@@ -8,7 +8,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { BridgeAdapter, BridgeSyncResult } from "./bridge-types";
 
-import { ixwikiGetNamespacedWikitext, ixwikiRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge/mysql-reader";
+import { getArticleWikitext, getRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
 /** Fetch recent changes to pages (watchlist proxy). */
 async function getUserWatchlistChanges(
@@ -26,21 +26,33 @@ async function getUserWatchlistChanges(
   }[]
 > {
   try {
-    const changes = await ixwikiRecentChanges(limit);
-    return changes.filter((rc) => rc.user !== wikiUsername);
+    const changes = await getRecentChanges(limit);
+    return (changes || [])
+      .filter((rc) => rc.user !== wikiUsername)
+      .map((rc) => ({
+        title: rc.title,
+        user: rc.user,
+        timestamp: rc.timestamp,
+        comment: rc.comment || "",
+        type: rc.type || "edit",
+        newLen: rc.newLen || 0,
+        oldLen: rc.oldLen || 0,
+      }));
   } catch {
     return [];
   }
 }
 
-/** Check if user's talk page has new messages via direct MariaDB query. */
+/** Check if user's talk page has new messages. */
 async function getUserTalkPageMessages(
   wikiUsername: string
 ): Promise<{ hasMessages: boolean; content: string | null }> {
   try {
-    const res = await ixwikiGetNamespacedWikitext(wikiUsername, 3);
-    if (!res?.wikitext) return { hasMessages: false, content: null };
-    return { hasMessages: res.wikitext.length > 0, content: res.wikitext };
+    const talkTitle = `User talk:${wikiUsername.replace(/ /g, "_")}`;
+    const article = await getArticleWikitext(talkTitle, "ixwiki");
+    const wikitext = article?.wikitext ?? "";
+    if (!wikitext) return { hasMessages: false, content: null };
+    return { hasMessages: wikitext.length > 0, content: wikitext };
   } catch {
     return { hasMessages: false, content: null };
   }

@@ -228,6 +228,9 @@ if [ "${DATABASE_READONLY:-}" != "true" ] && [ "${SKIP_DB_PUSH:-}" != "1" ] && [
     fi
 fi
 
+# Background WikiOS Database Integrity Guard
+bun run scripts/setup/check-wikios-db.ts > /dev/null 2>&1 &
+
 # ------------------------------------------------------------------------------
 # 8. Executive Environment Dashboard
 # ------------------------------------------------------------------------------

@@ -142,6 +142,12 @@ export interface SaveArticleInput {
   wikitext?: string;
   summary?: string;
   minor?: boolean;
+  namespace?: number;
+  namespacePrefix?: string | null;
+  protectionLevel?: string;
+  protectionExpiry?: Date | null;
+  redirectTargetSlug?: string | null;
+  redirectTargetFragment?: string | null;
   infoboxData?: Record<string, unknown>;
   leadImageUrl?: string;
 }
@@ -157,12 +163,17 @@ export interface WikiArticleEntity {
   contentJson: WikiBlock[] | null;
   wikitext: string;
   summary: string | null;
+  namespace: number;
+  namespacePrefix: string | null;
+  protectionLevel: string;
+  protectionExpiry: Date | null;
   infoboxData: Record<string, unknown> | null;
   readingTime: number;
   wordCount: number;
   viewCount: number;
   leadImageUrl: string | null;
   redirectTargetSlug: string | null;
+  redirectTargetFragment: string | null;
   authorId: string | null;
   lastEditorId: string | null;
   createdAt: Date;
@@ -179,4 +190,5 @@ export interface WikiRevisionSummary {
   authorId: string | null;
   createdAt: Date;
   byteSize: number;
+  byteDelta?: number;
 }

@@ -36,7 +36,7 @@ export default function WhatLinksHerePage() {
 
         {links.length > 0 && (
           <ul className="wikios-backlinks-list">
-            {links.map((link) => (
+            {links.map((link: { title: string; ns?: number }) => (
               <li key={link.title} className="wikios-backlink-item">
                 <Link
                   href={withBasePath(`/wiki/${encodeURIComponent(link.title.replace(/ /g, "_"))}`)}

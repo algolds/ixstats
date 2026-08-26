@@ -40,7 +40,12 @@ export const economyProcedures = {
         },
         users: {
           select: {
+            id: true,
             clerkUserId: true,
+            forumUsername: true,
+            wikiUsername: true,
+            membershipTier: true,
+            role: { select: { displayName: true, name: true } },
           },
           take: 1,
         },
@@ -73,6 +78,17 @@ export const economyProcedures = {
             storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
+            },
+            users: {
+              select: {
+                id: true,
+                clerkUserId: true,
+                forumUsername: true,
+                wikiUsername: true,
+                membershipTier: true,
+                role: { select: { displayName: true, name: true } },
+              },
+              take: 1,
             },
           },
         });
@@ -190,8 +206,26 @@ export const economyProcedures = {
       if (avgPopGrowth < 0.002) vulnerabilities.push("low_population_growth");
       if (avgGdpGrowth < 0.01) vulnerabilities.push("low_gdp_per_capita_growth");
 
+      const rawUser = (country.users as any[])?.[0];
+      const sovereignUser = rawUser
+        ? {
+            id: rawUser.id,
+            username:
+              rawUser.forumUsername ||
+              rawUser.wikiUsername ||
+              rawUser.clerkUserId ||
+              null,
+            roleName:
+              rawUser.role?.displayName ||
+              rawUser.role?.name ||
+              "Sovereign Regent",
+            membershipTier: rawUser.membershipTier || "citizen",
+          }
+        : null;
+
       const response = {
         ...country,
+        sovereignUser,
         currentPopulation: result.newStats.currentPopulation,
         currentGdpPerCapita: result.newStats.currentGdpPerCapita,
         currentTotalGdp: result.newStats.currentTotalGdp,

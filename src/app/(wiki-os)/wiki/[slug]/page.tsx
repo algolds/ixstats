@@ -14,6 +14,30 @@ import { withBasePath } from "~/lib/base-path";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import type { ArticleMode } from "~/lib/wiki-os/types";
 
+const RESERVED_TOOL_PAGES: Record<string, string> = {
+  categories: "/wiki/categories",
+  "category-index": "/wiki/categories",
+  "categories-index": "/wiki/categories",
+  contributions: "/wiki/contributions",
+  utilities: "/wiki/utilities",
+  templates: "/wiki/templates",
+  "template-palette": "/wiki/templates",
+  diff: "/wiki/diff",
+  "diff-viewer": "/wiki/diff",
+  watchlist: "/stashes",
+  random: "/wiki/random",
+  randompage: "/wiki/random",
+  search: "/wiki/search",
+  "recent-changes": "/wiki/recent-changes",
+  recentchanges: "/wiki/recent-changes",
+  repository: "/wiki/repository",
+  whatlinkshere: "/wiki/whatlinkshere",
+  "what-links-here": "/wiki/whatlinkshere",
+  lorewards: "/wiki/lorewards",
+  specialpages: "/wiki/utilities",
+  "special-pages": "/wiki/utilities",
+};
+
 export default function WikiOSArticlePage() {
   const params = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
@@ -22,14 +46,28 @@ export default function WikiOSArticlePage() {
   const { setActiveModal } = useWikiContext();
   const articleRef = useRef<HTMLDivElement>(null);
 
-  const slug = params.slug;
-  const title = decodeURIComponent(slug).replace(/_/g, " ");
-  const isMainPage = title === "Main Page" || title === "Main_Page";
+  const rawSlug = params.slug || "";
+  const slug = decodeURIComponent(rawSlug);
+  const title = slug.replace(/_/g, " ");
+  const isMainPage = title === "Main Page" || title === "Main_Page" || slug === "Main_Page";
 
   // Check URL search param for edit mode (e.g. ?action=edit)
   const isEditAction = searchParams.get("action") === "edit";
   const isMarginParam = searchParams.get("margin");
   const [mode, setMode] = useState<ArticleMode>(isEditAction ? "source" : "reading");
+
+  // Normalized keys for reserved tool detection
+  const slugLower = slug.toLowerCase();
+  const slugDashed = slugLower.replace(/[\s_]+/g, "-");
+  const titleLower = title.toLowerCase();
+  const titleDashed = titleLower.replace(/[\s_]+/g, "-");
+
+  const targetReservedPath =
+    RESERVED_TOOL_PAGES[slugDashed] ||
+    RESERVED_TOOL_PAGES[titleDashed] ||
+    RESERVED_TOOL_PAGES[slugLower] ||
+    RESERVED_TOOL_PAGES[titleLower] ||
+    null;
 
   // Sync mode with URL
   useEffect(() => {
@@ -45,30 +83,78 @@ export default function WikiOSArticlePage() {
     }
   }, [isMarginParam, setActiveModal]);
 
-
-  // Redirect Category: pages or /wiki/categories to the category browser
+  // Redirect Category: pages, User: profiles, Special: pages, or reserved tool routes
   useEffect(() => {
+    if (targetReservedPath) {
+      router.replace(withBasePath(targetReservedPath));
+      return;
+    }
+
     if (title.startsWith("Category:")) {
       const catName = title.slice("Category:".length);
       router.replace(
         withBasePath(`/wiki/categories/${encodeURIComponent(catName.replace(/ /g, "_"))}`)
       );
-    } else if (title.toLowerCase() === "categories") {
-      router.replace(withBasePath("/wiki/categories"));
-    }
-  }, [title, router]);
+    } else if (title.startsWith("User:") || title.startsWith("User_talk:")) {
+      const userName = title.replace(/^User(_talk)?:/i, "").trim();
+      router.replace(
+        withBasePath(`/wiki/user/${encodeURIComponent(userName.replace(/ /g, "_"))}`)
+      );
+    } else if (/^Special:/i.test(title)) {
+      const spec = title.replace(/^Special:/i, "").trim();
+      const specLower = spec.toLowerCase();
 
-  const isCategoryOrMain =
+      if (specLower === "specialpages" || specLower === "utilities") {
+        router.replace(withBasePath("/wiki/utilities"));
+      } else if (specLower === "recentchanges" || specLower === "recent-changes") {
+        router.replace(withBasePath("/wiki/recent-changes"));
+      } else if (specLower === "watchlist") {
+        router.replace(withBasePath("/stashes"));
+      } else if (specLower === "random" || specLower === "randompage") {
+        router.replace(withBasePath("/wiki/random"));
+      } else if (specLower === "categories" || specLower === "categorytree") {
+        router.replace(withBasePath("/wiki/categories"));
+      } else if (specLower === "search") {
+        router.replace(withBasePath("/wiki/search"));
+      } else if (specLower === "templates") {
+        router.replace(withBasePath("/wiki/templates"));
+      } else if (specLower === "diff") {
+        router.replace(withBasePath("/wiki/diff"));
+      } else if (specLower.startsWith("contributions")) {
+        const user = spec.replace(/^contributions\/?/i, "").trim();
+        router.replace(
+          user
+            ? withBasePath(`/wiki/contributions/${encodeURIComponent(user)}`)
+            : withBasePath("/wiki/contributions")
+        );
+      } else if (specLower.startsWith("whatlinkshere")) {
+        const target = spec.replace(/^whatlinkshere\/?/i, "").trim();
+        router.replace(
+          target
+            ? withBasePath(`/wiki/whatlinkshere/${encodeURIComponent(target)}`)
+            : withBasePath("/wiki/whatlinkshere")
+        );
+      } else {
+        router.replace(withBasePath("/wiki/utilities"));
+      }
+    }
+  }, [title, targetReservedPath, router]);
+
+  const isCategoryOrSpecialOrMain =
     isMainPage ||
     title.startsWith("Category:") ||
-    title.toLowerCase() === "categories";
+    title.startsWith("User:") ||
+    title.startsWith("User_talk:") ||
+    /^Special:/i.test(title) ||
+    Boolean(targetReservedPath);
 
-  // Fetch article HTML
+  // Fetch article HTML (strictly disabled on reserved tools, category routes, and special pages)
   const { data, isLoading, error, refetch } = api.wikios.getArticleHtml.useQuery(
     { title },
     {
-      enabled: !!title && !isCategoryOrMain,
+      enabled: !!title && !isCategoryOrSpecialOrMain,
       staleTime: 10 * 60 * 1000,
+      retry: false,
     }
   );
 
@@ -177,28 +263,38 @@ export default function WikiOSArticlePage() {
                   data.authorInfo
                     ? {
                         creator:
-                          "creator" in data.authorInfo
-                            ? data.authorInfo.creator ?? null
-                            : (data.authorInfo as { author?: string | null }).author ?? null,
+                          typeof (data.authorInfo as any).creator === "object"
+                            ? (data.authorInfo as any).creator?.username ?? null
+                            : (data.authorInfo as any).creator ?? (data.authorInfo as any).author ?? null,
                         creatorAvatar:
-                          "creatorAvatar" in data.authorInfo
-                            ? (data.authorInfo as { creatorAvatar?: string | null }).creatorAvatar ?? null
-                            : null,
+                          (data.authorInfo as any).creator?.avatar ??
+                          (data.authorInfo as any).creatorAvatar ??
+                          null,
                         createdAt:
-                          "createdAt" in data.authorInfo
-                            ? data.authorInfo.createdAt ?? null
-                            : (data.authorInfo as { createdTimestamp?: string | null })
-                                .createdTimestamp ?? null,
-                        lastEditor: data.authorInfo.lastEditor ?? null,
+                          (data.authorInfo as any).createdAt ??
+                          (data.authorInfo as any).creator?.timestamp ??
+                          (data.authorInfo as any).createdTimestamp ??
+                          null,
+                        lastEditor:
+                          typeof (data.authorInfo as any).lastEditor === "object"
+                            ? (data.authorInfo as any).lastEditor?.username ?? null
+                            : (data.authorInfo as any).lastEditor ?? null,
                         lastEditorAvatar:
-                          "lastEditorAvatar" in data.authorInfo
-                            ? (data.authorInfo as { lastEditorAvatar?: string | null }).lastEditorAvatar ?? null
-                            : null,
+                          (data.authorInfo as any).lastEditor?.avatar ??
+                          (data.authorInfo as any).lastEditorAvatar ??
+                          null,
                         lastEditedAt:
-                          "lastEditedAt" in data.authorInfo
-                            ? data.authorInfo.lastEditedAt ?? null
-                            : (data.authorInfo as { lastModifiedTimestamp?: string | null })
-                                .lastModifiedTimestamp ?? null,
+                          (data.authorInfo as any).lastEditedAt ??
+                          (data.authorInfo as any).lastEditor?.timestamp ??
+                          (data.authorInfo as any).lastModifiedTimestamp ??
+                          null,
+                        contributors:
+                          (data.authorInfo as any).topContributors ??
+                          (data.authorInfo as any).contributors ??
+                          [],
+                        totalContributors:
+                          (data.authorInfo as any).totalContributors ??
+                          ((data.authorInfo as any).topContributors?.length ?? 0),
                       }
                     : null
                 }

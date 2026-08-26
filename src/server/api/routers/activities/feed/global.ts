@@ -12,7 +12,7 @@ const activityFilterSchema = z.object({
   limit: z.number().min(1).max(80).default(20),
   cursor: z.string().optional(),
   filter: z
-    .enum(["all", "achievements", "diplomatic", "economic", "social", "meta"])
+    .enum(["all", "achievements", "diplomatic", "economic", "social", "meta", "community"])
     .default("all"),
   category: z.enum(["all", "game", "platform", "social"]).default("all"),
   userId: z.string().optional(),
@@ -81,7 +81,7 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
         // Build where clause based on filters
         const where: any = {};
 
-        if (input.filter !== "all") {
+        if (input.filter !== "all" && input.filter !== "community") {
           where.type = input.filter;
         }
 
@@ -451,7 +451,7 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
         }
 
         // Add wiki recent changes as feed items
-        if (input.filter === "all" || input.filter === "meta") {
+        if (input.filter === "all" || input.filter === "meta" || input.filter === "community") {
           try {
             const wikiChanges = await getWikiBridgeRecentChanges(20);
             for (const rc of wikiChanges) {
@@ -500,7 +500,7 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
         }
 
         // Add forum activity as feed items
-        if (input.filter === "all" || input.filter === "social") {
+        if (input.filter === "all" || input.filter === "social" || input.filter === "community") {
           try {
             const forumItems = await getForumActivity(20);
             for (const item of forumItems) {

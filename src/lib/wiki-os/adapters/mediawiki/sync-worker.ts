@@ -7,6 +7,7 @@
  */
 
 import { executeMediaWikiWrite, updateRevisionActor } from "./write-service";
+import { db } from "~/server/db";
 
 export interface MediaWikiSyncJob {
   slug: string;
@@ -59,8 +60,26 @@ export class MediaWikiExportWorker {
         job.authorWikiUsername ? { user: { wikiUsername: job.authorWikiUsername } } : "ixwiki"
       );
 
-      if (res.revisionId && job.authorWikiUsername) {
-        await updateRevisionActor(res.revisionId, job.authorWikiUsername);
+      if (res.revisionId) {
+        // Record mwLatestRevId on PostgreSQL article to prevent inbound CDC echo loops
+        await (db as any).wikiArticle.updateMany({
+          where: {
+            source: "ixwiki",
+            OR: [
+              { title: job.title },
+              { title: job.title.replace(/_/g, " ") },
+              { slug: job.slug },
+            ],
+          },
+          data: {
+            mwLatestRevId: res.revisionId,
+            lastMwSyncAt: new Date(),
+          },
+        }).catch(() => null);
+
+        if (job.authorWikiUsername) {
+          await updateRevisionActor(res.revisionId, job.authorWikiUsername);
+        }
       }
     } catch (err) {
       if (job.attempts < 3) {

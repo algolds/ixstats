@@ -7,7 +7,6 @@ import Link from "next/link";
 import {
   Search,
   Folder,
-  Folder as FolderTree,
   ArrowRight,
   Sparks as Sparkles,
   Packages as Layers,
@@ -26,7 +25,6 @@ import {
   Group as IconoirGroup,
   Megaphone as IconoirMegaphone,
   Cpu as IconoirCpu,
-  Globe,
 } from "iconoir-react";
 import { motion, useReducedMotion } from "motion/react";
 import { api } from "~/trpc/react";
@@ -134,6 +132,13 @@ const DOMAIN_CATEGORIES: DomainCategory[] = [
     metric: "Flora, Fauna & Ecology",
     description: "Flora, fauna, nature reserves, ecosystems, and natural phenomena across the world.",
   },
+  {
+    name: "Miscellaneous",
+    color: "#64748b",
+    icon: Layers,
+    metric: "Indexes, Documents & General",
+    description: "General topics, uncategorized articles, cross-disciplinary subjects, and reference indexes.",
+  },
 ];
 
 const ALPHABET = ["ALL", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), "#"] as const;
@@ -211,7 +216,7 @@ export default function CategoriesIndexPage() {
   }, [categoryResults]);
 
   return (
-    <WikiOSLayout title="Category Index">
+    <WikiOSLayout hideTitleHeading>
       <div className="w-full space-y-8 select-none pb-16 max-w-6xl mx-auto">
         {/* ── 1. Hero Masthead & Search ── */}
         <motion.div
@@ -225,7 +230,7 @@ export default function CategoriesIndexPage() {
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                <FolderTree className="h-3.5 w-3.5" />
+                <Folder className="h-3.5 w-3.5" />
                 <span>Knowledge Taxonomy</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-brand">
@@ -248,7 +253,7 @@ export default function CategoriesIndexPage() {
               </div>
 
               <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/50 dark:bg-zinc-800/50 border border-border/60 backdrop-blur-sm">
-                <Globe className="h-4 w-4 text-emerald-500" />
+                <IconoirGlobe className="h-4 w-4 text-emerald-500" />
                 <div className="text-left">
                   <div className="text-xs font-bold text-foreground">{countries.length} Nations</div>
                   <div className="text-[10px] text-muted-foreground">Geopolitical Portals</div>

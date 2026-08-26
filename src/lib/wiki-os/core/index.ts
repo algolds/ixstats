@@ -8,3 +8,5 @@ export * from "./link-graph-service";
 export * from "./native-search-service";
 export * from "./parser-functions";
 export * from "./category-service";
+export * from "./media-asset-service";
+export * from "./blurhash-service";

@@ -2,6 +2,7 @@
 
 import { UserProfile } from "@clerk/nextjs";
 import { Crown, OpenNewWindow as ExternalLink } from "iconoir-react";
+import { api } from "~/trpc/react";
 import { useUser, SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { AccountIdentityPanel } from "~/app/settings/_components/panels/AccountIdentityPanel";
 import { facetClerkAppearance } from "~/lib/clerk/theme";
@@ -9,7 +10,14 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 
 export default function IdAccountHubPage() {
   const { user } = useUser();
-  const username = user?.username || "me";
+  const { data: status } = api.ixnayid.getStatus.useQuery(undefined, { enabled: !!user });
+  const username =
+    status?.passportHandle ||
+    status?.forum?.username ||
+    status?.wiki?.username ||
+    (user?.username ? user.username.replace(/_$/, "") : null) ||
+    user?.username ||
+    "me";
 
   usePageTitle({
     title: "IxnayID & Account Settings",
@@ -34,7 +42,7 @@ export default function IdAccountHubPage() {
             </UserProfile.Page>
             <UserProfile.Link
               label="Public Passport"
-              url={`/@${username}`}
+              url={`/id/@${username}`}
               labelIcon={<ExternalLink className="h-4 w-4" />}
             />
           </UserProfile>

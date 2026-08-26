@@ -1135,7 +1135,7 @@ export class MessagingService {
     cap: number = DEFAULT_USER_MESSAGE_CAP
   ): Promise<number> {
     try {
-      const user = await this.db.user.findFirst({
+      const user = await this.db.user?.findFirst?.({
         where: { OR: [{ id: userId }, { clerkUserId: userId }] },
         include: { role: true },
       });

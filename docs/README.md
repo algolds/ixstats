@@ -138,6 +138,8 @@ The authoritative index for all IxStates architecture, systems, operations, spec
 | [processes/refactoring.md](processes/refactoring.md) | Modular architecture patterns, file size ceilings (≤700L), and router-split recipe |
 | [../scripts/README.md](../scripts/README.md) | **Active & Archived Scripts Catalog** — tooling, migration archives, and GIS calculators |
 | [audits/src-monolith-candidates.md](audits/src-monolith-candidates.md) | Large file refactoring tracker (>800 lines) |
+| [audits/test-suite-audit-and-justification.md](audits/test-suite-audit-and-justification.md) | **Test Suite Audit & Justification** — 122-file inventory, value stack ranking (Tiers 0–4), and ponytail prune candidates |
+
 
 ---
 

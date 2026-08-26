@@ -452,7 +452,11 @@ export const activitiesFeedHeadlinesRouter = createTRPCRouter({
       // ── 8. Wiki recent edits (from PostgreSQL WikiRevision shadow store) ──
       try {
         const localRevs = await ctx.db.wikiRevision.findMany({
-          where: { minor: false },
+          where: {
+            minor: false,
+            article: { namespace: 0 },
+            author: { notIn: ["LorewardsBot", "Maintenance script", "Robot"] },
+          },
           orderBy: { createdAt: "desc" },
           take: 8,
           include: { article: { select: { title: true } } },

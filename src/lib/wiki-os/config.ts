@@ -3,6 +3,7 @@
 
 export const DEFAULT_USER_AGENT = "IxStats-Builder";
 export const DEFAULT_MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
+export const MEDIAWIKI_TARGET_VERSION = "1.45.1";
 
 export type WikiSource = "ixwiki" | "iiwiki" | "althistory";
 

@@ -1,18 +1,21 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { NativeSearchService, searchWiki, searchShadowArticles } from "~/lib/wiki-os/core/native-search-service";
-import { db } from "~/server/db";
 
-jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers", () => ({
-  __esModule: true,
-  extractIntroFromWikitext: (txt: string) => txt,
+const mockFindMany: any = jest.fn();
+
+jest.mock("~/server/db", () => ({
+  db: {
+    wikiArticle: {
+      findMany: (...args: any[]) => mockFindMany(...args),
+    },
+  },
 }));
 
-const mockFindMany = jest.spyOn(db.wikiArticle, "findMany");
+import { NativeSearchService, searchWiki, searchShadowArticles } from "~/lib/wiki-os/core/native-search-service";
 
 describe("NativeSearchService & searchWiki contract", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockFindMany.mockResolvedValue([] as any);
+    mockFindMany.mockResolvedValue([]);
   });
 
   it("performs spotlight search across articles using title prefix and slug", async () => {
@@ -29,7 +32,7 @@ describe("NativeSearchService & searchWiki contract", () => {
       },
     ];
 
-    mockFindMany.mockResolvedValue(mockArticles as any);
+    mockFindMany.mockResolvedValue(mockArticles);
 
     const results = await NativeSearchService.spotlightSearch("Caphiria", "ixwiki", 10);
 
@@ -53,7 +56,7 @@ describe("NativeSearchService & searchWiki contract", () => {
         title: "Valora",
         wikitext: "Valora is a member state.",
       },
-    ] as any);
+    ]);
 
     const shadowResults = await searchShadowArticles("Valora", 5, "ixwiki");
     expect(shadowResults).toHaveLength(1);

@@ -243,6 +243,15 @@ const createPrismaClient = () => {
     // Wiki cache (written by WikiCacheService for 3-layer caching)
     "WikiCache",
     "ExternalApiCache",
+    // WikiOS Core Entities (Articles, Revisions, Categories, DAG Graph)
+    "WikiArticle",
+    "WikiRevision",
+    "WikiCategory",
+    "WikiCategoryMember",
+    "WikiAsset",
+    "WikiLink",
+    "WikiLog",
+    "WikiWatchlist",
     // WikiOS Stash — save-for-later with annotations
     "Stash",
     "StashItem",

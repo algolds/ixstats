@@ -1,10 +1,10 @@
 # WikiOS native architecture
 
-Status: Release candidate (Plan 170 complete)  
+Status: Release candidate (Plan 170 & Plan 191 complete)  
 Package: `src/lib/wiki-os/` (`@wikios/core`)  
 Runtime: TypeScript 7.0, Next.js 16 App Router  
 
-WikiOS is the knowledge engine and structured worldbuilding platform for IxStates. PostgreSQL is the primary database for article content, append-only revisions, directed link graphs, and categories. Reads take under 2ms and writes take under 10ms.
+WikiOS is the knowledge engine and structured worldbuilding platform for IxStates. PostgreSQL is the primary database for article content (4,685+ articles), append-only revisions, directed link graphs (48,200+ edges), taxonomies, and 7,555+ media assets (`wiki_assets`). Reads take under 2ms and writes take under 10ms.
 
 ---
 
@@ -13,6 +13,7 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 - **PostgreSQL primary storage.** Writes commit in under 10ms directly to `wiki_articles` and `wiki_revisions`.
 - **Pre-compiled HTML.** `contentHtml` serves reads directly from database indexes in under 2ms.
 - **Relational link graph (`wiki_links`).** Stores directed edges for backlink queries in under 1ms and identifies red links without extra lookups.
+- **Native Media & Asset Engine (`MediaAssetService`).** Manages 7,555+ media files in `wiki_assets` with MD5 shard paths, automated dimensions extraction, JIT auto-registration, and immutable caching (`Cache-Control: public, max-age=31536000, immutable`).
 - **Direct MariaDB read pool (`getIxWikiPool()`).** Connects directly to MariaDB on port 3306 or 13306 for unmigrated pages, history, and categories with zero HTTP overhead.
 - **Global bot bridge (`WikiOS-Bridge`).** `MediaWikiExportWorker` queues upstream edits asynchronously and patches `rev_actor` and `rc_actor` for accurate author attribution.
 - **Cloudflare edge defense (`src/lib/wiki-os/guardian/`).** Turnstile verification and non-blocking Cloudflare Zone edge cache purges on save.
@@ -36,11 +37,12 @@ flowchart TD
         Repo["ArticleRepository (<10ms save, <2ms read)"]
         LinkGraph["LinkGraphService (O(1) backlinks)"]
         Search["NativeSearchService (Two-tier search)"]
+        Media["MediaAssetService (wiki_assets & MD5 sharding)"]
         Guardian["CloudflareGuardian (Turnstile and CDN purge)"]
     end
 
     subgraph "Storage layer"
-        PG[("PostgreSQL database\nwiki_articles, wiki_revisions, wiki_links")]
+        PG[("PostgreSQL database\nwiki_articles, wiki_revisions, wiki_links, wiki_assets")]
         MariaDB[("MariaDB database\nDirect read pool: 1-3ms")]
         MediaWiki["MediaWiki Action API\nAsync mirror via bot bridge"]
     end
@@ -49,10 +51,12 @@ flowchart TD
     Routers --> Repo
     Routers --> LinkGraph
     Routers --> Search
+    Routers --> Media
     Routers --> Guardian
 
     Repo -->|"Primary read / write"| PG
     LinkGraph -->|"Directed edge graph"| PG
+    Media -->|"Asset lookups & JIT upsert"| PG
     Repo -.->|"Legacy read fallback"| MariaDB
     Repo -->|"Async job queue"| MediaWiki
 ```

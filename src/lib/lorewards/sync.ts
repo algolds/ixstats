@@ -6,37 +6,64 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import * as mysql from "mysql2/promise";
 import { db } from "~/server/db";
 import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "./ool-parser";
-import { getWikiDbPool } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
-
-// Direct MySQL for namespace 4 (Project/IxWiki) pages
-function getPool(): mysql.Pool {
-  return getWikiDbPool() as mysql.Pool;
-}
+import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 
 async function fetchOOLPageWikitext(yearOrKey: number | "main"): Promise<string | null> {
+  const pageTitle = yearOrKey === "main" ? "IxWiki:OOL" : `IxWiki:OOL/${yearOrKey}`;
+  const shortTitle = yearOrKey === "main" ? "OOL" : `OOL/${yearOrKey}`;
+
+  // 1. Try PostgreSQL first (<1ms)
   try {
-    const pool = getPool();
-    const pageTitle = yearOrKey === "main" ? "OOL" : `OOL/${yearOrKey}`;
-    const [rows] = await pool.execute<mysql.RowDataPacket[]>(
-      `SELECT t.old_text
-       FROM page p
-       JOIN slots s ON s.slot_revision_id = p.page_latest
-       JOIN content c ON c.content_id = s.slot_content_id
-       JOIN text t ON t.old_id = SUBSTRING(c.content_address, 4)
-       WHERE p.page_title = ? AND p.page_namespace = 4
-       LIMIT 1`,
-      [pageTitle]
-    );
-    if (!rows || rows.length === 0) return null;
-    return String(rows[0]!.old_text);
+    const article: any = await (db as any).wikiArticle.findFirst({
+      where: {
+        source: "ixwiki",
+        OR: [
+          { title: pageTitle },
+          { title: shortTitle },
+          { slug: pageTitle.toLowerCase().replace(/[:/]/g, "_") },
+          { slug: shortTitle.toLowerCase().replace(/[:/]/g, "_") },
+        ],
+      },
+      select: { wikitext: true },
+    });
+    if (article?.wikitext) return article.wikitext;
+  } catch {}
+
+  // 2. Try MediaWiki Action API HTTP
+  try {
+    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
+    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
+    const params = new URLSearchParams({
+      action: "query",
+      prop: "revisions",
+      rvprop: "content",
+      rvslots: "main",
+      titles: pageTitle,
+      format: "json",
+    });
+
+    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
+      headers: { "User-Agent": DEFAULT_USER_AGENT },
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (res.ok) {
+      const data = (await res.json()) as any;
+      const pages = data?.query?.pages || {};
+      const pageId = Object.keys(pages)[0];
+      if (pageId && pageId !== "-1") {
+        const rev = pages[pageId]?.revisions?.[0];
+        return rev?.slots?.main?.["*"] ?? rev?.["*"] ?? null;
+      }
+    }
   } catch (err) {
-    console.error(`[Lorewards] MySQL error fetching OOL/${yearOrKey}:`, err);
-    return null;
+    console.error(`[Lorewards] HTTP error fetching OOL/${yearOrKey}:`, err);
   }
+
+  return null;
 }
 
 const STATE_FILE = path.resolve("/ixwiki/shared/bots/discord/lorewards-state.json");

@@ -237,6 +237,7 @@ export function getDirtyScannedFiles(rootDir = DEFAULT_ROOT): string[] {
     const statusOutput = execSync("git status --porcelain", {
       cwd: rootDir,
       encoding: "utf8",
+      stdio: ["pipe", "pipe", "ignore"],
     });
     const lines = statusOutput.split("\n").filter(Boolean);
     const dirtyFiles: string[] = [];

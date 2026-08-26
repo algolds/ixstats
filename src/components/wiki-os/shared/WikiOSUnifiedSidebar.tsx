@@ -29,6 +29,7 @@ import {
   MoreHoriz as MoreHorizontal,
   Printer,
   Code as FileCode,
+  Wrench,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -538,6 +539,18 @@ export function WikiOSUnifiedSidebar({
                           <div className="font-semibold text-[var(--wikios-text)]">What Links Here</div>
                           <div className="text-[10px] text-[var(--wikios-text-dim)] truncate">Inbound wiki backlinks</div>
                         </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href={withBasePath("/wiki/utilities")}
+                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium cursor-pointer hover:bg-[var(--wikios-border)]/50 focus:bg-[var(--wikios-border)]/50 transition-colors"
+                        >
+                          <Wrench className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-[var(--wikios-text)]">Utilities & Special Hub</div>
+                            <div className="text-[10px] text-[var(--wikios-text-dim)] truncate">Diagnostics, tools & special pages</div>
+                          </div>
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator className="bg-[var(--wikios-border)] my-1" />
                       <DropdownMenuItem

@@ -35,6 +35,7 @@ import {
 } from "./ArticlePlaceholders";
 import { CategoriesBar } from "./ArticleCategories";
 import { ArticleFooter } from "./ArticleFooter";
+import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
@@ -551,52 +552,74 @@ export function ArticleRenderer({
     "--wikios-link-hover": themeColors.secondary,
   } as React.CSSProperties;
 
+  const narrator = useWikiNarrator(contentRef);
+
   return (
     <div
+      ref={titleRef}
       className={cn(
-        "wikios-article transition-[margin-right,padding-right] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        "wikios-article wikios-reader-container relative flex items-start justify-center gap-8 2xl:gap-10 transition-[margin-right,padding-right] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]",
         marginOpen && (marginExpanded ? "lg:mr-[400px]" : "lg:mr-80")
       )}
       style={containerStyle}
     >
       <div ref={titleRef} className="wikios-title-sentinel" />
 
-      {/* Redesigned Custom WikiOSHeader */}
-      <WikiOSHeader
-        title={title}
-        lastModified={lastModified}
-        wikiSource={wikiSource}
-        countryData={countryData}
-        featuredImageUrl={featuredImageUrl}
-        themeColors={themeColors}
-        authorInfo={authorInfo}
-        awardsData={awardsData}
-        tocLength={toc.length}
-        onTocClick={() => setTocOpen(true)}
-      />
+      {/* Main Reading Vessel (Hero + Article Body + Infobox) */}
+      <div className="wikios-reading-vessel w-full max-w-[1024px] min-w-0 flex-1">
+        {/* Redesigned Custom WikiOSHeader */}
+        <WikiOSHeader
+          title={title}
+          lastModified={lastModified}
+          wikiSource={wikiSource}
+          countryData={countryData}
+          featuredImageUrl={featuredImageUrl}
+          themeColors={themeColors}
+          authorInfo={authorInfo}
+          awardsData={awardsData}
+          tocLength={toc.length}
+          onTocClick={() => setTocOpen(true)}
+        />
 
-      {/* External wiki source badge */}
-      {wikiSource && wikiSource !== "ixwiki" && WIKI_SOURCE_LABELS[wikiSource] && (
-        <div className="mb-4 flex items-center gap-1.5">
-          <a
-            href={`${WIKI_SOURCE_LABELS[wikiSource]!.url}${encodeURIComponent(title.replace(/ /g, "_"))}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded border border-amber-500/10 bg-amber-50/5 px-2 py-0.5 text-xs text-amber-500 transition-colors hover:bg-amber-500/10"
-          >
-            <ExternalLink className="h-3 w-3" />
-            From {WIKI_SOURCE_LABELS[wikiSource]!.label}
-          </a>
-        </div>
-      )}
+        {/* Mobile Byline Strip (< XL screens where right Intel HUD is hidden) */}
+        {(() => {
+          const creator = authorInfo?.creator;
+          const creatorName =
+            typeof creator === "object"
+              ? (creator as any)?.username
+              : (creator || (authorInfo as any)?.author || null);
 
-      {/* Page-top notices (WIP, stub, hatnotes) */}
-      {noticesHtml && (
-        <div className="wikios-notices" dangerouslySetInnerHTML={{ __html: noticesHtml }} />
-      )}
+          if (!creatorName && !lastModified) return null;
 
-      {/* Content layout */}
-      <div className="wikios-article-with-toc">
+          return (
+            <div className="xl:hidden flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground mt-2.5 mb-3 px-1">
+              {creatorName && (
+                <span className="font-medium text-foreground/90">
+                  By <span className="font-semibold">{creatorName}</span>
+                </span>
+              )}
+              {lastModified && (
+                <>
+                  {creatorName && <span className="text-muted-foreground/40 select-none">•</span>}
+                  <span>
+                    {new Date(lastModified).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                </>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Page-top notices (WIP, stub, hatnotes) */}
+        {noticesHtml && (
+          <div className="wikios-notices" dangerouslySetInnerHTML={{ __html: noticesHtml }} />
+        )}
+
+        {/* Content layout */}
         <div className="wikios-article-main" ref={contentRef}>
           <div className="wikios-article-body wikios-article-content">
             {processedInfoboxHtml && (
@@ -665,8 +688,10 @@ export function ArticleRenderer({
             onOpenDrawer={() => setMarginOpen(true)}
           />
         </div>
+      </div>
 
-        {/* Desktop sticky TOC (autocollapses when Margin is open) */}
+      {/* Outset Gutter Rail: Sticky TOC + Companion Intel HUD */}
+      <aside className="wikios-outset-toc hidden xl:flex flex-col gap-3 shrink-0 w-[220px] 2xl:w-[240px]">
         {toc.length > 0 && (
           <StickyToc
             entries={toc}
@@ -674,7 +699,26 @@ export function ArticleRenderer({
             isCollapsed={marginOpen}
           />
         )}
-      </div>
+        <ArticleCompanionHUD
+          title={title}
+          slug={slug}
+          contentHtml={contentHtml}
+          lastModified={lastModified}
+          authorInfo={authorInfo}
+          categories={categories}
+          awardsData={awardsData}
+          marginThreadsCount={(marginData?.threads as any)?.length ?? 0}
+          marginAnnotationsCount={(annotationsData as any)?.length ?? 0}
+          onOpenMargin={(tab) => {
+            setMarginTab(tab || "threads");
+            setMarginOpen(true);
+          }}
+          onOpenHistory={() => setActiveModal("history")}
+          onOpenBacklinks={() => setActiveModal("backlinks")}
+          narrator={narrator}
+          isAuthenticated={isAuthenticated}
+        />
+      </aside>
 
       {/* Apple Books Style TOC Drawer (Modal Sheet) */}
       <AppleBooksTocDrawer

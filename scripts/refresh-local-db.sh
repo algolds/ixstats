@@ -27,11 +27,11 @@ echo "✓ Static assets synced."
 
 # Ensure local database schema is aligned with the codebase (Prisma 6 CLI doesn't autoload env with config files)
 echo "🚀 Syncing database schema with codebase..."
-if [ -f ".env" ]; then
-    set -a
-    source .env
-    set +a
-fi
 bun run db:push:force
+
+# Verify and auto-heal WikiOS articles and categories in PostgreSQL
+echo "📚 Verifying WikiOS database persistence..."
+bun run scripts/setup/check-wikios-db.ts
+
 
 

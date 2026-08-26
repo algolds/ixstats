@@ -40,6 +40,16 @@ export interface TemplateDataInfo {
  * Fetch TemplateData for one or more templates from MediaWiki.
  * Uses the templatedata API action.
  */
+function normalizeString(val: unknown): string | undefined {
+  if (!val) return undefined;
+  if (typeof val === "string") return val;
+  if (typeof val === "object") {
+    const obj = val as Record<string, string>;
+    return obj.en || Object.values(obj)[0] || undefined;
+  }
+  return undefined;
+}
+
 export async function fetchTemplateData(titles: string[]): Promise<Map<string, TemplateDataInfo>> {
   const result = new Map<string, TemplateDataInfo>();
   if (titles.length === 0) return result;
@@ -68,13 +78,18 @@ export async function fetchTemplateData(titles: string[]): Promise<Map<string, T
         },
         signal: AbortSignal.timeout(15000),
       });
-      const data = (await res.json()) as {
+      if (!res.ok) continue;
+
+      const rawText = await res.text();
+      if (!rawText.trim().startsWith("{")) continue;
+
+      const data = JSON.parse(rawText) as {
         pages?: Record<
           string,
           {
             title?: string;
-            description?: string;
-            params?: Record<string, TemplateParam>;
+            description?: unknown;
+            params?: Record<string, any>;
             paramOrder?: string[];
             format?: string;
             sets?: Array<{ label: string; params: string[] }>;
@@ -88,18 +103,30 @@ export async function fetchTemplateData(titles: string[]): Promise<Map<string, T
           if (!page.title || page.notemplatedata) continue;
           // Strip "Template:" prefix for storage
           const cleanName = page.title.replace(/^Template:/, "");
+          const normalizedParams: Record<string, TemplateParam> = {};
+
+          if (page.params) {
+            for (const [pKey, pVal] of Object.entries(page.params)) {
+              normalizedParams[pKey] = {
+                ...pVal,
+                label: normalizeString(pVal?.label),
+                description: normalizeString(pVal?.description),
+              };
+            }
+          }
+
           result.set(cleanName, {
             title: cleanName,
-            description: page.description ?? undefined,
-            params: page.params ?? {},
+            description: normalizeString(page.description),
+            params: normalizedParams,
             paramOrder: page.paramOrder,
             format: page.format,
             sets: page.sets,
           });
         }
       }
-    } catch (err) {
-      console.error(`[WikiOS] Failed to fetch TemplateData for batch:`, err);
+    } catch {
+      // Continue next batch
     }
   }
 

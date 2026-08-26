@@ -1,8 +1,7 @@
 // src/lib/wiki-os/bridge/index.ts
-// Unified barrel export for WikiBridge.
+// Unified barrel export for WikiBridge (PostgreSQL Native + Live HTTP API).
 
 export * from "./types";
-export * from "./mysql-pool";
-export * from "./mysql-reader";
+export * from "./pg-reader";
 export * from "./http-reader";
 export * from "./dispatchers";

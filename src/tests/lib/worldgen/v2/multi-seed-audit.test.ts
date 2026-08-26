@@ -50,13 +50,15 @@ describe("v2/multi-seed-audit — 10-Seed Quality Audit (≥85% Threshold)", () 
     expect(reports.length).toBe(10);
     const avgScore = reports.reduce((sum, r) => sum + r.compositeScore, 0) / reports.length;
 
-    console.log(`\n=== UPG v2 Multi-Seed Quality Audit Summary ===`);
-    console.log(`Seeds audited: ${reports.length}`);
-    console.log(`Average Composite Quality Score: ${avgScore.toFixed(1)}%`);
-    for (const r of reports) {
-      console.log(`  - Seed ${r.seed}: ${r.compositeScore}% (${r.passed ? "PASS" : "FAIL"})`);
+    if (process.env.VERBOSE_TESTS) {
+      console.log(`\n=== UPG v2 Multi-Seed Quality Audit Summary ===`);
+      console.log(`Seeds audited: ${reports.length}`);
+      console.log(`Average Composite Quality Score: ${avgScore.toFixed(1)}%`);
+      for (const r of reports) {
+        console.log(`  - Seed ${r.seed}: ${r.compositeScore}% (${r.passed ? "PASS" : "FAIL"})`);
+      }
+      console.log(`=================================================\n`);
     }
-    console.log(`=================================================\n`);
 
     expect(avgScore).toBeGreaterThanOrEqual(85);
   });

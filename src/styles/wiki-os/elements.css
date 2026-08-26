@@ -2285,6 +2285,16 @@ button.wikios-rc-expand-btn:hover {
   flex-shrink: 0;
 }
 
+.wikios-portal-card-img {
+  width: 24px;
+  height: 24px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .wikios-portal-card-title {
   flex: 1;
   min-width: 0;

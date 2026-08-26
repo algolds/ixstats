@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@nevil5249/shadowcraft";
 @source "../**/*.{ts,tsx,js,jsx}";
 
 @theme {

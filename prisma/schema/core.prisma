@@ -273,6 +273,8 @@ model User {
   editedArticles      WikiArticle[]            @relation("WikiArticleEditor")
   authoredRevisions   WikiRevision[]           @relation("WikiRevisionAuthor")
   uploadedAssets      WikiAsset[]              @relation("WikiAssetUploader")
+  wikiWatchlists      WikiWatchlist[]          @relation("UserWikiWatchlists")
+  wikiLogs            WikiLog[]                @relation("UserWikiLogs")
 
   @@index([clerkUserId])
   @@index([countryId])

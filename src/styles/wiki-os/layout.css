@@ -121,7 +121,7 @@
   flex: 1;
   min-width: 0;
   padding: 24px 32px 64px;
-  max-width: calc(var(--wikios-content-max-width) + var(--wikios-infobox-width) + 80px);
+  max-width: 1400px;
   margin: 0 auto;
   transform-origin: top center;
 }
@@ -143,21 +143,61 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Sticky TOC (right side, always expanded, pill-shaped container)
+   Article Reader Layout (Flush Hero/Infobox + Outset Gutter TOC)
    --------------------------------------------------------------------------- */
 
-/* Article + overlapping TOC */
+.wikios-reader-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 36px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.wikios-reading-vessel {
+  flex: 1;
+  min-width: 0;
+  max-width: 1024px;
+  width: 100%;
+}
+
+.wikios-article-main {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.wikios-outset-toc {
+  position: sticky;
+  top: 96px;
+  width: 220px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex-shrink: 0;
+  align-self: flex-start;
+  z-index: 20;
+}
+
+.wikios-outset-toc::-webkit-scrollbar {
+  display: none;
+}
+
+.wikios-outset-toc .wikios-sticky-toc {
+  width: 100%;
+  position: static;
+  top: auto;
+}
+
+/* Legacy container compat */
 .wikios-article-with-toc {
   position: relative;
   display: flex;
   gap: 32px;
   align-items: flex-start;
-}
-
-.wikios-article-main {
-  position: relative;
-  flex: 1;
-  min-width: 0;
 }
 
 /* ---------------------------------------------------------------------------

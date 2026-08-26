@@ -8,12 +8,7 @@ import {
   Group as Users,
   CheckCircle as CheckCircle2,
   Sparks as Sparkles,
-  Medal as Award,
-  Calendar,
-  User,
-  EditPencil as PenTool,
 } from "iconoir-react";
-import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { CategoryBreadcrumb } from "./CategoryBreadcrumb";
 import { withBasePath } from "~/lib/base-path";
@@ -21,6 +16,7 @@ import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext
 import { detectMediaType } from "~/lib/wiki-os/transformers/media-theme";
 import type { ActiveCountryData } from "~/components/wiki-os/shared/ActiveCountryUnifiedWidget";
 import type { FlagColors } from "~/lib/flags/flag-color-extractor";
+import { EditorialMastheadHeader } from "./headers/EditorialMastheadHeader";
 
 export type ArticleThemeColors =
   | FlagColors
@@ -43,6 +39,8 @@ export interface ArticleAuthorInfo {
   lastEditorAvatar?: string | null;
   lastEditedAt?: string | null;
   lastModifiedTimestamp?: string | null;
+  contributors?: Array<{ username: string; editCount?: number; lastContributedAt?: string }>;
+  totalContributors?: number;
 }
 
 export interface ArticleHeaderProps {
@@ -193,7 +191,7 @@ export function WikiOSHeader({
         };
       default:
         return {
-          Icon: Award,
+          Icon: Trophy,
           text: "Wiki Award",
           classes:
             "border-purple-600/20 bg-purple-600/10 text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-400 dark:hover:bg-purple-500/25 hover:bg-purple-600/20",
@@ -249,6 +247,29 @@ export function WikiOSHeader({
     [backdropUrl, heroMediaType, getImageStyle]
   );
 
+  // If no backdrop image is available, render clean Editorial Masthead
+  if (!backdropUrl) {
+    return (
+      <EditorialMastheadHeader
+        title={title}
+        lastModified={lastModified}
+        wikiSource={wikiSource}
+        countryData={countryData}
+        featuredImageUrl={featuredImageUrl}
+        themeColors={themeColors}
+        authorInfo={authorInfo}
+        awardsData={awardsData}
+        tocLength={_tocLength ?? 0}
+        onTocClick={_onTocClick ?? (() => {})}
+        primaryAward={primaryAward}
+        badgeConfig={badgeConfig}
+        showCelebration={showCelebration}
+        showPopover={showPopover}
+        setShowPopover={setShowPopover}
+      />
+    );
+  }
+
   return (
     <div
       ref={cardRef}
@@ -258,6 +279,7 @@ export function WikiOSHeader({
       style={containerStyle}
       className="wikios-header facet-surface facet-refraction relative z-10 mb-6 flex w-full cursor-default flex-col justify-end rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 select-none"
     >
+
       {/* Immersive Full-Bleed Image Backdrop */}
       {backdropUrl ? (
         <div
@@ -297,224 +319,120 @@ export function WikiOSHeader({
           transformStyle: "preserve-3d" as const,
         }}
       >
-        <div className="facet-surface facet-refraction space-y-4 rounded-2xl border border-black/15 bg-white/95 p-4 text-left shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-2xl sm:p-5 dark:border-white/10 dark:bg-zinc-950/80 dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        <div className="facet-surface facet-refraction space-y-2.5 rounded-2xl border border-black/15 bg-white/95 p-4 text-left shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-2xl sm:p-5 dark:border-white/10 dark:bg-zinc-950/80 dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           {/* Breadcrumb Path */}
           <div className="text-muted-foreground flex items-center gap-1 text-[10px] font-semibold tracking-wider uppercase">
             <CategoryBreadcrumb title={title} />
           </div>
 
-          {/* Title and Badge */}
-          <div className="flex flex-wrap items-baseline gap-2.5">
+          {/* Title & Award Badge */}
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-foreground text-xl leading-tight font-bold tracking-tight sm:text-2xl">
               {title.replace(/_/g, " ")}
             </h1>
-            {wikiSource && wikiSource !== "ixwiki" && (
-              <Badge
-                variant="outline"
-                className="border-amber-500/20 bg-amber-500/10 px-1.5 py-0 text-[10px] text-amber-400"
-              >
-                {wikiSource}
-              </Badge>
-            )}
-          </div>
 
-          {/* Metadata & Awards */}
-          {(() => {
-            const creatorName = authorInfo?.creator || authorInfo?.author || null;
-            const creatorAvatar = authorInfo?.creatorAvatar || null;
-            const lastEditorName = authorInfo?.lastEditor || null;
-            const lastEditorAvatar = authorInfo?.lastEditorAvatar || null;
-
-            return (lastModified || awardsData?.hasAwards || creatorName || lastEditorName) && (
-              <div className="flex w-full flex-wrap items-center justify-between gap-3 border-t border-black/10 dark:border-white/5 pt-2.5">
-                <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px]">
-                  {/* Author Attribution (Apple Design Hierarchy) */}
-                  {creatorName && (
-                    <div className="flex items-center gap-1.5 font-medium">
-                      <span className="text-[10px] text-muted-foreground/80 font-normal">Author:</span>
-                      <Link
-                        href={withBasePath(`/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`)}
-                        className="group/author inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground font-semibold hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 transition-all text-[11px]"
-                      >
-                        {creatorAvatar ? (
-                          <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
-                            <img
-                              src={creatorAvatar}
-                              alt={creatorName}
-                              className="aspect-square size-full object-cover"
-                              onError={(e) => {
-                                (e.currentTarget as HTMLElement).style.display = "none";
-                              }}
-                            />
-                            <User className="h-2.5 w-2.5 text-purple-400 absolute inset-0 m-auto -z-10" />
-                          </span>
-                        ) : (
-                          <User className="h-3 w-3 text-purple-400 shrink-0" />
-                        )}
-                        <span>{creatorName}</span>
-                      </Link>
-                    </div>
-                  )}
-
-                  {/* Most Recent Editor (if different from original author) */}
-                  {lastEditorName &&
-                    creatorName &&
-                    lastEditorName.toLowerCase() !== creatorName.toLowerCase() && (
-                      <div className="flex items-center gap-1.5 font-medium">
-                        <span className="text-muted-foreground/40 select-none">•</span>
-                        <span className="text-[10px] text-muted-foreground/80 font-normal">Updated by:</span>
-                        <Link
-                          href={withBasePath(`/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`)}
-                          className="group/editor inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground font-semibold hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 transition-all text-[11px]"
-                        >
-                          {lastEditorAvatar ? (
-                            <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
-                              <img
-                                src={lastEditorAvatar}
-                                alt={lastEditorName}
-                                className="aspect-square size-full object-cover"
-                                onError={(e) => {
-                                  (e.currentTarget as HTMLElement).style.display = "none";
-                                }}
-                              />
-                              <PenTool className="h-2.5 w-2.5 text-purple-400 absolute inset-0 m-auto -z-10" />
-                            </span>
-                          ) : (
-                            <PenTool className="h-2.5 w-2.5 text-purple-400 shrink-0" />
-                          )}
-                          <span>{lastEditorName}</span>
-                        </Link>
+            {awardsData?.hasAwards && primaryAward && badgeConfig && (
+              <Popover open={showPopover} onOpenChange={setShowPopover}>
+                <PopoverTrigger asChild>
+                  <button
+                    className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-95 ${
+                      badgeConfig.classes
+                    } ${
+                      showCelebration && primaryAward.category === "LOREWARD"
+                        ? "loreward-badge-celebrate"
+                        : ""
+                    }`}
+                  >
+                    {showCelebration && primaryAward.category === "LOREWARD" && (
+                      <div className="pointer-events-none absolute inset-0 overflow-visible">
+                        {[...Array(8)].map((_, i) => (
+                          <span
+                            key={i}
+                            className={`loreward-particle loreward-particle-${i + 1}`}
+                          />
+                        ))}
                       </div>
                     )}
+                    <badgeConfig.Icon
+                      className={`h-3.5 w-3.5 shrink-0 group-hover:animate-bounce ${badgeConfig.iconColor}`}
+                    />
 
-                  {/* Updated Timestamp */}
-                  {lastModified && (
-                    <div className="flex items-center gap-1.5 text-muted-foreground/80 text-[10.5px]">
-                      {(creatorName || lastEditorName) && (
-                        <span className="text-muted-foreground/40 select-none">•</span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3 text-muted-foreground/60" />
-                        {new Date(lastModified).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                    {awardsData.awards.length > 1 && (
+                      <span className="text-[10px] leading-none font-bold tabular-nums opacity-80">
+                        +{awardsData.awards.length - 1}
                       </span>
-                    </div>
-                  )}
-                </div>
+                    )}
+                    <span>{badgeConfig.text}</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-3 font-ui" align="start">
+                  <div className="mb-2 flex items-center justify-between border-b border-zinc-100 pb-2 dark:border-white/5">
+                    <span className="text-foreground text-xs font-bold">Lorewards & Accolades</span>
+                    <span className="text-muted-foreground text-[10px] font-medium">
+                      {awardsData.awards.length} awarded
+                    </span>
+                  </div>
+                  <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+                    {awardsData.awards.map((award: any, idx: number) => {
+                      const date = new Date(award.awardedAt || award.createdAt);
+                      let AwardIcon = Trophy;
+                      let iconColor = "text-amber-500";
+                      if (award.category === "LOREWARD") {
+                        AwardIcon = Trophy;
+                        iconColor = "text-amber-500";
+                      } else if (award.category === "FEATURED") {
+                        AwardIcon = Star;
+                        iconColor = "text-yellow-500";
+                      } else if (award.category === "COLLABORATION") {
+                        AwardIcon = Users;
+                        iconColor = "text-green-500";
+                      } else if (award.category === "PEER_REVIEW") {
+                        AwardIcon = CheckCircle2;
+                        iconColor = "text-blue-500";
+                      } else if (award.category === "EDITOR_MILESTONE") {
+                        AwardIcon = Sparkles;
+                        iconColor = "text-indigo-500";
+                      }
 
-                <div className="flex items-center gap-2">
-                {awardsData?.hasAwards && primaryAward && badgeConfig && (
-                  <Popover open={showPopover} onOpenChange={setShowPopover}>
-                    <PopoverTrigger asChild>
-                      <button
-                        className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-95 ${
-                          badgeConfig.classes
-                        } ${
-                          showCelebration && primaryAward.category === "LOREWARD"
-                            ? "loreward-badge-celebrate"
-                            : ""
-                        }`}
-                      >
-                        {showCelebration && primaryAward.category === "LOREWARD" && (
-                          <div className="pointer-events-none absolute inset-0 overflow-visible">
-                            {[...Array(8)].map((_, i) => (
-                              <span
-                                key={i}
-                                className={`loreward-particle loreward-particle-${i + 1}`}
-                              />
-                            ))}
-                          </div>
-                        )}
-                        <badgeConfig.Icon
-                          className={`h-3.5 w-3.5 shrink-0 group-hover:animate-bounce ${badgeConfig.iconColor}`}
-                        />
-
-                        {awardsData.awards.length > 1 && (
-                          <span className="text-[10px] leading-none font-bold tabular-nums opacity-80">
-                            +{awardsData.awards.length - 1}
-                          </span>
-                        )}
-                        <span className="tracking-wider uppercase">{badgeConfig.text}</span>
-                      </button>
-                    </PopoverTrigger>
-
-                    <PopoverContent
-                      side="bottom"
-                      align="end"
-                      sideOffset={8}
-                      className="z-[100055] w-72 space-y-2.5 rounded-xl border border-zinc-200 bg-white/95 p-3.5 text-xs shadow-[0_12px_36px_rgba(0,0,0,0.15)] backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/90 dark:shadow-[0_16px_48px_rgba(0,0,0,0.5)]"
-                    >
-                      <div className="text-muted-foreground text-left text-[9px] font-semibold tracking-wider uppercase">
-                        Awards & Achievements
-                      </div>
-                      <div className="max-h-48 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-2 overflow-y-auto pr-1">
-                        {awardsData.awards.map((award, idx) => {
-                          const date = new Date(award.awardedAt);
-
-                          let AwardIcon = Award;
-                          let iconColor = "text-purple-500";
-                          if (award.category === "LOREWARD") {
-                            AwardIcon = Trophy;
-                            iconColor = "text-amber-500";
-                          } else if (award.category === "FEATURED") {
-                            AwardIcon = Star;
-                            iconColor = "text-yellow-500";
-                          } else if (award.category === "COLLABORATION") {
-                            AwardIcon = Users;
-                            iconColor = "text-green-500";
-                          } else if (award.category === "PEER_REVIEW") {
-                            AwardIcon = CheckCircle2;
-                            iconColor = "text-blue-500";
-                          } else if (award.category === "EDITOR_MILESTONE") {
-                            AwardIcon = Sparkles;
-                            iconColor = "text-indigo-500";
-                          }
-
-                          return (
-                            <div
-                              key={award.id || idx}
-                              className="flex items-start gap-2 border-b border-zinc-100 pb-2 last:border-0 last:pb-0 dark:border-white/5"
-                            >
-                              <AwardIcon className={`mt-0.5 h-4 w-4 shrink-0 ${iconColor}`} />
-                              <div className="flex flex-col text-left">
-                                <span className="text-foreground text-[11px] font-semibold">
-                                  {award.name}
-                                </span>
-                                {award.description && (
-                                  <span className="text-muted-foreground mt-0.5 text-[10px] leading-normal">
-                                    {award.description}
-                                  </span>
-                                )}
-                                <span className="text-muted-foreground/60 mt-0.5 text-[9px]">
-                                  {date.toLocaleDateString(undefined, {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  })}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="flex justify-end border-t border-zinc-100 pt-2 dark:border-white/5">
-                        <Link
-                          href={withBasePath("/wiki/lorewards")}
-                          className="text-[10px] font-bold text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                      return (
+                        <div
+                          key={award.id || idx}
+                          className="flex items-start gap-2 border-b border-zinc-100 pb-2 last:border-0 last:pb-0 dark:border-white/5"
                         >
-                          View Leaderboard &rarr;
-                        </Link>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
-              </div>
-            </div>
-          );
-        })()}
+                          <AwardIcon className={`mt-0.5 h-4 w-4 shrink-0 ${iconColor}`} />
+                          <div className="flex flex-col text-left">
+                            <span className="text-foreground text-[11px] font-semibold">
+                              {award.name}
+                            </span>
+                            {award.description && (
+                              <span className="text-muted-foreground mt-0.5 text-[10px] leading-normal">
+                                {award.description}
+                              </span>
+                            )}
+                            <span className="text-muted-foreground/60 mt-0.5 text-[9px]">
+                              {date.toLocaleDateString(undefined, {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-end border-t border-zinc-100 pt-2 dark:border-white/5">
+                    <Link
+                      href={withBasePath("/wiki/lorewards")}
+                      className="text-[10px] font-bold text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                    >
+                      View Leaderboard &rarr;
+                    </Link>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
         </div>
       </div>
 

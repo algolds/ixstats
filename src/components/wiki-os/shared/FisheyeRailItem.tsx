@@ -26,6 +26,10 @@ export const getGlowColor = (id: string): string => {
     case "images":
     case "talk":
       return "rgba(168, 85, 247, 0.45)";
+    case "utilities":
+      return "rgba(6, 182, 212, 0.55)";
+    case "admin":
+      return "rgba(168, 85, 247, 0.55)";
     case "lorewards":
       return "rgba(234, 179, 8, 0.45)";
     case "create-page":
@@ -54,6 +58,10 @@ export const getActiveColorClass = (itemId: string): string => {
       return "text-rose-600 dark:text-rose-400 border-rose-500/30 bg-rose-500/10";
     case "images":
     case "talk":
+      return "text-purple-600 dark:text-purple-400 border-purple-500/30 bg-purple-500/10";
+    case "utilities":
+      return "text-cyan-600 dark:text-cyan-400 border-cyan-500/30 bg-cyan-500/10";
+    case "admin":
       return "text-purple-600 dark:text-purple-400 border-purple-500/30 bg-purple-500/10";
     case "lorewards":
       return "text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10";

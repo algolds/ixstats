@@ -15,6 +15,7 @@ interface UnifiedCountryFlagProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   fitContainer?: boolean;
+  objectFit?: "contain" | "cover";
   showPlaceholder?: boolean;
   showTooltip?: boolean;
   loading?: boolean;
@@ -48,6 +49,7 @@ export function UnifiedCountryFlag({
   size = "md",
   className = "",
   fitContainer = false,
+  objectFit = "contain",
   showPlaceholder = true,
   showTooltip = true,
   loading: externalLoading,
@@ -92,7 +94,8 @@ export function UnifiedCountryFlag({
   // Build CSS classes
   const flagClasses = cn(
     dimensionsClass,
-    "object-contain transition-all duration-200",
+    objectFit === "cover" ? "object-cover" : "object-contain",
+    "transition-all duration-200",
     rounded && "rounded",
     shadow && "shadow-sm",
     border && "border border-gray-200",
@@ -116,7 +119,7 @@ export function UnifiedCountryFlag({
   // Loading state
   if (isLoading) {
     return (
-      <div className="relative">
+      <div className={cn("relative", fitContainer && "h-full w-full")}>
         <Skeleton className={cn(dimensionsClass, rounded && "rounded", className)} />
         {showTooltip && <span className="sr-only">Loading flag for {countryName}</span>}
       </div>
@@ -173,7 +176,7 @@ export function UnifiedCountryFlag({
         title={tooltipText}
         role="img"
         aria-label={`Flag of ${countryName}`}
-        className="relative"
+        className={cn("relative", fitContainer && "h-full w-full")}
       >
         <FlagImage />
         {/* Visual indicator for local files */}

@@ -33,6 +33,19 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 🖼️ WikiOS Native Media & Asset Engine (Plan 191)
+
+- **PostgreSQL Native Asset Registry (`wiki_assets`)**:
+  - Ingested and indexed **7,555+** media assets (flags, coats of arms, infobox logos, maps, diagrams) into PostgreSQL `wiki_assets`.
+  - Stored canonical metadata pointers (`slug`, `filename`, `width`, `height`, `mimeType`, `sizeBytes`, `url`, `thumbnailUrl`, `@unique md5Hash`) with zero file duplication.
+- **MediaAssetService Core Domain Primitive**:
+  - Implemented `MediaAssetService` (`src/lib/wiki-os/core/media-asset-service.ts`) with typesafe MD5 shard path calculation (`8/8c/File.jpg`), $O(1)$ database asset lookups (<1ms), and multi-source image reference extractors.
+- **JIT & Save-Time Automated Image Processing**:
+  - `ArticleRepository.saveArticle` automatically parses and registers newly referenced images from wikitext (`[[File:...]]`), infobox parameters (`| flag =`, `| logo =`), and HTML `<img />` tags in non-blocking background tasks.
+  - `/api/mediawiki/ixwiki/[...path]` route features JIT lazy registration for newly encountered media files and serves responses with immutable caching (`Cache-Control: public, max-age=31536000, immutable`).
+- **Universal Streaming CLI Ingestion Engine**:
+  - Built `scripts/wiki/migrate-media-assets.ts` supporting continuous pagination across the MediaWiki Action API (`generator=allimages`) and live MariaDB pool with real-time batch logging.
+
 ### 🧭 Unified 3-Mode Navigation, Dynamic Repulsion Physics & Apple Design (Plan 179)
 
 - **3-Mode Navigation Architecture**:

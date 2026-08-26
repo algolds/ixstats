@@ -31,6 +31,7 @@ describe("useBuilderState", () => {
   beforeEach(() => {
     localStorage.clear();
     jest.clearAllMocks();
+    jest.spyOn(console, "log").mockImplementation(() => {});
   });
 
   describe("Initialization", () => {
@@ -210,6 +211,8 @@ describe("useBuilderState", () => {
       const savedState: BuilderState = {
         step: "core",
         selectedCountry: null,
+        selectedArchetypeId: null,
+        economyBuilderState: null,
         economicInputs: { nationalIdentity: { countryName: "Saved Country" } } as any,
         governmentComponents: [],
         taxSystemData: null,

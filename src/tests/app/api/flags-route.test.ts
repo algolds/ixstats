@@ -89,6 +89,8 @@ describe("Flag API Routes Contracts (Plan 164)", () => {
     });
 
     test("POST ?action=update accepts update request", async () => {
+      const prefetchSpy = jest.spyOn(serverFlagResolver, "prefetch").mockImplementation(() => {});
+
       const req = new NextRequest("http://localhost:3000/api/flag-cache?action=update", {
         method: "POST",
         body: JSON.stringify({ countries: ["Sweden", "Norway"] }),
@@ -100,6 +102,7 @@ describe("Flag API Routes Contracts (Plan 164)", () => {
       const json = await res!.json();
       expect(json.success).toBe(true);
       expect(json.message).toContain("started");
+      expect(prefetchSpy).toHaveBeenCalledWith(["Sweden", "Norway"]);
     });
 
     test("DELETE ?action=clear clears all flag caches", async () => {

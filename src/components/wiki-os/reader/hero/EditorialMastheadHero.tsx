@@ -489,23 +489,28 @@ export function EditorialMastheadHero({
                   <span>Featured Article</span>
                 </div>
                 {/* Live Author / Editorial Byline */}
-                {featuredArticleData?.authorInfo?.creator && (
-                  <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                    <span className="text-muted-foreground/40 select-none">·</span>
-                    <span className="flex items-center gap-1">
-                      {featuredArticleData.authorInfo.creatorAvatar ? (
-                        <img
-                          src={featuredArticleData.authorInfo.creatorAvatar}
-                          alt={featuredArticleData.authorInfo.creator}
-                          className="w-3.5 h-3.5 rounded-full object-cover border border-black/10 dark:border-white/20"
-                        />
-                      ) : (
-                        <User className="h-3 w-3 text-muted-foreground/70" />
-                      )}
-                      <span>By <strong className="text-foreground font-semibold">{featuredArticleData.authorInfo.creator}</strong></span>
-                    </span>
-                  </div>
-                )}
+                {(() => {
+                  const creator = featuredArticleData?.authorInfo?.creator;
+                  const creatorName = typeof creator === "object" ? (creator as any)?.username : creator;
+                  if (!creatorName) return null;
+                  return (
+                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                      <span className="text-muted-foreground/40 select-none">·</span>
+                      <span className="flex items-center gap-1">
+                        {featuredArticleData?.authorInfo?.creatorAvatar ? (
+                          <img
+                            src={featuredArticleData.authorInfo.creatorAvatar}
+                            alt={creatorName}
+                            className="w-3.5 h-3.5 rounded-full object-cover border border-black/10 dark:border-white/20"
+                          />
+                        ) : (
+                          <User className="h-3 w-3 text-muted-foreground/70" />
+                        )}
+                        <span>By <strong className="text-foreground font-semibold">{creatorName}</strong></span>
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Archive & Suggest Links */}

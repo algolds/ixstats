@@ -222,6 +222,104 @@ export async function httpGetCategoryMembers(
   }
 }
 
+/**
+ * Fetch full revision lineage from MediaWiki to accurately identify the original page creator,
+ * creation timestamp, latest editor, and all historical contributors.
+ */
+export async function fetchMediaWikiPageAuthorsAndRevisions(
+  title: string,
+  wiki: WikiSource = "ixwiki",
+  limit: number = 250
+): Promise<{
+  creator: { username: string; timestamp: string; avatar?: string | null } | null;
+  lastEditor: { username: string; timestamp: string; avatar?: string | null } | null;
+  revisions: Array<{
+    revid: number;
+    timestamp: string;
+    user: string;
+    comment: string;
+    size: number;
+  }>;
+  contributors: Array<{ username: string; editCount: number; lastContributedAt?: string }>;
+  totalContributors: number;
+} | null> {
+  const cleanTitle = decodeURIComponent(title).replace(/_/g, " ").trim();
+  const rawBase =
+    wiki === "iiwiki"
+      ? getIiwikiApiBaseUrl()
+      : wiki === "althistory"
+        ? ALTHISTORY_API
+        : DEFAULT_MEDIAWIKI_URL;
+  const base = rawBase.replace(/\/+$/, "");
+
+  const url = new URL(base.endsWith("api.php") ? base : `${base}/api.php`);
+  url.searchParams.set("action", "query");
+  url.searchParams.set("prop", "revisions");
+  url.searchParams.set("titles", cleanTitle);
+  url.searchParams.set("rvprop", "ids|timestamp|user|comment|size");
+  url.searchParams.set("rvlimit", String(Math.min(limit, 500)));
+  url.searchParams.set("rvdir", "older"); // newest to oldest
+  url.searchParams.set("format", "json");
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as any;
+    const pages = data?.query?.pages;
+    if (!pages) return null;
+
+    const pageKey = Object.keys(pages)[0];
+    if (!pageKey || pageKey === "-1") return null;
+
+    const revList = pages[pageKey]?.revisions;
+    if (!Array.isArray(revList) || revList.length === 0) return null;
+
+    const newest = revList[0];
+    const oldest = revList[revList.length - 1];
+
+    const counts = new Map<string, { editCount: number; lastContributedAt: string }>();
+    const formattedRevs = revList.map((r: any) => {
+      const user = r.user || "MediaWiki Contributor";
+      const ts = r.timestamp || new Date().toISOString();
+      const existing = counts.get(user);
+      if (existing) {
+        existing.editCount += 1;
+      } else {
+        counts.set(user, { editCount: 1, lastContributedAt: ts });
+      }
+      return {
+        revid: r.revid || 0,
+        timestamp: ts,
+        user,
+        comment: r.comment || "",
+        size: r.size || 0,
+      };
+    });
+
+    const contributors = Array.from(counts.entries())
+      .map(([username, val]) => ({
+        username,
+        editCount: val.editCount,
+        lastContributedAt: val.lastContributedAt,
+      }))
+      .sort((a, b) => b.editCount - a.editCount);
+
+    return {
+      creator: oldest ? { username: oldest.user, timestamp: oldest.timestamp } : null,
+      lastEditor: newest ? { username: newest.user, timestamp: newest.timestamp } : null,
+      revisions: formattedRevs,
+      contributors,
+      totalContributors: counts.size,
+    };
+  } catch (err) {
+    console.error(`[WikiBridge] Error fetching revisions for "${title}" on ${wiki}:`, err);
+    return null;
+  }
+}
+
 // ──────────────────────────────────────────────
 // AltHistory Wiki HTTP API
 // ──────────────────────────────────────────────

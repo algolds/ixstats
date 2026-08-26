@@ -35,7 +35,8 @@ import {
 } from "~/lib/wiki-os/transformers/image-url";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
-const TRENDING_LIMIT = 3;
+const TRENDING_DEFAULT_LIMIT = 4;
+const TRENDING_FILTER_LIMIT = 10;
 
 type FilterTab = "all" | "forum" | "wiki";
 
@@ -254,7 +255,9 @@ export function TrendingSectionWidget() {
     const sorted = scored.sort((a: any, b: any) => b.computedScore - a.computedScore);
 
     if (activeFilter !== "all") {
-      return sorted.filter((item: any) => item.source === activeFilter).slice(0, TRENDING_LIMIT);
+      return sorted
+        .filter((item: any) => item.source === activeFilter)
+        .slice(0, TRENDING_FILTER_LIMIT);
     }
 
     const result: any[] = [];
@@ -270,7 +273,7 @@ export function TrendingSectionWidget() {
     }
 
     for (const item of sorted) {
-      if (result.length >= TRENDING_LIMIT) break;
+      if (result.length >= TRENDING_DEFAULT_LIMIT) break;
       if (!usedIds.has(item.id)) {
         result.push(item);
         usedIds.add(item.id);

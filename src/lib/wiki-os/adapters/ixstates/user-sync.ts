@@ -12,26 +12,61 @@ import { getUserInfo } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { isSystemOwner } from "~/lib/auth";
 
 // ---------------------------------------------------------------------------
-// Public API
+// Alt Account Mappings & Aliases
 // ---------------------------------------------------------------------------
 
 /**
- * Look up a MediaWiki user by username.
+ * Curated MediaWiki alt account aliases.
+ * Key: Alt account username -> Value: Primary canonical author username
+ */
+export const KNOWN_WIKI_ALTS: Record<string, string> = {
+  Carthinova: "Kir",
+  "ixnet>Drunk Uncle Kir": "Kir",
+};
+
+/**
+ * Resolve any alt account alias to its primary canonical wiki username.
+ */
+export function resolvePrimaryWikiUsername(username: string): string {
+  if (!username) return username;
+  const trimmed = username.trim();
+  return KNOWN_WIKI_ALTS[trimmed] || trimmed;
+}
+
+/**
+ * Get all known alt aliases for a given primary wiki username.
+ */
+export function getWikiAltsForUser(primaryUsername: string): string[] {
+  const alts: string[] = [];
+  const normalizedPrimary = primaryUsername.trim().toLowerCase();
+  for (const [alt, primary] of Object.entries(KNOWN_WIKI_ALTS)) {
+    if (primary.toLowerCase() === normalizedPrimary) {
+      alts.push(alt);
+    }
+  }
+  return alts;
+}
+
+/**
+ * Look up a MediaWiki user by username (resolving alts if applicable).
  * Returns user info or null if not found.
  */
 export async function lookupWikiUser(
   username: string
-): Promise<{ userId: number; username: string; editCount: number; groups: string[] } | null> {
+): Promise<{ userId: number; username: string; editCount: number; groups: string[]; primaryUsername: string; isAlt: boolean } | null> {
   try {
-    const info = await getUserInfo(username);
+    const primaryName = resolvePrimaryWikiUsername(username);
+    const info = await getUserInfo(primaryName);
 
-    if (!info.exists) return null;
+    if (!info || !info.exists) return null;
 
     return {
-      userId: info.userId ?? 0,
-      username: info.username,
-      editCount: info.editCount,
-      groups: info.groups,
+      userId: info.userId ?? info.user_id ?? 0,
+      username: info.username ?? info.user_name ?? primaryName,
+      editCount: info.editCount ?? info.user_editcount ?? 0,
+      groups: info.groups ?? [],
+      primaryUsername: primaryName,
+      isAlt: primaryName.toLowerCase() !== username.trim().toLowerCase(),
     };
   } catch (error) {
     console.error("[Wiki Sync] User lookup error:", error);
@@ -48,8 +83,10 @@ export async function linkWikiAccount(
   wikiUsername: string,
   clerkUserId?: string
 ): Promise<{ success: boolean; wikiUsername?: string; wikiUserId?: number; error?: string }> {
+  const canonicalUsername = resolvePrimaryWikiUsername(wikiUsername);
+
   // Look up the wiki user
-  const wikiUser = await lookupWikiUser(wikiUsername);
+  const wikiUser = await lookupWikiUser(canonicalUsername);
   if (!wikiUser) {
     return { success: false, error: `Wiki user "${wikiUsername}" not found` };
   }
@@ -84,3 +121,4 @@ export async function linkWikiAccount(
 
   return { success: true, wikiUsername: wikiUser.username, wikiUserId: wikiUser.userId };
 }
+

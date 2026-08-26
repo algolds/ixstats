@@ -64,6 +64,7 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
 
   describe("Authentication & Read Isolation", () => {
     it("rejects unauthenticated callers for getConversationsByFolder, getFolderCounts, and getConversationMessages", async () => {
+      const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       const unauth = createCaller(null);
 
       await expect(
@@ -80,6 +81,8 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
           userId: victimUser,
         })
       ).rejects.toThrow(TRPCError);
+
+      warnSpy.mockRestore();
     });
 
     it("enforces ctx.auth.userId when querying conversations and ignores spoofed input.userId", async () => {

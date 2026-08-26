@@ -1,4 +1,4 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, it, expect, afterEach } from "@jest/globals";
 
 describe("GAMEPLAY_FLAGS", () => {
   const ENV = process.env;

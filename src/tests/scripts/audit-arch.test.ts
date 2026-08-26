@@ -122,6 +122,7 @@ describe("Plan 154: Architecture Size Ratchet & Active-Source Discovery", () => 
         )
       );
 
+      const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
       updateBaseline(tempDir, baselinePath);
 
       const updated = JSON.parse(
@@ -129,25 +130,28 @@ describe("Plan 154: Architecture Size Ratchet & Active-Source Discovery", () => 
       );
       expect(updated["src/server/api/routers/fileA.ts"]).toBe(740);
       expect(updated["src/server/api/routers/fileB.ts"]).toBeUndefined();
+      logSpy.mockRestore();
     });
 
     it("bootstraps newly covered roots deterministically", () => {
+      const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
       const appDir = path.join(tempDir, "src/app");
       const hooksDir = path.join(tempDir, "src/hooks");
       fs.mkdirSync(appDir, { recursive: true });
       fs.mkdirSync(hooksDir, { recursive: true });
 
       fs.writeFileSync(path.join(appDir, "AppMonolith.tsx"), "line\n".repeat(750));
-      fs.writeFileSync(path.join(hooksDir, "useHugeHook.ts"), "line\n".repeat(550));
+      fs.writeFileSync(path.join(hooksDir, "useGodHook.ts"), "line\n".repeat(550));
 
       const baselinePath = "baseline.json";
-      bootstrapBaseline(tempDir, baselinePath, { force: true });
+      bootstrapBaseline(tempDir, baselinePath);
 
       const bootstrapped = JSON.parse(
         fs.readFileSync(path.join(tempDir, baselinePath), "utf8")
       );
       expect(bootstrapped["src/app/AppMonolith.tsx"]).toBe(750);
-      expect(bootstrapped["src/hooks/useHugeHook.ts"]).toBe(550);
+      expect(bootstrapped["src/hooks/useGodHook.ts"]).toBe(550);
+      logSpy.mockRestore();
     });
   });
 });

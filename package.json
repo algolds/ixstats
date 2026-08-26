@@ -21,6 +21,8 @@
     "audit:urls:prod": "BASE_PATH=/projects/ixstates bun scripts/audit-production-urls.ts",
     "audit:v1": "bun scripts/audit/audit-v1.ts",
     "audit:v1:prod": "NODE_ENV=production bun scripts/audit/audit-v1.ts",
+    "audit:wikios-db": "bun scripts/audit/audit-wikios-db.ts",
+    "audit:wikios-parity": "bun scripts/audit/audit-wikios-parity.ts",
     "audit:wiring": "bun scripts/audit/audit-trpc-wiring.ts",
     "audit:wiring:json": "bun scripts/audit/audit-trpc-wiring.ts --json-only",
     "auth:check": "node scripts/setup/check-auth-config.js",
@@ -113,7 +115,7 @@
     "start:next": "NODE_ENV=production ./scripts/with-base-path.sh next start -p ${PORT:-3550}",
     "start:prod": "./start-production.sh",
     "sync:owners": "bun scripts/sync-system-owner-roles.ts",
-    "test": "jest",
+    "test": "jest --forceExit",
     "test:all": "bun scripts/audit/run-all-tests.ts",
     "test:builder-perf": "bun scripts/audit/test-builder-performance.ts",
     "test:coverage": "jest --coverage",
@@ -134,8 +136,13 @@
     "ts:explain": "tsc --explainFiles -p tsconfig.lib.json > traces/explain-files.txt",
     "ts:listfiles": "tsc --listFilesOnly -p tsconfig.lib.json",
     "ts:profile": "tsc --generateCpuProfile traces/tsc-profile.cpuprofile --noEmit -p tsconfig.lib.json",
-    "ts:trace": "tsc --generateTrace traces/tsc-trace --noEmit -p tsconfig.lib.json && bunx @typescript/analyze-trace traces/tsc-trace",
     "typecheck": "bun run typecheck:ui && bun run typecheck:server && bun run typecheck:trpc && bun run typecheck:db",
+    "wiki:seed:categories": "bun scripts/sync-wikios-categories.ts",
+    "wiki:clean:categories": "bun scripts/cleanup-wikios-categories.ts",
+    "wiki:clean:summaries": "bun scripts/cleanup-wikios-sync-summaries.ts",
+    "wiki:sync:media": "bun scripts/sync-ixwiki-media.ts",
+    "wiki:sync:full": "bun scripts/sync-ixwiki-full.ts",
+    "wiki:sync:live": "bun scripts/sync-ixwiki-live.ts",
     "typecheck:components": "bun scripts/verification/run-typecheck.ts tsconfig.components.json",
     "typecheck:db": "bun scripts/verification/run-typecheck.ts tsconfig.db.json",
     "typecheck:diag": "bun scripts/verification/run-typecheck.ts tsconfig.typecheck.json --extendedDiagnostics",
@@ -168,6 +175,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@nevil5249/shadowcraft": "^1.1.0",
     "@number-flow/react": "^0.5.14",
     "@prisma/client": "^6.19.3",
     "@radix-ui/react-accordion": "^1.2.20",
@@ -214,7 +222,6 @@
     "jspdf": "^4.2.1",
     "maplibre-gl": "^5.24.0",
     "motion": "^12.43.0",
-    "mysql2": "^3.23.4",
     "next": "16.3.1",
     "papaparse": "^5.6.0",
     "platejs": "^52.3.21",
@@ -261,6 +268,7 @@
     "eslint-plugin-unused-imports": "^4.4.1",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
+    "mysql2": "^3.24.2",
     "playwright": "^1.62.1",
     "postcss": "^8.5.26",
     "prettier": "^3.9.6",
@@ -363,8 +371,7 @@
       ]
     },
     "testPathIgnorePatterns": [
-      "<rootDir>/node_modules/",
-      "<rootDir>/src/server/api/routers/__tests__/caching-benchmark.test.ts"
+      "<rootDir>/node_modules/"
     ]
   },
   "prettier": {

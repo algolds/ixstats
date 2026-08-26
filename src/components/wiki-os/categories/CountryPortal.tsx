@@ -10,7 +10,7 @@ import {
   GraphUp as TrendingUp,
   Group as Users,
   Coins,
-  GraphUp as BarChart3,
+  Page as FileText,
 } from "iconoir-react";
 
 const CountryMapEmbed = dynamic(
@@ -29,6 +29,7 @@ const CountryMapEmbed = dynamic(
 interface CategoryMember {
   title: string;
   ns: number;
+  imageUrl?: string | null;
 }
 
 interface CountryPortalProps {
@@ -72,28 +73,58 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
   const slug = encodeURIComponent(country.name.replace(/ /g, "_"));
 
   return (
-    <div className="wikios-portal">
-      {/* Hero */}
-      <div className="wikios-portal-hero">
-        {country.flagUrl && <img src={country.flagUrl} alt="" className="wikios-portal-flag" />}
-        <div className="wikios-portal-hero-text">
-          <h1 className="wikios-portal-hero-name">{country.name}</h1>
-          <div className="wikios-portal-hero-badges">
-            {country.economicTier && (
-              <Badge variant="secondary" className="text-[10px]">
-                {country.economicTier}
-              </Badge>
+    <div className="w-full space-y-8 select-none pb-16 max-w-6xl mx-auto">
+      {/* ── Apple-Grade Masthead Card ── */}
+      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 border border-white/20 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_6px_24px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.4)]">
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-start sm:items-center gap-5">
+            {country.flagUrl ? (
+              <img
+                src={country.flagUrl}
+                alt=""
+                className="h-14 w-22 sm:h-16 sm:w-26 object-cover rounded-2xl border border-border/80 shadow-md shrink-0"
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted border border-border shrink-0">
+                <FileText className="h-7 w-7 text-muted-foreground" />
+              </div>
             )}
-            <Link href={withBasePath(`/wiki/${slug}`)} className="wikios-portal-hero-link">
-              <ExternalLink className="h-3 w-3" />
-              Wiki article
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Link
+                  href={withBasePath("/wiki/categories")}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15 transition-all"
+                >
+                  <span>Nations</span>
+                </Link>
+                {country.economicTier && (
+                  <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-muted/80 text-muted-foreground border border-border/60">
+                    {country.economicTier}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground font-brand">
+                {country.name}
+              </h1>
+            </div>
+          </div>
+
+          {/* Quick Action Navigation Buttons */}
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            <Link
+              href={withBasePath(`/wiki/${slug}`)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white/60 dark:bg-zinc-800/60 border border-border/60 hover:border-blue-500/40 hover:bg-white/90 dark:hover:bg-zinc-800/90 active:scale-[0.97] transition-all backdrop-blur-sm shadow-sm text-foreground"
+            >
+              <ExternalLink className="h-3.5 w-3.5 text-blue-500" />
+              <span>Wiki Article</span>
             </Link>
+
             <Link
               href={withBasePath(`/countries/${country.slug ?? country.id}`)}
-              className="wikios-portal-hero-link"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-500 active:scale-[0.97] transition-all shadow-sm"
             >
-              <BarChart3 className="h-3 w-3" />
-              Full dashboard
+              <TrendingUp className="h-3.5 w-3.5" />
+              <span>National Dashboard</span>
             </Link>
           </div>
         </div>
@@ -183,9 +214,19 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
                   <Link
                     key={m.title}
                     href={withBasePath(`/wiki/${encodeURIComponent(m.title.replace(/ /g, "_"))}`)}
-                    className="wikios-portal-card"
+                    className="wikios-portal-card group"
                   >
-                    {m.title}
+                    {m.imageUrl ? (
+                      <img
+                        src={m.imageUrl}
+                        alt=""
+                        className="wikios-portal-card-img"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <FileText className="h-3.5 w-3.5 shrink-0 opacity-40" />
+                    )}
+                    <span className="wikios-portal-card-title">{m.title}</span>
                   </Link>
                 ))}
               </div>

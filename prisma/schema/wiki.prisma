@@ -41,6 +41,13 @@ model WikiArticle {
   viewCount           Int                  @default(0)
   leadImageUrl        String?
   redirectTargetSlug  String?              // URL alias target if this article is a redirect
+  redirectTargetFragment String?           // Optional anchor fragment (e.g. "Section_5")
+  
+  // Namespaces & Governance
+  namespace           Int                  @default(0) // 0=Main, 1=Talk, 2=User, 3=User_talk, 4=Project, 10=Template, 14=Category
+  namespacePrefix     String?              // e.g. "Talk", "User", "Template", "Category"
+  protectionLevel     String               @default("ALL") // ALL | AUTOCONFIRMED | SYSOP | PROTECTED
+  protectionExpiry    DateTime?
   
   // Author Attribution
   authorId            String?
@@ -67,11 +74,15 @@ model WikiArticle {
   incomingLinks       WikiLink[]           @relation("TargetArticleLinks")
   stashItems          StashItem[]          @relation("ArticleStashItems")
   awards              WikiArticleAward[]   @relation("ArticleAwards")
+  watchers            WikiWatchlist[]      @relation("WatchedArticles")
+  logs                WikiLog[]            @relation("ArticleLogs")
 
   @@unique([source, title])
   @@index([source, slug])
   @@index([source, status])
+  @@index([source, namespace])
   @@index([slug])
+  @@index([namespace])
   @@index([authorId])
   @@map("wiki_articles")
 }
@@ -93,12 +104,55 @@ model WikiRevision {
   minor            Boolean      @default(false)
   source           String       @default("ixwiki") // ixwiki | iiwiki | althistory
   parentRevisionId String?
+  byteSize         Int          @default(0)
+  byteDelta        Int          @default(0)
   createdAt        DateTime     @default(now())
 
   @@index([articleId, createdAt])
   @@index([source, mwRevId])
+  @@index([author])
   @@index([authorId])
+  @@index([createdAt])
+  @@index([source, createdAt])
   @@map("wiki_revisions")
+}
+
+/// Native Stash Watchlist Model
+model WikiWatchlist {
+  id                  String       @id @default(cuid())
+  userId              String
+  user                User         @relation("UserWikiWatchlists", fields: [userId], references: [id], onDelete: Cascade)
+  articleId           String
+  article             WikiArticle  @relation("WatchedArticles", fields: [articleId], references: [id], onDelete: Cascade)
+  notificationTime    DateTime?    // Timestamp of last change on watched page
+  lastViewedTime      DateTime     @default(now()) // Timestamp when user last viewed the page
+  createdAt           DateTime     @default(now())
+
+  @@unique([userId, articleId])
+  @@index([userId, notificationTime])
+  @@index([articleId])
+  @@map("wiki_watchlists")
+}
+
+/// Immutable Event & Governance Audit Log for WikiOS
+model WikiLog {
+  id                  String       @id @default(cuid())
+  articleId           String?
+  article             WikiArticle? @relation("ArticleLogs", fields: [articleId], references: [id], onDelete: SetNull)
+  logType             String       // move | delete | protect | upload | rights | block
+  action              String       // e.g. "delete", "restore", "move", "protect", "modify"
+  title               String
+  userId              String?
+  user                User?        @relation("UserWikiLogs", fields: [userId], references: [id])
+  actorName           String
+  comment             String?      @db.VarChar(1000)
+  params              Json?
+  createdAt           DateTime     @default(now())
+
+  @@index([logType, createdAt(sort: Desc)])
+  @@index([articleId, createdAt(sort: Desc)])
+  @@index([actorName, createdAt(sort: Desc)])
+  @@map("wiki_logs")
 }
 
 /// Native Directed Link Graph Edge
@@ -185,18 +239,21 @@ model WikiAsset {
 
 /// Wiki template registry — cached TemplateData schemas and scoped styles.
 model WikiTemplate {
-  id           String   @id @default(cuid())
-  name         String   @unique
-  description  String?
-  category     String?  // navigation, infobox, formatting, maintenance, etc.
-  templateData Json?    // TemplateData JSON schema (params, description, format)
-  scopedCss    String?  @db.Text
-  paramCount   Int      @default(0)
-  usageCount   Int      @default(0)
-  lastSynced   DateTime @default(now())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String   @unique
+  description     String?
+  category        String?  // navigation, infobox, formatting, maintenance, etc.
+  templateData    Json?    // TemplateData JSON schema (params, description, format)
+  scopedCss       String?  @db.Text
+  paramCount      Int      @default(0)
+  usageCount      Int      @default(0)
+  isCanonical     Boolean  @default(false)
+  canonicalTarget String?  // Target canonical template if this is an alias
+  lastSynced      DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
+  @@index([isCanonical])
   @@index([category])
   @@index([name])
   @@map("wiki_templates")

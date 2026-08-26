@@ -44,6 +44,9 @@ interface GroupedPage {
 // ---------------------------------------------------------------------------
 
 function byteDelta(change: RawChange): number {
+  if (change.oldLen === 0 && change.newLen > 0) {
+    return change.newLen;
+  }
   return change.newLen - change.oldLen;
 }
 
@@ -56,6 +59,47 @@ function deltaClass(delta: number): string {
   if (delta > 0) return "wikios-rc-delta--pos";
   if (delta < 0) return "wikios-rc-delta--neg";
   return "";
+}
+
+function getSemanticAction(change: RawChange): { label: string; isPill: boolean; pillClass?: string } {
+  const comment = change.comment?.trim() || "";
+  const isSyncPlaceholder = /live sync/i.test(comment) || /mediawiki/i.test(comment);
+
+  if (comment && !isSyncPlaceholder) {
+    return { label: `“${comment}”`, isPill: false };
+  }
+
+  const delta = byteDelta(change);
+
+  if (change.type === "new" || change.oldLen === 0) {
+    return {
+      label: "Created page",
+      isPill: true,
+      pillClass: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/25",
+    };
+  }
+
+  if (delta > 1000) {
+    return {
+      label: `Expanded article (+${delta.toLocaleString()} B)`,
+      isPill: true,
+      pillClass: "bg-cyan-500/10 text-cyan-400 border border-cyan-500/25",
+    };
+  }
+
+  if (delta < -500) {
+    return {
+      label: `Trimmed content (${delta.toLocaleString()} B)`,
+      isPill: true,
+      pillClass: "bg-amber-500/10 text-amber-400 border border-amber-500/25",
+    };
+  }
+
+  return {
+    label: "Updated content",
+    isPill: true,
+    pillClass: "bg-white/5 text-muted-foreground border border-white/10",
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -109,7 +153,7 @@ export default function RecentChangesPage() {
       totalDelta: edits.reduce((sum, e) => sum + byteDelta(e), 0),
       latestTimestamp: edits[0]!.timestamp,
       latestUser: edits[0]!.user,
-      isNew: edits.some((e) => e.type === "new"),
+      isNew: edits.some((e) => e.type === "new" || e.oldLen === 0),
     }));
   }, [filtered]);
 
@@ -134,25 +178,31 @@ export default function RecentChangesPage() {
               <button
                 key={r.label}
                 onClick={() => setDateRange(r.hours)}
-                className={`wikios-rc-range-btn ${dateRange === r.hours ? "wikios-rc-range-btn--active" : ""}`}
+                className={`wikios-rc-range-btn ${
+                  dateRange === r.hours ? "wikios-rc-range-btn--active" : ""
+                }`}
               >
                 {r.label}
               </button>
             ))}
           </div>
-          <span className="text-xs text-[var(--wikios-text-dim)]">
-            {grouped.length} pages · {filtered.length} edits
-          </span>
+
+          <div className="text-xs text-[var(--wikios-text-dim)]">
+            {grouped.length} {grouped.length === 1 ? "page" : "pages"} updated
+          </div>
         </div>
 
+        {/* Loading skeleton */}
         {isLoading && (
-          <div className="wikios-loading" style={{ minHeight: 200 }}>
-            <div className="wikios-loading-spinner" />
+          <div className="space-y-2">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="wikios-rc-skeleton h-12" />
+            ))}
           </div>
         )}
 
-        {/* Grouped list */}
-        {grouped.length > 0 && (
+        {/* Change groups */}
+        {!isLoading && grouped.length > 0 && (
           <div className="wikios-rc-groups">
             {grouped.map((group) => {
               const isExpanded = expandedPages.has(group.title);
@@ -160,12 +210,18 @@ export default function RecentChangesPage() {
 
               return (
                 <div key={group.title} className="wikios-rc-group">
-                  {/* Group header */}
-                  <div className="wikios-rc-group-header">
+                  {/* Group header row */}
+                  <div
+                    className={`wikios-rc-group-header ${
+                      hasMultiple ? "cursor-pointer select-none" : ""
+                    }`}
+                    onClick={() => hasMultiple && toggleExpand(group.title)}
+                  >
                     {hasMultiple ? (
                       <button
-                        onClick={() => toggleExpand(group.title)}
+                        type="button"
                         className="wikios-rc-expand-btn"
+                        aria-label={isExpanded ? "Collapse" : "Expand"}
                       >
                         {isExpanded ? (
                           <ChevronDown className="h-3.5 w-3.5" />
@@ -210,6 +266,7 @@ export default function RecentChangesPage() {
                     <div className="wikios-rc-edits">
                       {group.edits.map((edit, idx) => {
                         const delta = byteDelta(edit);
+                        const action = getSemanticAction(edit);
                         return (
                           <div key={idx} className="wikios-rc-edit">
                             <span
@@ -221,8 +278,14 @@ export default function RecentChangesPage() {
                             <span className="wikios-rc-edit-time">
                               {formatMWTimeAgo(edit.timestamp)}
                             </span>
-                            {edit.comment && (
-                              <span className="wikios-rc-edit-comment">{edit.comment}</span>
+                            {action.isPill ? (
+                              <span
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium tracking-tight ${action.pillClass}`}
+                              >
+                                {action.label}
+                              </span>
+                            ) : (
+                              <span className="wikios-rc-edit-comment">{action.label}</span>
                             )}
                           </div>
                         );
@@ -230,10 +293,23 @@ export default function RecentChangesPage() {
                     </div>
                   )}
 
-                  {/* Single edit comment inline */}
-                  {!hasMultiple && group.edits[0]?.comment && (
-                    <div className="wikios-rc-single-comment">{group.edits[0].comment}</div>
-                  )}
+                  {/* Single edit comment or action tag */}
+                  {!hasMultiple &&
+                    group.edits[0] &&
+                    (() => {
+                      const action = getSemanticAction(group.edits[0]);
+                      return action.isPill ? (
+                        <div className="mt-1 flex items-center gap-1.5 pl-6 text-xs">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium tracking-tight ${action.pillClass}`}
+                          >
+                            {action.label}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="wikios-rc-single-comment">{action.label}</div>
+                      );
+                    })()}
                 </div>
               );
             })}

@@ -1,9 +1,16 @@
 // src/app/(wiki-os)/wiki/watchlist/page.tsx
-// Instant redirect to unified Lore Stashes hub.
+// WikiOS Stash Watchlist Hub
+"use client";
 
-import { redirect } from "next/navigation";
-import { withBasePath } from "~/lib/base-path";
+import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
+import { WikiWatchlistFeed } from "~/components/wiki-os/watchlist/WikiWatchlistFeed";
 
-export default function WatchlistRedirect() {
-  redirect(withBasePath("/stashes"));
+export default function WatchlistPage() {
+  return (
+    <WikiOSLayout title="Watchlist">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+        <WikiWatchlistFeed />
+      </div>
+    </WikiOSLayout>
+  );
 }

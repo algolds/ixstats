@@ -15,6 +15,7 @@
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "./page-content";
+import { wikiosHistoryDiffRouter } from "./history-diff";
 import { wikiosSearchCategoriesRouter } from "./search-categories";
 import { wikiosTemplatesRouter } from "./templates";
 import { wikiosEditingRouter } from "./editing";
@@ -22,15 +23,18 @@ import { wikiosStashRouter } from "./stash";
 import { wikiosWatchlistAnnotationsRouter } from "./watchlist-annotations";
 import { wikiosUserTalkRouter } from "./user-talk";
 import { wikiosDiscussionsRouter } from "./discussions";
+import { wikiosUtilitiesRouter } from "./utilities";
 
 export const wikiosRouter = mergeRouters(
   wikiosPageContentRouter,
+  wikiosHistoryDiffRouter,
   wikiosSearchCategoriesRouter,
   wikiosTemplatesRouter,
   wikiosEditingRouter,
   wikiosStashRouter,
   wikiosWatchlistAnnotationsRouter,
   wikiosUserTalkRouter,
-  wikiosDiscussionsRouter
+  wikiosDiscussionsRouter,
+  wikiosUtilitiesRouter
 );
 

@@ -18,6 +18,7 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { getImageUrl } from "~/lib/wiki-os/transformers/image-url";
 
 interface ImageResult {
   title: string;
@@ -75,7 +76,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
           title: f.title ?? f.name ?? "",
           url:
             f.url ??
-            `https://ixwiki.com/wiki/Special:FilePath/${encodeURIComponent(f.title ?? f.name ?? "")}`,
+            getImageUrl(f.title ?? f.name ?? ""),
           thumbUrl: f.thumbUrl ?? f.url,
           width: f.width,
           height: f.height,

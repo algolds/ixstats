@@ -9,6 +9,7 @@ describe("VaultService - Concurrency & Atomic Balance Safety", () => {
   let mockDb: any;
 
   beforeEach(() => {
+    jest.spyOn(console, "log").mockImplementation(() => {});
     vaultService = new VaultService();
   });
 

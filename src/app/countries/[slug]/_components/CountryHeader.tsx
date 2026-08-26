@@ -310,10 +310,10 @@ export function CountryHeader({
             <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-black/40 p-3 backdrop-blur-xl shrink-0 self-start lg:self-center">
               {delegate?.username ? (
                 <Link
-                  href={`/id/@${delegate.username}`}
+                  href={`/id/@${delegate.username.replace(/^@/, "")}`}
                   data-cuelume-press="soft"
                   className="group flex items-center gap-3 rounded-xl p-1 -m-1 transition-all duration-150 hover:bg-white/10 active:scale-[0.98] cursor-pointer"
-                  title={`View @${delegate.username}'s Global IxnayID Passport`}
+                  title={`View @${delegate.username}'s Global Passport`}
                 >
                   {delegate.forumAvatarUrl ? (
                     <img

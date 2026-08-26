@@ -38,9 +38,9 @@ export interface SettingSectionConfig {
 export const SETTINGS_SECTIONS: SettingSectionConfig[] = [
   {
     id: "account",
-    label: "IxnayID & Account",
+    label: "IxnayID & Passport",
     category: "Profile & Identity",
-    description: "Sign-in credentials, security settings, and connected accounts",
+    description: "Public passport presentation, multi-tenant realms, and connected community accounts",
     icon: User,
     glyphClass: "bg-blue-500/15 text-blue-500 dark:text-blue-400",
     accentColor: "text-blue-500",

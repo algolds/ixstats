@@ -95,3 +95,11 @@ describe("MarkovChain", () => {
 });
 ```
 
+---
+
+## 5. Test Suite Invariants & Audit
+
+For the comprehensive audit of all 122 test files, value stack rankings (Tiers 0–4), test runner environment notes, and candidates for pruning, see:
+- [**Test Suite Audit & Justification (August 2026)**](../audits/test-suite-audit-and-justification.md)
+
+

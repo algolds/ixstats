@@ -23,6 +23,8 @@ import {
   Globe,
   Settings,
   Plus,
+  FireFlame as Flame,
+  Clock,
 } from "iconoir-react";
 import type { UserResource } from "@clerk/types";
 import { useOrganization, useOrganizationList } from "@clerk/nextjs";
@@ -33,6 +35,7 @@ import { useUserCountry } from "~/hooks/useUserCountry";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow } from "../primitives";
 import { Input } from "~/components/ui/input";
+import { Switch } from "~/components/ui/switch";
 import { cn } from "~/lib/utils";
 import { formatMembershipTier } from "~/lib/tier-utils";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -159,12 +162,13 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
   };
 
   const passportHandle =
-    user?.username ||
     status?.passportHandle ||
-    status?.forum.username ||
-    status?.wiki.username ||
+    status?.forum?.username ||
+    status?.wiki?.username ||
+    (user?.username ? user.username.replace(/_$/, "") : null) ||
+    user?.username ||
     "me";
-  const passportUrl = `/@${passportHandle}`;
+  const passportUrl = `/id/@${passportHandle}`;
   const countryFactbookUrl = userProfile?.country?.slug
     ? `/countries/${userProfile.country.slug}`
     : null;
@@ -189,9 +193,9 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
   return (
     <div className="space-y-6">
       <SettingsHeader
-        title="IxnayID & Account"
+        title="IxnayID & Digital Passport"
         category="Profile & Identity"
-        description="Your login credentials, security settings, and connected community accounts."
+        description="Public passport presentation, multi-tenant realms, and connected community accounts."
         actions={
           <Link
             href={passportUrl}
@@ -199,7 +203,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             className="facet-interactive flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2 text-xs font-bold text-indigo-600 transition-all hover:bg-indigo-500/20 active:scale-[0.98] dark:text-indigo-400"
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            <span>Public Profile</span>
+            <span>View Public Passport</span>
           </Link>
         }
       />

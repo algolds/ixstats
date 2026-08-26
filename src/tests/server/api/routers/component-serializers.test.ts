@@ -80,6 +80,7 @@ describe("component-serializers zero values and presence semantics", () => {
     });
 
     it("handles valid JSON fields and falls back gracefully on malformed JSON", () => {
+      const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       const dbComp = {
         id: "econ_4",
         componentType: EconomicComponentType.CIRCULAR_ECONOMY,
@@ -91,6 +92,7 @@ describe("component-serializers zero values and presence semantics", () => {
       const result = transformEconomicComponent(dbComp);
       expect(result.synergies).toEqual([EconomicComponentType.MIXED_ECONOMY]);
       expect(result.conflicts).toEqual([]);
+      warnSpy.mockRestore();
     });
   });
 
@@ -136,6 +138,7 @@ describe("component-serializers zero values and presence semantics", () => {
     });
 
     it("handles valid and malformed JSON in government components", () => {
+      const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       const dbComp = {
         id: "gov_3",
         componentType: ComponentType.FEDERAL_SYSTEM,
@@ -147,6 +150,7 @@ describe("component-serializers zero values and presence semantics", () => {
       const result = transformGovernmentComponent(dbComp);
       expect(result.synergies).toEqual([ComponentType.UNITARY_SYSTEM]);
       expect(result.conflicts).toEqual([]);
+      warnSpy.mockRestore();
     });
   });
 });

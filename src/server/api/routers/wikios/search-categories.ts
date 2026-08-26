@@ -14,15 +14,22 @@ import {
   getSiteStats,
   getRandomPage,
   fullTextSearch,
-  getParentCategories as getParentCategoriesMySQL,
+  getParentCategories,
   getCategoryInfo,
   type WikiSource,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
 import { saveToMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/write-service";
-import { searchShadowArticles } from "~/lib/wiki-os/core/native-search-service";
-import { NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
+import { searchShadowArticles, NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
 import { CategoryService } from "~/lib/wiki-os/core/category-service";
+import { db } from "~/server/db";
+import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
+import {
+  extractLeadImageFromWikitext,
+  normalizeWikiImageUrl,
+  getImageUrl,
+} from "~/lib/wiki-os/transformers/image-url";
+import { batchFetchThumbnails } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
 export const wikiosSearchCategoriesRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
@@ -46,23 +53,21 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
       const { query, limit, wikiSource } = input;
 
       if (wikiSource === "ixwiki") {
-        // Direct MariaDB High-Speed SQL Search (<2ms)
-        const results = await searchPages(query, limit, "ixwiki");
-        return results.map((r) => ({
-          ...r,
-          source: "ixwiki" as const,
-        }));
+        const shadowResults = await searchShadowArticles(query, limit);
+        if (shadowResults.length > 0) {
+          return shadowResults.map((r) => ({
+            title: r.title,
+            snippet: r.snippet,
+            wikiSource: "ixwiki" as const,
+          }));
+        }
+        return searchPages(query, limit, "ixwiki");
       }
 
       if (wikiSource !== "all") {
-        const results = await searchPages(query, limit, wikiSource as WikiSource);
-        return results.map((r) => ({
-          ...r,
-          source: wikiSource as "ixwiki" | "iiwiki" | "althistory",
-        }));
+        return searchPages(query, limit, wikiSource as WikiSource);
       }
 
-      // Query all 3 wikis in parallel
       const sources: WikiSource[] = ["ixwiki", "iiwiki", "althistory"];
       const settled = await Promise.allSettled(
         sources.map((src) => searchPages(query, limit, src))
@@ -117,70 +122,150 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
 
   /**
-   * Get members of a category.
-   * Native PostgreSQL Category Tree (<2ms) with MySQL fallback.
+   * Get members of a category with automatic lead thumbnail image resolution.
    */
   getCategoryMembers: publicProcedure
     .input(
       z.object({
         category: z.string().min(1).max(500),
-        limit: z.number().min(1).max(100).default(50),
+        limit: z.number().min(1).max(500).default(500),
         offset: z.string().optional(),
         type: z.enum(["page", "subcat", "file"]).optional(),
       })
     )
     .query(async ({ input }) => {
-      // 1. Fast-path: Native PostgreSQL Category DAG
-      const nativeDetails = await CategoryService.getCategoryDetails(input.category);
-      if (nativeDetails.category && (nativeDetails.articles.length > 0 || nativeDetails.subcategories.length > 0)) {
-        const members: Array<{
-          pageid: number;
-          title: string;
-          type: "page" | "subcat" | "file";
-          ns: number;
-          isSubcategory: boolean;
-        }> = [
-          ...nativeDetails.subcategories.map((c) => ({
-            pageid: 0,
-            title: `Category:${c.name}`,
-            type: "subcat" as const,
-            ns: 14,
-            isSubcategory: true,
-          })),
-          ...nativeDetails.articles.map((a) => ({
-            pageid: 0,
-            title: a.title,
-            type: "page" as const,
-            ns: 0,
-            isSubcategory: false,
-          })),
-        ];
-
-        return {
-          members: members.slice(0, input.limit),
-          continueToken: members.length > input.limit ? "more" : null,
-        };
-      }
-
-      // 2. Fallback: MySQL bridge
-      const result = await getCategoryMembers(input.category, input.limit, input.type);
-      const members: Array<{
+      let rawMembers: Array<{
         pageid: number;
         title: string;
         type: "page" | "subcat" | "file";
         ns: number;
         isSubcategory: boolean;
-      }> = result.members.map((m) => ({
-        title: m.title,
-        ns: m.ns,
-        isSubcategory: m.isSubcategory,
-        pageid: 0,
-        type: m.ns === 14 ? ("subcat" as const) : m.ns === 6 ? ("file" as const) : ("page" as const),
-      }));
+        imageUrl?: string | null;
+      }> = [];
+      let hasMore = false;
+
+      // 1. Fast-path: Native PostgreSQL Category DAG
+      const nativeDetails = await CategoryService.getCategoryDetails(input.category);
+      if (nativeDetails.category && (nativeDetails.articles.length > 0 || nativeDetails.subcategories.length > 0)) {
+        if (!input.type || input.type === "subcat") {
+          for (const c of nativeDetails.subcategories) {
+            rawMembers.push({
+              pageid: 0,
+              title: `Category:${c.name}`,
+              type: "subcat" as const,
+              ns: 14,
+              isSubcategory: true,
+              imageUrl: null,
+            });
+          }
+        }
+
+        if (!input.type || input.type === "page") {
+          for (const a of nativeDetails.articles) {
+            rawMembers.push({
+              pageid: 0,
+              title: a.title,
+              type: "page" as const,
+              ns: 0,
+              isSubcategory: false,
+              imageUrl: null,
+            });
+          }
+        }
+
+        hasMore = rawMembers.length > input.limit;
+        rawMembers = rawMembers.slice(0, input.limit);
+      } else {
+        // 2. Resilient Bridge Fallback (MySQL IxWiki / HTTP Sister Wikis)
+        const bridgeResult = await getCategoryMembers(input.category, input.limit, input.type);
+        rawMembers = bridgeResult.members.map((m) => ({
+          pageid: m.pageId ?? 0,
+          title: m.title,
+          type: (m.type ?? "page") as "page" | "subcat" | "file",
+          ns: m.ns ?? 0,
+          isSubcategory: m.isSubcategory ?? false,
+          imageUrl: null,
+        }));
+        hasMore = bridgeResult.hasMore ?? false;
+      }
+
+      // 3. Batch Image Resolution for Page Members
+      const pageMembers = rawMembers.filter((m) => m.type === "page" || m.ns === 0);
+      if (pageMembers.length > 0) {
+        const titles = pageMembers.map((m) => m.title);
+        const slugs = titles.map((t) => toArticleSlug(t));
+        const imageMap = new Map<string, string>();
+
+        try {
+          const articles = await db.wikiArticle.findMany({
+            where: {
+              OR: [
+                { title: { in: titles } },
+                { title: { in: titles.map((t) => t.replace(/_/g, " ")) } },
+                { slug: { in: slugs } },
+              ],
+            },
+            select: {
+              title: true,
+              slug: true,
+              leadImageUrl: true,
+              wikitext: true,
+            },
+          });
+
+          for (const art of articles) {
+            let img: string | null = null;
+            if (art.leadImageUrl) {
+              img = normalizeWikiImageUrl(art.leadImageUrl) || art.leadImageUrl;
+            } else if (art.wikitext) {
+              const lead = extractLeadImageFromWikitext(art.wikitext);
+              if (lead) {
+                img = normalizeWikiImageUrl(lead) || lead;
+              }
+            }
+
+            if (img) {
+              imageMap.set(art.title, img);
+              imageMap.set(art.slug, img);
+              imageMap.set(art.title.replace(/ /g, "_"), img);
+            }
+          }
+        } catch {
+          // Non-fatal
+        }
+
+        const missingTitles = titles.filter(
+          (t) => !imageMap.has(t) && !imageMap.has(toArticleSlug(t)) && !imageMap.has(t.replace(/_/g, " "))
+        );
+        if (missingTitles.length > 0) {
+          try {
+            const mwImages = await batchFetchThumbnails(missingTitles);
+            for (const [title, url] of mwImages.entries()) {
+              const norm = normalizeWikiImageUrl(url) || url;
+              imageMap.set(title, norm);
+              imageMap.set(toArticleSlug(title), norm);
+            }
+          } catch {
+            // Non-fatal
+          }
+        }
+
+        // Assign resolved images back to members
+        for (const member of rawMembers) {
+          if (member.type === "page" || member.ns === 0) {
+            const memberSlug = toArticleSlug(member.title);
+            member.imageUrl =
+              imageMap.get(member.title) ??
+              imageMap.get(memberSlug) ??
+              imageMap.get(member.title.replace(/_/g, " ")) ??
+              null;
+          }
+        }
+      }
 
       return {
-        members,
-        continueToken: result.hasMore ? "more" : null,
+        members: rawMembers,
+        continueToken: hasMore ? "more" : null,
       };
     }),
 
@@ -225,7 +310,7 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
 
   /**
-   * Full-text search with faceted filtering — namespace, snippets, highlights.
+   * Full-text search with weighted relevance scoring — native PostgreSQL tsvector primary.
    */
   advancedSearch: publicProcedure
     .input(
@@ -238,9 +323,38 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
+      try {
+        const native = await NativeSearchService.fulltextSearch(
+          input.query,
+          "ixwiki",
+          input.limit,
+          input.offset
+        );
+        if (native && native.results.length > 0) {
+          return {
+            results: native.results.map((r) => ({
+              title: r.title,
+              namespace: 0,
+              snippet: r.snippet,
+              titleSnippet: null,
+              sectionSnippet: null,
+              categorySnippet: null,
+              size: r.readingTime * 200,
+              wordCount: r.readingTime * 200,
+              timestamp: new Date().toISOString(),
+              thumbnail: r.leadImageUrl ?? null,
+            })),
+            totalHits: native.total,
+            hasMore: native.results.length >= input.limit,
+          };
+        }
+      } catch {
+        // Fallback to legacy MySQL fulltext search
+      }
+
       const result = await fullTextSearch(input.query, input.limit, input.offset, input.namespace);
       return {
-        results: result.results.map((r) => ({
+        results: (result.results || []).map((r: any) => ({
           title: r.title,
           namespace: r.namespace,
           snippet: r.snippet,
@@ -252,8 +366,8 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
           timestamp: r.timestamp,
           thumbnail: r.thumbnail ?? null,
         })),
-        totalHits: result.totalHits,
-        hasMore: result.results.length >= input.limit,
+        totalHits: result.totalHits || 0,
+        hasMore: (result.results || []).length >= input.limit,
       };
     }),
 
@@ -267,8 +381,7 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
   getParentCategories: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
-      // Direct MySQL — ~20ms vs ~400ms via API
-      const categories = await getParentCategoriesMySQL(input.title);
+      const categories = await getParentCategories(input.title);
       return { categories };
     }),
 
@@ -284,22 +397,30 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      // Direct MySQL — ~50ms vs ~1500ms via API (eliminates 2-3 API calls)
       const info = await getCategoryInfo(input.category);
 
       let children: Array<{
         title: string;
         fullTitle: string;
         subcategories?: Array<{ title: string; fullTitle: string }>;
-      }> = info.subcategories;
+      }> = (info?.subcategories || []).map((name: string) => ({
+        title: name,
+        fullTitle: `Category:${name}`,
+      }));
 
       // Depth > 1: fetch one more level for each subcategory
-      if (input.depth > 1 && info.subcategories.length > 0 && info.subcategories.length <= 20) {
+      if (input.depth > 1 && children.length > 0 && children.length <= 20) {
         children = await Promise.all(
-          info.subcategories.map(async (sc) => {
+          children.map(async (sc) => {
             try {
               const childInfo = await getCategoryInfo(sc.fullTitle);
-              return { ...sc, subcategories: childInfo.subcategories };
+              return {
+                ...sc,
+                subcategories: (childInfo?.subcategories || []).map((cName: string) => ({
+                  title: cName,
+                  fullTitle: `Category:${cName}`,
+                })),
+              };
             } catch {
               return sc;
             }
@@ -308,10 +429,10 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
       }
 
       return {
-        title: info.title,
-        totalPages: info.totalPages,
-        totalSubcats: info.totalSubcats,
-        totalFiles: info.totalFiles,
+        title: info?.title || input.category,
+        totalPages: info?.totalPages || 0,
+        totalSubcats: info?.totalSubcats || 0,
+        totalFiles: info?.totalFiles || 0,
         subcategories: children,
       };
     }),
@@ -391,6 +512,38 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
+      // 1. Primary: Direct PostgreSQL Prisma Asset Search
+      if (input.wiki === "ixwiki" && (db as any).wikiAsset) {
+        const where: any = {};
+        if (input.query && input.query.trim().length > 0) {
+          where.OR = [
+            { title: { contains: input.query.trim(), mode: "insensitive" } },
+            { filename: { contains: input.query.trim(), mode: "insensitive" } },
+          ];
+        }
+        if (input.fileTypes && input.fileTypes.length > 0) {
+          where.mimeType = { in: input.fileTypes };
+        }
+
+        const assets: any[] = await (db as any).wikiAsset.findMany({
+          where,
+          take: input.limit,
+          orderBy: { title: "asc" },
+        });
+
+        if (assets && assets.length > 0) {
+          return assets.map((a) => ({
+            name: a.filename || a.title,
+            title: `File:${a.title}`,
+            url: a.url,
+            size: a.sizeBytes || 0,
+            width: a.width ?? 800,
+            height: a.height ?? 600,
+            mime: a.mimeType || "image/png",
+          }));
+        }
+      }
+
       const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
 
@@ -463,6 +616,42 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
+      // 1. Primary: Direct PostgreSQL Category Search via wikiCategory model (4,008 categories)
+      if (input.wiki === "ixwiki") {
+        const queryTerm = input.query ? input.query.trim() : "";
+        const fromTerm = input.from ? input.from.trim() : "";
+
+        const whereCat: any = {};
+        if (queryTerm) {
+          whereCat.OR = [
+            { name: { contains: queryTerm, mode: "insensitive" } },
+            { slug: { contains: toArticleSlug(queryTerm), mode: "insensitive" } },
+          ];
+        } else if (fromTerm) {
+          whereCat.name = { gte: fromTerm, mode: "insensitive" };
+        }
+
+        const categories = await db.wikiCategory.findMany({
+          where: whereCat,
+          include: {
+            _count: { select: { members: true, children: true } },
+          },
+          orderBy: { name: "asc" },
+          take: input.limit,
+        });
+
+        if (categories.length > 0) {
+          return categories.map((cat) => ({
+            name: cat.name,
+            title: `Category:${cat.name}`,
+            size: cat._count.members + cat._count.children,
+            pages: cat._count.members,
+            files: 0,
+            subcats: cat._count.children,
+          }));
+        }
+      }
+
       const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
       const params = new URLSearchParams({
@@ -508,15 +697,13 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
     }),
 
   /**
-   * Get image URL for an IxWiki file.
+   * Get direct static image URL for an IxWiki file.
    */
   getImageUrl: publicProcedure
     .input(z.object({ filename: z.string().min(1) }))
     .query(async ({ input }) => {
-      const { getWikiBaseUrl } = await import("~/lib/wiki-os/config");
-      const origin = getWikiBaseUrl("ixwiki");
-      const name = encodeURIComponent(input.filename.replace(/^File:/, "").replace(/ /g, "_"));
-      return { url: `${origin}/wiki/Special:FilePath/${name}` };
+      const url = getImageUrl(input.filename);
+      return { url };
     }),
 
   /**
@@ -532,21 +719,16 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
     .query(async ({ input }) => {
       if (input.wiki === "ixwiki") {
         try {
-          const { getIxWikiPool } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
-          const pool = getIxWikiPool();
-          const [rows] = await pool.query(
-            `
-            SELECT cat_title AS name, cat_files AS fileCount
-            FROM category
-            WHERE cat_files > 0
-            ORDER BY cat_files DESC
-            LIMIT ?
-          `,
-            [input.limit]
-          );
-          return (rows as Array<{ name: string; fileCount: number }>).map((r) => ({
-            name: String(r.name).replace(/_/g, " "),
-            fileCount: Number(r.fileCount),
+          const categories = await db.wikiCategory.findMany({
+            take: input.limit,
+            include: {
+              _count: { select: { members: true } },
+            },
+            orderBy: { members: { _count: "desc" } },
+          });
+          return (categories || []).map((c) => ({
+            name: String(c.name || "").replace(/_/g, " "),
+            fileCount: Number(c._count?.members || 0),
           }));
         } catch (err) {
           console.error("[wikiosSearchCategories] Failed to fetch ixwiki categories from DB:", err);

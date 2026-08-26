@@ -53,6 +53,14 @@ export async function register() {
 
       console.log("[Instrumentation] Production optimizations initialized successfully");
 
+      // Initialize WikiOS continuous MediaWiki auto-sync daemon
+      try {
+        const { startWikiAutoSyncDaemon } = await import("~/lib/wiki-os/services/auto-sync-service");
+        startWikiAutoSyncDaemon(60000);
+      } catch (syncError) {
+        console.warn("[Instrumentation] WikiOS auto-sync daemon setup failed (non-fatal):", syncError);
+      }
+
       // Signal PM2 that we are ready (for zero-downtime cluster reloads)
       const p = process as any;
       if (p.send) {
@@ -89,6 +97,14 @@ export async function register() {
       );
     } catch (error) {
       console.warn("[Instrumentation] Dev geo cache import failed (non-fatal):", error);
+    }
+
+    // Initialize WikiOS continuous MediaWiki auto-sync daemon in development
+    try {
+      const { startWikiAutoSyncDaemon } = await import("~/lib/wiki-os/services/auto-sync-service");
+      startWikiAutoSyncDaemon(45000);
+    } catch (syncError) {
+      console.warn("[Instrumentation] WikiOS auto-sync daemon setup failed (non-fatal):", syncError);
     }
   }
 }

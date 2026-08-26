@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import { db } from "~/server/db";
 import {
   createTRPCRouter,
   publicProcedure,
@@ -129,7 +130,10 @@ export const wikiCacheRouter = createTRPCRouter({
           "page",
           wikiSource as WikiSource
         );
-        const categoryPages = (membersResult?.members ?? [])
+        const rawMembers = Array.isArray(membersResult)
+          ? membersResult
+          : (membersResult as any)?.members ?? [];
+        const categoryPages = rawMembers
           .map((m: { title: string }) => m.title)
           .filter((t: string) => Boolean(t) && !t.startsWith("Category:"));
 
@@ -267,7 +271,7 @@ export const wikiCacheRouter = createTRPCRouter({
         thresholdHours: z.number().min(1).max(24).default(2),
       })
     )
-    .mutation(async () => {
+    .mutation(async ({ input: _input }) => {
       const result = await wikiCacheService.refreshStaleEntries();
 
       return {
@@ -295,8 +299,8 @@ export const wikiCacheRouter = createTRPCRouter({
   /**
    * Warm cache for all active countries (admin only)
    */
-  warmAllCountries: adminProcedure.mutation(async ({ ctx }) => {
-    const countries = await ctx.db.country.findMany({
+  warmAllCountries: adminProcedure.mutation(async ({ ctx: _ctx }) => {
+    const countries = await db.country.findMany({
       select: {
         name: true,
       },

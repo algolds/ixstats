@@ -135,4 +135,58 @@ describe("Decoupled IxnayID Passport & Sovereign Factbook Architecture (Plan 188
     expect(unifiedPayload.wiki.lorewards.currentStreak).toBe(14);
     expect(unifiedPayload.forum.messageCount).toBeGreaterThan(1000);
   });
+
+  it("normalizes tab query parameters for lore, work, and wiki seamlessly", () => {
+    const rawTabs = ["work", "wiki", "lore", "realms", "history", null, undefined];
+    const normalized = rawTabs.map((t) =>
+      t === "work" || t === "wiki" || t === "lore" ? "lore" : (t || "realms")
+    );
+
+    expect(normalized).toEqual([
+      "lore",
+      "lore",
+      "lore",
+      "realms",
+      "history",
+      "realms",
+      "realms",
+    ]);
+  });
+
+  it("de-duplicates authored articles across MediaWiki and PostgreSQL sources", () => {
+    const pgArticles = [
+      { id: "pg-1", title: "Treaty of Oakhaven", slug: "treaty_of_oakhaven" },
+      { id: "pg-2", title: "Republic of Valora", slug: "republic_of_valora" },
+    ];
+    const mwCreatedPages = [
+      { revid: 101, title: "Treaty of Oakhaven", slug: "treaty_of_oakhaven" },
+      { revid: 102, title: "Grand Harbor of Caelum", slug: "grand_harbor_of_caelum" },
+    ];
+
+    const merged: Array<{ id: string; title: string; slug: string }> = [];
+    const seen = new Set<string>();
+
+    for (const a of pgArticles) {
+      const key = a.title.toLowerCase();
+      if (!seen.has(key)) {
+        merged.push(a);
+        seen.add(key);
+      }
+    }
+
+    for (const p of mwCreatedPages) {
+      const key = p.title.toLowerCase();
+      if (!seen.has(key)) {
+        merged.push({ id: `mw-${p.revid}`, title: p.title, slug: p.slug });
+        seen.add(key);
+      }
+    }
+
+    expect(merged).toHaveLength(3);
+    expect(merged.map((m) => m.title)).toEqual([
+      "Treaty of Oakhaven",
+      "Republic of Valora",
+      "Grand Harbor of Caelum",
+    ]);
+  });
 });

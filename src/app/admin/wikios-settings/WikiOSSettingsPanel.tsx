@@ -12,6 +12,8 @@ import {
   SystemTuningSection,
 } from "../wiki/components";
 
+import { WikiOSUtilitiesDeck } from "~/components/wiki-os/utilities/WikiOSUtilitiesDeck";
+
 export function WikiOSSettingsPanel() {
   usePageTitle({ title: "Admin - WikiOS Settings" });
 
@@ -24,11 +26,13 @@ export function WikiOSSettingsPanel() {
     <div className="space-y-6">
       <AdminHeader
         icon={BookOpen}
-        title="WikiOS Base Settings"
-        description="Manage wiki domains, link statuses, and MediaWiki bridge system tuning."
+        title="WikiOS Utilities & Health Administration"
+        description="Unified health diagnostics, link integrity, and realm governance deck."
       />
 
-      <div className="space-y-6">
+      <WikiOSUtilitiesDeck embedded={true} defaultDomain="diagnostics" />
+
+      <div className="space-y-6 border-t border-border/40 pt-6">
         <WikiLinkStatusSection countriesData={countriesData} isLoading={countriesLoading} />
         <ManualLinkEditorSection countriesData={countriesData} />
         <SystemTuningSection />

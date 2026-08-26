@@ -1,5 +1,6 @@
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { resolveImageUrl, getImageUrl } from "./image-url";
+import { parseInfoboxToHtml } from "./infobox-parser";
 
 /**
  * Strips recursively nested templates (e.g. {{Infobox ... {{flag|...}} ... }})
@@ -186,6 +187,9 @@ export function parseWikitextToHtml(
 
   // 6. Convert wikitables to responsive HTML tables
   text = parseWikitables(text);
+
+  // 6b. Extract and convert Infobox template to HTML table before stripping
+  const infoboxHtml = parseInfoboxToHtml(text);
 
   // 7. Strip recursively nested templates: {{...}}
   text = stripWikitextTemplates(text);
@@ -390,11 +394,8 @@ export function parseWikitextToHtml(
   }
 
   const htmlOutput = formattedParagraphs.join("\n\n").trim();
-  // Auto-link entity names in plain text descriptions if explicit wikitext links were not present
-  if (!wikitext.includes("[[")) {
-    return autoLinkEntityNames(htmlOutput);
-  }
-  return htmlOutput;
+  const linked = !wikitext.includes("[[") ? autoLinkEntityNames(htmlOutput) : htmlOutput;
+  return infoboxHtml ? `${infoboxHtml}\n\n${linked}` : linked;
 }
 
 /**
@@ -470,14 +471,7 @@ export function cleanWikiMarkup(rawText: string | null | undefined, maxLength: n
   text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
 
   // 9. Iteratively strip nested templates: {{...}}
-  let prev;
-  let depth = 0;
-  do {
-    prev = text;
-    text = text.replace(/\{\{[^{}]*\}\}/g, "");
-    depth++;
-  } while (text !== prev && depth < 20);
-  text = text.replace(/\{\{[^}]+\}\}/g, "");
+  text = stripWikitextTemplates(text);
 
   // 10. Unpack internal links: [[Target|Label]] -> Label, [[Target]] -> Target
   text = text.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");

@@ -105,6 +105,7 @@ export function WikiOSLayout({
     if (p.includes("/blurbs")) return "blurbs";
     if (p.includes("/stashes")) return "stashes";
     if (p.includes("/wiki/repository")) return "images";
+    if (p.includes("/wiki/utilities")) return "utilities";
     if (p.includes("/wiki/watchlist")) return "stashes";
     if (p.includes("/wiki/random")) return "random";
     if (p.includes("/wiki/search")) return "search";
@@ -134,6 +135,8 @@ export function WikiOSLayout({
     "user",
     "history",
     "contributions",
+    "utilities",
+    "templates",
   ]);
   const cleanPath = stripBasePath(pathname);
   const wikiSlugMatch = cleanPath.match(/^\/wiki\/([^/]+)/);
@@ -182,20 +185,20 @@ export function WikiOSLayout({
         </WikiOSContentWrapper>
       </DashboardSidebarLayout>
 
-      <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3.5 border-t border-white/5 pt-8 pb-10 text-center text-xs">
+      <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3.5 border-t border-white/5 pt-8 pb-10 text-center text-xs font-[var(--wikios-font-brand)]">
         <Popover>
           <PopoverTrigger asChild>
             <button className="group flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 select-none opacity-80 hover:opacity-100 active:scale-95">
               <WikiOSLogomark className="h-7 w-auto text-zinc-900 dark:text-zinc-100 transition-transform duration-300 group-hover:scale-105" />
-              <div className="flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-muted-foreground/70 group-hover:text-muted-foreground">
-                <span>Powered by wikiOS</span>
-                <span>•</span>
-                <span>v{WIKIOS_VERSION}</span>
+              <div className="flex items-center gap-1.5 font-[var(--wikios-font-brand)] text-[11px] font-medium tracking-wide text-muted-foreground/70 group-hover:text-muted-foreground">
+                <span className="font-semibold text-foreground/80 group-hover:text-foreground">Powered by wikiOS</span>
+                <span className="text-muted-foreground/40">•</span>
+                <span className="tabular-nums text-muted-foreground/60 font-medium">v{WIKIOS_VERSION}</span>
               </div>
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-4 text-left">
-            <PopoverTitle className="mb-1 text-sm font-bold text-[var(--wikios-text)]">
+          <PopoverContent className="w-80 p-4 text-left font-[var(--wikios-font-ui)]">
+            <PopoverTitle className="mb-1 font-[var(--wikios-font-brand)] text-sm font-bold text-[var(--wikios-text)]">
               About WikiOS
             </PopoverTitle>
             <PopoverDescription className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
@@ -204,7 +207,7 @@ export function WikiOSLayout({
           </PopoverContent>
         </Popover>
 
-        <div className="text-muted-foreground/60 flex items-center justify-center gap-4 text-[11px]">
+        <div className="text-muted-foreground/60 flex items-center justify-center gap-4 text-[11px] font-[var(--wikios-font-ui)]">
           <Link href="/terms" className="transition-colors hover:text-amber-400">
             Terms of Service
           </Link>

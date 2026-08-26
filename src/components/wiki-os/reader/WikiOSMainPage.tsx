@@ -316,9 +316,27 @@ export function WikiOSMainPage() {
 
   const featuredArticleData = useMemo(() => {
     if (!featuredArticleDetails) return null;
+    const creatorName =
+      typeof featuredAuthorInfo?.creator === "object"
+        ? featuredAuthorInfo?.creator?.username
+        : (featuredAuthorInfo?.creator as string | undefined);
+    const lastEditorName =
+      typeof featuredAuthorInfo?.lastEditor === "object"
+        ? featuredAuthorInfo?.lastEditor?.username
+        : (featuredAuthorInfo?.lastEditor as string | undefined);
+
     return {
       ...featuredArticleDetails,
-      authorInfo: featuredAuthorInfo ?? null,
+      authorInfo: featuredAuthorInfo
+        ? {
+            creator: creatorName || null,
+            creatorAvatar: null,
+            createdAt: typeof featuredAuthorInfo.creator === "object" ? featuredAuthorInfo.creator?.timestamp || null : null,
+            lastEditor: lastEditorName || null,
+            lastEditorAvatar: null,
+            lastEditedAt: typeof featuredAuthorInfo.lastEditor === "object" ? featuredAuthorInfo.lastEditor?.timestamp || null : null,
+          }
+        : null,
     };
   }, [featuredArticleDetails, featuredAuthorInfo]);
 

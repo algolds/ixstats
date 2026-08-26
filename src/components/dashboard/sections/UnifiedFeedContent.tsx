@@ -197,15 +197,15 @@ export function UnifiedFeedContent({
             source: "ixwiki",
             pageTitle: rc.title,
             wikiUrl: titleToWikiOSPath(rc.title),
+            blurb: rc.blurb || null,
+            thumbnail: rc.thumbnail || null,
           },
         },
         engagement: { likes: 0, comments: 0, shares: 0, views: 0 },
-        timestamp: new Date(
-          rc.timestamp?.replace(
-            /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/,
-            "$1-$2-$3T$4:$5:$6Z"
-          ) ?? 0
-        ),
+        timestamp: (() => {
+          const d = new Date(rc.timestamp);
+          return isNaN(d.getTime()) ? new Date() : d;
+        })(),
         priority: isNewPage ? "medium" : "low",
         visibility: "public",
       };

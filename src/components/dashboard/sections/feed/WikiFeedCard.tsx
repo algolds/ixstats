@@ -251,10 +251,10 @@ export function WikiFeedCard({ activity }: { activity: any }) {
   }, [hasLiked]);
 
   const formattedIntroHtml = useMemo(() => {
-    const raw = intro?.text || intro?.intro || "";
+    const raw = intro?.text || intro?.intro || activity.content?.metadata?.blurb || "";
     if (!raw) return "";
     return parseWikitextToHtml(raw, "ixwiki");
-  }, [intro?.text, intro?.intro]);
+  }, [intro?.text, intro?.intro, activity.content?.metadata?.blurb]);
 
   const leadImage = useMemo(() => {
     // 1. Check pageImages from API query

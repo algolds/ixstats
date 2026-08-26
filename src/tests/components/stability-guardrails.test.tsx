@@ -23,16 +23,19 @@ jest.mock("sonner", () => ({
 describe("Stability Guardrails", () => {
   let warnSpy: any;
   let errorSpy: any;
+  let logSpy: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
     warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
   });
 
   afterEach(() => {
     warnSpy?.mockRestore();
     errorSpy?.mockRestore();
+    logSpy?.mockRestore();
   });
 
   // ─── WebGL / Graphics Error Safety ───
@@ -106,7 +109,7 @@ describe("Stability Guardrails", () => {
       const emptyData = {} as any;
 
       // Calculation should proceed and not throw TypeError
-      let personality;
+      let personality: any;
       expect(() => {
         personality = NPCPersonalitySystem.calculatePersonality(
           "country-abc",
@@ -145,7 +148,7 @@ describe("Stability Guardrails", () => {
         historical: { totalActions: 10, aggressiveActions: 5 },
       } as any;
 
-      let personality;
+      let personality: any;
       expect(() => {
         personality = NPCPersonalitySystem.calculatePersonality(
           "country-def",

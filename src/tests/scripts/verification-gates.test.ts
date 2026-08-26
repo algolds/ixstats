@@ -73,6 +73,9 @@ describe("verification-gates", () => {
 
   describe("verify-strict orchestrator", () => {
     it("short-circuits on the first failing stage and preserves exit code", () => {
+      const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+      const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
       const testStages: VerificationStage[] = [
         { name: "Stage 1 (Pass)", command: "bun", args: ["-e", "process.exit(0)"] },
         { name: "Stage 2 (Fail)", command: "bun", args: ["-e", "process.exit(42)"] },
@@ -85,9 +88,14 @@ describe("verification-gates", () => {
       expect(result.exitCode).toBe(42);
       expect(result.failedStage).toBe("Stage 2 (Fail)");
       expect(result.completedStages).toEqual(["Stage 1 (Pass)"]);
+
+      logSpy.mockRestore();
+      errSpy.mockRestore();
     });
 
     it("passes all stages and returns exit code 0 when all succeed", () => {
+      const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
       const testStages: VerificationStage[] = [
         { name: "Stage 1 (Pass)", command: "bun", args: ["-e", "process.exit(0)"] },
         { name: "Stage 2 (Pass)", command: "bun", args: ["-e", "process.exit(0)"] },
@@ -98,6 +106,8 @@ describe("verification-gates", () => {
       expect(result.passed).toBe(true);
       expect(result.exitCode).toBe(0);
       expect(result.completedStages).toEqual(["Stage 1 (Pass)", "Stage 2 (Pass)"]);
+
+      logSpy.mockRestore();
     });
   });
 

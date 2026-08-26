@@ -16,11 +16,12 @@ export const ixnayidRouter = createTRPCRouter({
   // =========================================================================
 
   getStatus: protectedProcedure.query(async ({ ctx }) => {
-    const user = await db.user.findUnique({
+    let user = await db.user.findUnique({
       where: { id: ctx.user.id },
       select: {
         id: true,
         clerkUserId: true,
+        countryId: true,
         forumUserId: true,
         forumUsername: true,
         lastForumSync: true,
@@ -30,16 +31,47 @@ export const ixnayidRouter = createTRPCRouter({
         discordUserId: true,
         discordUsername: true,
         lastDiscordSync: true,
-        country: { select: { name: true, slug: true } },
+        country: { select: { id: true, name: true, slug: true } },
       },
     });
 
-    const activeWikiName = user?.wikiUsername || user?.country?.name || null;
-    const passportHandle = user?.forumUsername || user?.wikiUsername || user?.clerkUserId || user?.id || null;
+    let country = user?.country ?? null;
+    if (!country && user?.countryId) {
+      country = await db.country.findUnique({
+        where: { id: user.countryId },
+        select: { id: true, name: true, slug: true },
+      });
+    }
+
+    if (!country && user?.clerkUserId) {
+      const tpAccount = await db.thinkpagesAccount.findFirst({
+        where: { clerkUserId: user.clerkUserId, isActive: true },
+        select: { countryId: true },
+      });
+      if (tpAccount?.countryId) {
+        country = await db.country.findUnique({
+          where: { id: tpAccount.countryId },
+          select: { id: true, name: true, slug: true },
+        });
+      }
+    }
+
+    const activeWikiName = user?.wikiUsername || country?.name || null;
+    const passportHandle =
+      user?.wikiUsername ||
+      user?.forumUsername ||
+      country?.slug ||
+      country?.name ||
+      ((ctx.user as any)?.username !== "admin" ? (ctx.user as any)?.username : null) ||
+      user?.clerkUserId ||
+      user?.id ||
+      null;
 
     return {
       passportHandle,
-      countrySlug: user?.country?.slug ?? (user?.country?.name ? user.country.name.toLowerCase().replace(/ /g, "_") : null),
+      countrySlug:
+        country?.slug ??
+        (country?.name ? country.name.toLowerCase().replace(/ /g, "_") : null),
       forum: {
         linked: !!user?.forumUserId || !!user?.forumUsername,
         username: user?.forumUsername ?? null,
@@ -159,13 +191,6 @@ export const ixnayidRouter = createTRPCRouter({
   // LOOKUP — preview before linking
   // =========================================================================
 
-  lookupWikiUser: protectedProcedure
-    .input(z.object({ username: z.string().min(1).max(100) }))
-    .query(async ({ input }) => {
-      const result = await lookupWikiUser(input.username);
-      return result;
-    }),
-
   lookupForumUser: protectedProcedure
     .input(z.object({ username: z.string().min(1).max(100) }))
     .query(async ({ input }) => {
@@ -173,8 +198,15 @@ export const ixnayidRouter = createTRPCRouter({
       return lookupForumUser(input.username);
     }),
 
+  lookupWikiUser: protectedProcedure
+    .input(z.object({ username: z.string().min(1).max(100) }))
+    .query(async ({ input }) => {
+      return lookupWikiUser(input.username);
+    }),
+
   // =========================================================================
-  // UNIFIED PROFILE RESOLVER — Country + WikiOS + Forum + Vault + ThinkPages
+  // UNIFIED IDENTITY PASSPORT (Digital Passport Query)
+  // Consolidates Forum, WikiOS, Multi-Tenant Realms, and MyCountry metadata
   // =========================================================================
 
   getUnifiedProfile: publicProcedure
@@ -186,79 +218,156 @@ export const ixnayidRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const cleanId = input.identifier.replace(/^@/, "").trim();
       const viewerClerkId = ctx.auth?.userId ?? null;
+      const isSelf = cleanId === "me" || (Boolean(viewerClerkId) && cleanId === viewerClerkId);
+      const strippedId = cleanId.replace(/_$/, "");
 
-      // 1. Try resolving as Country first (by slug, name, or id)
-      let countryRecord = await db.country.findFirst({
+      // 1. Fast Path: Try resolving as Canonical User Identity first
+      let userRecord: any = await db.user.findFirst({
         where: {
           OR: [
-            { slug: cleanId.toLowerCase() },
-            { name: cleanId },
+            ...(isSelf && viewerClerkId ? [{ clerkUserId: viewerClerkId }] : []),
+            { clerkUserId: cleanId },
+            { forumUsername: { equals: cleanId, mode: "insensitive" as const } },
+            { wikiUsername: { equals: cleanId, mode: "insensitive" as const } },
             { id: cleanId },
-            { wikiPageTitle: cleanId },
+            ...(strippedId !== cleanId
+              ? [
+                  { forumUsername: { equals: strippedId, mode: "insensitive" as const } },
+                  { wikiUsername: { equals: strippedId, mode: "insensitive" as const } },
+                  { clerkUserId: strippedId },
+                ]
+              : []),
           ],
         },
         include: {
-          users: {
-            where: { isActive: true },
-            take: 1,
+          role: true,
+          country: {
             include: {
-              role: true,
+              nationalIdentity: true,
+              geoProfile: true,
+              realm: { select: { id: true, name: true, slug: true } },
             },
           },
-          nationalIdentity: true,
-          geoProfile: true,
         },
       });
 
-      let userRecord = countryRecord?.users?.[0] ?? null;
+      let countryRecord: any = userRecord?.country ?? null;
 
-      // 2. If no country matched (or country has no users), check User by clerkUserId, wikiUsername, forumUsername, id
+      // Hydrate country from userRecord.countryId if direct relation was not populated
+      if (userRecord?.countryId && !countryRecord) {
+        countryRecord = await db.country.findUnique({
+          where: { id: userRecord.countryId },
+          include: {
+            nationalIdentity: true,
+            geoProfile: true,
+            realm: { select: { id: true, name: true, slug: true } },
+          },
+        });
+      }
+
+      // Check ThinkPages linked country if still unassigned
+      if (userRecord?.clerkUserId && !countryRecord) {
+        const tpAccount = await db.thinkpagesAccount.findFirst({
+          where: { clerkUserId: userRecord.clerkUserId, isActive: true },
+          select: { countryId: true },
+        });
+        if (tpAccount?.countryId) {
+          countryRecord = await db.country.findUnique({
+            where: { id: tpAccount.countryId },
+            include: {
+              nationalIdentity: true,
+              geoProfile: true,
+              realm: { select: { id: true, name: true, slug: true } },
+            },
+          });
+        }
+      }
+
+      // 2. Fallback: If no User directly matched, check if identifier is a Country slug/name
       if (!userRecord) {
-        const foundUser = await db.user.findFirst({
+        countryRecord = await db.country.findFirst({
           where: {
             OR: [
-              { clerkUserId: cleanId },
-              { wikiUsername: cleanId },
-              { forumUsername: cleanId },
+              { slug: cleanId.toLowerCase() },
+              { slug: strippedId.toLowerCase() },
+              { name: cleanId },
+              { name: strippedId },
               { id: cleanId },
+              { wikiPageTitle: cleanId },
             ],
           },
           include: {
-            role: true,
-            country: {
+            users: {
+              where: { isActive: true },
+              take: 1,
               include: {
-                nationalIdentity: true,
-                geoProfile: true,
+                role: true,
               },
             },
+            nationalIdentity: true,
+            geoProfile: true,
+            realm: { select: { id: true, name: true, slug: true } },
           },
         });
 
-        if (foundUser) {
-          userRecord = foundUser as any;
-          if (foundUser.country && !countryRecord) {
-            countryRecord = foundUser.country as any;
-          }
+        if (countryRecord?.users?.[0]) {
+          userRecord = countryRecord.users[0] as any;
         }
       }
 
       // 3. Fallback: if still no user/country found, check if identifier is a wiki or forum username
-      let resolvedWikiName = userRecord?.wikiUsername || (countryRecord?.name ?? null);
+      let resolvedWikiName =
+        userRecord?.wikiUsername ||
+        countryRecord?.wikiPageTitle ||
+        (countryRecord?.name ?? null);
       let resolvedForumUserId = userRecord?.forumUserId ?? null;
       let resolvedForumUsername = userRecord?.forumUsername ?? null;
 
       if (!userRecord && !countryRecord) {
         // Try looking up forum or wiki user to allow citizen preview
         const { lookupForumUser } = await import("~/server/modules/forum");
-        const forumLookup = await lookupForumUser(cleanId).catch(() => null);
+        const forumLookup =
+          (await lookupForumUser(cleanId).catch(() => null)) ||
+          (strippedId !== cleanId ? await lookupForumUser(strippedId).catch(() => null) : null);
         if (forumLookup) {
           resolvedForumUserId = forumLookup.userId;
           resolvedForumUsername = forumLookup.username;
         }
 
-        const wikiLookup = await lookupWikiUser(cleanId).catch(() => null);
+        const wikiLookup =
+          (await lookupWikiUser(cleanId).catch(() => null)) ||
+          (strippedId !== cleanId ? await lookupWikiUser(strippedId).catch(() => null) : null);
         if (wikiLookup && wikiLookup.username) {
           resolvedWikiName = wikiLookup.username;
+        }
+
+        // Direct PostgreSQL author check (Lorewards & Revisions fast-path)
+        if (!resolvedWikiName) {
+          const stats = await db.lorewardUserStats.findFirst({
+            where: {
+              OR: [
+                { username: { equals: cleanId, mode: "insensitive" } },
+                { username: { equals: strippedId, mode: "insensitive" } },
+              ],
+            },
+            select: { username: true },
+          });
+          if (stats?.username) {
+            resolvedWikiName = stats.username;
+          } else {
+            const rev = await (db as any).wikiRevision.findFirst({
+              where: {
+                OR: [
+                  { author: { equals: cleanId, mode: "insensitive" } },
+                  { author: { equals: strippedId, mode: "insensitive" } },
+                ],
+              },
+              select: { author: true },
+            });
+            if (rev?.author) {
+              resolvedWikiName = rev.author;
+            }
+          }
         }
       }
 
@@ -267,104 +376,381 @@ export const ixnayidRouter = createTRPCRouter({
         return null;
       }
 
-      // 4. Parallel data fetches for Wiki, Forum, Lorewards, ThinkPages, and Vault
-      const { getUserInfo, getUserContribs } = await import(
+      // 4. Parallel data fetches
+      const { getUserInfo, getUserContribs, getUserCreatedPages } = await import(
         "~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers"
       );
       const { xfFetch, transformBBCode, cacheKey, cachedFetch } = await import(
         "~/server/modules/forum"
       );
 
-      const [wikiInfoRes, wikiContribsRes, loreStatsRes, loreAwardsRes, forumMemberRes, thinkpagesRes] =
+      const fetchClerkUser = async () => {
+        const targetClerkId = userRecord?.clerkUserId || (cleanId.startsWith("user_") ? cleanId : null);
+        if (!targetClerkId && !cleanId) return null;
+        try {
+          const { clerkClient } = await import("@clerk/nextjs/server");
+          const client = await clerkClient();
+          if (targetClerkId) {
+            return await client.users.getUser(targetClerkId).catch(() => null);
+          }
+          const list = await client.users.getUserList({ username: [cleanId, strippedId] }).catch(() => null);
+          return list?.data?.[0] ?? null;
+        } catch {
+          return null;
+        }
+      };
+
+      const [wikiInfoRes, wikiContribsRes, mwCreatedPagesRes, loreStatsRes, loreAwardsRes, forumMemberRes, thinkpagesRes, clerkUserRes] =
         await Promise.allSettled([
-          // Wiki Info
-          resolvedWikiName
-            ? getUserInfo(resolvedWikiName).catch(() => null)
-            : Promise.resolve(null),
-          // Wiki Contribs
-          resolvedWikiName
-            ? getUserContribs(resolvedWikiName, 15).catch(() => ({ contribs: [] }))
-            : Promise.resolve({ contribs: [] }),
-          // Loreward stats
-          resolvedWikiName
-            ? db.lorewardUserStats
-                .findUnique({
-                  where: { username: resolvedWikiName },
-                })
-                .catch(() => null)
-            : Promise.resolve(null),
-          // Loreward award history
-          resolvedWikiName
-            ? db.lorewardEntry
-                .findMany({
-                  where: {
-                    OR: [{ winnerUser: resolvedWikiName }, { runnerUpUser: resolvedWikiName }],
-                    status: "approved",
-                  },
-                  orderBy: { date: "desc" },
-                  take: 10,
-                })
-                .catch(() => [])
-            : Promise.resolve([]),
-          // Forum Member
-          resolvedForumUserId
-            ? cachedFetch(
-                cacheKey("member", resolvedForumUserId),
-                "member",
-                () => xfFetch<{ user: any }>(`/users/${resolvedForumUserId}/`)
-              ).catch(() => null)
-            : Promise.resolve(null),
-          // ThinkPages Account
-          userRecord?.clerkUserId
-            ? db.thinkpagesAccount
-                .findFirst({
-                  where: { clerkUserId: userRecord.clerkUserId, isActive: true },
-                })
-                .catch(() => null)
-            : Promise.resolve(null),
+          resolvedWikiName ? getUserInfo(resolvedWikiName).catch(() => null) : Promise.resolve(null),
+          resolvedWikiName ? getUserContribs(resolvedWikiName, 100).catch(() => []) : Promise.resolve([]),
+          resolvedWikiName ? getUserCreatedPages(resolvedWikiName, 100).catch(() => []) : Promise.resolve([]),
+          resolvedWikiName ? db.lorewardUserStats.findFirst({ where: { username: { equals: resolvedWikiName, mode: "insensitive" } } }).catch(() => null) : Promise.resolve(null),
+          resolvedWikiName ? db.lorewardEntry.findMany({ where: { OR: [{ winnerUser: { equals: resolvedWikiName, mode: "insensitive" } }, { runnerUpUser: { equals: resolvedWikiName, mode: "insensitive" } }], status: "approved" }, orderBy: { date: "desc" }, take: 30 }).catch(() => []) : Promise.resolve([]),
+          resolvedForumUserId ? cachedFetch(cacheKey("member", resolvedForumUserId), "member", () => xfFetch<{ user: any }>(`/users/${resolvedForumUserId}/`)).catch(() => null) : Promise.resolve(null),
+          userRecord?.clerkUserId ? db.thinkpagesAccount.findFirst({ where: { clerkUserId: userRecord.clerkUserId, isActive: true } }).catch(() => null) : Promise.resolve(null),
+          fetchClerkUser(),
         ]);
 
       const wikiInfo = wikiInfoRes.status === "fulfilled" ? wikiInfoRes.value : null;
-      const wikiContribs =
-        wikiContribsRes.status === "fulfilled" ? wikiContribsRes.value?.contribs ?? [] : [];
+      const wikiContribs = wikiContribsRes.status === "fulfilled" ? (Array.isArray(wikiContribsRes.value) ? wikiContribsRes.value : (wikiContribsRes.value as any)?.contribs ?? []) : [];
+      const mwCreatedPages = mwCreatedPagesRes.status === "fulfilled" ? mwCreatedPagesRes.value ?? [] : [];
       const loreStats = loreStatsRes.status === "fulfilled" ? loreStatsRes.value : null;
       const loreAwards = loreAwardsRes.status === "fulfilled" ? loreAwardsRes.value ?? [] : [];
       const forumData = forumMemberRes.status === "fulfilled" ? forumMemberRes.value?.user ?? null : null;
       const thinkpagesAccount = thinkpagesRes.status === "fulfilled" ? thinkpagesRes.value : null;
+      const clerkUser = clerkUserRes.status === "fulfilled" ? clerkUserRes.value : null;
 
-      // Loreward rank calculation
       let loreRank: number | null = null;
       if (loreStats && loreStats.totalScore > 0) {
-        try {
-          loreRank =
-            (await db.lorewardUserStats.count({
-              where: { totalScore: { gt: loreStats.totalScore } },
-            })) + 1;
-        } catch {}
+        try { loreRank = (await db.lorewardUserStats.count({ where: { totalScore: { gt: loreStats.totalScore } } })) + 1; } catch {}
       }
 
-      // Find all nations owned by this user across all realms (Multi-Realm Sovereign Portfolio)
+      // Auto-sync Forum & Wiki credentials to user passport record
+      if (userRecord && (forumData || wikiInfo)) {
+        const syncUpdates: Record<string, any> = {};
+        if (forumData && (!userRecord.forumUserId || userRecord.forumUserId !== forumData.user_id)) {
+          syncUpdates.forumUserId = forumData.user_id;
+          syncUpdates.forumUsername = forumData.username;
+          syncUpdates.lastForumSync = new Date();
+        }
+        if (wikiInfo && resolvedWikiName && (!userRecord.wikiUsername || userRecord.wikiUsername !== resolvedWikiName)) {
+          syncUpdates.wikiUsername = resolvedWikiName;
+          syncUpdates.wikiUserId = wikiInfo.user_id ?? null;
+          syncUpdates.lastWikiSync = new Date();
+        }
+        if (Object.keys(syncUpdates).length > 0) {
+          db.user.update({
+            where: { id: userRecord.id },
+            data: syncUpdates,
+          }).catch(() => null);
+        }
+      }
+
       let userNations: any[] = [];
       if (userRecord) {
         userNations = await db.country.findMany({
           where: {
             OR: [
               { users: { some: { id: userRecord.id } } },
-              ...(userRecord.clerkUserId
-                ? [{ users: { some: { clerkUserId: userRecord.clerkUserId } } }]
-                : []),
+              ...(userRecord.clerkUserId ? [{ users: { some: { clerkUserId: userRecord.clerkUserId } } }] : []),
+              ...(userRecord.countryId ? [{ id: userRecord.countryId }] : []),
+              ...(countryRecord?.id ? [{ id: countryRecord.id }] : []),
+              ...(userRecord.forumUsername ? [{ leader: { equals: userRecord.forumUsername, mode: "insensitive" as const } }] : []),
+              ...(userRecord.wikiUsername ? [{ leader: { equals: userRecord.wikiUsername, mode: "insensitive" as const } }] : []),
+              ...(cleanId && cleanId !== "me" ? [{ leader: { equals: cleanId, mode: "insensitive" as const } }] : []),
             ],
           },
           include: {
-            realm: { select: { id: true, name: true } },
+            realm: { select: { id: true, name: true, slug: true } },
+            nationalIdentity: true,
+            geoProfile: true,
           },
           orderBy: { currentTotalGdp: "desc" },
         });
+
+        if (userNations.length === 0 && (countryRecord || userRecord.country)) {
+          const fallbackNation = countryRecord || userRecord.country;
+          if (fallbackNation) {
+            userNations = [fallbackNation];
+          }
+        }
       } else if (countryRecord) {
         userNations = [countryRecord];
       }
 
+      if (!countryRecord && userNations.length > 0) {
+        countryRecord = userNations[0];
+      }
+
+      const [
+        authoredArticlesRes,
+        nativeRevisionsRes,
+        wikiCommentsRes,
+        conlangsRes,
+        sportTeamsRes,
+        directivesRes,
+      ] = await Promise.allSettled([
+        db.wikiArticle
+          .findMany({
+            where: {
+              OR: [
+                ...(userRecord?.id ? [{ authorId: userRecord.id }, { lastEditorId: userRecord.id }] : []),
+                ...(resolvedWikiName ? [{ title: { contains: resolvedWikiName, mode: "insensitive" as const } }, { slug: { contains: resolvedWikiName.toLowerCase() } }] : []),
+                ...(cleanId && cleanId !== "me" ? [{ title: { contains: cleanId, mode: "insensitive" as const } }, { slug: { contains: cleanId.toLowerCase() } }] : []),
+              ],
+            },
+            take: 100,
+            orderBy: { createdAt: "desc" },
+            select: { id: true, slug: true, title: true, summary: true, updatedAt: true, createdAt: true },
+          })
+          .catch(() => []),
+        db.wikiRevision
+          .findMany({
+            where: {
+              OR: [
+                ...(userRecord?.id ? [{ authorId: userRecord.id }] : []),
+                ...(resolvedWikiName ? [{ author: { equals: resolvedWikiName, mode: "insensitive" as const } }] : []),
+                ...(cleanId && cleanId !== "me" ? [{ author: { equals: cleanId, mode: "insensitive" as const } }] : []),
+              ],
+            },
+            take: 100,
+            orderBy: { createdAt: "desc" },
+            select: {
+              id: true,
+              articleId: true,
+              summary: true,
+              minor: true,
+              author: true,
+              createdAt: true,
+              article: {
+                select: { id: true, title: true, slug: true, summary: true },
+              },
+            },
+          })
+          .catch(() => []),
+        db.wikiDiscussionComment
+          .findMany({
+            where: {
+              OR: [
+                ...(userRecord?.id ? [{ userId: userRecord.id }] : []),
+                ...(userRecord?.clerkUserId ? [{ userId: userRecord.clerkUserId }] : []),
+              ],
+            },
+            take: 30,
+            orderBy: { createdAt: "desc" },
+            select: {
+              id: true,
+              content: true,
+              userId: true,
+              createdAt: true,
+              thread: {
+                select: { id: true, articleTitle: true, title: true },
+              },
+            },
+          })
+          .catch(() => []),
+        userRecord?.id
+          ? db.languagePack.findMany({ where: { userId: userRecord.id }, take: 20, select: { id: true, name: true, description: true, culturalFamily: true, slug: true } }).catch(() => [])
+          : Promise.resolve([]),
+        userNations.length > 0
+          ? db.sportTeam.findMany({ where: { nationId: { in: userNations.map(n => n.id) } }, take: 20, select: { id: true, name: true, shortName: true, city: true, logo: true } }).catch(() => [])
+          : Promise.resolve([]),
+        userNations.length > 0
+          ? db.intent.findMany({ where: { countryId: { in: userNations.map(n => n.id) } }, take: 20, orderBy: { createdAt: "desc" }, select: { id: true, goal: true, tier: true, category: true, status: true, summary: true, createdAt: true } }).catch(() => [])
+          : Promise.resolve([]),
+      ]);
+
+      const rawAuthored = authoredArticlesRes.status === "fulfilled" ? authoredArticlesRes.value ?? [] : [];
+      const nativeRevisions = nativeRevisionsRes.status === "fulfilled" ? nativeRevisionsRes.value ?? [] : [];
+      const wikiComments = wikiCommentsRes.status === "fulfilled" ? wikiCommentsRes.value ?? [] : [];
+
+      const authoredArticles: Array<{
+        id: string;
+        slug: string;
+        title: string;
+        summary: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+      }> = [];
+      const seenTitles = new Set<string>();
+
+      for (const a of rawAuthored) {
+        const key = a.title.toLowerCase();
+        if (!seenTitles.has(key)) {
+          authoredArticles.push({
+            id: a.id,
+            slug: a.slug || a.title.toLowerCase().replace(/ /g, "_"),
+            title: a.title,
+            summary: a.summary || "WikiOS Canonical Article",
+            createdAt: new Date(a.createdAt),
+            updatedAt: new Date(a.updatedAt),
+          });
+          seenTitles.add(key);
+        }
+      }
+
+      for (const page of mwCreatedPages) {
+        const key = page.title.toLowerCase();
+        if (!seenTitles.has(key)) {
+          authoredArticles.push({
+            id: `mw-page-${key.replace(/[^a-z0-9]/g, "-")}`,
+            slug: page.title.toLowerCase().replace(/ /g, "_"),
+            title: page.title,
+            summary: `Authored Wiki Article (${(page.byteSize || 0).toLocaleString()} B)`,
+            createdAt: new Date(page.createdAt),
+            updatedAt: new Date(page.createdAt),
+          });
+          seenTitles.add(key);
+        }
+      }
+
+      authoredArticles.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+      // Build unified chronological WikiOS Activity Feed
+      const wikiActivityFeed: Array<{
+        id: string;
+        type: "publish" | "revision" | "minor_edit" | "discussion" | "laurel";
+        title: string;
+        articleSlug: string;
+        summary: string | null;
+        byteDiff: number | null;
+        timestamp: string;
+        url: string;
+      }> = [];
+
+      for (const rev of nativeRevisions) {
+        const articleTitle = rev.article?.title || "Wiki Article";
+        const articleSlug = rev.article?.slug || rev.article?.title || "";
+        wikiActivityFeed.push({
+          id: `rev-${rev.id}`,
+          type: rev.minor ? "minor_edit" : "revision",
+          title: articleTitle,
+          articleSlug,
+          summary: rev.summary || (rev.minor ? "Minor formatting & copyedit" : "Revised article content"),
+          byteDiff: null,
+          timestamp: new Date(rev.createdAt).toISOString(),
+          url: `/wiki/${encodeURIComponent(articleSlug || articleTitle)}`,
+        });
+      }
+
+      for (const c of wikiContribs) {
+        wikiActivityFeed.push({
+          id: `mw-${c.revid}`,
+          type: c.isNew ? "publish" : c.minor ? "minor_edit" : "revision",
+          title: c.title,
+          articleSlug: c.title.toLowerCase().replace(/ /g, "_"),
+          summary: c.comment || (c.isNew ? "Created new article" : "MediaWiki article revision"),
+          byteDiff: c.size ?? null,
+          timestamp: new Date(c.timestamp).toISOString(),
+          url: `/wiki/${encodeURIComponent(c.title)}`,
+        });
+      }
+
+      for (const comment of wikiComments) {
+        const threadTitle = comment.thread?.title || "Margin Discussion";
+        const articleTitle = comment.thread?.articleTitle || "";
+        wikiActivityFeed.push({
+          id: `comment-${comment.id}`,
+          type: "discussion",
+          title: threadTitle,
+          articleSlug: articleTitle,
+          summary: comment.content.length > 120 ? `${comment.content.slice(0, 117)}...` : comment.content,
+          byteDiff: null,
+          timestamp: new Date(comment.createdAt).toISOString(),
+          url: articleTitle ? `/wiki/${encodeURIComponent(articleTitle)}` : `/wiki`,
+        });
+      }
+
+      for (const award of loreAwards) {
+        const isWinner = resolvedWikiName && award.winnerUser?.toLowerCase() === resolvedWikiName.toLowerCase();
+        const articleName = (isWinner ? award.winnerPage : award.runnerUpPage) || award.winnerPage || "Wiki Lore";
+        const score = isWinner ? award.winnerScore : award.runnerUpScore;
+        const distinction = award.type === "daily" ? "Lore of the Day" : award.type === "weekly" ? "Lore of the Week" : "Monthly Laureate";
+
+        wikiActivityFeed.push({
+          id: `laurel-${award.id}`,
+          type: "laurel",
+          title: articleName,
+          articleSlug: articleName.toLowerCase().replace(/ /g, "_"),
+          summary: `${distinction} (${isWinner ? "Winner" : "Runner-Up"}${score ? ` · +${score} pts` : ""})`,
+          byteDiff: null,
+          timestamp: new Date(award.date).toISOString(),
+          url: `/wiki/${encodeURIComponent(articleName)}`,
+        });
+      }
+
+      wikiActivityFeed.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      const conlangs = conlangsRes.status === "fulfilled" ? conlangsRes.value ?? [] : [];
+      const sportTeams = sportTeamsRes.status === "fulfilled" ? sportTeamsRes.value ?? [] : [];
+      const directives = directivesRes.status === "fulfilled" ? directivesRes.value ?? [] : [];
+
+      const historyEvents: Array<any> = [];
+      for (const item of wikiActivityFeed) {
+        historyEvents.push({
+          id: `hist-${item.id}`,
+          system: "wikios",
+          type: item.type === "publish" ? "wikios.article_published" : "wikios.article_revised",
+          title: `${item.type === "publish" ? "Published" : item.type === "laurel" ? "Earned Laurel on" : item.type === "discussion" ? "Participated in" : "Edited"} "${item.title}"`,
+          description: item.summary || (item.byteDiff ? `${item.byteDiff > 0 ? `+${item.byteDiff}` : item.byteDiff} bytes` : "WikiOS Contribution"),
+          timestamp: item.timestamp,
+          objectUrl: item.url,
+        });
+      }
+
+      for (const dir of directives) {
+        historyEvents.push({
+          id: `dir-${dir.id}`,
+          system: "mycountry",
+          type: "mycountry.directive_enacted",
+          title: `Enacted Directive: ${dir.goal}`,
+          description: `Category: ${dir.category || "Governance"} · Tier: ${dir.tier} · Status: ${dir.status}`,
+          timestamp: new Date(dir.createdAt).toISOString(),
+          objectUrl: "/mycountry",
+        });
+      }
+
+      if (userRecord?.createdAt) {
+        historyEvents.push({
+          id: `account-joined`,
+          system: "realm",
+          type: "realm.joined",
+          title: "Established IxStates Identity",
+          description: "Registered canonical digital passport on IxStates",
+          timestamp: new Date(userRecord.createdAt).toISOString(),
+          objectUrl: `/id/@${cleanId}`,
+        });
+      }
+
+      historyEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
       const isOwner = Boolean(viewerClerkId && userRecord?.clerkUserId === viewerClerkId);
+      const realmsList = userNations.map((c: any) => ({
+        id: c.realmId ?? "default",
+        name: c.realm?.name ?? (c.realmId === "default" || !c.realmId ? "IxEarth" : "Custom Realm"),
+        slug: c.realm?.slug ?? (c.realmId === "default" || !c.realmId ? "ixearth" : "custom-realm"),
+        role: userRecord?.role?.displayName ?? "Leader",
+        isFeatured: Boolean(
+          (countryRecord && countryRecord.id === c.id) ||
+            (userRecord && userRecord.countryId === c.id)
+        ),
+        country: {
+          id: c.id,
+          name: c.name,
+          slug: c.slug ?? c.name.toLowerCase().replace(/ /g, "_"),
+          flagUrl: c.flag ?? null,
+          coatOfArmsUrl: c.coatOfArms ?? null,
+          currentPopulation: c.currentPopulation ?? 0,
+          currentTotalGdp: c.currentTotalGdp ?? 0,
+          currentGdpPerCapita: c.currentGdpPerCapita ?? 0,
+          continent: c.continent ?? null,
+          region: c.region ?? null,
+          governmentType: c.governmentType ?? null,
+          currentPublicApproval: c.currentPublicApproval ?? c.publicApproval ?? 72,
+          currentStability: c.currentStability ?? c.stability ?? 0.82,
+        },
+      }));
 
       return {
         country: countryRecord
@@ -391,12 +777,13 @@ export const ixnayidRouter = createTRPCRouter({
               isMapped: Boolean(countryRecord.centroid || countryRecord.geoProfile),
             }
           : null,
+        realms: realmsList,
         nations: userNations.map((c: any) => ({
           id: c.id,
           name: c.name,
           slug: c.slug ?? c.name.toLowerCase().replace(/ /g, "_"),
           realmId: c.realmId ?? "default",
-          realmName: c.realm?.name ?? (c.realmId === "default" ? "IxWorld" : "Custom Realm"),
+          realmName: c.realm?.name ?? (c.realmId === "default" || !c.realmId ? "IxEarth" : "Custom Realm"),
           flagUrl: c.flag ?? null,
           coatOfArmsUrl: c.coatOfArms ?? null,
           currentPopulation: c.currentPopulation ?? 0,
@@ -410,20 +797,39 @@ export const ixnayidRouter = createTRPCRouter({
               (userRecord && userRecord.countryId === c.id)
           ),
         })),
+        work: {
+          authoredArticles,
+          conlangs,
+          sportTeams,
+          directives,
+          wikiActivityFeed,
+          totalCreations:
+            authoredArticles.length + conlangs.length + sportTeams.length + directives.length + wikiActivityFeed.length,
+        },
+        history: historyEvents,
         account: {
           userId: userRecord?.id ?? null,
-          clerkUserId: userRecord?.clerkUserId ?? null,
+          clerkUserId: userRecord?.clerkUserId ?? clerkUser?.id ?? null,
           membershipTier: userRecord?.membershipTier ?? "basic",
           roleName: userRecord?.role?.displayName ?? userRecord?.role?.name ?? null,
           isOwner,
           canManage: isOwner,
-          createdAt: userRecord?.createdAt ? new Date(userRecord.createdAt).toISOString() : null,
+          createdAt: userRecord?.createdAt
+            ? new Date(userRecord.createdAt).toISOString()
+            : clerkUser?.createdAt
+              ? new Date(clerkUser.createdAt).toISOString()
+              : null,
+          clerkUsername: clerkUser?.username ?? null,
+          clerkDisplayName: clerkUser
+            ? ([clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || clerkUser.username || null)
+            : null,
+          clerkImageUrl: clerkUser?.imageUrl ?? null,
         },
         wiki: {
           linked: Boolean(wikiInfo?.exists || resolvedWikiName),
           username: resolvedWikiName,
-          registration: wikiInfo?.registration ?? null,
-          editCount: wikiInfo?.editCount ?? 0,
+          registration: wikiInfo?.registration ?? wikiInfo?.user_registration ?? null,
+          editCount: wikiInfo?.editCount ?? wikiInfo?.user_editcount ?? (wikiContribs?.length ?? 0),
           groups: wikiInfo?.groups ?? [],
           lorewards: loreStats
             ? {
@@ -439,20 +845,25 @@ export const ixnayidRouter = createTRPCRouter({
               }
             : null,
           recentEdits: wikiContribs.map((c: any) => ({
-            revid: c.revid,
-            title: c.title,
-            timestamp: c.timestamp,
-            size: c.size,
-            minor: Boolean(c.minor),
-            isNew: Boolean(c.isNew),
+            revid: c.rev_id || c.revid || 0,
+            title: c.page_title || c.title || "",
+            timestamp: c.rev_timestamp || c.timestamp || new Date().toISOString(),
+            size: c.rev_len || c.size || 0,
+            minor: Boolean(c.rev_minor_edit ?? c.minor),
+            isNew: Boolean(c.is_new ?? c.isNew),
+            comment: c.rev_comment ?? c.comment ?? null,
           })),
-          awardHistory: loreAwards.map((e: any) => ({
-            date: e.date,
-            type: e.type,
-            role: (e.winnerUser === resolvedWikiName ? "winner" : "runner-up") as "winner" | "runner-up",
-            page: e.pageTitle ?? null,
-            score: e.score ?? null,
-          })),
+          awardHistory: loreAwards.map((e: any) => {
+            const isWinner = resolvedWikiName && e.winnerUser?.toLowerCase() === resolvedWikiName.toLowerCase();
+            return {
+              id: e.id,
+              date: e.date,
+              type: e.type,
+              role: (isWinner ? "winner" : "runner-up") as "winner" | "runner-up",
+              page: (isWinner ? e.winnerPage : e.runnerUpPage) || e.winnerPage || e.runnerUpPage || null,
+              score: (isWinner ? e.winnerScore : e.runnerUpScore) || e.winnerScore || e.runnerUpScore || null,
+            };
+          }),
         },
         forum: {
           linked: Boolean(forumData || resolvedForumUserId),

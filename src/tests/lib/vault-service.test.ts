@@ -9,6 +9,7 @@ describe("VaultService - Upgrades & Perks", () => {
   let mockDb: any;
 
   beforeEach(() => {
+    jest.spyOn(console, "log").mockImplementation(() => {});
     vaultService = new VaultService();
     vaultService.clearUserPerksCache();
     mockDb = {

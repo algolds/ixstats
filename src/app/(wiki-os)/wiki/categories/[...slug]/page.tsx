@@ -68,28 +68,54 @@ const DOMAIN_MAP: Record<string, { color: string; metric: string; description: s
     metric: "landArea",
     description: "Flora, fauna, ecosystems, and the natural world",
   },
+  Miscellaneous: {
+    color: "#64748b",
+    metric: "articles",
+    description: "General topics, uncategorized articles, cross-disciplinary subjects, and reference indexes",
+  },
 };
 
-export default function CategoryPage() {
-  const params = useParams<{ slug: string[] }>();
-  const category = params.slug.join("/").replace(/_/g, " ");
+export default function CategoryPage({
+  params: pageParams,
+}: {
+  params?: Promise<{ slug?: string[] }> | { slug?: string[] };
+}) {
+  const routerParams = useParams<{ slug?: string[] }>();
+  
+  // Resolve slug from page props or useParams
+  const resolvedSlug = useMemo(() => {
+    if (routerParams?.slug) {
+      return Array.isArray(routerParams.slug) ? routerParams.slug.join("/") : routerParams.slug;
+    }
+    if (pageParams && typeof (pageParams as any).then !== "function") {
+      const p = pageParams as { slug?: string[] };
+      return p?.slug ? (Array.isArray(p.slug) ? p.slug.join("/") : p.slug) : "";
+    }
+    return "";
+  }, [routerParams, pageParams]);
+
+  const category = useMemo(() => {
+    return decodeURIComponent(resolvedSlug || "").replace(/_/g, " ").trim();
+  }, [resolvedSlug]);
 
   // Fetch subcategories
-  const { data: subcatData } = api.wikios.getCategoryMembers.useQuery(
-    { category, limit: 100, type: "subcat" },
-    { staleTime: 60_000 }
+  const { data: subcatData, isLoading: isLoadingSubcats } = api.wikios.getCategoryMembers.useQuery(
+    { category, limit: 500, type: "subcat" },
+    { enabled: category.length > 0, staleTime: 60_000 }
   );
 
   // Fetch pages
-  const { data: pageData, isLoading } = api.wikios.getCategoryMembers.useQuery(
-    { category, limit: 100, type: "page" },
-    { staleTime: 60_000 }
+  const { data: pageData, isLoading: isLoadingPages } = api.wikios.getCategoryMembers.useQuery(
+    { category, limit: 500, type: "page" },
+    { enabled: category.length > 0, staleTime: 60_000 }
   );
+
+  const isLoading = (isLoadingSubcats || isLoadingPages) && category.length > 0;
 
   // Country detection (same pattern as InfoboxWithMap)
   const { data: countryResults } = api.countries.getSelectList.useQuery(
     { search: category, limit: 5 },
-    { staleTime: 10 * 60 * 1000 }
+    { enabled: category.length > 0, staleTime: 10 * 60 * 1000 }
   );
 
   const matchedCountry = useMemo(() => {
@@ -108,21 +134,43 @@ export default function CategoryPage() {
     return (pageData?.members ?? []).map((m) => ({
       title: m.title,
       ns: ("ns" in m ? (m as { ns: number }).ns : 0) as number,
+      imageUrl: ("imageUrl" in m ? (m as { imageUrl?: string | null }).imageUrl : null) ?? null,
     }));
   }, [pageData]);
-  const domainMeta = DOMAIN_MAP[category] ?? null;
+
+  const domainKey = Object.keys(DOMAIN_MAP).find(
+    (k) => k.toLowerCase() === category.toLowerCase()
+  );
+  const domainMeta = domainKey ? DOMAIN_MAP[domainKey] : null;
+  const canonicalDomainName = domainKey ?? category;
 
   return (
-    <WikiOSLayout title={matchedCountry ? undefined : `Category:${category}`}>
+    <WikiOSLayout hideTitleHeading>
       {isLoading ? (
-        <div className="wikios-loading min-h-[200px]">
-          <div className="wikios-loading-spinner" />
+        <div className="w-full space-y-6 max-w-6xl mx-auto animate-pulse select-none">
+          <div className="h-40 rounded-3xl bg-muted/40 border border-border/40" />
+          <div className="space-y-3">
+            <div className="h-5 w-32 bg-muted/50 rounded-lg" />
+            <div className="flex flex-wrap gap-2">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="h-8 w-28 bg-muted/40 rounded-xl" />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-3 pt-4">
+            <div className="h-5 w-40 bg-muted/50 rounded-lg" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="h-16 bg-muted/40 rounded-2xl" />
+              ))}
+            </div>
+          </div>
         </div>
       ) : matchedCountry ? (
         <CountryPortal country={matchedCountry} subcategories={subcategories} pages={pages} />
       ) : domainMeta ? (
         <DomainPortal
-          domain={category}
+          domain={canonicalDomainName}
           domainMeta={domainMeta}
           subcategories={subcategories}
           pages={pages}

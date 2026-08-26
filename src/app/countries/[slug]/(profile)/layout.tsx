@@ -5,7 +5,6 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { WarningTriangle as AlertTriangle } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card } from "~/components/ui/card";
-import { api } from "~/trpc/react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { CountryActionsMenu } from "~/components/mycountry/dossier/CountryActionsMenu";
@@ -16,6 +15,7 @@ import { CountryRightPillNav } from "../_components/CountryRightPillNav";
 import { useCountryPageState } from "../_hooks/useCountryPageState";
 import { toCountrySlug } from "../_types";
 import { CountryProfileProvider } from "../_context/CountryProfileContext";
+import { api } from "~/trpc/react";
 
 export default function CountryProfileLayout({
   children,
@@ -63,23 +63,26 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
     [userProfile?.countryId, country?.id]
   );
 
-  const { data: unifiedProfile, isLoading: isUnifiedProfileLoading } =
-    api.ixnayid.getUnifiedProfile.useQuery(
-      { identifier: slug || country?.name || "" },
-      { enabled: Boolean(slug || country?.name) }
-    );
-
   const delegate = useMemo(() => {
-    const handle = unifiedProfile?.forum?.username || unifiedProfile?.wiki?.username;
+    const sovereign = (country as any)?.sovereignUser;
+    const handle = sovereign?.username || country?.leader;
     if (!handle) return null;
     return {
       username: handle,
-      roleName: unifiedProfile.account.roleName,
-      forumAvatarUrl: unifiedProfile.forum.avatarUrl,
-      isStaff: unifiedProfile.forum.isStaff,
-      membershipTier: unifiedProfile.account.membershipTier,
+      roleName: sovereign?.roleName || "Sovereign Regent",
+      forumAvatarUrl: null,
+      isStaff: false,
+      membershipTier: sovereign?.membershipTier || "citizen",
     };
-  }, [unifiedProfile]);
+  }, [country]);
+
+  const { data: unifiedProfile, isLoading: profileLoading } = api.ixnayid.getUnifiedProfile.useQuery(
+    { identifier: delegate?.username || country?.leader || country?.name || "" },
+    {
+      enabled: Boolean(country?.name || country?.leader || delegate?.username),
+      staleTime: 60_000,
+    }
+  );
 
   if (isLoading) {
     return (
@@ -128,7 +131,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
       isOwnCountry={isOwnCountry}
       unifiedProfile={unifiedProfile}
       delegate={delegate}
-      isLoading={isUnifiedProfileLoading}
+      isLoading={profileLoading}
     >
       <div className="from-background via-background to-muted/20 min-h-screen bg-gradient-to-br">
         <div className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">

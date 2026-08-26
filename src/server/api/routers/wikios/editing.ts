@@ -13,7 +13,7 @@ import {
   getRevisionWikitextShadow,
   getArticleHistoryShadow,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
-import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
+import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/mediawiki/sync-worker";
 import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
 import { resolveWikiUsername } from "~/lib/wiki-os/auth";
@@ -203,16 +203,37 @@ export const wikiosEditingRouter = createTRPCRouter({
         throw new Error(`Revision ${input.revid} not found`);
       }
 
-      const summary =
-        input.summary || `Reverted to revision ${input.revid} via WikiOS`;
+      const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
+      const summary = input.summary || `Reverted to revision ${input.revid} via WikiOS`;
 
-      return saveToMediaWiki(
-        input.title,
-        oldRev.wikitext,
-        summary,
-        false,
-        ctx
+      // 1. Primary Save: Direct to PostgreSQL (<10ms)
+      const saveResult = await ArticleRepository.saveArticle(
+        {
+          slug: input.title,
+          title: input.title,
+          wikitext: oldRev.wikitext,
+          summary,
+          minor: false,
+        },
+        ctx.auth?.userId ?? undefined,
+        authorName
       );
+
+      // 2. Background MediaWiki sync
+      MediaWikiExportWorker.enqueue({
+        slug: input.title,
+        title: input.title,
+        wikitext: oldRev.wikitext,
+        summary,
+        minor: false,
+        authorWikiUsername: authorName,
+      });
+
+      return {
+        success: true,
+        title: input.title,
+        revisionId: saveResult.revisionId,
+      };
     }),
 
   /**
@@ -223,23 +244,52 @@ export const wikiosEditingRouter = createTRPCRouter({
     .input(z.object({ title: z.string().min(1).max(500) }))
     .mutation(async ({ input, ctx }) => {
       // Read-through: serve from shadow history with MySQL fallback
-      const history = await getArticleHistoryShadow(input.title, 50, "ixwiki");
+      const history = await getArticleHistoryShadow(input.title, 50);
       const revisions = history.revisions;
       if (revisions.length < 2) throw new Error("Not enough revisions to rollback");
 
       const lastEditor = revisions[0]!.user;
-      const targetRev = revisions.find((r) => r.user !== lastEditor);
+      const targetRev = revisions.find((r: { user: string; revid: number }) => r.user !== lastEditor);
       if (!targetRev) throw new Error("All revisions are by the same user");
 
       const oldContent = await getRevisionWikitextShadow(targetRev.revid, "ixwiki");
       if (!oldContent) throw new Error("Could not fetch target revision content");
 
+      const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
       const summary = `Rolled back edits by ${lastEditor} to revision ${targetRev.revid}`;
-      return saveToMediaWiki(input.title, oldContent.wikitext, summary, false, ctx);
+
+      // 1. Primary Save: Direct to PostgreSQL
+      const saveResult = await ArticleRepository.saveArticle(
+        {
+          slug: input.title,
+          title: input.title,
+          wikitext: oldContent.wikitext,
+          summary,
+          minor: false,
+        },
+        ctx.auth?.userId ?? undefined,
+        authorName
+      );
+
+      // 2. Background MediaWiki sync
+      MediaWikiExportWorker.enqueue({
+        slug: input.title,
+        title: input.title,
+        wikitext: oldContent.wikitext,
+        summary,
+        minor: false,
+        authorWikiUsername: authorName,
+      });
+
+      return {
+        success: true,
+        title: input.title,
+        revisionId: saveResult.revisionId,
+      };
     }),
 
   /**
-   * Upload a file (image/document) to MediaWiki via Action API upload endpoint.
+   * Upload a file (image/document) with Dual-Ingest (PostgreSQL wiki_assets + MediaWiki Action API).
    */
   uploadFile: protectedProcedure
     .input(
@@ -257,6 +307,24 @@ export const wikiosEditingRouter = createTRPCRouter({
         throw new Error("File size exceeds 10MB limit");
       }
 
+      // 1. Dual-Ingest: Register asset in PostgreSQL wiki_assets
+      try {
+        const cleanName = input.filename.replace(/^File:/, "").replace(/ /g, "_");
+        const ext = cleanName.split(".").pop()?.toLowerCase() || "png";
+        const mimeType =
+          ext === "svg" ? "image/svg+xml" : ext === "jpg" || ext === "jpeg" ? "image/jpeg" : ext === "webp" ? "image/webp" : "image/png";
+
+        await MediaAssetService.registerAsset({
+          filename: cleanName,
+          title: cleanName.replace(/_/g, " "),
+          mimeType,
+          sizeBytes: fileBuffer.length,
+        });
+      } catch (assetErr) {
+        console.warn("[wikiosEditingRouter] Best-effort wiki_assets registration:", assetErr);
+      }
+
+      // 2. Upload to MediaWiki Action API
       const result = await executeMediaWikiWrite(
         {
           action: "upload",
@@ -277,20 +345,107 @@ export const wikiosEditingRouter = createTRPCRouter({
       };
     }),
 
-  // ---------------------------------------------------------------------------
-  // Page Properties & Protection (direct MySQL)
-  // ---------------------------------------------------------------------------
+  /**
+   * Atomic Page Move / Rename with Redirect Creation & Link Graph Updates
+   */
+  movePage: protectedProcedure
+    .input(
+      z.object({
+        oldTitle: z.string().min(1).max(500),
+        newTitle: z.string().min(1).max(500),
+        reason: z.string().max(500).default("Renamed via WikiOS"),
+        realm: z.string().default("ixwiki"),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { PageManagementService } = await import("~/lib/wiki-os/core/page-management-service");
+      return PageManagementService.movePage(
+        input.oldTitle,
+        input.newTitle,
+        input.reason,
+        ctx.auth.userId || "anonymous",
+        input.realm
+      );
+    }),
 
-  // ---------------------------------------------------------------------------
-  // Advanced Search (Phase 1)
-  // ---------------------------------------------------------------------------
+  /**
+   * Soft Delete / Archive an Article
+   */
+  archiveArticle: protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        reason: z.string().max(500).default("Archived via WikiOS"),
+        realm: z.string().default("ixwiki"),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { PageManagementService } = await import("~/lib/wiki-os/core/page-management-service");
+      return PageManagementService.archiveArticle(
+        input.title,
+        input.reason,
+        ctx.auth.userId || "anonymous",
+        input.realm
+      );
+    }),
 
-  // ---------------------------------------------------------------------------
-  // Category Tree (Phase 1)
-  // ---------------------------------------------------------------------------
+  /**
+   * Restore an Archived Article
+   */
+  restoreArticle: protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        realm: z.string().default("ixwiki"),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { PageManagementService } = await import("~/lib/wiki-os/core/page-management-service");
+      return PageManagementService.restoreArticle(
+        input.title,
+        ctx.auth.userId || "anonymous",
+        input.realm
+      );
+    }),
 
-  // ---------------------------------------------------------------------------
-  // Watchlist endpoints (backed by the LoreStash "Watchlist" stash)
-  // ---------------------------------------------------------------------------
+  /**
+   * Reverse Media Usage Lookup
+   */
+  getMediaUsage: publicProcedure
+    .input(
+      z.object({
+        assetFilename: z.string().min(1),
+        limit: z.number().min(1).max(200).default(50),
+      })
+    )
+    .query(async ({ input }) => {
+      const { PageManagementService } = await import("~/lib/wiki-os/core/page-management-service");
+      return PageManagementService.getMediaUsage(input.assetFilename, input.limit);
+    }),
+
+  /**
+   * Maintenance Diagnostics Suite (Orphans, Dead-Ends, Broken Redirects)
+   */
+  getMaintenanceDiagnostics: publicProcedure
+    .input(
+      z.object({
+        realm: z.string().default("ixwiki"),
+        limit: z.number().min(1).max(100).default(50),
+      })
+    )
+    .query(async ({ input }) => {
+      const { PageManagementService } = await import("~/lib/wiki-os/core/page-management-service");
+      const [orphans, deadEnds, brokenRedirects] = await Promise.all([
+        PageManagementService.getOrphanPages(input.limit, input.realm),
+        PageManagementService.getDeadEndPages(input.limit, input.realm),
+        PageManagementService.getBrokenRedirects(input.limit, input.realm),
+      ]);
+
+      return {
+        orphans,
+        deadEnds,
+        brokenRedirects,
+      };
+    }),
 });
 

@@ -249,6 +249,371 @@ export const adminUsersRouter = createTRPCRouter({
         });
       }
     }),
-});
 
-// getWikiDbPool is now imported from "~/lib/wiki-os/adapters/mediawiki/bridge"
+  // --- IDENTITY & CROSS-PLATFORM LINKING PROCEDURES ---
+
+  // Get full identity matrix across all registered platform users
+  listUserIdentities: adminProcedure.query(async ({ ctx }) => {
+    const users = await ctx.db.user.findMany({
+      include: {
+        country: true,
+        role: true,
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const { getWikiAltsForUser } = await import("~/lib/wiki-os/adapters/ixstates/user-sync");
+
+    return users.map((u) => {
+      const wikiAlts = u.wikiUsername ? getWikiAltsForUser(u.wikiUsername) : [];
+      return {
+        id: u.id,
+        clerkUserId: u.clerkUserId,
+        membershipTier: u.membershipTier || "basic",
+        country: u.country,
+        role: u.role,
+        wikiUsername: u.wikiUsername,
+        wikiUserId: u.wikiUserId,
+        wikiAlts,
+        lastWikiSync: u.lastWikiSync,
+        discordUserId: u.discordUserId,
+        discordUsername: u.discordUsername,
+        lastDiscordSync: u.lastDiscordSync,
+        forumUserId: u.forumUserId,
+        forumUsername: u.forumUsername,
+        lastForumSync: u.lastForumSync,
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt,
+      };
+    });
+  }),
+
+  // Link a user's MediaWiki account (admin manual link / override)
+  linkUserWiki: adminProcedure
+    .input(z.object({ userId: z.string(), wikiUsername: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const { linkWikiAccount } = await import("~/lib/wiki-os/adapters/ixstates/user-sync");
+      const res = await linkWikiAccount(input.userId, input.wikiUsername, ctx.auth.userId);
+      if (!res.success) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: res.error || "Failed to link MediaWiki account",
+        });
+      }
+      await globalCache.delete(`user_profile:${input.userId}`);
+      return res;
+    }),
+
+  // Unlink a user's MediaWiki account
+  unlinkUserWiki: adminProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.user.update({
+        where: { id: input.userId },
+        data: {
+          wikiUsername: null,
+          wikiUserId: null,
+          lastWikiSync: null,
+        },
+      });
+      await globalCache.delete(`user_profile:${input.userId}`);
+      return { success: true };
+    }),
+
+  // Link a user's Discord account (admin manual link / override)
+  linkUserDiscord: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        discordUserId: z.string().min(1),
+        discordUsername: z.string().min(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.user.update({
+        where: { id: input.userId },
+        data: {
+          discordUserId: input.discordUserId,
+          discordUsername: input.discordUsername,
+          lastDiscordSync: new Date(),
+        },
+      });
+      await globalCache.delete(`user_profile:${input.userId}`);
+      return { success: true };
+    }),
+
+  // Unlink a user's Discord account
+  unlinkUserDiscord: adminProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.user.update({
+        where: { id: input.userId },
+        data: {
+          discordUserId: null,
+          discordUsername: null,
+          lastDiscordSync: null,
+        },
+      });
+      await globalCache.delete(`user_profile:${input.userId}`);
+      return { success: true };
+    }),
+
+  // Query Discord Guild members via bot token and suggest identity linkages
+  syncDiscordGuildMembers: adminProcedure.query(async ({ ctx }) => {
+    const botToken = process.env.DISCORD_BOT_TOKEN;
+    const defaultGuildId = process.env.DISCORD_GUILD_ID || "552179975769161729";
+    const defaultChannelId = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223534418722818";
+
+    if (!botToken) {
+      return {
+        configured: false,
+        members: [],
+        suggestions: [],
+        error: "DISCORD_BOT_TOKEN is not configured in environment.",
+      };
+    }
+
+    try {
+      let guildId = defaultGuildId;
+
+      // 1. Try to resolve the bot's current guilds dynamically
+      try {
+        const guildRes = await fetch("https://discord.com/api/v10/users/@me/guilds", {
+          headers: { Authorization: `Bot ${botToken}` },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (guildRes.ok) {
+          const guilds = (await guildRes.json()) as any[];
+          if (Array.isArray(guilds) && guilds.length > 0 && guilds[0].id) {
+            guildId = guilds[0].id;
+          }
+        }
+      } catch {
+        // Fallback to defaultGuildId
+      }
+
+      // 2. Fetch guild members or discover via recent channel interactions
+      let rawMembers: Array<{ id: string; username: string; nick?: string; globalName?: string }> = [];
+
+      try {
+        const membersRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`, {
+          headers: {
+            Authorization: `Bot ${botToken}`,
+            "Content-Type": "application/json",
+          },
+          signal: AbortSignal.timeout(8000),
+        });
+
+        if (membersRes.ok) {
+          const guildMembers = (await membersRes.json()) as any[];
+          if (Array.isArray(guildMembers)) {
+            for (const m of guildMembers) {
+              if (!m.user || m.user.bot) continue;
+              rawMembers.push({
+                id: String(m.user.id),
+                username: String(m.user.username || ""),
+                nick: m.nick ? String(m.nick) : undefined,
+                globalName: m.user.global_name ? String(m.user.global_name) : undefined,
+              });
+            }
+          }
+        }
+      } catch {
+        // Guild members list requires Server Members Intent; fallback to channel discovery below
+      }
+
+      // Fallback / Supplementary: Discover active members from recent channel messages
+      if (rawMembers.length === 0) {
+        try {
+          const msgRes = await fetch(`https://discord.com/api/v10/channels/${defaultChannelId}/messages?limit=100`, {
+            headers: { Authorization: `Bot ${botToken}` },
+            signal: AbortSignal.timeout(8000),
+          });
+          if (msgRes.ok) {
+            const msgs = (await msgRes.json()) as any[];
+            const seen = new Set<string>();
+            for (const msg of msgs) {
+              if (!msg.author || msg.author.bot) continue;
+              const uid = String(msg.author.id);
+              if (seen.has(uid)) continue;
+              seen.add(uid);
+              rawMembers.push({
+                id: uid,
+                username: String(msg.author.username || ""),
+                globalName: msg.author.global_name ? String(msg.author.global_name) : undefined,
+              });
+            }
+          }
+        } catch {
+          // Channel fallback failed
+        }
+      }
+
+      // Fetch all users and countries to match against
+      const users = await ctx.db.user.findMany({
+        include: { country: true },
+      });
+
+      interface Suggestion {
+        discordUserId: string;
+        discordUsername: string;
+        discordNick?: string;
+        discordAvatar?: string;
+        matchedUserId: string;
+        matchedUserClerkId: string;
+        matchedCountryName: string;
+        confidence: "HIGH" | "MEDIUM";
+        reason: string;
+      }
+
+      const suggestions: Suggestion[] = [];
+      const parsedMembers = [];
+
+      for (const m of rawMembers) {
+        const discordUserId = m.id;
+        const discordUsername = m.username;
+        const discordNick = m.nick;
+        const globalName = m.globalName;
+
+        parsedMembers.push({
+          id: discordUserId,
+          username: discordUsername,
+          nick: discordNick,
+          globalName,
+        });
+
+
+        // Skip if already linked
+        const existingLink = users.find((u) => u.discordUserId === discordUserId);
+        if (existingLink) continue;
+
+        // Try to match by country name in nickname: "[Urcea] John" or "Urcea"
+        for (const u of users) {
+          if (!u.country) continue;
+          const cName = u.country.name.toLowerCase();
+          const nickLower = (discordNick || "").toLowerCase();
+          const globalLower = (globalName || "").toLowerCase();
+          const userLower = discordUsername.toLowerCase();
+
+          // High confidence: country name in brackets [Urcea] or starts with country name
+          if (nickLower.includes(`[${cName}]`) || nickLower.startsWith(`${cName} |`) || nickLower.startsWith(`${cName} -`)) {
+            suggestions.push({
+              discordUserId,
+              discordUsername,
+              discordNick,
+              matchedUserId: u.id,
+              matchedUserClerkId: u.clerkUserId,
+              matchedCountryName: u.country.name,
+              confidence: "HIGH",
+              reason: `Server nickname "${discordNick}" contains nation bracket [${u.country.name}]`,
+            });
+            break;
+          }
+
+          // Medium confidence: exact match on username or nickname
+          if (nickLower === cName || globalLower === cName || userLower === cName) {
+            suggestions.push({
+              discordUserId,
+              discordUsername,
+              discordNick,
+              matchedUserId: u.id,
+              matchedUserClerkId: u.clerkUserId,
+              matchedCountryName: u.country.name,
+              confidence: "HIGH",
+              reason: `Discord identity directly matches nation "${u.country.name}"`,
+            });
+            break;
+          }
+        }
+      }
+
+      return {
+        configured: true,
+        totalGuildMembers: parsedMembers.length,
+        members: parsedMembers.slice(0, 150),
+        suggestions,
+      };
+    } catch (err: any) {
+      return {
+        configured: true,
+        members: [],
+        suggestions: [],
+        error: `Discord sync error: ${err.message}`,
+      };
+    }
+  }),
+
+  // Batch apply high confidence Discord matches
+  applyDiscordAutoAssignments: adminProcedure
+    .input(
+      z.object({
+        assignments: z.array(
+          z.object({
+            userId: z.string(),
+            discordUserId: z.string(),
+            discordUsername: z.string(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      let applied = 0;
+      for (const a of input.assignments) {
+        await ctx.db.user.update({
+          where: { id: a.userId },
+          data: {
+            discordUserId: a.discordUserId,
+            discordUsername: a.discordUsername,
+            lastDiscordSync: new Date(),
+          },
+        });
+        applied++;
+      }
+      return { success: true, appliedCount: applied };
+    }),
+
+  // Get MediaWiki Master Reconciliation Overview
+  listMediaWikiReconciliationMatrix: adminProcedure.query(async ({ ctx }) => {
+    const { MEDIAWIKI_MAPPING } = await import("~/lib/wiki-os/adapters/ixstates/wiki-mappings");
+    const users = await ctx.db.user.findMany({
+      include: { country: true },
+    });
+
+    const entries = Object.entries(MEDIAWIKI_MAPPING).map(([wikiName, mapInfo]) => {
+      const matchedUser = users.find((u) => {
+        if (!u.country) return false;
+        const cName = (u.country.name || "").toLowerCase();
+        const target = mapInfo.primaryCountry.toLowerCase();
+        return cName === target || cName.includes(target) || target.includes(cName);
+      });
+
+      let status = "UNMATCHED_USER";
+      if (mapInfo.isAltFor) {
+        status = "ALT_MERGED";
+      } else if (matchedUser) {
+        status = matchedUser.wikiUsername === wikiName ? "ALREADY_LINKED" : "READY_TO_LINK";
+      }
+
+      return {
+        wikiUsername: wikiName,
+        targetCountry: mapInfo.primaryCountry,
+        isAltFor: mapInfo.isAltFor,
+        notes: mapInfo.notes,
+        status,
+        matchedUser: matchedUser
+          ? {
+              id: matchedUser.id,
+              clerkUserId: matchedUser.clerkUserId,
+              countryName: matchedUser.country?.name,
+              currentWikiUsername: matchedUser.wikiUsername,
+            }
+          : null,
+      };
+    });
+
+    return {
+      totalMapped: entries.length,
+      entries,
+    };
+  }),
+});

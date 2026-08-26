@@ -1,27 +1,36 @@
 // src/app/(wiki-os)/wiki/diff/page.tsx
-// WikiOS Diff Viewer — shows visual diff between two revisions with undo
+// WikiOS Native Revision Diff Comparator with DiffViewer
 "use client";
 
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, ViewColumns2 as Columns2, AlignLeft, Undo, Check } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
+import { DiffViewer } from "~/components/diff-viewer";
+import { withBasePath } from "~/lib/base-path";
 
 export default function DiffPage() {
   const searchParams = useSearchParams();
-  const fromrev = parseInt(searchParams.get("from") ?? "0", 10);
-  const torev = parseInt(searchParams.get("to") ?? "0", 10);
+  const fromParam = searchParams.get("from") || searchParams.get("oldid") || "0";
+  const toParam =
+    searchParams.get("to") || searchParams.get("diff") || searchParams.get("revid") || "0";
+  const fromrev = fromParam !== "prev" ? parseInt(fromParam, 10) || 0 : 0;
+  const torev = parseInt(toParam, 10) || 0;
+  const [layout, setLayout] = useState<"unified" | "split">("unified");
   const [undoConfirm, setUndoConfirm] = useState(false);
 
   const { data, isLoading, error } = api.wikios.getDiff.useQuery(
     { fromrev, torev },
-    { enabled: fromrev > 0 && torev > 0, staleTime: 60_000 }
+    { enabled: torev > 0, staleTime: 60_000 }
   );
 
-  // We need to get the title from the revision to perform undo
+  const effectiveFromRev = data?.from?.revid ?? fromrev;
+
   const { data: revContent } = api.wikios.getRevisionContent.useQuery(
-    { revid: fromrev },
-    { enabled: fromrev > 0 && undoConfirm, staleTime: 300_000 }
+    { revid: effectiveFromRev },
+    { enabled: effectiveFromRev > 0 && undoConfirm, staleTime: 300_000 }
   );
 
   const revertMutation = api.wikios.revertToRevision.useMutation({
@@ -29,124 +38,137 @@ export default function DiffPage() {
   });
 
   return (
-    <WikiOSLayout title="Revision diff">
-      <div className="wikios-special-page">
+    <WikiOSLayout title="Revision Diff">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 space-y-6">
+        {/* Back Link */}
+        <div>
+          <Link
+            href={withBasePath("/wiki/utilities")}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-wiki transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to Utilities
+          </Link>
+        </div>
+
         {isLoading && (
-          <div className="wikios-loading" style={{ minHeight: 200 }}>
-            <div className="wikios-loading-spinner" />
+          <div className="flex h-64 items-center justify-center rounded-2xl border border-border/40 bg-card/50">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-wiki border-t-transparent" />
           </div>
         )}
 
         {error && (
-          <div className="wikios-error facet-hierarchy-child rounded-lg p-6">
-            <p className="text-sm text-red-400">Failed to load diff: {error.message}</p>
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-xs text-red-400">
+            Failed to load revision comparison: {error.message}
           </div>
         )}
 
         {data && (
-          <>
-            <div className="wikios-diff-meta">
-              <div className="wikios-diff-rev wikios-diff-rev--from">
-                <span className="wikios-diff-label">From:</span>
-                <span className="wikios-diff-revid">r{data.from.revid}</span>
-                <span className="wikios-diff-user">{data.from.user}</span>
-                {data.from.timestamp && (
-                  <span className="wikios-diff-time">
-                    {new Date(data.from.timestamp).toLocaleString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+          <div className="space-y-4">
+            {/* Diff Meta Card */}
+            <div className="rounded-2xl border border-border/40 bg-card/75 p-6 backdrop-blur-xl space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-wiki uppercase tracking-wider">
+                    Comparing Revisions
                   </span>
-                )}
-                {data.from.comment && (
-                  <span className="wikios-diff-comment">({data.from.comment})</span>
-                )}
-              </div>
-              <div className="wikios-diff-rev wikios-diff-rev--to">
-                <span className="wikios-diff-label">To:</span>
-                <span className="wikios-diff-revid">r{data.to.revid}</span>
-                <span className="wikios-diff-user">{data.to.user}</span>
-                {data.to.timestamp && (
-                  <span className="wikios-diff-time">
-                    {new Date(data.to.timestamp).toLocaleString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                )}
-                {data.to.comment && (
-                  <span className="wikios-diff-comment">({data.to.comment})</span>
-                )}
-              </div>
-            </div>
+                  <h2 className="mt-1 text-lg font-bold text-foreground">
+                    r{data.from.revid} &rarr; r{data.to.revid}
+                  </h2>
+                </div>
 
-            {/* Undo action bar */}
-            <div className="my-3 flex items-center gap-2">
-              {!undoConfirm ? (
-                <button
-                  type="button"
-                  className="wikios-action-btn border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 active:scale-95"
-                  onClick={() => setUndoConfirm(true)}
-                >
-                  Undo this change (revert to r{data.from.revid})
-                </button>
-              ) : (
+                {/* Layout Switcher */}
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="wikios-action-btn border-red-500/30 bg-red-500/15 text-xs font-semibold text-red-400 hover:bg-red-500/25 active:scale-95 disabled:opacity-50"
-                    disabled={revertMutation.isPending || !revContent}
-                    onClick={() => {
-                      if (revContent) {
-                        revertMutation.mutate({
-                          title: revContent.title,
-                          revid: data.from.revid,
-                          summary: `Undid revision ${data.to.revid} by ${data.to.user}`,
-                        });
-                      }
-                    }}
-                  >
-                    {revertMutation.isPending ? "Reverting..." : "Confirm Undo"}
-                  </button>
-                  <button
-                    type="button"
-                    className="wikios-action-btn text-xs active:scale-95"
-                    onClick={() => setUndoConfirm(false)}
-                  >
-                    Cancel
-                  </button>
+                  <div className="flex rounded-xl border border-border/40 bg-secondary/50 p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setLayout("unified")}
+                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                        layout === "unified" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <AlignLeft className="h-3.5 w-3.5" />
+                      Unified
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLayout("split")}
+                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                        layout === "split" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Columns2 className="h-3.5 w-3.5" />
+                      Split
+                    </button>
+                  </div>
+
+                  {/* Undo Button */}
+                  {!undoConfirm ? (
+                    <button
+                      type="button"
+                      onClick={() => setUndoConfirm(true)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 active:scale-[0.98] transition-all"
+                    >
+                      <Undo className="h-3.5 w-3.5" />
+                      Revert to r{data.from.revid}
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={revertMutation.isPending || !revContent}
+                        onClick={() => {
+                          if (revContent) {
+                            revertMutation.mutate({
+                              title: revContent.title,
+                              revid: data.from.revid,
+                              summary: `Reverted revision ${data.to.revid} by ${data.to.user}`,
+                            });
+                          }
+                        }}
+                        className="rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-semibold text-black hover:bg-amber-400 active:scale-[0.98]"
+                      >
+                        {revertMutation.isPending ? "Reverting…" : "Confirm Revert"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUndoConfirm(false)}
+                        className="rounded-xl border border-border/50 bg-secondary px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/80"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Status alerts */}
+              {revertMutation.isSuccess && (
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-400">
+                  <Check className="h-4 w-4" />
+                  Successfully reverted to revision r{data.from.revid}.
                 </div>
               )}
             </div>
 
-            {revertMutation.isSuccess && (
-              <div className="mb-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-400">
-                Successfully reverted to revision r{data.from.revid}.
-              </div>
-            )}
-            {revertMutation.isError && (
-              <div className="mb-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400">
-                Revert failed: {revertMutation.error.message}
-              </div>
-            )}
-
-            <div className="wikios-diff-table-wrapper">
-              <table
-                className="wikios-diff-table"
-                dangerouslySetInnerHTML={{ __html: data.diffHtml }}
+            {/* DiffViewer Component */}
+            <div className="rounded-2xl border border-border/40 bg-card/60 p-4 overflow-hidden">
+              <DiffViewer
+                oldCode={data.oldWikitext ?? ""}
+                newCode={data.newWikitext ?? ""}
+                layout={layout}
+                language="markdown"
+                oldTitle={`Revision r${data.from.revid} (${data.from.user})`}
+                newTitle={`Revision r${data.to.revid} (${data.to.user})`}
               />
             </div>
-          </>
+          </div>
         )}
 
-        {!isLoading && (!fromrev || !torev) && (
-          <p className="text-zinc-400">No revisions selected for comparison.</p>
+        {!isLoading && !data && torev === 0 && (
+          <div className="rounded-2xl border border-dashed border-border/50 bg-card/30 p-12 text-center text-xs text-muted-foreground">
+            No revisions selected for comparison. Specify <code>?to=REV</code> or <code>?from=REV&to=REV</code> in the URL.
+          </div>
         )}
       </div>
     </WikiOSLayout>
