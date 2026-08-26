@@ -12,3 +12,4 @@ export * from "./safe-decode";
 export * from "./media-theme";
 export * from "./resolve-highres-image";
 export * from "./wikitext-parser";
+export * from "./wiki-ast-converter";

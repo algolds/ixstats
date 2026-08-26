@@ -8,6 +8,7 @@ import {
   getDraft,
   clearDraft,
 } from "~/lib/wiki-os/editor/draft-store";
+import { wikitextToAst, astToHtml } from "~/lib/wiki-os/transformers/wiki-ast-converter";
 
 const WikiVisualEditor = dynamic(
   () => import("~/components/wiki-os/editor/WikiVisualEditor").then((m) => m.WikiVisualEditor),
@@ -95,17 +96,38 @@ export function WikiEditBridge({
         setConverting(true);
         try {
           if (newMode === "visual") {
-            const res = await convertWikitextToHtml.mutateAsync({
-              wikitext: currentContent,
-              title,
-            });
-            setActiveHtml(res.html);
-            saveDraft({
-              title,
-              source: "ixwiki",
-              mode: "visual",
-              html: res.html,
-            });
+            // Instant client-side path: convert wikitext → AST → HTML when the
+            // document is fully within our grammar; fall back to Parsoid otherwise.
+            let handled = false;
+            try {
+              const doc = wikitextToAst(currentContent, title);
+              if (doc.parseConfidence === "full") {
+                setActiveHtml(astToHtml(doc));
+                saveDraft({
+                  title,
+                  source: "ixwiki",
+                  mode: "visual",
+                  html: astToHtml(doc),
+                });
+                handled = true;
+              }
+            } catch {
+              /* fall through to server conversion */
+            }
+            if (!handled) {
+              const res = await convertWikitextToHtml.mutateAsync({
+                wikitext: currentContent,
+                title,
+              });
+              setActiveHtml(res.html);
+              saveDraft({
+                title,
+                source: "ixwiki",
+                mode: "visual",
+                html: res.html,
+              });
+            }
+            setMode(newMode);
           } else {
             const res = await htmlToWikitext.mutateAsync({
               html: currentContent,
