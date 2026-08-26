@@ -1,5 +1,5 @@
 import { ComponentType } from "@prisma/client";
-import { City as Building2, Shield, CheckSquare as Vote, StatUp as TrendingUp, PharmacyCrossCircle as Cross, ScaleFrameEnlarge as Scale, Cpu, Dollar as DollarSign, StatsReport as BarChart3, Heart, Brain, Globe, Trophy as Award, WarningTriangle as AlertTriangle, OpenBook as BookOpen, Community as Handshake, Microscope, LightBulb as Lightbulb, ArrowSeparate as ArrowRightLeft, Copyright, Flash as Zap, Wifi, ChatBubble as MessageSquare, Refresh as RefreshCw } from "iconoir-react";
+import { City as Building2, Shield, StatUp as TrendingUp, ScaleFrameEnlarge as Scale, Heart, Globe, WarningTriangle as AlertTriangle, Community as Handshake, Microscope, LightBulb as Lightbulb, ArrowSeparate as ArrowRightLeft, Copyright, Flash as Zap, Wifi, ChatBubble as MessageSquare, Refresh as RefreshCw } from "iconoir-react";
 import type { AtomicGovernmentComponent } from "./types";
 
 export const ATOMIC_COMPONENTS_PART_3: Partial<Record<ComponentType, AtomicGovernmentComponent>> = {
