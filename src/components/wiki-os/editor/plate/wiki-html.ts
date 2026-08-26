@@ -37,17 +37,44 @@ export interface ChipMapEmbedEl extends BaseEl { type: "chip-mapembed"; href: st
 export interface MediaEl extends BaseEl { type: "media"; html: string; filename?: string }
 export interface RawHtmlEl extends BaseEl { type: "raw-html"; html: string; kind?: "infobox" | "generic"; name?: string; params?: Record<string, string>; dataMw?: string }
 export interface RefEl extends BaseEl { type: "ref"; label: string }
+export interface InfoboxBoxEl extends BaseEl { type: "infobox-box"; title?: string; fields: Array<{ label: string; value: string }>; html: string; edited?: boolean }
 
 export type WikiElement =
   | PEl | HeadingEl | QuoteEl | ListEl | ListItemEl | CodeBlockEl
   | TableEl | RowEl | CellEl | HrEl | LinkEl
   | TemplateEl | ChipEngineEl | ChipCoordEl | ChipMapEmbedEl
-  | MediaEl | RawHtmlEl | RefEl;
+  | MediaEl | RawHtmlEl | RefEl | InfoboxBoxEl;
 
 let idCounter = 0;
 const nextId = () => `wn${Date.now().toString(36)}${(idCounter++).toString(36)}`;
 
-const VOID_TYPES = new Set(["hr", "template", "chip-engine", "chip-coord", "chip-mapembed", "media", "raw-html", "ref"]);
+const VOID_TYPES = new Set(["hr", "template", "chip-engine", "chip-coord", "chip-mapembed", "media", "raw-html", "ref", "infobox-box"]);
+
+// Table classes that indicate metadata/navigation furniture → atomic, not editable grids
+const FURNITURE_RE = /navbox|metadata|vertical-navbox|mbox|sidebar|sistersitebox|toc|navigation|catlinks|mw-jump/i;
+
+function parseInfoboxFields(el: Element): { title?: string; fields: Array<{ label: string; value: string }> } {
+  const fields: Array<{ label: string; value: string }> = [];
+  let title: string | undefined;
+  const titleEl =
+    el.querySelector(".infobox-title, caption, .infobox-above") ?? null;
+  if (titleEl?.textContent?.replace(/\s+/g, " ").trim()) {
+    title = titleEl.textContent.replace(/\s+/g, " ").trim();
+  }
+
+  el.querySelectorAll("tr").forEach((tr) => {
+    // skip rows that are pure media/layout
+    if (tr.querySelector("img, figure")) return;
+    const label = tr.querySelector("th")?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+    const data = tr.querySelector("td")?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+    if (label && data) {
+      fields.push({ label, value: data });
+    } else if (!label && data && data.length < 120) {
+      fields.push({ label: "", value: data });
+    }
+  });
+  return { title, fields };
+}
 
 export function isVoidType(type: string): boolean {
   return VOID_TYPES.has(type);
@@ -112,7 +139,14 @@ function convertInlineNodes(nodes: NodeList, marks: Partial<WikiText>, out: Desc
     const el = n as Element;
     const tag = el.tagName.toLowerCase();
 
+    if (el.classList.contains("mw-editsection") || tag === "style" || tag === "input" || tag === "button" || tag === "form" || tag === "select") return;
     if (tag === "br") { out.push({ text: "\n", ...marks }); return; }
+
+    if (tag === "a") {
+      const hrefAttr = el.getAttribute("href") ?? "";
+      const chipEarly = chipInfoFromAnchor(el as HTMLAnchorElement);
+      void chipEarly;
+    }
 
     // atomic inline constructs
     if (el.getAttribute("typeof")?.includes("mw:Transclusion")) {
@@ -156,7 +190,8 @@ function convertInlineNodes(nodes: NodeList, marks: Partial<WikiText>, out: Desc
         out.push({ type: "chip-mapembed", href: chip.href, title: chip.title, children: [{ text: "" }], id: nextId() } as unknown as Descendant);
         return;
       }
-      const href = el.getAttribute("href") || "";
+      let href = el.getAttribute("href") || "";
+      if (href.startsWith("./")) href = `/wiki/${href.slice(2)}`;
       const internal = !/^https?:/i.test(href);
       const children: Descendant[] = [];
       convertInlineNodes(el.childNodes, marks, children);
@@ -262,7 +297,17 @@ export function deserializeParsoidHtml(html: string): Descendant[] {
       if (n.nodeType !== Node.ELEMENT_NODE) continue;
       const el = n as Element;
       const tag = el.tagName.toLowerCase();
-      if (tag === "style" || tag === "link" || tag === "head" || tag === "meta") continue;
+      if (tag === "style" || tag === "link" || tag === "head" || tag === "meta" || tag === "input" || tag === "form" || tag === "button" || tag === "select") continue;
+      // Citizen/skin heading wrappers: <div class="mw-heading"><h3>…<span class="mw-editsection">…
+      if (el.classList.contains("mw-heading")) {
+        el.querySelectorAll(".mw-editsection").forEach((x) => x.remove());
+        const h = el.querySelector("h2, h3, h4, h5, h6, h1");
+        if (h) {
+          const level = Math.min(Math.max(parseInt(h.tagName[1], 10), 2), 4);
+          blocks.push({ type: `h${level}` as "h2", children: convertBlockChildren(h), id: nextId() } as unknown as Descendant);
+          continue;
+        }
+      }
       if (el.getAttribute("typeof")?.includes("mw:Transclusion") || el.hasAttribute("about")) {
         // infobox tables & grouped transclusions stay atomic + lossless
         pushRaw(el, /infobox/i.test(el.className) ? "infobox" : "generic");
@@ -305,6 +350,25 @@ export function deserializeParsoidHtml(html: string): Descendant[] {
           break;
         }
         case "table": {
+          const cls = el.className || "";
+          if (/infobox/i.test(cls)) {
+            const parsed = parseInfoboxFields(el);
+            if (parsed.fields.length > 0) {
+              blocks.push({
+                type: "infobox-box", id: nextId(), html: el.outerHTML,
+                title: parsed.title, fields: parsed.fields,
+                children: [{ text: "" }],
+              } as unknown as Descendant);
+            } else {
+              // layout-only infobox (media/map) → lossless atomic block
+              pushRaw(el, "infobox");
+            }
+            break;
+          }
+          if (FURNITURE_RE.test(cls) || el.querySelector("figure, [typeof*=File]")) {
+            pushRaw(el, "generic");
+            break;
+          }
           // real (non-infobox) wikitable → structured table model
           const rows: Descendant[] = [];
           el.querySelectorAll("tr").forEach((tr) => {
@@ -446,6 +510,15 @@ function serializeBlock(el: WikiElement): string {
     }
     case "hr":
       return "<hr>";
+    case "infobox-box": {
+      const ib = el as InfoboxBoxEl;
+      if (!ib.edited) return ib.html;
+      const rows = ib.fields
+        .map((f) => `<tr>${f.label ? `<th class="infobox-label">${esc(f.label)}</th>` : ""}<td class="infobox-data">${esc(f.value)}</td></tr>`)
+        .join("");
+      const title = ib.title ? `<tr><th colspan="2" class="infobox-title">${esc(ib.title)}</th></tr>` : "";
+      return `<table class="infobox wikios-ve-infobox"><tbody>${title}${rows}</tbody></table>`;
+    }
     case "template":
     case "raw-html":
     case "media":

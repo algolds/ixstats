@@ -22,6 +22,7 @@ export interface PlateWikiEditorProps {
   onEditorReady?: (editor: ReturnType<typeof usePlateEditor>) => void;
   openTemplateEditor: (id: string) => void;
   deleteNode: (id: string) => void;
+  updateInfoboxFields?: (id: string, fields: Array<{ label: string; value: string }>) => void;
   onKeyDownExtra?: (e: React.KeyboardEvent) => void;
 }
 
@@ -93,6 +94,7 @@ export function PlateWikiEditor({
   onEditorReady,
   openTemplateEditor,
   deleteNode,
+  updateInfoboxFields,
   onKeyDownExtra,
 }: PlateWikiEditorProps) {
   const initialValue = useMemo(() => deserializeParsoidHtml(initialHtml), []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -131,8 +133,9 @@ export function PlateWikiEditor({
     () => ({
       openTemplateEditor,
       deleteNode,
+      updateInfoboxFields,
     }),
-    [openTemplateEditor, deleteNode]
+    [openTemplateEditor, deleteNode, updateInfoboxFields]
   );
 
   const findPathById = (id: string) => {

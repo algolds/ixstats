@@ -129,6 +129,29 @@ export function WikiVisualEditor({
     fmt.removeEditingNode();
   }, [fmt]);
 
+  const handleUpdateInfoboxFields = useCallback(
+    (id: string, fields: Array<{ label: string; value: string }>) => {
+      const editor = editorRef.current;
+      if (!editor) return;
+      const { Editor, Transforms } = require("slate") as typeof import("slate");
+      const entries = Array.from(
+        Editor.nodes(editor as unknown as import("slate").BaseEditor, {
+          at: [],
+          match: (n) => (n as unknown as { id?: string }).id === id,
+        })
+      );
+      if (entries.length === 0) return;
+      const [, path] = entries[0]!;
+      Transforms.setNodes(
+        editor as unknown as import("slate").BaseEditor,
+        { fields, edited: true } as unknown as Partial<import("slate").Descendant>,
+        { at: path }
+      );
+      state.setIsDirty(true);
+    },
+    [editorRef, state]
+  );
+
   // Template and Image Handlers
   const handleInsertTemplateFromWikitext = useCallback(
     (wikitext: string, defaultName = "Template") => {
@@ -235,6 +258,7 @@ export function WikiVisualEditor({
           onValueChange={handleValueChange}
           openTemplateEditor={handleOpenTemplateEditor}
           deleteNode={() => fmt.removeEditingNode()}
+          updateInfoboxFields={handleUpdateInfoboxFields}
         />
       </div>
 

@@ -9,7 +9,7 @@
 
 import { createPlatePlugin } from "platejs/react";
 import { PlateRawHtmlElement } from "../elements/PlateRawHtmlElement";
-import { PlateInfoboxElement } from "../elements/PlateInfoboxElement";
+import { PlateInfoboxElement, PlateInfoboxBoxElement } from "../elements/PlateInfoboxElement";
 import { PlateEngineChipElement } from "../elements/PlateEngineChipElement";
 import { PlateCoordChipElement, PlateMapEmbedChipElement } from "../elements/PlateCoordChipElement";
 import { PlateMediaElement } from "../elements/PlateMediaElement";
@@ -52,7 +52,7 @@ export function createIxWikiPlugins() {
 export function getIxWikiComponents() {
   return {
     [ELEMENT_RAW_HTML]: PlateRawHtmlElement,
-    [ELEMENT_INFOBOX]: PlateInfoboxElement,
+    [ELEMENT_INFOBOX]: PlateInfoboxBoxElement,
     [ELEMENT_TEMPLATE]: PlateRawHtmlElement,
     [ELEMENT_CHIP_ENGINE]: PlateEngineChipElement,
     [ELEMENT_CHIP_COORD]: PlateCoordChipElement,
