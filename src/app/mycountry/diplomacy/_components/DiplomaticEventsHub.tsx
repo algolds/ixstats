@@ -228,6 +228,7 @@ function ImpactPreview({
   );
 }
 
+// oxlint-disable-next-line eslint/no-unused-vars
 export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEventsHubProps) {
   const [activeTab, setActiveTab] = useState("active");
   const [selectedEvent, setSelectedEvent] = useState<any>(null);

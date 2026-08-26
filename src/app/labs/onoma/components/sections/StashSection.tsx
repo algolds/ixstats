@@ -47,6 +47,7 @@ export function StashSection({
   const [expandedDicts, setExpandedDicts] = useState<Record<string, boolean>>({});
 
   // Copy states
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Name deployment modal
@@ -98,6 +99,7 @@ export function StashSection({
       return matchSearch && matchFolder;
     }) || [];
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const handleCopy = async (id: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -117,6 +119,7 @@ export function StashSection({
     }
   };
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const handleTogglePublic = async (id: string, currentPublic: boolean) => {
     try {
       await bank.togglePublic(id, !currentPublic);

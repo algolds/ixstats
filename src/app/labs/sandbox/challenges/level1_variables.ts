@@ -12,6 +12,7 @@
  *    while "Faneria" is the actual string value passed at runtime!
  */
 
+// oxlint-disable-next-line eslint/no-unused-vars
 export function formatNationHeader(name: string, populationMillions: number): string {
   // TODO: Replace "" with the formatted string template
   return "";

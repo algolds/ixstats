@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { ShareAndroid as Share2, Check, Group as Users, Settings, Spark as Sparkles } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
@@ -17,6 +18,7 @@ interface CountryRightPillNavProps {
  * Houses the country management action, share trigger, and quick owner settings shortcut.
  */
 export function CountryRightPillNav({
+  // oxlint-disable-next-line eslint/no-unused-vars
   countryName,
   countryId: _countryId,
   isOwnCountry,

@@ -40,8 +40,11 @@ export const allNations: NationData[] = [
  * Hint: return nations.filter((n) => n.alliance === targetAlliance && n.stability >= minStability);
  */
 export function filterAllianceNations(
+  // oxlint-disable-next-line eslint/no-unused-vars
   nations: NationData[],
+  // oxlint-disable-next-line eslint/no-unused-vars
   targetAlliance: string,
+  // oxlint-disable-next-line eslint/no-unused-vars
   minStability: number
 ): NationData[] {
   // TODO: Use nations.filter() checking alliance and minStability
@@ -55,6 +58,7 @@ export function filterAllianceNations(
  *
  * Hint: return nations.map((n) => `${n.name} ($${n.gdp}B GDP)`);
  */
+// oxlint-disable-next-line eslint/no-unused-vars
 export function formatNationSummaries(nations: NationData[]): string[] {
   // TODO: Use nations.map() to transform each nation object into a string
   return [];
@@ -66,6 +70,7 @@ export function formatNationSummaries(nations: NationData[]): string[] {
  *
  * Hint: return nations.find((n) => n.slug === targetSlug) || null;
  */
+// oxlint-disable-next-line eslint/no-unused-vars
 export function findNationBySlug(nations: NationData[], targetSlug: string): NationData | null {
   // TODO: Use nations.find() matching nation.slug === targetSlug
   return null;
@@ -78,6 +83,7 @@ export function findNationBySlug(nations: NationData[], targetSlug: string): Nat
  * Hint: let total = 0; nations.forEach(n => total += n.gdp); return total;
  *   OR: return nations.reduce((sum, n) => sum + n.gdp, 0);
  */
+// oxlint-disable-next-line eslint/no-unused-vars
 export function calculateTotalGdp(nations: NationData[]): number {
   // TODO: Return total sum of nation.gdp across all nations
   return 0;
@@ -89,6 +95,7 @@ export function calculateTotalGdp(nations: NationData[]): number {
  *
  * Hint: Do NOT mutate original array! Use [...nations].sort((a, b) => direction === "asc" ? a.gdp - b.gdp : b.gdp - a.gdp);
  */
+// oxlint-disable-next-line eslint/no-unused-vars
 export function sortNationsByGdp(nations: NationData[], direction: "asc" | "desc"): NationData[] {
   // TODO: Immutably sort nations by GDP based on direction parameter
   return [];
@@ -105,7 +112,9 @@ export function sortNationsByGdp(nations: NationData[], direction: "asc" | "desc
  *       return { allStable, anyCritical };
  */
 export function checkAllianceSecurity(
+  // oxlint-disable-next-line eslint/no-unused-vars
   nations: NationData[],
+  // oxlint-disable-next-line eslint/no-unused-vars
   minStability: number
 ): { allStable: boolean; anyCritical: boolean } {
   // TODO: Use nations.every() and nations.some()
@@ -124,6 +133,7 @@ export function checkAllianceSecurity(
  *       });
  *       return groups;
  */
+// oxlint-disable-next-line eslint/no-unused-vars
 export function groupNationsByAlliance(nations: NationData[]): Record<string, NationData[]> {
   // TODO: Group nations array into an object by alliance name
   return {};

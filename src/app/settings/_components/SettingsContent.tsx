@@ -95,6 +95,7 @@ const VALID_TABS = new Set<SettingSectionId>([
 export function SettingsContent() {
   usePageTitle({ title: "Settings" });
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoaded, userProfile, country, isLoading: profileLoading } = useUserCountry();

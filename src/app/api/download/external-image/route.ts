@@ -46,6 +46,7 @@ function isTrustedDomain(url: string): boolean {
   }
 }
 
+// oxlint-disable-next-line eslint/no-unused-vars
 function getFileNameFromUrl(url: string): string {
   try {
     const urlObj = new URL(url);

@@ -15,6 +15,7 @@ import { LorewardsBotSection } from "./platform/LorewardsBotSection";
 export function BotIntegrationCenter() {
   usePageTitle({ title: "Admin - Bot Settings" });
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { config, setConfig, timeState, importState, setImportState, actionState, setActionState } =
     useAdminState();
 
@@ -31,6 +32,7 @@ export function BotIntegrationCenter() {
     }
   );
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: configData, refetch: refetchConfig } = api.admin.getConfig.useQuery();
 
   // Handlers

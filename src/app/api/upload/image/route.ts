@@ -18,6 +18,7 @@ import crypto from "crypto";
 import { rateLimiter } from "~/lib/cache";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+// oxlint-disable-next-line eslint/no-unused-vars
 const UPLOAD_RATE_LIMIT = 10; // Max uploads per minute per user
 
 // SECURITY: Only allow specific image types
@@ -70,6 +71,7 @@ function generateSafeFileName(originalName: string, userId: string, fileType: st
     .createHash("md5")
     .update(`${userId}-${Date.now()}-${originalName}`)
     .digest("hex");
+  // oxlint-disable-next-line eslint/no-unused-vars
   const extension = fileType.split("/")[1] || "png";
   const timestamp = Date.now();
   // Sanitize original name

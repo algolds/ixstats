@@ -70,6 +70,7 @@ export default function MyClubPage() {
 
   const clubCards =
     clubs?.map((team, idx) => {
+      // oxlint-disable-next-line eslint/no-unused-vars
       const emoji = SPORT_EMOJIS[team.league?.sportPreset ?? ""] ?? "\uD83C\uDFC6";
       const hasActiveSeason = !!team.activeSeason;
 

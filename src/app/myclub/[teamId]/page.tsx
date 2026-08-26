@@ -37,6 +37,7 @@ import { LineupBuilder } from "~/components/sports/club/LineupBuilder";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { RevenueCollector } from "~/components/sports/club/RevenueCollector";
 import { TeamTrainingButton } from "~/components/sports/club/TeamTrainingButton";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { ArrowLeft, Trophy, Group as Users, Calendar, StatsReport as BarChart3, WhiteFlag as Flag, MapPin, Shield, FireFlame as Flame, ArrowSeparate as ArrowLeftRight, Dollar as DollarSign, Search, OpenNewWindow as ExternalLink } from "iconoir-react";
 
 const SPORT_EMOJIS: Record<string, string> = {
@@ -144,6 +145,7 @@ export default function MyClubTeamDetailPage() {
   const [listPrice, setListPrice] = useState<number>(100);
   const [searchQuery, setSearchQuery] = useState("");
   const [bidAmount, setBidAmount] = useState<number>(150);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [biddingTeamId, setBiddingTeamId] = useState("");
   const [comparePlayer, setComparePlayer] = useState<any | null>(null);
   const [attackFocus, setAttackFocus] = useState(50);

@@ -14,6 +14,7 @@
  *    complex nested if statements.
  */
 
+// oxlint-disable-next-line eslint/no-unused-vars
 export function getEconomicTier(gdpPerCapita: number): string {
   // TODO: Implement if/else conditionals checking gdpPerCapita
   return "";

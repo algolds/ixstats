@@ -9,6 +9,7 @@ export const NationTreasuryVault = {
   nationName: "Faneria",
   reserves: 1000,
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   allocateBudget(amount: number) {
     // TODO: Deduct amount from this.reserves using 'this.reserves -= amount'
   },

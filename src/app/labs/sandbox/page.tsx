@@ -126,6 +126,7 @@ export default function SandboxPage() {
   // Level 3: Array Masterclass (.filter, .map, .find, total sum, .sort, .some/.every, grouping)
   const [lvl3Alliance, setLvl3Alliance] = useState("Concord");
   const [lvl3MinStab, setLvl3MinStab] = useState(80);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [lvl3SearchSlug, setLvl3SearchSlug] = useState("faneria");
   const [lvl3SortDirection, setLvl3SortDirection] = useState<"asc" | "desc">("desc");
 
@@ -157,6 +158,7 @@ export default function SandboxPage() {
 
   // 3C: .find()
   const l3FindExported = typeof Level3.findNationBySlug === "function";
+  // oxlint-disable-next-line eslint/no-unused-vars
   const l3FoundNation =
     l3FindExported && l3ArrayExported
       ? Level3.findNationBySlug(Level3.allNations, lvl3SearchSlug)

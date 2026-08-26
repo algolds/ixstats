@@ -34,6 +34,7 @@ export function TrendingTopics() {
           ))
         ) : topics && topics.length > 0 ? (
           // Trending topics
+          // oxlint-disable-next-line eslint/no-unused-vars
           topics.map((topic, index) => {
             const isHashtag = topic.title.startsWith("#");
             const tag = isHashtag ? topic.title.slice(1) : topic.title;

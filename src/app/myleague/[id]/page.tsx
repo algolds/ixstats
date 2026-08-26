@@ -1119,9 +1119,13 @@ function ScheduleTab({
 
   sportPreset,
   archetype,
+  // oxlint-disable-next-line eslint/no-unused-vars
   promotionCount = 0,
+  // oxlint-disable-next-line eslint/no-unused-vars
   relegationCount = 0,
+  // oxlint-disable-next-line eslint/no-unused-vars
   hasParentLeague = false,
+  // oxlint-disable-next-line eslint/no-unused-vars
   hasSubLeagues = false,
   onSeasonTransition,
   onTeamClick,

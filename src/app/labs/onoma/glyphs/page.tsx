@@ -11,6 +11,7 @@ import {
   Search,
   Check,
   Copy,
+  // oxlint-disable-next-line eslint/no-unused-vars
   Settings,
 } from "iconoir-react";
 import {

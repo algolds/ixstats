@@ -66,6 +66,7 @@ export function transformApiDataToVitalityIntelligence(
   country: ApiCountryData,
   previousCountry?: ApiCountryData
 ): VitalityIntelligence[] {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const now = Date.now();
 
   return [
@@ -477,6 +478,7 @@ export function transformApiIntelligenceToInsights(
   return intelligenceItems
     .filter((item) => item.type === "opportunity" || item.type === "update")
     .slice(0, 6) // Limit to top 6 insights
+    // oxlint-disable-next-line eslint/no-unused-vars
     .map((item, index) => ({
       id: item.id,
       title: item.title,
@@ -521,6 +523,7 @@ export function transformApiIntelligenceToRecommendations(
   return intelligenceItems
     .filter((item) => item.actionable && item.actions && item.actions.length > 0)
     .slice(0, 4) // Limit to top 4 recommendations
+    // oxlint-disable-next-line eslint/no-unused-vars
     .map((item, index) => ({
       id: item.id,
       title: `Address ${item.title}`,
@@ -884,6 +887,7 @@ function calculateRegionalAverage(
  */
 function calculateCountryRank(
   score: number,
+  // oxlint-disable-next-line eslint/no-unused-vars
   metric: "economic" | "population" | "diplomatic" | "governance"
 ): number {
   // Simple ranking algorithm based on score

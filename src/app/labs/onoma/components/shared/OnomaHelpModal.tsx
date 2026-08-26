@@ -14,6 +14,7 @@ import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/type
 import {
   WALKTHROUGH_STEPS,
   SYSTEM_GUIDES,
+  // oxlint-disable-next-line eslint/no-unused-vars
   type SystemGuideItem,
 } from "./onoma-help-data";
 

@@ -6,11 +6,13 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Search, Refresh as RefreshCw, OpenNewWindow as ExternalLink, Xmark as X, SoundHigh as Volume2 } from "iconoir-react";
 import {
   RiBookMarkedLine,
   RiGitForkLine,
   RiStarFill,
+  // oxlint-disable-next-line eslint/no-unused-vars
   RiSoundModuleLine,
   RiStore2Line,
 } from "react-icons/ri";

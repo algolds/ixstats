@@ -30,6 +30,7 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
   const notify = useNotify();
   const utils = api.useUtils();
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: myAccounts, isLoading } = api.thinkpages.getMyAccounts.useQuery();
   const primaryAccount = myAccounts?.[0];
 

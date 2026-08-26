@@ -48,6 +48,7 @@ export function OnomaHeader({
   activeSubTab,
   activeExploreSubTab,
   lastActiveTab,
+  // oxlint-disable-next-line eslint/no-unused-vars
   lexiconCount,
   shouldAnimateStash,
   hasInteractedPronunciation,

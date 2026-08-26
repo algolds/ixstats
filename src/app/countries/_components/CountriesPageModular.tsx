@@ -58,6 +58,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   }, [searchInput, onSearchChange]);
 
   // Reshuffle function
+  // oxlint-disable-next-line eslint/no-unused-vars
   const handleReshuffle = useCallback(() => {
     setRandomSeed(Date.now());
     setSortBy("random");

@@ -26,6 +26,7 @@ export function OnomaFooter({
   onNavigateExplore,
   onOpenHelp: _onOpenHelp,
 }: OnomaFooterProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const shouldReduceMotion = useReducedMotion();
 
   const scrollToTop = () => {

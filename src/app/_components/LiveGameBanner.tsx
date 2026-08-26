@@ -18,6 +18,7 @@ interface LiveGameBannerProps {
 
 export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBannerProps) {
   // Use centralized time context
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { ixTimeTimestamp, multiplier, ixTimeFormatted, refreshTime } = useIxTime();
 
   const [currentTime, setCurrentTime] = useState<{

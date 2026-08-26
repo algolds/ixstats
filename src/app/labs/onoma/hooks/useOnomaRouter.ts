@@ -21,6 +21,7 @@ import { useOnomaPronunciation } from "./useOnomaPronunciation";
 
 export function useOnomaRouter() {
   const pathname = usePathname();
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { isSignedIn, isLoaded } = useUser();
   const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery();
 

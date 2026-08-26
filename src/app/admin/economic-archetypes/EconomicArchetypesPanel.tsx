@@ -21,6 +21,7 @@ import {
   Trash as Trash2,
   Copy,
   Search,
+  // oxlint-disable-next-line eslint/no-unused-vars
   EyeClosed as EyeOff,
   StatUp as TrendingUp,
 } from "iconoir-react";
@@ -50,6 +51,7 @@ export function EconomicArchetypesPanel() {
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [selectedComplexity, setSelectedComplexity] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [showInactive, setShowInactive] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingArchetype, setEditingArchetype] = useState<any | null>(null);
@@ -110,6 +112,7 @@ export function EconomicArchetypesPanel() {
 
   const archetypes = archetypesData?.archetypes || [];
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: stats } = api.economicArchetypes.getArchetypeUsageStats.useQuery();
 
   // Mutations

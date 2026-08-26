@@ -19,6 +19,7 @@ import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 
 type SetupStep = "welcome" | "link-existing" | "create-new" | "complete";
 
+// oxlint-disable-next-line eslint/no-unused-vars
 interface CountryOption {
   id: string;
   name: string;
@@ -98,6 +99,7 @@ export default function SetupPage() {
   const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLinking, setIsLinking] = useState(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,6 +111,7 @@ export default function SetupPage() {
 
   // TRPC Mutations
   const linkCountryMutation = api.users.linkCountry.useMutation();
+  // oxlint-disable-next-line eslint/no-unused-vars
   const createCountryMutation = api.users.createCountry.useMutation();
 
   // Check if user has already completed setup

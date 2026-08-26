@@ -3,6 +3,7 @@
 // Philosophy: Apple SF Symbols × Emil Design Engineering × Pro Audio/Vector Studio
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Undo as Undo2, Redo as Redo2, Undo as RotateCcw, Component as Shapes, Plus, ViewGrid as Grid3X3, Check, EditPencil as PenTool, Sparks as Sparkle } from "iconoir-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { FacetMaterial } from "~/components/ui/facet";

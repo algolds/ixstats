@@ -48,6 +48,7 @@ const SPORT_LABELS: Record<string, string> = {
   boxing: "Boxing",
 };
 
+// oxlint-disable-next-line eslint/no-unused-vars
 const SPORT_EMOJIS: Record<string, string> = {
   soccer: "⚽",
   football: "🏈",

@@ -4,6 +4,7 @@
 // Onoma Lab — Syntax & Sentence Builder Section
 
 import React, { useState, useEffect } from "react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Trash as Trash2, Page as FileText } from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";

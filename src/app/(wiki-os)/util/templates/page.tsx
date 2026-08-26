@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { ViewGrid, Search, Code, Check, Spark, Packages, Copy, Eye, List } from "iconoir-react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";

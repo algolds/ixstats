@@ -7,6 +7,7 @@ import {
   Heart,
   Trophy,
   Calendar,
+  // oxlint-disable-next-line eslint/no-unused-vars
   Shield,
   OpenNewWindow as ExternalLink,
   Spark as Sparkles,
@@ -47,6 +48,7 @@ function formatDate(unixTimestamp: number | null | undefined): string {
 }
 
 export function ForumTab({ forum, username: fallbackName, isOwnCountry }: ForumTabProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const username = forum.username || fallbackName || "Forum Member";
 
   if (!forum.linked && !forum.userId && !forum.username) {
