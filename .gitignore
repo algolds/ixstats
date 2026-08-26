@@ -125,6 +125,7 @@ cypress/videos/
 *.claude.md
 /.clerk/
 .eslintcache
+.oxlintcache
 .hextaui
 
 # Ignore local sibling workspace development artifacts not part of this repo.

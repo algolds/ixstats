@@ -1,0 +1,82 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "unicorn", "import", "oxc", "jest", "nextjs", "jsx-a11y"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "pedantic": "off"
+  },
+  "rules": {
+    // Unused vars - replaces eslint-plugin-unused-imports (auto-fixable, respects ^_)
+    "eslint/no-unused-vars": "off",
+    "typescript/no-unused-vars": [
+      "warn",
+      {
+        "varsIgnorePattern": "^_",
+        "argsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        "destructuredArrayIgnore": true
+      }
+    ],
+    // TS relaxed
+    "typescript/no-explicit-any": "off",
+    "typescript/no-empty-function": "off",
+    "typescript/ban-ts-comment": "warn",
+    "typescript/no-require-imports": "off",
+    // React hooks correctness (native react plugin)
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    // React 19 new JSX runtime - React import not required
+    "react/react-in-jsx-scope": "off",
+    // Next.js handles <a> etc - relax a11y/next for now (was off in ESLint, keep pre-existing)
+    "jsx-a11y/click-events-have-key-events": "off",
+    "jsx-a11y/no-static-element-interactions": "off",
+    "jsx-a11y/label-has-associated-control": "off",
+    "jsx-a11y/no-autofocus": "off",
+    "nextjs/no-img-element": "off",
+    // General
+    "eslint/no-console": "off",
+    "eslint/prefer-const": "warn",
+    "eslint/no-var": "error",
+    "eslint/eqeqeq": ["warn", "always"],
+    // Import hygiene - warn only (import plugin heavier)
+    "import/no-cycle": "off",
+    "import/no-unassigned-import": "off"
+  },
+  "settings": {
+    "jsx-a11y": { "components": { "Link": "a", "Button": "button" } }
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "builtin": true
+  },
+  "ignorePatterns": [
+    ".next/**",
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    "out/**",
+    ".next/types/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "tests/**",
+    "prisma/**",
+    "*.config.js",
+    "*.config.ts",
+    "*.config.mjs",
+    "server.mjs",
+    "coverage/**",
+    "public/**"
+  ],
+  "overrides": [
+    {
+      "files": ["src/**/*.test.ts", "src/**/*.test.tsx", "**/__tests__/**"],
+      "plugins": ["jest"],
+      "rules": {
+        "jest/no-disabled-tests": "warn",
+        "jest/no-focused-tests": "error"
+      }
+    }
+  ]
+}
