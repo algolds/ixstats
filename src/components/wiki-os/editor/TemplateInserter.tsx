@@ -15,17 +15,7 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-
-interface TemplateParam {
-  label?: string;
-  description?: string;
-  type?: string;
-  default?: string;
-  required?: boolean;
-  suggested?: boolean;
-  example?: string;
-  aliases?: string[];
-}
+import type { TemplateParam } from "~/lib/wiki-os/templates/template-registry";
 
 interface TemplateInserterProps {
   onInsert: (templateName: string, params: Record<string, string>) => void;

@@ -6,22 +6,15 @@ import * as React from "react";
 import { ViewGrid, Search, Copy, Check, Plus, Spark, Xmark, NavArrowDown, Edit, Eye, List } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { VisualInfoboxPreviewCard } from "~/components/wiki-os/templates/VisualInfoboxPreviewCard";
+import type { TemplateParam } from "~/lib/wiki-os/templates/template-registry";
+
+// Palette presets and builder flows guarantee `name`; refine the canonical type instead of redefining it.
+export type PaletteTemplateParam = TemplateParam & { name: string };
 
 interface TemplatePaletteModalProps {
   isOpen: boolean;
   onClose: () => void;
   onInsert?: (wikitext: string, data: Record<string, string>) => void;
-}
-
-interface TemplateParam {
-  name: string;
-  label?: string;
-  description?: string;
-  type?: string;
-  required?: boolean;
-  default?: string;
-  example?: string;
-  variantOnly?: string[];
 }
 
 export interface MasterTemplatePreset {
@@ -30,7 +23,7 @@ export interface MasterTemplatePreset {
   description: string;
   isCanonical: boolean;
   variants?: Array<{ id: string; label: string; defaultFields: string[] }>;
-  params: TemplateParam[];
+  params: PaletteTemplateParam[];
 }
 
 export const MASTER_TEMPLATE_PRESETS: MasterTemplatePreset[] = [
@@ -367,7 +360,7 @@ export function TemplatePaletteModal({
   const selectedTemplate = React.useMemo(() => {
     if (presetMatch) return presetMatch;
 
-    const params: TemplateParam[] = [];
+    const params: PaletteTemplateParam[] = [];
     const td = dynamicSchema?.templateData as any;
     if (td?.params) {
       for (const [key, p] of Object.entries(td.params) as Array<[string, any]>) {
