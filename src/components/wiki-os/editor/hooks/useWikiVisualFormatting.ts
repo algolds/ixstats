@@ -280,6 +280,7 @@ export function useWikiVisualFormatting({
             params,
             dataMw,
             label: params.label || templateName.split(":").pop() || templateName,
+            wikitext: `{{${templateName}}}`,
             children: [{ text: "" }],
           };
           Transforms.insertNodes(editor, node as unknown as Descendant);
@@ -303,6 +304,7 @@ export function useWikiVisualFormatting({
             params,
             dataMw,
             html: `<div typeof="mw:Transclusion" data-mw='${dataMw.replace(/'/g, "&#39;")}' class="wikios-ve-template">${fixEditorImageUrls(result.html)}</div>`,
+            wikitext,
             children: [{ text: "" }],
           } as Descendant);
           setIsDirty(true);
@@ -330,6 +332,7 @@ export function useWikiVisualFormatting({
             id: nanoid(),
             html: figure.outerHTML,
             filename: figure.querySelector("img")?.getAttribute("alt") ?? undefined,
+            wikitext: imageWikitext,
             children: [{ text: "" }],
           } as Descendant);
           setIsDirty(true);
@@ -351,25 +354,24 @@ export function useWikiVisualFormatting({
         if (entries.length === 0) return;
         const [node, path] = entries[0]! as [Node, import("slate").Path];
         const dataMw = buildDataMw(name, newParams);
+        const rebuiltWikitext = `{{${name}${Object.entries(newParams).filter(([, v]) => v.trim()).map(([k, v]) => `|${k}=${v}`).join("")}}}`;
 
-        if ((node as { type?: string }).type === "chip-engine") {
+        if ((node as unknown as { type?: string }).type === "chip-engine") {
           Transforms.setNodes(
             editor,
-            { params: newParams, dataMw } as Partial<Descendant>,
+            { params: newParams, dataMw, wikitext: rebuiltWikitext } as Partial<Descendant>,
             { at: path }
           );
         } else {
-          const paramParts = Object.entries(newParams)
-            .filter(([, v]) => v.trim())
-            .map(([k, v]) => `|${k}=${v}`);
           void previewMutation
-            .mutateAsync({ wikitext: `{{${name}${paramParts.join("")}}}`, title })
+            .mutateAsync({ wikitext: rebuiltWikitext, title })
             .then((result) => {
               Transforms.setNodes(
                 editor,
                 {
                   params: newParams,
                   dataMw,
+                  wikitext: rebuiltWikitext,
                   html: `<div typeof="mw:Transclusion" data-mw='${buildDataMw(name, newParams).replace(/'/g, "&#39;")}' class="wikios-ve-template">${fixEditorImageUrls(result.html)}</div>`,
                 } as Partial<Descendant>,
                 { at: path }

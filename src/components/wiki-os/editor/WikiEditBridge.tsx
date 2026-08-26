@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import {
@@ -154,11 +154,43 @@ export function WikiEditBridge({
     [mode, title, convertWikitextToHtml, htmlToWikitext]
   );
 
+  const lastSerializedRef = useRef<{ wikitext: string; complete: boolean } | null>(null);
+  const setLastSerialized = useCallback((result: { wikitext: string; complete: boolean }) => {
+    lastSerializedRef.current = result;
+  }, []);
+
   const handleVisualSave = useCallback(
     async (html: string, summary: string, minor: boolean, keepEditing?: boolean) => {
       setSaving(true);
       setEditConflict(false);
       try {
+        // Prefer lossless client-side wikitext when every atomic block has one.
+        const serialized = lastSerializedRef.current;
+        if (serialized?.complete) {
+          const result = await saveWikitext.mutateAsync({
+            title,
+            wikitext: serialized.wikitext,
+            summary,
+            minor,
+            basetimestamp: editorHtml?.timestamp ?? undefined,
+          });
+          if ((result as { editConflict?: boolean }).editConflict) {
+            setEditConflict(true);
+            throw new Error("Edit conflict detected: this page was modified by another user.");
+          }
+          clearDraft(title);
+          if (keepEditing) {
+            const res = await refetchEditorHtml();
+            if (res.data) setActiveHtml(res.data.html);
+          } else {
+            onSaveSuccess?.();
+            onClose();
+          }
+          return;
+        }
+        console.warn(
+          "[WikiOS] Visual save falling back to HTML conversion: document contains atomic blocks without canonical wikitext."
+        );
         const result = await saveArticle.mutateAsync({
           title,
           html,
@@ -190,7 +222,7 @@ export function WikiEditBridge({
         setSaving(false);
       }
     },
-    [title, editorHtml, saveArticle, refetchEditorHtml, onSaveSuccess, onClose]
+    [title, editorHtml, saveWikitext, saveArticle, refetchEditorHtml, onSaveSuccess, onClose]
   );
 
   const handleSourceSave = useCallback(
@@ -254,6 +286,7 @@ export function WikiEditBridge({
           onSave={handleVisualSave}
           onCancel={onClose}
           onSwitchToSource={(dirty, html) => handleModeSwitch("source", dirty, html)}
+          onSerializedWikitext={setLastSerialized}
         />
       ) : (
         <WikiSourceEditor
