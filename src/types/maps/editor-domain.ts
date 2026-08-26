@@ -5,7 +5,7 @@
  * 100% compile-time type safety with TypeScript 7.0.
  */
 
-import type { Position, Polygon, MultiPolygon, LineString, MultiLineString, Point } from "geojson";
+import type { Polygon, MultiPolygon, LineString, MultiLineString, Point } from "geojson";
 
 // ──────────────────────────────────────────────
 // Branded Nominal Identifiers

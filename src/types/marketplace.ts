@@ -3,9 +3,7 @@
 
 import type { CardRarity, CardType } from "@prisma/client";
 import type {
-  ArtworkVariants,
   CardStatsData,
-  CardEnhancementsData,
   CardInstance,
 } from "./cards-display";
 

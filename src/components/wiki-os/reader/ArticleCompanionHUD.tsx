@@ -60,8 +60,6 @@ export function ArticleCompanionHUD({
   isAuthenticated = false,
   isCollapsed = false,
 }: ArticleCompanionHUDProps) {
-  if (isCollapsed) return null;
-
   const [showAllContributors, setShowAllContributors] = React.useState(false);
 
   // Calculate word count & estimated reading time dynamically
@@ -109,6 +107,8 @@ export function ArticleCompanionHUD({
     (otherContributors.length + (creatorName ? 1 : 0));
 
   const hasNotes = marginThreadsCount > 0 || marginAnnotationsCount > 0;
+
+  if (isCollapsed) return null;
 
   return (
     <div className="wikios-companion-hud flex flex-col gap-3 select-none">

@@ -18,7 +18,6 @@ import type {
   NotificationEngagement,
   DeliveryContext,
   NotificationHistory,
-  DeliveryMethod,
 } from "~/types/unified-notifications";
 
 import {
