@@ -40,6 +40,13 @@ const TRENDING_FILTER_LIMIT = 10;
 
 type FilterTab = "all" | "forum" | "wiki";
 
+const DEFAULT_SOURCE = {
+  icon: Activity,
+  color: "text-amber-700 dark:text-amber-300",
+  bg: "bg-amber-500/15 border-amber-500/30",
+  label: "Live Activity",
+};
+
 const TRENDING_SOURCE: Record<
   string,
   { icon: typeof Rss | typeof Activity; color: string; bg: string; label: string }
@@ -61,6 +68,12 @@ const TRENDING_SOURCE: Record<
     color: "text-teal-700 dark:text-teal-300",
     bg: "bg-teal-500/15 border-teal-500/30",
     label: "Wiki",
+  },
+  ixstats: {
+    icon: Activity,
+    color: "text-amber-700 dark:text-amber-300",
+    bg: "bg-amber-500/15 border-amber-500/30",
+    label: "Live Activity",
   },
   general: {
     icon: Activity,
@@ -337,7 +350,8 @@ export function TrendingSectionWidget() {
 
           {!isLoading &&
             trendingItems.map((item: any) => {
-              const src = TRENDING_SOURCE[item.source as string] ?? TRENDING_SOURCE.ixstats!;
+              const src =
+                (item.source && TRENDING_SOURCE[item.source as string]) ?? DEFAULT_SOURCE;
               const SrcIcon = src.icon;
               const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
               const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);

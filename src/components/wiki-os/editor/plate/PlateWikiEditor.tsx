@@ -120,18 +120,8 @@ export function PlateWikiEditor({
     slash.close();
   };
 
-  const version = useValueVersion();
   const reportRef = useRef(onValueChange);
   reportRef.current = onValueChange;
-
-  useEffect(() => {
-    if (!editor || !readyFired.current) return;
-    reportRef.current(
-      editor.children as Descendant[],
-      serializePlateToHtml(editor.children as Descendant[]),
-      valueToPlainText(editor.children as Descendant[])
-    );
-  }, [version, editor]);
 
   const callbacks: PlateWikiCallbacks = useMemo(
     () => ({
@@ -176,6 +166,7 @@ export function PlateWikiEditor({
   return (
     <PlateWikiCallbacksProvider value={callbacks}>
       <Plate editor={editor}>
+        <ValueReporter editor={editor} onValueChange={onValueChange} readyRef={readyFired} />
         <PlateContent
           className="wikios-ve-content min-h-[400px] outline-none"
           spellCheck
@@ -197,4 +188,30 @@ export function PlateWikiEditor({
       </Plate>
     </PlateWikiCallbacksProvider>
   );
+}
+
+/** Lives inside <Plate> so it can subscribe to store updates. */
+function ValueReporter({
+  editor,
+  onValueChange,
+  readyRef,
+}: {
+  editor: ReturnType<typeof usePlateEditor>;
+  onValueChange: (nodes: Descendant[], html: string, plainText: string) => void;
+  readyRef: React.MutableRefObject<boolean>;
+}) {
+  const version = useValueVersion();
+  const reportRef = useRef(onValueChange);
+  reportRef.current = onValueChange;
+
+  useEffect(() => {
+    if (!editor || !readyRef.current) return;
+    reportRef.current(
+      editor.children as Descendant[],
+      serializePlateToHtml(editor.children as Descendant[]),
+      valueToPlainText(editor.children as Descendant[])
+    );
+  }, [version, editor, readyRef]);
+
+  return null;
 }
