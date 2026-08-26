@@ -38,6 +38,7 @@ import {
   wrapSelectionCM,
 } from "./utils/codemirror-wikitext";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
+import { EditorModalProvider } from "./context/EditorModalContext";
 import { getDraft, clearDraft } from "~/lib/wiki-os/editor/draft-store";
 import { WikiSourceToolbar } from "./components/WikiSourceToolbar";
 import { WikiEditorSavePanel } from "./components/WikiEditorSavePanel";
@@ -400,6 +401,7 @@ export function WikiSourceEditor({
   }, []);
 
   return (
+    <EditorModalProvider value={state.modalContextValue}>
     <div className="wikios-editor-modern">
       <WikiSourceToolbar
         title={title}
@@ -427,28 +429,6 @@ export function WikiSourceEditor({
         wrapSelection={wrapSelection}
         insertAtCursor={insertAtCursor}
         insertAtLine={insertAtLine}
-        setShowImageSearch={state.setShowImageSearch}
-        setShowInfoboxModal={state.setShowInfoboxModal}
-        setShowCountryStatsModal={state.setShowCountryStatsModal}
-        setShowBusinessStatsModal={state.setShowBusinessStatsModal}
-        setShowMapCoordsModal={state.setShowMapCoordsModal}
-        stashesOpen={state.stashesOpen}
-        setStashesOpen={state.setStashesOpen}
-        templatesOpen={state.templatesOpen}
-        setTemplatesOpen={state.setTemplatesOpen}
-        settingsOpen={state.settingsOpen}
-        setSettingsOpen={state.setSettingsOpen}
-        showLineNumbers={state.showLineNumbers}
-        handleToggleLineNumbers={state.handleToggleLineNumbers}
-        enableWordWrap={state.enableWordWrap}
-        handleToggleWordWrap={state.handleToggleWordWrap}
-        enableAutocomplete={state.enableAutocomplete}
-        handleToggleAutocomplete={state.handleToggleAutocomplete}
-        stashes={state.stashes}
-        activeStashId={state.activeStashId}
-        setSelectedStashId={state.setSelectedStashId}
-        imageItems={state.imageItems}
-        imagesMap={state.imagesMap}
         handleInsertStashedImage={(filename) =>
           insertAtCursor(`[[File:${filename}|thumb|]]`)
         }
@@ -496,22 +476,13 @@ export function WikiSourceEditor({
       />
 
       <WikiEditorModalHost
-        showImageSearch={state.showImageSearch}
-        setShowImageSearch={state.setShowImageSearch}
         onInsertImage={insertAtCursor}
-        showInfoboxModal={state.showInfoboxModal}
-        setShowInfoboxModal={state.setShowInfoboxModal}
         onInsertInfobox={insertAtCursor}
-        showCountryStatsModal={state.showCountryStatsModal}
-        setShowCountryStatsModal={state.setShowCountryStatsModal}
         onInsertCountryStats={insertAtCursor}
-        showBusinessStatsModal={state.showBusinessStatsModal}
-        setShowBusinessStatsModal={state.setShowBusinessStatsModal}
         onInsertBusinessStats={insertAtCursor}
-        showMapCoordsModal={state.showMapCoordsModal}
-        setShowMapCoordsModal={state.setShowMapCoordsModal}
         onInsertMapCoords={insertAtCursor}
       />
     </div>
+    </EditorModalProvider>
   );
 }

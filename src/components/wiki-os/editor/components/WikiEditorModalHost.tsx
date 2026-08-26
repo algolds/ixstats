@@ -13,26 +13,17 @@ import {
   BusinessStatsModal,
   MapCoordsModal,
 } from "~/components/wiki-os/editor/WikiTemplateModals";
+import { useEditorModalContext } from "../context/EditorModalContext";
 
 export interface WikiEditorModalHostProps {
-  showImageSearch: boolean;
-  setShowImageSearch: (open: boolean) => void;
   onInsertImage: (wikitext: string) => void;
 
-  showInfoboxModal: boolean;
-  setShowInfoboxModal: (open: boolean) => void;
   onInsertInfobox: (wikitext: string) => void;
 
-  showCountryStatsModal: boolean;
-  setShowCountryStatsModal: (open: boolean) => void;
   onInsertCountryStats: (wikitext: string) => void;
 
-  showBusinessStatsModal: boolean;
-  setShowBusinessStatsModal: (open: boolean) => void;
   onInsertBusinessStats: (wikitext: string) => void;
 
-  showMapCoordsModal: boolean;
-  setShowMapCoordsModal: (open: boolean) => void;
   onInsertMapCoords: (wikitext: string) => void;
 
   editingTemplate?: {
@@ -46,55 +37,46 @@ export interface WikiEditorModalHostProps {
 }
 
 export function WikiEditorModalHost({
-  showImageSearch,
-  setShowImageSearch,
   onInsertImage,
-  showInfoboxModal,
-  setShowInfoboxModal,
   onInsertInfobox,
-  showCountryStatsModal,
-  setShowCountryStatsModal,
   onInsertCountryStats,
-  showBusinessStatsModal,
-  setShowBusinessStatsModal,
   onInsertBusinessStats,
-  showMapCoordsModal,
-  setShowMapCoordsModal,
   onInsertMapCoords,
   editingTemplate,
   setEditingTemplate,
   onUpdateTemplate,
   onRemoveTemplate,
 }: WikiEditorModalHostProps) {
+  const modal = useEditorModalContext();
   return (
     <>
       <ImageSearchModal
-        isOpen={showImageSearch}
-        onClose={() => setShowImageSearch(false)}
+        isOpen={modal.showImageSearch}
+        onClose={() => modal.setShowImageSearch(false)}
         onInsert={onInsertImage}
       />
 
       <InfoboxCountryModal
-        isOpen={showInfoboxModal}
-        onClose={() => setShowInfoboxModal(false)}
+        isOpen={modal.showInfoboxModal}
+        onClose={() => modal.setShowInfoboxModal(false)}
         onInsert={onInsertInfobox}
       />
 
       <CountryStatsModal
-        isOpen={showCountryStatsModal}
-        onClose={() => setShowCountryStatsModal(false)}
+        isOpen={modal.showCountryStatsModal}
+        onClose={() => modal.setShowCountryStatsModal(false)}
         onInsert={onInsertCountryStats}
       />
 
       <BusinessStatsModal
-        isOpen={showBusinessStatsModal}
-        onClose={() => setShowBusinessStatsModal(false)}
+        isOpen={modal.showBusinessStatsModal}
+        onClose={() => modal.setShowBusinessStatsModal(false)}
         onInsert={onInsertBusinessStats}
       />
 
       <MapCoordsModal
-        isOpen={showMapCoordsModal}
-        onClose={() => setShowMapCoordsModal(false)}
+        isOpen={modal.showMapCoordsModal}
+        onClose={() => modal.setShowMapCoordsModal(false)}
         onInsert={onInsertMapCoords}
       />
 

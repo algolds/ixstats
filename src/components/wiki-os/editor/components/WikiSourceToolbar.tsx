@@ -36,15 +36,11 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { useEditorModalContext } from "../context/EditorModalContext";
 import { AppleSwitch } from "~/components/ui/apple-switch";
 import { WikiEditorHeader } from "./WikiEditorHeader";
 import { StashImageCard } from "./StashImageCard";
-import type {
-  StashEntity,
-  StashItemEntity,
-  WikimediaImageMeta,
-  SaveActionType,
-} from "../types";
+import type { SaveActionType } from "../types";
 
 export interface WikiSourceToolbarProps {
   title: string;
@@ -71,30 +67,6 @@ export interface WikiSourceToolbarProps {
   insertAtCursor: (text: string) => void;
   insertAtLine: (before: string, after: string) => void;
 
-  setShowImageSearch: (open: boolean) => void;
-  setShowInfoboxModal: (open: boolean) => void;
-  setShowCountryStatsModal: (open: boolean) => void;
-  setShowBusinessStatsModal: (open: boolean) => void;
-  setShowMapCoordsModal: (open: boolean) => void;
-  stashesOpen: boolean;
-  setStashesOpen: (open: boolean) => void;
-  templatesOpen: boolean;
-  setTemplatesOpen: (open: boolean) => void;
-  settingsOpen: boolean;
-  setSettingsOpen: (open: boolean) => void;
-
-  showLineNumbers: boolean;
-  handleToggleLineNumbers: (val: boolean) => void;
-  enableWordWrap: boolean;
-  handleToggleWordWrap: (val: boolean) => void;
-  enableAutocomplete: boolean;
-  handleToggleAutocomplete: (val: boolean) => void;
-
-  stashes: StashEntity[];
-  activeStashId: string;
-  setSelectedStashId: (id: string) => void;
-  imageItems: StashItemEntity[];
-  imagesMap: Map<string, WikimediaImageMeta>;
   handleInsertStashedImage: (filename: string) => void;
 }
 
@@ -119,30 +91,9 @@ export function WikiSourceToolbar({
   wrapSelection,
   insertAtCursor,
   insertAtLine,
-  setShowImageSearch,
-  setShowInfoboxModal,
-  setShowCountryStatsModal,
-  setShowBusinessStatsModal,
-  setShowMapCoordsModal,
-  stashesOpen,
-  setStashesOpen,
-  templatesOpen,
-  setTemplatesOpen,
-  settingsOpen,
-  setSettingsOpen,
-  showLineNumbers,
-  handleToggleLineNumbers,
-  enableWordWrap,
-  handleToggleWordWrap,
-  enableAutocomplete,
-  handleToggleAutocomplete,
-  stashes,
-  activeStashId,
-  setSelectedStashId,
-  imageItems,
-  imagesMap,
   handleInsertStashedImage,
 }: WikiSourceToolbarProps) {
+  const modal = useEditorModalContext();
   return (
     <>
       <WikiEditorHeader
@@ -314,11 +265,11 @@ export function WikiSourceToolbar({
           <FmtBtn
             icon={ImageIcon}
             title="Insert Image (Search Commons / Wiki)"
-            onClick={() => setShowImageSearch(true)}
+            onClick={() => modal.setShowImageSearch(true)}
           />
 
           {/* Stashed Images Popover */}
-          <Popover open={stashesOpen} onOpenChange={setStashesOpen}>
+          <Popover open={modal.stashesOpen} onOpenChange={modal.setStashesOpen}>
             <PopoverTrigger
               className="wikios-editor-format-btn"
               title="Stashed Images"
@@ -334,13 +285,13 @@ export function WikiSourceToolbar({
                   <Bookmark className="h-3.5 w-3.5 text-amber-400" />
                   <span>Stash Explorer</span>
                 </span>
-                {stashes.length > 1 && (
+                {modal.stashes.length > 1 && (
                   <select
-                    value={activeStashId}
-                    onChange={(e) => setSelectedStashId(e.target.value)}
+                    value={modal.activeStashId}
+                    onChange={(e) => modal.setSelectedStashId(e.target.value)}
                     className="rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-zinc-300 outline-none"
                   >
-                    {stashes.map((s) => (
+                    {modal.stashes.map((s) => (
                       <option key={s.id} value={s.id} className="bg-zinc-900 text-white">
                         {s.name} ({s.itemCount})
                       </option>
@@ -349,7 +300,7 @@ export function WikiSourceToolbar({
                 )}
               </div>
 
-              {imageItems.length === 0 ? (
+              {modal.imageItems.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-6 text-center text-zinc-400">
                   <ImageIcon className="mb-2 h-6 w-6 opacity-40" />
                   <div className="text-xs">No media files in this stash</div>
@@ -359,10 +310,10 @@ export function WikiSourceToolbar({
                 </div>
               ) : (
                 <div className="grid max-h-56 grid-cols-4 gap-1.5 overflow-y-auto p-1">
-                  {imageItems.map((item: any) => {
+                  {modal.imageItems.map((item: any) => {
                     const cleanTitle = item.pageTitle.replace(/^commons:/, "");
                     const filename = cleanTitle.replace(/^File:/, "");
-                    const imgInfo = imagesMap.get(item.pageTitle);
+                    const imgInfo = modal.imagesMap.get(item.pageTitle);
                     return (
                       <StashImageCard
                         key={item.id}
@@ -391,7 +342,7 @@ export function WikiSourceToolbar({
 
         {/* Templates & Advanced */}
         <div className="wikios-editor-format-group">
-          <Popover open={templatesOpen} onOpenChange={setTemplatesOpen}>
+          <Popover open={modal.templatesOpen} onOpenChange={modal.setTemplatesOpen}>
             <PopoverTrigger
               className="wikios-editor-format-btn wikios-editor-format-select"
               title="Insert Template"
@@ -408,8 +359,8 @@ export function WikiSourceToolbar({
                 <button
                   type="button"
                   onClick={() => {
-                    setTemplatesOpen(false);
-                    setShowInfoboxModal(true);
+                    modal.setTemplatesOpen(false);
+                    modal.setShowInfoboxModal(true);
                   }}
                   className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
                 >
@@ -419,8 +370,8 @@ export function WikiSourceToolbar({
                 <button
                   type="button"
                   onClick={() => {
-                    setTemplatesOpen(false);
-                    setShowCountryStatsModal(true);
+                    modal.setTemplatesOpen(false);
+                    modal.setShowCountryStatsModal(true);
                   }}
                   className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
                 >
@@ -430,8 +381,8 @@ export function WikiSourceToolbar({
                 <button
                   type="button"
                   onClick={() => {
-                    setTemplatesOpen(false);
-                    setShowBusinessStatsModal(true);
+                    modal.setTemplatesOpen(false);
+                    modal.setShowBusinessStatsModal(true);
                   }}
                   className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
                 >
@@ -441,8 +392,8 @@ export function WikiSourceToolbar({
                 <button
                   type="button"
                   onClick={() => {
-                    setTemplatesOpen(false);
-                    setShowMapCoordsModal(true);
+                    modal.setTemplatesOpen(false);
+                    modal.setShowMapCoordsModal(true);
                   }}
                   className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
                 >
@@ -476,7 +427,7 @@ export function WikiSourceToolbar({
 
         {/* Far right: Editor View Settings */}
         <div className="ml-auto flex items-center">
-          <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <Popover open={modal.settingsOpen} onOpenChange={modal.setSettingsOpen}>
             <PopoverTrigger
               className="wikios-editor-format-btn"
               title="Editor Settings"
@@ -496,8 +447,8 @@ export function WikiSourceToolbar({
                 <div className="flex items-center justify-between select-none">
                   <span className="font-medium">Line Numbers</span>
                   <AppleSwitch
-                    checked={showLineNumbers}
-                    onCheckedChange={handleToggleLineNumbers}
+                    checked={modal.showLineNumbers}
+                    onCheckedChange={modal.handleToggleLineNumbers}
                     size="sm"
                     tone="neutral"
                   />
@@ -507,8 +458,8 @@ export function WikiSourceToolbar({
                 <div className="flex items-center justify-between select-none">
                   <span className="font-medium">Word Wrap</span>
                   <AppleSwitch
-                    checked={enableWordWrap}
-                    onCheckedChange={handleToggleWordWrap}
+                    checked={modal.enableWordWrap}
+                    onCheckedChange={modal.handleToggleWordWrap}
                     size="sm"
                     tone="neutral"
                   />
@@ -518,8 +469,8 @@ export function WikiSourceToolbar({
                 <div className="flex items-center justify-between select-none">
                   <span className="font-medium">Autocomplete</span>
                   <AppleSwitch
-                    checked={enableAutocomplete}
-                    onCheckedChange={handleToggleAutocomplete}
+                    checked={modal.enableAutocomplete}
+                    onCheckedChange={modal.handleToggleAutocomplete}
                     size="sm"
                     tone="neutral"
                   />

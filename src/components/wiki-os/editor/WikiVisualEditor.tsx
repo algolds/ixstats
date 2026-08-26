@@ -15,6 +15,7 @@ import { WikiVisualToolbar } from "./components/WikiVisualToolbar";
 import { WikiEditorSavePanel } from "./components/WikiEditorSavePanel";
 import { WikiEditorModalHost } from "./components/WikiEditorModalHost";
 import { WikiEditorStatusBar } from "./components/WikiEditorStatusBar";
+import { EditorModalProvider } from "./context/EditorModalContext";
 
 export interface WikiVisualEditorProps {
   initialHtml: string;
@@ -199,6 +200,7 @@ export function WikiVisualEditor({
   }, [fmt, state.setIsDirty]);
 
   return (
+    <EditorModalProvider value={state.modalContextValue}>
     <div className="wikios-ve-container">
       <WikiVisualToolbar
         title={title}
@@ -233,24 +235,6 @@ export function WikiVisualEditor({
         insertHtmlAtCursor={fmt.insertHtmlAtCursor}
         saveSelection={fmt.saveSelection}
         restoreSelection={fmt.restoreSelection}
-        setShowImageSearch={state.setShowImageSearch}
-        setShowInfoboxModal={state.setShowInfoboxModal}
-        setShowCountryStatsModal={state.setShowCountryStatsModal}
-        setShowBusinessStatsModal={state.setShowBusinessStatsModal}
-        setShowMapCoordsModal={state.setShowMapCoordsModal}
-        stashesOpen={state.stashesOpen}
-        setStashesOpen={state.setStashesOpen}
-        templatesOpen={state.templatesOpen}
-        setTemplatesOpen={state.setTemplatesOpen}
-        settingsOpen={state.settingsOpen}
-        setSettingsOpen={state.setSettingsOpen}
-        enableAutocomplete={state.enableAutocomplete}
-        handleToggleAutocomplete={state.handleToggleAutocomplete}
-        stashes={state.stashes}
-        activeStashId={state.activeStashId}
-        setSelectedStashId={state.setSelectedStashId}
-        imageItems={state.imageItems}
-        imagesMap={state.imagesMap}
         handleInsertStashedImage={handleInsertStashedImage}
       />
 
@@ -287,20 +271,10 @@ export function WikiVisualEditor({
       />
 
       <WikiEditorModalHost
-        showImageSearch={state.showImageSearch}
-        setShowImageSearch={state.setShowImageSearch}
         onInsertImage={fmt.handleInsertImage}
-        showInfoboxModal={state.showInfoboxModal}
-        setShowInfoboxModal={state.setShowInfoboxModal}
         onInsertInfobox={handleInsertInfobox}
-        showCountryStatsModal={state.showCountryStatsModal}
-        setShowCountryStatsModal={state.setShowCountryStatsModal}
         onInsertCountryStats={handleInsertCountryStats}
-        showBusinessStatsModal={state.showBusinessStatsModal}
-        setShowBusinessStatsModal={state.setShowBusinessStatsModal}
         onInsertBusinessStats={handleInsertBusinessStats}
-        showMapCoordsModal={state.showMapCoordsModal}
-        setShowMapCoordsModal={state.setShowMapCoordsModal}
         onInsertMapCoords={handleInsertMapCoords}
         editingTemplate={fmt.editingTemplate}
         setEditingTemplate={fmt.setEditingTemplate}
@@ -308,5 +282,6 @@ export function WikiVisualEditor({
         onRemoveTemplate={handleRemoveTemplate}
       />
     </div>
+    </EditorModalProvider>
   );
 }
