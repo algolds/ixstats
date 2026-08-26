@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -53,7 +53,6 @@ export function useWikiVisualFormatting({
   editorRef,
   setIsDirty,
 }: UseWikiVisualFormattingProps) {
-  const savedRangeRef = useRef<Range | null>(null);
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
   const [editingTemplate, setEditingTemplate] = useState<EditingTemplateRef | null>(null);
 
@@ -245,10 +244,10 @@ export function useWikiVisualFormatting({
     editorRef.current?.focus?.();
   }, [exec, editorRef]);
 
-  // Legacy DOM-selection shims — retained so existing toolbar wiring keeps working.
+  // Legacy DOM-selection shims — retained because shared toolbar dropdowns
+  // (StashDropdown / TemplateDropdown) still take onBeforeOpen handlers.
   const saveSelection = useCallback(() => {}, []);
   const restoreSelection = useCallback(() => {}, []);
-  const insertNodeAtCursor = useCallback((_node: Node) => {}, []);
 
   const insertHtmlAtCursor = useCallback(
     (html: string) => {
@@ -402,13 +401,11 @@ export function useWikiVisualFormatting({
   }, [editingTemplate, withEditor, setIsDirty]);
 
   return {
-    savedRangeRef,
     activeFormats,
     editingTemplate,
     setEditingTemplate,
     saveSelection,
     restoreSelection,
-    insertNodeAtCursor,
     insertHtmlAtCursor,
     exec,
     setHeading,

@@ -6,6 +6,7 @@
 
 import { Transforms, type Descendant, type BaseEditor } from "slate";
 import { MASTER_TEMPLATE_PRESETS } from "~/lib/wiki-os/templates/master-presets";
+import { templatePresetToNode } from "../insert-template";
 
 export interface SlashItem {
   id: string;
@@ -120,16 +121,7 @@ export const SLASH_ITEMS: SlashItem[] = [
       preset.category === "engine"
         ? "Live Simulation Connectors"
         : CATEGORY_OF_NAME[preset.name] ?? "Factbooks & Infoboxes",
-    execute: insertNode({
-      type: "raw-html",
-      kind: /infobox/i.test(preset.name) ? "infobox" : "generic",
-      name: preset.name,
-      params: Object.fromEntries(
-        (preset.variants?.[0]?.defaultFields ?? preset.params.slice(0, 4).map((p) => p.name)).map((f) => [f, ""])
-      ),
-      html: `<div typeof="mw:Transclusion" class="wikios-ve-template"><em>${preset.description}</em></div>`,
-      children: [{ text: "" }],
-    }),
+    execute: insertNode(templatePresetToNode(preset)),
   })),
 
   {

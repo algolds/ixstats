@@ -20,7 +20,8 @@ import { EditorModalProvider } from "./context/EditorModalContext";
 import {
   PlateWikiEditor,
 } from "./plate/PlateWikiEditor";
-import { serializePlateToWikitext, type WikitextSerializeResult } from "./plate/wiki-html";
+import type { WikitextSerializeResult } from "./plate/wiki-wikitext";
+import { serializePlateToWikitext } from "./plate/wiki-wikitext";
 import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
 import type { TSlateEditor } from "platejs";
 
@@ -52,7 +53,6 @@ export function WikiVisualEditor({
   const editorRef = useRef<PlateEditorLike | null>(null);
   const htmlRef = useRef<string>(initialHtml);
   const wtRef = useRef<WikitextSerializeResult>({ wikitext: "", complete: false });
-  const valueRef = useRef<Descendant[] | null>(null);
   const { repulsionProgress } = useNavigationScroll();
 
   const state = useWikiEditorState({ title, onSave });
@@ -87,9 +87,6 @@ export function WikiVisualEditor({
       onSerializedWikitext?.(wtRef.current);
       state.setIsDirty(true);
       state.setWordCount(plainText.split(/\s+/).filter(Boolean).length);
-      if (editorRef.current) {
-        valueRef.current = editorRef.current.children;
-      }
     },
     [state, onSerializedWikitext]
   );

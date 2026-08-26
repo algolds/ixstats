@@ -8,7 +8,7 @@ import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { Badge } from "~/components/ui/badge";
-import { MASTER_TEMPLATE_PRESETS } from "~/components/wiki-os/editor/TemplatePaletteModal";
+import { MASTER_TEMPLATE_PRESETS } from "~/lib/wiki-os/templates/master-presets";
 import { VisualInfoboxPreviewCard } from "~/components/wiki-os/templates/VisualInfoboxPreviewCard";
 
 export default function WikiTemplatesPage() {

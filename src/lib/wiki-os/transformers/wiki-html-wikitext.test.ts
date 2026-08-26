@@ -1,4 +1,5 @@
-import { deserializeParsoidHtml, serializePlateToWikitext } from "~/components/wiki-os/editor/plate/wiki-html";
+import { deserializeParsoidHtml } from "~/components/wiki-os/editor/plate/wiki-html";
+import { serializePlateToWikitext } from "~/components/wiki-os/editor/plate/wiki-wikitext";
 import type { Descendant } from "slate";
 
 /** Build nodes via the real deserializer so structure matches production. */
