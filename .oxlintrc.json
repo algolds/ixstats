@@ -6,19 +6,28 @@
     "suspicious": "warn",
     "pedantic": "off"
   },
+  "options": { "maxWarnings": 2100 },
   "rules": {
-    // Unused vars - phased cleanup (2037->0): off for now, ratchet via maxWarnings; use ^_ prefix convention per AGENTS.md
+    // Unused vars - replaces eslint-plugin-unused-imports (auto-fixable, respects ^_)
     "eslint/no-unused-vars": "off",
-    "typescript/no-unused-vars": "off",
+    "typescript/no-unused-vars": [
+      "warn",
+      {
+        "varsIgnorePattern": "^_",
+        "argsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        "destructuredArrayIgnore": true
+      }
+    ],
     // TS relaxed
     "typescript/no-explicit-any": "off",
     "typescript/no-empty-function": "off",
     "typescript/ban-ts-comment": "warn",
     "typescript/no-require-imports": "off",
-    // React hooks correctness — keep rules-of-hooks as error, rest off for clean (incremental fix in follow-up)
+    // React hooks correctness — keep rules-of-hooks as error (only 3 fixed), rest warn via categories
     "react/rules-of-hooks": "error",
-    "react/exhaustive-deps": "off",
-    "react/set-state-in-effect": "off",
+    "react/exhaustive-deps": "warn",
+    "react/set-state-in-effect": "warn",
     // React 19 new JSX runtime - React import not required
     "react/react-in-jsx-scope": "off",
     // Next.js handles <a> etc - relax a11y/next for now (was off in ESLint, keep pre-existing)
@@ -45,55 +54,28 @@
     "unicorn/no-new-array": "off",
     "unicorn/prefer-add-event-listener": "off",
     "typescript/no-extraneous-class": "off",
-    "react/refs": "off",
-    "react/purity": "off",
+    "react/refs": "warn",
+    "react/purity": "warn",
     "react/immutability": "off",
     "react/hooks": "off",
     "react/static-components": "off",
     "react/preserve-manual-memoization": "off",
     "react/use-memo": "off",
-    "react/exhaustive-effect-dependencies": "off",
-    "react/no-unstable-nested-components": "off",
-    "react/memo-dependencies": "off",
-    "react/iframe-missing-sandbox": "off",
     "oxc/only-used-in-recursion": "off",
     // General
     "eslint/no-console": "off",
-    "eslint/prefer-const": "off",
+    "eslint/prefer-const": "warn",
     "eslint/no-var": "error",
-    "eslint/no-shadow": "off",
     "eslint/eqeqeq": ["warn", "always", { "null": "ignore" }],
     "eslint/no-useless-escape": "off",
     "eslint/no-control-regex": "off",
     "eslint/no-misleading-character-class": "off",
     "eslint/no-constant-binary-expression": "off",
     "eslint/no-unassigned-vars": "off",
-    "eslint/no-unneeded-ternary": "off",
-    "eslint/no-constant-condition": "off",
-    "eslint/no-eval": "off",
-    "eslint/no-unused-expressions": "off",
-    "eslint/no-unmodified-loop-condition": "off",
-    "eslint/no-new": "off",
-    "eslint/no-duplicate-case": "off",
-    "react/jsx-no-comment-textnodes": "off",
-    "react/capitalized-calls": "off",
-    "react/incompatible-library": "off",
-    "unicorn/no-empty-file": "off",
-    "unicorn/no-useless-length-check": "off",
-    "unicorn/require-post-message-target-origin": "off",
-    "jsx-a11y/anchor-is-valid": "off",
-    "jsx-a11y/no-noninteractive-tabindex": "off",
-    "oxc/const-comparisons": "off",
-    "oxc/erasing-op": "off",
-    "nextjs/no-assign-module-variable": "off",
-    "nextjs/no-html-link-for-pages": "off",
     // Import hygiene - warn only (import plugin heavier)
     "import/no-cycle": "off",
-    "import/no-unassigned-import": "off",
-    "import/no-named-as-default": "off",
-    "import/no-named-as-default-member": "off"
+    "import/no-unassigned-import": "off"
   },
-  "options": { "maxWarnings": 0 },
   "settings": {
     "jsx-a11y": { "components": { "Link": "a", "Button": "button" } }
   },
