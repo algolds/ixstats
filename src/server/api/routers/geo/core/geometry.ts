@@ -52,7 +52,7 @@ export function computeApproxAreaForFeature(geometry: Geometry): number {
         sumLng += lng;
         sumLat += lat;
       }
-      const cLng = sumLng / closed.length;
+      const _cLng = sumLng / closed.length;
       const cLat = sumLat / closed.length;
       const latRad = (cLat * Math.PI) / 180;
       const kmPerDegLng = 111.32 * Math.cos(latRad);

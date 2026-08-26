@@ -21,7 +21,7 @@ const recipeTypeEnum = z.enum(["FUSION", "EVOLUTION"]);
 /**
  * Material requirement schema
  */
-const materialRequirementSchema = z.object({
+const _materialRequirementSchema = z.object({
   cardId: z.string().optional(), // Specific card ID (for evolution)
   rarity: z.string().optional(), // Required rarity (for fusion)
   type: z.string().optional(), // Required card type
@@ -31,7 +31,7 @@ const materialRequirementSchema = z.object({
 /**
  * Unlock requirement schema
  */
-const unlockRequirementSchema = z.object({
+const _unlockRequirementSchema = z.object({
   minLevel: z.number().int().optional(), // Minimum collector level
   achievements: z.array(z.string()).optional(), // Required achievements
   completedRecipes: z.array(z.string()).optional(), // Required completed recipes

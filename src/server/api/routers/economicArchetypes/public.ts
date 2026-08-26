@@ -75,7 +75,7 @@ function getFallbackArchetypes(era: "modern" | "historical" | "all") {
  * Zod schema for archetype creation/update
  * Validates input data structure
  */
-const archetypeInputSchema = z.object({
+const _archetypeInputSchema = z.object({
   key: z.string().min(1),
   name: z.string().min(1),
   description: z.string().min(1),

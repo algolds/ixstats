@@ -54,12 +54,12 @@ const economicsSyncRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { countryId, governmentComponents } = input;
+      const { countryId, governmentComponents: _governmentComponents } = input;
 
       await assertCountryWriteAccess(ctx, countryId);
 
       // Update country with government components
-      const updated = await ctx.db.country.update({
+      const _updated = await ctx.db.country.update({
         where: { id: countryId },
         data: {
           updatedAt: new Date(),

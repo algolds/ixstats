@@ -27,7 +27,7 @@ import { TRPCError } from "@trpc/server";
 
 // ==================== VALIDATION SCHEMAS ====================
 
-const traitSchema = z.object({
+const _traitSchema = z.object({
   assertiveness: z.number().min(0).max(100),
   cooperativeness: z.number().min(0).max(100),
   economicFocus: z.number().min(0).max(100),

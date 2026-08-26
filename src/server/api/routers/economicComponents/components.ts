@@ -32,18 +32,18 @@ import {
 
 const economicComponentTypeSchema = z.nativeEnum(EconomicComponentType);
 
-const getAllComponentsSchema = z
+const _getAllComponentsSchema = z
   .object({
     category: z.string().optional(),
     isActive: z.boolean().optional(),
   })
   .optional();
 
-const getComponentByTypeSchema = z.object({
+const _getComponentByTypeSchema = z.object({
   componentType: economicComponentTypeSchema,
 });
 
-const incrementUsageSchema = z.object({
+const _incrementUsageSchema = z.object({
   componentType: economicComponentTypeSchema,
 });
 

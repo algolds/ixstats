@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 
 // Input schemas
-const activityFilterSchema = z.object({
+const _activityFilterSchema = z.object({
   limit: z.number().min(1).max(80).default(20),
   cursor: z.string().optional(),
   filter: z
@@ -15,7 +15,7 @@ const activityFilterSchema = z.object({
   userId: z.string().optional(),
 });
 
-const createActivitySchema = z.object({
+const _createActivitySchema = z.object({
   type: z.enum(["achievement", "diplomatic", "economic", "social", "meta"]),
   category: z.enum(["game", "platform", "social"]).default("game"),
   userId: z.string().optional(),
@@ -33,19 +33,19 @@ const createActivitySchema = z.object({
   relatedCountries: z.array(z.string()).optional(),
 });
 
-const engagementActionSchema = z.object({
+const _engagementActionSchema = z.object({
   activityId: z.string(),
   action: z.string(),
   userId: z.string(),
 });
 
-const commentActionSchema = z.object({
+const _commentActionSchema = z.object({
   activityId: z.string(),
   userId: z.string(),
   content: z.string().min(1).max(2000),
 });
 
-const getUserEngagementSchema = z.object({
+const _getUserEngagementSchema = z.object({
   activityIds: z.array(z.string()),
   userId: z.string(),
 });

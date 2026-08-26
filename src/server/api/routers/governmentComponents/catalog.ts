@@ -44,7 +44,7 @@ const incrementUsageSchema = z.object({
   componentType: componentTypeSchema,
 });
 
-const createSynergySchema = z.object({
+const _createSynergySchema = z.object({
   component1: componentTypeSchema,
   component2: componentTypeSchema,
   synergyType: z.enum(["STRONG", "MODERATE", "WEAK", "CONFLICT"]),

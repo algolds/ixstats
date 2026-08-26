@@ -69,7 +69,7 @@ export const intelligenceBriefingRouter = createTRPCRouter({
 
   recalculateForCountry: premiumProcedure
     .input(z.object({ countryId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx: _ctx, input }) => {
       await calculateIntelligence({ countryId: input.countryId, forceRecalculate: true });
       return { success: true, message: `Intelligence recalculated for country ${input.countryId}` };
     }),

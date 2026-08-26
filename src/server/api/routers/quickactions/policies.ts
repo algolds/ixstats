@@ -129,12 +129,12 @@ const governmentOfficialBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-const governmentOfficialCreateSchema = governmentOfficialBaseSchema;
+const _governmentOfficialCreateSchema = governmentOfficialBaseSchema;
 
 // Update schema - all fields optional
-const governmentOfficialUpdateSchema = governmentOfficialBaseSchema.partial();
+const _governmentOfficialUpdateSchema = governmentOfficialBaseSchema.partial();
 
-const meetingInputSchema = z.object({
+const _meetingInputSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional().nullable(),
   scheduledDate: z.date(),
@@ -198,7 +198,7 @@ const policyCreateSchema = policyBaseSchema;
 // Update schema - all fields optional
 const policyUpdateSchema = policyBaseSchema.partial();
 
-const activityScheduleInputSchema = z.object({
+const _activityScheduleInputSchema = z.object({
   activityType: z.enum([
     "meeting",
     "policy_review",

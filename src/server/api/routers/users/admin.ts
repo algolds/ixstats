@@ -140,7 +140,7 @@ export const usersAdminRouter = createTRPCRouter({
         },
       });
 
-      const adminRole = await ctx.db.role.upsert({
+      const _adminRole = await ctx.db.role.upsert({
         where: { name: "admin" },
         update: {},
         create: {
@@ -153,7 +153,7 @@ export const usersAdminRouter = createTRPCRouter({
         },
       });
 
-      const userRole = await ctx.db.role.upsert({
+      const _userRole = await ctx.db.role.upsert({
         where: { name: "user" },
         update: {},
         create: {

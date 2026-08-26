@@ -289,7 +289,7 @@ export const adminSystemRouter = createTRPCRouter({
         multiplier: z.number().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx: _ctx, input }) => {
       try {
         // Try to set via bot first
         const botResult = await IxTime.setBotTimeOverride(input.ixTime, input.multiplier);
@@ -375,10 +375,10 @@ export const adminSystemRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         const currentEpoch = IxTime.getInGameEpoch();
-        const currentIxTime = IxTime.getCurrentIxTime();
+        const _currentIxTime = IxTime.getCurrentIxTime();
 
         // Calculate the time difference
-        const timeDifference = input.targetEpoch - currentEpoch;
+        const _timeDifference = input.targetEpoch - currentEpoch;
         const yearsDifference = IxTime.getYearsElapsed(currentEpoch, input.targetEpoch);
 
         // Update all countries' baseline dates to the new epoch

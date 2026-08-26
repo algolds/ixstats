@@ -6,7 +6,7 @@ import { IxTime } from "~/lib/ixtime";
 import { validateNoXSS } from "~/lib/utils";
 import { globalCache } from "~/lib/cache";
 
-const invalidateFeeds = async () => {
+const _invalidateFeeds = async () => {
   try {
     await Promise.all([
       globalCache.deleteByPattern("thinkpages_feed:*"),
@@ -60,7 +60,7 @@ export function hydratePostDates<T extends PostDateFields | null | undefined>(po
   } as T;
 }
 
-const SearchUnsplashImagesSchema = z.object({
+const _SearchUnsplashImagesSchema = z.object({
   query: z.string().min(1),
   page: z.number().min(1).default(1),
   per_page: z.number().min(1).max(30).default(10),
@@ -134,12 +134,12 @@ const pollInclude = {
 };
 
 // Create schema - all required fields with defaults
-const CreateAccountSchema = thinkpagesAccountBaseSchema;
+const _CreateAccountSchema = thinkpagesAccountBaseSchema;
 
 // Update schema - all fields optional
-const UpdateAccountSchema = thinkpagesAccountBaseSchema.partial();
+const _UpdateAccountSchema = thinkpagesAccountBaseSchema.partial();
 
-const CreatePostSchema = z.object({
+const _CreatePostSchema = z.object({
   accountId: z.string(), // ThinkpagesAccount ID for feed posts
   content: z
     .string()
@@ -213,7 +213,7 @@ const CreatePostSchema = z.object({
     .optional(),
 });
 
-const AddReactionSchema = z.object({
+const _AddReactionSchema = z.object({
   postId: z.string(),
   accountId: z.string(), // ThinkpagesAccount ID for reactions
   reactionType: z.union([

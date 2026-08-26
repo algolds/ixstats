@@ -25,22 +25,22 @@ import {
 
 const componentTypeSchema = z.nativeEnum(ComponentType);
 
-const getAllComponentsSchema = z
+const _getAllComponentsSchema = z
   .object({
     category: z.string().optional(),
     isActive: z.boolean().optional(),
   })
   .optional();
 
-const getComponentByTypeSchema = z.object({
+const _getComponentByTypeSchema = z.object({
   componentType: componentTypeSchema,
 });
 
-const getSynergiesSchema = z.object({
+const _getSynergiesSchema = z.object({
   componentType: componentTypeSchema,
 });
 
-const incrementUsageSchema = z.object({
+const _incrementUsageSchema = z.object({
   componentType: componentTypeSchema,
 });
 

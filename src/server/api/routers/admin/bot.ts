@@ -7,7 +7,7 @@ import type { AdminPageBotStatusView } from "~/types/ixstats";
 
 export const adminBotRouter = createTRPCRouter({
   // Get bot status with health check
-  getBotStatus: adminProcedure.query(async ({ ctx }) => {
+  getBotStatus: adminProcedure.query(async ({ ctx: _ctx }) => {
     try {
       const [botHealth, ixTimeStatus] = await Promise.all([
         IxTime.checkBotHealth(),
@@ -56,7 +56,7 @@ export const adminBotRouter = createTRPCRouter({
   // Set custom time via bot or local override
 
   // Bot control operations
-  syncBot: adminProcedure.mutation(async ({ ctx }) => {
+  syncBot: adminProcedure.mutation(async ({ ctx: _ctx }) => {
     try {
       const result = await IxTime.syncWithBot();
       return result;
@@ -66,7 +66,7 @@ export const adminBotRouter = createTRPCRouter({
     }
   }),
 
-  pauseBot: adminProcedure.mutation(async ({ ctx }) => {
+  pauseBot: adminProcedure.mutation(async ({ ctx: _ctx }) => {
     try {
       const result = await IxTime.pauseBotTime();
       return result;
@@ -76,7 +76,7 @@ export const adminBotRouter = createTRPCRouter({
     }
   }),
 
-  resumeBot: adminProcedure.mutation(async ({ ctx }) => {
+  resumeBot: adminProcedure.mutation(async ({ ctx: _ctx }) => {
     try {
       const result = await IxTime.resumeBotTime();
       return result;
@@ -86,7 +86,7 @@ export const adminBotRouter = createTRPCRouter({
     }
   }),
 
-  clearBotOverrides: adminProcedure.mutation(async ({ ctx }) => {
+  clearBotOverrides: adminProcedure.mutation(async ({ ctx: _ctx }) => {
     try {
       const result = await IxTime.clearBotOverrides();
       return result;

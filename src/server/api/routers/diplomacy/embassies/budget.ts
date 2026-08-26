@@ -2,17 +2,14 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   protectedProcedure,
-  adminProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { notificationAPI } from "~/lib/notifications/api";
 import {
   calculateCulturalCompatibility,
   type CountryBasicInfo,
   type DiplomaticRelationship,
   type EmbassyConnection,
 } from "~/lib/diplomacy/cultural-compatibility";
-import { NPCPersonalitySystem, type ObservableData } from "~/lib/diplomacy/npc-personality";
 import { vaultService } from "~/lib/vault/vault-service";
 
 

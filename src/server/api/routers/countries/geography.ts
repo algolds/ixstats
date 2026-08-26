@@ -4,7 +4,7 @@ import { protectedProcedure, cachedStaticProcedure } from "~/server/api/trpc";
 export const geographyProcedures = {
   // Get custom geography (continents and regions)
   // Using cachedStaticProcedure - geography data rarely changes (1hr TTL)
-  getCustomGeography: cachedStaticProcedure.query(async ({ ctx }) => {
+  getCustomGeography: cachedStaticProcedure.query(async ({ ctx: _ctx }) => {
     // For now, return empty custom geography
     // In the future, this could fetch from a CustomGeography table
     return {
@@ -16,7 +16,7 @@ export const geographyProcedures = {
   // Add custom continent
   addContinent: protectedProcedure
     .input(z.object({ name: z.string() }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx: _ctx, input }) => {
       // For now, just return success
       // In the future, this could store in a CustomGeography table
       return { success: true, name: input.name };
@@ -30,7 +30,7 @@ export const geographyProcedures = {
         region: z.string(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx: _ctx, input }) => {
       // For now, just return success
       // In the future, this could store in a CustomGeography table
       return { success: true, continent: input.continent, region: input.region };

@@ -6,7 +6,7 @@ import { notificationHooks } from "~/lib/notifications/hooks";
 import { validateNoXSS } from "~/lib/utils";
 import { globalCache } from "~/lib/cache";
 
-const invalidateFeeds = async () => {
+const _invalidateFeeds = async () => {
   try {
     await Promise.all([
       globalCache.deleteByPattern("thinkpages_feed:*"),
@@ -18,7 +18,7 @@ const invalidateFeeds = async () => {
   }
 };
 
-const hydratePostDates = (post: any) => {
+const _hydratePostDates = (post: any) => {
   if (!post) return post;
   return {
     ...post,
@@ -51,7 +51,7 @@ const hydratePostDates = (post: any) => {
   };
 };
 
-const SearchUnsplashImagesSchema = z.object({
+const _SearchUnsplashImagesSchema = z.object({
   query: z.string().min(1),
   page: z.number().min(1).default(1),
   per_page: z.number().min(1).max(30).default(10),
@@ -78,7 +78,7 @@ const thinkpagesAccountBaseSchema = z.object({
   profileImageUrl: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
 });
-const pollInclude = {
+const _pollInclude = {
   poll: {
     include: {
       options: {
@@ -93,12 +93,12 @@ const pollInclude = {
 };
 
 // Create schema - all required fields with defaults
-const CreateAccountSchema = thinkpagesAccountBaseSchema;
+const _CreateAccountSchema = thinkpagesAccountBaseSchema;
 
 // Update schema - all fields optional
-const UpdateAccountSchema = thinkpagesAccountBaseSchema.partial();
+const _UpdateAccountSchema = thinkpagesAccountBaseSchema.partial();
 
-const CreatePostSchema = z.object({
+const _CreatePostSchema = z.object({
   accountId: z.string(), // ThinkpagesAccount ID for feed posts
   content: z
     .string()
@@ -172,7 +172,7 @@ const CreatePostSchema = z.object({
     .optional(),
 });
 
-const AddReactionSchema = z.object({
+const _AddReactionSchema = z.object({
   postId: z.string(),
   accountId: z.string(), // ThinkpagesAccount ID for reactions
   reactionType: z.union([
@@ -181,7 +181,7 @@ const AddReactionSchema = z.object({
   ]),
 });
 
-const GetFeedSchema = z.object({
+const _GetFeedSchema = z.object({
   countryId: z.string().optional(), // Feed filtered by country
   hashtag: z.string().optional(),
   filter: z.enum(["recent", "trending", "hot"]).default("recent"),

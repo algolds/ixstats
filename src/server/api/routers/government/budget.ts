@@ -8,7 +8,7 @@ import { GovernmentBuilderStateSchema } from "~/types/government";
 import { notificationAPI } from "~/lib/notifications/api";
 
 // Input validation schemas
-const governmentStructureInputSchema = z.object({
+const _governmentStructureInputSchema = z.object({
   governmentName: z.string().min(1, "Government name is required"),
   governmentType: z.enum([
     "Constitutional Monarchy",
@@ -79,12 +79,12 @@ const departmentBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-const departmentCreateSchema = departmentBaseSchema;
+const _departmentCreateSchema = departmentBaseSchema;
 
 // Update schema - all fields optional
-const departmentUpdateSchema = departmentBaseSchema.partial();
+const _departmentUpdateSchema = departmentBaseSchema.partial();
 
-const budgetAllocationInputSchema = z.object({
+const _budgetAllocationInputSchema = z.object({
   departmentId: z.string().min(1),
   budgetYear: z.number().int().min(2020).max(2030),
   allocatedAmount: z.number().nonnegative(),
@@ -102,7 +102,7 @@ const subBudgetInputSchema = z.object({
   priority: z.enum(["Critical", "High", "Medium", "Low"]).default("Medium"),
 });
 
-const revenueSourceInputSchema = z.object({
+const _revenueSourceInputSchema = z.object({
   name: z.string().min(1),
   category: z.enum(["Direct Tax", "Indirect Tax", "Non-Tax Revenue", "Fees and Fines", "Other"]),
   description: z.string().optional(),
@@ -112,7 +112,7 @@ const revenueSourceInputSchema = z.object({
   administeredBy: z.string().optional(),
 });
 
-const governmentBuilderStateSchema = GovernmentBuilderStateSchema;
+const _governmentBuilderStateSchema = GovernmentBuilderStateSchema;
 
 export const governmentBudgetRouter = createTRPCRouter({
   // Get budget summary

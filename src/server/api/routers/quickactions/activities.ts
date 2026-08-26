@@ -40,12 +40,12 @@ const governmentOfficialBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-const governmentOfficialCreateSchema = governmentOfficialBaseSchema;
+const _governmentOfficialCreateSchema = governmentOfficialBaseSchema;
 
 // Update schema - all fields optional
-const governmentOfficialUpdateSchema = governmentOfficialBaseSchema.partial();
+const _governmentOfficialUpdateSchema = governmentOfficialBaseSchema.partial();
 
-const meetingInputSchema = z.object({
+const _meetingInputSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional().nullable(),
   scheduledDate: z.date(),
@@ -101,10 +101,10 @@ const policyBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-const policyCreateSchema = policyBaseSchema;
+const _policyCreateSchema = policyBaseSchema;
 
 // Update schema - all fields optional
-const policyUpdateSchema = policyBaseSchema.partial();
+const _policyUpdateSchema = policyBaseSchema.partial();
 
 const activityScheduleInputSchema = z.object({
   activityType: z.enum([
@@ -228,7 +228,7 @@ export const quickActionsActivitiesRouter = createTRPCRouter({
 
       // Notify about activity scheduled
       try {
-        const isUrgent = input.activity.priority === "urgent";
+        const _isUrgent = input.activity.priority === "urgent";
         await notificationHooks.onQuickActionComplete({
           userId: input.userId,
           countryId: input.countryId,

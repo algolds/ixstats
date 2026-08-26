@@ -623,7 +623,7 @@ const economicsBuilderRouter = createTRPCRouter({
 
       try {
         // Update country with changes
-        const updated = await ctx.db.country.update({
+        const _updated = await ctx.db.country.update({
           where: { id: countryId },
           data: {
             ...changes,

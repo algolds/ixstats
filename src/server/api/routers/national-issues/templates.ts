@@ -71,7 +71,7 @@ const ConsequenceDefinitionSchema = z.object({
   durationDays: z.number().optional(),
 });
 
-const ResponseOptionSchema = z.object({
+const _ResponseOptionSchema = z.object({
   id: z.string(),
   label: z.string(),
   description: z.string(),

@@ -6,7 +6,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { globalCache } from "~/lib/cache";
 
 // Input schemas
-const activityFilterSchema = z.object({
+const _activityFilterSchema = z.object({
   limit: z.number().min(1).max(80).default(20),
   cursor: z.string().optional(),
   filter: z
@@ -34,7 +34,7 @@ const createActivitySchema = z.object({
   relatedCountries: z.array(z.string()).optional(),
 });
 
-const engagementActionSchema = z.object({
+const _engagementActionSchema = z.object({
   activityId: z.string(),
   action: z.string(),
   userId: z.string(),

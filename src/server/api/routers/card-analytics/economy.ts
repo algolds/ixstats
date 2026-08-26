@@ -138,7 +138,7 @@ async function getCardEconomyOverview(
   const changePercent = (change30Days / Math.max(nationCardValue - change30Days, 1)) * 100;
 
   // Get country GDP for correlation calculation
-  const country = await db.country.findUnique({
+  const _country = await db.country.findUnique({
     where: { id: countryId },
     select: { currentGdpPerCapita: true },
   });

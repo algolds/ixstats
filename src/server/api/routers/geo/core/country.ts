@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { cachedPublicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import type { Feature, Geometry } from "geojson";
+import type { Geometry } from "geojson";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { truncateGeometry } from "~/lib/maps/geojson-compress";
 

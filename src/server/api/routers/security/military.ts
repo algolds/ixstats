@@ -75,7 +75,7 @@ const militaryAssetInputSchema = z.object({
   imageUrl: z.string().optional(),
 });
 
-const securityThreatInputSchema = z.object({
+const _securityThreatInputSchema = z.object({
   threatName: z.string().min(1),
   threatType: z.enum([
     "military",
@@ -107,7 +107,7 @@ const securityThreatInputSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
-const neighborThreatInputSchema = z.object({
+const _neighborThreatInputSchema = z.object({
   neighborName: z.string().min(1),
   neighborCountryId: z.string().optional(),
   borderType: z.enum(["land", "maritime", "both"]),

@@ -44,12 +44,12 @@ const militaryBranchBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-const militaryBranchCreateSchema = militaryBranchBaseSchema;
+const _militaryBranchCreateSchema = militaryBranchBaseSchema;
 
 // Update schema - all fields optional
-const militaryBranchUpdateSchema = militaryBranchBaseSchema.partial();
+const _militaryBranchUpdateSchema = militaryBranchBaseSchema.partial();
 
-const militaryUnitInputSchema = z.object({
+const _militaryUnitInputSchema = z.object({
   name: z.string().min(1),
   unitType: z.string(),
   designation: z.string().optional(),
@@ -62,7 +62,7 @@ const militaryUnitInputSchema = z.object({
   imageUrl: z.string().optional(),
 });
 
-const militaryAssetInputSchema = z.object({
+const _militaryAssetInputSchema = z.object({
   assetType: z.enum(["aircraft", "ship", "vehicle", "weapon_system", "installation"]),
   category: z.string(),
   name: z.string().min(1),
@@ -108,7 +108,7 @@ const securityThreatInputSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
-const neighborThreatInputSchema = z.object({
+const _neighborThreatInputSchema = z.object({
   neighborName: z.string().min(1),
   neighborCountryId: z.string().optional(),
   borderType: z.enum(["land", "maritime", "both"]),

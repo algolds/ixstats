@@ -6,7 +6,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 const classificationSchema = z.enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL"]);
 
 // Diplomatic Intelligence Types
-const diplomaticRelationSchema = z.object({
+const _diplomaticRelationSchema = z.object({
   id: z.string(),
   countryId: z.string(),
   relatedCountryId: z.string(),
@@ -17,7 +17,7 @@ const diplomaticRelationSchema = z.object({
   updatedAt: z.date(),
 });
 
-const intelligenceBriefingSchema = z.object({
+const _intelligenceBriefingSchema = z.object({
   id: z.string(),
   countryId: z.string(),
   classification: classificationSchema,
@@ -44,7 +44,7 @@ const intelligenceBriefingSchema = z.object({
   ixTimeContext: z.number(),
 });
 
-const activityIntelligenceSchema = z.object({
+const _activityIntelligenceSchema = z.object({
   id: z.string(),
   countryId: z.string(),
   activityType: z.enum(["diplomatic", "economic", "cultural", "security"]),

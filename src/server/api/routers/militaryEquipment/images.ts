@@ -42,7 +42,7 @@ export const militaryEquipmentImagesRouter = createTRPCRouter({
         equipmentId: z.string().cuid(),
       })
     )
-    .query(async ({ ctx, input }) => {
+    .query(async ({ ctx: _ctx, input }) => {
       try {
         const { resolveEquipmentImage } =
           await import("~/server/services/wikimedia-equipment-image-resolver");
@@ -154,7 +154,7 @@ export const militaryEquipmentImagesRouter = createTRPCRouter({
    * Public: Get image cache statistics
    * Returns statistics about the equipment image cache
    */
-  getImageCacheStats: publicProcedure.query(async ({ ctx }) => {
+  getImageCacheStats: publicProcedure.query(async ({ ctx: _ctx }) => {
     try {
       const { getImageCacheStats } =
         await import("~/server/services/wikimedia-equipment-image-resolver");

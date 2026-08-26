@@ -300,7 +300,7 @@ function calculateTrends(data: Record<string, unknown>[]) {
 /**
  * Calculate correlation analysis (simplified)
  */
-function calculateCorrelations(data: Record<string, unknown>[]) {
+function calculateCorrelations(_data: Record<string, unknown>[]) {
   // Simplified correlation analysis
   return {
     gdpPopulation: 0.85,
@@ -324,7 +324,7 @@ function calculateStandardDeviation(values: number[]) {
  */
 function generateAIRecommendations(
   country: Record<string, unknown>,
-  recentData: Record<string, unknown>[]
+  _recentData: Record<string, unknown>[]
 ) {
   const recommendations = [];
 

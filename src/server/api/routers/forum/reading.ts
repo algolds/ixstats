@@ -14,7 +14,6 @@ import {
   type XFUser,
   type XFThread,
   type XFForum,
-  getXfApiUrl,
   transformBBCode,
   cachedFetch,
   cacheKey,

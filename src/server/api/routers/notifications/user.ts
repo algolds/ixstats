@@ -364,7 +364,7 @@ export const notificationsUserRouter = createTRPCRouter({
         adminUserId: z.string().optional(),
       })
     )
-    .query(async ({ ctx, input }) => {
+    .query(async ({ ctx, input: _input }) => {
       const { db } = ctx;
 
       // Admin role verified by adminProcedure middleware

@@ -27,7 +27,7 @@ import { TRPCError } from "@trpc/server";
 
 // ==================== VALIDATION SCHEMAS ====================
 
-const traitSchema = z.object({
+const _traitSchema = z.object({
   assertiveness: z.number().min(0).max(100),
   cooperativeness: z.number().min(0).max(100),
   economicFocus: z.number().min(0).max(100),
@@ -38,7 +38,7 @@ const traitSchema = z.object({
   isolationism: z.number().min(0).max(100),
 });
 
-const archetypeEnum = z.enum([
+const _archetypeEnum = z.enum([
   "aggressive_expansionist",
   "peaceful_merchant",
   "cautious_isolationist",

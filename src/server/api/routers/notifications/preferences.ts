@@ -12,7 +12,7 @@ import {
 import { TRPCError } from "@trpc/server";
 
 const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
-const NotificationType = z.enum([
+const _NotificationType = z.enum([
   "info",
   "warning",
   "success",
@@ -24,7 +24,7 @@ const NotificationType = z.enum([
   "diplomatic",
   "system",
 ]);
-const NotificationCategory = z.enum([
+const _NotificationCategory = z.enum([
   "economic",
   "diplomatic",
   "governance",

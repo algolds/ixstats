@@ -164,7 +164,7 @@ export const formulasRouter = createTRPCRouter({
         expectedOutput: z.number().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx: _ctx, input }) => {
       const startTime = Date.now();
 
       let result = 0;

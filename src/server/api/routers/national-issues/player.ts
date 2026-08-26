@@ -176,7 +176,7 @@ const ConsequenceDefinitionSchema = z.object({
   durationDays: z.number().optional(),
 });
 
-const ResponseOptionSchema = z.object({
+const _ResponseOptionSchema = z.object({
   id: z.string(),
   label: z.string(),
   description: z.string(),
@@ -226,7 +226,7 @@ const TemplateCreateSchema = z.object({
   isGlobal: z.boolean().default(false),
 });
 
-const TemplateUpdateSchema = TemplateCreateSchema.partial().extend({
+const _TemplateUpdateSchema = TemplateCreateSchema.partial().extend({
   id: z.string(),
 });
 

@@ -18,7 +18,7 @@ import {
 import { TRPCError } from "@trpc/server";
 
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
-const coordinatesSchema = z
+const _coordinatesSchema = z
   .tuple([z.number(), z.number()])
   .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
     message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",

@@ -322,7 +322,7 @@ export const usersProfileRouter = createTRPCRouter({
         }),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx: _ctx, input }) => {
       try {
         // For now, we'll store user preferences in a simple way
         // In a real implementation, you might have a UserProfile table

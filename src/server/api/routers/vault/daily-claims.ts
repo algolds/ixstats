@@ -19,7 +19,7 @@ import { globalCache } from "~/lib/cache";
 /**
  * Vault transaction type enum for validation
  */
-const vaultTransactionTypeEnum = z.enum([
+const _vaultTransactionTypeEnum = z.enum([
   "EARN_PASSIVE",
   "EARN_ACTIVE",
   "EARN_CARDS",

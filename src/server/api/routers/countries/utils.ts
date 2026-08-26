@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { globalCache } from "~/lib/cache";
 import { getArticleIntro } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import type { BaseCountryData } from "~/types/ixstats";
 
 // Cache helpers
 export function getCacheKey(operation: string, params: any): string {

@@ -5,8 +5,8 @@ import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { NOTIFICATION_EVENTS } from "~/lib/notifications/events-registry";
 
-const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
-const NotificationType = z.enum([
+const _NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
+const _NotificationType = z.enum([
   "info",
   "warning",
   "success",
@@ -18,7 +18,7 @@ const NotificationType = z.enum([
   "diplomatic",
   "system",
 ]);
-const NotificationCategory = z.enum([
+const _NotificationCategory = z.enum([
   "economic",
   "diplomatic",
   "governance",

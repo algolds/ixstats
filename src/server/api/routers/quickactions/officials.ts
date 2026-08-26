@@ -44,7 +44,7 @@ const governmentOfficialCreateSchema = governmentOfficialBaseSchema;
 // Update schema - all fields optional
 const governmentOfficialUpdateSchema = governmentOfficialBaseSchema.partial();
 
-const meetingInputSchema = z.object({
+const _meetingInputSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional().nullable(),
   scheduledDate: z.date(),
@@ -100,12 +100,12 @@ const policyBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-const policyCreateSchema = policyBaseSchema;
+const _policyCreateSchema = policyBaseSchema;
 
 // Update schema - all fields optional
-const policyUpdateSchema = policyBaseSchema.partial();
+const _policyUpdateSchema = policyBaseSchema.partial();
 
-const activityScheduleInputSchema = z.object({
+const _activityScheduleInputSchema = z.object({
   activityType: z.enum([
     "meeting",
     "policy_review",
@@ -251,7 +251,7 @@ export const quickActionsOfficialsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { governmentStructureId, departmentId, responsibilities, ...safeUpdates } =
+      const { governmentStructureId: _governmentStructureId, departmentId, responsibilities, ...safeUpdates } =
         input.updates;
 
       const official = await ctx.db.governmentOfficial.update({
