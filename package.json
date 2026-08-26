@@ -233,6 +233,7 @@
     "recharts": "^3.10.1",
     "remark-gfm": "^4.0.1",
     "shiki": "^4.4.3",
+    "slate": "0.124.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "sonner": "^2.0.8",

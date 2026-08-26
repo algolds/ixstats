@@ -1,14 +1,15 @@
 // src/components/wiki-os/editor/WikiVisualEditor.tsx
-// Hybrid visual editor — Parsoid HTML in contenteditable with React toolbar.
-// Templates render as live HTML with click-to-edit. Preserves data-mw for roundtrip.
+// Visual editor on Plate (Slate). Parsoid HTML is deserialized into a block
+// model; atomic nodes (templates/chips/media) preserve their original HTML
+// verbatim for lossless save roundtrips.
 
 "use client";
 
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
-import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
-import { getDraft } from "~/lib/wiki-os/editor/draft-store";
+import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
 import { parseTemplateWikitext } from "~/lib/wiki-os/editor/parse-template-wikitext";
+import type { Descendant } from "slate";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
 import { useWikiVisualFormatting } from "./hooks/useWikiVisualFormatting";
 import { WikiVisualToolbar } from "./components/WikiVisualToolbar";
@@ -16,6 +17,11 @@ import { WikiEditorSavePanel } from "./components/WikiEditorSavePanel";
 import { WikiEditorModalHost } from "./components/WikiEditorModalHost";
 import { WikiEditorStatusBar } from "./components/WikiEditorStatusBar";
 import { EditorModalProvider } from "./context/EditorModalContext";
+import {
+  PlateWikiEditor,
+} from "./plate/PlateWikiEditor";
+import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
+import type { TSlateEditor } from "platejs";
 
 export interface WikiVisualEditorProps {
   initialHtml: string;
@@ -30,6 +36,8 @@ export interface WikiVisualEditorProps {
   onSwitchToSource: (dirty: boolean, currentHtml: string) => void;
 }
 
+type PlateEditorLike = TSlateEditor;
+
 export function WikiVisualEditor({
   initialHtml,
   title,
@@ -37,101 +45,89 @@ export function WikiVisualEditor({
   onCancel,
   onSwitchToSource,
 }: WikiVisualEditorProps) {
-  const editableRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<PlateEditorLike | null>(null);
+  const htmlRef = useRef<string>(initialHtml);
+  const valueRef = useRef<Descendant[] | null>(null);
   const { repulsionProgress } = useNavigationScroll();
 
   const state = useWikiEditorState({ title, onSave });
   const fmt = useWikiVisualFormatting({
     title,
-    editableRef,
+    editorRef: editorRef as unknown as React.MutableRefObject<PlateEditorLike | null>,
     setIsDirty: state.setIsDirty,
   });
 
-  // Load initial HTML into contenteditable div on mount
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (editableRef.current) {
-      const fixed = fixEditorImageUrls(initialHtml);
-      editableRef.current.innerHTML = fixed;
-      fmt.protectTemplatesAndImages(editableRef.current);
-      state.setWordCount(editableRef.current.innerText.split(/\s+/).filter(Boolean).length);
-
-      const existingDraft = getDraft(title, "ixwiki");
-      const draftContent = existingDraft?.html;
-      if (draftContent && draftContent !== fixed) {
-        timer = setTimeout(() => {
-          const restore = window.confirm(
-            `An unsaved local draft from a previous session was found for "${title}". Would you like to restore it?`
-          );
-          if (restore && editableRef.current) {
-            editableRef.current.innerHTML = draftContent;
-            fmt.protectTemplatesAndImages(editableRef.current);
-            state.setIsDirty(true);
-          }
-        }, 100);
-      }
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [title, initialHtml, fmt.protectTemplatesAndImages, state.setIsDirty, state.setWordCount]);
-
-  // Dirty tracking, word count
-  const handleInput = useCallback(() => {
-    state.setIsDirty(true);
-    if (editableRef.current) {
-      state.setWordCount(editableRef.current.innerText.split(/\s+/).filter(Boolean).length);
-    }
-  }, [state.setIsDirty, state.setWordCount]);
-
-  // Save actions
-  const handleSave = useCallback(async () => {
-    await state.executeSave(() => editableRef.current?.innerHTML ?? "");
-  }, [state]);
-
-  const handleSaveDraft = useCallback(() => {
-    state.executeSaveDraft(() => editableRef.current?.innerHTML ?? "", "visual");
-  }, [state]);
-
-  // Keyboard shortcuts
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey) {
-        switch (e.key.toLowerCase()) {
-          case "b":
-            e.preventDefault();
-            fmt.exec("bold");
-            break;
-          case "i":
-            e.preventDefault();
-            fmt.exec("italic");
-            break;
-          case "u":
-            e.preventDefault();
-            fmt.exec("underline");
-            break;
-          case "k":
-            e.preventDefault();
-            fmt.insertLink();
-            break;
-          case "s":
-            e.preventDefault();
-            handleSave();
-            break;
-          case "z":
-          case "y":
-            break;
+  // Draft restore prompt (drafts store serialized HTML)
+  const initialForPlate = React.useMemo(() => {
+    const existingDraft = getDraft(title, "ixwiki");
+    const draftContent = existingDraft?.html;
+    if (draftContent && draftContent !== fixEditorImageUrls(initialHtml)) {
+      setTimeout(() => {
+        const restore = window.confirm(
+          `An unsaved local draft from a previous session was found for "${title}". Would you like to restore it? Reopen the editor to apply.`
+        );
+        if (restore) {
+          state.setIsDirty(true);
         }
-      }
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey) {
-        if (e.key.toLowerCase() === "x") {
-          e.preventDefault();
-          fmt.exec("strikeThrough");
-        }
+      }, 100);
+      return draftContent;
+    }
+    return fixEditorImageUrls(initialHtml);
+  }, [title, initialHtml, state.setIsDirty]);
+
+  const handleValueChange = useCallback(
+    (_nodes: Descendant[], html: string, plainText: string) => {
+      htmlRef.current = html;
+      state.setIsDirty(true);
+      state.setWordCount(plainText.split(/\s+/).filter(Boolean).length);
+      if (editorRef.current) {
+        valueRef.current = editorRef.current.children;
       }
     },
-    [fmt, handleSave]
+    [state]
   );
+
+  const handleSave = useCallback(async () => {
+    await state.executeSave(() => htmlRef.current);
+    saveDraft({ title, source: "ixwiki", mode: "visual", html: htmlRef.current });
+  }, [state, title]);
+
+  const handleSaveDraft = useCallback(() => {
+    state.executeSaveDraft(() => htmlRef.current, "visual");
+  }, [state]);
+
+  const handleSwitchToSource = useCallback(() => {
+    onSwitchToSource(state.isDirty, htmlRef.current);
+  }, [onSwitchToSource, state.isDirty]);
+
+  const handleOpenTemplateEditor = useCallback(
+    (id: string) => {
+      const editor = editorRef.current;
+      if (!editor || !fmt.setEditingTemplate) return;
+      const { Editor } = require("slate") as typeof import("slate");
+      const entries = Array.from(
+        Editor.nodes(editor as unknown as import("slate").BaseEditor, {
+          at: [],
+          match: (n) => (n as unknown as { id?: string }).id === id,
+        })
+      );
+      if (entries.length === 0) return;
+      const node = entries[0]![0] as {
+        name?: string;
+        params?: Record<string, string>;
+      };
+      fmt.setEditingTemplate({
+        id,
+        name: node.name ?? "Template",
+        params: node.params ?? {},
+      });
+    },
+    [fmt]
+  );
+
+  const handleRemoveTemplate = useCallback(() => {
+    fmt.removeEditingNode();
+  }, [fmt]);
 
   // Template and Image Handlers
   const handleInsertTemplateFromWikitext = useCallback(
@@ -166,20 +162,14 @@ export function WikiVisualEditor({
       const colonIdx = head.indexOf(":");
       const type = colonIdx !== -1 ? head.slice(0, colonIdx) : head;
       const values = colonIdx !== -1 ? head.slice(colonIdx + 1) : "";
+      const href = `${type}:${values}`;
+      const titleAttr = `${type}:${values}`;
 
-      const anchor = document.createElement("a");
-      anchor.contentEditable = "false";
-      anchor.setAttribute("href", `${type}:${values}`);
-      anchor.setAttribute("title", `${type}:${values}`);
-
-      if (type.toLowerCase() === "coords") {
-        anchor.className = "wikios-ve-custom-chip chip-coords";
-        anchor.innerHTML = `<span class="opacity-70">📍</span> ${label || "Location"}`;
-      } else {
-        anchor.className = "wikios-ve-custom-chip chip-mapembed";
-        anchor.innerHTML = `<span class="opacity-70">🗺️</span> Map Embed`;
-      }
-      fmt.insertNodeAtCursor(anchor);
+      const chipNode =
+        type.toLowerCase() === "coords"
+          ? { type: "chip-coord", href, title: titleAttr, label: label || "Location", children: [{ text: "" }] }
+          : { type: "chip-mapembed", href, title: titleAttr, children: [{ text: "" }] };
+      fmt.insertChip(chipNode);
     },
     [fmt]
   );
@@ -191,14 +181,6 @@ export function WikiVisualEditor({
     [fmt]
   );
 
-  const handleRemoveTemplate = useCallback(() => {
-    if (fmt.editingTemplate) {
-      fmt.editingTemplate.element.remove();
-      fmt.setEditingTemplate(null);
-      state.setIsDirty(true);
-    }
-  }, [fmt, state.setIsDirty]);
-
   return (
     <EditorModalProvider value={state.modalContextValue}>
     <div className="wikios-ve-container">
@@ -207,10 +189,7 @@ export function WikiVisualEditor({
         wordCount={state.wordCount}
         isDirty={state.isDirty}
         repulsionProgress={repulsionProgress}
-        onSwitchToSource={() => {
-          const currentHtml = editableRef.current?.innerHTML ?? "";
-          onSwitchToSource(state.isDirty, currentHtml);
-        }}
+        onSwitchToSource={handleSwitchToSource}
         onCancel={onCancel}
         onSave={handleSave}
         handleSaveDraft={handleSaveDraft}
@@ -249,16 +228,13 @@ export function WikiVisualEditor({
         onSave={handleSave}
       />
 
-      {/* ─── ContentEditable Editor Canvas ─── */}
+      {/* ─── Plate Editor Canvas ─── */}
       <div className="wikios-ve-editor-wrapper">
-        <div
-          ref={editableRef}
-          className="wikios-ve-content"
-          contentEditable
-          suppressContentEditableWarning
-          onInput={handleInput}
-          onKeyDown={handleKeyDown}
-          spellCheck
+        <PlateWikiEditor
+          initialHtml={initialForPlate}
+          onValueChange={handleValueChange}
+          openTemplateEditor={handleOpenTemplateEditor}
+          deleteNode={() => fmt.removeEditingNode()}
         />
       </div>
 

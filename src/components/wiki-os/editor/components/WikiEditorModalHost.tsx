@@ -27,7 +27,7 @@ export interface WikiEditorModalHostProps {
   onInsertMapCoords: (wikitext: string) => void;
 
   editingTemplate?: {
-    element: HTMLElement;
+    id: string;
     name: string;
     params: Record<string, string>;
   } | null;
