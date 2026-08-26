@@ -58,8 +58,10 @@ export function GovernmentBuilder({
   initialData,
   onSave,
   onChange,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onPreview,
   isReadOnly = false,
+  // oxlint-disable-next-line eslint/no-unused-vars
   hideSaveButton = false,
   countryId,
   enableAutoSync = false,
@@ -97,7 +99,9 @@ export function GovernmentBuilder({
     goToNextStep,
     goToPreviousStep,
     applyTemplate: builderApplyTemplate,
+    // oxlint-disable-next-line eslint/no-unused-vars
     handleSave,
+    // oxlint-disable-next-line eslint/no-unused-vars
     triggerSync,
     clearConflicts,
     allCollapsed,

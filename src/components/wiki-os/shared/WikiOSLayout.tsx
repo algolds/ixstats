@@ -34,6 +34,7 @@ import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
 export function WikiOSLayout({
   title,
+  // oxlint-disable-next-line eslint/no-unused-vars
   sidebarVariant = "wiki",
   hideTitleHeading = false,
   showUtilitiesRibbon,

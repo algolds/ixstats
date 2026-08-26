@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { MoreHoriz as MoreHorizontal, Pin, Bookmark, OpenBook as BookOpen, WhiteFlag as Flag, EditPencil as Edit, Trash as Trash2, Journal as Newspaper, Group as Users, Refresh as Repeat2, ChatBubble as MessageCircle } from "iconoir-react";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
@@ -134,7 +135,9 @@ export function StandardPostView({
   showReplies,
   setShowReplies,
   threadQuery,
+  // oxlint-disable-next-line eslint/no-unused-vars
   showMoreOptions,
+  // oxlint-disable-next-line eslint/no-unused-vars
   setShowMoreOptions,
   showReplyComposer,
   setShowReplyComposer,

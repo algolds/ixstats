@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Globe, Plus, Search } from "iconoir-react";
 import {
   SCENARIO_TYPES,

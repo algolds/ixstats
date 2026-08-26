@@ -16,6 +16,7 @@ import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import {
@@ -69,6 +70,7 @@ export function DemographicsHealthModal({
     api.historical.getCountryHistory.useQuery({ countryId }, { enabled: !!countryId && isOpen });
 
   // Fetch global stats for comparison
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: globalStats, isLoading: globalLoading } = api.countries.getGlobalStats.useQuery(
     undefined,
     { enabled: isOpen }

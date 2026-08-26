@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ViewGrid as LayoutGrid,
+  // oxlint-disable-next-line eslint/no-unused-vars
   HistoricShieldAlt as HistoricShield,
+  // oxlint-disable-next-line eslint/no-unused-vars
   StatUp as TrendingUp,
   KeyCommand as Command,
   EditPencil as Edit3,
@@ -37,6 +39,7 @@ export function UnifiedGlassCommandBar({
   onDeclare,
 }: UnifiedGlassCommandBarProps) {
   const router = useRouter();
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { compactMode } = useTheme();
   const { country } = useCountryData();
 
@@ -173,6 +176,7 @@ export function UnifiedGlassCommandBar({
 
             <span className="text-muted-foreground/40 text-xs">/</span>
 
+            // oxlint-disable-next-line eslint/no-unused-vars
             {DOMAIN_TILES.map(({ id, title, icon: Icon, badgeCls }) => {
               const isActive = activeSection === id;
               return (

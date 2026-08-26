@@ -201,6 +201,7 @@ export function GovernmentStructureForm({
     [onChange]
   );
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const formatCurrency = (amount: number) => {
     return safeFormatCurrency(amount, data.budgetCurrency || "USD", false, "USD");
   };

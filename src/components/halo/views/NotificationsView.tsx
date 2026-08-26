@@ -117,6 +117,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
 
   // ─── Merge & group ─────────────────────────────────────────────────────
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { allAlerts, groups } = useMemo(() => {
     const standardList: NotificationItem[] = (notificationsData?.notifications || [])
       .filter((n) => !n.dismissed && !locallyDismissedIds.has(n.id))

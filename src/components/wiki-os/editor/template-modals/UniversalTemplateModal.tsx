@@ -22,6 +22,7 @@ export function UniversalTemplateModal({
 }: UniversalTemplateModalProps) {
   const [selectedTemplate, setSelectedTemplate] = useState(initialTemplateName);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [searchQuery, setSearchQuery] = useState("");
 
   const { paramList, hasSchema, loading } = useTemplateSchema(selectedTemplate);

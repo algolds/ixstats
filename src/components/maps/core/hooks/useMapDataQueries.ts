@@ -45,12 +45,14 @@ export function useMapDataQueries({
   } = useMapDataBatched(initialLayers, currentZoom);
 
   // 3. Story Pins and Labels queries
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: storyPinsGeoJson, isLoading: isStoryPinsLoading } =
     api.geoFeatures.getAllStoryPins.useQuery(undefined, {
       staleTime: 5 * 60_000,
       gcTime: 30 * 60_000,
       enabled: mapEngineReady,
     });
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: mapLabelsGeoJson, isLoading: isMapLabelsLoading } =
     api.geoFeatures.getAllMapLabels.useQuery(undefined, {
       staleTime: 5 * 60_000,
@@ -59,6 +61,7 @@ export function useMapDataQueries({
     });
 
   // 4. Top-25 countries
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: topCountryNames, isLoading: isTopCountriesLoading } =
     api.countries.getTopCountriesByImportance.useQuery(
       { limit: 25 },

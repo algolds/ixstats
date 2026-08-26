@@ -143,6 +143,7 @@ function convertInlineNodes(nodes: NodeList, marks: Partial<WikiText>, out: Desc
     if (tag === "br") { out.push({ text: "\n", ...marks }); return; }
 
     if (tag === "a") {
+      // oxlint-disable-next-line eslint/no-unused-vars
       const hrefAttr = el.getAttribute("href") ?? "";
       const chipEarly = chipInfoFromAnchor(el as HTMLAnchorElement);
       void chipEarly;
@@ -284,6 +285,7 @@ export function deserializeParsoidHtml(html: string): Descendant[] {
   };
 
   const walkBlocks = (parent: Element) => {
+    // oxlint-disable-next-line eslint/no-unused-vars
     parent.childNodes.forEach((n) => { /* placeholder to satisfy lint on forEach reuse */ });
     for (let i = 0; i < parent.childNodes.length; i++) {
       const n = parent.childNodes[i];

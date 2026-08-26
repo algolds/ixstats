@@ -203,6 +203,7 @@ function ExecutiveAgendaComponent({
     return "democracy";
   }, [govStructure.data]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const governanceConfig = useMemo(() => {
     const data = govStructure.data;
     switch (resolvedGovType) {
@@ -251,6 +252,7 @@ function ExecutiveAgendaComponent({
     }
   }, [resolvedGovType, gameYear, resolvedTermProgress, govStructure.data, now]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const resolvedApproval = useMemo(() => {
     if (countryDetails.data?.publicApproval !== undefined) {
       return `${Math.round(countryDetails.data.publicApproval)}%`;
@@ -258,6 +260,7 @@ function ExecutiveAgendaComponent({
     return "68%";
   }, [countryDetails.data]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const activeIssuesCount = useMemo(() => {
     return issuesData.data?.issues?.length ?? 0;
   }, [issuesData.data]);

@@ -8,6 +8,7 @@ interface ExportDialogProps {
 }
 
 export default function ExportDialog({ onClose }: ExportDialogProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { blazon, composition } = useVexelEditor();
   const [exporting, setExporting] = useState(false);
 

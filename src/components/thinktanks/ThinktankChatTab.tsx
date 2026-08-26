@@ -25,6 +25,7 @@ export function ThinktankChatTab({
   isMember = true,
   onJoin,
 }: ThinktankChatTabProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const notify = useNotify();
   const utils = api.useUtils();
   const targetId = conversationId || groupId;

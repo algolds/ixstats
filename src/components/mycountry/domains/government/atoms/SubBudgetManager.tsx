@@ -195,6 +195,7 @@ export function SubBudgetManager({
           {data.map((item, index) => {
             const Icon = budgetTypeIcons[item.budgetType];
             const typeColor = budgetTypeColors[item.budgetType];
+            // oxlint-disable-next-line eslint/no-unused-vars
             const priorityColor = priorityColors[item.priority];
 
             return (

@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   ChatBubble as MessageSquare,
   DesignPencil as Highlighter,
+  // oxlint-disable-next-line eslint/no-unused-vars
   Bookmark,
   Xmark as X,
   Expand as Maximize2,

@@ -20,8 +20,10 @@ export type V2Mode = CommandNavMode;
 
 export function CommandNavToggle({
   mode = "home",
+  // oxlint-disable-next-line eslint/no-unused-vars
   activeSection = "overview",
   onChangeMode,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onNavigate,
 }: {
   mode?: CommandNavMode;

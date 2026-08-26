@@ -404,7 +404,9 @@ function AssetDialog({
   open,
   onOpenChange,
   asset,
+  // oxlint-disable-next-line eslint/no-unused-vars
   branchId,
+  // oxlint-disable-next-line eslint/no-unused-vars
   branchType,
   onCreate,
   onUpdate,

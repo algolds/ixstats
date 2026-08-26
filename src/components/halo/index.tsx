@@ -107,9 +107,13 @@ function CommandPaletteContent({
     searchFilter,
     isUserInteracting,
     searchResults,
+    // oxlint-disable-next-line eslint/no-unused-vars
     countriesData,
+    // oxlint-disable-next-line eslint/no-unused-vars
     setMode,
+    // oxlint-disable-next-line eslint/no-unused-vars
     setIsExpanded,
+    // oxlint-disable-next-line eslint/no-unused-vars
     setExpandedMode,
     setSearchQuery,
     setSearchFilter,

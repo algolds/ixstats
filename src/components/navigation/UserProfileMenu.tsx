@@ -21,6 +21,7 @@ export function UserProfileMenu({
   userProfile,
   setupStatus,
   userCountryFlag,
+  // oxlint-disable-next-line eslint/no-unused-vars
   flagsLoading,
 }: UserProfileMenuProps) {
   const [showUserPopover, setShowUserPopover] = useState(false);

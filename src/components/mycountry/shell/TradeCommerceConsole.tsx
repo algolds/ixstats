@@ -4,12 +4,15 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import {
   Globe as Globe2,
   DeliveryTruck as Ship,
+  // oxlint-disable-next-line eslint/no-unused-vars
   StatDown as TrendingDown,
   Percentage as Percent,
   Lock,
   LockSlash as Unlock,
   Community as Handshake,
+  // oxlint-disable-next-line eslint/no-unused-vars
   ScaleFrameEnlarge as Scale,
+  // oxlint-disable-next-line eslint/no-unused-vars
   ArrowUpRight,
   Plus,
   Trash as Trash2,
@@ -205,6 +208,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   const totalExports = (gdpBase * exportsPct) / 100;
   const totalImports = (gdpBase * importsPct) / 100;
   const annualTradeVolume = totalExports + totalImports;
+  // oxlint-disable-next-line eslint/no-unused-vars
   const tradeBalance = totalExports - totalImports;
 
   // ---------------------------------------------------------------------------

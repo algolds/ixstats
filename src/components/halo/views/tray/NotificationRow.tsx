@@ -26,6 +26,7 @@ export function NotificationRow({
   isRead,
   colors,
   Icon,
+  // oxlint-disable-next-line eslint/no-unused-vars
   handleMarkRead,
   handleDismiss,
   handleClick,

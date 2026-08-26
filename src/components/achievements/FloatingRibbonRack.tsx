@@ -20,6 +20,7 @@ export function FloatingRibbonRack({
   unlockedCount = 3,
   className,
   style,
+  // oxlint-disable-next-line eslint/no-unused-vars
   hasImage = true,
 }: FloatingRibbonRackProps) {
   const ribbonsToDisplay = FORUM_RIBBONS.filter((r) => pinnedIds.includes(r.id)).slice(0, 3);

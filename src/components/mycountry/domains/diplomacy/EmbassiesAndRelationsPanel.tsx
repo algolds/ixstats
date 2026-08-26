@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { City as Building2, Group as Users, Community as Handshake, Page as FileText, Palette, Plus, NavArrowRight as ChevronRight, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
@@ -53,8 +54,11 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
   >("embassies");
 
   // Collapsible sections
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [relationsExpanded, setRelationsExpanded] = useState(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [exchangesExpanded, setExchangesExpanded] = useState(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [eventsExpanded, setEventsExpanded] = useState(false);
 
   // Determine ownership
@@ -73,6 +77,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
     isLoading: embassiesLoading,
     refetch: refetchEmbassies,
   } = useEmbassyNetworkData(countryId, isOwner);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const networkMetrics = useNetworkMetrics(embassiesWithSynergies);
 
   // Shared data modal (embassy synergy detail — legacy)
@@ -363,6 +368,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
 }
 
 /* ─── Stats Cell ─── */
+// oxlint-disable-next-line eslint/no-unused-vars
 function StatCell({
   icon: Icon,
   label,

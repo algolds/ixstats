@@ -8,6 +8,7 @@ import type { MediaEl } from "../wiki-html";
 /** Stashed/Commons media block — original figure HTML preserved verbatim. */
 export function PlateMediaElement({ attributes, children }: { attributes: Record<string, unknown>; children: React.ReactNode }) {
   const el = useElement() as unknown as MediaEl | undefined;
+  // oxlint-disable-next-line eslint/no-unused-vars
   const path = usePath();
   const readOnly = useReadOnly();
   const cb = usePlateWikiCallbacks();

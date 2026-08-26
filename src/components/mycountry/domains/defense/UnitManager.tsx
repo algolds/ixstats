@@ -262,6 +262,7 @@ function UnitDialog({
   open,
   onOpenChange,
   unit,
+  // oxlint-disable-next-line eslint/no-unused-vars
   branchId,
   branchType,
   onCreate,

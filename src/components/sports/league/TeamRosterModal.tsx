@@ -41,6 +41,7 @@ interface PlayerAttributes {
 
 // ─── Attribute badge styling ────────────────────────────────────────────────
 
+// oxlint-disable-next-line eslint/no-unused-vars
 function attributeBadgeClass(value: number): string {
   if (value >= 90) return "bg-amber-400/20 text-amber-600 dark:text-amber-400 border-amber-400/40";
   if (value >= 80)
@@ -49,6 +50,7 @@ function attributeBadgeClass(value: number): string {
   return "bg-muted/60 text-muted-foreground border-border";
 }
 
+// oxlint-disable-next-line eslint/no-unused-vars
 function attributeProgressColor(value: number): string {
   if (value >= 90) return "bg-amber-400";
   if (value >= 80) return "bg-emerald-400";
@@ -58,6 +60,7 @@ function attributeProgressColor(value: number): string {
 
 // ─── Career stage styling ───────────────────────────────────────────────────
 
+// oxlint-disable-next-line eslint/no-unused-vars
 const CAREER_STAGE_STYLES: Record<string, { label: string; className: string }> = {
   rookie: { label: "Rookie", className: "border-blue-500/30 bg-blue-500/10 text-blue-400" },
   developing: {

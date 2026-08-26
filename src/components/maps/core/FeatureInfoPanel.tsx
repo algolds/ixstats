@@ -29,6 +29,7 @@ function formatPopulation(n: number | null | undefined): string {
 }
 
 function FeaturePeekContent({ feature }: { feature: SelectedFeature }) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const isCity = feature.featureType === "city" || feature.featureType === "capital";
   const typeLabel =
     feature.featureType === "capital"

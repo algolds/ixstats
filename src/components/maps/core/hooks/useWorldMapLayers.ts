@@ -11,6 +11,7 @@ import {
 } from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import { applySmoothProjection } from "../utils/projectionTransition";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { filterByArea, COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
 
 interface UseWorldMapLayersProps {

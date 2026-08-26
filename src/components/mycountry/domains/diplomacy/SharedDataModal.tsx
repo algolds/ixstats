@@ -773,6 +773,7 @@ function renderEconomicData(data: any) {
   );
 }
 
+// oxlint-disable-next-line eslint/no-unused-vars
 function renderIntelligenceData(data: any[] | undefined, isOwner: boolean) {
   if (!data || data.length === 0) return <EmptyState type="intelligence" />;
 

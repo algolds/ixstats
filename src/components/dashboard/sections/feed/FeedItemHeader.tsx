@@ -70,6 +70,7 @@ export function FeedItemHeader({
   titleHtml,
   externalUrl,
 }: FeedItemHeaderProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const Icon = resolvedConfig.icon;
 
   return (

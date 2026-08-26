@@ -75,6 +75,7 @@ export function MarginGutterPins({
   const lastContainerHeight = useRef<number>(0);
 
   const primaryColor = themeColors?.primary || "var(--wikios-accent, #fef036)";
+  // oxlint-disable-next-line eslint/no-unused-vars
   const secondaryColor = themeColors?.secondary || "var(--wikios-accent-hover, #facc15)";
 
   const computePins = useCallback(() => {
@@ -341,6 +342,7 @@ export function MarginGutterPins({
         const isHovered = hoveredPinId === pin.id;
         const isCluster = pin.type === "cluster";
         const isAnnotation = pin.type === "annotation";
+        // oxlint-disable-next-line eslint/no-unused-vars
         const pinBgColor = isAnnotation ? pin.color || "#fef036" : primaryColor;
         const hasFlyout = isCluster || pin.type === "thread" || !!pin.comment;
 

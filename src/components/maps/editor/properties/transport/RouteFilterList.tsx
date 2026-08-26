@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Search, EditPencil as Pencil, Trash as Trash2, ModernTv as Mountain } from "iconoir-react";
 import { ROUTE_STYLES } from "~/lib/maps/map-config";
 

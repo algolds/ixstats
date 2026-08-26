@@ -6,6 +6,7 @@ import { Shield, Group as Users, Archery as Target, Activity, HelpCircle, InfoCi
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
   Dialog,
@@ -35,6 +36,7 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
   averageReadiness,
   averageTechnology,
   averageMorale,
+  // oxlint-disable-next-line eslint/no-unused-vars
   branches,
 }: ReadinessOverviewCardProps) {
   return (

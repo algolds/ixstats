@@ -135,6 +135,7 @@ function DomainActivityCard({
   );
 }
 
+// oxlint-disable-next-line eslint/no-unused-vars
 function DomainWidget({
   domain,
   title,
@@ -893,6 +894,7 @@ function EconomyContext({ countryId }: { countryId: string }) {
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const activity = useMemo<ActivityEntry[]>(() => {
     const entries: ActivityEntry[] = [];
 

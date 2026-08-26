@@ -45,6 +45,7 @@ export function GlassCanvasComposer({
   account,
   accounts,
   onAccountSelect,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onAccountSettings,
   onCreateAccount,
   isOwner,
@@ -52,6 +53,7 @@ export function GlassCanvasComposer({
   placeholder = "What's happening?",
   countryId,
   repostData,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isSignedIn = true,
   hasCountry = true,
 }: GlassCanvasComposerProps) {
@@ -76,6 +78,7 @@ export function GlassCanvasComposer({
     isUploadingImage,
     postToDiscord,
     setPostToDiscord,
+    // oxlint-disable-next-line eslint/no-unused-vars
     isEditorFocused,
     setIsEditorFocused,
     pollDraft,

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Xmark as X, Journal as Newspaper, Sparks as Sparkles, WarningCircle as AlertCircle, SystemRestart as Loader2, HelpCircle } from "iconoir-react";
 
 import { api } from "~/trpc/react";
@@ -86,9 +87,11 @@ export function AccountCreationModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showUnsplashSearch, setShowUnsplashSearch] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [imageSource, setImageSource] = useState<"unsplash" | "upload" | "wiki">("unsplash");
   const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState<boolean>(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const createAccountMutation = api.thinkpages.createAccount.useMutation({
@@ -118,6 +121,7 @@ export function AccountCreationModal({
     }
   );
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: accountCountsByType, isLoading: isLoadingAccountCountsByType } =
     api.thinkpages.getAccountCountsByType.useQuery(
       { countryId },

@@ -260,6 +260,7 @@ function Row({
   );
 }
 
+// oxlint-disable-next-line eslint/no-unused-vars
 export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardTabProps) {
   const [filter, setFilter] = useState<FilterId>("achievements");
   const [activeDomain, setActiveDomain] = useState<string>("all");

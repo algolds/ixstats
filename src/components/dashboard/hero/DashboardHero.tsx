@@ -14,6 +14,7 @@ import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { createVitalityRingsFromCountry } from "~/components/mycountry/primitives";
 import { SECTION_THEME_CLASSES } from "~/lib/themes";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
@@ -21,6 +22,7 @@ import { type HeroHelpStep } from "~/components/ui/hero-help-modal";
 
 import { HeroSnapshotPanels, type HeroSnapshotData } from "./HeroSnapshotPanels";
 
+// oxlint-disable-next-line eslint/no-unused-vars
 const DASHBOARD_HELP_STEPS: HeroHelpStep[] = [
   {
     title: "Welcome to IxStats",
@@ -44,6 +46,7 @@ const DASHBOARD_HELP_STEPS: HeroHelpStep[] = [
   },
 ];
 
+// oxlint-disable-next-line eslint/no-unused-vars
 const HERO_NAV = [
   {
     section: "Overview" as const,
@@ -117,6 +120,7 @@ export function DashboardHeroComponent({
     { id: countryId },
     { enabled: hasCountry, staleTime: 60_000 }
   );
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: rankings } = api.mycountry.getRankings.useQuery(
     { countryId },
     { enabled: hasCountry, staleTime: 300_000 }

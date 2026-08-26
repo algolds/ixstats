@@ -66,6 +66,7 @@ function runParticleBurst(canvas: HTMLCanvasElement, opts: ConfettiOptions = {})
     };
   });
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   let animId: number;
   const render = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -135,6 +136,7 @@ interface ConfettiButtonProps extends React.ComponentProps<"button"> {
   options?: ConfettiOptions;
 }
 
+// oxlint-disable-next-line eslint/no-unused-vars
 export const ConfettiButton = ({ options, children, ...props }: ConfettiButtonProps) => {
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     props.onClick?.(event);

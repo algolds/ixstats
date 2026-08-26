@@ -10,6 +10,7 @@ import {
   ControlSlider as SlidersHorizontal,
   Bookmark,
   Copy,
+  // oxlint-disable-next-line eslint/no-unused-vars
   OpenNewWindow as ExternalLink,
   Sparks as Sparkles,
   InfoCircle as Info,

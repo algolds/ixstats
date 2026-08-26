@@ -3,12 +3,14 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { OpenBook as BookOpen, Search, Eye, Bookmark, ClockRotateRight as History, User, Clock, ArrowUpRight, CheckCircle, PagePlus as FilePlus, EditPencil as Edit3 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 
 function formatTimestamp(date: Date | string): string {
@@ -54,6 +56,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
     });
 
   // 3. Fetch user stashes
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: stashes } = api.wikios.getStashes.useQuery(undefined, {
     enabled: !!currentUserId,
     staleTime: 60000,

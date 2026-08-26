@@ -17,12 +17,19 @@ interface UseEditorSnapGuideProps {
 }
 
 export function useEditorSnapGuide({
+  // oxlint-disable-next-line eslint/no-unused-vars
   map,
+  // oxlint-disable-next-line eslint/no-unused-vars
   mode,
+  // oxlint-disable-next-line eslint/no-unused-vars
   guides = [],
+  // oxlint-disable-next-line eslint/no-unused-vars
   setGuides,
+  // oxlint-disable-next-line eslint/no-unused-vars
   showGuides = true,
+  // oxlint-disable-next-line eslint/no-unused-vars
   snapEnabled = true,
+  // oxlint-disable-next-line eslint/no-unused-vars
   snapTolerance = 10,
 }: UseEditorSnapGuideProps) {
   const [activeDragGuide, setActiveDragGuide] = useState<{

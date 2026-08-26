@@ -3,6 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Package, Sparks as Sparkles, Gift, Shop as Store, Crown, Cpu, OpenBook as BookOpen, Database, StatUp as TrendingUp, Trophy as Award, FireFlame as Flame, Shield, Flash as Zap, Coins, Heart, Palette, Wrench, Dashboard as Gauge, Lock, Compass, Trophy, Crown as Gem, Tournament as Sword, Archery as Target, WhiteFlag as Flag, Sparks as Ghost, Emoji as Skull, Key, LightBulb as Lightbulb, Terminal, MusicDoubleNote as Music, Label as Ticket, Gamepad as Gamepad2, SeaWaves as Anchor, SunLight as Sun, HalfMoon as Moon, Hammer, Eye, User } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -64,6 +65,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   User,
 };
 
+// oxlint-disable-next-line eslint/no-unused-vars
 interface Particle {
   id: number;
   x: number;

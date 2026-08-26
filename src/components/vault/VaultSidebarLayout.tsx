@@ -27,7 +27,9 @@ export function VaultSidebarLayout({
   children,
   heroSection,
   alerts,
+  // oxlint-disable-next-line eslint/no-unused-vars
   activeSection,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onNavigate,
 }: VaultSidebarLayoutProps) {
   const pathname = stripBasePath(usePathname());

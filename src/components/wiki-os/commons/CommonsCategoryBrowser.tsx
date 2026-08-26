@@ -269,6 +269,7 @@ interface CommonsCategoryBrowserProps {
 }
 
 // Flatten all categories for the batch info query (max 20 per call)
+// oxlint-disable-next-line eslint/no-unused-vars
 const ALL_CATEGORIES = CATEGORY_GROUPS.flatMap((g) => g.categories);
 
 export function CommonsCategoryBrowser({

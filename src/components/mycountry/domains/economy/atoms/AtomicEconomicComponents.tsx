@@ -66,12 +66,15 @@ export function AtomicEconomicComponentSelector({
   selectedComponents,
   onComponentChange,
   maxComponents = 15,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isReadOnly = false,
+  // oxlint-disable-next-line eslint/no-unused-vars
   governmentComponents = [],
   hideSelectedList = false,
 }: AtomicEconomicComponentSelectorProps) {
   // Use database hook for component data
   const {
+    // oxlint-disable-next-line eslint/no-unused-vars
     components: dbComponents,
     isLoading,
     isUsingFallback,
@@ -596,6 +599,7 @@ export function AtomicEconomicBuilder({
     builder.handleClear();
   };
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const selectedComponentObjects = useMemo(() => {
     return builder.selectedComponents
       .map((type) => ATOMIC_ECONOMIC_COMPONENTS[type])

@@ -67,6 +67,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
   onClearSystemMessages,
   isMuted = false,
   isArchived = false,
+  // oxlint-disable-next-line eslint/no-unused-vars
   displayNamePreference = "country",
 }) => {
   const [isSearchVisible, setIsSearchVisible] = useState(false);

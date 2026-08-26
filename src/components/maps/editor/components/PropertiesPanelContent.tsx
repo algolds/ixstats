@@ -65,6 +65,7 @@ export function PropertiesPanelContent({
   featureDetails,
   wikiPageTitle,
   setWikiPageTitle,
+  // oxlint-disable-next-line eslint/no-unused-vars
   handleLinkFeature,
   updatePropertiesMutation,
   isEditingJson,

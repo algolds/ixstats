@@ -61,6 +61,7 @@ export function MarginMarkupTab({
   const [copiedAll, setCopiedAll] = useState(false);
   const [shareTarget, setShareTarget] = useState<{ quote: string; note?: string | null } | null>(null);
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  // oxlint-disable-next-line eslint/no-unused-vars
   const primaryColor = themeColors?.primary || "var(--wikios-accent, #fef036)";
 
   const {

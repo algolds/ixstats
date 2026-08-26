@@ -27,6 +27,7 @@ export default function ShieldRenderer({
   onElementClick,
   customChargeSvgs = {},
 }: ShieldRendererProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { shield, charges, ordinaries } = computeLayout(composition);
   const clipId = `shield-clip-${composition.shield.shape}`;
 

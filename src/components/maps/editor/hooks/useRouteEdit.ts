@@ -26,10 +26,13 @@ export function useRouteEdit({
   isLoaded,
   mode,
   routeWaypoints,
+  // oxlint-disable-next-line eslint/no-unused-vars
   editingRouteId,
   editingRouteVertices,
   onRouteVerticesUpdate,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onRouteEditCommit,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onRouteEditCancel,
 }: UseRouteEditProps) {
   const routeDraggingRef = useRef<number | null>(null);

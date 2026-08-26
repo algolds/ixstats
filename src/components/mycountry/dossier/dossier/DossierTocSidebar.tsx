@@ -97,6 +97,7 @@ export function DossierTocSidebar({
   nativeDocs = [],
   activeSectionId,
   onSelectSection,
+  // oxlint-disable-next-line eslint/no-unused-vars
   flagColors,
   wikiSource = "ixwiki",
 }: DossierTocSidebarProps) {
@@ -231,11 +232,13 @@ export function DossierTocSidebar({
     }
   };
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const flagUrl =
     infobox?.image_flag || infobox?.flag
       ? resolveImageUrl(infobox.image_flag || infobox.flag, wikiSource)
       : undefined;
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const coatUrl =
     infobox?.image_coat || (infobox as any)?.coat
       ? resolveImageUrl(infobox?.image_coat || (infobox as any)?.coat, wikiSource)

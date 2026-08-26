@@ -148,6 +148,7 @@ export function PopulationDetailsModal({
   // Previously 1y caused mismatch with Trends selector
   const defaultChartData = useMemo(() => processChartData("5y"), [historicalData]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const projectionData = useMemo(() => {
     if (!economicData) return [];
 

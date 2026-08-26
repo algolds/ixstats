@@ -38,13 +38,16 @@ export function useEditorMapEvents({
   map,
   mode,
   features,
+  // oxlint-disable-next-line eslint/no-unused-vars
   selectedFeature,
   onFeatureSelect,
   onMapClick,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onFeatureContextMenu,
   onApplyPaintFill,
   onApplyEyedropper,
   onApplyMagicWand,
+  // oxlint-disable-next-line eslint/no-unused-vars
   lockedLayers,
   context,
 }: UseEditorMapEventsProps) {

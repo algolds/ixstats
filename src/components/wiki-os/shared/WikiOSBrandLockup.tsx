@@ -17,6 +17,7 @@ export function WikiOSBrandLockup({
   className,
   variant = "hero",
   showSubtitle = true,
+  // oxlint-disable-next-line eslint/no-unused-vars
   showBadge = true,
 }: WikiOSBrandLockupProps) {
   // ── Horizontal / Compact Variant (for navigation / toolbars) ──

@@ -28,6 +28,7 @@ interface ScrubbableRevisionTimelineProps {
 
 export function ScrubbableRevisionTimeline({
   title,
+  // oxlint-disable-next-line eslint/no-unused-vars
   slug,
   revisions,
   isLoading,

@@ -74,6 +74,7 @@ export const LayerPanel = React.memo(function LayerPanel({
   onToggleGuidesVisibility,
   onDeleteGuide,
   minimal = false,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isLoading = false,
 }: LayerPanelProps) {
   // Pre-expand regions and cities by default

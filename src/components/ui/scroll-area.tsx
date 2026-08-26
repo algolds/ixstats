@@ -41,6 +41,7 @@ export interface ScrollAreaProps
 const ScrollArea = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.Root>,
   ScrollAreaProps
+// oxlint-disable-next-line eslint/no-unused-vars
 >(({ className, children, orientation, scrollHideDelay, type, ...props }, ref) => (
   <ScrollAreaPrimitive.Root
     ref={ref}

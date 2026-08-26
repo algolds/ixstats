@@ -55,6 +55,7 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
 
   const playTrack = useCallback(
     (track: Media) => {
+      // oxlint-disable-next-line eslint/no-unused-vars
       const isSameTrack = activeTrack && activeTrack.id === track.id;
       const isDelegatedTrack = track.isDynamicTts || track.id.startsWith("wiki:");
 

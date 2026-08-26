@@ -35,6 +35,7 @@ export function IxTimePicker({
   showRealWorldTime = true,
 }: IxTimePickerProps) {
   // Convert IxTime timestamp to Date for input
+  // oxlint-disable-next-line eslint/no-unused-vars
   const ixDate = new Date(value);
 
   // Convert IxTime to real-world time for reference

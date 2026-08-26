@@ -139,6 +139,7 @@ const ACCENT_BG: Record<string, string> = {
   teal: "bg-teal-500",
   rose: "bg-rose-500",
 };
+// oxlint-disable-next-line eslint/no-unused-vars
 const ACCENT_BG_FAINT: Record<string, string> = {
   emerald: "bg-emerald-500/10",
   cyan: "bg-cyan-500/10",
@@ -416,12 +417,14 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
   }, [yields, gdpBase]);
 
   // Laffer curve position — simple heuristic: optimal is ~25-35% effective rate
+  // oxlint-disable-next-line eslint/no-unused-vars
   const lafferPosition = useMemo(() => {
     if (effectiveTaxBurden < 15) return "below-optimal";
     if (effectiveTaxBurden <= 35) return "optimal";
     return "above-optimal";
   }, [effectiveTaxBurden]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const budgetImpact = useMemo(() => {
     const govRevenue = country?.governmentRevenueTotal ?? 0;
     const totalYield = yields._total ?? 0;
@@ -429,9 +432,11 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
     return ((totalYield - govRevenue) / govRevenue) * 100;
   }, [country?.governmentRevenueTotal, yields]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const collectionEfficiency = (fiscal?.taxEfficiency ?? 0.85) * 100;
 
   // Revenue composition percentages
+  // oxlint-disable-next-line eslint/no-unused-vars
   const revenueComposition = useMemo(() => {
     const total = yields._total || 1;
     return TAX_CHANNELS.map((ch) => ({

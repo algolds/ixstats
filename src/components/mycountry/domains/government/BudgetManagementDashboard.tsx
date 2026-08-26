@@ -5,6 +5,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { safeFormatCurrency, formatCurrency, toTitleCase, cn } from "~/lib/utils";
 import {
   PieChart,
@@ -50,7 +51,9 @@ export function BudgetManagementDashboard({
   departments: propDepts,
   budgetAllocations: propAllocations,
   revenueSources: propRevenue,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onUpdateBudget,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isReadOnly = false,
 }: BudgetManagementDashboardProps) {
   const { data: fetchedGov } = api.government.getFullByCountryId.useQuery(

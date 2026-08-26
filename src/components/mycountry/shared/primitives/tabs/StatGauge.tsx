@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Progress } from "~/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";

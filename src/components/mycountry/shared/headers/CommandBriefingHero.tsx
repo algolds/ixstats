@@ -23,6 +23,7 @@ function CivilServiceWidget({
   enabled,
   onNavigate,
   onDeclare,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onOpenDrill,
 }: {
   countryId: string;
@@ -157,6 +158,7 @@ export function V2CommandBriefingHero({
   onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
   onDeclare?: (prefilled?: string) => void;
 }) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { country, economyData } = useCountryData();
 
   // Fetch national issues count

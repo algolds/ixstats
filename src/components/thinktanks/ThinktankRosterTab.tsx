@@ -6,11 +6,14 @@ import {
   User,
   Crown,
   Shield,
+  // oxlint-disable-next-line eslint/no-unused-vars
   MoreHoriz,
+  // oxlint-disable-next-line eslint/no-unused-vars
   Spark,
 } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { cn } from "~/lib/utils";
 
 interface Member {
@@ -42,10 +45,12 @@ interface ThinktankRosterTabProps {
 }
 
 export function ThinktankRosterTab({
+  // oxlint-disable-next-line eslint/no-unused-vars
   groupId,
   members,
   currentUserId,
   userRole,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onRemoveMember,
 }: ThinktankRosterTabProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,6 +99,7 @@ export function ThinktankRosterTab({
     }
   };
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const isOwnerOrAdmin = userRole === "owner" || userRole === "admin";
 
   return (

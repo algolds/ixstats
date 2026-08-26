@@ -112,6 +112,7 @@ export default function MapEditorOverlay({
     showGrid,
     setShowGrid,
     showGuides,
+    // oxlint-disable-next-line eslint/no-unused-vars
     setShowGuides,
     snapEnabled,
     setSnapEnabled,

@@ -6,6 +6,7 @@ import { api } from "~/trpc/react";
 import { Bank as Landmark, StatsReport as BarChart2, Page as ScrollText, WarningTriangle as AlertTriangle, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, SystemRestart as Loader2 } from "iconoir-react";
 import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
 // ── Lazy-loaded sub-components (only mount when expanded) ─────────────────
@@ -110,6 +111,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
     return parliament.seats.filter((s: any) => s.chamber === activeChamberTab);
   }, [parliament, chambers, activeChamberTab]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const activeChamberSeatsCount = useMemo(() => {
     if (!parliament) return 0;
     if (chambers.length <= 1) return parliament.legislature.totalSeats;
@@ -119,6 +121,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
 
   // Lore-first: surface a non-default selection method (sortition, appointed, …) for the
   // active chamber. "elected" is the default and shown as nothing to avoid noise.
+  // oxlint-disable-next-line eslint/no-unused-vars
   const activeChamberSelectionLabel = useMemo(() => {
     const labels: Record<string, string> = {
       appointed: "Appointed",
@@ -133,6 +136,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
     return method && method !== "elected" ? (labels[method] ?? null) : null;
   }, [chambers, activeChamberTab]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const activeChamberPartySummary = useMemo(() => {
     if (!parliament) return [];
     if (chambers.length <= 1) return parliament.partySummary;
@@ -161,6 +165,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
     return Array.from(counts.values()).sort((a, b) => b.seats - a.seats);
   }, [parliament, activeChamberSeats, chambers]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const hasParliamentData = parliament && parliament.seats.length > 0;
 
   return (

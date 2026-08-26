@@ -23,7 +23,9 @@ export function VaultCardHoldingsCard({
   featuredCards,
   topCardsLoading,
   onNavigate,
+  // oxlint-disable-next-line eslint/no-unused-vars
   getRarityGlow,
+  // oxlint-disable-next-line eslint/no-unused-vars
   getRarityBorder,
 }: VaultCardHoldingsCardProps) {
   return (

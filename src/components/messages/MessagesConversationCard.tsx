@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Group as Users, BellOff, Globe, AntennaSignal as Radio } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { MessageFolder } from "~/types/messages";
@@ -37,6 +38,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
   isSelected,
   onClick,
   currentUserId,
+  // oxlint-disable-next-line eslint/no-unused-vars
   activeFolder,
   settings,
   isMuted = false,

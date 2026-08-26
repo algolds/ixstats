@@ -44,6 +44,7 @@ interface ArticleCompanionHUDProps {
 }
 
 export function ArticleCompanionHUD({
+  // oxlint-disable-next-line eslint/no-unused-vars
   title,
   slug: _slug,
   contentHtml,
@@ -57,6 +58,7 @@ export function ArticleCompanionHUD({
   onOpenHistory,
   onOpenBacklinks,
   narrator,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isAuthenticated = false,
   isCollapsed = false,
 }: ArticleCompanionHUDProps) {

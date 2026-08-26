@@ -33,6 +33,7 @@ export function StreakCalendar({ username }: { username: string }) {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1); // 1-12
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data, isLoading } = api.lorewards.getStreakCalendar.useQuery(
     { username, year, month },
     { staleTime: 60_000 }

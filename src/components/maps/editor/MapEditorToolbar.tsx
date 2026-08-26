@@ -37,6 +37,7 @@ interface ToolDef {
   group: number;
 }
 
+// oxlint-disable-next-line eslint/no-unused-vars
 const TOOLS: ToolDef[] = [
   { mode: "view", icon: MousePointer2, label: "Select", shortcut: "V", group: 0 },
   { mode: "pan", icon: Hand, label: "Hand (Pan)", shortcut: "H", group: 0 },

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { DiceSix as Dices, Label as Tag, Sparks as Sparkles, Check } from "iconoir-react";
 import { cn } from "~/lib/utils";
 

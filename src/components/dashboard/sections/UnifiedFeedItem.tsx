@@ -15,6 +15,7 @@ import {
   OpenBook as BookOpen,
   ChatBubble as MessageCircle,
 } from "iconoir-react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Badge } from "~/components/ui/badge";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 import {
@@ -127,6 +128,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
   const source = activity.source ?? "activity";
   const isWiki = source === "wiki";
   const isGrouped = !!activity._grouped;
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [expanded, setExpanded] = useState(false);
 
   // Dynamic badge for IxStats activities

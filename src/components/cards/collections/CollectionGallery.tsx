@@ -67,6 +67,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
   const {
     data: collectionsData,
     isLoading,
+    // oxlint-disable-next-line eslint/no-unused-vars
     refetch,
   } = api.vault.getPublicCollections.useQuery({
     limit: pageSize,

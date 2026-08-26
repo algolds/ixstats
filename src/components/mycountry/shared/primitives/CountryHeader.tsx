@@ -18,8 +18,11 @@ export function CountryHeader({
   countryName,
   countryId,
   countrySlug,
+  // oxlint-disable-next-line eslint/no-unused-vars
   economicTier,
+  // oxlint-disable-next-line eslint/no-unused-vars
   populationTier,
+  // oxlint-disable-next-line eslint/no-unused-vars
   variant = "unified",
 }: CountryHeaderProps) {
   return (

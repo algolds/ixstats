@@ -34,6 +34,7 @@ export function WikiOSProfileWidget({
   const { user, isSignedIn } = useWikiAuth();
   const { themeColors } = useWikiContext();
   const [imgError, setImgError] = useState(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const showExpanded = expanded || isLocalHoverExpanded;
   const hoverBorderColor = themeColors?.primary ?? "var(--wikios-accent)";
 

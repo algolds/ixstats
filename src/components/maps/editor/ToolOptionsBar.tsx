@@ -11,6 +11,7 @@
  */
 
 import React, { memo } from "react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Crown, Trash as Trash2, Copy, MapPin, Bank as Landmark, Type, Bookmark as BookMarked, Check, Undo as Undo2, ArrowSeparate as ArrowLeftRight, Eye, Cut as Scissors, GitMerge, ControlSlider as Sliders, Sparks as Sparkles, HandBrake as Hand, SelectWindow as LassoSelect, ColorPicker as PaintBucket, ColorPicker as Pipette } from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -26,6 +27,7 @@ import {
 } from "~/components/ui/color-picker";
 
 import {
+  // oxlint-disable-next-line eslint/no-unused-vars
   TransformGeometryPopover,
   CityTransformationsPopover,
 } from "./toolbars/options/ScatterToolOptions";

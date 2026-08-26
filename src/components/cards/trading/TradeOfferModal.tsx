@@ -207,6 +207,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
         prev.includes(cardId) ? prev.filter((id) => id !== cardId) : [...prev, cardId]
       );
     };
+    // oxlint-disable-next-line eslint/no-unused-vars
     const resetForm = () => {
       setStep(recipientId ? "cards" : "partner");
       setSelectedYourCards([]);

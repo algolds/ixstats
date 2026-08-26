@@ -33,6 +33,7 @@ import { useSubdivisionDraw } from "./hooks/useSubdivisionDraw";
 import { useSubdivisionVertexEdit } from "./hooks/useSubdivisionVertexEdit";
 import { useRouteEdit } from "./hooks/useRouteEdit";
 import { usePointDrag } from "./hooks/usePointDrag";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { useEditorSnapGuide } from "./map/useEditorSnapGuide";
 
 import { useMapEditorContext } from "~/components/maps/editor/plugins/context";

@@ -96,6 +96,7 @@ export function PostActions({
     return;
   }, [showReactionPopup]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const utils = api.useUtils();
   const queryClient = useQueryClient();
 

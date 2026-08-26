@@ -22,6 +22,7 @@ import {
   ArrowUp,
   ArrowDown,
   Clock,
+  // oxlint-disable-next-line eslint/no-unused-vars
   Compress as Minimize2,
   MapPin,
   EditPencil as Edit3,
@@ -663,6 +664,7 @@ export function ExecutiveHomeComponent({
 
   const items = useMemo(() => feed.data ?? [], [feed.data]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const briefing = useMemo(() => {
     if (items.length === 0) return null;
     const latest = items[0];

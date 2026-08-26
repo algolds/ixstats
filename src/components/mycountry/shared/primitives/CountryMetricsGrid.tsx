@@ -20,6 +20,7 @@ interface CountryMetricsGridProps {
 }
 
 export function CountryMetricsGrid({ metrics, variant = "standard" }: CountryMetricsGridProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const gridCols =
     variant === "executive"
       ? "grid-cols-2 md:grid-cols-6"

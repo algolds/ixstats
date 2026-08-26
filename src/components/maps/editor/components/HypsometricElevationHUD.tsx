@@ -16,6 +16,7 @@ export function HypsometricElevationHUD({
   onClose,
 }: HypsometricElevationHUDProps) {
   const liveTerrain = useTransientMapStore((s) => s.terrainInfo);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const cursorCoords = useTransientMapStore((s) => s.cursorCoords);
 
   // Generate synthetic hypsometric elevation profile between active ruler points
@@ -30,7 +31,9 @@ export function HypsometricElevationHUD({
     const points: Array<{ distKm: number; elevM: number; biome: string }> = [];
     for (let i = 0; i <= samples; i++) {
       const t = i / samples;
+      // oxlint-disable-next-line eslint/no-unused-vars
       const lng = p1[0] + (p2[0] - p1[0]) * t;
+      // oxlint-disable-next-line eslint/no-unused-vars
       const lat = p1[1] + (p2[1] - p1[1]) * t;
 
       // Synthetic elevation curve with realistic mountain pass and valley

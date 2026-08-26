@@ -306,6 +306,7 @@ export function MetricTooltip({
  */
 export function AnimatedValue({
   value,
+  // oxlint-disable-next-line eslint/no-unused-vars
   format = "number",
   decimals = 1,
   prefix = "",

@@ -67,6 +67,7 @@ export function TaxBuilder({
   initialData,
   onSave,
   onChange,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onPreview,
   isReadOnly = false,
   countryId,
@@ -94,6 +95,7 @@ export function TaxBuilder({
     (typeof taxSystemTemplates)[number] | null
   >(null);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);

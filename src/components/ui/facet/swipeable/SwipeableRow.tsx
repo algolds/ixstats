@@ -596,6 +596,7 @@ function SwipeableRowContent({ children, className }: SwipeableRowContentProps) 
     wasDrag,
     toggleExpand,
     isCommitting,
+    // oxlint-disable-next-line eslint/no-unused-vars
     isExpanded,
     springPreset,
     containerWidth,

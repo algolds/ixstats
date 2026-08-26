@@ -113,6 +113,7 @@ const DEFAULT_TABS: MetricModalTab[] = [
 export function BaseMetricDetailsModal({
   isOpen,
   onClose,
+  // oxlint-disable-next-line eslint/no-unused-vars
   countryId,
   countryName,
   title,

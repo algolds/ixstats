@@ -37,6 +37,7 @@ export function useSubdivisionDraw({
   onDrawComplete,
   worldMapLayers,
   editorVisibleLayers,
+  // oxlint-disable-next-line eslint/no-unused-vars
   guides,
   snapEnabled,
   snapTolerance,

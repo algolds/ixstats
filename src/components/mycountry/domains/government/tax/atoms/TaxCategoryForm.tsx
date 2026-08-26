@@ -128,6 +128,7 @@ export function TaxCategoryForm({
   administeredBy,
   isSyncedFromRevenue = false,
   onApplyStandardBrackets,
+  // oxlint-disable-next-line eslint/no-unused-vars
   availableDepartments = [],
 }: TaxCategoryFormProps) {
   const [isExpanded, setIsExpanded] = useState(false);

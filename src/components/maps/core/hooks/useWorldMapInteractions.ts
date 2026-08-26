@@ -29,7 +29,9 @@ export function useWorldMapInteractions({
   map,
   isLoaded,
   layers,
+  // oxlint-disable-next-line eslint/no-unused-vars
   overlayVisibility,
+  // oxlint-disable-next-line eslint/no-unused-vars
   labelsVisible,
   geographyFilter,
   topCountryNames,

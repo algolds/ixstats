@@ -38,6 +38,7 @@ const NAV_GROUP_2: ForumNavItem[] = [
   { id: "conversations", href: "/messages", icon: MessageCircle, title: "Messages" },
 ];
 
+// oxlint-disable-next-line eslint/no-unused-vars
 const NAV_GROUP_3: ForumNavItem[] = [
   { id: "search", href: "/forum/search", icon: Search, title: "Search" },
 ];

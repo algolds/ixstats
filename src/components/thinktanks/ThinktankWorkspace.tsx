@@ -16,6 +16,7 @@ import { ThinktankLayout } from "./ThinktankLayout";
 import { ThinktankDirectorySidebar } from "./ThinktankDirectorySidebar";
 import { ThinktankHeader, type ThinktankTab } from "./ThinktankHeader";
 import { ThinktankFeedTab } from "./ThinktankFeedTab";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { ThinktankPapersTab } from "./ThinktankPapersTab";
 import { ThinktankRosterTab } from "./ThinktankRosterTab";
 import { ThinktankSettingsModal } from "./ThinktankSettingsModal";
@@ -26,6 +27,7 @@ interface ThinktankWorkspaceProps {
 }
 
 export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWorkspaceProps = {}) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const router = useRouter();
   const searchParams = useSearchParams();
   const notify = useNotify();

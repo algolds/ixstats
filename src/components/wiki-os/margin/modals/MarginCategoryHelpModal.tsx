@@ -29,6 +29,7 @@ interface MarginCategoryHelpModalProps {
 export function MarginCategoryHelpModal({
   isOpen,
   onClose,
+  // oxlint-disable-next-line eslint/no-unused-vars
   themeColors,
 }: MarginCategoryHelpModalProps) {
   // ESC key handler

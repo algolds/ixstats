@@ -124,7 +124,9 @@ export function MidRibbonPassportDocument({
   const lorewards = data?.wiki?.lorewards;
   const work = data?.work;
   const history = data?.history;
+  // oxlint-disable-next-line eslint/no-unused-vars
   const forum = data?.forum;
+  // oxlint-disable-next-line eslint/no-unused-vars
   const vault = data?.vault;
 
   const loreCount = (work?.authoredArticles?.length ?? 0) + (work?.conlangs?.length ?? 0) + (work?.directives?.length ?? 0) + (work?.sportTeams?.length ?? 0) + (work?.wikiActivityFeed?.length ?? 0) || (work?.totalCreations ?? 0);

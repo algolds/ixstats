@@ -7,6 +7,7 @@ import ExportDialog from "./ExportDialog";
 import { FacetMaterial } from "~/components/ui/facet";
 
 export default function SaveControls() {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { composition, achievementId, isDirty, setInitialState, markSaved } = useVexelEditor();
 
   const [title, setTitle] = useState("My Coat of Arms");

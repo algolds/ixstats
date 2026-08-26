@@ -33,6 +33,7 @@ interface ThinktankPapersTabProps {
 
 export function ThinktankPapersTab({
   groupId,
+  // oxlint-disable-next-line eslint/no-unused-vars
   groupName = "Group",
   isMember = true,
   currentUserId,

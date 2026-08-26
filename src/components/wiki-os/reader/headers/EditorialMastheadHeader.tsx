@@ -19,6 +19,7 @@ interface EditorialMastheadProps extends ArticleHeaderProps {
 export function EditorialMastheadHeader({
   title,
   lastModified,
+  // oxlint-disable-next-line eslint/no-unused-vars
   wikiSource,
   themeColors,
   authorInfo,

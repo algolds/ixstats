@@ -14,6 +14,7 @@ interface MetricModalLayoutProps {
 }
 
 export function MetricModalLayout({
+  // oxlint-disable-next-line eslint/no-unused-vars
   variant = "default",
   className,
   children,

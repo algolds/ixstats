@@ -16,6 +16,7 @@ import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import {
@@ -214,6 +215,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     nominalGdp: { label: "Nominal GDP (Trillions)", color: "#ea580c" },
   };
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const getTrendIcon = (value: number) => {
     return value > 0 ? (
       <TrendingUp className="h-4 w-4 text-green-500" />

@@ -64,6 +64,7 @@ export function useSubdivisionVertexEdit({
   onGeometryUpdate,
   worldMapLayers,
   editorVisibleLayers,
+  // oxlint-disable-next-line eslint/no-unused-vars
   guides,
   snapEnabled,
   snapTolerance,

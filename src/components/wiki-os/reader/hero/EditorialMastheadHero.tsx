@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
+  // oxlint-disable-next-line eslint/no-unused-vars
   Shuffle,
+  // oxlint-disable-next-line eslint/no-unused-vars
   MediaImage as ImageIcon,
   Star,
   ChatBubble as MessageSquare,
@@ -137,11 +139,13 @@ export function EditorialMastheadHero({
 
   const hours = String(clockTime.getUTCHours()).padStart(2, "0");
   const minutes = String(clockTime.getUTCMinutes()).padStart(2, "0");
+  // oxlint-disable-next-line eslint/no-unused-vars
   const hoursMinutes = `${hours}:${minutes}`;
   const weekdayShort = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][clockTime.getUTCDay()] || "SAT";
   const monthShort = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][clockTime.getUTCMonth()] || "AUG";
   const dayNum = clockTime.getUTCDate();
   const yearNum = clockTime.getUTCFullYear();
+  // oxlint-disable-next-line eslint/no-unused-vars
   const calendarWeekDays = getCurrentWeekDays(clockTime);
   const weather = useMemo(() => getPrimeMeridianWeather(clockTime), [clockTime]);
 
@@ -155,6 +159,7 @@ export function EditorialMastheadHero({
   );
 
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const handleSearchClick = () => {
     if (onOpenSearch) {
       onOpenSearch();

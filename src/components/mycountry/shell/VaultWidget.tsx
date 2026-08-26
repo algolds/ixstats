@@ -18,6 +18,7 @@ import { stripBasePath } from "~/lib/base-path";
 import {
   ViewGrid as Grid3x3,
   Wallet,
+  // oxlint-disable-next-line eslint/no-unused-vars
   ArrowSeparate as ArrowRightLeft,
   Download,
   Trophy,

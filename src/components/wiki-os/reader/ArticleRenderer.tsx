@@ -92,6 +92,7 @@ interface ArticleRendererProps {
   authorInfo?: ArticleAuthorInfo | null;
 }
 
+// oxlint-disable-next-line eslint/no-unused-vars
 const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
   iiwiki: { label: "iiwiki.com", url: "https://iiwiki.com/wiki/" },
   althistory: { label: "althistory.fandom.com", url: "https://althistory.fandom.com/wiki/" },
@@ -145,6 +146,7 @@ export function ArticleRenderer({
   const { isSignedIn } = useWikiAuth();
   const isAuthenticated = isSignedIn;
   const [tocOpen, setTocOpen] = useState(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
 
   // --- WikiOS Margin Suite State ---
@@ -158,6 +160,7 @@ export function ArticleRenderer({
   const slug = useMemo(() => encodeURIComponent(title.replace(/ /g, "_")), [title]);
 
   // Query discussions for Gutter Pins & counts
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: marginData, refetch: refetchMargin } = api.wikios.getArticleMarginData.useQuery(
     { articleTitle: title, status: "ALL" },
     { enabled: !!title, staleTime: 15_000 }
