@@ -10,6 +10,7 @@ import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Transforms, Editor, Element as SlateElement, type Node, type Descendant } from "slate";
 import { nanoid } from "platejs";
+import { renderTemplateCached } from "~/lib/wiki-os/templates/preview-service";
 
 // The concrete plate editor type is deeply generic; the formatting layer only
 // relies on Slate runtime APIs, so we keep the ref loose.
@@ -294,7 +295,8 @@ export function useWikiVisualFormatting({
           .filter(([, v]) => v.trim())
           .map(([k, v]) => `|${k}=${v}`);
         const wikitext = `{{${templateName}${paramParts.join("")}}}`;
-        const result = await previewMutation.mutateAsync({ wikitext, title });
+        const preview = await renderTemplateCached(templateName, params);
+        const result = { html: preview.html };
         withEditor((editor) => {
           Transforms.insertNodes(editor, {
             type: "raw-html",
