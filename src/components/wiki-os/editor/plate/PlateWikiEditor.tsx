@@ -11,6 +11,9 @@ import { usePlateEditor, Plate, PlateContent, useValueVersion } from "platejs/re
 import { Editor, Transforms, type Descendant } from "slate";
 import { deserializeParsoidHtml, serializePlateToHtml, valueToPlainText } from "./wiki-html";
 import { createIxWikiPlugins } from "./plugins/createIxWikiPlugins";
+import { useSlashMenuState } from "./slash-menu/useSlashMenuState";
+import { WikiSlashMenu } from "./slash-menu/WikiSlashMenu";
+import type { SlashItem } from "./slash-menu/slash-items";
 import { PlateWikiCallbacksProvider, type PlateWikiCallbacks } from "./elements/PlateRawHtmlElement";
 
 export interface PlateWikiEditorProps {
@@ -100,6 +103,23 @@ export function PlateWikiEditor({
     [] as never
   );
 
+  const slash = useSlashMenuState();
+
+  const handleSlashSelect = (_item: SlashItem) => {
+    // Remove the typed "/query" trigger text before insertion
+    if (editor && editor.selection) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        Transforms.delete(editor as unknown as import("slate").BaseEditor, {
+          distance: slash.query.length + 1,
+          unit: "character",
+          reverse: true,
+        });
+      } catch { /* best-effort cleanup */ }
+    }
+    slash.close();
+  };
+
   const version = useValueVersion();
   const reportRef = useRef(onValueChange);
   reportRef.current = onValueChange;
@@ -163,7 +183,16 @@ export function PlateWikiEditor({
           renderLeaf={((props: any) => <LeafRenderer {...props} />) as never}
           onKeyDown={((e: React.KeyboardEvent) => {
             onKeyDownExtra?.(e);
+            slash.handleKeyDown(e);
           }) as never}
+        />
+        <WikiSlashMenu
+          open={slash.open}
+          query={slash.query}
+          anchorRect={slash.anchorRect}
+          editor={editor as never}
+          onSelect={handleSlashSelect}
+          onClose={slash.close}
         />
       </Plate>
     </PlateWikiCallbacksProvider>
