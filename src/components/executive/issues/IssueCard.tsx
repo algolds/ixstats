@@ -86,6 +86,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
   let isUrgent = false;
   if (hasDeadline) {
     const deadlineReal = IxTime.convertFromIxTime(issue.deadlineIxTime!);
+    // oxlint-disable-next-line
     const nowReal = Date.now();
     const remaining = deadlineReal - nowReal;
     const daysRemaining = remaining / (24 * 60 * 60 * 1000);

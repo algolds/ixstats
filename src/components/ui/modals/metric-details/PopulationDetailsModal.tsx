@@ -146,6 +146,7 @@ export function PopulationDetailsModal({
 
   // Overview trailing growth uses unified 5y window to match default X-axis
   // Previously 1y caused mismatch with Trends selector
+  // oxlint-disable-next-line
   const defaultChartData = useMemo(() => processChartData("5y"), [historicalData]);
 
   // oxlint-disable-next-line eslint/no-unused-vars

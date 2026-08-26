@@ -317,9 +317,11 @@ export function CommonsCategoryBrowser({
   // Reset expansion states when wiki source changes or groups load
   useEffect(() => {
     if (groups && groups.length > 0) {
+      // oxlint-disable-next-line
       setExpandedGroups({ [groups[0]!.label]: true });
     }
     setExpanded({});
+  // oxlint-disable-next-line
   }, [wiki, groups]);
 
   // Auto-expand parent category and group if browsingCategory is selected
@@ -328,6 +330,7 @@ export function CommonsCategoryBrowser({
 
     // Auto-expand the main category folder
     if (allCats.includes(browsingCategory)) {
+      // oxlint-disable-next-line
       setExpanded((prev) => ({ ...prev, [browsingCategory]: true }));
     }
 

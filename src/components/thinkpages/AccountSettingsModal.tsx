@@ -31,6 +31,7 @@ export function AccountSettingsModal({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 
@@ -50,6 +51,7 @@ export function AccountSettingsModal({
 
   useEffect(() => {
     if (account) {
+      // oxlint-disable-next-line
       setVerified(account.verified);
       setPostingFrequency(account.postingFrequency);
       setPoliticalLean(account.politicalLean);

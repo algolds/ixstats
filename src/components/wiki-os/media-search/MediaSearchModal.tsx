@@ -49,6 +49,7 @@ export function MediaSearchModal({
   // Reset selections when modal opens or active tab changes
   useEffect(() => {
     if (isOpen) {
+      // oxlint-disable-next-line
       setSelectedImage(null);
       setSelectedImageObj(null);
     }

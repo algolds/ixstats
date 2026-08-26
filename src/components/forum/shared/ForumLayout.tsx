@@ -54,6 +54,7 @@ function ForumSearchModal({ open, onClose }: { open: boolean; onClose: () => voi
 
   useEffect(() => {
     if (open) {
+      // oxlint-disable-next-line
       setQuery("");
       setTimeout(() => inputRef.current?.focus(), 50);
     }

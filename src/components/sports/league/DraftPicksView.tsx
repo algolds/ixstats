@@ -191,6 +191,7 @@ export function DraftPicksView({
           style={{ height: "600px" }}
           data={filteredPicks}
           components={TableComponents}
+          // oxlint-disable-next-line
           fixedHeaderContent={() => (
             <TableRow className="bg-muted/40 backdrop-blur-md">
               <TableHead className="w-16 text-center">Pick</TableHead>
@@ -201,6 +202,7 @@ export function DraftPicksView({
               <TableHead className="w-24 text-center">Overall</TableHead>
             </TableRow>
           )}
+          // oxlint-disable-next-line
           itemContent={(_index, pick) => {
             const overall = pick.player ? getPlayerOverall(pick.player.ratings) : 50;
 

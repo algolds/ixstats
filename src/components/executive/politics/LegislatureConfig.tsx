@@ -118,6 +118,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
         baseChamberType = legislature.chamberType.split("|")[0]!;
       }
 
+      // oxlint-disable-next-line
       setFormData({
         name: legislature.name,
         chamberType: baseChamberType as any,
@@ -141,6 +142,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
       return;
     }
     if (formData.chamberType === "unicameral") {
+      // oxlint-disable-next-line
       setChambers([
         {
           name: formData.name,

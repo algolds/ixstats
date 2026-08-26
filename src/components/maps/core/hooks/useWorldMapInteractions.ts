@@ -51,12 +51,16 @@ export function useWorldMapInteractions({
 
   // Keep latest refs to avoid stale callbacks
   const onCountryClickRef = useRef(onCountryClick);
+  // oxlint-disable-next-line
   onCountryClickRef.current = onCountryClick;
   const onCountryHoverRef = useRef(onCountryHover);
+  // oxlint-disable-next-line
   onCountryHoverRef.current = onCountryHover;
   const onMapClickRef = useRef(onMapClick);
+  // oxlint-disable-next-line
   onMapClickRef.current = onMapClick;
   const onFeatureClickRef = useRef(onFeatureClick);
+  // oxlint-disable-next-line
   onFeatureClickRef.current = onFeatureClick;
 
   const updateDistanceFade = useCallback(() => {

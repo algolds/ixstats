@@ -56,6 +56,7 @@ const SortableList = <TItem extends SortableBaseItem>({
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 

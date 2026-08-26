@@ -513,6 +513,7 @@ export function VaultAuctionsTab() {
                   const endTime = new Date(auction.endTime);
                   const minsLeft = Math.max(
                     0,
+                    // oxlint-disable-next-line
                     Math.floor((endTime.getTime() - Date.now()) / 60000)
                   );
                   return (

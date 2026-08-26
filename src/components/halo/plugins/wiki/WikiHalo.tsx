@@ -57,6 +57,7 @@ function WikiBreadcrumb() {
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   const greetingText = useMemo(() => {
+    // oxlint-disable-next-line
     const timeGreeting = getGreeting(ixTimeTimestamp || Date.now());
     return `${timeGreeting}${user?.firstName ? `, ${user.firstName}` : ""}`;
   }, [ixTimeTimestamp, user?.firstName]);

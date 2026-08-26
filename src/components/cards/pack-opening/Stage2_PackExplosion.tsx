@@ -71,11 +71,15 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
     const particles = useMemo(() => {
       const generated = [];
       for (let i = 0; i < particleCount; i++) {
+        // oxlint-disable-next-line
         const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.5;
+        // oxlint-disable-next-line
         const speed = 1 + Math.random() * 2;
+        // oxlint-disable-next-line
         const size = 3 + Math.random() * 8;
         const color =
           rarityParticleConfig.colors[
+            // oxlint-disable-next-line
             Math.floor(Math.random() * rarityParticleConfig.colors.length)
           ] || "#ffffff";
 

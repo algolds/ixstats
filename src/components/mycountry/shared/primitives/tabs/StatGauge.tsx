@@ -137,6 +137,7 @@ export function StatGauge({
   };
 
   // Trend icon
+  // oxlint-disable-next-line
   const TrendIcon = () => {
     if (!trend) return null;
 

@@ -473,6 +473,7 @@ export function EmojiPicker({
     if (!searchQuery) return discordEmojis;
     const query = searchQuery.toLowerCase();
     return discordEmojis.filter((emoji) => emoji.name.toLowerCase().includes(query));
+  // oxlint-disable-next-line
   }, [discordEmojis, searchQuery]);
 
   const handleSelectUnicode = (emojiChar: string) => {

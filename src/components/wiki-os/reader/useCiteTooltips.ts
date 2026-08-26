@@ -104,6 +104,7 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
     ? createPortal(
         createElement(
           "div",
+          // oxlint-disable-next-line
           {
             className: "wikios-cite-tooltip",
             style: {

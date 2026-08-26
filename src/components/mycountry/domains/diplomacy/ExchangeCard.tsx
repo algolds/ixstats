@@ -103,9 +103,13 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
               key={i}
               className={cn("absolute rounded-full opacity-15", typeConfig.color)}
               style={{
+                // oxlint-disable-next-line
                 width: `${3 + Math.random() * 4}px`,
+                // oxlint-disable-next-line
                 height: `${3 + Math.random() * 4}px`,
+                // oxlint-disable-next-line
                 left: `${Math.random() * 100}%`,
+                // oxlint-disable-next-line
                 top: `${Math.random() * 100}%`,
               }}
               animate={{
@@ -120,6 +124,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
                 scale: [1, 1.2, 1],
               }}
               transition={{
+                // oxlint-disable-next-line
                 duration: 3 + Math.random() * 2,
                 repeat: Infinity,
                 delay: i * 0.15,

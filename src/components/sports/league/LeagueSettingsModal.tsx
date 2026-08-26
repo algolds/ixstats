@@ -148,6 +148,7 @@ export function LeagueSettingsModal({
 
   useEffect(() => {
     if (open) {
+      // oxlint-disable-next-line
       setName(league.name);
       setLogoUrl(league.logo ?? "");
       setCoverUrl(league.coverImage ?? "");

@@ -74,6 +74,7 @@ export function useGlassCanvasComposer({
       const isDev = process.env.NODE_ENV === "development";
       const shouldShow = isDev || Math.random() < 0.1;
       if (shouldShow) {
+        // oxlint-disable-next-line
         setShowDiscordTopic(true);
       }
     }
@@ -185,6 +186,7 @@ export function useGlassCanvasComposer({
   };
 
   const handleSubmit = useCallback(() => {
+    // oxlint-disable-next-line
     if (!account) return;
 
     if (

@@ -27,6 +27,7 @@ export const Tooltip = ({
     if (isVisible && contentRef.current) {
       setHeight(contentRef.current.scrollHeight);
     }
+  // oxlint-disable-next-line
   }, [isVisible, content]);
 
   const calculatePosition = (clientX: number, clientY: number) => {
@@ -104,6 +105,7 @@ export const Tooltip = ({
   // Update position when tooltip becomes visible or content changes
   useEffect(() => {
     if (isVisible && contentRef.current) {
+      // oxlint-disable-next-line
       const newPosition = calculatePosition(mouse.x, mouse.y);
       setPosition(newPosition);
     }

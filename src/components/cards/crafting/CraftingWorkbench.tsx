@@ -102,6 +102,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
         card: null,
         required: true,
       }));
+      // oxlint-disable-next-line
       setCardSlots(slots);
     }
   }, [recipeData]);

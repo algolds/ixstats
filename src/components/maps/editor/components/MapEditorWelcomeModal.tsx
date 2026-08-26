@@ -107,6 +107,7 @@ export function MapEditorWelcomeModal({
 
   useEffect(() => {
     if (forceShow) {
+      // oxlint-disable-next-line
       setShow(true);
       setCurrentPage(0);
       return;

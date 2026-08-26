@@ -97,8 +97,10 @@ export function useMapState({
   }, []);
 
   const measuringRef = useRef(false);
+  // oxlint-disable-next-line
   measuringRef.current = isMeasuring;
   const pinToolRef = useRef(false);
+  // oxlint-disable-next-line
   pinToolRef.current = isPinToolActive;
 
   const handleFeatureClick = useCallback(

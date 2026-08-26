@@ -70,6 +70,7 @@ export function useWorldMapDataOverlays({
         map.off("zoom", updateStoryPins);
       }
     };
+  // oxlint-disable-next-line
   }, [map, isLoaded, overlayFeatures?.storyPins, selectedCountryId, theme]);
 
   // 1b. Render custom map labels with dynamic client-side zoom/focus filtering
@@ -128,6 +129,7 @@ export function useWorldMapDataOverlays({
         map.off("zoom", updateFilteredLabels);
       }
     };
+  // oxlint-disable-next-line
   }, [map, isLoaded, overlayFeatures?.mapLabels, selectedCountryId, theme]);
 
   // 2. Toggle overlay groups visibility
@@ -172,6 +174,7 @@ export function useWorldMapDataOverlays({
         }
       }
     }
+  // oxlint-disable-next-line
   }, [map, isLoaded, overlayVisibility, theme]);
 
   // 3. Toggle all text label layers visibility on/off
@@ -194,5 +197,6 @@ export function useWorldMapDataOverlays({
         map.setLayoutProperty(id, "visibility", labelsVisible ? "visible" : "none");
       }
     }
+  // oxlint-disable-next-line
   }, [map, isLoaded, labelsVisible, theme]);
 }

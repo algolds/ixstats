@@ -34,6 +34,7 @@ function CommandSurfaceComponent({
   // Sync mode with route section: set executive mode if on executive section, or reset to home when navigating to a specific domain surface
   useEffect(() => {
     if (section === "executive") {
+      // oxlint-disable-next-line
       setMode("executive");
     } else if (DOMAIN_SECTIONS.has(section)) {
       setMode("home");

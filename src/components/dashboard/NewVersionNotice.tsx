@@ -16,6 +16,7 @@ export function NewVersionNotice() {
     const current = `${APP_VERSION}+${BUILD_VERSION}`;
     const seen = localStorage.getItem(STORAGE_KEY);
     if (seen !== current) {
+      // oxlint-disable-next-line
       setVisible(true);
     }
   }, []);

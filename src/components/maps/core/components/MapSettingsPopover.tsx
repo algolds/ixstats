@@ -38,6 +38,7 @@ export function MapSettingsPopover({
 
   // Keep state in sync across renders (other instances may write prefs)
   useEffect(() => {
+    // oxlint-disable-next-line
     setSnapEnabledState(getSnapEnabled());
     setSnapTolState(getSnapTolerance());
   }, []);

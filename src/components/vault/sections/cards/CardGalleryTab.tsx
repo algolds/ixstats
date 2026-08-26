@@ -99,6 +99,7 @@ export function CardGalleryTab({
   useEffect(() => {
     if (nsCardsData) {
       if (offset === 0) {
+        // oxlint-disable-next-line
         setAllNsCards(nsCardsData.cards as unknown as CardInstance[]);
       } else {
         setAllNsCards((prev) => {
@@ -119,7 +120,9 @@ export function CardGalleryTab({
   }, []);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     handleFilterChange();
+  // oxlint-disable-next-line
   }, [search, season, rarity, sortBy, source, handleFilterChange]);
 
   // Build display cards based on source

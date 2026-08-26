@@ -211,6 +211,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-[--intel-silver]">Cultural Alignment</span>
                           <span className="font-medium text-cyan-400">
+                            // oxlint-disable-next-line
                             {Math.round(60 + Math.random() * 30)}%
                           </span>
                         </div>
@@ -221,6 +222,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-[--intel-silver]">Success Probability</span>
                           <span className="font-medium text-purple-400">
+                            // oxlint-disable-next-line
                             {Math.round(65 + Math.random() * 25)}%
                           </span>
                         </div>

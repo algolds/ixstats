@@ -435,11 +435,13 @@ function AssetDialog({
 
   React.useEffect(() => {
     if (asset) {
+      // oxlint-disable-next-line
       setFormData({
         ...asset,
         imageUrl: asset.imageUrl || "",
       });
     }
+  // oxlint-disable-next-line
   }, [asset, open]);
 
   const handleSubmit = () => {

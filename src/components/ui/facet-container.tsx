@@ -91,6 +91,7 @@ export const FacetContainer = forwardRef<HTMLDivElement, FacetContainerProps>(
     // Track active depth state changes
     useEffect(() => {
       if (currentDepth !== depth) {
+        // oxlint-disable-next-line
         setCurrentDepth(depth);
         onDepthChange?.(depth);
       }

@@ -233,6 +233,7 @@ export function useSubdivisionDraw({
   // Clear draw state when mode changes away from add-subdivision
   useEffect(() => {
     if (mode !== "add-subdivision" && mode !== "add-lake") {
+      // oxlint-disable-next-line
       clearDraw();
     }
   }, [mode, clearDraw]);

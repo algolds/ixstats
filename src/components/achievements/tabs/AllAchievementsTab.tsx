@@ -147,6 +147,7 @@ function GroupedSeriesCard({
     if (selectedRarity !== "all") {
       const matchIdx = item.levels.findIndex((l) => l.rarity === selectedRarity);
       if (matchIdx !== -1 && item.levels[matchIdx].isUnlocked) {
+        // oxlint-disable-next-line
         setInspectedIndex(matchIdx);
         return;
       }

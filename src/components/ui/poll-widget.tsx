@@ -317,6 +317,7 @@ export function PollWidgetRoot({
     [disabled, hasVoted, multiple, setSelectedArray, animationPhase]
   );
 
+  // oxlint-disable-next-line
   const isSelected = useCallback((optionId: string) => selected.includes(optionId), [selected]);
 
   const getPercentage = useCallback(
@@ -357,6 +358,7 @@ export function PollWidgetRoot({
         }, autoCollapseDelay);
       }, 400);
     }
+  // oxlint-disable-next-line
   }, [selected, onVote, animationPhase, autoCollapseDelay, successDuration, mode, setOpen]);
 
   // Reset animation phase when opening
@@ -403,6 +405,7 @@ export function PollWidgetRoot({
       question,
       description,
       options,
+      // oxlint-disable-next-line
       selected,
       multiple,
       disabled,

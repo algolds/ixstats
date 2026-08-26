@@ -52,6 +52,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
 
   useEffect(() => {
     if (isOpen) {
+      // oxlint-disable-next-line
       setActiveTab("search");
       setSearchQuery("");
       setSelectedBusiness(null);

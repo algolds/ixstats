@@ -74,8 +74,10 @@ export function BudgetAllocationForm({
 
   // Use a ref to access latest data without causing re-renders
   const dataRef = useRef(data);
+  // oxlint-disable-next-line
   dataRef.current = data;
   const totalBudgetRef = useRef(totalBudget);
+  // oxlint-disable-next-line
   totalBudgetRef.current = totalBudget;
 
   const handleChange = useCallback(

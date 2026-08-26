@@ -82,6 +82,7 @@ export function useWorldMapLayers({
 
       const oceanLabelsData = {
         type: "FeatureCollection" as const,
+        // oxlint-disable-next-line
         features: showOceanLabels
           ? WATER_BODY_LABELS.map((wb, i) => ({
               type: "Feature" as const,

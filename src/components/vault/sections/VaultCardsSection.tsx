@@ -117,6 +117,7 @@ export function VaultCardsSection() {
     if (activeTab === "collections") {
       return <CollectionsSidebarContent onCreateCollection={() => setCreateCollectionOpen(true)} />;
     }
+    // oxlint-disable-next-line
     if (activeTab === "gallery" && isDev) {
       return (
         <GallerySidebarContent

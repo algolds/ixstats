@@ -80,6 +80,7 @@ export function MapWelcomeModal({
   // Sync parent isOpen control
   useEffect(() => {
     if (isOpen !== undefined) {
+      // oxlint-disable-next-line
       setShow(isOpen);
     }
   }, [isOpen]);

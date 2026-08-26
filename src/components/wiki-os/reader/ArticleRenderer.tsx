@@ -397,6 +397,7 @@ export function ArticleRenderer({
     });
 
     setPortalTargets(targets);
+  // oxlint-disable-next-line
   }, [processedHtml, processedInfoboxHtml]);
 
   const { data: countryData } = api.countries.getByIdBasic.useQuery(
@@ -512,6 +513,7 @@ export function ArticleRenderer({
 
     container.addEventListener("click", handleClick, true);
     return () => container.removeEventListener("click", handleClick, true);
+  // oxlint-disable-next-line
   }, [contentHtml]);
 
   const lightboxPortal = useImageLightbox(contentRef);

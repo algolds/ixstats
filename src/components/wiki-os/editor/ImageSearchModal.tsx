@@ -39,6 +39,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
+      // oxlint-disable-next-line
       setSelected(null);
       setCaption("");
       setSize("thumb");

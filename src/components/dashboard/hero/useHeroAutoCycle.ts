@@ -8,6 +8,7 @@ export function useHeroAutoCycle(isPremium: boolean) {
   const [activeSection, setActiveSection] = useState<HeroSection>("Overview");
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoCycleRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // oxlint-disable-next-line
   const lastInteractionRef = useRef(Date.now());
 
   const resetAutoCycle = useCallback(() => {

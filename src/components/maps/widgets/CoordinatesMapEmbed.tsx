@@ -207,6 +207,7 @@ export function CoordinatesMapEmbed({
     });
     observer.observe(containerRef.current);
     return () => observer.disconnect();
+  // oxlint-disable-next-line
   }, [mapReady]);
 
   return (

@@ -108,6 +108,7 @@ export function UnifiedDashboardSection({
 
   // ── Auto-select account ──
   useEffect(() => {
+    // oxlint-disable-next-line
     if (!selectedAccount && accounts.length > 0) setSelectedAccount(accounts[0]);
   }, [accounts, selectedAccount]);
 

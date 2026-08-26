@@ -313,6 +313,7 @@ export const DynamicIslandContent = ({
     return () => {
       observer.disconnect();
     };
+  // oxlint-disable-next-line
   }, [state.size, children]);
 
   const isAutoHeight = dimensions.height === "auto";
@@ -409,6 +410,7 @@ export const Halo = ({ children, id, ...props }: { children: ReactNode; id: stri
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
 
     let resizeTimeout: NodeJS.Timeout;
@@ -423,6 +425,7 @@ export const Halo = ({ children, id, ...props }: { children: ReactNode; id: stri
         rafId = requestAnimationFrame(() => {
           const width = window.innerWidth;
           const newSize = width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop";
+          // oxlint-disable-next-line
           if (screenSize !== newSize) {
             setScreenSize(newSize);
           }

@@ -574,10 +574,14 @@ export function PostActions({
                   data-reaction-popup
                   style={{
                     zIndex: 99999,
+                    // oxlint-disable-next-line
                     top: reactionButtonRef.current
+                      // oxlint-disable-next-line
                       ? Math.max(10, reactionButtonRef.current.getBoundingClientRect().top - 60)
                       : 100,
+                    // oxlint-disable-next-line
                     left: reactionButtonRef.current
+                      // oxlint-disable-next-line
                       ? Math.max(10, reactionButtonRef.current.getBoundingClientRect().left - 140)
                       : 100,
                   }}

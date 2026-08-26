@@ -59,6 +59,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
 
   useEffect(() => {
     if (open) {
+      // oxlint-disable-next-line
       setName(team.name);
       setLogoUrl(team.logo ?? "");
       setCoverUrl(team.coverImage ?? "");

@@ -12,6 +12,7 @@ export function useLocalToggle(key: string, defaultValue: boolean): [boolean, ()
   useEffect(() => {
     try {
       const stored = localStorage.getItem(key);
+      // oxlint-disable-next-line
       if (stored !== null) setValue(stored === "true");
     } catch {
       /* SSR */
@@ -40,6 +41,7 @@ export function useLocalPref(key: string, defaultValue: boolean): [boolean, (che
   useEffect(() => {
     try {
       const stored = localStorage.getItem(key);
+      // oxlint-disable-next-line
       if (stored !== null) setVal(stored === "true");
     } catch {
       /* SSR */

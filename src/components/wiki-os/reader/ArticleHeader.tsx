@@ -106,6 +106,7 @@ export function WikiOSHeader({
   // Fires gold particle explosion on page mount for award winning articles
   useEffect(() => {
     if (awardsData?.hasLoreward) {
+      // oxlint-disable-next-line
       setShowCelebration(true);
       const timer = setTimeout(() => setShowCelebration(false), 1800);
       return () => clearTimeout(timer);
@@ -116,6 +117,7 @@ export function WikiOSHeader({
   // Capture natural image dimensions to adjust card aspect ratio dynamically
   useEffect(() => {
     if (!backdropUrl) {
+      // oxlint-disable-next-line
       setAspectRatio(null);
       return;
     }

@@ -37,6 +37,7 @@ export const CardDesignerStudio: React.FC = () => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_PRESETS_KEY);
       if (saved) {
+        // oxlint-disable-next-line
         setPresets(JSON.parse(saved));
       }
     } catch (e) {

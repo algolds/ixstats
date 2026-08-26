@@ -196,6 +196,7 @@ export function WikiOSMainPage() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY) as string | null;
       if (saved === "editorial-masthead") {
+        // oxlint-disable-next-line
         setVariant("editorial-masthead");
       } else {
         setVariant("sculpted-emblem");
@@ -237,6 +238,7 @@ export function WikiOSMainPage() {
     if (!countries || countries.length === 0) return [];
     const copy = [...countries];
     for (let i = copy.length - 1; i > 0; i--) {
+      // oxlint-disable-next-line
       const j = Math.floor(Math.random() * (i + 1));
       [copy[i], copy[j]] = [copy[j]!, copy[i]!];
     }

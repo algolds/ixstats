@@ -52,6 +52,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
   useEffect(() => {
     try {
       const savedNotes = localStorage.getItem("wikios:scratchpad") || "";
+      // oxlint-disable-next-line
       setScratchpad(savedNotes);
 
       const savedSessions = localStorage.getItem("wikios:pausedSessions");

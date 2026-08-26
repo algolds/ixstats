@@ -25,9 +25,11 @@ function ExpandedViewComponent({
   useEffect(() => {
     if (typeof window !== "undefined") {
       const playAs = localStorage.getItem("ixstats.play_as_user");
+      // oxlint-disable-next-line
       setIsImpersonating(!!playAs);
       setTargetUser(playAs || "");
     }
+  // oxlint-disable-next-line
   }, [mode]);
 
   const handleStopImpersonating = () => {

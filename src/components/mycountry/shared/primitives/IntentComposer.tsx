@@ -33,6 +33,7 @@ export const IntentComposer = React.memo(function IntentComposer({
   // Sync initialGoal prop when passed or changed
   useEffect(() => {
     if (initialGoal) {
+      // oxlint-disable-next-line
       setGoal(initialGoal);
       setQueryInput(initialGoal);
     }

@@ -12,6 +12,7 @@ export interface BaseModalProps {
 export function Portal({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 

@@ -240,6 +240,7 @@ function ValueReporter({
 }) {
   const version = useValueVersion();
   const reportRef = useRef(onValueChange);
+  // oxlint-disable-next-line
   reportRef.current = onValueChange;
 
   useEffect(() => {
@@ -249,6 +250,7 @@ function ValueReporter({
       serializePlateToHtml(editor.children as Descendant[]),
       valueToPlainText(editor.children as Descendant[])
     );
+  // oxlint-disable-next-line
   }, [version, editor, readyRef]);
 
   return null;

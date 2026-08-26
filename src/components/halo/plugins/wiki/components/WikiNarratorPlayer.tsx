@@ -123,6 +123,7 @@ export function WikiNarratorPlayer({
 
   // Sync narrator state into audio-ui's centralized audio store
   useEffect(() => {
+    // oxlint-disable-next-line
     if (!narratorState) return;
 
     useAudioStore.setState({

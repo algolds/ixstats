@@ -41,6 +41,7 @@ export default function GalleryMode() {
   // Set compositions state when data is loaded
   useEffect(() => {
     if (initialData) {
+      // oxlint-disable-next-line
       setCompositions(initialData as unknown as HeraldryComposition[]);
     }
   }, [initialData]);

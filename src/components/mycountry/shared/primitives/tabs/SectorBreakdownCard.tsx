@@ -189,6 +189,7 @@ export function SectorBreakdownCard({
   const itemProps = animate ? { variants: staggerItem } : {};
 
   // Trend icon component
+  // oxlint-disable-next-line
   const TrendIcon = ({ trend, value }: { trend?: "up" | "down" | "stable"; value?: number }) => {
     if (!trend) return null;
 

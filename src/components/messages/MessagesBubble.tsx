@@ -114,6 +114,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
 
   useEffect(() => {
     if (isEditing) {
+      // oxlint-disable-next-line
       setEditContent(message.content.replace(/<[^>]*>/g, ""));
       setTimeout(() => editInputRef.current?.focus(), 50);
     }

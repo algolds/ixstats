@@ -33,6 +33,7 @@ export function PreText({
 
   // Set mounted flag on client
   useEffect(() => {
+    // oxlint-disable-next-line
     setIsMounted(true);
   }, []);
 

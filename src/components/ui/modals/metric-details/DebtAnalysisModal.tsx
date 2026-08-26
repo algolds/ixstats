@@ -169,7 +169,9 @@ export function DebtAnalysisModal({
   };
 
   const defaultProcessedData = useMemo(
+    // oxlint-disable-next-line
     () => processHistoricalData("1y"),
+    // oxlint-disable-next-line
     [historicalData, economyData]
   );
   const debtStats = useMemo(() => {

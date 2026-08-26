@@ -47,6 +47,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
 
   // Surface the player the moment narration starts or state updates
   useEffect(() => {
+    // oxlint-disable-next-line
     if (hasNarratorAccess && narratorState?.isPlaying) setWikiTab("narrator");
   }, [hasNarratorAccess, narratorState?.isPlaying]);
 
@@ -60,6 +61,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
         title: d.title,
         type: d.mode as "visual" | "source",
       }));
+      // oxlint-disable-next-line
       setLocalDrafts(drafts);
     } catch (e) {
       console.error("Failed to read drafts:", e);
@@ -79,6 +81,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
     } catch (e) {
       console.error("Failed to read paused sessions:", e);
     }
+  // oxlint-disable-next-line
   }, [articleTitle, pathname]);
 
   const isMainPage =

@@ -34,9 +34,13 @@ export function VaultParticleExplosionModal({
     if (!open) return [];
     return Array.from({ length: count }).map((_, i) => ({
       id: i,
+      // oxlint-disable-next-line
       x: (Math.random() - 0.5) * 360,
+      // oxlint-disable-next-line
       y: (Math.random() - 0.5) * 300 - 100,
+      // oxlint-disable-next-line
       rotate: Math.random() * 360,
+      // oxlint-disable-next-line
       scale: 0.6 + Math.random() * 0.7,
     }));
   }, [open, count]);

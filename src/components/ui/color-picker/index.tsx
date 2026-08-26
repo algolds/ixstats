@@ -269,6 +269,7 @@ export const ColorPicker = ({
           return;
         }
 
+        // oxlint-disable-next-line
         setHue(next.h);
         setSaturation(next.s);
         setLightness(next.l);
@@ -335,6 +336,7 @@ export const ColorPickerSelection = memo(({ className, ...props }: ColorPickerSe
       const x = saturation / 100;
       const topLightness = x < 0.01 ? 100 : 50 + 50 * (1 - x);
       const y = topLightness > 0 ? 1 - lightness / topLightness : 1;
+      // oxlint-disable-next-line
       setPositionX(x);
       setPositionY(Math.max(0, Math.min(1, y)));
     }

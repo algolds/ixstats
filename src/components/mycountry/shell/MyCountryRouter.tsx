@@ -65,6 +65,7 @@ function MyCountryRouterInner() {
     )
       return;
     if (isCompliant) {
+      // oxlint-disable-next-line
       setShowComplianceModal(false);
       if (complianceStorageKey) window.localStorage.removeItem(complianceStorageKey);
       return;
@@ -128,6 +129,7 @@ function MyCountryRouterInner() {
   useEffect(() => {
     const routeSection = getSectionFromPathname(pathname);
     if (routeSection !== activeSection) {
+      // oxlint-disable-next-line
       setActiveSection(routeSection);
     }
   }, [pathname, activeSection]);

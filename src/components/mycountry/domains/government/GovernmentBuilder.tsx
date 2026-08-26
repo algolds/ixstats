@@ -151,7 +151,9 @@ export function GovernmentBuilder({
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== "true") return;
+    // oxlint-disable-next-line
     setSuggestions(computeGovernmentSuggestions(builderState as any));
+  // oxlint-disable-next-line
   }, [builderState, intel.latestUpdate]);
 
   const handleApplySuggestion = (s: SuggestionItem) => {

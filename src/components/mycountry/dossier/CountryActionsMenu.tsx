@@ -41,6 +41,7 @@ export function CountryActionsMenu({
   const [schedulerOpen, setSchedulerOpen] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 

@@ -156,6 +156,7 @@ export function TransportOverlay({
 
   // ── Animate dash offset for flow effect ──
   const animateRef = useRef(animateFlows);
+  // oxlint-disable-next-line
   animateRef.current = animateFlows;
 
   const startAnimation = useCallback(() => {

@@ -61,6 +61,7 @@ export function WikiEditBridge({
     const localDraft = getDraft(title);
     if (localDraft && !draftRestored) {
       if (localDraft.wikitext) {
+        // oxlint-disable-next-line
         setActiveWikitext(localDraft.wikitext);
       }
       if (localDraft.mode) {

@@ -88,11 +88,13 @@ export function EconomicWelcomeModal({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 
   useEffect(() => {
     if (open !== undefined) {
+      // oxlint-disable-next-line
       setShow(open);
       if (open) {
         setActiveTab(0);

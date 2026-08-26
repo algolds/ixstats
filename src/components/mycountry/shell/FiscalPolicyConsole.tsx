@@ -330,6 +330,7 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
     () =>
       deriveSectorWeights(
         econConfig?.sectors as any,
+        // oxlint-disable-next-line
         profile?.exportsGDPPercent ?? (econConfig as any)?.economicProfile?.exportsGDPPercent,
         profile?.importsGDPPercent ?? (econConfig as any)?.economicProfile?.importsGDPPercent
       ),
@@ -386,6 +387,7 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
         } as any);
       }, 800);
     },
+    // oxlint-disable-next-line
     [countryId, taxEfficiency, updateMutation, fiscal]
   );
 
@@ -560,6 +562,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
     () =>
       deriveSectorWeights(
         econConfig?.sectors as any,
+        // oxlint-disable-next-line
         profile?.exportsGDPPercent ?? (econConfig as any)?.economicProfile?.exportsGDPPercent,
         profile?.importsGDPPercent ?? (econConfig as any)?.economicProfile?.importsGDPPercent
       ),

@@ -27,6 +27,7 @@ export function ParadoxFlavorCard({
     try {
       const stored = localStorage.getItem("narrator:flavor:enabled");
       if (stored !== null) {
+        // oxlint-disable-next-line
         setIsEnabled(stored === "true");
       }
     } catch  {

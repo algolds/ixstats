@@ -41,6 +41,7 @@ export function useWorldMapOverlayFeatures({
     } catch (err) {
       console.warn("[useWorldMapOverlayFeatures] capitals layer error:", err);
     }
+  // oxlint-disable-next-line
   }, [map, isLoaded, capitals, theme]);
 
   // 2. Render subdivisions, cities, and POIs with dynamic zoom/focus filtering
@@ -131,5 +132,6 @@ export function useWorldMapOverlayFeatures({
         map.off("zoom", updateOverlayFeatures);
       }
     };
+  // oxlint-disable-next-line
   }, [map, isLoaded, overlayFeatures, selectedCountryId, theme]);
 }

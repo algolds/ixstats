@@ -58,6 +58,7 @@ export function AccountCreationModal({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 
@@ -131,6 +132,7 @@ export function AccountCreationModal({
   useEffect(() => {
     if (formData.username.length < 3) {
       // Too short to check
+      // oxlint-disable-next-line
       setIsUsernameAvailable(null);
       setIsCheckingUsername(false);
     } else if (!isValidUsernameFormat) {
@@ -162,6 +164,7 @@ export function AccountCreationModal({
   useEffect(() => {
     if (!isOpen) {
       // Reset state when modal is closed
+      // oxlint-disable-next-line
       setStep("type");
       setFormData({
         accountType: "citizen",

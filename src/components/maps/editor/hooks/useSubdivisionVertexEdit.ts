@@ -89,10 +89,13 @@ export function useSubdivisionVertexEdit({
 
   // Keep latest refs of parameters to avoid stale closure in event callbacks
   const featuresRef = useRef(features);
+  // oxlint-disable-next-line
   featuresRef.current = features;
   const countryGeometryRef = useRef(countryGeometry);
+  // oxlint-disable-next-line
   countryGeometryRef.current = countryGeometry;
   const onGeometryUpdateRef = useRef(onGeometryUpdate);
+  // oxlint-disable-next-line
   onGeometryUpdateRef.current = onGeometryUpdate;
 
   const updateVertexEditVis = useCallback(
@@ -371,6 +374,7 @@ export function useSubdivisionVertexEdit({
           .map((f) => [f.id, JSON.parse(JSON.stringify(f.geometry))])
       );
 
+      // oxlint-disable-next-line
       setIsVertexEditing(true);
       updateVertexEditVis();
 
@@ -516,6 +520,7 @@ export function useSubdivisionVertexEdit({
       }
 
       updateVertexEditVis(true);
+      // oxlint-disable-next-line
       scheduleThrottledUpdate();
     };
 

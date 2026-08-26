@@ -77,6 +77,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
     const handleValueChange = useCallback(
       (html: string, plainText: string) => {
         if (onChange) {
+          // oxlint-disable-next-line
           const bbcode = slateNodesToBbcode(editor.children || []);
           onChange(html, plainText, bbcode);
         }

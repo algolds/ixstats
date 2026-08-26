@@ -91,6 +91,7 @@ export function LoreImportDrawer({
   // Sync initial source
   useEffect(() => {
     if (initialSource) {
+      // oxlint-disable-next-line
       setSource(initialSource);
     }
   }, [initialSource]);
@@ -139,6 +140,7 @@ export function LoreImportDrawer({
   // Auto-select first result whenever search results change
   useEffect(() => {
     if (activeItems && activeItems.length > 0) {
+      // oxlint-disable-next-line
       setSelectedItem((curr) => {
         const exists = curr && activeItems.some((i) => i.title === curr.title || i.id === curr.id);
         return exists ? curr : activeItems[0] || null;

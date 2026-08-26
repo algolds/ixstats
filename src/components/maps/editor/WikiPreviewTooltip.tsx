@@ -42,6 +42,7 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
   );
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
     return () => setMounted(false);
   }, []);

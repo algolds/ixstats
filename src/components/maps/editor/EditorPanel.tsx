@@ -101,6 +101,7 @@ export function EditorPanel({
   // Sync tab if overridden
   useEffect(() => {
     if (activeTabOverride) {
+      // oxlint-disable-next-line
       setActiveTab(activeTabOverride);
     }
   }, [activeTabOverride]);
@@ -108,6 +109,7 @@ export function EditorPanel({
   // Keep activeTab in sync with available tabs in this panel
   useEffect(() => {
     if (tabs.length > 0 && !tabs.includes(activeTab)) {
+      // oxlint-disable-next-line
       setActiveTab(tabs[0]);
     }
   }, [tabs, activeTab]);
@@ -176,6 +178,7 @@ export function EditorPanel({
     if (userOverrideRef.current) return;
     if (mode.startsWith("add-") || mode.startsWith("edit-")) {
       if (tabs.includes("properties")) {
+        // oxlint-disable-next-line
         setActiveTab("properties");
       }
     }

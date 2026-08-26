@@ -231,6 +231,7 @@ export function TrendingSectionWidget() {
     const rawItems = trendingData?.items ?? [];
     if (rawItems.length === 0) return [];
 
+    // oxlint-disable-next-line
     const nowMs = Date.now();
 
     const scored = rawItems.map((item: any) => {

@@ -162,6 +162,7 @@ export function GovernmentStructureForm({
 }: GovernmentStructureFormProps) {
   // Use a ref to access latest data without causing re-renders
   const dataRef = useRef(data);
+  // oxlint-disable-next-line
   dataRef.current = data;
 
   const [isGovHeadLocked, setIsGovHeadLocked] = React.useState(() => {

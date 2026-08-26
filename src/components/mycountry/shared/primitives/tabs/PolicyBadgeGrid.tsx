@@ -177,6 +177,7 @@ export function PolicyBadgeGrid({
       )
     : null;
 
+  // oxlint-disable-next-line
   const PolicyBadgeItem = ({ policy }: { policy: PolicyBadge }) => {
     const IconComponent = policy.icon || Check;
     const catConfig = policy.category ? categoryConfig[policy.category] : categoryConfig.social;

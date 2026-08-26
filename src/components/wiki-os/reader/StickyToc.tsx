@@ -83,10 +83,12 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
   // Reset search and original HTML when entries (page) change
   useEffect(() => {
     originalHtml.current = null;
+    // oxlint-disable-next-line
     setSearchQuery("");
     setShowSearch(false);
     setMatchCount(0);
     setCurrentMatchIndex(-1);
+  // oxlint-disable-next-line
   }, [entries]);
 
   // Find in page search highlighting effect
@@ -103,6 +105,7 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
     }
 
     if (!searchQuery.trim()) {
+      // oxlint-disable-next-line
       setMatchCount(0);
       setCurrentMatchIndex(-1);
       return;

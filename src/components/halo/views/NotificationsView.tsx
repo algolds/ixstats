@@ -154,6 +154,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     };
 
     for (const n of alerts) {
+      // oxlint-disable-next-line
       const hrs = (Date.now() - new Date(n.timestamp ?? n.createdAt ?? 0).getTime()) / 3600000;
       if (hrs < 1) buckets.Recent.push(n);
       else if (hrs < 24) buckets["Earlier Today"].push(n);

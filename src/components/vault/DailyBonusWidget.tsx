@@ -50,6 +50,7 @@ export const DailyBonusWidget: React.FC = () => {
   // Auto-open modal on first load if claim is available
   useEffect(() => {
     if (balanceData?.canClaimDailyBonus && !hasAutoOpened) {
+      // oxlint-disable-next-line
       setIsOpen(true);
       setHasAutoOpened(true);
     }

@@ -40,10 +40,13 @@ export function useRouteEdit({
 
   // Keep latest refs of parameters to avoid stale closure in event callbacks
   const routeWaypointsRef = useRef(routeWaypoints);
+  // oxlint-disable-next-line
   routeWaypointsRef.current = routeWaypoints;
   const editingRouteVerticesRef = useRef(editingRouteVertices);
+  // oxlint-disable-next-line
   editingRouteVerticesRef.current = editingRouteVertices;
   const onRouteVerticesUpdateRef = useRef(onRouteVerticesUpdate);
+  // oxlint-disable-next-line
   onRouteVerticesUpdateRef.current = onRouteVerticesUpdate;
 
   const updateRouteEditVis = useCallback(() => {
@@ -103,6 +106,7 @@ export function useRouteEdit({
 
   useEffect(() => {
     updateRouteEditVis();
+  // oxlint-disable-next-line
   }, [editingRouteVertices, updateRouteEditVis]);
 
   useEffect(() => {

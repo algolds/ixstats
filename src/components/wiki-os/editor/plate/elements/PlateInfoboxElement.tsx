@@ -29,6 +29,7 @@ function InfoboxCard({ el, readOnly }: { el: InfoboxBoxEl; readOnly: boolean }) 
   const [showPreview, setShowPreview] = useState(false);
 
   // resync when node data changes externally (undo etc.)
+  // oxlint-disable-next-line
   useEffect(() => setFields(el.fields), [el.fields]);
 
   const commit = (next: Array<{ label: string; value: string }>) => {

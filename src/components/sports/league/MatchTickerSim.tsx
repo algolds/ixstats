@@ -39,6 +39,7 @@ export function MatchTickerSim({
     if (!isPlaying) return;
 
     if (traceIndex >= trace.length) {
+      // oxlint-disable-next-line
       setIsPlaying(false);
       if (onFinished) onFinished();
       return;

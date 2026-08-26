@@ -618,7 +618,9 @@ export function MarginThreadsTab({
 
   useEffect(() => {
     if (draftQuote) {
+      // oxlint-disable-next-line
       setShowNewThread(true);
+      // oxlint-disable-next-line
       if (!newTitle) {
         setNewTitle(`Regarding: "${draftQuote.slice(0, 35)}${draftQuote.length > 35 ? "..." : ""}"`);
       }

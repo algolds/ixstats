@@ -76,6 +76,7 @@ export function LineupBuilder({
 
   const maxStarters = useMemo(() => {
     return Object.values(startingSlots).reduce((sum, val) => sum + val, 0);
+  // oxlint-disable-next-line
   }, [startingSlots]);
 
   const handleToggleStarter = (playerId: string) => {

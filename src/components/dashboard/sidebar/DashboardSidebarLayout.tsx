@@ -67,6 +67,7 @@ export function DashboardSidebarLayout({
     let timer: any = null;
     if (isHovered) {
       if (variant === "rail") {
+        // oxlint-disable-next-line
         setIsHoveredDelayed(true);
       } else {
         timer = setTimeout(() => {
@@ -83,6 +84,7 @@ export function DashboardSidebarLayout({
 
   useEffect(() => {
     if (disableCollapse) {
+      // oxlint-disable-next-line
       setIsSidebarCollapsed(false);
       setIsMounted(true);
     } else {

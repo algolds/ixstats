@@ -31,6 +31,7 @@ function shortFor(t: { name: string; shortName?: string | null }): string {
 function useLiveMatchState(match: LiveActivityMatch | null) {
   const [tick, setTick] = useState(0);
   useEffect(() => {
+    // oxlint-disable-next-line
     if (!match) return;
     const id = setInterval(() => setTick((n) => n + 1), 1000);
     return () => clearInterval(id);

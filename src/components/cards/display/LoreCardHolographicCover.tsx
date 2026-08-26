@@ -180,7 +180,9 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
             backgroundImage: holoGradient,
             backgroundSize: "400% 400%",
             backgroundPosition:
+              // oxlint-disable-next-line
               isHovered && containerRef.current
+                // oxlint-disable-next-line
                 ? `${(mousePos.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePos.y / (containerRef.current.offsetHeight || 1)) * 100}%`
                 : "50% 50%",
             mixBlendMode: "overlay",

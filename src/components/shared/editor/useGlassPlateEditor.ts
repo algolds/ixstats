@@ -210,6 +210,7 @@ export function useGlassPlateEditor({
   const stashItems = stashItemsQuery.data?.items || [];
   const imageItems = useMemo(
     () => stashItems.filter((item) => item.pageTitle.startsWith("commons:")),
+    // oxlint-disable-next-line
     [stashItems]
   );
   const imageTitles = useMemo(

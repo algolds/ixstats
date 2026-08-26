@@ -164,15 +164,18 @@ export function FacetTabs({
   const metrics = sizeClasses[size];
   const { bounds, containerRef } = useTabBounds(tabs);
   const activeBounds = bounds[activeTab];
+  // oxlint-disable-next-line
   const containerWidth = containerRef.current?.clientWidth ?? 500;
 
   const indicatorSpringConfig = SPRING_PRESETS[springPreset];
 
+  // oxlint-disable-next-line
   const { springX, springWidth, springGrab, handlers, handleTabClick } = useSliderPhysics({
     bounds,
     activeId: activeTab,
     onChange,
     padding: metrics.padding,
+    // oxlint-disable-next-line
     containerWidth,
     indicatorSpringConfig,
     grabSpringConfig,

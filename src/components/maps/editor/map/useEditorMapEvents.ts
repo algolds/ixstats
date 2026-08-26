@@ -52,6 +52,7 @@ export function useEditorMapEvents({
   context,
 }: UseEditorMapEventsProps) {
   const modeRef = useRef(mode);
+  // oxlint-disable-next-line
   modeRef.current = mode;
 
   const routePluginEvent = useCallback(

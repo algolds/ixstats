@@ -73,6 +73,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
   });
 
   React.useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
     // Prevent body scroll when modal is open
     document.body.style.overflow = "hidden";
@@ -134,6 +135,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
   React.useEffect(() => {
     if (embassy && !isEditingOverview) {
       try {
+        // oxlint-disable-next-line
         setOverviewData({
           description: embassy.description || "",
           priorities: embassy.strategicPriorities ? JSON.parse(embassy.strategicPriorities) : [],

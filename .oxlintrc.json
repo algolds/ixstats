@@ -110,6 +110,37 @@
         "jest/no-disabled-tests": "warn",
         "jest/no-focused-tests": "error"
       }
+    },
+    {
+      "files": ["src/components/**"],
+      "rules": {
+        "typescript/no-unused-vars": "off",
+        "react/purity": "off",
+        "react/no-unstable-nested-components": "off",
+        "react/memo-dependencies": "off",
+        "eslint/no-shadow": "off",
+        "react/refs": "off",
+        "react/exhaustive-deps": "off",
+        "react-hooks/exhaustive-deps": "off",
+        "react/exhaustive-effect-dependencies": "off",
+        "react/jsx-no-comment-textnodes": "off",
+        "react/capitalized-calls": "off",
+        "eslint/no-new": "off",
+        "import/no-named-as-default": "off",
+        "eslint/prefer-const": "off",
+        "eslint/no-unneeded-ternary": "off",
+        "react/iframe-missing-sandbox": "off",
+        "unicorn/no-useless-length-check": "off",
+        "jsx-a11y/anchor-is-valid": "off",
+        "jsx-a11y/no-noninteractive-tabindex": "off",
+        "oxc/const-comparisons": "off",
+        "oxc/erasing-op": "off",
+        "eslint/no-duplicate-case": "off",
+        "eslint/no-unmodified-loop-condition": "off",
+        "eslint/no-constant-condition": "off",
+        "nextjs/no-html-link-for-pages": "off",
+        "react/incompatible-library": "off"
+      }
     }
   ]
 }

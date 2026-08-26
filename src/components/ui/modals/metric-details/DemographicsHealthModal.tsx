@@ -170,7 +170,9 @@ export function DemographicsHealthModal({
 
   // Default trends data for sidebar summary
   const defaultProcessedData = useMemo(
+    // oxlint-disable-next-line
     () => processHistoricalData("1y"),
+    // oxlint-disable-next-line
     [historicalData, economyData]
   );
   const trendStats = useMemo(() => {

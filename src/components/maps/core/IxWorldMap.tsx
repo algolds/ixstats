@@ -242,6 +242,7 @@ const IxWorldMap = memo(
       const map = mapRef.current;
       if (!map || !isLoaded) return;
       try {
+        // oxlint-disable-next-line
         const newStyle = buildBaseStyle(theme, projectionMode);
         map.setStyle(newStyle as any, { diff: true });
       } catch (err) {

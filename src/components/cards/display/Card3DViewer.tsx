@@ -104,6 +104,7 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
 
     // Sync currentSide and reset rotation when initialSide prop changes
     useEffect(() => {
+      // oxlint-disable-next-line
       setCurrentSide(initialSide);
       rotateX.set(0);
       rotateY.set(0);

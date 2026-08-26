@@ -67,6 +67,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
   React.useEffect(() => {
     if (error) {
       console.warn("Discord emojis failed to load:", error);
+      // oxlint-disable-next-line
       setDiscordError("Discord emojis unavailable");
     }
   }, [error]);

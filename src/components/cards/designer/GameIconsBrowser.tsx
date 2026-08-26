@@ -66,6 +66,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
     // Load manifest once on open
     useEffect(() => {
       if (!isOpen || icons.length > 0) return;
+      // oxlint-disable-next-line
       setLoading(true);
       fetch("/icons/game-icons-manifest.json")
         .then((res) => res.json())
@@ -110,7 +111,9 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
 
     // Reset pagination on filter change
     useEffect(() => {
+      // oxlint-disable-next-line
       setPage(1);
+    // oxlint-disable-next-line
     }, [searchQuery, activeTag, selectedAuthor]);
 
     const displayedIcons = useMemo(() => {

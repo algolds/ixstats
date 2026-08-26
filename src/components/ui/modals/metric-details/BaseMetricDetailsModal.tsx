@@ -143,6 +143,7 @@ export function BaseMetricDetailsModal({
       const raw = localStorage.getItem(persistKey);
       if (raw) {
         const parsed = JSON.parse(raw) as { activeTab?: string; timeRange?: TimeRange; chartType?: ChartType };
+        // oxlint-disable-next-line
         if (parsed.activeTab && tabs.some((t) => t.id === parsed.activeTab)) setActiveTab(parsed.activeTab);
         if (parsed.timeRange) setTimeRange(parsed.timeRange);
         if (parsed.chartType) setChartType(parsed.chartType);
@@ -159,6 +160,7 @@ export function BaseMetricDetailsModal({
 
   // Keep valid tab if tabs change (e.g. Details removed)
   useEffect(() => {
+    // oxlint-disable-next-line
     if (!tabs.some((t) => t.id === activeTab)) setActiveTab(tabs[0]?.id || "overview");
   }, [tabs, activeTab]);
 

@@ -41,6 +41,7 @@ function ThinkPagesAccountHubInner() {
   const accounts = useMemo(() => accountsData || [], [accountsData]);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     if (!selectedAccount && accounts.length > 0) setSelectedAccount(accounts[0]);
   }, [accounts, selectedAccount]);
 

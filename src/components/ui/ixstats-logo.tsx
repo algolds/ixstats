@@ -87,6 +87,7 @@ export function IxStatsLogo({
       : {},
   };
 
+  // oxlint-disable-next-line
   const LogoIcon = () => (
     <motion.div
       className={cn("relative flex items-center justify-center", config.container)}
@@ -134,6 +135,7 @@ export function IxStatsLogo({
     </motion.div>
   );
 
+  // oxlint-disable-next-line
   const LogoText = () => (
     <h1
       className={cn(

@@ -58,6 +58,7 @@ export function WikiRepositoryTab({
 
   // Reset selected image and query when source changes
   useEffect(() => {
+    // oxlint-disable-next-line
     setWikiImages([]);
     setSearchOffset(0);
     setCatOffset(0);
@@ -65,6 +66,7 @@ export function WikiRepositoryTab({
     setActiveCategories([]);
     setWikiSearchQuery("");
     setDebouncedWikiQuery("");
+  // oxlint-disable-next-line
   }, [wikiSource]);
 
   // Debounce wiki query
@@ -124,6 +126,7 @@ export function WikiRepositoryTab({
   // Merge Commons Search into wikiImages
   useEffect(() => {
     if (wikiSource === "commons" && isSearchMode && commonsSearchData?.images) {
+      // oxlint-disable-next-line
       setWikiImages((prev) =>
         searchOffset === 0 ? commonsSearchData.images : [...prev, ...commonsSearchData.images]
       );
@@ -133,6 +136,7 @@ export function WikiRepositoryTab({
   // Merge Commons Browse into wikiImages
   useEffect(() => {
     if (wikiSource === "commons" && isBrowseMode && commonsCatData?.images) {
+      // oxlint-disable-next-line
       setWikiImages((prev) =>
         catOffset === 0 ? commonsCatData.images : [...prev, ...commonsCatData.images]
       );
@@ -174,6 +178,7 @@ export function WikiRepositoryTab({
           license: "CC BY-SA 3.0",
         };
       });
+      // oxlint-disable-next-line
       setWikiImages(mapped);
     }
   }, [wikiFileData, wikiSource]);

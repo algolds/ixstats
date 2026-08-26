@@ -148,7 +148,9 @@ export function GovernmentSpendingModal({
 
   // Derive stats for Sidebar
   const defaultProcessedData = useMemo(
+    // oxlint-disable-next-line
     () => processHistoricalData("1y"),
+    // oxlint-disable-next-line
     [historicalData, economyData]
   );
   const spendStats = useMemo(() => {

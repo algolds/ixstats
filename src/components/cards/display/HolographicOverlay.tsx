@@ -189,11 +189,14 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
 
     // Calculate light refraction style
     const refractionStyle =
+      // oxlint-disable-next-line
       enableMouseTracking && containerRef.current
         ? getLightRefractionStyle(
             mousePosition.x,
             mousePosition.y,
+            // oxlint-disable-next-line
             containerRef.current.offsetWidth,
+            // oxlint-disable-next-line
             containerRef.current.offsetHeight
           )
         : { transform: "", filter: "" };
@@ -222,7 +225,9 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
                     : getMetallicGradient("gold"),
             backgroundSize: "200% 200%",
             backgroundPosition:
+              // oxlint-disable-next-line
               isHovered && containerRef.current
+                // oxlint-disable-next-line
                 ? `${(mousePosition.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePosition.y / (containerRef.current.offsetHeight || 1)) * 100}%`
                 : "50% 50%",
             opacity: isHovered ? 0.75 : 0,

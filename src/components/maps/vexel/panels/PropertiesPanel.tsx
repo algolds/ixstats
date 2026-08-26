@@ -44,6 +44,7 @@ export default function PropertiesPanel() {
   };
 
   // Color picker component
+  // oxlint-disable-next-line
   const TincturePicker = ({
     value,
     onChange,

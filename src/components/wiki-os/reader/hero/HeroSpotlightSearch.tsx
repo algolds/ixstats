@@ -81,7 +81,9 @@ export function HeroSpotlightSearch({
 
   // Reset selected index when results change
   useEffect(() => {
+    // oxlint-disable-next-line
     setSelectedIndex(0);
+  // oxlint-disable-next-line
   }, [results.length]);
 
   // Handle click outside to close dropdown

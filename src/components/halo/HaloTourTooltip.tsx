@@ -22,6 +22,7 @@ export function HaloTourTooltip() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
 
     // Check initial completed status from localStorage

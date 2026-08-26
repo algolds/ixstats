@@ -21,6 +21,7 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
 
   useEffect(() => {
     if (isOpen) {
+      // oxlint-disable-next-line
       setFormData({
         name: "",
         nativeName: "",

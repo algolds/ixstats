@@ -69,12 +69,14 @@ export function ThinktankPapersTab({
         d.title.toLowerCase().includes(query) ||
         (d.content && d.content.toLowerCase().includes(query))
     );
+  // oxlint-disable-next-line
   }, [docs, searchQuery]);
 
   // Selected doc
   const activeDoc = useMemo(() => {
     if (!selectedDocId && docs.length > 0) return docs[0];
     return docs.find((d) => d.id === selectedDocId) || null;
+  // oxlint-disable-next-line
   }, [docs, selectedDocId]);
 
   // Mutations

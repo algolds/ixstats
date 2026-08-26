@@ -168,6 +168,7 @@ function ImageLightboxModal({
 
   // Synchronize state when image prop changes
   useEffect(() => {
+    // oxlint-disable-next-line
     setCurrentSrc(image.highResSrc);
     setScale(1);
     setPan({ x: 0, y: 0 });

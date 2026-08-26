@@ -164,6 +164,7 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem("wikios:recentArticles");
+      // oxlint-disable-next-line
       if (stored) setRecentArticles(JSON.parse(stored));
     } catch {
       /* SSR or private browsing */

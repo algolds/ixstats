@@ -65,6 +65,7 @@ export function CardBackgroundImage({
   // Reset image loaded state when URL changes
   React.useEffect(() => {
     if (imageUrl) {
+      // oxlint-disable-next-line
       setImageLoaded(false);
       setImageError(false);
     }

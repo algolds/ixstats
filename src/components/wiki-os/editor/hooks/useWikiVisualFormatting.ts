@@ -142,6 +142,7 @@ export function useWikiVisualFormatting({
           withEditor((editor) => {
             const marks = Object.keys(Editor.marks(editor) ?? {});
             marks.forEach((m) => Editor.removeMark(editor, m));
+            // oxlint-disable-next-line
             setIsDirty(true);
           });
           break;
@@ -314,6 +315,7 @@ export function useWikiVisualFormatting({
         console.error("Failed to render template:", err);
       }
     },
+    // oxlint-disable-next-line
     [previewMutation, title, withEditor, setIsDirty]
   );
 

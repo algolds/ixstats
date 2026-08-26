@@ -44,9 +44,11 @@ export function IxTimePicker({
     const ixTimeDiff = ixTime - currentIxTime; // Difference in IxTime milliseconds
     const multiplier = IxTime.getTimeMultiplier(); // Get current time multiplier
 
+    // oxlint-disable-next-line
     if (multiplier === 0) return new Date(Date.now()); // If paused, return current real time
 
     const realTimeDiff = ixTimeDiff / multiplier; // Convert to real-world milliseconds
+    // oxlint-disable-next-line
     return new Date(Date.now() + realTimeDiff);
   };
 

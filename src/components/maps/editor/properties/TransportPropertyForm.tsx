@@ -78,6 +78,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
 
   React.useEffect(() => {
     if (routeWaypoints.length > 0 && tab !== "draw") {
+      // oxlint-disable-next-line
       setTab("draw");
     }
   }, [routeWaypoints.length, tab]);

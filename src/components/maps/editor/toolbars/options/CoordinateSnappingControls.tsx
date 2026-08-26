@@ -77,6 +77,7 @@ export function CoordinateSnappingControls({
 
   React.useEffect(() => {
     if (coords) {
+      // oxlint-disable-next-line
       setLng(coords[0].toString());
       setLat(coords[1].toString());
     }

@@ -294,6 +294,7 @@ function DiplomacyContext({ countryId }: { countryId: string }) {
         icon: Users,
         iconColor: "text-amber-400",
         text: `Alliance: ${a.name ?? "Diplomatic Pact"} (${a.memberCount ?? a.members?.length ?? 1} members)`,
+        // oxlint-disable-next-line
         time: new Date(a.createdAt ?? Date.now()),
       });
     });
@@ -717,6 +718,7 @@ function PoliticsContext({ countryId }: { countryId: string }) {
         iconColor: "text-indigo-500",
         text: `Legislature: ${legislature.totalSeats} seats configured`,
         time: new Date(
+          // oxlint-disable-next-line
           (legislature as any).updatedAt ?? (legislature as any).createdAt ?? Date.now()
         ),
       });
@@ -918,6 +920,7 @@ function EconomyContext({ countryId }: { countryId: string }) {
         icon: Coins,
         iconColor: "text-teal-500",
         text: `Budget: $${formatCompact(amount)} → ${deptName}`,
+        // oxlint-disable-next-line
         time: new Date(t.allocation?.updatedAt ?? t.allocation?.createdAt ?? Date.now()),
       });
     });

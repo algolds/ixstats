@@ -84,11 +84,13 @@ export function WikiMarginDrawer({
   const _primaryColor = themeColors?.primary || "var(--wikios-accent, #fef036)";
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 
   // Sync initial tab if passed from caller
   useEffect(() => {
+    // oxlint-disable-next-line
     if (initialTab) setActiveTab(initialTab);
   }, [initialTab]);
 

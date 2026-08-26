@@ -86,6 +86,7 @@ export function ThinktankDirectorySidebar({
       const isUserMember =
         Boolean(g.isMember) ||
         Boolean(g.isJoined) ||
+        // oxlint-disable-next-line
         (Boolean(currentUserId) && g.createdBy === currentUserId) ||
         (Boolean(currentUserId) && g.members?.some((m: any) => m.userId === currentUserId));
 

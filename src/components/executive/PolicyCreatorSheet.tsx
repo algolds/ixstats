@@ -236,6 +236,7 @@ export function PolicyCreatorSheet({
 
   useEffect(() => {
     if (open && prefill) {
+      // oxlint-disable-next-line
       if (prefill.title) setFormTitle(prefill.title);
       if (prefill.description) setFormDescription(prefill.description);
       if (prefill.objectives) setFormObjectives(prefill.objectives);
@@ -252,6 +253,7 @@ export function PolicyCreatorSheet({
   // Load selected template settings
   useEffect(() => {
     if (selectedTemplateKey === "custom") {
+      // oxlint-disable-next-line
       setCalculatedEffects(null);
       return;
     }
@@ -281,6 +283,7 @@ export function PolicyCreatorSheet({
 
     if (predefined) {
       const results = predefined.calculate(sliderSettings, { currentPopulation: pop });
+      // oxlint-disable-next-line
       setCalculatedEffects(results);
       setFormImplCost(String(results.implementationCost));
       setFormMaintCost(String(results.maintenanceCost));
@@ -315,6 +318,7 @@ export function PolicyCreatorSheet({
     const calculatedImpl = (base.impl + metricCostImpl) * multiplier;
     const calculatedMaint = (base.maint + metricCostMaint) * multiplier;
 
+    // oxlint-disable-next-line
     setFormImplCost(String(calculatedImpl));
     setFormMaintCost(String(calculatedMaint));
   }, [formCategory, formPriority, targetMetrics, selectedTemplateKey]);

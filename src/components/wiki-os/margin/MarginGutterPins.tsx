@@ -263,7 +263,9 @@ export function MarginGutterPins({
   // Clean up any lingering anchor highlights on unmount
   useEffect(() => {
     return () => {
+      // oxlint-disable-next-line
       if (contentRef.current) {
+        // oxlint-disable-next-line
         contentRef.current
           .querySelectorAll(".wikios-anchor-highlighted")
           .forEach((el) => el.classList.remove("wikios-anchor-highlighted"));

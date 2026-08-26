@@ -242,6 +242,7 @@ export function ReactionsDialog({
                         style={{ height: 350 }}
                         data={filteredReactions}
                         overscan={50}
+                        // oxlint-disable-next-line
                         itemContent={(_index, reaction: PostReaction) => {
                           const discordUrl = getDiscordEmojiUrl(
                             reaction.reactionType,

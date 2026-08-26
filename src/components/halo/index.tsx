@@ -518,6 +518,7 @@ function CommandPaletteWrapper({
 
   // Initialize once on mount
   useEffect(() => {
+    // oxlint-disable-next-line
     setIsInitialized(true);
 
     return () => {

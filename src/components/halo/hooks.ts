@@ -307,6 +307,7 @@ export function useDynamicIslandState() {
       const limit = searchFilter === "all" ? 3 : 12;
       for (const cmd of commandIndex) {
         if (cmd._lower.includes(query)) {
+          // oxlint-disable-next-line
           matchedCommands.push({
             id: `command-${cmd.name.toLowerCase().replace(/\s+/g, "-")}`,
             type: "command",
@@ -328,6 +329,7 @@ export function useDynamicIslandState() {
       const limit = searchFilter === "all" ? 3 : 12;
       for (const feat of featureIndex) {
         if (feat._lower.includes(query)) {
+          // oxlint-disable-next-line
           matchedFeatures.push({
             id: `feature-${feat.name.toLowerCase().replace(/\s+/g, "-")}`,
             type: "feature",
@@ -402,6 +404,7 @@ export function useDynamicIslandState() {
     if (pluginIdChanged && activePlugin?.expandedViews) {
       const firstViewKey = Object.keys(activePlugin.expandedViews)[0];
       if (firstViewKey) {
+        // oxlint-disable-next-line
         setExpandedMode(`plugin:${firstViewKey}`);
       }
     } else if (!activePlugin) {

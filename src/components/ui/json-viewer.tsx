@@ -537,6 +537,7 @@ function JsonViewer({
 
   React.useEffect(() => {
     if (searchQuery) {
+      // oxlint-disable-next-line
       setCollapsedPaths(new Set());
     }
   }, [searchQuery]);

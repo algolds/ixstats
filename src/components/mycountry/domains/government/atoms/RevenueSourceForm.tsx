@@ -147,8 +147,10 @@ export function RevenueSourceForm({
 
   // Use refs to access latest values without causing re-renders
   const dataRef = useRef(data);
+  // oxlint-disable-next-line
   dataRef.current = data;
   const totalRevenueRef = useRef(totalRevenue);
+  // oxlint-disable-next-line
   totalRevenueRef.current = totalRevenue;
 
   const formatCurrency = (amount: number) => {

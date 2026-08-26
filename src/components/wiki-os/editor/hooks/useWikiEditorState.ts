@@ -120,6 +120,7 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
 
   const imageItems = useMemo(() => {
     return stashItems.filter((item) => item.pageTitle.startsWith("commons:"));
+  // oxlint-disable-next-line
   }, [stashItems]);
 
   const imageTitles = useMemo(() => {
@@ -211,6 +212,7 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
       showLineNumbers,
       handleToggleLineNumbers,
       enableWordWrap,
+      // oxlint-disable-next-line
       handleToggleWordWrap,
       summary,
       setSummary,
@@ -236,6 +238,7 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
       enableAutocomplete, showLineNumbers, enableWordWrap,
       summary, minor, saving, showSavePanel,
       saveDropdownOpen, saveActionType,
+      // oxlint-disable-next-line
       stashes, activeStashId, imageItems, imagesMap,
     ]
   );

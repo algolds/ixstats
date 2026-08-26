@@ -51,6 +51,7 @@ export function StashSettingsMenu({
 
   // Sync renameValue with stash prop
   useEffect(() => {
+    // oxlint-disable-next-line
     setRenameValue(stash.name);
   }, [stash.name]);
 

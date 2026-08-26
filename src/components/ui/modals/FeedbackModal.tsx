@@ -41,6 +41,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // oxlint-disable-next-line
       setUrl(window.location.href);
       setUserAgent(navigator.userAgent);
       setLogs(getConsoleLogs());

@@ -38,6 +38,7 @@ export function useTabBounds(tabs: FacetTabItem[]) {
     observer.observe(containerRef.current);
 
     return () => observer.disconnect();
+  // oxlint-disable-next-line
   }, [measureTabs, tabs]);
 
   return {

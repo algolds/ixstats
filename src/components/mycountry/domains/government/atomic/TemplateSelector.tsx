@@ -184,6 +184,7 @@ export const TemplateSelector = React.memo<TemplateSelectorProps>(
       try {
         const stored = window.sessionStorage.getItem(COLLAPSED_GROUPS_STORAGE_KEY);
         if (!stored) {
+          // oxlint-disable-next-line
           setCollapsedGroups(new Set(DEFAULT_COLLAPSED_GROUPS));
           setHasHydratedCollapsedState(true);
           return;

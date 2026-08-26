@@ -45,6 +45,7 @@ export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberPr
   const [draft, setDraft] = useState<number>(currentValue);
   // Keep draft in sync if the parent value changes externally (e.g. "Return to present").
   useEffect(() => {
+    // oxlint-disable-next-line
     setDraft(currentValue);
   }, [currentValue]);
 

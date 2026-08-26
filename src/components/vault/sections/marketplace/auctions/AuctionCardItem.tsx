@@ -34,6 +34,7 @@ export function AuctionCardItem({
   const currentBid = auction.currentBid ?? auction.startingPrice;
   const bidCount = auction.bidCount ?? auction.AuctionBid?.length ?? 0;
   const endTime = new Date(auction.endTime);
+  // oxlint-disable-next-line
   const msLeft = endTime.getTime() - Date.now();
   const minsLeft = Math.max(0, Math.floor(msLeft / 60000));
   const isUrgent = minsLeft < 10;

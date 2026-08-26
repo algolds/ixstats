@@ -176,6 +176,7 @@ export function useSwipePhysics({
   const lastMoveX = useRef(0);
   const velocity = useRef(0);
   const onStateChangeRef = useRef(onStateChange);
+  // oxlint-disable-next-line
   onStateChangeRef.current = onStateChange;
 
   // ── State transition helper ───────────────────────────────────────────

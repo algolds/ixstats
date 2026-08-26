@@ -331,6 +331,7 @@ export function WikiSourceEditor({
           viewRef.current.dispatch({
             changes: { from: 0, to: docLength, insert: draftContent },
           });
+          // oxlint-disable-next-line
           state.setIsDirty(true);
         }
       }, 100);

@@ -99,6 +99,7 @@ export function MeetingScheduler({
   React.useEffect(() => {
     if (open) {
       if (timePreset === "immediately") {
+        // oxlint-disable-next-line
         setScheduledIxTime(IxTime.getCurrentIxTime());
       } else if (timePreset === "tomorrow") {
         setScheduledIxTime(IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000);
@@ -151,6 +152,7 @@ export function MeetingScheduler({
   React.useEffect(() => {
     if (open) {
       if (defaultMeeting) {
+        // oxlint-disable-next-line
         setTitle(defaultMeeting.title ?? "");
         setDescription(defaultMeeting.description ?? "");
         if (defaultMeeting.ixTime) {

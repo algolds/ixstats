@@ -20,6 +20,7 @@ import { createUrl } from "~/lib/utils";
 export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId: string }) {
   const [seed, setSeed] = useState(0);
   useEffect(() => {
+    // oxlint-disable-next-line
     setSeed(Date.now());
   }, []);
 

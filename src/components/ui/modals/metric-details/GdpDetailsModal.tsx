@@ -182,6 +182,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
   };
 
   // Default stats use 5y window to match Population modal + new default
+  // oxlint-disable-next-line
   const defaultProcessedData = useMemo(() => processHistoricalData("5y"), [historicalData]);
   const gdpStats = useMemo(() => createGdpStats(defaultProcessedData), [defaultProcessedData]);
 

@@ -61,6 +61,7 @@ export function ForumContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem("forum:recentThreads");
+      // oxlint-disable-next-line
       if (stored) setRecentThreads(JSON.parse(stored));
     } catch {
       /* SSR or private browsing */

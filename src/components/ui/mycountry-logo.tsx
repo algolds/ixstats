@@ -105,6 +105,7 @@ export function MyCountryLogo({
     },
   };
 
+  // oxlint-disable-next-line
   const LogoIcon = () => (
     <motion.div
       className="relative flex items-center justify-center"
@@ -150,6 +151,7 @@ export function MyCountryLogo({
     </motion.div>
   );
 
+  // oxlint-disable-next-line
   const LogoText = () => (
     <motion.div variants={animated ? textVariants : {}} className="flex flex-col leading-none">
       <span

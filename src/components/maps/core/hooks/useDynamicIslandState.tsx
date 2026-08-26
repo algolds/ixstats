@@ -138,6 +138,7 @@ export function useDynamicIslandState({ onSearchResult }: UseDynamicIslandStateP
         handleSelect(flatResults[selectedIdx]);
       }
     },
+    // oxlint-disable-next-line
     [flatResults, selectedIdx, handleSelect, closeSearch]
   );
 

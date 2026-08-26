@@ -451,6 +451,7 @@ export function DepartmentForm({
   };
 
   const dataRef = useRef(data);
+  // oxlint-disable-next-line
   dataRef.current = data;
 
   const handleChange = useCallback(

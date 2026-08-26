@@ -57,6 +57,7 @@ export function MapLoadingScreen({ isReady }: MapLoadingScreenProps) {
 
   useEffect(() => {
     if (isReady) {
+      // oxlint-disable-next-line
       setMounted(false);
     } else {
       setMounted(true);

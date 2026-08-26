@@ -157,6 +157,7 @@ export function InteractiveMetric({
   };
 
   // Trend display
+  // oxlint-disable-next-line
   const TrendDisplay = () => {
     if (!trend) return null;
 

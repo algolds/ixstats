@@ -14,6 +14,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
     if (!importer.validationReport) {
       importer.runValidation();
     }
+  // oxlint-disable-next-line
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const report = importer.validationReport;

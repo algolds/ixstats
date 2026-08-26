@@ -26,6 +26,7 @@ export function CuelumeSoundProvider({ children }: { children: React.ReactNode }
     }
     // Fire subtle arrival sound on route transition
     soundEffects.arrival();
+  // oxlint-disable-next-line
   }, [pathname]);
 
   return <>{children}</>;

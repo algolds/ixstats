@@ -285,6 +285,7 @@ function UnitDialog({
 
   React.useEffect(() => {
     if (unit) {
+      // oxlint-disable-next-line
       setFormData(unit);
     } else {
       setFormData({
@@ -301,6 +302,7 @@ function UnitDialog({
         effectiveness: 50,
       });
     }
+  // oxlint-disable-next-line
   }, [unit, open]);
 
   const handleSubmit = () => {

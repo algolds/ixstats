@@ -82,6 +82,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
 
   useEffect(() => {
     if (open) {
+      // oxlint-disable-next-line
       setStep(1);
 
       // Try to read title and page type from URL search parameters

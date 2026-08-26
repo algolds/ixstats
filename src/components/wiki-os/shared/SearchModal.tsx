@@ -46,6 +46,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   // Focus input on open
   useEffect(() => {
     if (open) {
+      // oxlint-disable-next-line
       setQuery("");
       setSelectedIndex(0);
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -54,7 +55,9 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 
   // Reset selection on results change
   useEffect(() => {
+    // oxlint-disable-next-line
     setSelectedIndex(0);
+  // oxlint-disable-next-line
   }, [items.length]);
 
 

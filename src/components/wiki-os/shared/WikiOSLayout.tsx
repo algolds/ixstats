@@ -60,6 +60,7 @@ export function WikiOSLayout({
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("create") === "true" || params.get("action") === "create-page") {
+        // oxlint-disable-next-line
         setCreatePageOpen(true);
       }
     }

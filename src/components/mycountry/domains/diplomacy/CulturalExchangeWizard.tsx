@@ -269,6 +269,7 @@ export function CulturalExchangeWizard({
   // Initialize start date to current IxTime if empty
   React.useEffect(() => {
     if (!startDate) {
+      // oxlint-disable-next-line
       setStartDate(currentIxTimeDate);
     }
   }, [currentIxTimeDate, startDate]);

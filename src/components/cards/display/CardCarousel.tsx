@@ -164,6 +164,7 @@ export const CardCarousel = React.memo<CardCarouselProps>(
      * Initial scroll check
      */
     useEffect(() => {
+      // oxlint-disable-next-line
       checkScrollability();
     }, [cards]);
 

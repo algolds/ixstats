@@ -61,6 +61,7 @@ export function MessageTrayItem({
     "Dispatch";
 
   const excerpt = latestMessage?.content || "No messages yet";
+  // oxlint-disable-next-line
   const timestamp = conversation.lastMessageAt || latestMessage?.createdAt || Date.now();
 
   const isDiplomatic = conversation.source === "diplomatic" || conversation.type === "diplomatic";

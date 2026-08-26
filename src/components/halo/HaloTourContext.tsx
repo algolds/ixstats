@@ -83,6 +83,7 @@ export function HaloTourProvider({
 
   // Load status from localStorage and handle invitation banner
   useEffect(() => {
+    // oxlint-disable-next-line
     setIsMounted(true);
     if (typeof window === "undefined") return;
 
@@ -137,6 +138,7 @@ export function HaloTourProvider({
     return () => {
       if (timer) clearTimeout(timer);
     };
+  // oxlint-disable-next-line
   }, [autoStartDelay]);
 
   // Broadcast step updates to trigger state transitions in the Halo component

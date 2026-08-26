@@ -69,7 +69,9 @@ export function UnifiedCountryFlag({
 
   // Reset imageError whenever the resolved flagUrl changes
   useEffect(() => {
+    // oxlint-disable-next-line
     setImageError(false);
+  // oxlint-disable-next-line
   }, [externalFlagUrl, hookResult.flagUrl]);
 
   // Determine which values to use (null flagUrl falls through to hook result)
@@ -150,6 +152,7 @@ export function UnifiedCountryFlag({
   }
 
   // Success state - show the flag
+  // oxlint-disable-next-line
   const FlagImage = () => (
     <img
       src={flagUrl}

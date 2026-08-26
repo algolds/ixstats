@@ -220,6 +220,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   useEffect(() => {
     const parsed = parseSectorBreakdownJson(profile?.sectorBreakdown);
     if (parsed && parsed.length > 0) {
+      // oxlint-disable-next-line
       setSectors(parsed);
     }
   }, [profile?.sectorBreakdown]);
@@ -242,6 +243,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
     try {
       const parsed = JSON.parse(fiscal.exciseTaxRates);
       if (parsed?.sectorTariffs) {
+        // oxlint-disable-next-line
         setTariffs((prev) => ({ ...prev, ...parsed.sectorTariffs }));
       }
     } catch {

@@ -41,6 +41,7 @@ export function WikiOSUtilitiesDeck({
 
   useEffect(() => {
     if (domainParam && ["all", "discovery", "editorial", "diagnostics", "governance"].includes(domainParam)) {
+      // oxlint-disable-next-line
       setSelectedDomain(domainParam);
     }
   }, [domainParam]);

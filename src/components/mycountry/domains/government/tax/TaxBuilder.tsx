@@ -98,6 +98,7 @@ export function TaxBuilder({
   // oxlint-disable-next-line eslint/no-unused-vars
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 
@@ -249,11 +250,13 @@ export function TaxBuilder({
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== "true") return;
     if (!intel.latestUpdate) return;
+    // oxlint-disable-next-line
     setSuggestions(computeTaxSuggestions(builderState));
   }, [intel.latestUpdate, builderState]);
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== "true") return;
+    // oxlint-disable-next-line
     setSuggestions(computeTaxSuggestions(builderState));
   }, [builderState]);
 

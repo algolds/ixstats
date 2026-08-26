@@ -34,11 +34,13 @@ function ChartSkeleton({ height = 300, type = "bar" }: ChartSkeletonProps) {
             key={i}
             className="rounded-sm bg-[var(--color-bg-secondary)]/30"
             style={{
+              // oxlint-disable-next-line
               height: `${Math.random() * 60 + 20}%`,
               width: "12%",
               marginLeft: i === 0 ? "0" : "2%",
             }}
             initial={{ height: 0 }}
+            // oxlint-disable-next-line
             animate={{ height: `${Math.random() * 60 + 20}%` }}
             transition={{ delay: i * 0.1, duration: 0.5, ease: "easeOut" }}
           />

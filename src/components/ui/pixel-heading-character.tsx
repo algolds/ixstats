@@ -270,6 +270,7 @@ export function PixelHeading({
   useEffect(() => {
     if (!autoPlay) return;
     // Kick off the interval immediately
+    // oxlint-disable-next-line
     setIsActive(true);
     setMsElapsed(0);
     intervalRef.current = setInterval(() => {

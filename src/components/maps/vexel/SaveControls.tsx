@@ -36,6 +36,7 @@ export default function SaveControls() {
 
   useEffect(() => {
     if (currentAchievement) {
+      // oxlint-disable-next-line
       setTitle(currentAchievement.title);
       setSubjectType(currentAchievement.subjectType as any);
       setSubjectId(currentAchievement.subjectId);

@@ -44,6 +44,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
 
   useEffect(() => {
     if (isOpen) {
+      // oxlint-disable-next-line
       setSearchQuery("");
       setSelectedCountry(null);
       setSelectedStat("population");

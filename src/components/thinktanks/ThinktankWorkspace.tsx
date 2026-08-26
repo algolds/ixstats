@@ -93,6 +93,7 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
     if (selectedGroupId || groups.length === 0) return;
 
     if (initialGroupId) {
+      // oxlint-disable-next-line
       setSelectedGroupId(initialGroupId);
       return;
     }
@@ -147,6 +148,7 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
   // Auto-switch to feed if user is not a member of the selected group
   useEffect(() => {
     if (activeGroup && !activeGroup.isMember && activeTab !== "feed") {
+      // oxlint-disable-next-line
       setActiveTab("feed");
     }
   }, [activeGroup, activeTab]);

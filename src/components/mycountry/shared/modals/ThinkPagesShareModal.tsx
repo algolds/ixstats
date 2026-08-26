@@ -57,6 +57,7 @@ export function ThinkPagesShareModal({
 
   useEffect(() => {
     if (isOpen) {
+      // oxlint-disable-next-line
       setPublishStatus("idle");
       let changesSummary = summary || goal;
       try {

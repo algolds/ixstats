@@ -505,6 +505,7 @@ export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiH
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setIsMounted(true);
   }, []);
 

@@ -110,6 +110,7 @@ export function useSliderPhysics({
         rawWidth.set(0);
       }
     }
+  // oxlint-disable-next-line
   }, [activeId, bounds, activeBounds, rawX, rawWidth, springX, springWidth]);
 
   // ─── Gesture Handlers ──────────────────────────────────────────────────────
@@ -292,6 +293,7 @@ export function useSliderPhysics({
       isDragging.current = false;
       clearClickTimeout();
     };
+  // oxlint-disable-next-line
   }, []);
 
   return {

@@ -39,6 +39,7 @@ export function DashboardRouter({ discordBadge }: DashboardRouterProps) {
   useEffect(() => {
     if (appliedDefaultCollapse.current || !mapStatus) return;
     appliedDefaultCollapse.current = true;
+    // oxlint-disable-next-line
     if (!mapStatus.isMapped) setHeroCollapsed(true);
   }, [mapStatus]);
 

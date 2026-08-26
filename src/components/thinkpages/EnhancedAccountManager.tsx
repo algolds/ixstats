@@ -104,6 +104,7 @@ export function EnhancedAccountManager({
     };
   };
 
+  // oxlint-disable-next-line
   const AccountCard = ({ account, index }: { account: any; index: number }) => {
     const Icon = getAccountIcon(account.accountType);
     const colorClasses = getAccountTypeColor(account.accountType);

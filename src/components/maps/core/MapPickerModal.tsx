@@ -65,6 +65,7 @@ export function MapPickerModal({
   // Set initial coordinates validation once geometry is ready
   useEffect(() => {
     if (selectedCoords && geometry) {
+      // oxlint-disable-next-line
       setIsValid(validateCoords(selectedCoords));
     }
   }, [selectedCoords, geometry, validateCoords]);

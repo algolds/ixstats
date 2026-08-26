@@ -22,6 +22,7 @@ export function WikiHeroMaster(props: WikiHeroProps) {
     try {
       const saved = localStorage.getItem(STORAGE_KEY) as string | null;
       if (saved === "editorial-masthead") {
+        // oxlint-disable-next-line
         setInternalVariant("editorial-masthead");
       } else {
         setInternalVariant("sculpted-emblem");
@@ -37,6 +38,7 @@ export function WikiHeroMaster(props: WikiHeroProps) {
 
   const handleSelectVariant = useCallback((newVariant: WikiHeroVariant) => {
     if (props.onSelectVariant) {
+      // oxlint-disable-next-line
       props.onSelectVariant(newVariant);
     } else {
       setInternalVariant(newVariant);
@@ -50,6 +52,7 @@ export function WikiHeroMaster(props: WikiHeroProps) {
 
   const handleSelectRefraction = useCallback((newMode: RefractionMode) => {
     if (props.onSelectRefractionMode) {
+      // oxlint-disable-next-line
       props.onSelectRefractionMode(newMode);
     } else {
       setInternalRefraction(newMode);

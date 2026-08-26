@@ -40,6 +40,7 @@ export function MapPipelineTelemetry({
   React.useEffect(() => {
     if (countries && countries.length > 0) {
       if (!countries.some((c) => c && c.featureId === selectedCountryId)) {
+        // oxlint-disable-next-line
         setSelectedCountryId(countries[0]!.featureId);
       }
     }

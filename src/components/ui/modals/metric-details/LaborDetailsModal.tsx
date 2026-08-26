@@ -137,7 +137,9 @@ export function LaborDetailsModal({
 
   // Derive labor stats
   const defaultProcessedData = useMemo(
+    // oxlint-disable-next-line
     () => processHistoricalData("1y"),
+    // oxlint-disable-next-line
     [historicalData, economyData]
   );
   const laborStats = useMemo(() => {

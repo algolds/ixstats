@@ -113,6 +113,7 @@ export function BudgetManagementDashboard({
       departmentCount: departments.length,
       topSpendingDepartments,
     };
+  // oxlint-disable-next-line
   }, [budgetAllocations, departments, governmentStructure?.totalBudget, selectedYear]);
 
   // Calculate revenue summary
@@ -157,6 +158,7 @@ export function BudgetManagementDashboard({
       revenueBreakdown,
       topRevenueSources,
     };
+  // oxlint-disable-next-line
   }, [revenueSources]);
 
   const formatCurrency = (amount: number) => {

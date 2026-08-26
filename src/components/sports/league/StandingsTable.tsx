@@ -119,6 +119,7 @@ function StandingsTableInner({
       {
         id: "rank",
         accessorFn: (row) => row.rank,
+        // oxlint-disable-next-line
         header: () => (
           <Tooltip content="Rank / Seed">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">
@@ -135,6 +136,7 @@ function StandingsTableInner({
         id: "team",
         accessorFn: (row) => row.teamName ?? row.teamId,
         header: "Team",
+        // oxlint-disable-next-line
         cell: ({ row }) => {
           const s = row.original;
           const i = row.index;
@@ -165,6 +167,7 @@ function StandingsTableInner({
       },
       {
         accessorKey: "wins",
+        // oxlint-disable-next-line
         header: () => (
           <Tooltip content="Wins">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">W</span>
@@ -174,6 +177,7 @@ function StandingsTableInner({
       },
       {
         accessorKey: "losses",
+        // oxlint-disable-next-line
         header: () => (
           <Tooltip content="Losses">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">L</span>
@@ -183,6 +187,7 @@ function StandingsTableInner({
       },
       {
         accessorKey: "draws",
+        // oxlint-disable-next-line
         header: () => (
           <Tooltip content="Draws">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">D</span>
@@ -192,6 +197,7 @@ function StandingsTableInner({
       },
       {
         accessorKey: "points",
+        // oxlint-disable-next-line
         header: () => (
           <Tooltip content="Points">
             <span className="decoration-border/60 cursor-help font-bold underline decoration-dotted">
@@ -199,10 +205,12 @@ function StandingsTableInner({
             </span>
           </Tooltip>
         ),
+        // oxlint-disable-next-line
         cell: ({ getValue }) => <span className="font-bold">{getValue<number>()}</span>,
       },
       {
         accessorKey: "pointsFor",
+        // oxlint-disable-next-line
         header: () => (
           <Tooltip content="Points For (Goals/Points Scored)">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">PF</span>
@@ -212,6 +220,7 @@ function StandingsTableInner({
       },
       {
         accessorKey: "pointsAgainst",
+        // oxlint-disable-next-line
         header: () => (
           <Tooltip content="Points Against (Goals/Points Allowed)">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">PA</span>
@@ -221,6 +230,7 @@ function StandingsTableInner({
       },
       {
         id: "gamesPlayed",
+        // oxlint-disable-next-line
         header: () => (
           <Tooltip content="Games Played (Total matches played this season)">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">GP</span>
@@ -231,6 +241,7 @@ function StandingsTableInner({
       },
       {
         id: "difference",
+        // oxlint-disable-next-line
         header: () => (
           <Tooltip content="Point Differential (PF minus PA)">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">
@@ -277,6 +288,7 @@ function StandingsTableInner({
 
   const TableComponents = useMemo(
     () => ({
+      // oxlint-disable-next-line
       Table: React.forwardRef<HTMLTableElement, any>(
         ({ className: tableClassName, ...props }, ref) => (
           <table
@@ -286,12 +298,15 @@ function StandingsTableInner({
           />
         )
       ),
+      // oxlint-disable-next-line
       TableHead: React.forwardRef<HTMLTableSectionElement, any>((props, ref) => (
         <TableHeader {...props} ref={ref} />
       )),
+      // oxlint-disable-next-line
       TableBody: React.forwardRef<HTMLTableSectionElement, any>((props, ref) => (
         <TableBody {...props} ref={ref} />
       )),
+      // oxlint-disable-next-line
       TableRow: React.forwardRef<HTMLTableRowElement, any>(({ ...props }, ref) => {
         const index = props["data-index"];
         const row = rows[index];

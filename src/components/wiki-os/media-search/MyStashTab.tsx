@@ -52,6 +52,7 @@ export function MyStashTab({
   // Fetch images for all pages in the stash in parallel
   useEffect(() => {
     if (!selectedStashId || stashItems.length === 0) {
+      // oxlint-disable-next-line
       setAllStashImages([]);
       return;
     }

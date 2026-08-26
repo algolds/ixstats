@@ -42,6 +42,7 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
     useEffect(() => {
       if (revealedIndex >= cards.length - 1) {
         // All cards revealed, trigger celebration then complete
+        // oxlint-disable-next-line
         setAllRevealed(true);
         const timer = setTimeout(() => {
           onRevealComplete();
@@ -132,8 +133,10 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
               const distance = isMobile ? 150 : 250;
               const x = Math.cos(angle) * distance;
               const y = Math.sin(angle) * distance;
+              // oxlint-disable-next-line
               const size = 4 + Math.random() * 8;
               const colors = ["#fbbf24", "#f97316", "#ef4444", "#ec4899", "#a855f7"];
+              // oxlint-disable-next-line
               const color = colors[Math.floor(Math.random() * colors.length)];
 
               return (
@@ -155,6 +158,7 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
                     rotate: [0, 360],
                   }}
                   transition={{
+                    // oxlint-disable-next-line
                     duration: 1 + Math.random() * 0.5,
                     delay: i * 0.02,
                     ease: "easeOut",

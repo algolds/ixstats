@@ -173,6 +173,7 @@ export function SkeletonChart() {
       <Skeleton className="h-4 w-32" />
       <div className="flex h-48 items-end gap-2">
         {Array.from({ length: 8 }).map((_, i) => (
+          // oxlint-disable-next-line
           <Skeleton key={i} className="flex-1" style={{ height: `${Math.random() * 80 + 20}%` }} />
         ))}
       </div>

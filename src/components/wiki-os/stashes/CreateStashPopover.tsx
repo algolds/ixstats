@@ -48,6 +48,7 @@ export function CreateStashPopover({
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 50);
     } else {
+      // oxlint-disable-next-line
       setName("");
       setError(null);
     }

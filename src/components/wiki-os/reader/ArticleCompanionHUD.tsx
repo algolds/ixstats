@@ -102,6 +102,7 @@ export function ArticleCompanionHUD({
     return rawContributors.filter(
       (c) => c.username && (!creatorName || c.username.toLowerCase() !== creatorName.toLowerCase())
     );
+  // oxlint-disable-next-line
   }, [rawContributors, creatorName]);
 
   const totalContributorsCount =

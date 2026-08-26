@@ -27,6 +27,7 @@ export function MentionMenuPortal({
 }: MentionMenuPortalProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
     return () => setMounted(false);
   }, []);

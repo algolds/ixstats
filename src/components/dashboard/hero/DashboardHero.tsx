@@ -162,6 +162,7 @@ export function DashboardHeroComponent({
       popGrowth: normalizeGrowth(newStats.populationGrowthRate),
       maxGdpGrowthRate: newStats.maxGdpGrowthRate ?? 0,
     }),
+    // oxlint-disable-next-line
     [newStats, country]
   );
 

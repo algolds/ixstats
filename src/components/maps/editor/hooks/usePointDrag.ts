@@ -31,15 +31,19 @@ export function usePointDrag({
   } | null>(null);
 
   const featuresRef = useRef(features);
+  // oxlint-disable-next-line
   featuresRef.current = features;
 
   const modeRef = useRef(mode);
+  // oxlint-disable-next-line
   modeRef.current = mode;
 
   const onFeatureSelectRef = useRef(onFeatureSelect);
+  // oxlint-disable-next-line
   onFeatureSelectRef.current = onFeatureSelect;
 
   const updatePointCoordinatesRef = useRef(updatePointCoordinates);
+  // oxlint-disable-next-line
   updatePointCoordinatesRef.current = updatePointCoordinates;
 
   useEffect(() => {

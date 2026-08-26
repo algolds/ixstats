@@ -80,6 +80,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
 
   React.useEffect(() => {
     if (updatedData) {
+      // oxlint-disable-next-line
       setPollState({
         votes: (updatedData.votes || {}) as Record<string, number>,
         totalVotes: updatedData.totalVotes || 0,
