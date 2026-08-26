@@ -8,6 +8,7 @@ import React, { useRef, useEffect, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
 import { getDraft } from "~/lib/wiki-os/editor/draft-store";
+import { parseTemplateWikitext } from "~/lib/wiki-os/editor/parse-template-wikitext";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
 import { useWikiVisualFormatting } from "./hooks/useWikiVisualFormatting";
 import { WikiVisualToolbar } from "./components/WikiVisualToolbar";
@@ -132,58 +133,27 @@ export function WikiVisualEditor({
   );
 
   // Template and Image Handlers
-  const handleInsertInfobox = useCallback(
-    (wikitext: string) => {
-      const clean = wikitext.trim().replace(/^\{\{/, "").replace(/\}\}$/, "");
-      const parts = clean.split("|");
-      const name = parts[0]?.trim() || "Infobox";
-      const params: Record<string, string> = {};
-      for (let i = 1; i < parts.length; i++) {
-        const p = parts[i]!;
-        const eq = p.indexOf("=");
-        if (eq !== -1) {
-          params[p.slice(0, eq).trim()] = p.slice(eq + 1).trim();
-        }
-      }
+  const handleInsertTemplateFromWikitext = useCallback(
+    (wikitext: string, defaultName = "Template") => {
+      const { name, params } = parseTemplateWikitext(wikitext, defaultName);
       fmt.handleInsertTemplate(name, params);
     },
     [fmt]
+  );
+
+  const handleInsertInfobox = useCallback(
+    (wikitext: string) => handleInsertTemplateFromWikitext(wikitext, "Infobox"),
+    [handleInsertTemplateFromWikitext]
   );
 
   const handleInsertCountryStats = useCallback(
-    (wikitext: string) => {
-      const clean = wikitext.trim().replace(/^\{\{/, "").replace(/\}\}$/, "");
-      const parts = clean.split("|");
-      const name = parts[0]?.trim() || "CountryData";
-      const params: Record<string, string> = {};
-      for (let i = 1; i < parts.length; i++) {
-        const p = parts[i]!;
-        const eq = p.indexOf("=");
-        if (eq !== -1) {
-          params[p.slice(0, eq).trim()] = p.slice(eq + 1).trim();
-        }
-      }
-      fmt.handleInsertTemplate(name, params);
-    },
-    [fmt]
+    (wikitext: string) => handleInsertTemplateFromWikitext(wikitext, "CountryData"),
+    [handleInsertTemplateFromWikitext]
   );
 
   const handleInsertBusinessStats = useCallback(
-    (wikitext: string) => {
-      const clean = wikitext.trim().replace(/^\{\{/, "").replace(/\}\}$/, "");
-      const parts = clean.split("|");
-      const name = parts[0]?.trim() || "BusinessData";
-      const params: Record<string, string> = {};
-      for (let i = 1; i < parts.length; i++) {
-        const p = parts[i]!;
-        const eq = p.indexOf("=");
-        if (eq !== -1) {
-          params[p.slice(0, eq).trim()] = p.slice(eq + 1).trim();
-        }
-      }
-      fmt.handleInsertTemplate(name, params);
-    },
-    [fmt]
+    (wikitext: string) => handleInsertTemplateFromWikitext(wikitext, "BusinessData"),
+    [handleInsertTemplateFromWikitext]
   );
 
   const handleInsertMapCoords = useCallback(
