@@ -31,19 +31,19 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         deadEnds,
         brokenRedirects,
       ] = await Promise.all([
-        (db as any).wikiArticle
+        db.wikiArticle
           .count({
             where: { source: realm, status: "PUBLISHED", namespace: 0 },
           })
           .catch(() => 0),
-        (db as any).wikiArticle
+        db.wikiArticle
           .count({
             where: { source: realm, status: "ARCHIVED" },
           })
           .catch(() => 0),
-        (db as any).wikiAsset.count().catch(() => 0),
-        (db as any).wikiRevision.count().catch(() => 0),
-        (db as any).wikiLink.count().catch(() => 0),
+        db.wikiAsset.count().catch(() => 0),
+        db.wikiRevision.count().catch(() => 0),
+        db.wikiLink.count().catch(() => 0),
         getSiteStats().catch(() => ({
           articles: 0,
           images: 0,
@@ -131,7 +131,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const articles = await (db as any).wikiArticle.findMany({
+      const articles = await db.wikiArticle.findMany({
         where: {
           source: input.realm,
           status: "PUBLISHED",
@@ -164,7 +164,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const articles = await (db as any).wikiArticle.findMany({
+      const articles = await db.wikiArticle.findMany({
         where: {
           source: input.realm,
           status: "PUBLISHED",
@@ -197,7 +197,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      return (db as any).wikiArticle.findMany({
+      return db.wikiArticle.findMany({
         where: {
           source: input.realm,
           status: "ARCHIVED",
@@ -227,19 +227,19 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const where: any = {};
+      const where: { action?: string } = {};
       if (input.action && input.action !== "all") {
         where.action = input.action;
       }
 
       const [logs, total] = await Promise.all([
-        (db as any).wikiLog.findMany({
+        db.wikiLog.findMany({
           where,
           orderBy: { createdAt: "desc" },
           take: input.limit,
           skip: input.offset,
         }),
-        (db as any).wikiLog.count({ where }),
+        db.wikiLog.count({ where }),
       ]);
 
       return {

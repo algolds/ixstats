@@ -28,6 +28,7 @@ import { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
 import { CreatePageModal } from "./CreatePageModal";
 import { WikiOSLogomark } from "./WikiOSLogomark";
+import { WikiUtilitiesRibbon } from "./WikiUtilitiesRibbon";
 
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
@@ -35,12 +36,14 @@ export function WikiOSLayout({
   title,
   sidebarVariant = "wiki",
   hideTitleHeading = false,
+  showUtilitiesRibbon,
   sections,
   children,
 }: {
   title?: string;
   sidebarVariant?: "wiki" | "dashboard";
   hideTitleHeading?: boolean;
+  showUtilitiesRibbon?: boolean;
   sections?: TocEntry[];
   children: ReactNode;
 }) {
@@ -100,17 +103,19 @@ export function WikiOSLayout({
     const p = stripBasePath(pathname);
     if (p.includes("/talk")) return "talk";
     if (p.includes("/edit")) return "edit";
-    if (p.includes("/wiki/recent")) return "recent";
-    if (p.includes("/wiki/lorewards")) return "lorewards";
+    if (p.includes("/util/categories") || p.includes("/wiki/categories")) return "categories";
+    if (p.includes("/util/recent") || p.includes("/wiki/recent")) return "recent";
+    if (p.includes("/util/templates") || p.includes("/wiki/templates")) return "templates";
+    if (p === "/util" || p.startsWith("/util") || p.includes("/wiki/utilities")) return "utilities";
+    if (p.includes("/util/lorewards") || p.includes("/wiki/lorewards")) return "lorewards";
     if (p.includes("/blurbs")) return "blurbs";
     if (p.includes("/stashes")) return "stashes";
-    if (p.includes("/wiki/repository")) return "images";
-    if (p.includes("/wiki/utilities")) return "utilities";
-    if (p.includes("/wiki/watchlist")) return "stashes";
-    if (p.includes("/wiki/random")) return "random";
-    if (p.includes("/wiki/search")) return "search";
-    if (p.includes("/wiki/history")) return "history";
-    if (p === "/wiki/Main_Page") return "main";
+    if (p.includes("/util/repository") || p.includes("/wiki/repository")) return "images";
+    if (p.includes("/util/watchlist") || p.includes("/wiki/watchlist")) return "stashes";
+    if (p.includes("/util/random") || p.includes("/wiki/random")) return "random";
+    if (p.includes("/util/search") || p.includes("/wiki/search")) return "search";
+    if (p.includes("/util/history") || p.includes("/wiki/history")) return "history";
+    if (p === "/wiki/Main_Page" || p === "/wiki") return "main";
     return null;
   };
 
@@ -137,12 +142,14 @@ export function WikiOSLayout({
     "contributions",
     "utilities",
     "templates",
+    "sandbox",
   ]);
   const cleanPath = stripBasePath(pathname);
   const wikiSlugMatch = cleanPath.match(/^\/wiki\/([^/]+)/);
   const wikiSlug = wikiSlugMatch ? decodeURIComponent(wikiSlugMatch[1]) : null;
   const isReservedWikiPage = !!wikiSlug && RESERVED_WIKI_SLUGS.has(wikiSlug);
   const isSpecialNamespace = !!wikiSlug && /^special:/i.test(wikiSlug);
+  const isUtilRoute = cleanPath === "/util" || cleanPath.startsWith("/util/");
   const isLibraryRoute =
     cleanPath === "/blurbs" ||
     cleanPath.startsWith("/blurbs/") ||
@@ -150,7 +157,7 @@ export function WikiOSLayout({
     cleanPath.startsWith("/stashes/");
   // Not under /wiki/<slug> at all → not an article either.
   const isSpecialPage =
-    isMainPage || isReservedWikiPage || isSpecialNamespace || isLibraryRoute || !wikiSlug;
+    isMainPage || isReservedWikiPage || isSpecialNamespace || isLibraryRoute || isUtilRoute || !wikiSlug;
 
   const sidebarContent = (
     <WikiOSUnifiedSidebar
@@ -181,6 +188,12 @@ export function WikiOSLayout({
         disableGlobalHover={true}
       >
         <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>
+          {(showUtilitiesRibbon ?? isSpecialPage) && (
+            <WikiUtilitiesRibbon
+              onSearchClick={() => setSearchOpen(true)}
+              onCreatePageClick={() => setCreatePageOpen(true)}
+            />
+          )}
           {children}
         </WikiOSContentWrapper>
       </DashboardSidebarLayout>

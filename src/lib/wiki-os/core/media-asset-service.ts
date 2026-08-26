@@ -68,7 +68,7 @@ export class MediaAssetService {
     const { hash } = this.getMd5ShardPath(clean);
 
     try {
-      const asset = await (db as any).wikiAsset.findFirst({
+      const asset = await db.wikiAsset.findFirst({
         where: {
           OR: [
             { md5Hash: hash },
@@ -96,7 +96,7 @@ export class MediaAssetService {
     const hashes = cleanNames.map((n) => this.getMd5ShardPath(n).hash);
 
     try {
-      const assets: MediaAssetRecord[] = await (db as any).wikiAsset.findMany({
+      const assets = await db.wikiAsset.findMany({
         where: {
           OR: [
             { filename: { in: cleanNames } },
@@ -106,10 +106,11 @@ export class MediaAssetService {
       });
 
       for (const asset of assets) {
-        map.set(asset.filename, asset);
-        map.set(asset.filename.toLowerCase(), asset);
-        map.set(asset.slug, asset);
-        map.set(asset.md5Hash, asset);
+        const record = asset as MediaAssetRecord;
+        map.set(asset.filename, record);
+        map.set(asset.filename.toLowerCase(), record);
+        map.set(asset.slug, record);
+        map.set(asset.md5Hash, record);
       }
     } catch (err) {
       console.error("[MediaAssetService] Batch find failed:", err);
@@ -132,12 +133,12 @@ export class MediaAssetService {
 
     try {
       // 1. Check if asset already exists by md5Hash
-      const existingByHash = await (db as any).wikiAsset.findUnique({
+      const existingByHash = await db.wikiAsset.findUnique({
         where: { md5Hash: hash },
       });
 
       if (existingByHash) {
-        return await (db as any).wikiAsset.update({
+        return (await db.wikiAsset.update({
           where: { id: existingByHash.id },
           data: {
             title,
@@ -150,18 +151,18 @@ export class MediaAssetService {
             height: data.height ?? existingByHash.height,
             blurhash: data.blurhash ?? existingByHash.blurhash,
           },
-        });
+        })) as MediaAssetRecord;
       }
 
       // 2. Check if an asset exists by slug
-      const existingBySlug = await (db as any).wikiAsset.findUnique({
+      const existingBySlug = await db.wikiAsset.findUnique({
         where: { slug },
       });
 
       if (existingBySlug) {
         // If it's the exact same filename, this is an updated version of the file
         if (existingBySlug.filename.toLowerCase() === cleanName.toLowerCase()) {
-          return await (db as any).wikiAsset.update({
+          return (await db.wikiAsset.update({
             where: { id: existingBySlug.id },
             data: {
               title,
@@ -175,7 +176,7 @@ export class MediaAssetService {
               height: data.height ?? existingBySlug.height,
               blurhash: data.blurhash ?? existingBySlug.blurhash,
             },
-          });
+          })) as MediaAssetRecord;
         }
 
         // Different file name that collided on slug — disambiguate slug with hash prefix
@@ -186,7 +187,7 @@ export class MediaAssetService {
       }
 
       // 3. Create new record
-      return await (db as any).wikiAsset.create({
+      return (await db.wikiAsset.create({
         data: {
           title,
           slug,
@@ -200,10 +201,10 @@ export class MediaAssetService {
           blurhash: data.blurhash || BlurHashService.generateDeterministicHash(cleanName),
           md5Hash: hash,
         },
-      });
-    } catch (err: any) {
+      })) as MediaAssetRecord;
+    } catch (err: unknown) {
       // Fallback: in case of race conditions, try safe update
-      const fallback = await (db as any).wikiAsset.findFirst({
+      const fallback = await db.wikiAsset.findFirst({
         where: { OR: [{ md5Hash: hash }, { filename: cleanName }] },
       });
       if (fallback) {

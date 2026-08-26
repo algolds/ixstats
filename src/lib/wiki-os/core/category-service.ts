@@ -43,7 +43,7 @@ export class CategoryService {
     }
 
     // 1. Direct fetch from PostgreSQL WikiCategory DAG
-    let cat: any = await db.wikiCategory.findFirst({
+    const cat = await db.wikiCategory.findFirst({
       where: {
         OR: [
           { slug },
@@ -107,7 +107,7 @@ export class CategoryService {
 
     // 2. If direct members are few, pull member articles from child subcategories in the DAG
     if (articleMap.size < 50 && cat?.children && cat.children.length > 0) {
-      const childIds = cat.children.map((c: any) => c.id);
+      const childIds = cat.children.map((c) => c.id);
       const childMembers = await db.wikiCategoryMember.findMany({
         where: {
           categoryId: { in: childIds },
@@ -197,7 +197,7 @@ export class CategoryService {
     articleId: string,
     categoryNames: string[]
   ): Promise<void> {
-    if (categoryNames.length === 0 || !(db as any).wikiCategoryMember) {
+    if (categoryNames.length === 0) {
       return;
     }
 
@@ -205,7 +205,7 @@ export class CategoryService {
     const categoryIds: string[] = [];
     for (const name of categoryNames) {
       const slug = toArticleSlug(name);
-      const cat: any = await (db as any).wikiCategory.upsert({
+      const cat = await db.wikiCategory.upsert({
         where: { slug },
         create: { slug, name: name.replace(/_/g, " ") },
         update: {},
@@ -215,17 +215,15 @@ export class CategoryService {
     }
 
     // Transactionally update category memberships
-    await db.$transaction(async (tx: any) => {
-      if (tx.wikiCategoryMember) {
-        await tx.wikiCategoryMember.deleteMany({ where: { articleId } });
-        await tx.wikiCategoryMember.createMany({
-          data: categoryIds.map((categoryId) => ({
-            articleId,
-            categoryId,
-          })),
-          skipDuplicates: true,
-        });
-      }
+    await db.$transaction(async (tx) => {
+      await tx.wikiCategoryMember.deleteMany({ where: { articleId } });
+      await tx.wikiCategoryMember.createMany({
+        data: categoryIds.map((categoryId) => ({
+          articleId,
+          categoryId,
+        })),
+        skipDuplicates: true,
+      });
     });
   }
 

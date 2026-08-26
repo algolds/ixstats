@@ -9,33 +9,32 @@ import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
 import { WikiOSMainPage } from "~/components/wiki-os/reader/WikiOSMainPage";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
-import { useLinkPreviews } from "~/components/wiki-os/reader/LinkPreview";
 import { withBasePath } from "~/lib/base-path";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import type { ArticleMode } from "~/lib/wiki-os/types";
 
 const RESERVED_TOOL_PAGES: Record<string, string> = {
-  categories: "/wiki/categories",
-  "category-index": "/wiki/categories",
-  "categories-index": "/wiki/categories",
-  contributions: "/wiki/contributions",
-  utilities: "/wiki/utilities",
-  templates: "/wiki/templates",
-  "template-palette": "/wiki/templates",
-  diff: "/wiki/diff",
-  "diff-viewer": "/wiki/diff",
-  watchlist: "/stashes",
-  random: "/wiki/random",
-  randompage: "/wiki/random",
-  search: "/wiki/search",
-  "recent-changes": "/wiki/recent-changes",
-  recentchanges: "/wiki/recent-changes",
-  repository: "/wiki/repository",
-  whatlinkshere: "/wiki/whatlinkshere",
-  "what-links-here": "/wiki/whatlinkshere",
-  lorewards: "/wiki/lorewards",
-  specialpages: "/wiki/utilities",
-  "special-pages": "/wiki/utilities",
+  categories: "/util/categories",
+  "category-index": "/util/categories",
+  "categories-index": "/util/categories",
+  contributions: "/util/contributions",
+  utilities: "/util",
+  templates: "/util/templates",
+  "template-palette": "/util/templates",
+  diff: "/util/diff",
+  "diff-viewer": "/util/diff",
+  watchlist: "/util/watchlist",
+  random: "/util/random",
+  randompage: "/util/random",
+  search: "/util/search",
+  "recent-changes": "/util/recent-changes",
+  recentchanges: "/util/recent-changes",
+  repository: "/util/repository",
+  whatlinkshere: "/util/whatlinkshere",
+  "what-links-here": "/util/whatlinkshere",
+  lorewards: "/util/lorewards",
+  specialpages: "/util",
+  "special-pages": "/util",
 };
 
 export default function WikiOSArticlePage() {
@@ -105,37 +104,37 @@ export default function WikiOSArticlePage() {
       const specLower = spec.toLowerCase();
 
       if (specLower === "specialpages" || specLower === "utilities") {
-        router.replace(withBasePath("/wiki/utilities"));
+        router.replace(withBasePath("/util"));
       } else if (specLower === "recentchanges" || specLower === "recent-changes") {
-        router.replace(withBasePath("/wiki/recent-changes"));
+        router.replace(withBasePath("/util/recent-changes"));
       } else if (specLower === "watchlist") {
-        router.replace(withBasePath("/stashes"));
+        router.replace(withBasePath("/util/watchlist"));
       } else if (specLower === "random" || specLower === "randompage") {
-        router.replace(withBasePath("/wiki/random"));
+        router.replace(withBasePath("/util/random"));
       } else if (specLower === "categories" || specLower === "categorytree") {
-        router.replace(withBasePath("/wiki/categories"));
+        router.replace(withBasePath("/util/categories"));
       } else if (specLower === "search") {
-        router.replace(withBasePath("/wiki/search"));
+        router.replace(withBasePath("/util/search"));
       } else if (specLower === "templates") {
-        router.replace(withBasePath("/wiki/templates"));
+        router.replace(withBasePath("/util/templates"));
       } else if (specLower === "diff") {
-        router.replace(withBasePath("/wiki/diff"));
+        router.replace(withBasePath("/util/diff"));
       } else if (specLower.startsWith("contributions")) {
         const user = spec.replace(/^contributions\/?/i, "").trim();
         router.replace(
           user
-            ? withBasePath(`/wiki/contributions/${encodeURIComponent(user)}`)
-            : withBasePath("/wiki/contributions")
+            ? withBasePath(`/util/contributions/${encodeURIComponent(user)}`)
+            : withBasePath("/util/contributions")
         );
       } else if (specLower.startsWith("whatlinkshere")) {
         const target = spec.replace(/^whatlinkshere\/?/i, "").trim();
         router.replace(
           target
-            ? withBasePath(`/wiki/whatlinkshere/${encodeURIComponent(target)}`)
-            : withBasePath("/wiki/whatlinkshere")
+            ? withBasePath(`/util/whatlinkshere/${encodeURIComponent(target)}`)
+            : withBasePath("/util/whatlinkshere")
         );
       } else {
-        router.replace(withBasePath("/wiki/utilities"));
+        router.replace(withBasePath("/util"));
       }
     }
   }, [title, targetReservedPath, router]);
@@ -185,9 +184,6 @@ export default function WikiOSArticlePage() {
       canonical.href = `https://ixwiki.com/wiki/${encodeURIComponent(data.title.replace(/ /g, "_"))}`;
     }
   }, [data?.title, isMainPage, mode]);
-
-  // Link hover previews
-  const previewPortal = useLinkPreviews(articleRef);
 
   const handleEnterEdit = useCallback((editMode: "source" | "visual" = "source") => {
     setMode(editMode);
@@ -303,7 +299,6 @@ export default function WikiOSArticlePage() {
           </>
         )}
       </div>
-      {previewPortal}
     </WikiOSLayout>
   );
 }

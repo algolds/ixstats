@@ -42,7 +42,6 @@ import {
   ixwikiGetPageProtection,
   ixwikiGetImageMeta,
   ixwikiGetPageLog,
-  batchFetchThumbnails,
 } from "./pg-reader";
 import {
   iiwikiGetWikitext,
@@ -492,8 +491,7 @@ export async function searchWithFallback(
 // Wikitext Processing Helpers
 // ──────────────────────────────────────────────
 
-import { cleanExcerpt } from "~/lib/wiki-os/transformers/excerpt";
-import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { cleanExcerpt, cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
 export { cleanWikiMarkup };
 
 /**

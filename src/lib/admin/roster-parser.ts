@@ -1,5 +1,5 @@
 /**
- * Roster File Parser — CSV & JSON support via PapaParse
+ * Roster File Parser — CSV & JSON support via PapaParse for Admin country roster import.
  */
 
 import Papa from "papaparse";

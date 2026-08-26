@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { MyCountryTabsList } from "~/components/mycountry/shared/tabs";
 import { FactbookMetricsProvider } from "~/components/mycountry/shared/headers/FactbookMetricsProvider";
 import { FactbookModals } from "~/components/mycountry/shared/modals/FactbookModals";
-import { sectionFromPathname } from "~/lib/wiki-os/adapters/ixstates/factbook-routes";
+import { sectionFromPathname } from "~/lib/country/factbook-routes";
 
 /**
  * FactbookLayout — persistent shell for all five factbook sections

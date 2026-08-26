@@ -45,7 +45,7 @@ export class PageManagementService {
 
     return db.$transaction(async (tx) => {
       // 1. Fetch original article
-      const original: any = await (tx as any).wikiArticle.findFirst({
+      const original = await tx.wikiArticle.findFirst({
         where: {
           source: realm,
           OR: [{ slug: oldSlug }, { title: oldSlugOrTitle.replace(/_/g, " ") }],
@@ -57,7 +57,7 @@ export class PageManagementService {
       }
 
       // 2. Check if target title already exists
-      const existingTarget: any = await (tx as any).wikiArticle.findFirst({
+      const existingTarget = await tx.wikiArticle.findFirst({
         where: {
           source: realm,
           OR: [{ slug: newSlug }, { title: newTitle.replace(/_/g, " ") }],
@@ -69,7 +69,7 @@ export class PageManagementService {
       }
 
       // 3. Update original article to new title and slug
-      const movedArticle: any = await (tx as any).wikiArticle.update({
+      const movedArticle = await tx.wikiArticle.update({
         where: { id: original.id },
         data: {
           title: newTitle.replace(/_/g, " "),
@@ -80,7 +80,7 @@ export class PageManagementService {
       });
 
       // 4. Create redirect article at the old location
-      const redirectArticle: any = await (tx as any).wikiArticle.create({
+      const redirectArticle = await tx.wikiArticle.create({
         data: {
           title: original.title,
           slug: oldSlug,
@@ -98,17 +98,20 @@ export class PageManagementService {
       });
 
       // 5. Update Link Graph: Repoint incoming links to new article ID
-      const linkUpdateResult = await (tx as any).wikiLink.updateMany({
+      const linkUpdateResult = await tx.wikiLink.updateMany({
         where: { targetArticleId: original.id },
         data: { targetArticleId: movedArticle.id },
       });
 
       // 6. Log the move action
-      await (tx as any).wikiLog.create({
+      await tx.wikiLog.create({
         data: {
+          logType: "move",
           action: "move",
           title: newTitle,
-          details: {
+          actorName: userId || "Wiki Contributor",
+          comment: reason,
+          params: {
             oldTitle: original.title,
             oldSlug,
             newTitle,
@@ -116,6 +119,7 @@ export class PageManagementService {
             reason,
           },
           userId,
+          articleId: movedArticle.id,
         },
       });
 
@@ -141,7 +145,7 @@ export class PageManagementService {
   ): Promise<{ success: boolean; articleId: string }> {
     const slug = toArticleSlug(slugOrTitle);
 
-    const article: any = await (db as any).wikiArticle.findFirst({
+    const article = await db.wikiArticle.findFirst({
       where: {
         source: realm,
         OR: [{ slug }, { title: slugOrTitle.replace(/_/g, " ") }],
@@ -152,7 +156,7 @@ export class PageManagementService {
       throw new Error(`Article "${slugOrTitle}" not found.`);
     }
 
-    await (db as any).wikiArticle.update({
+    await db.wikiArticle.update({
       where: { id: article.id },
       data: {
         status: "ARCHIVED",
@@ -161,12 +165,16 @@ export class PageManagementService {
       },
     });
 
-    await (db as any).wikiLog.create({
+    await db.wikiLog.create({
       data: {
+        logType: "delete",
         action: "delete",
         title: article.title,
-        details: { reason, previousStatus: article.status },
+        actorName: userId || "Wiki Contributor",
+        comment: reason,
+        params: { reason, previousStatus: article.status },
         userId,
+        articleId: article.id,
       },
     });
 
@@ -183,7 +191,7 @@ export class PageManagementService {
   ): Promise<{ success: boolean; articleId: string }> {
     const slug = toArticleSlug(slugOrTitle);
 
-    const article: any = await (db as any).wikiArticle.findFirst({
+    const article = await db.wikiArticle.findFirst({
       where: {
         source: realm,
         OR: [{ slug }, { title: slugOrTitle.replace(/_/g, " ") }],
@@ -194,7 +202,7 @@ export class PageManagementService {
       throw new Error(`Archived article "${slugOrTitle}" not found.`);
     }
 
-    await (db as any).wikiArticle.update({
+    await db.wikiArticle.update({
       where: { id: article.id },
       data: {
         status: "PUBLISHED",
@@ -203,12 +211,16 @@ export class PageManagementService {
       },
     });
 
-    await (db as any).wikiLog.create({
+    await db.wikiLog.create({
       data: {
+        logType: "delete",
         action: "restore",
         title: article.title,
-        details: { restoredFrom: "ARCHIVED" },
+        actorName: userId || "Wiki Contributor",
+        comment: "Restored from archive",
+        params: { restoredFrom: "ARCHIVED" },
         userId,
+        articleId: article.id,
       },
     });
 
@@ -221,7 +233,7 @@ export class PageManagementService {
   static async getMediaUsage(assetFilenameOrSlug: string, limit = 50): Promise<MediaUsageItem[]> {
     const clean = assetFilenameOrSlug.replace(/^File:/i, "").trim();
 
-    const articles = await (db as any).wikiArticle.findMany({
+    const articles = await db.wikiArticle.findMany({
       where: {
         OR: [
           { wikitext: { contains: clean, mode: "insensitive" } },
@@ -239,7 +251,7 @@ export class PageManagementService {
       },
     });
 
-    return articles.map((a: any) => ({
+    return articles.map((a) => ({
       articleId: a.id,
       articleSlug: a.slug,
       articleTitle: a.title,
@@ -253,7 +265,7 @@ export class PageManagementService {
    */
   static async getOrphanPages(limit = 50, realm = "ixwiki"): Promise<Array<{ id: string; title: string; slug: string; length: number }>> {
     try {
-      const orphans: any = await (db as any).wikiArticle.findMany({
+      const orphans = await db.wikiArticle.findMany({
         where: {
           source: realm,
           namespace: 0,
@@ -273,7 +285,7 @@ export class PageManagementService {
         },
       });
 
-      return (orphans || []).map((o: any) => ({
+      return (orphans || []).map((o) => ({
         id: o.id,
         title: o.title,
         slug: o.slug,
@@ -289,7 +301,7 @@ export class PageManagementService {
    */
   static async getDeadEndPages(limit = 50, realm = "ixwiki"): Promise<Array<{ id: string; title: string; slug: string; length: number }>> {
     try {
-      const deadEnds: any = await (db as any).wikiArticle.findMany({
+      const deadEnds = await db.wikiArticle.findMany({
         where: {
           source: realm,
           namespace: 0,
@@ -309,7 +321,7 @@ export class PageManagementService {
         },
       });
 
-      return (deadEnds || []).map((d: any) => ({
+      return (deadEnds || []).map((d) => ({
         id: d.id,
         title: d.title,
         slug: d.slug,
@@ -325,7 +337,7 @@ export class PageManagementService {
    */
   static async getBrokenRedirects(limit = 50, realm = "ixwiki"): Promise<Array<{ id: string; title: string; slug: string; targetSlug: string }>> {
     try {
-      const redirects: any = await (db as any).wikiArticle.findMany({
+      const redirects = await db.wikiArticle.findMany({
         where: {
           source: realm,
           redirectTargetSlug: { not: null },
@@ -342,10 +354,10 @@ export class PageManagementService {
       if (!redirects || redirects.length === 0) return [];
 
       const targetSlugs = redirects
-        .map((r: any) => r.redirectTargetSlug)
-        .filter((s: any): s is string => Boolean(s));
+        .map((r) => r.redirectTargetSlug)
+        .filter((s): s is string => Boolean(s));
 
-      const existingTargets: any = await (db as any).wikiArticle.findMany({
+      const existingTargets = await db.wikiArticle.findMany({
         where: {
           source: realm,
           slug: { in: targetSlugs },
@@ -354,16 +366,16 @@ export class PageManagementService {
         select: { slug: true },
       });
 
-      const validTargetSet = new Set(existingTargets.map((t: any) => t.slug));
+      const validTargetSet = new Set(existingTargets.map((t) => t.slug));
 
       return redirects
-        .filter((r: any) => !validTargetSet.has(r.redirectTargetSlug))
+        .filter((r) => r.redirectTargetSlug && !validTargetSet.has(r.redirectTargetSlug))
         .slice(0, limit)
-        .map((r: any) => ({
+        .map((r) => ({
           id: r.id,
           title: r.title,
           slug: r.slug,
-          targetSlug: r.redirectTargetSlug,
+          targetSlug: r.redirectTargetSlug!,
         }));
     } catch {
       return [];

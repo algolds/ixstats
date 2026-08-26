@@ -62,7 +62,7 @@ export class MediaWikiExportWorker {
 
       if (res.revisionId) {
         // Record mwLatestRevId on PostgreSQL article to prevent inbound CDC echo loops
-        await (db as any).wikiArticle.updateMany({
+        await db.wikiArticle.updateMany({
           where: {
             source: "ixwiki",
             OR: [

@@ -88,3 +88,21 @@ export interface WikiUserProfileData {
   lorewardScore: number;
   loreRank?: number | null;
 }
+
+/**
+ * Universal canonical article authorship and edit lineage representation.
+ */
+export interface ArticleAuthorInfo {
+  creator?: { username: string; timestamp?: string; avatar?: string | null } | string | null;
+  author?: string | null;
+  creatorAvatar?: string | null;
+  createdAt?: string | null;
+  createdTimestamp?: string | null;
+  lastEditor?: { username: string; timestamp?: string; avatar?: string | null } | string | null;
+  lastEditorAvatar?: string | null;
+  lastEditedAt?: string | null;
+  lastModifiedTimestamp?: string | null;
+  topContributors?: Array<{ username: string; editCount?: number; lastContributedAt?: string }>;
+  contributors?: Array<{ username: string; editCount?: number; lastContributedAt?: string }>;
+  totalContributors?: number;
+}

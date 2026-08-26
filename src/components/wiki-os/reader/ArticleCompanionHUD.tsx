@@ -41,6 +41,7 @@ interface ArticleCompanionHUDProps {
     stop: () => void;
   };
   isAuthenticated?: boolean;
+  isCollapsed?: boolean;
 }
 
 export function ArticleCompanionHUD({
@@ -58,7 +59,10 @@ export function ArticleCompanionHUD({
   onOpenBacklinks,
   narrator,
   isAuthenticated = false,
+  isCollapsed = false,
 }: ArticleCompanionHUDProps) {
+  if (isCollapsed) return null;
+
   const [showAllContributors, setShowAllContributors] = React.useState(false);
 
   // Calculate word count & estimated reading time dynamically

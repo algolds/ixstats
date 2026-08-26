@@ -5,7 +5,6 @@
  * Provides high-speed (<2ms) reads for country profiles, infoboxes, and sections.
  */
 
-import { db } from "~/server/db";
 import { getArticleWikitext, type WikiSource } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "./unified-parser";
 import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";

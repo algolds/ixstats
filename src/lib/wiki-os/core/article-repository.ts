@@ -38,7 +38,7 @@ export class ArticleRepository {
     const normalizedSlug = toArticleSlug(slug);
 
     try {
-      const article: any = await (db as any).wikiArticle.findFirst({
+      const article = await db.wikiArticle.findFirst({
         where: {
           source,
           OR: [
@@ -83,10 +83,10 @@ export class ArticleRepository {
         slug: toArticleSlug(article.title),
         title: article.title,
         source: article.source,
-        status: (article.status || "PUBLISHED") as any,
-        format: (article.format || "STRUCTURED_JSON") as any,
+        status: (article.status || "PUBLISHED") as WikiArticleEntity["status"],
+        format: (article.format || "STRUCTURED_JSON") as WikiArticleEntity["format"],
         contentHtml: article.contentHtml ?? "",
-        contentJson: (article.contentJson as any) ?? null,
+        contentJson: (article.contentJson as unknown as WikiArticleEntity["contentJson"]) ?? null,
         wikitext: article.wikitext ?? "",
         summary: article.summary ?? null,
         namespace: article.namespace ?? 0,
@@ -133,7 +133,7 @@ export class ArticleRepository {
     const readingTime = Math.max(1, Math.ceil(words / 200));
 
     // Save article and create revision in a single atomic transaction
-    const result = await db.$transaction(async (tx: any) => {
+    const result = await db.$transaction(async (tx) => {
       // Resolve DB user id if Clerk ID or username was provided
       let resolvedDbUserId: string | null = null;
       if (authorId) {
@@ -186,6 +186,10 @@ export class ArticleRepository {
           slug: true,
           source: true,
           wikitext: true,
+          namespace: true,
+          namespacePrefix: true,
+          protectionLevel: true,
+          protectionExpiry: true,
           syncedAt: true,
           updatedAt: true,
         },
@@ -277,7 +281,7 @@ export class ArticleRepository {
   ): Promise<WikiRevisionSummary[]> {
     const normalized = toArticleSlug(slug);
 
-    const revisions: any[] = await (db as any).wikiRevision.findMany({
+    const revisions = await db.wikiRevision.findMany({
       where: {
         article: {
           source,
@@ -303,13 +307,14 @@ export class ArticleRepository {
         wikitext: true,
         byteSize: true,
         byteDelta: true,
+        format: true,
       },
     });
 
-    return revisions.map((r: any) => ({
+    return revisions.map((r) => ({
       id: toRevisionId(r.id),
       articleId: toArticleId(r.articleId),
-      format: (r.format || "STRUCTURED_JSON") as any,
+      format: (r.format || "STRUCTURED_JSON") as WikiRevisionSummary["format"],
       summary: r.summary ?? null,
       minor: r.minor ?? false,
       author: r.author ?? null,

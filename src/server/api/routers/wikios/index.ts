@@ -16,7 +16,8 @@
 import { mergeRouters } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "./page-content";
 import { wikiosHistoryDiffRouter } from "./history-diff";
-import { wikiosSearchCategoriesRouter } from "./search-categories";
+import { wikiosSearchRouter } from "./search";
+import { wikiosCategoriesRouter } from "./categories";
 import { wikiosTemplatesRouter } from "./templates";
 import { wikiosEditingRouter } from "./editing";
 import { wikiosStashRouter } from "./stash";
@@ -28,7 +29,8 @@ import { wikiosUtilitiesRouter } from "./utilities";
 export const wikiosRouter = mergeRouters(
   wikiosPageContentRouter,
   wikiosHistoryDiffRouter,
-  wikiosSearchCategoriesRouter,
+  wikiosSearchRouter,
+  wikiosCategoriesRouter,
   wikiosTemplatesRouter,
   wikiosEditingRouter,
   wikiosStashRouter,

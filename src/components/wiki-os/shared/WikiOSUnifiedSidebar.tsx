@@ -30,6 +30,8 @@ import {
   Printer,
   Code as FileCode,
   Wrench,
+  Folder,
+  ViewGrid,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -52,8 +54,9 @@ import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
 const NAV_GROUP_1 = [
   { id: "main", href: "/wiki/Main_Page", icon: Home, title: "Main Page" },
-  { id: "recent", href: "/wiki/recent-changes", icon: Clock, title: "Recent Changes" },
-  { id: "random", href: "/wiki/random", icon: Shuffle, title: "Random" },
+  { id: "categories", href: "/util/categories", icon: Folder, title: "Categories" },
+  { id: "recent", href: "/util/recent-changes", icon: Clock, title: "Recent Changes" },
+  { id: "random", href: "/util/random", icon: Shuffle, title: "Random" },
 ];
 
 interface WikiOSUnifiedSidebarProps {
@@ -371,9 +374,15 @@ export function WikiOSUnifiedSidebar({
         {NAV_GROUP_1.map((item) => {
           let glowClass =
             "border-blue-500/20 bg-blue-500/5 text-blue-400 hover:bg-blue-500/15 rail-glow-blue rail-animate-bounce";
-          if (item.id === "recent") {
+          if (item.id === "categories") {
+            glowClass =
+              "border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/15 rail-glow-green";
+          } else if (item.id === "recent") {
             glowClass =
               "border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15 rail-glow-amber rail-animate-spin";
+          } else if (item.id === "utilities") {
+            glowClass =
+              "border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20 rail-glow-di";
           } else if (item.id === "random") {
             glowClass =
               "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15 rail-glow-di rail-animate-wiggle";
@@ -426,12 +435,23 @@ export function WikiOSUnifiedSidebar({
 
         {renderRow({
           id: "images",
-          href: withBasePath("/wiki/repository"),
+          href: withBasePath("/util/repository"),
           icon: ImageIcon,
           title: "Repository",
           glowClass:
             "rail-glow-purple rail-animate-wiggle border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15",
-          isActive: pathname === "/wiki/repository" || pathname.startsWith("/wiki/repository/"),
+          isActive: pathname === "/util/repository" || pathname.startsWith("/util/repository/") || pathname.startsWith("/wiki/repository/"),
+          index: rowIndex++,
+        })}
+
+        {renderRow({
+          id: "utilities",
+          href: withBasePath("/util"),
+          icon: Wrench,
+          title: "Utilities",
+          glowClass:
+            "rail-glow-di border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20",
+          isActive: pathname === "/util" || pathname.startsWith("/util") || pathname.startsWith("/wiki/utilities"),
           index: rowIndex++,
         })}
 
@@ -542,7 +562,7 @@ export function WikiOSUnifiedSidebar({
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link
-                          href={withBasePath("/wiki/utilities")}
+                          href={withBasePath("/util")}
                           className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium cursor-pointer hover:bg-[var(--wikios-border)]/50 focus:bg-[var(--wikios-border)]/50 transition-colors"
                         >
                           <Wrench className="w-3.5 h-3.5 text-purple-400 shrink-0" />

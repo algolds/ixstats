@@ -1,12 +1,10 @@
-import { getWikiAuth, type WikiAuthContext } from "~/lib/wiki-os/auth";
+import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
 import { invalidateCache } from "./parsoid";
-import { invalidateArticleShadow, recordArticleRevision } from "~/lib/wiki-os/adapters/mediawiki/article-store";
-import { db } from "~/server/db";
-import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
-import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
+import { invalidateArticleShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import type { Prisma } from "@prisma/client";
+import { type db } from "~/server/db";
 
 export interface WikiWriteContext extends WikiAuthContext {
   user?: {
@@ -23,14 +21,6 @@ export interface WikiWriteContext extends WikiAuthContext {
   db?: Prisma.TransactionClient | typeof db;
 }
 
-/**
- * Best-effort actor attribution logger for WikiOS edits.
- */
-export async function updateRevisionActor(revid: number, wikiUsername: string): Promise<boolean> {
-  // WikiOS revisions in PostgreSQL track author directly via WikiRevision.author
-  return true;
-}
-
 export interface MediaWikiWriteResult {
   success: boolean;
   pageId?: number;
@@ -39,6 +29,14 @@ export interface MediaWikiWriteResult {
   noChange?: boolean;
   result?: Record<string, unknown>;
   error?: string;
+}
+
+/**
+ * Best-effort actor attribution logger for WikiOS edits.
+ */
+export async function updateRevisionActor(_revid: number, _wikiUsername: string): Promise<boolean> {
+  // WikiOS revisions in PostgreSQL track author directly via WikiRevision.author
+  return true;
 }
 
 export async function executeMediaWikiWrite(
@@ -93,15 +91,6 @@ export async function executeMediaWikiWrite(
   }
 
   const edit = data.edit;
-  const username = ctx?.user?.wikiUsername;
-
-  if (edit?.newrevid && username) {
-    try {
-      await updateRevisionActor(edit.newrevid, username);
-    } catch (_attrErr) {
-      // Actor attribution is best-effort
-    }
-  }
 
   return {
     success: edit?.result === "Success",

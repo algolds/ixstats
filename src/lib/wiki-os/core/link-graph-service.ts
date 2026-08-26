@@ -6,7 +6,7 @@
  */
 
 import { db } from "~/server/db";
-import { toArticleSlug, type ArticleId, type ArticleSlug } from "./domain-types";
+import { toArticleSlug } from "./domain-types";
 
 export interface ExtractedLink {
   targetSlug: string;
@@ -86,8 +86,8 @@ export class LinkGraphService {
     const targetSlugs = extracted.map((l) => l.targetSlug);
     const targetTitles = extracted.map((l) => l.targetSlug.replace(/_/g, " "));
 
-    const existingTargets: Array<{ id: string; title: string; slug?: string }> = targetSlugs.length > 0
-      ? await (db as any).wikiArticle.findMany({
+    const existingTargets: Array<{ id: string; title: string }> = targetSlugs.length > 0
+      ? await db.wikiArticle.findMany({
           where: {
             source,
             OR: [
@@ -107,27 +107,25 @@ export class LinkGraphService {
 
     try {
       // Transactionally update the link graph for this article
-      await db.$transaction(async (tx: any) => {
+      await db.$transaction(async (tx) => {
         // Remove old outgoing links
-        if (tx.wikiLink) {
-          await tx.wikiLink.deleteMany({
-            where: { sourceArticleId: articleId },
-          });
+        await tx.wikiLink.deleteMany({
+          where: { sourceArticleId: articleId },
+        });
 
-          // Insert new links
-          if (extracted.length > 0) {
-            await tx.wikiLink.createMany({
-              data: extracted.map((link) => ({
-                sourceArticleId: articleId,
-                targetSlug: link.targetSlug,
-                targetArticleId: targetMap.get(link.targetSlug) ?? null,
-                anchorText: link.anchorText ?? null,
-                sectionAnchor: link.sectionAnchor ?? null,
-                isExternal: link.isExternal,
-              })),
-              skipDuplicates: true,
-            });
-          }
+        // Insert new links
+        if (extracted.length > 0) {
+          await tx.wikiLink.createMany({
+            data: extracted.map((link) => ({
+              sourceArticleId: articleId,
+              targetSlug: link.targetSlug,
+              targetArticleId: targetMap.get(link.targetSlug) ?? null,
+              anchorText: link.anchorText ?? null,
+              sectionAnchor: link.sectionAnchor ?? null,
+              isExternal: link.isExternal,
+            })),
+            skipDuplicates: true,
+          });
         }
       });
     } catch {
@@ -147,29 +145,29 @@ export class LinkGraphService {
   ): Promise<Array<{ id: string; slug: string; title: string; anchorText: string | null }>> {
     const normalized = toArticleSlug(targetSlug);
 
-    if (!(db as any).wikiLink) {
+    try {
+      const links = await db.wikiLink.findMany({
+        where: {
+          targetSlug: normalized,
+          sourceArticle: { source },
+        },
+        include: {
+          sourceArticle: {
+            select: { id: true, title: true },
+          },
+        },
+        take: limit,
+      });
+
+      return links.map((l) => ({
+        id: l.sourceArticle?.id ?? "",
+        slug: toArticleSlug(l.sourceArticle?.title ?? ""),
+        title: l.sourceArticle?.title ?? "",
+        anchorText: l.anchorText ?? null,
+      }));
+    } catch {
       return [];
     }
-
-    const links: any[] = await (db as any).wikiLink.findMany({
-      where: {
-        targetSlug: normalized,
-        sourceArticle: { source },
-      },
-      include: {
-        sourceArticle: {
-          select: { id: true, title: true },
-        },
-      },
-      take: limit,
-    });
-
-    return links.map((l: any) => ({
-      id: l.sourceArticle?.id ?? "",
-      slug: toArticleSlug(l.sourceArticle?.title ?? ""),
-      title: l.sourceArticle?.title ?? "",
-      anchorText: l.anchorText ?? null,
-    }));
   }
 
   /**
@@ -181,28 +179,32 @@ export class LinkGraphService {
   ): Promise<Array<{ targetSlug: string; anchorText: string | null; isBroken: boolean }>> {
     const normalized = toArticleSlug(sourceSlug);
 
-    const article = await (db as any).wikiArticle.findFirst({
-      where: {
-        source,
-        OR: [
-          { title: { equals: sourceSlug.replace(/_/g, " "), mode: "insensitive" } },
-          { title: { equals: normalized, mode: "insensitive" } },
-        ],
-      },
-      select: { id: true },
-    });
+    try {
+      const article = await db.wikiArticle.findFirst({
+        where: {
+          source,
+          OR: [
+            { title: { equals: sourceSlug.replace(/_/g, " "), mode: "insensitive" } },
+            { title: { equals: normalized, mode: "insensitive" } },
+          ],
+        },
+        select: { id: true },
+      });
 
-    if (!article || !(db as any).wikiLink) return [];
+      if (!article) return [];
 
-    const links: any[] = await (db as any).wikiLink.findMany({
-      where: { sourceArticleId: article.id },
-      select: { targetSlug: true, anchorText: true, targetArticleId: true },
-    });
+      const links = await db.wikiLink.findMany({
+        where: { sourceArticleId: article.id },
+        select: { targetSlug: true, anchorText: true, targetArticleId: true },
+      });
 
-    return links.map((l: any) => ({
-      targetSlug: l.targetSlug,
-      anchorText: l.anchorText,
-      isBroken: l.targetArticleId === null,
-    }));
+      return links.map((l) => ({
+        targetSlug: l.targetSlug,
+        anchorText: l.anchorText,
+        isBroken: l.targetArticleId === null,
+      }));
+    } catch {
+      return [];
+    }
   }
 }

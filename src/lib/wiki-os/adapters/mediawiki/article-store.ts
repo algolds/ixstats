@@ -10,12 +10,14 @@ import { ArticleRepository } from "../../core/article-repository";
 import { toArticleSlug, type WikiRevisionSummary } from "../../core/domain-types";
 import {
   getArticleWikitext,
-  getCurrentRevMeta,
   getPageHistory,
   getRevisionWikitext,
   type WikiSource,
 } from "./bridge";
 import { fetchMediaWikiPageAuthorsAndRevisions } from "./bridge/http-reader";
+import type { ArticleAuthorInfo } from "~/lib/wiki-os/types/canonical";
+
+export type { ArticleAuthorInfo };
 
 export interface ShadowResult {
   wikitext: string;
@@ -33,15 +35,6 @@ export interface HistoryRevision {
   comment: string;
   size: number;
   minor: boolean;
-}
-
-export interface ArticleAuthorInfo {
-  creator: { username: string; timestamp?: string; avatar?: string | null } | null;
-  createdAt?: string | null;
-  lastEditor: { username: string; timestamp?: string; avatar?: string | null } | null;
-  lastEditedAt?: string | null;
-  topContributors: Array<{ username: string; editCount: number; lastContributedAt?: string }>;
-  totalContributors: number;
 }
 
 /**
@@ -125,7 +118,7 @@ export async function saveArticleHtmlShadow(
 ): Promise<void> {
   try {
     const slug = toArticleSlug(title);
-    await (db as any).wikiArticle.updateMany({
+    await db.wikiArticle.updateMany({
       where: {
         source,
         OR: [{ slug }, { title: title.replace(/_/g, " ") }],
@@ -202,12 +195,14 @@ export async function getArticleAuthors(
     const mwData = await fetchMediaWikiPageAuthorsAndRevisions(cleanTitle, source, 250);
     if (mwData && mwData.creator) {
       // Check if PostgreSQL has any newer native edits
-      let latestEditor = mwData.lastEditor;
-      let latestEditedAt = mwData.lastEditor?.timestamp || null;
+      let latestEditor: { username: string; timestamp?: string; avatar?: string | null } | null =
+        typeof mwData.lastEditor === "object" && mwData.lastEditor ? mwData.lastEditor : null;
+      let latestEditedAt: string | null =
+        (typeof mwData.lastEditor === "object" && mwData.lastEditor ? mwData.lastEditor.timestamp : null) ?? null;
 
       try {
         const slug = toArticleSlug(cleanTitle);
-        const latestPgRev: any = await (db as any).wikiRevision.findFirst({
+        const latestPgRev = await db.wikiRevision.findFirst({
           where: {
             article: {
               source,
@@ -221,18 +216,17 @@ export async function getArticleAuthors(
           select: {
             author: true,
             createdAt: true,
-            user: { select: { username: true, avatarUrl: true } },
           },
         });
 
         if (latestPgRev && (!latestEditedAt || new Date(latestPgRev.createdAt) > new Date(latestEditedAt))) {
-          const fallbackName = latestEditor ? latestEditor.username : "MediaWiki Contributor";
+          const fallbackName = latestEditor ? (typeof latestEditor === "string" ? latestEditor : latestEditor.username) : "MediaWiki Contributor";
           latestEditor = {
-            username: latestPgRev.author || latestPgRev.user?.username || fallbackName,
+            username: latestPgRev.author || fallbackName,
             timestamp: new Date(latestPgRev.createdAt).toISOString(),
-            avatar: latestPgRev.user?.avatarUrl || null,
+            avatar: null,
           };
-          latestEditedAt = latestEditor.timestamp;
+          latestEditedAt = latestEditor.timestamp ?? null;
         }
       } catch {
         // Best effort PostgreSQL check
@@ -248,6 +242,7 @@ export async function getArticleAuthors(
         lastEditor: latestEditor,
         lastEditedAt: latestEditedAt,
         topContributors: mwData.contributors,
+        contributors: mwData.contributors,
         totalContributors: mwData.totalContributors,
       };
     }
@@ -260,7 +255,7 @@ export async function getArticleAuthors(
   // 2. Fall back to PostgreSQL Authoritative Store if MediaWiki is unreachable
   try {
     const slug = toArticleSlug(cleanTitle);
-    const article: any = await (db as any).wikiArticle.findFirst({
+    const article = await db.wikiArticle.findFirst({
       where: {
         source,
         OR: [
@@ -275,26 +270,19 @@ export async function getArticleAuthors(
         updatedAt: true,
         author: {
           select: {
-            username: true,
-            avatarUrl: true,
+            wikiUsername: true,
           },
         },
       },
     });
 
     if (article) {
-      const revisions: any[] = await (db as any).wikiRevision.findMany({
+      const revisions = await db.wikiRevision.findMany({
         where: { articleId: article.id },
         orderBy: { createdAt: "asc" },
         select: {
           author: true,
           createdAt: true,
-          user: {
-            select: {
-              username: true,
-              avatarUrl: true,
-            },
-          },
         },
       });
 
@@ -303,15 +291,15 @@ export async function getArticleAuthors(
         const newestRev = revisions[revisions.length - 1]!;
 
         const creatorUsername =
-          oldestRev.author || oldestRev.user?.username || article.author?.username || "MediaWiki Contributor";
+          oldestRev.author || article.author?.wikiUsername || "MediaWiki Contributor";
         const creatorTimestamp = (oldestRev.createdAt || article.createdAt).toISOString();
 
-        const lastEditorUsername = newestRev.author || newestRev.user?.username || creatorUsername;
+        const lastEditorUsername = newestRev.author || creatorUsername;
         const lastEditorTimestamp = (newestRev.createdAt || article.updatedAt).toISOString();
 
         const counts = new Map<string, { editCount: number; lastContributedAt: string }>();
         for (const r of revisions) {
-          const user = r.author || r.user?.username || "MediaWiki Contributor";
+          const user = r.author || "MediaWiki Contributor";
           const existing = counts.get(user);
           if (existing) {
             existing.editCount += 1;
@@ -335,20 +323,21 @@ export async function getArticleAuthors(
           creator: {
             username: creatorUsername,
             timestamp: creatorTimestamp,
-            avatar: oldestRev.user?.avatarUrl || article.author?.avatarUrl || null,
+            avatar: null,
           },
           createdAt: creatorTimestamp,
           lastEditor: {
             username: lastEditorUsername,
             timestamp: lastEditorTimestamp,
-            avatar: newestRev.user?.avatarUrl || null,
+            avatar: null,
           },
           lastEditedAt: lastEditorTimestamp,
           topContributors: contributors.slice(0, 10),
+          contributors: contributors.slice(0, 10),
           totalContributors: counts.size,
         };
       } else if (article.author || article.createdAt) {
-        const creatorUsername = article.author?.username || "MediaWiki Contributor";
+        const creatorUsername = article.author?.wikiUsername || "MediaWiki Contributor";
         const creatorTimestamp = article.createdAt.toISOString();
         const lastEditorTimestamp = article.updatedAt.toISOString();
 
@@ -356,19 +345,22 @@ export async function getArticleAuthors(
           creator: {
             username: creatorUsername,
             timestamp: creatorTimestamp,
-            avatar: article.author?.avatarUrl || null,
+            avatar: null,
           },
           createdAt: creatorTimestamp,
           lastEditor: {
             username: creatorUsername,
             timestamp: lastEditorTimestamp,
-            avatar: article.author?.avatarUrl || null,
+            avatar: null,
           },
           lastEditedAt: lastEditorTimestamp,
-          topContributors: article.author?.username
-            ? [{ username: article.author.username, editCount: 1, lastContributedAt: lastEditorTimestamp }]
+          topContributors: article.author?.wikiUsername
+            ? [{ username: article.author.wikiUsername, editCount: 1, lastContributedAt: lastEditorTimestamp }]
             : [],
-          totalContributors: article.author?.username ? 1 : 0,
+          contributors: article.author?.wikiUsername
+            ? [{ username: article.author.wikiUsername, editCount: 1, lastContributedAt: lastEditorTimestamp }]
+            : [],
+          totalContributors: article.author?.wikiUsername ? 1 : 0,
         };
       }
     }
@@ -385,6 +377,7 @@ export async function getArticleAuthors(
     lastEditor: null,
     lastEditedAt: null,
     topContributors: [],
+    contributors: [],
     totalContributors: 0,
   };
 }
@@ -393,7 +386,7 @@ export async function getArticleAuthors(
  * Check whether a revision has already been recorded
  */
 export async function hasRevision(revid: number, _source: WikiSource = "ixwiki"): Promise<boolean> {
-  const existing: any = await (db as any).wikiRevision.findFirst({
+  const existing = await db.wikiRevision.findFirst({
     where: {
       mwRevId: revid,
     },
@@ -403,7 +396,7 @@ export async function hasRevision(revid: number, _source: WikiSource = "ixwiki")
 }
 
 /**
- * Record an article revision directly into PostgreSQL
+ * Record an article revision directly into PostgreSQL via authoritative ArticleRepository
  */
 export async function recordArticleRevision(opts: {
   title: string;
@@ -417,7 +410,7 @@ export async function recordArticleRevision(opts: {
 }): Promise<boolean> {
   try {
     const realm = opts.source || "ixwiki";
-    const saveResult = await ArticleRepository.saveArticle(
+    await ArticleRepository.saveArticle(
       {
         slug: toArticleSlug(opts.title),
         title: opts.title,
@@ -426,51 +419,25 @@ export async function recordArticleRevision(opts: {
         summary: opts.summary || undefined,
         minor: opts.minor,
       },
-      opts.authorId || undefined
+      opts.authorId || undefined,
+      opts.author || "Wiki Contributor"
     );
 
-    await (db as any).wikiRevision.create({
-      data: {
-        articleId: saveResult.article.id,
-        author: opts.author || "Wiki Contributor",
-        authorId: opts.authorId || null,
-        wikitext: opts.wikitext,
-        summary: opts.summary || "Article update",
-        minor: opts.minor || false,
-        mwRevId: opts.mwRevId || null,
-        format: "WIKITEXT",
-        source: realm,
-        byteSize: opts.wikitext.length,
-      },
-    });
-
     return true;
-  } catch (err: any) {
-    console.error("[ArticleStore] Failed to record article revision:", err.message);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[ArticleStore] Failed to record article revision:", msg);
     return false;
   }
 }
 
 /**
- * Invalidate shadow cache on write / edit.
+ * Invalidate shadow cache on write / edit (No-op: PostgreSQL is authoritative and atomic).
  */
 export function invalidateArticleShadow(_title: string, _source: WikiSource = "ixwiki"): void {
-  // No-op: PostgreSQL is authoritative and updates atomically
+  // No-op
 }
 
 export function batchInvalidateArticleShadow(_titles: string[], _source: WikiSource = "ixwiki"): void {
   // No-op
-}
-
-export function recordInAppEdit(
-  _title: string,
-  _wikitext: string,
-  _summary?: string,
-  _source: WikiSource = "ixwiki"
-): void {
-  // No-op
-}
-
-export function getRecentEdits(): any[] {
-  return [];
 }

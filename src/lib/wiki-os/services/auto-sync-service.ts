@@ -6,10 +6,11 @@
  */
 
 import { db } from "~/server/db";
-import { cleanExcerpt, extractLeadImageFromWikitext, calculateRawTextBytes } from "../transformers/excerpt";
+import { cleanExcerpt, calculateRawTextBytes } from "../transformers/wikitext-parser";
+import { extractLeadImageFromWikitext } from "../transformers/image-url";
 import { toArticleSlug } from "../core/domain-types";
+import { DEFAULT_USER_AGENT } from "../config";
 
-const DEFAULT_USER_AGENT = "IxStats-Builder";
 const MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
 const API_URL = `${MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`;
 

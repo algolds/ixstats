@@ -80,7 +80,7 @@ export class InboundMediaWikiSyncService {
 
     try {
       // 1. Get current max mwLatestRevId from PostgreSQL
-      const latestArticle: any = await (db as any).wikiArticle.findFirst({
+      const latestArticle = await db.wikiArticle.findFirst({
         where: { source: realm, mwLatestRevId: { not: null } },
         orderBy: { mwLatestRevId: "desc" },
         select: { mwLatestRevId: true },
@@ -128,7 +128,7 @@ export class InboundMediaWikiSyncService {
           const byteDelta = Number(rc.newlen || 0) - Number(rc.oldlen || 0);
 
           // 3. Check existing article for echo prevention
-          const existingArticle = await (db as any).wikiArticle.findFirst({
+          const existingArticle = await db.wikiArticle.findFirst({
             where: { source: realm, title: fullTitle },
             select: { id: true, mwLatestRevId: true },
           });
@@ -144,7 +144,7 @@ export class InboundMediaWikiSyncService {
           const words = wikitext.split(/\s+/).filter(Boolean).length;
 
           // 5. Upsert Article in PostgreSQL
-          const article: any = await (db as any).wikiArticle.upsert({
+          const article = await db.wikiArticle.upsert({
             where: {
               source_title: { source: realm, title: fullTitle },
             },
@@ -172,7 +172,7 @@ export class InboundMediaWikiSyncService {
           });
 
           // 6. Create Revision record
-          await (db as any).wikiRevision.create({
+          await db.wikiRevision.create({
             data: {
               articleId: article.id,
               author: this.sanitize(String(rc.user || "MediaWiki Editor")),

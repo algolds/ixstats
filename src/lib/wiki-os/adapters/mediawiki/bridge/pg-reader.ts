@@ -15,7 +15,7 @@ import {
   MediaAssetService,
 } from "~/lib/wiki-os/core";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
-import { cleanExcerpt, calculateRawTextBytes } from "~/lib/wiki-os/transformers/excerpt";
+import { cleanExcerpt, calculateRawTextBytes } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { fetchMediaWikiPageAuthorsAndRevisions } from "./http-reader";
 import type {
   WikiArticle,

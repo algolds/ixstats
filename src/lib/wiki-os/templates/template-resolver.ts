@@ -160,10 +160,10 @@ export async function resolveTemplates(
 // HTML replacement
 // ---------------------------------------------------------------------------
 
-const CHIP_STYLES: Record<string, { bg: string; color: string; icon: string }> = {
-  mycountry: { bg: "rgba(245,158,11,0.12)", color: "#fbbf24", icon: "📊" },
-  countrydata: { bg: "rgba(59,130,246,0.12)", color: "#93c5fd", icon: "📈" },
-  businessdata: { bg: "rgba(20,184,166,0.12)", color: "#2dd4bf", icon: "💼" },
+const CHIP_STYLES: Record<string, { className: string; icon: string }> = {
+  mycountry: { className: "bg-amber-500/10 text-amber-400 border-amber-500/20", icon: "📊" },
+  countrydata: { className: "bg-blue-500/10 text-blue-400 border-blue-500/20", icon: "📈" },
+  businessdata: { className: "bg-teal-500/10 text-teal-400 border-teal-500/20", icon: "💼" },
 };
 
 function makeChip(key: string, value: string): string {
@@ -172,12 +172,8 @@ function makeChip(key: string, value: string): string {
   else if (key.startsWith("BusinessData:")) style = CHIP_STYLES["businessdata"]!;
 
   return (
-    `<span class="wikios-stat-resolved" data-key="${escapeAttr(key)}" ` +
-    `style="display:inline-flex;align-items:center;gap:4px;padding:1px 8px;` +
-    `border-radius:999px;border:1px solid rgba(255,255,255,0.06);` +
-    `background:${style.bg};color:${style.color};font-size:11.5px;line-height:1.5;` +
-    `vertical-align:middle;margin:0 1px;white-space:nowrap;">` +
-    `<span style="opacity:0.7;font-size:10px;">${style.icon}</span> ` +
+    `<span class="wikios-stat-resolved inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-mono font-medium align-middle my-0 mx-0.5 whitespace-nowrap ${style.className}" data-key="${escapeAttr(key)}">` +
+    `<span class="opacity-70 text-[10px]">${style.icon}</span> ` +
     `${escapeHtml(value)}</span>`
   );
 }

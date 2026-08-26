@@ -17,7 +17,7 @@ import {
   getImageMeta,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
-import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { parseWikitextToHtml, cleanExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 import {
   extractTemplateKeys,
   resolveTemplates,
@@ -35,8 +35,8 @@ import {
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-service";
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
-import { cleanExcerpt } from "~/lib/wiki-os/transformers/excerpt";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
+import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 
 import { db } from "~/server/db";
 
@@ -176,7 +176,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
             const res = await fetch(
               `${apiEndpoint}?action=parse&page=${encodeURIComponent(resolvedTitle.replace(/ /g, "_"))}&prop=text&disablelimitreport=1&disableeditsection=1&formatversion=2&format=json`,
               {
-                headers: { "User-Agent": "IxStats-Builder" },
+                headers: { "User-Agent": DEFAULT_USER_AGENT },
                 signal: AbortSignal.timeout(3500),
               }
             );
@@ -549,42 +549,14 @@ export const wikiosPageContentRouter = createTRPCRouter({
       }
 
       const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, input.wiki).catch(() => null);
-      if (nativeArticle) {
-        let introText = nativeArticle.summary || "";
-        if (!introText && nativeArticle.wikitext) {
-          const { extractIntroFromWikitext } = await import(
-            "~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers"
-          );
-          introText = extractIntroFromWikitext(nativeArticle.wikitext);
-        }
-        if (introText) {
-          return {
-            title: nativeArticle.title,
-            intro: introText,
-            text: introText,
-            source: input.wiki,
-          };
-        }
-      }
-
-      const shadowArticle = await getArticleWikitextShadow(resolvedTitle, input.wiki);
-      if (shadowArticle?.wikitext) {
-        const { extractIntroFromWikitext } = await import(
-          "~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers"
-        );
-        const intro = extractIntroFromWikitext(shadowArticle.wikitext);
-        return {
-          title: resolvedTitle,
-          intro,
-          text: intro,
-          source: input.wiki,
-        };
-      }
+      const introText =
+        nativeArticle?.summary ||
+        (nativeArticle?.wikitext ? cleanExcerpt(nativeArticle.wikitext, 300) : "");
 
       return {
-        title: summary.title || resolvedTitle,
-        intro: "",
-        text: "",
+        title: nativeArticle?.title || summary.title || resolvedTitle,
+        intro: introText,
+        text: introText,
         source: input.wiki,
       };
     }),

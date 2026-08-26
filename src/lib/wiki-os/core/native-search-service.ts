@@ -48,7 +48,7 @@ export class NativeSearchService {
     const targetNamespace = isTemplateQuery ? 10 : isCategoryQuery ? 14 : isUserQuery ? 2 : 0;
 
     // 1. Direct prefix & title match via Prisma
-    const articles: any[] = await (db as any).wikiArticle.findMany({
+    const articles = await db.wikiArticle.findMany({
       where: {
         source,
         namespace: targetNamespace,
@@ -61,13 +61,16 @@ export class NativeSearchService {
       select: {
         id: true,
         title: true,
+        summary: true,
         wikitext: true,
+        readingTime: true,
+        leadImageUrl: true,
       },
       take: limit,
       orderBy: { updatedAt: "desc" },
     });
 
-    return articles.map((a: any) => {
+    return articles.map((a) => {
       const isExact = a.title.toLowerCase() === trimmed.toLowerCase();
       const isPrefix = a.title.toLowerCase().startsWith(trimmed.toLowerCase());
       const slug = toArticleSlug(a.title);
@@ -111,7 +114,16 @@ export class NativeSearchService {
 
       if (sanitizedWords.length > 0) {
         const tsQuery = sanitizedWords.map((w) => `${w}:*`).join(" & ");
-        const rawResults: any[] = await (db as any).$queryRawUnsafe(
+        const rawResults: Array<{
+          id: string;
+          title: string;
+          slug: string | null;
+          summary: string | null;
+          preview: string | null;
+          readingTime: number | null;
+          leadImageUrl: string | null;
+          rank: number;
+        }> = await db.$queryRawUnsafe(
           `SELECT 
             id, title, slug, summary,
             substring(wikitext, 1, 300) as preview,
@@ -161,8 +173,8 @@ export class NativeSearchService {
     }
 
     // 2. Prisma full-text / ILIKE query with fallback
-    const [articles, total]: [any[], number] = await Promise.all([
-      (db as any).wikiArticle.findMany({
+    const [articles, total] = await Promise.all([
+      db.wikiArticle.findMany({
         where: {
           source,
           OR: [
@@ -182,7 +194,7 @@ export class NativeSearchService {
         skip: offset,
         orderBy: { updatedAt: "desc" },
       }),
-      (db as any).wikiArticle.count({
+      db.wikiArticle.count({
         where: {
           source,
           OR: [
@@ -193,7 +205,7 @@ export class NativeSearchService {
       }),
     ]);
 
-    const results: SearchResultItem[] = articles.map((a: any) => {
+    const results: SearchResultItem[] = articles.map((a) => {
       let snippet: string | null = a.summary || null;
       if (!snippet && a.wikitext) {
         const idx = a.wikitext.toLowerCase().indexOf(trimmed.toLowerCase());
@@ -243,7 +255,7 @@ export async function getArticleSummaryFromShadow(
   const cleanTitle = decodeURIComponent(title).replace(/_/g, " ").trim();
   try {
     const slug = toArticleSlug(cleanTitle);
-    const article = await (db as any).wikiArticle.findFirst({
+    const article = await db.wikiArticle.findFirst({
       where: {
         source,
         OR: [

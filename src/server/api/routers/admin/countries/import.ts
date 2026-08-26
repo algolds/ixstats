@@ -6,7 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
-import { parseRosterFile } from "~/lib/wiki-os/adapters/ixstates/roster-parser";
+import { parseRosterFile } from "~/lib/admin/roster-parser";
 import type { ImportAnalysis, BaseCountryData } from "~/types/ixstats";
 import { generateSlug } from "~/lib/utils";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";

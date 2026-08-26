@@ -191,7 +191,7 @@ Write economy details here...
 <references />`;
     case "conflict":
       return `{{Infobox military conflict
-| conflict_name = ${title}
+| conflict      = ${title}
 | date          = ${conflictFields.date}
 | place         = ${conflictFields.place}
 | combatant1    = ${conflictFields.combatant1}

@@ -690,35 +690,38 @@ export function ArticleRenderer({
         </div>
       </div>
 
-      {/* Outset Gutter Rail: Sticky TOC + Companion Intel HUD */}
-      <aside className="wikios-outset-toc hidden xl:flex flex-col gap-3 shrink-0 w-[220px] 2xl:w-[240px]">
-        {toc.length > 0 && (
-          <StickyToc
-            entries={toc}
-            contentRef={contentRef}
+      {/* Outset Gutter Rail: Sticky TOC + Companion Intel HUD (Auto-hidden when Margin Drawer is open) */}
+      {!marginOpen && (
+        <aside className="wikios-outset-toc hidden xl:flex flex-col gap-3 shrink-0 w-[220px] 2xl:w-[240px] animate-in fade-in duration-200">
+          {toc.length > 0 && (
+            <StickyToc
+              entries={toc}
+              contentRef={contentRef}
+              isCollapsed={marginOpen}
+            />
+          )}
+          <ArticleCompanionHUD
+            title={title}
+            slug={slug}
+            contentHtml={contentHtml}
+            lastModified={lastModified}
+            authorInfo={authorInfo}
+            categories={categories}
+            awardsData={awardsData}
+            marginThreadsCount={(marginData?.threads as any)?.length ?? 0}
+            marginAnnotationsCount={(annotationsData as any)?.length ?? 0}
+            onOpenMargin={(tab) => {
+              setMarginTab(tab || "threads");
+              setMarginOpen(true);
+            }}
+            onOpenHistory={() => setActiveModal("history")}
+            onOpenBacklinks={() => setActiveModal("backlinks")}
+            narrator={narrator}
+            isAuthenticated={isAuthenticated}
             isCollapsed={marginOpen}
           />
-        )}
-        <ArticleCompanionHUD
-          title={title}
-          slug={slug}
-          contentHtml={contentHtml}
-          lastModified={lastModified}
-          authorInfo={authorInfo}
-          categories={categories}
-          awardsData={awardsData}
-          marginThreadsCount={(marginData?.threads as any)?.length ?? 0}
-          marginAnnotationsCount={(annotationsData as any)?.length ?? 0}
-          onOpenMargin={(tab) => {
-            setMarginTab(tab || "threads");
-            setMarginOpen(true);
-          }}
-          onOpenHistory={() => setActiveModal("history")}
-          onOpenBacklinks={() => setActiveModal("backlinks")}
-          narrator={narrator}
-          isAuthenticated={isAuthenticated}
-        />
-      </aside>
+        </aside>
+      )}
 
       {/* Apple Books Style TOC Drawer (Modal Sheet) */}
       <AppleBooksTocDrawer

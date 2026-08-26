@@ -394,44 +394,7 @@ export function parseWikitextToHtml(
   }
 
   const htmlOutput = formattedParagraphs.join("\n\n").trim();
-  const linked = !wikitext.includes("[[") ? autoLinkEntityNames(htmlOutput) : htmlOutput;
-  return infoboxHtml ? `${infoboxHtml}\n\n${linked}` : linked;
-}
-
-/**
- * Auto-links entity names (countries, continents, regions) in plain text descriptions
- * when explicit [[wikitext]] links are not already present.
- */
-function autoLinkEntityNames(html: string): string {
-  const ENTITY_NAMES = [
-    "Urcea",
-    "Levantia",
-    "Burgundie",
-    "Lapody",
-    "Rhotia",
-    "Camland",
-    "Avonia",
-    "Jindao",
-    "Shangea",
-    "Senria",
-    "Coius",
-    "Caelum",
-    "Guanu",
-    "Vesperia",
-    "Odoneru Ocean",
-    "Ionian Mountains",
-  ];
-
-  let result = html;
-  for (const name of ENTITY_NAMES) {
-    const route = titleToWikiOSRoute(name);
-    const regex = new RegExp(`\\b(${name})\\b(?![^<]*>|[^<>]*<\\/a>)`, "g");
-    result = result.replace(
-      regex,
-      `<a href="${route}" class="text-primary font-semibold hover:underline">$1</a>`
-    );
-  }
-  return result;
+  return infoboxHtml ? `${infoboxHtml}\n\n${htmlOutput}` : htmlOutput;
 }
 
 /**
@@ -508,4 +471,14 @@ export function cleanWikitextExcerpt(
   maxLength: number = 300
 ): string {
   return cleanWikiMarkup(rawText, maxLength);
+}
+
+/** Alias for cleanWikiMarkup / cleanWikitextExcerpt */
+export const cleanExcerpt = cleanWikiMarkup;
+
+/**
+ * Calculates raw text byte size
+ */
+export function calculateRawTextBytes(text: string | null | undefined): number {
+  return Buffer.byteLength(text || "", "utf8");
 }

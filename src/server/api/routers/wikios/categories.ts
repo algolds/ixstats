@@ -1,126 +1,28 @@
 /**
- * wikios.ts — WikiOS tRPC router.
+ * categories.ts — WikiOS Category DAG & Taxonomy Router
  *
- * Provides endpoints for WikiOS article rendering, editing, history, search,
- * template registry, watchlist, advanced search, and category tree.
+ * Provides endpoints for category members, parent categories, category tree,
+ * category search, subcategories, and category auto-completion.
  */
 
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import {
-  searchPages,
-  getRecentChanges,
   getCategoryMembers,
-  getSiteStats,
-  getRandomPage,
-  fullTextSearch,
   getParentCategories,
   getCategoryInfo,
+  batchFetchThumbnails,
   type WikiSource,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-
-import { saveToMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/write-service";
-import { searchShadowArticles, NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
 import { CategoryService } from "~/lib/wiki-os/core/category-service";
 import { db } from "~/server/db";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 import {
   extractLeadImageFromWikitext,
   normalizeWikiImageUrl,
-  getImageUrl,
 } from "~/lib/wiki-os/transformers/image-url";
-import { batchFetchThumbnails } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
-export const wikiosSearchCategoriesRouter = createTRPCRouter({
-  // ---------------------------------------------------------------------------
-  // Reader endpoints
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Search articles by title prefix.
-   * Supports multi-wiki search: specify a single source or "all" to query
-   * ixwiki, iiwiki, and althistory in parallel.
-   */
-  search: publicProcedure
-    .input(
-      z.object({
-        query: z.string().min(1).max(200),
-        limit: z.number().min(1).max(50).default(10),
-        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory", "all"]).optional().default("ixwiki"),
-      })
-    )
-    .query(async ({ input }) => {
-      const { query, limit, wikiSource } = input;
-
-      if (wikiSource === "ixwiki") {
-        const shadowResults = await searchShadowArticles(query, limit);
-        if (shadowResults.length > 0) {
-          return shadowResults.map((r) => ({
-            title: r.title,
-            snippet: r.snippet,
-            wikiSource: "ixwiki" as const,
-          }));
-        }
-        return searchPages(query, limit, "ixwiki");
-      }
-
-      if (wikiSource !== "all") {
-        return searchPages(query, limit, wikiSource as WikiSource);
-      }
-
-      const sources: WikiSource[] = ["ixwiki", "iiwiki", "althistory"];
-      const settled = await Promise.allSettled(
-        sources.map((src) => searchPages(query, limit, src))
-      );
-
-      const merged: Array<{
-        title: string;
-        pageId: number;
-        length: number;
-        source: "ixwiki" | "iiwiki" | "althistory";
-      }> = [];
-      for (let i = 0; i < sources.length; i++) {
-        const result = settled[i]!;
-        if (result.status === "fulfilled") {
-          for (const r of result.value) {
-            merged.push({ ...r, source: sources[i]! });
-          }
-        }
-      }
-
-      return merged;
-    }),
-
-  /**
-   * Get recent changes for the Recent Changes special page.
-   */
-  getRecentChanges: publicProcedure
-    .input(z.object({ limit: z.number().min(1).max(100).default(50) }))
-    .query(async ({ input }) => {
-      return getRecentChanges(input.limit);
-    }),
-
-  /**
-   * Get a random article title.
-   */
-  getRandomPage: publicProcedure.query(async () => {
-    // Direct MySQL — ~10ms vs ~200ms via API
-    const title = await getRandomPage();
-    return { title };
-  }),
-
-  /**
-   * Get site statistics (total articles, edits, active users).
-   */
-  getSiteStats: publicProcedure.query(async () => {
-    // Direct MySQL — ~5ms vs ~200ms via API
-    return getSiteStats();
-  }),
-
-  // ---------------------------------------------------------------------------
-  // History & Diff endpoints (Phase 3)
-  // ---------------------------------------------------------------------------
-
+export const wikiosCategoriesRouter = createTRPCRouter({
   /**
    * Get members of a category with automatic lead thumbnail image resolution.
    */
@@ -269,114 +171,8 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
       };
     }),
 
-  // ---------------------------------------------------------------------------
-  // Editor endpoints (Phase 2)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Template Registry (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Lore Stash — save-for-later with color-coded collections
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Annotations
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // User Info (for WikiOS profiles)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Rollback / Undo endpoints
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Talk / Discussion Pages
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // File Upload
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Page Properties & Protection (direct MySQL)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Advanced Search (Phase 1)
-  // ---------------------------------------------------------------------------
-
   /**
-   * Full-text search with weighted relevance scoring — native PostgreSQL tsvector primary.
-   */
-  advancedSearch: publicProcedure
-    .input(
-      z.object({
-        query: z.string().min(1).max(500),
-        limit: z.number().min(1).max(50).default(20),
-        offset: z.number().min(0).default(0),
-        namespace: z.number().optional(),
-        sort: z.enum(["relevance", "timestamp"]).default("relevance"),
-      })
-    )
-    .query(async ({ input }) => {
-      try {
-        const native = await NativeSearchService.fulltextSearch(
-          input.query,
-          "ixwiki",
-          input.limit,
-          input.offset
-        );
-        if (native && native.results.length > 0) {
-          return {
-            results: native.results.map((r) => ({
-              title: r.title,
-              namespace: 0,
-              snippet: r.snippet,
-              titleSnippet: null,
-              sectionSnippet: null,
-              categorySnippet: null,
-              size: r.readingTime * 200,
-              wordCount: r.readingTime * 200,
-              timestamp: new Date().toISOString(),
-              thumbnail: r.leadImageUrl ?? null,
-            })),
-            totalHits: native.total,
-            hasMore: native.results.length >= input.limit,
-          };
-        }
-      } catch {
-        // Fallback to legacy MySQL fulltext search
-      }
-
-      const result = await fullTextSearch(input.query, input.limit, input.offset, input.namespace);
-      return {
-        results: (result.results || []).map((r: any) => ({
-          title: r.title,
-          namespace: r.namespace,
-          snippet: r.snippet,
-          titleSnippet: null,
-          sectionSnippet: null,
-          categorySnippet: null,
-          size: r.size,
-          wordCount: r.wordCount,
-          timestamp: r.timestamp,
-          thumbnail: r.thumbnail ?? null,
-        })),
-        totalHits: result.totalHits || 0,
-        hasMore: (result.results || []).length >= input.limit,
-      };
-    }),
-
-  // ---------------------------------------------------------------------------
-  // Category Tree (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Get parent categories for a page (for breadcrumb navigation).
+   * Get parent categories of a page.
    */
   getParentCategories: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
@@ -437,172 +233,6 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
       };
     }),
 
-  // ---------------------------------------------------------------------------
-  // Search & Media endpoints (Consolidated from legacy wiki router)
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Search articles with PostgreSQL shadow full-text/trigram engine for ixwiki.
-   */
-  searchArticles: publicProcedure
-    .input(
-      z.object({
-        query: z.string().min(1).max(200),
-        limit: z.number().min(1).max(50).default(10),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
-      })
-    )
-    .query(async ({ input }) => {
-      const source = input.wiki as WikiSource;
-      if (source === "ixwiki") {
-        const shadowResults = await searchShadowArticles(input.query, input.limit, source);
-        if (shadowResults.length > 0) {
-          return shadowResults.map((r) => ({
-            title: r.title,
-            pageId: 0,
-            length: 0,
-            snippet: r.snippet,
-            source: "ixwiki" as const,
-          }));
-        }
-      }
-      const live = await searchPages(input.query, input.limit, source);
-      return live.map((r) => ({ ...r, source }));
-    }),
-
-  /**
-   * Search pages alias for backward compatibility.
-   */
-  searchPages: publicProcedure
-    .input(
-      z.object({
-        query: z.string().min(1).max(200),
-        limit: z.number().min(1).max(50).default(10),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
-      })
-    )
-    .query(async ({ input }) => {
-      const source = input.wiki as WikiSource;
-      if (source === "ixwiki") {
-        const shadowResults = await searchShadowArticles(input.query, input.limit, source);
-        if (shadowResults.length > 0) {
-          return shadowResults.map((r) => ({
-            title: r.title,
-            pageId: 0,
-            length: 0,
-            snippet: r.snippet,
-            source: "ixwiki" as const,
-          }));
-        }
-      }
-      return searchPages(input.query, input.limit, source);
-    }),
-
-  /**
-   * Search wiki files/images by name prefix or category.
-   */
-  searchFiles: publicProcedure
-    .input(
-      z.object({
-        query: z.string().max(200).optional(),
-        category: z.string().max(200).optional(),
-        limit: z.number().min(1).max(50).default(20),
-        fileTypes: z.array(z.string()).optional(),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
-      })
-    )
-    .query(async ({ input }) => {
-      // 1. Primary: Direct PostgreSQL Prisma Asset Search
-      if (input.wiki === "ixwiki" && (db as any).wikiAsset) {
-        const where: any = {};
-        if (input.query && input.query.trim().length > 0) {
-          where.OR = [
-            { title: { contains: input.query.trim(), mode: "insensitive" } },
-            { filename: { contains: input.query.trim(), mode: "insensitive" } },
-          ];
-        }
-        if (input.fileTypes && input.fileTypes.length > 0) {
-          where.mimeType = { in: input.fileTypes };
-        }
-
-        const assets: any[] = await (db as any).wikiAsset.findMany({
-          where,
-          take: input.limit,
-          orderBy: { title: "asc" },
-        });
-
-        if (assets && assets.length > 0) {
-          return assets.map((a) => ({
-            name: a.filename || a.title,
-            title: `File:${a.title}`,
-            url: a.url,
-            size: a.sizeBytes || 0,
-            width: a.width ?? 800,
-            height: a.height ?? 600,
-            mime: a.mimeType || "image/png",
-          }));
-        }
-      }
-
-      const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
-      const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
-
-      let url = "";
-      if (input.category) {
-        url = `${baseUrl}?action=query&generator=categorymembers&gcmtitle=Category:${encodeURIComponent(
-          input.category.replace(/ /g, "_")
-        )}&gcmtype=file&gcmlimit=${input.limit}&prop=imageinfo&iiprop=url|size|mime&format=json`;
-      } else {
-        const q = input.query || "";
-        url = `${baseUrl}?action=query&list=allimages&aiprefix=${encodeURIComponent(
-          q.replace(/ /g, "_")
-        )}&ailimit=${input.limit}&aiprop=url|size|mime&format=json`;
-      }
-
-      const res = await fetch(url, {
-        headers: { "User-Agent": DEFAULT_USER_AGENT },
-      });
-      if (!res.ok) return [];
-      const data = (await res.json()) as {
-        query?: {
-          allimages?: Array<{ name: string; url: string; size: number; width: number; height: number; mime: string }>;
-          pages?: Record<string, { title: string; imageinfo?: Array<{ url: string; size: number; width: number; height: number; mime: string }> }>;
-        };
-      };
-
-      if (data.query?.allimages) {
-        return data.query.allimages.map((img) => ({
-          name: img.name,
-          title: `File:${img.name}`,
-          url: img.url,
-          size: img.size,
-          width: img.width,
-          height: img.height,
-          mime: img.mime,
-        }));
-      }
-
-      if (data.query?.pages) {
-        return Object.values(data.query.pages)
-          .filter((p) => p.imageinfo && p.imageinfo[0])
-          .map((p) => {
-            const info = p.imageinfo![0]!;
-            const name = p.title.replace(/^File:/, "");
-            return {
-              name,
-              title: p.title,
-              url: info.url,
-              size: info.size,
-              width: info.width,
-              height: info.height,
-              mime: info.mime,
-            };
-          });
-      }
-
-      return [];
-    }),
-
   /**
    * Search wiki categories by prefix or letter.
    */
@@ -621,7 +251,10 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
         const queryTerm = input.query ? input.query.trim() : "";
         const fromTerm = input.from ? input.from.trim() : "";
 
-        const whereCat: any = {};
+        const whereCat: {
+          OR?: Array<{ name?: { contains: string; mode: "insensitive" }; slug?: { contains: string; mode: "insensitive" } }>;
+          name?: { gte: string; mode: "insensitive" };
+        } = {};
         if (queryTerm) {
           whereCat.OR = [
             { name: { contains: queryTerm, mode: "insensitive" } },
@@ -697,16 +330,6 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
     }),
 
   /**
-   * Get direct static image URL for an IxWiki file.
-   */
-  getImageUrl: publicProcedure
-    .input(z.object({ filename: z.string().min(1) }))
-    .query(async ({ input }) => {
-      const url = getImageUrl(input.filename);
-      return { url };
-    }),
-
-  /**
    * Get dynamic list of categories containing files.
    */
   getCategories: publicProcedure
@@ -731,7 +354,7 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
             fileCount: Number(c._count?.members || 0),
           }));
         } catch (err) {
-          console.error("[wikiosSearchCategories] Failed to fetch ixwiki categories from DB:", err);
+          console.error("[wikiosCategories] Failed to fetch ixwiki categories from DB:", err);
           return [];
         }
       } else {
@@ -864,48 +487,4 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
         return [];
       }
     }),
-
-  /**
-   * Search approved businesses for template modals.
-   */
-  searchBusinesses: publicProcedure
-    .input(
-      z.object({
-        query: z.string().optional(),
-        countryId: z.string().optional(),
-        limit: z.number().min(1).max(50).default(30),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const where: {
-        status: string;
-        category: { in: string[] };
-        countryId?: string;
-        name?: { contains: string; mode: "insensitive" };
-      } = {
-        status: "approved",
-        category: { in: ["commercial", "office", "industrial", "factory"] },
-      };
-      if (input.countryId) {
-        where.countryId = input.countryId;
-      }
-      if (input.query) {
-        where.name = {
-          contains: input.query,
-          mode: "insensitive",
-        };
-      }
-      return ctx.db.pointOfInterest.findMany({
-        where,
-        take: input.limit,
-        select: {
-          id: true,
-          name: true,
-          category: true,
-          coordinates: true,
-          countryId: true,
-        },
-      });
-    }),
 });
-
