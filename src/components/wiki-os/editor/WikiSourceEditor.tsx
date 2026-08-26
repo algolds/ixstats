@@ -287,15 +287,6 @@ export function WikiSourceEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialWikitext]);
 
-  // Warn on unload
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (state.isDirty) e.preventDefault();
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [state.isDirty]);
-
   // Debounced preview refresh
   const refreshPreview = useCallback(() => {
     if (!showPreview) return;

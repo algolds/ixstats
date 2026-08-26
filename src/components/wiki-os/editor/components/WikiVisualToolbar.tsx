@@ -17,7 +17,6 @@ import {
   Link as Link2,
   LinkSlash as Unlink,
   MediaImage as ImageIcon,
-  Puzzle,
   Code,
   Minus,
   Type,
@@ -30,17 +29,13 @@ import {
   Table,
   ArrowRight as Indent,
   ArrowLeft as Outdent,
-  Bookmark,
-  Sparks as Sparkles,
-  Map as MapIcon,
-  Settings,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { useEditorModalContext } from "../context/EditorModalContext";
-import { AppleSwitch } from "~/components/ui/apple-switch";
+import { StashDropdown } from "./shared/StashDropdown";
+import { TemplateDropdown } from "./shared/TemplateDropdown";
+import { SettingsDropdown } from "./shared/SettingsDropdown";
 import { WikiEditorHeader } from "./WikiEditorHeader";
-import { StashImageCard } from "./StashImageCard";
 import type { SaveActionType } from "../types";
 
 export interface WikiVisualToolbarProps {
@@ -270,139 +265,18 @@ export function WikiVisualToolbar({
             }}
           />
 
-          <Popover open={modal.stashesOpen} onOpenChange={modal.setStashesOpen}>
-            <PopoverTrigger
-              className="wikios-editor-format-btn"
-              title="Stashed Images"
-              onClick={saveSelection}
-            >
-              <Bookmark className="h-3.5 w-3.5" />
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="glass-none z-[10001] flex w-80 flex-col gap-2 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-3 text-[var(--wikios-text)] shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-[var(--wikios-border)] pb-2">
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--wikios-text-muted)]">
-                  <Bookmark className="h-3.5 w-3.5 text-amber-400" />
-                  <span>Stash Explorer</span>
-                </span>
-                {modal.stashes.length > 1 && (
-                  <select
-                    value={modal.activeStashId}
-                    onChange={(e) => modal.setSelectedStashId(e.target.value)}
-                    className="rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-zinc-300 outline-none"
-                  >
-                    {modal.stashes.map((s) => (
-                      <option key={s.id} value={s.id} className="bg-zinc-900 text-white">
-                        {s.name} ({s.itemCount})
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              {modal.imageItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-6 text-center text-zinc-400">
-                  <ImageIcon className="mb-2 h-6 w-6 opacity-40" />
-                  <div className="text-xs">No media files in this stash</div>
-                  <div className="mt-1 text-[10px] text-zinc-500">
-                    Stash Commons images from the repository to quickly insert them here.
-                  </div>
-                </div>
-              ) : (
-                <div className="grid max-h-56 grid-cols-4 gap-1.5 overflow-y-auto p-1">
-                  {modal.imageItems.map((item: any) => {
-                    const cleanTitle = item.pageTitle.replace(/^commons:/, "");
-                    const filename = cleanTitle.replace(/^File:/, "");
-                    const imgInfo = modal.imagesMap.get(item.pageTitle);
-                    return (
-                      <StashImageCard
-                        key={item.id}
-                        imgInfo={imgInfo}
-                        cleanTitle={cleanTitle}
-                        filename={filename}
-                        onInsert={() => {
-                          setStashesOpen(false);
-                          restoreSelection();
-                          handleInsertStashedImage(filename);
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </PopoverContent>
-          </Popover>
+          <StashDropdown
+            onInsertImage={(filename) => {
+              restoreSelection();
+              handleInsertStashedImage(filename);
+            }}
+            onBeforeOpen={saveSelection}
+          />
 
           <VEBtn icon={<Table className="h-3.5 w-3.5" />} title="Insert table" onClick={insertTable} />
 
           {/* Templates dropdown */}
-          <Popover open={modal.templatesOpen} onOpenChange={modal.setTemplatesOpen}>
-            <PopoverTrigger
-              className="wikios-editor-format-btn"
-              title="Insert Template"
-              onClick={saveSelection}
-            >
-              <Puzzle className="h-3.5 w-3.5" />
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="glass-none z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
-            >
-              <div className="flex flex-col gap-0.5 text-xs">
-                <button
-                  type="button"
-                  onClick={() => {
-                    modal.setTemplatesOpen(false);
-                    restoreSelection();
-                    modal.setShowInfoboxModal(true);
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
-                >
-                  <Puzzle className="h-3.5 w-3.5 text-blue-400" />
-                  <span>Infobox Country</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    modal.setTemplatesOpen(false);
-                    restoreSelection();
-                    modal.setShowCountryStatsModal(true);
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
-                >
-                  <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                  <span>Country Stats</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    modal.setTemplatesOpen(false);
-                    restoreSelection();
-                    modal.setShowBusinessStatsModal(true);
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
-                >
-                  <Sparkles className="h-3.5 w-3.5 text-teal-400" />
-                  <span>Business Stats</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    modal.setTemplatesOpen(false);
-                    restoreSelection();
-                    modal.setShowMapCoordsModal(true);
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
-                >
-                  <MapIcon className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>Map Coords &amp; Embeds</span>
-                </button>
-                <div className="my-0.5 border-t border-[var(--wikios-border)]" />
-              </div>
-            </PopoverContent>
-          </Popover>
+          <TemplateDropdown onSelect={restoreSelection} onBeforeOpen={saveSelection} />
           <VEBtn icon={<Minus className="h-3.5 w-3.5" />} title="Horizontal rule" onClick={insertHR} />
           <VEBtn
             icon={
@@ -427,32 +301,7 @@ export function WikiVisualToolbar({
 
         {/* Far right: Editor Settings */}
         <div className="ml-auto flex items-center">
-          <Popover open={modal.settingsOpen} onOpenChange={modal.setSettingsOpen}>
-            <PopoverTrigger className="wikios-editor-format-btn" title="Editor Settings">
-              <Settings className="h-3.5 w-3.5" />
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="glass-none z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-2 text-[var(--wikios-text)] shadow-2xl"
-            >
-              <div className="flex flex-col gap-2.5 p-1 text-xs">
-                <div className="mb-1 border-b border-[var(--wikios-border)] pb-1.5 font-semibold text-[var(--wikios-text-dim)]">
-                  Editor Settings
-                </div>
-
-                {/* Autocomplete */}
-                <div className="flex items-center justify-between select-none">
-                  <span className="font-medium">Autocomplete</span>
-                  <AppleSwitch
-                    checked={modal.enableAutocomplete}
-                    onCheckedChange={modal.handleToggleAutocomplete}
-                    size="sm"
-                    tone="neutral"
-                  />
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <SettingsDropdown />
         </div>
       </div>
     </>
