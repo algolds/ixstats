@@ -1,7 +1,6 @@
 // src/components/wiki-os/editor/WikiVisualEditor.tsx
-// Visual editor on Plate (Slate). Parsoid HTML is deserialized into a block
-// model; atomic nodes (templates/chips/media) preserve their original HTML
-// verbatim for lossless save roundtrips.
+// Visual editor on Plate (Slate).
+// Operates on native WikiAST blocks and lossless wikitext serialization.
 
 "use client";
 
@@ -17,25 +16,24 @@ import { WikiEditorSavePanel } from "./components/WikiEditorSavePanel";
 import { WikiEditorModalHost } from "./components/WikiEditorModalHost";
 import { WikiEditorStatusBar } from "./components/WikiEditorStatusBar";
 import { EditorModalProvider } from "./context/EditorModalContext";
-import {
-  PlateWikiEditor,
-} from "./plate/PlateWikiEditor";
+import { PlateWikiEditor } from "./plate/PlateWikiEditor";
 import type { WikitextSerializeResult } from "./plate/wiki-wikitext";
 import { serializePlateToWikitext } from "./plate/wiki-wikitext";
 import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
 import type { TSlateEditor } from "platejs";
 
 export interface WikiVisualEditorProps {
-  initialHtml: string;
+  initialHtml?: string;
+  initialWikitext?: string;
   title: string;
   onSave: (
-    html: string,
+    wikitextOrHtml: string,
     summary: string,
     minor: boolean,
     keepEditing?: boolean
   ) => Promise<void> | void;
   onCancel: () => void;
-  onSwitchToSource: (dirty: boolean, currentHtml: string) => void;
+  onSwitchToSource: (dirty: boolean, currentContent: string) => void;
   /** Reports the client-side wikitext serialization after every change. */
   onSerializedWikitext?: (result: WikitextSerializeResult) => void;
 }
@@ -44,6 +42,7 @@ type PlateEditorLike = TSlateEditor;
 
 export function WikiVisualEditor({
   initialHtml,
+  initialWikitext,
   title,
   onSave,
   onCancel,
@@ -51,8 +50,8 @@ export function WikiVisualEditor({
   onSerializedWikitext,
 }: WikiVisualEditorProps) {
   const editorRef = useRef<PlateEditorLike | null>(null);
-  const htmlRef = useRef<string>(initialHtml);
-  const wtRef = useRef<WikitextSerializeResult>({ wikitext: "", complete: false });
+  const htmlRef = useRef<string>(initialHtml || "");
+  const wtRef = useRef<WikitextSerializeResult>({ wikitext: initialWikitext || "", complete: true });
   const { repulsionProgress } = useNavigationScroll();
 
   const state = useWikiEditorState({ title, onSave });
@@ -62,23 +61,20 @@ export function WikiVisualEditor({
     setIsDirty: state.setIsDirty,
   });
 
-  // Draft restore prompt (drafts store serialized HTML)
-  const initialForPlate = React.useMemo(() => {
+  // Draft restore prompt
+  const initialContent = React.useMemo(() => {
     const existingDraft = getDraft(title, "ixwiki");
-    const draftContent = existingDraft?.html;
-    if (draftContent && draftContent !== fixEditorImageUrls(initialHtml)) {
-      setTimeout(() => {
-        const restore = window.confirm(
-          `An unsaved local draft from a previous session was found for "${title}". Would you like to restore it? Reopen the editor to apply.`
-        );
-        if (restore) {
-          state.setIsDirty(true);
-        }
-      }, 100);
-      return draftContent;
+    if (existingDraft?.wikitext) {
+      return { wikitext: existingDraft.wikitext };
     }
-    return fixEditorImageUrls(initialHtml);
-  }, [title, initialHtml, state.setIsDirty]);
+    if (existingDraft?.html) {
+      return { html: fixEditorImageUrls(existingDraft.html) };
+    }
+    if (initialWikitext !== undefined) {
+      return { wikitext: initialWikitext };
+    }
+    return { html: fixEditorImageUrls(initialHtml || "") };
+  }, [title, initialHtml, initialWikitext]);
 
   const handleValueChange = useCallback(
     (nodes: Descendant[], html: string, plainText: string) => {
@@ -87,21 +83,24 @@ export function WikiVisualEditor({
       onSerializedWikitext?.(wtRef.current);
       state.setIsDirty(true);
       state.setWordCount(plainText.split(/\s+/).filter(Boolean).length);
+      fmt.refreshActiveFormats();
     },
-    [state, onSerializedWikitext]
+    [state, onSerializedWikitext, fmt]
   );
 
   const handleSave = useCallback(async () => {
-    await state.executeSave(() => htmlRef.current);
-    saveDraft({ title, source: "ixwiki", mode: "visual", html: htmlRef.current });
+    const wikitextToSave = wtRef.current.wikitext || htmlRef.current;
+    await state.executeSave(() => wikitextToSave);
+    saveDraft({ title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
   }, [state, title]);
 
   const handleSaveDraft = useCallback(() => {
-    state.executeSaveDraft(() => htmlRef.current, "visual");
+    const wikitextToSave = wtRef.current.wikitext || htmlRef.current;
+    state.executeSaveDraft(() => wikitextToSave, "visual");
   }, [state]);
 
   const handleSwitchToSource = useCallback(() => {
-    onSwitchToSource(state.isDirty, htmlRef.current);
+    onSwitchToSource(state.isDirty, wtRef.current.wikitext || htmlRef.current);
   }, [onSwitchToSource, state.isDirty]);
 
   const handleOpenTemplateEditor = useCallback(
@@ -133,7 +132,6 @@ export function WikiVisualEditor({
     fmt.removeEditingNode();
   }, [fmt]);
 
-  // Raw-wikitext save for templates without a TemplateData schema.
   const handleUpdateTemplateRaw = useCallback(
     (wikitext: string) => {
       const editor = editorRef.current;
@@ -150,7 +148,7 @@ export function WikiVisualEditor({
       const [, path] = entries[0]!;
       Transforms.setNodes(
         editor as unknown as import("slate").BaseEditor,
-        { wikitext } as unknown as Partial<import("slate").Descendant>,
+        { rawWikitext: wikitext, wikitext } as unknown as Partial<import("slate").Descendant>,
         { at: path }
       );
       fmt.setEditingTemplate(null);
@@ -236,83 +234,84 @@ export function WikiVisualEditor({
 
   return (
     <EditorModalProvider value={state.modalContextValue}>
-    <div className="wikios-ve-container">
-      <WikiVisualToolbar
-        title={title}
-        wordCount={state.wordCount}
-        isDirty={state.isDirty}
-        repulsionProgress={repulsionProgress}
-        onSwitchToSource={handleSwitchToSource}
-        onCancel={onCancel}
-        onSave={handleSave}
-        handleSaveDraft={handleSaveDraft}
-        saving={state.saving}
-        saveDropdownOpen={state.saveDropdownOpen}
-        setSaveDropdownOpen={state.setSaveDropdownOpen}
-        saveActionType={state.saveActionType}
-        setSaveActionType={state.setSaveActionType}
-        setShowSavePanel={state.setShowSavePanel}
-        summary={state.summary}
-        setSummary={state.setSummary}
-        activeFormats={fmt.activeFormats}
-        exec={fmt.exec}
-        setHeading={fmt.setHeading}
-        setParagraph={fmt.setParagraph}
-        insertLink={fmt.insertLink}
-        removeLink={fmt.removeLink}
-        insertHR={fmt.insertHR}
-        insertTable={fmt.insertTable}
-        insertRef={fmt.insertRef}
-        clearFormatting={fmt.clearFormatting}
-        insertHtmlAtCursor={fmt.insertHtmlAtCursor}
-        saveSelection={fmt.saveSelection}
-        restoreSelection={fmt.restoreSelection}
-        handleInsertStashedImage={handleInsertStashedImage}
-      />
+      <div className="wikios-ve-container">
+        <WikiVisualToolbar
+          title={title}
+          wordCount={state.wordCount}
+          isDirty={state.isDirty}
+          repulsionProgress={repulsionProgress}
+          onSwitchToSource={handleSwitchToSource}
+          onCancel={onCancel}
+          onSave={handleSave}
+          handleSaveDraft={handleSaveDraft}
+          saving={state.saving}
+          saveDropdownOpen={state.saveDropdownOpen}
+          setSaveDropdownOpen={state.setSaveDropdownOpen}
+          saveActionType={state.saveActionType}
+          setSaveActionType={state.setSaveActionType}
+          setShowSavePanel={state.setShowSavePanel}
+          summary={state.summary}
+          setSummary={state.setSummary}
+          activeFormats={fmt.activeFormats}
+          exec={fmt.exec}
+          setHeading={fmt.setHeading}
+          setParagraph={fmt.setParagraph}
+          insertLink={fmt.insertLink}
+          removeLink={fmt.removeLink}
+          insertHR={fmt.insertHR}
+          insertTable={fmt.insertTable}
+          insertRef={fmt.insertRef}
+          clearFormatting={fmt.clearFormatting}
+          insertHtmlAtCursor={fmt.insertHtmlAtCursor}
+          saveSelection={fmt.saveSelection}
+          restoreSelection={fmt.restoreSelection}
+          handleInsertStashedImage={handleInsertStashedImage}
+        />
 
-      <WikiEditorSavePanel
-        showSavePanel={state.showSavePanel}
-        summary={state.summary}
-        setSummary={state.setSummary}
-        minor={state.minor}
-        setMinor={state.setMinor}
-        saving={state.saving}
-        saveActionType={state.saveActionType}
-        onSave={handleSave}
-      />
+        <WikiEditorSavePanel
+          showSavePanel={state.showSavePanel}
+          summary={state.summary}
+          setSummary={state.setSummary}
+          minor={state.minor}
+          setMinor={state.setMinor}
+          saving={state.saving}
+          saveActionType={state.saveActionType}
+          onSave={handleSave}
+        />
 
-      {/* ─── Plate Editor Canvas ─── */}
-      <div className="wikios-ve-editor-wrapper">
-        <PlateWikiEditor
-          initialHtml={initialForPlate}
-          onValueChange={handleValueChange}
-          openTemplateEditor={handleOpenTemplateEditor}
-          deleteNode={() => fmt.removeEditingNode()}
-          updateInfoboxFields={handleUpdateInfoboxFields}
+        {/* ─── Plate Editor Canvas ─── */}
+        <div className="wikios-ve-editor-wrapper">
+          <PlateWikiEditor
+            initialHtml={initialContent.html}
+            initialWikitext={initialContent.wikitext}
+            onValueChange={handleValueChange}
+            openTemplateEditor={handleOpenTemplateEditor}
+            deleteNode={() => fmt.removeEditingNode()}
+            updateInfoboxFields={handleUpdateInfoboxFields}
+          />
+        </div>
+
+        <WikiEditorStatusBar
+          cursorPos={{ line: 1, col: 1 }}
+          wordCount={state.wordCount}
+          lineCount={1}
+          formatName="Canvas Block AST"
+          encoding="UTF-8"
+        />
+
+        <WikiEditorModalHost
+          onInsertImage={fmt.handleInsertImage}
+          onInsertInfobox={handleInsertInfobox}
+          onInsertCountryStats={handleInsertCountryStats}
+          onInsertBusinessStats={handleInsertBusinessStats}
+          onInsertMapCoords={handleInsertMapCoords}
+          editingTemplate={fmt.editingTemplate}
+          setEditingTemplate={fmt.setEditingTemplate}
+          onUpdateTemplate={fmt.handleTemplateUpdate}
+          onUpdateTemplateRaw={handleUpdateTemplateRaw}
+          onRemoveTemplate={handleRemoveTemplate}
         />
       </div>
-
-      <WikiEditorStatusBar
-        cursorPos={{ line: 1, col: 1 }}
-        wordCount={state.wordCount}
-        lineCount={1}
-        formatName="Canvas Block AST"
-        encoding="UTF-8"
-      />
-
-      <WikiEditorModalHost
-        onInsertImage={fmt.handleInsertImage}
-        onInsertInfobox={handleInsertInfobox}
-        onInsertCountryStats={handleInsertCountryStats}
-        onInsertBusinessStats={handleInsertBusinessStats}
-        onInsertMapCoords={handleInsertMapCoords}
-        editingTemplate={fmt.editingTemplate}
-        setEditingTemplate={fmt.setEditingTemplate}
-        onUpdateTemplate={fmt.handleTemplateUpdate}
-        onUpdateTemplateRaw={handleUpdateTemplateRaw}
-        onRemoveTemplate={handleRemoveTemplate}
-      />
-    </div>
     </EditorModalProvider>
   );
 }

@@ -240,12 +240,25 @@ export function WikiOSHeader({
     maxHeight: "260px",
   } as React.CSSProperties;
 
-  const { getImageStyle, isDarkTheme } = useWikiMediaTheme();
+  const { getImageStyle } = useWikiMediaTheme();
   const heroMediaType = useMemo(() => detectMediaType(backdropUrl), [backdropUrl]);
   const heroMediaStyle = useMemo(
     () => getImageStyle(backdropUrl || "", heroMediaType),
     [backdropUrl, heroMediaType, getImageStyle]
   );
+
+  const isSvg = useMemo(() => {
+    if (!backdropUrl) return false;
+    const lower = backdropUrl.toLowerCase();
+    return (
+      heroMediaType === "svg" ||
+      heroMediaType === "diagram" ||
+      heroMediaType === "math" ||
+      lower.includes(".svg") ||
+      lower.includes("format=svg") ||
+      (lower.includes("/special:filepath/") && lower.endsWith(".svg"))
+    );
+  }, [backdropUrl, heroMediaType]);
 
   // If no backdrop image is available, render clean Editorial Masthead
   if (!backdropUrl) {
@@ -277,24 +290,49 @@ export function WikiOSHeader({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={handleMouseLeave}
       style={containerStyle}
-      className="wikios-header facet-surface facet-refraction relative z-10 mb-6 flex w-full cursor-default flex-col justify-end rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 select-none"
+      className="wikios-header facet-surface facet-refraction relative z-10 mb-6 flex w-full cursor-default flex-col justify-end rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 select-none overflow-hidden"
     >
 
-      {/* Immersive Full-Bleed Image Backdrop */}
+      {/* Backdrop: Centered & Contained Vector Artwork for SVGs / Full-Bleed for Photos */}
       {backdropUrl ? (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-2xl select-none"
+          className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden rounded-2xl select-none"
           style={heroMediaStyle.backgroundColor ? { backgroundColor: heroMediaStyle.backgroundColor } : undefined}
         >
-          <img
-            src={backdropUrl}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover object-center saturate-110 transition-all duration-300"
-            style={heroMediaStyle.filter ? { filter: heroMediaStyle.filter } : undefined}
-            loading="eager"
-            referrerPolicy="no-referrer"
-          />
+          {isSvg ? (
+            <>
+              {/* Subtle Chromatic Radial Underglow */}
+              <div
+                className="absolute inset-0 opacity-25 dark:opacity-15 blur-3xl pointer-events-none -z-10"
+                style={{
+                  background: `radial-gradient(circle at 60% 50%, ${themeColors?.primary ?? "#3b82f6"} 0%, transparent 65%)`,
+                }}
+              />
+              <img
+                src={backdropUrl}
+                alt=""
+                className="h-full w-full max-h-[85%] max-w-[92%] object-contain object-center p-3 sm:p-5 md:p-6 drop-shadow-md transition-all duration-300"
+                style={{
+                  ...(heroMediaStyle.filter ? { filter: heroMediaStyle.filter } : {}),
+                  ...(heroMediaStyle.backgroundColor ? { backgroundColor: heroMediaStyle.backgroundColor } : {}),
+                  ...(heroMediaStyle.borderRadius ? { borderRadius: heroMediaStyle.borderRadius } : {}),
+                  ...(heroMediaStyle.padding ? { padding: heroMediaStyle.padding } : {}),
+                }}
+                loading="eager"
+                referrerPolicy="no-referrer"
+              />
+            </>
+          ) : (
+            <img
+              src={backdropUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover object-center saturate-110 transition-all duration-300"
+              style={heroMediaStyle.filter ? { filter: heroMediaStyle.filter } : undefined}
+              loading="eager"
+              referrerPolicy="no-referrer"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent dark:from-black/75 dark:via-black/25 dark:to-transparent" />
         </div>
       ) : (

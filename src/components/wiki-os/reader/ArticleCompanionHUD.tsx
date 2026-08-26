@@ -1,5 +1,5 @@
 // src/components/wiki-os/reader/ArticleCompanionHUD.tsx
-// Apple-inspired companion rail widget positioned in the right margin under the TOC.
+// Apple-inspired companion rail widget positioned at the top of the outset gutter rail (above the TOC).
 // Features reading metrics, audio narration toggle, Margin discussion count, and quick actions.
 
 "use client";
@@ -112,13 +112,10 @@ export function ArticleCompanionHUD({
   const hasNotes = marginThreadsCount > 0 || marginAnnotationsCount > 0;
 
   return (
-    <div className="wikios-companion-hud flex flex-col gap-3 pt-3 select-none">
+    <div className="wikios-companion-hud flex flex-col gap-3 select-none">
       {/* 1. Article Intelligence & Provenance Capsule */}
       <div className="facet-surface rounded-2xl border border-white/10 bg-card/40 p-3.5 shadow-xs backdrop-blur-xl transition-all duration-300">
         <div className="flex items-center justify-between gap-2 border-b border-border/30 pb-2 mb-2.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 font-brand">
-            Article Intel
-          </span>
           {awardsData?.hasLoreward && (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[9px] font-bold text-amber-400">
               <Trophy className="h-2.5 w-2.5" />
@@ -268,11 +265,15 @@ export function ArticleCompanionHUD({
               )}
               <span>{narrator.isPlaying ? "Narrating..." : "Listen to article"}</span>
             </div>
-            {narrator.isPlaying && (
+            {narrator.isPlaying ? (
               <span className="flex items-center gap-0.5">
                 <span className="h-2 w-0.5 animate-[bounce_1s_infinite_100ms] rounded-full bg-cyan-400" />
                 <span className="h-3 w-0.5 animate-[bounce_1s_infinite_200ms] rounded-full bg-cyan-400" />
                 <span className="h-2 w-0.5 animate-[bounce_1s_infinite_300ms] rounded-full bg-cyan-400" />
+              </span>
+            ) : (
+              <span className="rounded-full bg-cyan-500/15 border border-cyan-500/30 px-1.5 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-cyan-400 leading-none">
+                Beta
               </span>
             )}
           </button>
@@ -329,10 +330,7 @@ export function ArticleCompanionHUD({
           </button>
         </div>
 
-        {/* Stash Button Integration */}
-        <div className="pt-0.5">
-          <StashButton title={title} isAuthenticated={isAuthenticated} />
-        </div>
+      
       </div>
 
       {/* 3. Top Categories / Domain Tags */}

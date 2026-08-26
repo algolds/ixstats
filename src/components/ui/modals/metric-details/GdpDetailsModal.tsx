@@ -33,7 +33,9 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { format, subMonths } from "date-fns";
+import { format } from "date-fns";
+import { IxTime } from "~/lib/ixtime";
+import { getIxCutoff } from "~/lib/ixtime/range";
 import {
   BaseMetricDetailsModal,
   type MetricModalTab,
@@ -52,7 +54,6 @@ const TABS: MetricModalTab[] = [
   { id: "overview", label: "Overview", icon: BarChart3 },
   { id: "trends", label: "Trends", icon: LineChart },
   { id: "comparison", label: "Comparison", icon: Globe },
-  { id: "details", label: "Details", icon: Info },
 ];
 
 /**
@@ -87,47 +88,41 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
 
   const isLoading = countryLoading || historicalLoading || globalLoading;
 
-  // Process historical data for charts
+  // Process historical data for charts - IxTime-aware cutoff (not real subMonths)
   const processHistoricalData = (timeRange: TimeRange) => {
     if (!historicalData || historicalData.length === 0) return [];
 
-    const now = new Date();
-    const rangeMap = {
-      "3m": 3,
-      "6m": 6,
-      "1y": 12,
-      "2y": 24,
-      "5y": 60,
-      all: Infinity,
-    };
+    const nowIx = IxTime.getCurrentIxTime();
+    const cutoffIx = getIxCutoff(timeRange, nowIx);
 
-    const monthsToShow = rangeMap[timeRange] || 12;
-    const cutoffDate = monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
+    const filtered = historicalData.filter((point: any) => {
+      const ts = IxTime.toTimestamp(point.ixTimeTimestamp as any);
+      return ts !== null && ts >= cutoffIx;
+    });
 
-    return historicalData
-      .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
-      .slice(-100)
-      .map((point: any, index: number) => ({
-        period: index + 1,
-        date: format(new Date(point.ixTimeTimestamp), "MMM yyyy"),
-        timestamp: point.ixTimeTimestamp,
-        totalGdp: point.totalGdp / 1e12,
-        gdpPerCapita: point.gdpPerCapita,
-        gdpGrowth: (() => {
-          const rate =
-            point.gdpGrowthRate !== undefined ? point.gdpGrowthRate : point.gdpGrowth || 0;
-          const abs = Math.abs(rate);
-          if (abs < 0.01) {
-            return rate * 2500;
-          } else if (abs <= 0.5) {
-            return rate * 100;
-          } else {
+    return filtered
+      .slice(-365)
+      .map((point: any, index: number) => {
+        const tsNum = IxTime.toTimestamp(point.ixTimeTimestamp as any) as number;
+        return {
+          period: index + 1,
+          date: format(new Date(tsNum), "MMM yyyy"),
+          timestamp: tsNum,
+          totalGdp: point.totalGdp / 1e12,
+          gdpPerCapita: point.gdpPerCapita,
+          gdpGrowth: (() => {
+            const rate =
+              point.gdpGrowthRate !== undefined ? point.gdpGrowthRate : point.gdpGrowth || 0;
+            // Normalize: stored rate is usually 0.02 = 2%; handle legacy scaled values
+            const abs = Math.abs(rate);
+            if (abs < 0.01) return rate * 100;
+            if (abs <= 0.5) return rate * 100;
             return rate;
-          }
-        })(),
-        realGdp: point.totalGdp / 1e12,
-        nominalGdp: point.totalGdp / 1e12,
-      }))
+          })(),
+          realGdp: point.totalGdp / 1e12,
+          nominalGdp: point.totalGdp / 1e12,
+        };
+      })
       .sort(
         (a: any, b: any) =>
           (new Date(a.timestamp).getTime() ?? 0) - (new Date(b.timestamp).getTime() ?? 0)
@@ -187,10 +182,8 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     };
   };
 
-  // Default processed data and stats for overview (1y range)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const defaultProcessedData = useMemo(() => processHistoricalData("1y"), [historicalData]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Default stats use 5y window to match Population modal + new default
+  const defaultProcessedData = useMemo(() => processHistoricalData("5y"), [historicalData]);
   const gdpStats = useMemo(() => createGdpStats(defaultProcessedData), [defaultProcessedData]);
 
   // Economic tier information
@@ -246,8 +239,6 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
         return renderTrendsTab(timeRange, chartType);
       case "comparison":
         return renderComparisonTab();
-      case "details":
-        return renderDetailsTab();
       default:
         return null;
     }
@@ -279,11 +270,11 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                 GDP Performance Summary
               </CardTitle>
               <CardDescription>
-                Key performance indicators and historical volatility metrics.
+                Key performance indicators and historical volatility metrics. Volatility / Peak-Trough / Total Growth merged from former Details tab.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col justify-center p-0">
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-amber-500">
                     {gdpStats?.avgGrowth ? `${gdpStats.avgGrowth.toFixed(2)}%` : "N/A"}
@@ -301,6 +292,18 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                     {formatCurrency((gdpStats?.maxGdp || 0) * 1e12)}
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">Peak GDP</div>
+                </div>
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
+                  <div className="text-lg font-bold text-emerald-400">
+                    {gdpStats?.totalGrowth ? `${gdpStats.totalGrowth.toFixed(1)}%` : "N/A"}
+                  </div>
+                  <div className="text-muted-foreground mt-1 text-xs">Total Growth</div>
+                </div>
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
+                  <div className="text-lg font-bold text-purple-400">
+                    {gdpStats ? `${(((gdpStats.maxGdp - gdpStats.minGdp) / gdpStats.maxGdp) * 100).toFixed(1)}%` : "N/A"}
+                  </div>
+                  <div className="text-muted-foreground mt-1 text-xs">Peak-to-Trough</div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-blue-400">{gdpStats?.dataPoints || 0}</div>
@@ -711,96 +714,6 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     );
   };
 
-  const renderDetailsTab = () => {
-    if (isLoading) {
-      return (
-        <MetricModalLayout variant="economy">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[300px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-full w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
-    }
-
-    return (
-      <MetricModalLayout variant="economy">
-        <MetricModalLayout.MainArea>
-          <div className="space-y-6">
-            <Card className="facet-refraction border-white/5 p-6">
-              <CardHeader className="mb-4 p-0">
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-amber-500" />
-                  GDP Projections
-                </CardTitle>
-                <CardDescription>Economic forecasting and growth scenarios</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Alert className="border-amber-500/20 bg-amber-500/5 text-amber-500">
-                  <TrendingUp className="h-4 w-4" />
-                  <AlertDescription className="text-muted-foreground text-xs leading-relaxed">
-                    Advanced GDP projection models are available through the Predictive Models
-                    feature in the premium analytics suite. These include multi-scenario forecasting
-                    with confidence intervals based on historical patterns and economic indicators.
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
-
-            <Alert className="border-white/5 bg-white/5">
-              <Info className="h-4 w-4" />
-              <AlertDescription className="text-muted-foreground text-xs leading-relaxed">
-                Economic tier classifications are based on GDP per capita and determine growth rate
-                caps in the IxStats system. Higher tiers indicate more mature economies with
-                typically lower but more stable growth rates.
-              </AlertDescription>
-            </Alert>
-          </div>
-        </MetricModalLayout.MainArea>
-
-        <MetricModalLayout.Sidebar>
-          {gdpStats && (
-            <div className="flex h-full flex-col justify-between gap-4">
-              <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-                <span className="text-2xl font-bold text-amber-500">
-                  {gdpStats.volatility.toFixed(2)}%
-                </span>
-                <span className="mt-1 text-sm font-medium">GDP Volatility</span>
-                <span className="text-muted-foreground mt-0.5 text-[10px]">
-                  {gdpStats.volatility < 5
-                    ? "Very Stable"
-                    : gdpStats.volatility < 10
-                      ? "Stable"
-                      : gdpStats.volatility < 20
-                        ? "Moderate"
-                        : "High Volatility"}
-                </span>
-              </div>
-              <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-                <span className="text-2xl font-bold text-emerald-400">
-                  {gdpStats.totalGrowth.toFixed(1)}%
-                </span>
-                <span className="mt-1 text-sm font-medium">Total Growth</span>
-                <span className="text-muted-foreground mt-0.5 text-[10px]">
-                  Over selected period
-                </span>
-              </div>
-              <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-                <span className="text-2xl font-bold text-purple-400">
-                  {(((gdpStats.maxGdp - gdpStats.minGdp) / gdpStats.maxGdp) * 100).toFixed(1)}%
-                </span>
-                <span className="mt-1 text-sm font-medium">Peak-to-Trough</span>
-                <span className="text-muted-foreground mt-0.5 text-[10px]">Maximum variance</span>
-              </div>
-            </div>
-          )}
-        </MetricModalLayout.Sidebar>
-      </MetricModalLayout>
-    );
-  };
-
   return (
     <BaseMetricDetailsModal
       isOpen={isOpen}
@@ -815,6 +728,8 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
       isLoading={isLoading}
       onRefresh={() => refetch()}
       variant="economy"
+      persistKey="ixstats:gdp-analysis"
+      defaultTimeRange="5y"
     >
       {renderTabContent}
     </BaseMetricDetailsModal>

@@ -1,8 +1,27 @@
 /**
- * wiki-ast.ts — Canonical IxWiki Abstract Syntax Tree (AST) Document Model.
+ * wiki-ast.ts — Canonical IxWiki Abstract Syntax Tree (AST) Document Model (v2).
  * Provides a structured, immutable representation of an article for Plate,
  * CodeMirror, and backend sync pipelines.
  */
+
+export const WIKI_AST_VERSION = 1;
+
+// ─── Source Spans & Diagnostics ─────────────────────────────────────────────
+
+export interface WikiSourceSpan {
+  start: number;
+  end: number;
+}
+
+export interface Diagnostic {
+  severity: "info" | "warning" | "error";
+  message: string;
+  start: number;
+  end: number;
+  code?: string;
+}
+
+export type ParseState = "complete" | "incomplete";
 
 // ─── Inline Text & Marks ───────────────────────────────────────────────────
 
@@ -27,30 +46,36 @@ export interface WikiLinkInline {
   target: string;
   label?: string;
   exists?: boolean;
-  children: [WikiTextNode];
+  children: [WikiTextNode] | WikiInlineNode[];
 }
 
 export interface WikiExternalLinkInline {
   type: "external-link";
   url: string;
-  children: [WikiTextNode];
+  children: [WikiTextNode] | WikiInlineNode[];
 }
 
 export interface CoordChipInline {
   type: "chip-coord";
-  lat: number;
-  lng: number;
+  lat?: number;
+  lng?: number;
+  href?: string;
+  title?: string;
   label?: string;
+  format?: "dms" | "decimal" | "link";
+  wikitext?: string;
   children: [{ text: "" }];
 }
 
 export interface EngineDataChipInline {
   type: "chip-engine-data";
-  connector: "CountryData" | "BusinessData" | "DefenseData";
+  connector: "CountryData" | "BusinessData" | "DefenseData" | "MyCountry";
   slug: string;
   metric: string;
   format?: "currency" | "compact" | "number" | "raw";
   fallback?: string;
+  label?: string;
+  wikitext?: string;
   children: [{ text: "" }];
 }
 
@@ -58,6 +83,7 @@ export interface CitationInline {
   type: "citation-ref";
   refId?: string;
   name?: string;
+  label?: string;
   rawWikitext?: string;
   children: WikiInlineNode[];
 }
@@ -70,28 +96,58 @@ export type WikiInlineNode =
   | EngineDataChipInline
   | CitationInline;
 
-// ─── Block Elements ────────────────────────────────────────────────────────
+// ─── Template Models ───────────────────────────────────────────────────────
 
-export interface WikiParagraphBlock {
-  type: "paragraph";
-  id?: string;
-  children: WikiInlineNode[];
+export type TemplateClassification =
+  | "standard"
+  | "infobox"
+  | "chip-engine"
+  | "chip-coord"
+  | "custom";
+
+export interface WikiParameter {
+  key: string;
+  value: string;
+  isPositional?: boolean;
+  index?: number;
+  raw?: string;
 }
 
-export interface WikiHeadingBlock {
-  type: "heading";
+export interface WikiTemplateNode {
+  type: "template";
   id?: string;
-  level: 1 | 2 | 3 | 4 | 5 | 6;
-  children: WikiInlineNode[];
+  templateName: string;
+  name?: string;
+  params: Record<string, string>;
+  paramList?: WikiParameter[];
+  positional?: string[];
+  classification?: TemplateClassification;
+  raw: string;
+  rawWikitext?: string;
+  source?: WikiSourceSpan;
+  parseState?: ParseState;
+  dataMw?: string;
+  html?: string;
+  children: [{ text: "" }];
 }
 
 export interface WikiInfoboxBlock {
   type: "infobox";
   id?: string;
   templateName: string;
+  title?: string;
   variantId?: string;
   params: Record<string, string>;
+  paramList?: WikiParameter[];
+  positional?: string[];
+  classification?: "infobox";
+  raw: string;
   rawWikitext?: string;
+  source?: WikiSourceSpan;
+  parseState?: ParseState;
+  fields?: Array<{ label: string; value: string }>;
+  html?: string;
+  edited?: boolean;
   children: [{ text: "" }];
 }
 
@@ -99,10 +155,58 @@ export interface TemplateBlock {
   type: "template";
   id?: string;
   templateName: string;
-  format: "inline" | "block";
+  format?: "inline" | "block";
   params: Record<string, string>;
+  paramList?: WikiParameter[];
+  raw?: string;
   rawWikitext?: string;
+  source?: WikiSourceSpan;
+  parseState?: ParseState;
+  classification?: TemplateClassification;
   children: [{ text: "" }];
+}
+
+export interface WikiParserFunctionBlock {
+  type: "parser-function";
+  id?: string;
+  functionName: string;
+  expression: string;
+  branches: string[];
+  raw: string;
+  rawWikitext?: string;
+  source?: WikiSourceSpan;
+  parseState?: ParseState;
+  children: [{ text: "" }];
+}
+
+export interface WikiRawNode {
+  type: "raw";
+  id?: string;
+  raw: string;
+  rawWikitext?: string;
+  reason?: "unrecognized" | "malformed";
+  source?: WikiSourceSpan;
+  kind?: "infobox" | "generic";
+  name?: string;
+  params?: Record<string, string>;
+  dataMw?: string;
+  html?: string;
+  children: [{ text: "" }];
+}
+
+// ─── Content Block Elements ─────────────────────────────────────────────────
+
+export interface WikiParagraphBlock {
+  type: "paragraph" | "p";
+  id?: string;
+  children: WikiInlineNode[];
+}
+
+export interface WikiHeadingBlock {
+  type: "heading" | "h2" | "h3" | "h4";
+  id?: string;
+  level?: 1 | 2 | 3 | 4 | 5 | 6;
+  children: WikiInlineNode[];
 }
 
 export interface MediaBlock {
@@ -113,17 +217,19 @@ export interface MediaBlock {
   align?: "left" | "center" | "right" | "thumb" | "frameless";
   width?: number;
   height?: number;
+  html?: string;
+  wikitext?: string;
   children: [{ text: "" }];
 }
 
 export interface TableCellNode {
-  type: "table-cell";
+  type: "table-cell" | "th" | "td";
   isHeader?: boolean;
   children: (WikiParagraphBlock | WikiInlineNode)[];
 }
 
 export interface TableRowNode {
-  type: "table-row";
+  type: "table-row" | "tr";
   children: TableCellNode[];
 }
 
@@ -131,48 +237,52 @@ export interface WikiTableBlock {
   type: "table";
   id?: string;
   caption?: string;
+  rawWikitext?: string;
   children: TableRowNode[];
 }
 
 export interface ListBlock {
-  type: "list";
+  type: "list" | "ul" | "ol";
   id?: string;
-  ordered: boolean;
+  ordered?: boolean;
   children: Array<{
-    type: "list-item";
+    type: "list-item" | "li";
     children: (WikiParagraphBlock | WikiInlineNode)[];
   }>;
 }
 
 export interface QuoteBlock {
-  type: "quote";
+  type: "quote" | "blockquote";
   id?: string;
   author?: string;
   source?: string;
-  children: WikiParagraphBlock[];
+  children: WikiParagraphBlock[] | WikiInlineNode[];
 }
 
 export interface CodeBlock {
   type: "code-block";
   id?: string;
   language?: string;
-  code: string;
-  children: [{ text: "" }];
+  code?: string;
+  children: [{ text: string }];
 }
 
 export interface DividerBlock {
-  type: "divider";
+  type: "divider" | "hr";
   id?: string;
   children: [{ text: "" }];
 }
 
 export interface WikiMapEmbedBlock {
-  type: "map-embed";
+  type: "map-embed" | "chip-mapembed";
   id?: string;
-  lat: number;
-  lng: number;
+  lat?: number;
+  lng?: number;
   zoom?: number;
   layer?: string;
+  href?: string;
+  title?: string;
+  wikitext?: string;
   children: [{ text: "" }];
 }
 
@@ -182,7 +292,10 @@ export type WikiBlockNode =
   | WikiParagraphBlock
   | WikiHeadingBlock
   | WikiInfoboxBlock
+  | WikiTemplateNode
   | TemplateBlock
+  | WikiParserFunctionBlock
+  | WikiRawNode
   | MediaBlock
   | WikiTableBlock
   | ListBlock
@@ -198,6 +311,7 @@ export interface WikiDocument {
   slug: string;
   version: number;
   nodes: WikiBlockNode[];
+  diagnostics?: Diagnostic[];
   metadata?: {
     categories?: string[];
     lastModified?: string;

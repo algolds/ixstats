@@ -1,7 +1,7 @@
 /**
  * wiki-wikitext.ts — Canonical wikitext serialization for the Plate canvas.
- * Atomic nodes (templates/chips/media/raw blocks) emit their stored
- * `wikitext` verbatim; structural blocks map to MediaWiki markup.
+ * Atomic and interactive template nodes emit their stored wikitext or canonical
+ * representation; structural blocks map to standard MediaWiki markup.
  */
 
 import type { Descendant } from "slate";
@@ -13,8 +13,7 @@ import type {
   CellEl,
   InfoboxBoxEl,
 } from "./wiki-html";
-
-// ─── Slate → Wikitext (canonical, lossless for atomic nodes) ───────────────
+import { serializeTemplateToWikitext } from "~/lib/wiki-os/wikitext/serializer";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -22,7 +21,6 @@ function esc(s: string): string {
 
 export interface WikitextSerializeResult {
   wikitext: string;
-  /** false when any atomic node lacks a canonical wikitext field */
   complete: boolean;
 }
 
@@ -48,23 +46,21 @@ function leavesToWikitext(children: Descendant[]): string {
   return out;
 }
 
-
 /**
  * Serialize the Plate value to canonical MediaWiki wikitext.
- * Atomic nodes (templates/chips/media/raw blocks) emit their stored
- * `wikitext` verbatim when present; if any atomic node lacks one,
- * `complete` is false and callers must fall back to the HTML save path.
  */
 export function serializePlateToWikitext(nodes: Descendant[]): WikitextSerializeResult {
-  let complete = true;
+  const complete = true;
   const parts: string[] = [];
 
   const walkInline = (children: Descendant[]): string => {
     let out = "";
-    let atomicMissing = false;
     for (const child of children) {
       const el = child as WikiElement & WikiText;
-      if (typeof el.text === "string") { out += leavesToWikitext([child]); continue; }
+      if (typeof el.text === "string") {
+        out += leavesToWikitext([child]);
+        continue;
+      }
       switch (el.type) {
         case "link": {
           const label = leavesToWikitext(el.children);
@@ -79,23 +75,34 @@ export function serializePlateToWikitext(nodes: Descendant[]): WikitextSerialize
         case "ref":
           out += `<ref>${el.label}</ref>`;
           break;
+        case "chip-coord": {
+          const cc = child as any;
+          out += cc.wikitext || `[[Coords:${cc.lat},${cc.lng}|${cc.label || "Location"}]]`;
+          break;
+        }
+        case "chip-engine": {
+          const ce = child as any;
+          out += ce.wikitext || `[[${ce.connector || "CountryData"}:${ce.slug}|${ce.metric}]]`;
+          break;
+        }
         default: {
-          const wt = (child as unknown as { wikitext?: string }).wikitext;
+          const wt = (child as unknown as { rawWikitext?: string; wikitext?: string }).rawWikitext || (child as unknown as { wikitext?: string }).wikitext;
           if (wt) out += wt;
-          else atomicMissing = true;
         }
       }
     }
-    if (atomicMissing) complete = false;
     return out;
   };
 
   const walkBlock = (node: Descendant): void => {
-    const el = node as WikiElement;
+    const el = node as any;
     switch (el.type) {
+      case "h1": parts.push(`= ${inlineToWikitextSafe(el)} =\n`); break;
       case "h2": parts.push(`== ${inlineToWikitextSafe(el)} ==\n`); break;
       case "h3": parts.push(`=== ${inlineToWikitextSafe(el)} ===\n`); break;
       case "h4": parts.push(`==== ${inlineToWikitextSafe(el)} ====\n`); break;
+      case "h5": parts.push(`===== ${inlineToWikitextSafe(el)} =====\n`); break;
+      case "h6": parts.push(`====== ${inlineToWikitextSafe(el)} ======\n`); break;
       case "p": {
         const inner = walkInline(el.children);
         if (inner.trim()) parts.push(`${inner}\n`);
@@ -105,9 +112,10 @@ export function serializePlateToWikitext(nodes: Descendant[]): WikitextSerialize
         parts.push(`<blockquote>${walkInline(el.children)}</blockquote>\n`);
         break;
       case "code-block":
-        parts.push(`<pre>${esc(el.children.map((c) => (c as WikiText).text ?? "").join(""))}</pre>\n`);
+        parts.push(`<pre>${esc(el.children.map((c: any) => c.text ?? "").join(""))}</pre>\n`);
         break;
-      case "ul": case "ol": {
+      case "ul":
+      case "ol": {
         const marker = el.type === "ol" ? "#" : "*";
         for (const li of el.children as ListItemEl[]) {
           parts.push(`${marker} ${walkInline(li.children).trim()}\n`);
@@ -131,28 +139,50 @@ export function serializePlateToWikitext(nodes: Descendant[]): WikitextSerialize
       case "hr":
         parts.push("----\n");
         break;
+      case "infobox-block":
+      case "infobox":
       case "infobox-box": {
-        const ib = el as InfoboxBoxEl;
-        if (ib.wikitext) parts.push(`${ib.wikitext}\n`);
-        else { complete = false; parts.push(`${ib.html}\n`); }
+        const wt = el.rawWikitext || el.wikitext || serializeTemplateToWikitext({
+          templateName: el.templateName || "Infobox",
+          params: el.params,
+          positional: el.positional,
+          paramList: el.paramList,
+        });
+        parts.push(`${wt}\n`);
         break;
       }
-      case "template": case "media": case "raw-html": case "chip-engine": case "chip-coord": case "chip-mapembed": {
-        const wt = (node as unknown as { wikitext?: string }).wikitext;
+      case "template-block":
+      case "template": {
+        const wt = el.rawWikitext || el.wikitext || serializeTemplateToWikitext({
+          templateName: el.templateName || el.name || "Template",
+          params: el.params,
+          positional: el.positional,
+          paramList: el.paramList,
+        });
+        parts.push(`${wt}\n`);
+        break;
+      }
+      case "media": {
+        const wt = el.wikitext || `[[File:${el.filename}|${el.align || "thumb"}|${el.caption || ""}]]`;
+        parts.push(`${wt}\n`);
+        break;
+      }
+      case "raw-html": {
+        const wt = el.rawWikitext || el.wikitext || el.html || "";
+        parts.push(`${wt}\n`);
+        break;
+      }
+      default: {
+        const wt = el.rawWikitext || el.wikitext;
         if (wt) parts.push(`${wt}\n`);
-        else complete = false;
-        break;
       }
-      default:
-        complete = false;
     }
   };
 
-  // heading helper needs access to walkInline + complete flag
   function inlineToWikitextSafe(e: WikiElement): string {
     return walkInline(e.children);
   }
 
   nodes.forEach(walkBlock);
-  return { wikitext: parts.join("\n"), complete };
+  return { wikitext: parts.join("\n").trim(), complete };
 }

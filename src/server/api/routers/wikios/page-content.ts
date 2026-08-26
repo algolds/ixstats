@@ -417,7 +417,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
    * Get Parsoid HTML for the visual editor.
    * Returns raw Parsoid output with data-mw attributes preserved.
    * This is the HTML that can round-trip back to wikitext via Parsoid.
-   * Do NOT use transformArticleHtml on this — it destroys the metadata.
+  /**
+   * @deprecated Plan 305 — Visual and source editors use getWikitext directly. Retained for API compatibility.
    */
   getEditorHtml: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))

@@ -8,15 +8,16 @@
  */
 
 import { createPlatePlugin } from "platejs/react";
-import { PlateRawHtmlElement } from "../elements/PlateRawHtmlElement";
-import { PlateInfoboxElement, PlateInfoboxBoxElement } from "../elements/PlateInfoboxElement";
+import { PlateInteractiveTemplateElement } from "../elements/PlateInteractiveTemplateElement";
 import { PlateEngineChipElement } from "../elements/PlateEngineChipElement";
 import { PlateCoordChipElement, PlateMapEmbedChipElement } from "../elements/PlateCoordChipElement";
 import { PlateMediaElement } from "../elements/PlateMediaElement";
 
 export const ELEMENT_RAW_HTML = "raw-html";
 export const ELEMENT_TEMPLATE = "template";
+export const ELEMENT_TEMPLATE_BLOCK = "template-block";
 export const ELEMENT_INFOBOX = "infobox";
+export const ELEMENT_INFOBOX_BLOCK = "infobox-block";
 export const ELEMENT_CHIP_ENGINE = "chip-engine";
 export const ELEMENT_CHIP_COORD = "chip-coord";
 export const ELEMENT_CHIP_MAP_EMBED = "chip-mapembed";
@@ -38,7 +39,9 @@ export function createIxWikiPlugins() {
   return [
     voidPlugin(ELEMENT_RAW_HTML),
     voidPlugin(ELEMENT_TEMPLATE),
+    voidPlugin(ELEMENT_TEMPLATE_BLOCK),
     voidPlugin(ELEMENT_INFOBOX),
+    voidPlugin(ELEMENT_INFOBOX_BLOCK),
     voidPlugin(ELEMENT_CHIP_ENGINE),
     voidPlugin(ELEMENT_CHIP_COORD),
     voidPlugin(ELEMENT_CHIP_MAP_EMBED),
@@ -51,9 +54,11 @@ export function createIxWikiPlugins() {
 /** Element-type → React component map consumed by `createPlateEditor`. */
 export function getIxWikiComponents() {
   return {
-    [ELEMENT_RAW_HTML]: PlateRawHtmlElement,
-    [ELEMENT_INFOBOX]: PlateInfoboxBoxElement,
-    [ELEMENT_TEMPLATE]: PlateRawHtmlElement,
+    [ELEMENT_RAW_HTML]: PlateInteractiveTemplateElement,
+    [ELEMENT_INFOBOX]: PlateInteractiveTemplateElement,
+    [ELEMENT_INFOBOX_BLOCK]: PlateInteractiveTemplateElement,
+    [ELEMENT_TEMPLATE]: PlateInteractiveTemplateElement,
+    [ELEMENT_TEMPLATE_BLOCK]: PlateInteractiveTemplateElement,
     [ELEMENT_CHIP_ENGINE]: PlateEngineChipElement,
     [ELEMENT_CHIP_COORD]: PlateCoordChipElement,
     [ELEMENT_CHIP_MAP_EMBED]: PlateMapEmbedChipElement,

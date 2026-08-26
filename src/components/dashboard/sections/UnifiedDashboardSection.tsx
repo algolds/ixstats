@@ -26,6 +26,7 @@ import { AccountManagerModal } from "~/components/thinkpages/AccountManagerModal
 import { RepostModal } from "~/components/thinkpages/RepostModal";
 import { GlassCanvasComposer } from "~/components/thinkpages/GlassCanvasComposer";
 import { useNotify } from "~/hooks/useNotify";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 import { UnifiedFeedContent, FollowingFeedContent } from "./UnifiedFeedContent";
 import { TrendingSectionWidget } from "./TrendingSectionWidget";
@@ -189,12 +190,16 @@ export function UnifiedDashboardSection({
         <div className="facet-layout-grid-3">
           {/* Feed stream (left 2/3) */}
           <div className="facet-layout-main-span-2 space-y-5">
-            {/* Feed Tab Bar */}
+            {/* Feed Tab Bar - ticks on change incl Community */}
             <motion.div variants={staggerItem} className="flex items-center gap-2">
               <FacetTabs
                 tabs={TABS}
                 activeTab={activeTab}
-                onChange={(tabId) => setActiveTab(tabId as FeedTab)}
+                onChange={(tabId) => {
+                  if (tabId !== activeTab) soundEffects.tick(0.14);
+                  setActiveTab(tabId as FeedTab);
+                  if (tabId === "community") soundEffects.page(0.12);
+                }}
                 tone="accent"
                 size="md"
                 className="flex-1"
@@ -204,6 +209,7 @@ export function UnifiedDashboardSection({
               {isSignedIn && (
                 <button
                   onClick={() => setIsAccountModalOpen(true)}
+                  data-cuelume-press="soft"
                   className="text-muted-foreground hover:text-foreground relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-black/[0.08] bg-black/[0.04] shadow-sm transition-all duration-300 hover:bg-black/[0.08] dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.08]"
                   title="Feed & Account Settings"
                 >

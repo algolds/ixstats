@@ -281,7 +281,8 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           {/* Directives */}
           {hasCountry ? (
             <Link
-              href={createUrl("/mycountry/executive")}
+              href={createUrl("/mycountry/executive?focus=directives")}
+              data-cuelume-press="soft"
               className="group/icon relative flex flex-col items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/15 px-1 py-2.5 backdrop-blur-md transition-all duration-150 hover:scale-[1.03] hover:bg-amber-500/25 active:scale-[0.94] dark:border-amber-500/25 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
               title={`${issueCount} pending directives (${urgentCount} urgent)`}
             >
@@ -312,7 +313,8 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           {/* Agenda */}
           {hasCountry ? (
             <Link
-              href={createUrl("/mycountry/executive")}
+              href={createUrl("/mycountry/executive?focus=agenda")}
+              data-cuelume-press="soft"
               className={cn(
                 "group/icon relative flex flex-col items-center justify-center rounded-xl px-1 py-2.5 backdrop-blur-md transition-all duration-150 hover:scale-[1.03] active:scale-[0.94]",
                 pendingActions > 0

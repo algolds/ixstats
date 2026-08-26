@@ -690,16 +690,9 @@ export function ArticleRenderer({
         </div>
       </div>
 
-      {/* Outset Gutter Rail: Sticky TOC + Companion Intel HUD (Auto-hidden when Margin Drawer is open) */}
+      {/* Outset Gutter Rail: Companion Intel HUD on top + Sticky TOC underneath (Auto-hidden when Margin Drawer is open) */}
       {!marginOpen && (
         <aside className="wikios-outset-toc hidden xl:flex flex-col gap-3 shrink-0 w-[220px] 2xl:w-[240px] animate-in fade-in duration-200">
-          {toc.length > 0 && (
-            <StickyToc
-              entries={toc}
-              contentRef={contentRef}
-              isCollapsed={marginOpen}
-            />
-          )}
           <ArticleCompanionHUD
             title={title}
             slug={slug}
@@ -720,6 +713,13 @@ export function ArticleRenderer({
             isAuthenticated={isAuthenticated}
             isCollapsed={marginOpen}
           />
+          {toc.length > 0 && (
+            <StickyToc
+              entries={toc}
+              contentRef={contentRef}
+              isCollapsed={marginOpen}
+            />
+          )}
         </aside>
       )}
 

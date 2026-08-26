@@ -36,6 +36,7 @@ import {
 } from "recharts";
 import { formatPopulation } from "~/lib/utils";
 import { IxTime } from "~/lib/ixtime";
+import { getIxCutoff } from "~/lib/ixtime/range";
 import { cn } from "~/lib/utils";
 import {
   BaseMetricDetailsModal,
@@ -43,6 +44,7 @@ import {
 } from "./BaseMetricDetailsModal";
 import type { TimeRange, ChartType } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "~/components/ui/hover-card";
 
 interface PopulationDetailsModalProps {
   isOpen: boolean;
@@ -55,7 +57,6 @@ const TABS: MetricModalTab[] = [
   { id: "overview", label: "Overview", icon: BarChart3 },
   { id: "trends", label: "Trends", icon: LineChart },
   { id: "comparison", label: "Comparison", icon: Globe },
-  { id: "details", label: "Details", icon: Info },
 ];
 
 /**
@@ -120,38 +121,33 @@ export function PopulationDetailsModal({
   const processChartData = (timeRange: TimeRange) => {
     if (!historicalData?.length) return [];
 
-    const rangeMap = {
-      "3m": 3,
-      "6m": 6,
-      "1y": 12,
-      "2y": 24,
-      "5y": 60,
-      all: Infinity,
-    };
-
-    const monthsToShow = rangeMap[timeRange] || 12;
-    const cutoffDate =
-      monthsToShow === Infinity
-        ? new Date(0)
-        : new Date(Date.now() - monthsToShow * 30 * 24 * 60 * 60 * 1000);
+    // IxTime-aware cutoff (not real 30d months) - fixes X-axis showing wrong span
+    const nowIx = IxTime.getCurrentIxTime();
+    const cutoffIx = getIxCutoff(timeRange, nowIx);
 
     return historicalData
-      .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
-      .map((point: any) => ({
-        year: IxTime.getCurrentGameYear(point.ixTimeTimestamp),
-        population: point.population,
-        populationGrowthRate: (point.populationGrowthRate || 0) * 100,
-        populationDensity: point.populationDensity,
-        totalGdp: point.totalGdp,
-        timestamp: point.ixTimeTimestamp,
-        date: IxTime.formatIxTime(point.ixTimeTimestamp, true),
-      }))
+      .filter((point: any) => {
+        const ts = IxTime.toTimestamp(point.ixTimeTimestamp as any);
+        return ts !== null && ts >= cutoffIx;
+      })
+      .map((point: any) => {
+        const tsNum = IxTime.toTimestamp(point.ixTimeTimestamp as any) as number;
+        return {
+          year: IxTime.getCurrentGameYear(tsNum),
+          population: point.population,
+          populationGrowthRate: (point.populationGrowthRate || 0) * 100,
+          populationDensity: point.populationDensity,
+          totalGdp: point.totalGdp,
+          timestamp: tsNum,
+          date: IxTime.formatIxTime(tsNum, true),
+        };
+      })
       .sort((a: any, b: any) => (a.timestamp ?? 0) - (b.timestamp ?? 0));
   };
 
-  // Default chart data for overview metrics
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const defaultChartData = useMemo(() => processChartData("1y"), [historicalData]);
+  // Overview trailing growth uses unified 5y window to match default X-axis
+  // Previously 1y caused mismatch with Trends selector
+  const defaultChartData = useMemo(() => processChartData("5y"), [historicalData]);
 
   const projectionData = useMemo(() => {
     if (!economicData) return [];
@@ -304,10 +300,19 @@ export function PopulationDetailsModal({
     if (!economicData) return null;
 
     const currentPop = economicData.currentPopulation;
-    const growthRate = economicData.populationGrowthRate;
+    const liveGrowthRate = economicData.populationGrowthRate * 100;
     const density = economicData.populationDensity || currentPop / (economicData?.landArea || 1);
 
-    let growth = growthRate * 100;
+    // trailingGrowth: delta between last two points (period actual)
+    let trailingGrowth = liveGrowthRate;
+    if (defaultChartData && defaultChartData.length >= 2) {
+      const current = defaultChartData[defaultChartData.length - 1];
+      const previous = defaultChartData[defaultChartData.length - 2];
+      if (current && previous && previous.population > 0) {
+        trailingGrowth = ((current.population - previous.population) / previous.population) * 100;
+      }
+    }
+
     let globalComparison = 0;
     let globalAverage = 0;
     let rank = 1;
@@ -324,17 +329,10 @@ export function PopulationDetailsModal({
       totalCountries = comparisonData.length;
     }
 
-    if (defaultChartData && defaultChartData.length >= 2) {
-      const current = defaultChartData[defaultChartData.length - 1];
-      const previous = defaultChartData[defaultChartData.length - 2];
-      if (current && previous && previous.population > 0) {
-        growth = ((current.population - previous.population) / previous.population) * 100;
-      }
-    }
-
     return {
       currentValue: currentPop,
-      growth,
+      growth: trailingGrowth,
+      liveGrowth: liveGrowthRate,
       globalComparison,
       globalAverage,
       rank,
@@ -351,8 +349,6 @@ export function PopulationDetailsModal({
         return renderTrendsTab(timeRange);
       case "comparison":
         return renderComparisonTab();
-      case "details":
-        return renderDetailsTab();
       default:
         return null;
     }
@@ -478,9 +474,32 @@ export function PopulationDetailsModal({
 
           <div className="facet-refraction relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
             <div>
-              <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                Demographics Classification
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                  Demographics Classification
+                </span>
+                {populationTierInfo && (
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <button className="text-muted-foreground hover:text-foreground inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-colors">
+                        <Info className="h-3 w-3" />
+                      </button>
+                    </HoverCardTrigger>
+                    <HoverCardContent side="top" align="end" className="w-72 p-3">
+                      <h4 className="mb-2 text-xs font-semibold tracking-wider uppercase">Population Tier System</h4>
+                      <div className="space-y-1.5">
+                        {populationTierInfo.allTiers.map((tier: any, idx: number) => (
+                          <div key={tier.name} className={cn("flex items-center justify-between rounded-md border px-2 py-1 text-xs", idx === populationTierInfo.currentIndex ? "border-cyan-500/40 bg-cyan-500/10" : "border-white/5 bg-black/5")}>
+                            <span className={cn("text-[11px] font-semibold", idx === populationTierInfo.currentIndex ? "text-cyan-400" : "text-white")}>{tier.name}</span>
+                            <span className="text-muted-foreground text-[10px]">{tier.description}</span>
+                            {idx === populationTierInfo.currentIndex && <Badge className="ml-1 border-none bg-cyan-500/20 px-1 py-0 text-[8px] text-cyan-400">Current</Badge>}
+                          </div>
+                        ))}
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                )}
+              </div>
               <div className="mt-2">
                 <Badge className="border-none bg-cyan-500/20 text-sm font-semibold text-cyan-400">
                   {populationTierInfo?.currentTier?.name || "Unknown"}
@@ -532,9 +551,14 @@ export function PopulationDetailsModal({
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5 text-cyan-500" />
                 Population Growth Trends
+                {economicData && (
+                  <Badge variant="outline" className="ml-2 border-cyan-500/20 bg-cyan-500/5 text-xs text-cyan-400">
+                    Live: {(economicData.populationGrowthRate * 100).toFixed(3)}% · Trailing: {performanceMetrics?.growth.toFixed(3)}%
+                  </Badge>
+                )}
               </CardTitle>
               <CardDescription>
-                Population development over time with {chartData.length} data points
+                Population development over time with {chartData.length} data points · Live rate from sim · Trailing from last interval delta
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -555,6 +579,7 @@ export function PopulationDetailsModal({
                       scale="time"
                       name="Time"
                       tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
+                      tickCount={6}
                       stroke="rgba(255, 255, 255, 0.3)"
                     />
                     <YAxis
@@ -756,125 +781,6 @@ export function PopulationDetailsModal({
     );
   };
 
-  const renderDetailsTab = () => {
-    return (
-      <MetricModalLayout variant="social">
-        <MetricModalLayout.MainArea>
-          {economicData && (
-            <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
-              <CardHeader className="mb-4 p-0">
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-cyan-500" />
-                  20-Year Population Projections
-                  <Badge
-                    variant="outline"
-                    className="ml-2 border-cyan-500/20 bg-cyan-500/5 text-cyan-400"
-                  >
-                    {(economicData.populationGrowthRate * 100).toFixed(3)}% growth
-                  </Badge>
-                </CardTitle>
-                <CardDescription>
-                  Projected population assuming constant growth rates
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col justify-center p-0">
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={projectionData}>
-                      <defs>
-                        <linearGradient id="popProjGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2} />
-                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                      <XAxis dataKey="year" stroke="rgba(255, 255, 255, 0.3)" />
-                      <YAxis
-                        tickFormatter={(value) => formatPopulation(value)}
-                        stroke="rgba(255, 255, 255, 0.3)"
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          background: "rgba(18, 20, 24, 0.8)",
-                          backdropFilter: "blur(8px)",
-                          borderColor: "rgba(255, 255, 255, 0.1)",
-                          borderRadius: "8px",
-                        }}
-                        formatter={(value: any) => [formatPopulation(value), "Population"]}
-                        labelFormatter={(label) => `Year ${label}`}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="population"
-                        stroke="#06b6d4"
-                        fillOpacity={1}
-                        fill="url(#popProjGrad)"
-                        strokeWidth={2}
-                        strokeDasharray="5 5"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="text-muted-foreground mt-4 space-y-0.5 text-[10px]">
-                  <p>* Projections assume constant growth rates and no major demographic changes</p>
-                  <p>
-                    * Actual results may vary based on economic development, migration, and policy
-                    changes
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </MetricModalLayout.MainArea>
-
-        <MetricModalLayout.Sidebar>
-          {populationTierInfo && (
-            <div className="facet-refraction flex flex-1 flex-col justify-between space-y-3 rounded-xl border border-white/5 bg-white/5 p-4">
-              <div>
-                <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
-                  Population Tier System
-                </h4>
-                <div className="max-h-[300px] space-y-2 overflow-y-auto pr-1">
-                  {populationTierInfo.allTiers.map((tier, index) => (
-                    <div
-                      key={tier.name}
-                      className={cn(
-                        "rounded-lg border p-2 text-xs transition-all",
-                        index === populationTierInfo.currentIndex
-                          ? "border-cyan-500/40 bg-cyan-500/10 shadow-inner"
-                          : "border-white/5 bg-black/10"
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="text-[11px] font-semibold text-white">
-                          <span
-                            className={cn(
-                              index === populationTierInfo.currentIndex && "text-cyan-400"
-                            )}
-                          >
-                            {tier.name}
-                          </span>
-                          {index === populationTierInfo.currentIndex && (
-                            <Badge className="ml-1.5 scale-90 border-none bg-cyan-500/20 px-1 py-0 text-[8px] text-cyan-400">
-                              Current
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-muted-foreground mt-1 text-[10px] leading-relaxed">
-                        {tier.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </MetricModalLayout.Sidebar>
-      </MetricModalLayout>
-    );
-  };
-
   return (
     <BaseMetricDetailsModal
       isOpen={isOpen}
@@ -889,6 +795,8 @@ export function PopulationDetailsModal({
       isLoading={isLoading}
       onRefresh={() => refetch()}
       variant="social"
+      persistKey="ixstats:pop-analysis"
+      defaultTimeRange="5y"
     >
       {renderTabContent}
     </BaseMetricDetailsModal>

@@ -116,7 +116,7 @@ export function QuickBacklinksModal({
           {links.length === 0 && !isLoading && (
             <div className="wikios-quick-modal-empty">No pages link to this article.</div>
           )}
-          {links.map((link, i) => (
+          {links.map((link: { title: string }, i: number) => (
             <Link
               key={`${link.title}-${i}`}
               href={withBasePath(`/wiki/${encodeURIComponent(link.title.replace(/ /g, "_"))}`)}

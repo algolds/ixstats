@@ -36,6 +36,15 @@ export function useMapEditorSync({
   );
 
   const {
+    data: linkage,
+    isLoading: linkageLoading,
+    refetch: refetchCountryLinkage,
+  } = api.geoCore.getCountryLinkage.useQuery(
+    { countryId: countryId! },
+    { enabled: !!countryId && !skipLinkageGate }
+  );
+
+  const {
     data: routes,
     isLoading: routesLoading,
     refetch: refetchRoutes,
@@ -50,13 +59,15 @@ export function useMapEditorSync({
     void utils.geoCore.getCountryFeatures.invalidate({ countryId });
     void utils.transport.getCountryRoutes.invalidate({ countryId });
     void utils.geoCore.getCountryGeometry.invalidate({ countryId });
+    void utils.geoCore.getCountryLinkage.invalidate({ countryId });
   }, [countryId, utils]);
 
   const refetchFeatures = useCallback(() => {
     void refetchGeoFeatures();
     void refetchRoutes();
     void refetchCountryGeo();
-  }, [refetchGeoFeatures, refetchRoutes, refetchCountryGeo]);
+    void refetchCountryLinkage();
+  }, [refetchGeoFeatures, refetchRoutes, refetchCountryGeo, refetchCountryLinkage]);
 
   const debouncedRefetch = useCallback(() => {
     if (refetchTimerRef.current) {
@@ -168,8 +179,8 @@ export function useMapEditorSync({
   return {
     countryGeo,
     geometryLoading,
-    linkage: null,
-    linkageLoading: false,
+    linkage,
+    linkageLoading,
     features,
     featuresLoading: featuresLoading || routesLoading,
     routes,

@@ -118,33 +118,18 @@ function TemplateEditorDialog({
 }) {
   const [values, setValues] = useState<Record<string, string>>({ ...params });
   const [showPreview, setShowPreview] = useState(false);
-  const { paramList, hasSchema } = useTemplateSchema(templateName);
+  const { paramList, hasSchema, loading } = useTemplateSchema(templateName);
   const [rawWikitext, setRawWikitext] = useState(() =>
     `{{${templateName}${Object.entries(params).filter(([, v]) => v.trim()).map(([k, v]) => `|${k}=${v}`).join("")}}}`
   );
 
-  const tdQuery = api.wikios.getTemplateData.useQuery(
-    { title: templateName },
-    { staleTime: 300000 }
-  );
   const previewQuery = api.wikios.getTemplatePreview.useQuery(
     { template: templateName, params: values },
     { enabled: showPreview, staleTime: 0 }
   );
 
-  const tdParams =
-    (
-      tdQuery.data?.templateData as {
-        params?: Record<string, { label?: string; description?: string; required?: boolean }>;
-      }
-    )?.params ?? {};
-  const allKeys = hasSchema
-    ? [
-        ...paramList.filter((p) => p.meta.required).map((p) => p.key),
-        ...paramList.filter((p) => !p.meta.required).map((p) => p.key),
-        ...Object.keys(params).filter((k) => !paramList.some((p) => p.key === k)),
-      ]
-    : [...new Set([...Object.keys(params), ...Object.keys(tdParams)])];
+  const schemaKeySet = React.useMemo(() => new Set(paramList.map((p) => p.key)), [paramList]);
+  const extraKeys = React.useMemo(() => Object.keys(params).filter((k) => !schemaKeySet.has(k)), [params, schemaKeySet]);
 
   return (
     <div className="wikios-modal-backdrop" onClick={onClose}>
@@ -162,7 +147,13 @@ function TemplateEditorDialog({
           </button>
         </div>
         <div className="wikios-quick-modal-body">
-          {!hasSchema && (
+          {loading && (
+            <div className="py-4 text-center text-xs text-muted-foreground">
+              Loading template schema...
+            </div>
+          )}
+
+          {!loading && !hasSchema && (
             <div className="wikios-ve-template-field">
               <label className="wikios-ve-template-field-label">
                 Wikitext <span className="text-muted-foreground">(no TemplateData schema — edit source directly)</span>
@@ -175,27 +166,45 @@ function TemplateEditorDialog({
               />
             </div>
           )}
-          {hasSchema && allKeys.map((key) => {
-            const schema = tdParams[key];
-            return (
-              <div key={key} className="wikios-ve-template-field">
-                <label className="wikios-ve-template-field-label">
-                  {schema?.label ?? key}
-                  {schema?.required && <span className="text-destructive ml-0.5">*</span>}
-                </label>
-                {schema?.description && (
-                  <div className="wikios-ti-param-desc">{schema.description}</div>
-                )}
-                <input
-                  type="text"
-                  value={values[key] ?? ""}
-                  onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
-                  className="wikios-ti-param-input"
-                  placeholder={(schema as { example?: string })?.example ?? `Enter ${schema?.label ?? key}...`}
-                />
-              </div>
-            );
-          })}
+
+          {!loading && hasSchema && (
+            <>
+              {paramList.map(({ key, meta }) => (
+                <div key={key} className="wikios-ve-template-field">
+                  <label className="wikios-ve-template-field-label">
+                    {meta.label ?? key}
+                    {meta.required && <span className="text-destructive ml-0.5">*</span>}
+                  </label>
+                  {meta.description && (
+                    <div className="wikios-ti-param-desc">{meta.description}</div>
+                  )}
+                  <input
+                    type="text"
+                    value={values[key] ?? ""}
+                    onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
+                    className="wikios-ti-param-input"
+                    placeholder={meta.example ?? `Enter ${meta.label ?? key}...`}
+                  />
+                </div>
+              ))}
+
+              {extraKeys.map((key) => (
+                <div key={key} className="wikios-ve-template-field">
+                  <label className="wikios-ve-template-field-label">
+                    {key}
+                  </label>
+                  <input
+                    type="text"
+                    value={values[key] ?? ""}
+                    onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
+                    className="wikios-ti-param-input"
+                    placeholder={`Enter ${key}...`}
+                  />
+                </div>
+              ))}
+            </>
+          )}
+
           {showPreview && previewQuery.data && (
             <div
               className="wikios-ti-preview"
@@ -219,10 +228,8 @@ function TemplateEditorDialog({
               onClick={() => {
                 if (hasSchema || !onSaveRaw) {
                   onSave(values);
-                } else if (rawWikitext.trim() && rawWikitext !== rawWikitext.trim()) {
-                  onSaveRaw(rawWikitext.trim());
                 } else {
-                  onSaveRaw(rawWikitext);
+                  onSaveRaw(rawWikitext.trim());
                 }
               }}
               className="wikios-ve-btn wikios-ve-btn-primary"

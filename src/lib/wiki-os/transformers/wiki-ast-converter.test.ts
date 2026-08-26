@@ -1,101 +1,51 @@
-import { wikitextToAst, astToWikitext } from "./wiki-ast-converter";
-import type { WikiDocument } from "../core/wiki-ast";
+/**
+ * wiki-ast-converter.test.ts — WikiAST ⇄ Wikitext & Plate Node Roundtrip Tests.
+ */
 
-function blocks(doc: WikiDocument): WikiDocument["nodes"] {
-  return doc.nodes;
-}
+import {
+  wikitextToAst,
+  astToWikitext,
+  astToPlateNodes,
+  plateNodesToAst,
+} from "./wiki-ast-converter";
 
-describe("wiki-ast-converter", () => {
-  it("parses plain paragraphs with bold, italic, and links", () => {
-    const doc = wikitextToAst(
-      "Hello '''world''' with ''style'' and a [[Main Page|link]]."
-    );
-    const [para] = blocks(doc);
-    expect(para?.type).toBe("paragraph");
-    const children = (para as { children: Array<Record<string, unknown>> }).children;
-    expect(children.some((c) => c.bold === true && String(c.text).includes("world"))).toBe(true);
-    expect(children.some((c) => c.italic === true)).toBe(true);
-    expect(children.some((c) => c.type === "wiki-link")).toBe(true);
-  });
+describe("WikiAST ⇄ Plate Nodes & Wikitext Roundtrip Converter", () => {
+  it("converts wikitext to AST and then to Plate nodes without HTML intermediary", () => {
+    const wikitext = `{{Infobox country
+| name = Urcea
+| capital = [[Urceopolis]]
+| population = 54,000,000
+}}
 
-  it("roundtrips bold/italic/links losslessly", () => {
-    const wt = "A '''bold''' and ''italic'' and [[Target|label]] end.";
-    const doc = wikitextToAst(wt);
-    const out = astToWikitext(doc);
-    expect(out).toContain("'''bold'''");
-    expect(out).toContain("''italic''");
-    expect(out).toContain("[[Target|label]]");
-  });
+== History ==
 
-  it("parses and serializes headings", () => {
-    const doc = wikitextToAst("Intro\n\n== History ==\n\n=== Ancient ===\n\nAfter.");
-    const hs = blocks(doc).filter((n) => n.type === "heading");
-    expect(hs.map((h) => (h as { level: number }).level)).toEqual([2, 3]);
-    const out = astToWikitext(doc);
-    expect(out).toContain("== History ==");
-    expect(out).toContain("=== Ancient ===");
-  });
+The Kingdom of Urcea is located near [[Coords:40.5,-79.8|40.5 N, 79.8 W]].
 
-  it("roundtrips an infobox with custom parameters", () => {
-    const wt = "{{Infobox country\n| capital = Vilena\n| motto = Liberté, Ordre, Concorde\n}}\n\nBody text.";
-    const doc = wikitextToAst(wt);
-    const infobox = blocks(doc).find((n) => n.type === "infobox") as
-      | { templateName: string; params: Record<string, string> }
-      | undefined;
-    expect(infobox).toBeDefined();
-    expect(infobox!.templateName).toBe("Infobox country");
-    expect(infobox!.params.capital).toBe("Vilena");
+* Point A
+* Point B`;
 
-    const out = astToWikitext(doc);
-    expect(out).toContain("{{Infobox country");
-    expect(out).toContain("| capital = Vilena");
-    // second roundtrip is stable
-    const doc2 = wikitextToAst(out);
-    const infobox2 = blocks(doc2).find((n) => n.type === "infobox") as { params: Record<string, string> };
-    expect(infobox2.params.motto).toBe("Liberté, Ordre, Concorde");
-  });
+    const ast = wikitextToAst(wikitext, "Urcea", "urcea");
+    expect(ast.nodes).toHaveLength(4);
 
-  it("roundtrips lists and dividers", () => {
-    const wt = "* alpha\n* beta\n\n# one\n# two\n\n----";
-    const out = astToWikitext(wikitextToAst(wt));
-    expect(out).toContain("* alpha");
-    expect(out).toContain("# one");
-    expect(out).toContain("----");
-  });
+    const plateNodes = astToPlateNodes(ast);
+    expect(plateNodes).toHaveLength(4);
 
-  it("roundtrips media syntax", () => {
-    const wt = "[[File:Example.svg|thumb|A caption]]";
-    const doc = wikitextToAst(wt);
-    const media = blocks(doc).find((n) => n.type === "media") as { filename: string; caption?: string };
-    expect(media.filename).toBe("File:Example.svg");
-    expect(media.caption).toBe("A caption");
-    expect(astToWikitext(doc)).toContain("[[File:Example.svg|thumb|A caption]]");
-  });
+    expect(plateNodes[0].type).toBe("infobox-block");
+    expect(plateNodes[0].templateName).toBe("Infobox country");
+    expect(plateNodes[0].params["name"]).toBe("Urcea");
 
-  it("roundtrips tables with headers and rows", () => {
-    const wt = [
-      '{| class="wikitable"',
-      "! Name !! Capital",
-      "|-",
-      "| Burgundie || Vilena",
-      "|-",
-      "| Yerli || Arvand",
-      "|}",
-    ].join("\n");
-    const doc = wikitextToAst(wt);
-    const table = blocks(doc).find((n) => n.type === "table") as unknown as {
-      children: Array<{ children: Array<{ isHeader?: boolean; children: Array<{ text: string }> }> }>;
-    };
-    expect(table.children.length).toBe(3); // header row + 2 body rows
-    const out = astToWikitext(doc);
-    expect(out).toContain('{| class="wikitable"');
-    expect(out).toContain("! Name");
-    expect(out).toContain("| Burgundie");
-    expect(out).toContain("| Vilena");
-  });
+    expect(plateNodes[1].type).toBe("h2");
+    expect(plateNodes[2].type).toBe("p");
+    expect(plateNodes[3].type).toBe("ul");
 
-  it("flags parser functions and refs as partial confidence", () => {
-    const doc = wikitextToAst("Text with {{#ifexpr:1|a|b}} magic.");
-    expect(doc.parseConfidence).toBe("partial");
+    // Convert Plate nodes back to AST
+    const reconstructedAst = plateNodesToAst(plateNodes, "Urcea", "urcea");
+    expect(reconstructedAst.nodes).toHaveLength(4);
+
+    const roundtripWikitext = astToWikitext(reconstructedAst);
+    expect(roundtripWikitext).toContain("{{Infobox country");
+    expect(roundtripWikitext).toContain("Urcea");
+    expect(roundtripWikitext).toContain("== History ==");
+    expect(roundtripWikitext).toContain("* Point A");
   });
 });

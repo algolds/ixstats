@@ -59,6 +59,12 @@ export interface BaseMetricDetailsModalProps {
   children: (activeTab: string, timeRange: TimeRange, chartType: ChartType) => React.ReactNode;
   /** Theme variation for Facet UI color styling */
   variant?: MetricThemeVariant;
+  /** Default time range (default: 5y per Dashboard fix) */
+  defaultTimeRange?: TimeRange;
+  /** Default chart type */
+  defaultChartType?: ChartType;
+  /** localStorage key for persisting tab/time/chart across refresh */
+  persistKey?: string;
 }
 
 /**
@@ -119,12 +125,41 @@ export function BaseMetricDetailsModal({
   showTimeRange = true,
   showChartType = true,
   variant = "default",
+  defaultTimeRange = "5y",
+  defaultChartType = "line",
+  persistKey,
   children,
 }: BaseMetricDetailsModalProps) {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id || "overview");
-  const [timeRange, setTimeRange] = useState<TimeRange>("1y");
-  const [chartType, setChartType] = useState<ChartType>("line");
+  const [timeRange, setTimeRange] = useState<TimeRange>(defaultTimeRange);
+  const [chartType, setChartType] = useState<ChartType>(defaultChartType);
   const theme = getThemeClasses(variant);
+
+  // Persist/restore tab/time/chart when persistKey set. Default 5y survives refresh/leave-return.
+  useEffect(() => {
+    if (!persistKey || typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(persistKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { activeTab?: string; timeRange?: TimeRange; chartType?: ChartType };
+        if (parsed.activeTab && tabs.some((t) => t.id === parsed.activeTab)) setActiveTab(parsed.activeTab);
+        if (parsed.timeRange) setTimeRange(parsed.timeRange);
+        if (parsed.chartType) setChartType(parsed.chartType);
+      }
+    } catch { /* ignore */ }
+  }, [persistKey, tabs]);
+
+  useEffect(() => {
+    if (!persistKey || typeof window === "undefined") return;
+    try {
+      localStorage.setItem(persistKey, JSON.stringify({ activeTab, timeRange, chartType }));
+    } catch { /* ignore */ }
+  }, [persistKey, activeTab, timeRange, chartType]);
+
+  // Keep valid tab if tabs change (e.g. Details removed)
+  useEffect(() => {
+    if (!tabs.some((t) => t.id === activeTab)) setActiveTab(tabs[0]?.id || "overview");
+  }, [tabs, activeTab]);
 
   // Enhanced escape functionality and body scroll lock
   useEffect(() => {

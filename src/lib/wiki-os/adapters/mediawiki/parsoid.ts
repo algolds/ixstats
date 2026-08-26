@@ -7,6 +7,8 @@
 
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { parse } from "~/lib/wiki-os/wikitext/parser";
+import { astToWikitext } from "~/lib/wiki-os/wikitext/serializer";
 import { saveArticleHtmlShadow } from "./article-store";
 
 export interface ParsoidArticle {
@@ -124,26 +126,11 @@ export const getArticleHtmlViaParsoid = getArticleHtml;
 export const getArticleHtmlViaActionApi = getArticleHtml;
 
 /**
- * Convert HTML back to wikitext in-process without external network dependencies.
+ * Convert HTML or wikitext back to canonical wikitext using the native AST engine.
  */
-export async function htmlToWikitext(html: string, _title: string): Promise<ParsoidTransformResult> {
-  const wikitext = html
-    .replace(/<p[^>]*>/gi, "")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<h1[^>]*>(.*?)<\/h1>/gi, "= $1 =\n")
-    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, "== $1 ==\n")
-    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, "=== $1 ===\n")
-    .replace(/<h4[^>]*>(.*?)<\/h4>/gi, "==== $1 ====\n")
-    .replace(/<b[^>]*>(.*?)<\/b>/gi, "'''$1'''")
-    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, "'''$1'''")
-    .replace(/<i[^>]*>(.*?)<\/i>/gi, "''$1''")
-    .replace(/<em[^>]*>(.*?)<\/em>/gi, "''$1''")
-    .replace(/<a[^>]*href=["'][^"']*\/wiki\/([^"']+)["'][^>]*>(.*?)<\/a>/gi, "[[$1|$2]]")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-
+export async function htmlToWikitext(html: string, title: string): Promise<ParsoidTransformResult> {
+  const { ast } = parse(html, { title });
+  const wikitext = astToWikitext(ast);
   return { wikitext: wikitext || html };
 }
 
@@ -151,7 +138,5 @@ export async function htmlToWikitext(html: string, _title: string): Promise<Pars
  * Convert wikitext to HTML in-process using native TypeScript compiler (<2ms).
  */
 export async function wikitextToHtml(wikitext: string, _title: string): Promise<string> {
-  // Editor path: preserve unknown templates as placeholders so mode switching
-  // never silently deletes them (display callers keep the stripping default).
   return parseWikitextToHtml(wikitext, "ixwiki", { preserveUnknownTemplates: true });
 }

@@ -28,8 +28,9 @@ export interface BaseMetricModalProps {
 
 /**
  * Time range options for historical charts
+ * Includes extended 4y/5y/20y selectors per Dashboard unification.
  */
-export type TimeRange = "3m" | "6m" | "1y" | "2y" | "5y" | "all";
+export type TimeRange = "3m" | "6m" | "1y" | "2y" | "4y" | "5y" | "20y" | "all";
 
 /**
  * Chart type options for data visualization
@@ -44,7 +45,9 @@ export const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
   { value: "6m", label: "6 Months" },
   { value: "1y", label: "1 Year" },
   { value: "2y", label: "2 Years" },
+  { value: "4y", label: "4 Years" },
   { value: "5y", label: "5 Years" },
+  { value: "20y", label: "20 Years" },
   { value: "all", label: "All Time" },
 ];
 

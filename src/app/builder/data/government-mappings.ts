@@ -1,1 +1,1 @@
-export * from "./government-mappings";
+export * from "./government-mappings/index";

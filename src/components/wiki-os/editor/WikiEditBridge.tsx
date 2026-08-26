@@ -3,12 +3,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
-import {
-  saveDraft,
-  getDraft,
-  clearDraft,
-} from "~/lib/wiki-os/editor/draft-store";
-import { wikitextToAst, astToHtml } from "~/lib/wiki-os/transformers/wiki-ast-converter";
+import { saveDraft, getDraft, clearDraft } from "~/lib/wiki-os/editor/draft-store";
+import type { WikitextSerializeResult } from "./plate/wiki-wikitext";
 
 const WikiVisualEditor = dynamic(
   () => import("~/components/wiki-os/editor/WikiVisualEditor").then((m) => m.WikiVisualEditor),
@@ -44,159 +40,72 @@ export function WikiEditBridge({
 }: WikiEditBridgeProps) {
   const [mode, setMode] = useState<"source" | "visual">(initialMode);
   const [_saving, setSaving] = useState(false);
-  const [converting, setConverting] = useState(false);
   const [editConflict, setEditConflict] = useState(false);
-  const [activeHtml, setActiveHtml] = useState<string | null>(null);
   const [activeWikitext, setActiveWikitext] = useState<string | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
 
-  const {
-    data: editorHtml,
-    isLoading: editorLoading,
-    refetch: refetchEditorHtml,
-  } = api.wikios.getEditorHtml.useQuery(
-    { title },
-    { enabled: mode === "visual", staleTime: 5 * 60 * 1000 }
-  );
-
+  // Single Authoritative Fetch via getWikitext (read-through Postgres + MediaWiki fallback)
   const {
     data: wikitextData,
     isLoading: wtLoading,
     refetch: refetchWikitext,
   } = api.wikios.getWikitext.useQuery(
     { title },
-    { enabled: mode === "source", staleTime: 5 * 60 * 1000 }
+    { staleTime: 5 * 60 * 1000 }
   );
 
-  const convertWikitextToHtml = api.wikios.convertWikitextToHtml.useMutation();
-  const htmlToWikitext = api.wikios.htmlToWikitext.useMutation();
-  const saveArticle = api.wikios.saveArticle.useMutation();
   const saveWikitext = api.wikios.saveWikitext.useMutation();
 
   // Restore draft from canonical draft store
   useEffect(() => {
     const localDraft = getDraft(title);
     if (localDraft && !draftRestored) {
-      if (localDraft.mode === "visual" && localDraft.html) {
-        setActiveHtml(localDraft.html);
-        setMode("visual");
-      } else if (localDraft.wikitext) {
+      if (localDraft.wikitext) {
         setActiveWikitext(localDraft.wikitext);
-        setMode("source");
+      }
+      if (localDraft.mode) {
+        setMode(localDraft.mode);
       }
       setDraftRestored(true);
     }
   }, [title, draftRestored]);
 
+  // Instant In-Memory Mode Switching (Invariant 3 & Invariant 7)
   const handleModeSwitch = useCallback(
-    async (newMode: "source" | "visual", dirty: boolean, currentContent: string) => {
+    (newMode: "source" | "visual", dirty: boolean, currentContent: string) => {
       if (newMode === mode) return;
 
       if (dirty) {
-        setConverting(true);
-        try {
-          if (newMode === "visual") {
-            // Instant client-side path: convert wikitext → AST → HTML when the
-            // document is fully within our grammar; fall back to Parsoid otherwise.
-            let handled = false;
-            try {
-              const doc = wikitextToAst(currentContent, title);
-              if (doc.parseConfidence === "full") {
-                setActiveHtml(astToHtml(doc));
-                saveDraft({
-                  title,
-                  source: "ixwiki",
-                  mode: "visual",
-                  html: astToHtml(doc),
-                });
-                handled = true;
-              }
-            } catch {
-              /* fall through to server conversion */
-            }
-            if (!handled) {
-              const res = await convertWikitextToHtml.mutateAsync({
-                wikitext: currentContent,
-                title,
-              });
-              setActiveHtml(res.html);
-              saveDraft({
-                title,
-                source: "ixwiki",
-                mode: "visual",
-                html: res.html,
-              });
-            }
-            setMode(newMode);
-          } else {
-            const res = await htmlToWikitext.mutateAsync({
-              html: currentContent,
-              title,
-            });
-            setActiveWikitext(res.wikitext);
-            saveDraft({
-              title,
-              source: "ixwiki",
-              mode: "source",
-              wikitext: res.wikitext,
-            });
-          }
-          setMode(newMode);
-        } catch (err) {
-          console.error("Seamless mode switch failed:", err);
-        } finally {
-          setConverting(false);
-        }
-      } else {
-        setMode(newMode);
+        setActiveWikitext(currentContent);
+        saveDraft({
+          title,
+          source: "ixwiki",
+          mode: newMode,
+          wikitext: currentContent,
+        });
       }
+      setMode(newMode);
     },
-    [mode, title, convertWikitextToHtml, htmlToWikitext]
+    [mode, title]
   );
 
-  const lastSerializedRef = useRef<{ wikitext: string; complete: boolean } | null>(null);
-  const setLastSerialized = useCallback((result: { wikitext: string; complete: boolean }) => {
+  const lastSerializedRef = useRef<WikitextSerializeResult | null>(null);
+  const setLastSerialized = useCallback((result: WikitextSerializeResult) => {
     lastSerializedRef.current = result;
   }, []);
 
   const handleVisualSave = useCallback(
-    async (html: string, summary: string, minor: boolean, keepEditing?: boolean) => {
+    async (content: string, summary: string, minor: boolean, keepEditing?: boolean) => {
       setSaving(true);
       setEditConflict(false);
       try {
-        // Prefer lossless client-side wikitext when every atomic block has one.
-        const serialized = lastSerializedRef.current;
-        if (serialized?.complete) {
-          const result = await saveWikitext.mutateAsync({
-            title,
-            wikitext: serialized.wikitext,
-            summary,
-            minor,
-            basetimestamp: editorHtml?.timestamp ?? undefined,
-          });
-          if ((result as { editConflict?: boolean }).editConflict) {
-            setEditConflict(true);
-            throw new Error("Edit conflict detected: this page was modified by another user.");
-          }
-          clearDraft(title);
-          if (keepEditing) {
-            const res = await refetchEditorHtml();
-            if (res.data) setActiveHtml(res.data.html);
-          } else {
-            onSaveSuccess?.();
-            onClose();
-          }
-          return;
-        }
-        console.warn(
-          "[WikiOS] Visual save falling back to HTML conversion: document contains atomic blocks without canonical wikitext."
-        );
-        const result = await saveArticle.mutateAsync({
+        const wikitextToSave = lastSerializedRef.current?.wikitext || content;
+        const result = await saveWikitext.mutateAsync({
           title,
-          html,
+          wikitext: wikitextToSave,
           summary,
           minor,
-          basetimestamp: editorHtml?.timestamp ?? undefined,
+          basetimestamp: wikitextData?.timestamp ?? undefined,
         });
 
         if ((result as { editConflict?: boolean }).editConflict) {
@@ -207,9 +116,9 @@ export function WikiEditBridge({
         clearDraft(title);
 
         if (keepEditing) {
-          const res = await refetchEditorHtml();
+          const res = await refetchWikitext();
           if (res.data) {
-            setActiveHtml(res.data.html);
+            setActiveWikitext(res.data.wikitext);
           }
         } else {
           onSaveSuccess?.();
@@ -222,7 +131,7 @@ export function WikiEditBridge({
         setSaving(false);
       }
     },
-    [title, editorHtml, saveWikitext, saveArticle, refetchEditorHtml, onSaveSuccess, onClose]
+    [title, wikitextData, saveWikitext, refetchWikitext, onSaveSuccess, onClose]
   );
 
   const handleSourceSave = useCallback(
@@ -264,11 +173,11 @@ export function WikiEditBridge({
     [title, wikitextData, saveWikitext, refetchWikitext, onSaveSuccess, onClose]
   );
 
-  const isLoading = (mode === "visual" ? editorLoading : wtLoading) || converting;
-
-  if (isLoading) {
-    return <EditorLoading text={converting ? "Converting editor mode..." : "Loading article..."} />;
+  if (wtLoading && activeWikitext === null) {
+    return <EditorLoading text="Loading article..." />;
   }
+
+  const initialWikitextValue = activeWikitext ?? wikitextData?.wikitext ?? "";
 
   return (
     <div className="wikios-edit-bridge relative min-h-[600px] w-full">
@@ -282,16 +191,16 @@ export function WikiEditBridge({
       {mode === "visual" ? (
         <WikiVisualEditor
           title={title}
-          initialHtml={activeHtml ?? editorHtml?.html ?? ""}
+          initialWikitext={initialWikitextValue}
           onSave={handleVisualSave}
           onCancel={onClose}
-          onSwitchToSource={(dirty, html) => handleModeSwitch("source", dirty, html)}
+          onSwitchToSource={(dirty, content) => handleModeSwitch("source", dirty, content)}
           onSerializedWikitext={setLastSerialized}
         />
       ) : (
         <WikiSourceEditor
           title={title}
-          initialWikitext={activeWikitext ?? wikitextData?.wikitext ?? ""}
+          initialWikitext={initialWikitextValue}
           onSave={handleSourceSave}
           onCancel={onClose}
           onSwitchToVisual={(dirty, wt) => handleModeSwitch("visual", dirty, wt)}
