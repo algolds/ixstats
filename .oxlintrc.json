@@ -75,6 +75,7 @@
     "import/no-cycle": "off",
     "import/no-unassigned-import": "off"
   },
+  "options": { "maxWarnings": 2100 },
   "settings": {
     "jsx-a11y": { "components": { "Link": "a", "Button": "button" } }
   },
