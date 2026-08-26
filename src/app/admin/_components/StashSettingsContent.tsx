@@ -13,7 +13,6 @@ import { Skeleton } from "~/components/ui/skeleton";
 import {
   Folder as FolderHeart,
   FloppyDisk as Save,
-  Sparks as Sparkles,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";

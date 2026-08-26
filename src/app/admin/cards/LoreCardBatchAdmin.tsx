@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Download, Search, Xmark as X, WarningCircle as AlertCircle, WarningTriangle as AlertTriangle, OpenBook as BookOpen, Globe, SystemRestart as Loader2, CheckCircle as CheckCircle2, XmarkCircle as XCircle, Clock, Upload, UserBadgeCheck as UserCheck, ControlSlider as Sliders, Component as Layers, Page as FileText, Trash as Trash2, Play, Compass, Page as Scroll, Sparks as Sparkles, ClockRotateRight as History, MediaImage as ImageIcon, Eye, Copy, OpenNewWindow as ExternalLink, Undo as RotateCcw, InfoCircle as Info } from "iconoir-react";
+import { Download, Search, Xmark as X, WarningCircle as AlertCircle, WarningTriangle as AlertTriangle, OpenBook as BookOpen, Globe, SystemRestart as Loader2, CheckCircle as CheckCircle2, XmarkCircle as XCircle, Clock, Upload, UserBadgeCheck as UserCheck, ControlSlider as Sliders, Component as Layers, Page as FileText, Trash as Trash2, Play, Page as Scroll, Sparks as Sparkles, MediaImage as ImageIcon, Eye, Copy, OpenNewWindow as ExternalLink, Undo as RotateCcw, InfoCircle as Info } from "iconoir-react";
 import type { CardRarity } from "@prisma/client";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import { IIWikiBadge } from "~/components/cards/display";

@@ -34,7 +34,7 @@ import {
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { NavArrowDown as ChevronDown, Plus, EditPencil as Edit2, ClockRotateRight as History, Sparks as Sparkles, Crown, Database, Trophy as Award, Shield, Flash as Zap, Coins, Palette, Dashboard as Gauge, Compass, SystemRestart as Loader2, SwitchOff as ToggleLeft, SwitchOn as ToggleRight } from "iconoir-react";
+import { NavArrowDown as ChevronDown, Plus, EditPencil as Edit2, ClockRotateRight as History, Sparks as Sparkles, Database, Shield, Coins, Dashboard as Gauge, SystemRestart as Loader2, SwitchOff as ToggleLeft, SwitchOn as ToggleRight } from "iconoir-react";
 import { ICON_MAP } from "~/components/vault/sections/marketplace/VaultStoreTab";
 
 export function VaultStoreControl() {
@@ -42,7 +42,7 @@ export function VaultStoreControl() {
   const utils = api.useUtils();
 
   // Queries
-  const { data: items, isLoading, refetch } = api.vault.adminListStoreItemsAll.useQuery();
+  const { data: items, isLoading, refetch: _refetch } = api.vault.adminListStoreItemsAll.useQuery();
 
   // Dialog States
   const [isOpen, setIsOpen] = useState(false);

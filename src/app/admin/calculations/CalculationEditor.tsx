@@ -6,9 +6,7 @@ import { useState, useEffect } from "react";
 import {
   Calculator,
   FloppyDisk as Save,
-  WarningTriangle as AlertTriangle,
   StatUp as TrendingUp,
-  Group as Users,
   EditPencil as Pencil,
   Search,
 } from "iconoir-react";

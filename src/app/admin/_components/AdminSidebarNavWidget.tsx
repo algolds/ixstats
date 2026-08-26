@@ -26,7 +26,6 @@ import {
   ChatBubble as MessageCircle,
   Package,
   Palette,
-  Refresh as RefreshCw,
   Search,
   Settings,
   Shield,
@@ -34,7 +33,6 @@ import {
   Terminal,
   Translate as Languages,
   Trophy,
-  WarningTriangle as AlertTriangle,
 } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 

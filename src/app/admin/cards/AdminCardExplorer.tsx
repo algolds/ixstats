@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Search, WarningTriangle as AlertTriangle, CheckCircle, Eye, EyeClosed as EyeOff, NavArrowRight as ChevronRight, Component as Layers, ControlSlider as SlidersHorizontal, Xmark as X, ArrowSeparateVertical as ArrowUpDown, EditPencil as Edit2, Check } from "iconoir-react";
+import { Search, WarningTriangle as AlertTriangle, CheckCircle, Eye, EyeClosed as EyeOff, Component as Layers, ControlSlider as SlidersHorizontal, Xmark as X, ArrowSeparateVertical as ArrowUpDown, EditPencil as Edit2, Check } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -226,7 +226,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
     sortBy,
   };
 
-  const { data, isLoading, isFetching, refetch } = api.cards.getNSCards.useQuery(queryInput);
+  const { data, isLoading, isFetching: _isFetching, refetch } = api.cards.getNSCards.useQuery(queryInput);
 
   const updateDetailsMutation = api.cards.updateCardDetails.useMutation({
     onSuccess: () => {
@@ -242,7 +242,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
 
   const total = data?.total ?? 0;
   const cards = data?.cards ?? [];
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const _totalPages = Math.ceil(total / PAGE_SIZE);
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
 
   const isFiltered =

@@ -116,7 +116,7 @@ export function UsersPanel() {
     onError: (err) => notify.error("Error", err.message || "Failed to link Discord account"),
   });
 
-  const unlinkDiscordMutation = api.admin.unlinkUserDiscord.useMutation({
+  const _unlinkDiscordMutation = api.admin.unlinkUserDiscord.useMutation({
     onSuccess: () => {
       notify.success("Success", "Discord account unlinked");
       void refetchIdentities();
@@ -153,7 +153,7 @@ export function UsersPanel() {
     onError: (err) => notify.error("Error", err.message || "Failed to unlink country"),
   });
 
-  const updateMembershipTier = api.users.updateMembershipTier.useMutation({
+  const _updateMembershipTier = api.users.updateMembershipTier.useMutation({
     onSuccess: () => {
       notify.success("Success", "Updated membership tier");
       void refetchIdentities();

@@ -13,13 +13,11 @@ import {
   PieChart,
   Pie,
   Cell,
-  Line,
 } from "recharts";
 import { api } from "~/trpc/react";
 import {
   StatsReport as BarChart3,
   Reports as PieChartIcon,
-  Activity,
 } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -60,7 +58,7 @@ export function DiplomaticOptionsAnalyticsTab() {
     usage: stat.totalUsage,
   }));
 
-  const typeChartData = Object.entries(usageStats.typeStats).map(([type, stat]) => ({
+  const _typeChartData = Object.entries(usageStats.typeStats).map(([type, stat]) => ({
     name: type
       .replace(/_/g, " ")
       .split(" ")

@@ -33,7 +33,7 @@ function getBgClasses(style: BgStyleType, theme: "light" | "dark") {
 }
 
 function renderBackdrop(style: BgStyleType, theme: "light" | "dark", customColor: string) {
-  const gridColor = theme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
+  const _gridColor = theme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
   const textColor = theme === "dark" ? "opacity-25" : "opacity-20";
 
   switch (style) {

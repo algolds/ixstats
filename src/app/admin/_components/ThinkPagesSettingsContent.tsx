@@ -14,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   Globe,
   FloppyDisk as Save,
-  FireFlame as Flame,
   RssFeed as Rss,
   Send,
 } from "iconoir-react";

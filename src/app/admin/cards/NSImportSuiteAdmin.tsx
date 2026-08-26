@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Refresh as RefreshCw, Database, Globe, MapPin, Search, Group as Users, Play, Pause, Square, WarningTriangle as AlertTriangle, Filter, Xmark as X, Component as Layers, Clock, ArrowRight, Eye, Sparks as Sparkles, MediaImage as ImageIcon, Page as FileText } from "iconoir-react";
+import { Refresh as RefreshCw, Database, Globe, MapPin, Search, Group as Users, Play, Pause, Square, WarningTriangle as AlertTriangle, Filter, Xmark as X, Component as Layers, Clock, ArrowRight, Sparks as Sparkles, Page as FileText } from "iconoir-react";
 
 import { api } from "~/trpc/react";
 import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
@@ -30,7 +30,7 @@ import {
 
 export function NSImportSuiteAdmin() {
   const notify = useNotify();
-  const [refreshInterval, setRefreshInterval] = useState<number | null>(10000);
+  const [refreshInterval, _setRefreshInterval] = useState<number | null>(10000);
   const [regionNames, setRegionNames] = useState("greater_ixnay");
   const [syncTypeFilter, setSyncTypeFilter] = useState<"all" | "region">("all");
   const [discoveredRegions, setDiscoveredRegions] = useState<
@@ -50,8 +50,8 @@ export function NSImportSuiteAdmin() {
   const [confirmStopJobId, setConfirmStopJobId] = useState<string | null>(null);
 
   const {
-    data: healthStats,
-    isLoading: loadingHealth,
+    data: _healthStats,
+    isLoading: _loadingHealth,
     refetch: refetchHealth,
   } = api.nsImport.getSyncHealth.useQuery(undefined, {
     refetchInterval: refreshInterval ?? false,

@@ -17,7 +17,6 @@ import {
 } from "~/components/ui/select";
 import {
   Terminal,
-  User,
   Refresh as RefreshCw,
   Trash as Trash2,
   Search,

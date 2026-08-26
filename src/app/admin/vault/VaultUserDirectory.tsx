@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Search, NavArrowRight as ChevronRight, SystemRestart as Loader2, Gift, ArrowSeparateVertical as ArrowUpDown, MoreHoriz as MoreHorizontal, FireFlame as Flame, ClockRotateRight as History, Crown as Gem } from "iconoir-react";
+import { NavArrowRight as ChevronRight, SystemRestart as Loader2, Gift, ArrowSeparateVertical as ArrowUpDown, MoreHoriz as MoreHorizontal, FireFlame as Flame, ClockRotateRight as History, Crown as Gem } from "iconoir-react";
 
 import { FacetDataTable, type FacetColumn } from "~/components/ui/data-table";
 

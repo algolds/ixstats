@@ -9,7 +9,6 @@ import { Skeleton } from "~/components/ui/skeleton";
 import {
   Database,
   Trash as Trash2,
-  Page as ScrollText,
   WarningTriangle as AlertTriangle,
   SystemRestart as Loader2,
 } from "iconoir-react";

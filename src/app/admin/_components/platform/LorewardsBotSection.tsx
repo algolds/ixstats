@@ -8,7 +8,7 @@ import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
-import { Refresh as RefreshCw, SystemRestart as Loader2, Play, Square, Terminal, ControlSlider as Sliders, Database, Trash as Trash2, Trophy as Award, InfoCircle as Info, Flash as Zap, Shield, ArrowSeparateVertical as ChevronsUpDown, Prohibition as Ban, FloppyDisk as Save, CheckCircle } from "iconoir-react";
+import { Refresh as RefreshCw, SystemRestart as Loader2, Play, Square, Terminal, ControlSlider as Sliders, Database, Trash as Trash2, Trophy as Award, InfoCircle as Info, Flash as Zap, ArrowSeparateVertical as ChevronsUpDown, Prohibition as Ban, FloppyDisk as Save, CheckCircle } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import {

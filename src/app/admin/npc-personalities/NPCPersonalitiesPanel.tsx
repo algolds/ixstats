@@ -24,7 +24,6 @@ import {
   Trash as Trash2,
   Copy,
   User,
-  StatsReport as BarChart3,
   Globe,
 } from "iconoir-react";
 import { AdminHeader } from "../_components/AdminHeader";
