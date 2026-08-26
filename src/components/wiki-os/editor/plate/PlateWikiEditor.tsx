@@ -62,7 +62,11 @@ function ElementRenderer(props: any) {
     case "li":
       return <li {...attributes}>{children}</li>;
     case "table":
-      return <table {...attributes} className="my-2 w-full border-collapse text-xs [&_td]:border [&_td]:border-border/40 [&_td]:px-2 [&_th]:border [&_th]:border-border/40 [&_th]:bg-secondary/50 [&_th]:px-2">{children}</table>;
+      return (
+        <table {...attributes} className="my-2 w-full border-collapse text-xs [&_td]:border [&_td]:border-border/40 [&_td]:px-2 [&_th]:border [&_th]:border-border/40 [&_th]:bg-secondary/50 [&_th]:px-2">
+          <tbody>{children}</tbody>
+        </table>
+      );
     case "tr":
       return <tr {...attributes}>{children}</tr>;
     case "td": case "th":
