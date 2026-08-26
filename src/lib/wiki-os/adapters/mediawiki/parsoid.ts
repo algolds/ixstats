@@ -151,5 +151,7 @@ export async function htmlToWikitext(html: string, _title: string): Promise<Pars
  * Convert wikitext to HTML in-process using native TypeScript compiler (<2ms).
  */
 export async function wikitextToHtml(wikitext: string, _title: string): Promise<string> {
-  return parseWikitextToHtml(wikitext, "ixwiki");
+  // Editor path: preserve unknown templates as placeholders so mode switching
+  // never silently deletes them (display callers keep the stripping default).
+  return parseWikitextToHtml(wikitext, "ixwiki", { preserveUnknownTemplates: true });
 }
