@@ -1,15 +1,11 @@
-import { renderTemplateCached, cacheKey, isKnownInfoboxFamily } from "./preview-service";
+import {
+  renderTemplateCached,
+  previewCacheKey,
+  isKnownInfoboxFamily,
+} from "./preview-service";
 
 jest.mock("./template-registry", () => ({
   getTemplatePreview: jest.fn(),
-}));
-
-jest.mock("ioredis", () => ({
-  Redis: jest.fn().mockImplementation(() => ({
-    get: jest.fn(),
-    set: jest.fn(),
-    on: jest.fn(),
-  })),
 }));
 
 import { getTemplatePreview } from "./template-registry";
@@ -42,8 +38,8 @@ describe("preview-service", () => {
   });
 
   it("param order does not change the cache key", () => {
-    expect(cacheKey("T", { a: "1", b: "2" })).toBe(cacheKey("T", { b: "2", a: "1" }));
-    expect(cacheKey("T", { a: "1" })).not.toBe(cacheKey("T", { a: "2" }));
+    expect(previewCacheKey("T", { a: "1", b: "2" })).toBe(previewCacheKey("T", { b: "2", a: "1" }));
+    expect(previewCacheKey("T", { a: "1" })).not.toBe(previewCacheKey("T", { a: "2" }));
   });
 
   it("network failure degrades to empty html without throwing", async () => {

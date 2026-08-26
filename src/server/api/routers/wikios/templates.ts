@@ -10,10 +10,10 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { searchTemplates as searchTemplatesDB } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import {
   fetchTemplateData,
-  getTemplatePreview as renderTemplatePreview,
   categorizeTemplate,
   isNoiseTemplate,
 } from "~/lib/wiki-os/templates/template-registry";
+import { renderTemplateWithRedisCache } from "~/lib/wiki-os/templates/preview-service.server";
 import { db } from "~/server/db";
 import type { Prisma } from "@prisma/client";
 
@@ -786,7 +786,8 @@ export const wikiosTemplatesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      return renderTemplatePreview(input.template, input.params);
+      const preview = await renderTemplateWithRedisCache(input.template, input.params);
+      return preview.html;
     }),
 
   /**
