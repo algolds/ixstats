@@ -65,7 +65,7 @@
     "eslint/no-console": "off",
     "eslint/prefer-const": "warn",
     "eslint/no-var": "error",
-    "eslint/eqeqeq": ["warn", "always"],
+    "eslint/eqeqeq": ["warn", "always", { "null": "ignore" }],
     "eslint/no-useless-escape": "off",
     "eslint/no-control-regex": "off",
     "eslint/no-misleading-character-class": "off",
