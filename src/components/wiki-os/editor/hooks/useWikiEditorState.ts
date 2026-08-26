@@ -41,7 +41,6 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
 
   // Modals and popovers
   const [showImageSearch, setShowImageSearch] = useState(false);
-  const [showTemplateInserter, setShowTemplateInserter] = useState(false);
   const [showInfoboxModal, setShowInfoboxModal] = useState(false);
   const [showCountryStatsModal, setShowCountryStatsModal] = useState(false);
   const [showBusinessStatsModal, setShowBusinessStatsModal] = useState(false);
@@ -211,8 +210,6 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
     executeSaveDraft,
     showImageSearch,
     setShowImageSearch,
-    showTemplateInserter,
-    setShowTemplateInserter,
     showInfoboxModal,
     setShowInfoboxModal,
     showCountryStatsModal,

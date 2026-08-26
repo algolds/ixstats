@@ -82,7 +82,6 @@ export interface WikiVisualToolbarProps {
   setShowCountryStatsModal: (open: boolean) => void;
   setShowBusinessStatsModal: (open: boolean) => void;
   setShowMapCoordsModal: (open: boolean) => void;
-  setShowTemplateInserter: (open: boolean) => void;
   stashesOpen: boolean;
   setStashesOpen: (open: boolean) => void;
   templatesOpen: boolean;
@@ -132,7 +131,6 @@ export function WikiVisualToolbar({
   setShowCountryStatsModal,
   setShowBusinessStatsModal,
   setShowMapCoordsModal,
-  setShowTemplateInserter,
   stashesOpen,
   setStashesOpen,
   templatesOpen,
@@ -441,18 +439,6 @@ export function WikiVisualToolbar({
                   <span>Map Coords &amp; Embeds</span>
                 </button>
                 <div className="my-0.5 border-t border-[var(--wikios-border)]" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTemplatesOpen(false);
-                    restoreSelection();
-                    setShowTemplateInserter(true);
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[var(--wikios-text-muted)] transition-colors hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)]"
-                >
-                  <Puzzle className="h-3.5 w-3.5" />
-                  <span>Generic Template...</span>
-                </button>
               </div>
             </PopoverContent>
           </Popover>

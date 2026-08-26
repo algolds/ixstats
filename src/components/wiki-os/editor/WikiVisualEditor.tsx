@@ -238,7 +238,6 @@ export function WikiVisualEditor({
         setShowCountryStatsModal={state.setShowCountryStatsModal}
         setShowBusinessStatsModal={state.setShowBusinessStatsModal}
         setShowMapCoordsModal={state.setShowMapCoordsModal}
-        setShowTemplateInserter={state.setShowTemplateInserter}
         stashesOpen={state.stashesOpen}
         setStashesOpen={state.setStashesOpen}
         templatesOpen={state.templatesOpen}
@@ -291,9 +290,6 @@ export function WikiVisualEditor({
         showImageSearch={state.showImageSearch}
         setShowImageSearch={state.setShowImageSearch}
         onInsertImage={fmt.handleInsertImage}
-        showTemplateInserter={state.showTemplateInserter}
-        setShowTemplateInserter={state.setShowTemplateInserter}
-        onInsertTemplate={fmt.handleInsertTemplate}
         showInfoboxModal={state.showInfoboxModal}
         setShowInfoboxModal={state.setShowInfoboxModal}
         onInsertInfobox={handleInsertInfobox}

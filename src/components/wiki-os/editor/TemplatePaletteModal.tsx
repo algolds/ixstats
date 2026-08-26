@@ -8,7 +8,6 @@ import { api } from "~/trpc/react";
 import { VisualInfoboxPreviewCard } from "~/components/wiki-os/templates/VisualInfoboxPreviewCard";
 import {
   MASTER_TEMPLATE_PRESETS,
-  type MasterTemplatePreset,
   type PaletteTemplateParam,
 } from "~/lib/wiki-os/templates/master-presets";
 

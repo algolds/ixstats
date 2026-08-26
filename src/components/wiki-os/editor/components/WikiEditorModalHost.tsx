@@ -7,7 +7,6 @@ import React, { useState } from "react";
 import { Puzzle, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { ImageSearchModal } from "~/components/wiki-os/editor/ImageSearchModal";
-import { TemplateInserter } from "~/components/wiki-os/editor/TemplateInserter";
 import {
   InfoboxCountryModal,
   CountryStatsModal,
@@ -19,10 +18,6 @@ export interface WikiEditorModalHostProps {
   showImageSearch: boolean;
   setShowImageSearch: (open: boolean) => void;
   onInsertImage: (wikitext: string) => void;
-
-  showTemplateInserter?: boolean;
-  setShowTemplateInserter?: (open: boolean) => void;
-  onInsertTemplate?: (name: string, params: Record<string, string>) => void;
 
   showInfoboxModal: boolean;
   setShowInfoboxModal: (open: boolean) => void;
@@ -54,9 +49,6 @@ export function WikiEditorModalHost({
   showImageSearch,
   setShowImageSearch,
   onInsertImage,
-  showTemplateInserter,
-  setShowTemplateInserter,
-  onInsertTemplate,
   showInfoboxModal,
   setShowInfoboxModal,
   onInsertInfobox,
@@ -81,13 +73,6 @@ export function WikiEditorModalHost({
         onClose={() => setShowImageSearch(false)}
         onInsert={onInsertImage}
       />
-
-      {showTemplateInserter && onInsertTemplate && setShowTemplateInserter && (
-        <TemplateInserter
-          onInsert={onInsertTemplate}
-          onClose={() => setShowTemplateInserter(false)}
-        />
-      )}
 
       <InfoboxCountryModal
         isOpen={showInfoboxModal}
