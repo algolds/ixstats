@@ -6,7 +6,7 @@
 import React, { memo } from "react";
 import {
   Puzzle,
-  Sparkles,
+  Sparks as Sparkles,
   Map as MapIcon,
 } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";

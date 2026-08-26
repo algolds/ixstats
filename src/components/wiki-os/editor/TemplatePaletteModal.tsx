@@ -14,6 +14,12 @@ import {
 // Re-exported for existing consumers (e.g. /util/templates page).
 export { MASTER_TEMPLATE_PRESETS } from "~/lib/wiki-os/templates/master-presets";
 
+interface TemplatePaletteModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onInsert?: (wikitext: string, data: Record<string, string>) => void;
+}
+
 export function TemplatePaletteModal({
   isOpen,
   onClose,

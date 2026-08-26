@@ -10,3 +10,5 @@ export * from "./parser-functions";
 export * from "./category-service";
 export * from "./media-asset-service";
 export * from "./blurhash-service";
+export * from "./wiki-ast";
+export * from "./wiki-ast-guards";
