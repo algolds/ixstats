@@ -15,9 +15,7 @@ import { WebPhotosTab } from "./WebPhotosTab";
 import { WikiRepositoryTab } from "./WikiRepositoryTab";
 import { UploadTab } from "./UploadTab";
 
-// Import WikiOS styles for component support
-import "~/styles/wiki-os/variables.css";
-import "~/styles/wiki-os/components.css";
+
 
 interface MediaSearchModalProps {
   isOpen: boolean;
