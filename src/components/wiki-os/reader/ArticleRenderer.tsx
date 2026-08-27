@@ -37,6 +37,7 @@ import { ArticleFooter } from "./ArticleFooter";
 import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
+import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { extractLeadImageFromHtml } from "~/lib/wiki-os/transformers/image-url";
 import {
@@ -148,6 +149,24 @@ export function ArticleRenderer({
   const [tocOpen, setTocOpen] = useState(false);
   // oxlint-disable-next-line eslint/no-unused-vars
   const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
+  const [companionCollapsed, setCompanionCollapsed] = useState(false);
+
+  // Persist companion collapsed preference (xl only)
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("wikios:companionCollapsed");
+      if (v === "true") setCompanionCollapsed(true);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem("wikios:companionCollapsed", String(companionCollapsed));
+    } catch {
+      /* ignore */
+    }
+  }, [companionCollapsed]);
 
   // --- WikiOS Margin Suite State ---
   const [marginExpanded, setMarginExpanded] = useState(false);
@@ -463,10 +482,9 @@ export function ArticleRenderer({
     return () => setWikiPage(null, [], null);
   }, [title, toc, themeColors, setWikiPage]);
 
-  // Scroll spy
+  // Scroll spy — single owner now in WikiArticleRightRail; this keeps WikiContext activeSectionId in sync
   useEffect(() => {
     if (toc.length === 0) return;
-
     function tick() {
       const ids = toc.map((e) => e.id);
       let current: string | null = null;
@@ -474,17 +492,13 @@ export function ArticleRenderer({
         const el = document.getElementById(id);
         if (el) {
           const rect = el.getBoundingClientRect();
-          if (rect.top <= 120) {
-            current = id;
-          }
+          if (rect.top <= 120) current = id;
         }
       }
       setActiveSectionId(current);
     }
-
     window.addEventListener("scroll", tick, { passive: true });
     tick();
-
     return () => {
       window.removeEventListener("scroll", tick);
       setActiveSectionId(null);
@@ -568,8 +582,13 @@ export function ArticleRenderer({
     >
       <div ref={titleRef} className="wikios-title-sentinel" />
 
-      {/* Main Reading Vessel (Hero + Article Body + Infobox) */}
-      <div className="wikios-reading-vessel w-full max-w-[1024px] min-w-0 flex-1">
+      {/* Main Reading Vessel — expands when companion is collapsed */}
+      <div
+        className={cn(
+          "wikios-reading-vessel w-full min-w-0 flex-1 transition-[max-width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          companionCollapsed ? "max-w-[1160px]" : "max-w-[1024px]"
+        )}
+      >
         {/* Redesigned Custom WikiOSHeader */}
         <WikiOSHeader
           title={title}
@@ -693,9 +712,32 @@ export function ArticleRenderer({
         </div>
       </div>
 
-      {/* Outset Gutter Rail: Companion Intel HUD on top + Sticky TOC underneath (Auto-hidden when Margin Drawer is open) */}
-      {!marginOpen && (
-        <aside className="wikios-outset-toc hidden xl:flex flex-col gap-3 shrink-0 w-[220px] 2xl:w-[240px] animate-in fade-in duration-200">
+      {/* Right static panel — Vector 2022 / Notion pattern: companion pinned, only TOC scrolls */}
+      {!marginOpen && !companionCollapsed && (
+        <aside className="hidden xl:flex shrink-0 sticky top-20 self-start flex-col gap-3 w-[240px] 2xl:w-[280px] max-h-[calc(100vh-6rem)] border-l border-white/5 pl-3 pr-1 animate-in fade-in duration-200" aria-label="Article companion and table of contents">
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              // §1 Response — kill latency: active feedback on pointer-down, not click
+              (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.96)";
+            }}
+            onPointerUp={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.transform = "";
+            }}
+            onPointerLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.transform = "";
+            }}
+            onClick={() => {
+              soundEffects.press();
+              setCompanionCollapsed(true);
+            }}
+            className="hidden xl:flex items-center justify-center gap-1 self-end -mb-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/10 hover:border-white/15 transition-all duration-150 active:scale-[0.96] cursor-pointer select-none"
+            title="Hide companion"
+            aria-label="Hide companion"
+          >
+            <span>Hide</span>
+            <ChevronRight className="h-3 w-3" />
+          </button>
           <ArticleCompanionHUD
             title={title}
             slug={slug}
@@ -714,16 +756,29 @@ export function ArticleRenderer({
             onOpenBacklinks={() => setActiveModal("backlinks")}
             narrator={narrator}
             isAuthenticated={isAuthenticated}
-            isCollapsed={marginOpen}
+            isCollapsed={false}
           />
           {toc.length > 0 && (
-            <StickyToc
-              entries={toc}
-              contentRef={contentRef}
-              isCollapsed={marginOpen}
-            />
+            <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin pr-1 -mr-1 [mask-image:linear-gradient(to_bottom,transparent,black_8px,black_calc(100%-8px),transparent)]">
+              <StickyToc entries={toc} contentRef={contentRef} isCollapsed={false} />
+            </div>
           )}
         </aside>
+      )}
+      {/* Companion collapsed — edge handle on the same border-l line (spatial consistency §7, hint §8) */}
+      {!marginOpen && companionCollapsed && (
+        <button
+          type="button"
+          onClick={() => {
+            soundEffects.press();
+            setCompanionCollapsed(false);
+          }}
+          className="hidden xl:flex w-8 shrink-0 sticky top-20 self-start h-[calc(100vh-6rem)] items-start justify-center border-l border-white/5 pt-8 text-muted-foreground/40 hover:text-foreground hover:bg-white/[0.04] hover:border-white/10 transition-colors duration-150 cursor-pointer select-none"
+          title="Show companion"
+          aria-label="Show companion"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
       )}
 
       {/* Apple Books Style TOC Drawer (Modal Sheet) */}

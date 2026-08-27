@@ -459,17 +459,37 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 {card.title}
               </motion.h3>
 
-              {/* Subtitle line */}
-              <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/80 uppercase">
-                <span>
-                  {card.subcategory ||
-                    (effectiveCategory ? getCategoryLabel(effectiveCategory) : "Chronicles")}
-                </span>
-                <span className="text-white/40">•</span>
-                <span className="font-semibold tracking-wide text-amber-400">
-                  {designMeta.customSubtitle || card.rarity}
-                </span>
-              </p>
+              {/* Subtitle line — NS cards use NationStates badge, so suppress "NS Import" text label */}
+              {(() => {
+                const isNsImportLabel = cardTypeStr === "NS_IMPORT" || Boolean(card.nsCardId);
+                const categoryLabel =
+                  card.subcategory ||
+                  (effectiveCategory ? getCategoryLabel(effectiveCategory) : null) ||
+                  (isLoreCard && card.cardType !== "NS_IMPORT" ? getCardTypeLabel(card.cardType) : null);
+                // For NS imports with badge, never show "NS Import" text — badge already signals it
+                const showLabel = categoryLabel && !(isNsImportLabel && categoryLabel === "NS Import");
+                const hideLabel = isNsImportLabel && !categoryLabel;
+                if (hideLabel) {
+                  return (
+                    <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-amber-400 uppercase">
+                      <span>{designMeta.customSubtitle || card.rarity}</span>
+                    </p>
+                  );
+                }
+                return (
+                  <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/80 uppercase">
+                    {showLabel ? (
+                      <>
+                        <span>{categoryLabel}</span>
+                        <span className="text-white/40">•</span>
+                      </>
+                    ) : null}
+                    <span className="font-semibold tracking-wide text-amber-400">
+                      {designMeta.customSubtitle || card.rarity}
+                    </span>
+                  </p>
+                );
+              })()}
 
               {/* Country name (if available) */}
               {card.country && (

@@ -189,13 +189,13 @@ export function WikiOSLayout({
         expandedWidthStyle="12rem"
         disableGlobalHover={true}
       >
-        <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>
-          {(showUtilitiesRibbon ?? isSpecialPage) && (
-            <WikiUtilitiesRibbon
-              onSearchClick={() => setSearchOpen(true)}
-              onCreatePageClick={() => setCreatePageOpen(true)}
-            />
-          )}
+          <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>
+          {/*{(showUtilitiesRibbon ?? isSpecialPage) && (
+          //  <WikiUtilitiesRibbon
+          //    onSearchClick={() => setSearchOpen(true)}
+          //    onCreatePageClick={() => setCreatePageOpen(true)}
+          //  />
+          )}*/}
           {children}
         </WikiOSContentWrapper>
       </DashboardSidebarLayout>

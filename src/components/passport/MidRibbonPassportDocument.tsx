@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import {
   Check,
@@ -12,12 +13,12 @@ import {
   Trophy,
   Clock,
   Crown,
-  FireFlame as Flame,
   ChatBubble as MessageSquare,
   Spark as Sparkles,
   RotateCameraLeft as RotateCcw,
   EditPencil as Edit3,
 } from "iconoir-react";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { cn } from "~/lib/utils";
 import { Switch } from "~/components/ui/switch";
 import { GuillochePattern } from "./cards/GuillochePattern";
@@ -25,6 +26,7 @@ import { IxnayPassportSeal } from "./cards/IxnayPassportSeal";
 import { PassportRealmsTab } from "./tabs/PassportRealmsTab";
 import { PassportLoreTab } from "./tabs/PassportLoreTab";
 import { PassportHistoryTab } from "./tabs/PassportHistoryTab";
+import { PassportVaultTab } from "./tabs/PassportVaultTab";
 import { PassportLorewardsModal } from "./modals/PassportLorewardsModal";
 import type { PassportTabType, UnifiedProfilePayload, RealmItem } from "./types";
 
@@ -79,6 +81,7 @@ export function MidRibbonPassportDocument({
   const [copiedLink, setCopiedLink] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isLorewardsModalOpen, setIsLorewardsModalOpen] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   const featuredRealm = realms.find((r) => r.isFeatured) || realms[0] || null;
   
@@ -93,10 +96,11 @@ export function MidRibbonPassportDocument({
 
   // Passport presentation & privacy preferences
   const [showAccolades, setShowAccolades] = useState(true);
-  const [showStreak, setShowStreak] = useState(true);
+  const [showImpact, setShowImpact] = useState(true);
   const [showForumStats, setShowForumStats] = useState(true);
   const [showVaultCards, setShowVaultCards] = useState(true);
   const [showHistoryStream, setShowHistoryStream] = useState(true);
+
 
   const handleCopyHandle = useCallback(async () => {
     try {
@@ -124,12 +128,22 @@ export function MidRibbonPassportDocument({
   const lorewards = data?.wiki?.lorewards;
   const work = data?.work;
   const history = data?.history;
-  // oxlint-disable-next-line eslint/no-unused-vars
   const forum = data?.forum;
-  // oxlint-disable-next-line eslint/no-unused-vars
   const vault = data?.vault;
 
   const loreCount = (work?.authoredArticles?.length ?? 0) + (work?.conlangs?.length ?? 0) + (work?.directives?.length ?? 0) + (work?.sportTeams?.length ?? 0) + (work?.wikiActivityFeed?.length ?? 0) || (work?.totalCreations ?? 0);
+
+  // Replacement for Realms — not redundant with PRIMARY REALM grammar: show category diversity from vault
+  const categorySummary = (() => {
+    const top = (vault as any)?.topCards as Array<any> | undefined;
+    if (!top || top.length === 0) return { label: "—", sub: "No categories yet" };
+    const cats = top.map((c: any) => (c.card?.category ?? c.category) as string | null).filter((x): x is string => !!x && x !== "NS_IMPORT");
+    const distinct = new Set(cats).size;
+    const topCat = cats[0] ?? null;
+    const label = distinct ? `${distinct}/12` : "—";
+    const sub = topCat ? `${topCat.charAt(0) + topCat.slice(1).toLowerCase()} focus` : "Collecting";
+    return { label, sub };
+  })();
 
   const ribbonTabs: Array<{
     id: PassportTabType;
@@ -140,25 +154,36 @@ export function MidRibbonPassportDocument({
   }> = [
     { id: "realms", index: "01", label: "Realms", icon: Globe, count: realms.length },
     { id: "lore", index: "02", label: "Lore", icon: Trophy, count: loreCount },
-    { id: "history", index: "03", label: "History", icon: Clock, count: showHistoryStream ? (history?.length ?? 0) : 0 },
+    { id: "vault", index: "03", label: "Vault", icon: Crown, count: data?.vault?.totalCards ?? 0 },
+    { id: "history", index: "04", label: "History", icon: Clock, count: showHistoryStream ? (history?.length ?? 0) : 0 },
   ];
 
+  // Apple §4 springs: flip is interruptible, from presentation value
+  const flipTransition = shouldReduceMotion
+    ? { duration: 0.2, ease: "easeOut" as const }
+    : { type: "spring" as const, bounce: 0, duration: 0.4 };
+
   return (
-    <div className="relative w-full [perspective:1800px]">
-      <div
-        className={cn(
-          "relative w-full transition-transform duration-700 ease-out [transform-style:preserve-3d]",
-          isFlipped && "[transform:rotateY(180deg)]"
-        )}
+    <div className="relative w-full" style={{ perspective: 1800 }}>
+      <motion.div
+        className="relative w-full"
+        style={{ transformStyle: "preserve-3d", willChange: "transform" } as React.CSSProperties}
+        animate={{ rotateY: shouldReduceMotion ? 0 : isFlipped ? 180 : 0 }}
+        transition={flipTransition}
       >
         {/* ========================================================================= */}
         {/* FRONT FACE OF THE PASSPORT                                               */}
         {/* ========================================================================= */}
-        <div
+        <motion.div
           className={cn(
-            "relative w-full rounded-3xl border border-black/10 dark:border-white/15 bg-gradient-to-br from-stone-50 via-card to-stone-100 dark:from-stone-900/95 dark:via-card/95 dark:to-stone-950/90 shadow-2xl backdrop-blur-2xl transition-opacity duration-300 [backface-visibility:hidden]",
+            // Apple §12 Materials: translucent layer, not opaque bar — content scrolls under, weight encodes hierarchy
+            "relative w-full rounded-3xl border border-black/10 dark:border-white/15 bg-card/70 dark:bg-card/60 backdrop-blur-[20px] saturate-[180%] shadow-2xl [backface-visibility:hidden]",
+            "supports-[backdrop-filter:blur(0)]:bg-card/85",
             isFlipped ? "pointer-events-none opacity-0" : "opacity-100"
           )}
+          style={{ willChange: shouldReduceMotion ? undefined : "opacity" }}
+          animate={{ opacity: isFlipped ? 0 : 1 }}
+          transition={shouldReduceMotion ? { duration: 0.2 } : { duration: 0.15 }}
         >
           <GuillochePattern opacity={0.06} />
 
@@ -171,7 +196,10 @@ export function MidRibbonPassportDocument({
                   <IxnayPassportSeal />
                   <div>
                     <div className="flex items-center gap-2">
-                      <h1 className="font-mono text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-foreground">
+                      <h1
+                        className="font-mono text-xs sm:text-sm font-bold uppercase tracking-[0.14em] text-foreground"
+                        style={{ fontOpticalSizing: "auto" } as React.CSSProperties}
+                      >
                         IXSTATES PASSPORT
                       </h1>
                     </div>
@@ -317,19 +345,20 @@ export function MidRibbonPassportDocument({
                       </button>
                     )}
 
-                    {showStreak && (
-                      <div className="rounded-xl border border-black/6 dark:border-white/8 bg-black/[0.02] dark:bg-white/[0.02] p-2.5 space-y-0.5">
+                    {showImpact && (
+                      <button
+                        type="button"
+                        onClick={() => onSelectTab("vault")}
+                        data-cuelume-press="soft"
+                        className="rounded-xl border border-black/6 dark:border-white/8 bg-black/[0.02] dark:bg-white/[0.02] p-2.5 space-y-0.5 text-left hover:bg-black/[0.04] dark:hover:bg-white/[0.04] active:scale-[0.97] transition-all cursor-pointer w-full"
+                      >
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-[9px] uppercase text-stone-400">Streak</span>
-                          <Flame className="h-3 w-3 text-rose-500" />
+                          <span className="font-mono text-[9px] uppercase text-stone-400">Focus</span>
+                          <Sparkles className="h-3 w-3 text-amber-500" />
                         </div>
-                        <p className="text-sm font-bold text-rose-500">
-                          {lorewards?.currentStreak ?? 0} Days
-                        </p>
-                        <p className="font-mono text-[10px] text-muted-foreground">
-                          Best: {lorewards?.longestStreak ?? 0}d
-                        </p>
-                      </div>
+                        <p className="text-sm font-bold text-foreground">{categorySummary.label}</p>
+                        <p className="font-mono text-[10px] text-muted-foreground truncate">{categorySummary.sub}</p>
+                      </button>
                     )}
 
                     {showForumStats && (
@@ -348,18 +377,23 @@ export function MidRibbonPassportDocument({
                     )}
 
                     {showVaultCards && (
-                      <div className="rounded-xl border border-black/6 dark:border-white/8 bg-black/[0.02] dark:bg-white/[0.02] p-2.5 space-y-0.5">
+                      <Link
+                        href="/vault"
+                        data-cuelume-press="soft"
+                        className="rounded-xl border border-black/6 dark:border-white/8 bg-black/[0.02] dark:bg-white/[0.02] p-2.5 space-y-0.5 hover:bg-black/[0.04] dark:hover:bg-white/[0.04] active:scale-[0.97] transition-all cursor-pointer block"
+                      >
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-[9px] uppercase text-stone-400">Vault</span>
-                          <Crown className="h-3 w-3 text-purple-500" />
+                          <span className="font-mono text-[9px] uppercase text-stone-400">IxCredits</span>
+                          <IxCreditsSymbol className="h-3 w-3 text-amber-500" />
                         </div>
-                        <p className="text-sm font-bold text-purple-400">
-                          Level {data?.vault?.collectorLevel ?? 1}
+                        <p className="text-sm font-bold text-foreground flex items-center gap-1">
+                          <IxCreditsSymbol className="h-3 w-3 shrink-0 text-amber-500" />
+                          {(vault as any)?.credits?.toLocaleString?.() ?? "0"}
                         </p>
                         <p className="font-mono text-[10px] text-muted-foreground">
-                          {data?.vault?.totalCards ?? 0} Cards
+                          {(vault?.totalCards ?? 0).toLocaleString()} cards · Lv {vault?.collectorLevel ?? 1}
                         </p>
-                      </div>
+                      </Link>
                     )}
                   </div>
 
@@ -382,10 +416,6 @@ export function MidRibbonPassportDocument({
             {/* 2. MID-CARD DIE-CUT INDEX RIBBON */}
             <div className="border-y border-black/10 dark:border-white/15 bg-black/[0.025] dark:bg-black/40 px-4 sm:px-6 py-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                  SECTIONS:
-                </span>
-
                 <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
                   {ribbonTabs.map((tab) => {
                     const isActive = activeTab === tab.id;
@@ -406,9 +436,20 @@ export function MidRibbonPassportDocument({
                         <Icon className="h-3.5 w-3.5" />
                         <span>{tab.label}</span>
                         {tab.count !== undefined && tab.count > 0 && (
-                          <span className="rounded-full bg-black/10 dark:bg-white/15 px-1.5 py-0.2 font-mono text-[9px]">
+                          <motion.span
+                            key={`${tab.id}-${tab.count}`}
+                            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={
+                              shouldReduceMotion
+                                ? { duration: 0.15 }
+                                : { type: "spring", bounce: 0, duration: 0.3 }
+                            }
+                            className="rounded-full bg-black/10 dark:bg-white/15 px-1.5 py-0.2 font-mono text-[9px]"
+                            style={{ willChange: "transform, opacity" }}
+                          >
                             {tab.count}
-                          </span>
+                          </motion.span>
                         )}
                       </button>
                     );
@@ -417,31 +458,57 @@ export function MidRibbonPassportDocument({
               </div>
             </div>
 
-            {/* 3. LOWER TAB BODY CONTENT */}
-            <div className="p-5 sm:p-7 space-y-6">
-              {activeTab === "realms" && (
-                <PassportRealmsTab realms={realms} cleanUsername={cleanUsername} />
-              )}
+            {/* 3. LOWER TAB BODY CONTENT — Apple §4 spring, §9 rubber-band, §11 will-change */}
+            <div className="p-5 sm:p-7 space-y-6 overscroll-contain" style={{ overscrollBehavior: "contain" } as React.CSSProperties}>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
+                  animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                  exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                  transition={
+                    shouldReduceMotion
+                      ? { duration: 0.15, ease: "easeOut" }
+                      : { type: "spring", bounce: 0, duration: 0.35 }
+                  }
+                  style={{ willChange: shouldReduceMotion ? undefined : "transform, opacity" }}
+                >
+                  {activeTab === "realms" && (
+                    <PassportRealmsTab realms={realms} cleanUsername={cleanUsername} />
+                  )}
 
-              {(activeTab === "lore" || activeTab === "work" || activeTab === "wiki") && (
-                <PassportLoreTab work={work} wiki={data?.wiki} cleanUsername={cleanUsername} />
-              )}
+                  {(activeTab === "lore" || activeTab === "work" || activeTab === "wiki") && (
+                    <PassportLoreTab work={work} wiki={data?.wiki} cleanUsername={cleanUsername} />
+                  )}
 
-              {activeTab === "history" && (
-                <PassportHistoryTab history={showHistoryStream ? history : []} cleanUsername={cleanUsername} />
-              )}
+                  {activeTab === "vault" && (
+                    <PassportVaultTab vault={data?.vault} cleanUsername={cleanUsername} data={data} />
+                  )}
+
+                  {activeTab === "history" && (
+                    <PassportHistoryTab history={showHistoryStream ? history : []} cleanUsername={cleanUsername} />
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* ========================================================================= */}
         {/* BACK FACE OF THE PASSPORT (CONFIGURATION & PRIVACY CONTROLS)               */}
         {/* ========================================================================= */}
-        <div
+        <motion.div
           className={cn(
-            "absolute inset-0 w-full min-h-full rounded-3xl border border-black/10 dark:border-white/15 bg-gradient-to-br from-stone-50 via-card to-stone-100 dark:from-stone-900/95 dark:via-card/95 dark:to-stone-950/90 shadow-2xl backdrop-blur-2xl p-6 sm:p-8 space-y-6 [transform:rotateY(180deg)] [backface-visibility:hidden] transition-opacity duration-300 overflow-y-auto",
-            !isFlipped ? "pointer-events-none opacity-0" : "opacity-100"
+            "absolute inset-0 w-full min-h-full rounded-3xl border border-black/10 dark:border-white/15 bg-card/70 dark:bg-card/60 backdrop-blur-[20px] saturate-[180%] shadow-2xl p-6 sm:p-8 space-y-6 [backface-visibility:hidden] overflow-y-auto",
+            !isFlipped ? "pointer-events-none" : ""
           )}
+          style={
+            shouldReduceMotion
+              ? undefined
+              : ({ transform: "rotateY(180deg)", willChange: "transform, opacity" } as React.CSSProperties)
+          }
+          animate={{ opacity: isFlipped ? 1 : 0 }}
+          transition={shouldReduceMotion ? { duration: 0.2 } : { duration: 0.15 }}
         >
           <GuillochePattern opacity={0.05} />
 
@@ -517,10 +584,10 @@ export function MidRibbonPassportDocument({
 
                   <div className="flex items-center justify-between pt-2 border-t border-black/6 dark:border-white/8">
                     <div className="space-y-0.5">
-                      <p className="font-semibold text-foreground">Writing Streak</p>
-                      <p className="text-[11px] text-muted-foreground">Show active lore streak days</p>
+                      <p className="font-semibold text-foreground">Focus</p>
+                      <p className="text-[11px] text-muted-foreground">Show category breadth</p>
                     </div>
-                    <Switch checked={showStreak} onCheckedChange={setShowStreak} />
+                    <Switch checked={showImpact} onCheckedChange={setShowImpact} />
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-black/6 dark:border-white/8">
@@ -533,8 +600,8 @@ export function MidRibbonPassportDocument({
 
                   <div className="flex items-center justify-between pt-2 border-t border-black/6 dark:border-white/8">
                     <div className="space-y-0.5">
-                      <p className="font-semibold text-foreground">Vault Cards & Decks</p>
-                      <p className="text-[11px] text-muted-foreground">Show card collection totals</p>
+                      <p className="font-semibold text-foreground">IxCredits</p>
+                      <p className="text-[11px] text-muted-foreground">Show IxCredits & collection</p>
                     </div>
                     <Switch checked={showVaultCards} onCheckedChange={setShowVaultCards} />
                   </div>
@@ -563,8 +630,8 @@ export function MidRibbonPassportDocument({
               </button>
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Interactive Lorewards Civic Accolades Modal */}
       <PassportLorewardsModal

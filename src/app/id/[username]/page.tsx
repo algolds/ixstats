@@ -38,8 +38,8 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
     if (tabParam) {
       if (tabParam === "work" || tabParam === "wiki" || tabParam === "lore") {
         setActiveTab("lore");
-      } else if (tabParam === "realms" || tabParam === "history") {
-        setActiveTab(tabParam);
+      } else if (tabParam === "realms" || tabParam === "history" || tabParam === "vault") {
+        setActiveTab(tabParam as PassportTabType);
       }
     }
   }, [searchParams]);

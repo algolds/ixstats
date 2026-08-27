@@ -19,4 +19,4 @@ export type PassportVault = UnifiedProfilePayload["vault"];
 
 export type PassportThinkPages = UnifiedProfilePayload["thinkpages"];
 
-export type PassportTabType = "realms" | "lore" | "work" | "wiki" | "history";
+export type PassportTabType = "realms" | "lore" | "work" | "wiki" | "history" | "vault";

@@ -222,34 +222,66 @@ export const ixnayidRouter = createTRPCRouter({
       const strippedId = cleanId.replace(/_$/, "");
 
       // 1. Fast Path: Try resolving as Canonical User Identity first
-      let userRecord: any = await db.user.findFirst({
-        where: {
-          OR: [
-            ...(isSelf && viewerClerkId ? [{ clerkUserId: viewerClerkId }] : []),
-            { clerkUserId: cleanId },
-            { forumUsername: { equals: cleanId, mode: "insensitive" as const } },
-            { wikiUsername: { equals: cleanId, mode: "insensitive" as const } },
-            { id: cleanId },
-            ...(strippedId !== cleanId
-              ? [
-                  { forumUsername: { equals: strippedId, mode: "insensitive" as const } },
-                  { wikiUsername: { equals: strippedId, mode: "insensitive" as const } },
-                  { clerkUserId: strippedId },
-                ]
-              : []),
-          ],
-        },
-        include: {
-          role: true,
-          country: {
-            include: {
-              nationalIdentity: true,
-              geoProfile: true,
-              realm: { select: { id: true, name: true, slug: true } },
+      // Viewer-priority: if the authenticated viewer owns the identifier as their own wiki/forum handle,
+      // return the viewer's record first. Prevents duplicate wikiUsername collisions (e.g. Heku)
+      // from resolving to an unrelated account when the viewer visits /id/@Heku.
+      let viewerPriorityRecord: any = null;
+      if (viewerClerkId) {
+        const viewerRecord = await db.user.findUnique({
+          where: { clerkUserId: viewerClerkId },
+          include: {
+            role: true,
+            country: {
+              include: {
+                nationalIdentity: true,
+                geoProfile: true,
+                realm: { select: { id: true, name: true, slug: true } },
+              },
             },
           },
-        },
-      });
+        });
+        if (viewerRecord) {
+          const vWiki = viewerRecord.wikiUsername?.toLowerCase() ?? null;
+          const vForum = viewerRecord.forumUsername?.toLowerCase() ?? null;
+          const cLower = cleanId.toLowerCase();
+          const sLower = strippedId.toLowerCase();
+          if (vWiki === cLower || vForum === cLower || vWiki === sLower || vForum === sLower) {
+            viewerPriorityRecord = viewerRecord;
+          }
+        }
+      }
+
+      let userRecord: any =
+        viewerPriorityRecord ??
+        (await db.user.findFirst({
+          where: {
+            OR: [
+              ...(isSelf && viewerClerkId ? [{ clerkUserId: viewerClerkId }] : []),
+              { clerkUserId: cleanId },
+              { forumUsername: { equals: cleanId, mode: "insensitive" as const } },
+              { wikiUsername: { equals: cleanId, mode: "insensitive" as const } },
+              { id: cleanId },
+              ...(strippedId !== cleanId
+                ? [
+                    { forumUsername: { equals: strippedId, mode: "insensitive" as const } },
+                    { wikiUsername: { equals: strippedId, mode: "insensitive" as const } },
+                    { clerkUserId: strippedId },
+                  ]
+                : []),
+            ],
+          },
+          orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+          include: {
+            role: true,
+            country: {
+              include: {
+                nationalIdentity: true,
+                geoProfile: true,
+                realm: { select: { id: true, name: true, slug: true } },
+              },
+            },
+          },
+        }));
 
       let countryRecord: any = userRecord?.country ?? null;
 
@@ -576,6 +608,7 @@ export const ixnayidRouter = createTRPCRouter({
       const seenTitles = new Set<string>();
 
       for (const a of rawAuthored) {
+        if (!a?.title) continue;
         const key = a.title.toLowerCase();
         if (!seenTitles.has(key)) {
           authoredArticles.push({
@@ -591,15 +624,16 @@ export const ixnayidRouter = createTRPCRouter({
       }
 
       for (const page of mwCreatedPages) {
-        const key = page.title.toLowerCase();
+        if (!(page as any)?.title) continue;
+        const key = (page as any).title.toLowerCase();
         if (!seenTitles.has(key)) {
           authoredArticles.push({
             id: `mw-page-${key.replace(/[^a-z0-9]/g, "-")}`,
-            slug: page.title.toLowerCase().replace(/ /g, "_"),
-            title: page.title,
-            summary: `Authored Wiki Article (${(page.byteSize || 0).toLocaleString()} B)`,
-            createdAt: new Date(page.createdAt),
-            updatedAt: new Date(page.createdAt),
+            slug: (page as any).title.toLowerCase().replace(/ /g, "_"),
+            title: (page as any).title,
+            summary: `Authored Wiki Article (${((page as any).byteSize || 0).toLocaleString()} B)`,
+            createdAt: new Date((page as any).createdAt),
+            updatedAt: new Date((page as any).createdAt),
           });
           seenTitles.add(key);
         }
@@ -634,16 +668,29 @@ export const ixnayidRouter = createTRPCRouter({
         });
       }
 
-      for (const c of wikiContribs) {
+      for (const [idx, c] of wikiContribs.entries()) {
+        const cTitle: string = (c as any).title ?? (c as any).page_title ?? (c as any).pageTitle ?? "Untitled";
+        const cRevid = (c as any).revid ?? (c as any).rev_id ?? (c as any).revId ?? 0;
+        const cTimestamp: string = (c as any).timestamp ?? (c as any).rev_timestamp ?? (c as any).revTimestamp ?? new Date().toISOString();
+        const cSize = (c as any).size ?? (c as any).rev_len ?? (c as any).revLen ?? null;
+        const cComment: string | null = (c as any).comment ?? (c as any).rev_comment ?? null;
+        const cIsNew: boolean = Boolean((c as any).isNew ?? (c as any).is_new);
+        const cIsMinor: boolean = Boolean((c as any).minor ?? (c as any).rev_minor_edit);
+        if (!cTitle || cTitle === "Untitled") {
+          // Skip malformed contrib rows — defensive against pg-reader shape drift
+          continue;
+        }
+        const ts = new Date(cTimestamp).getTime() || idx;
+        const safeSlug = cTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 24);
         wikiActivityFeed.push({
-          id: `mw-${c.revid}`,
-          type: c.isNew ? "publish" : c.minor ? "minor_edit" : "revision",
-          title: c.title,
-          articleSlug: c.title.toLowerCase().replace(/ /g, "_"),
-          summary: c.comment || (c.isNew ? "Created new article" : "MediaWiki article revision"),
-          byteDiff: c.size ?? null,
-          timestamp: new Date(c.timestamp).toISOString(),
-          url: `/wiki/${encodeURIComponent(c.title)}`,
+          id: `mw-${cRevid || 0}-${safeSlug}-${ts}-${idx}`,
+          type: cIsNew ? "publish" : cIsMinor ? "minor_edit" : "revision",
+          title: cTitle,
+          articleSlug: cTitle.toLowerCase().replace(/ /g, "_"),
+          summary: cComment || (cIsNew ? "Created new article" : "MediaWiki article revision"),
+          byteDiff: cSize,
+          timestamp: new Date(cTimestamp).toISOString(),
+          url: `/wiki/${encodeURIComponent(cTitle)}`,
         });
       }
 
@@ -880,12 +927,144 @@ export const ixnayidRouter = createTRPCRouter({
           aboutHtml: forumData?.about ? transformBBCode(forumData.about).contentHtml : null,
           customFields: forumData?.custom_fields ?? null,
         },
-        vault: {
-          totalCards: userRecord?.totalCards ?? 0,
-          deckValue: userRecord?.deckValue ?? 0,
-          collectorLevel: userRecord?.collectorLevel ?? 1,
-          collectorXp: userRecord?.collectorXp ?? 0,
-        },
+        vault: await (async () => {
+          const base = {
+            totalCards: userRecord?.totalCards ?? 0,
+            deckValue: userRecord?.deckValue ?? 0,
+            collectorLevel: userRecord?.collectorLevel ?? 1,
+            collectorXp: userRecord?.collectorXp ?? 0,
+            credits: 0,
+            topCards: [] as Array<{
+              ownershipId: string;
+              cardId: string;
+              title: string;
+              rarity: string;
+              marketValue: number;
+              artworkUrl: string | null;
+              cardType: string;
+            }>,
+          };
+          if (!userRecord?.id) return base;
+          try {
+            const [myVault, liveCount, liveValueAgg, ownerships] = await Promise.all([
+              (db as any).myVault.findUnique({ where: { userId: userRecord.id }, select: { credits: true, vaultLevel: true, vaultXp: true } }).catch(() => null),
+              (db as any).cardOwnership.count({ where: { ownerId: userRecord.id, cards: { isRetired: false } } }).catch(() => null),
+              (db as any).cardOwnership.findMany({ where: { ownerId: userRecord.id, cards: { isRetired: false } }, select: { quantity: true, cards: { select: { marketValue: true } } } } as any).catch(() => []),
+              (db as any).cardOwnership.findMany({
+                where: { ownerId: userRecord.id },
+                take: 6,
+                orderBy: [{ createdAt: "desc" }],
+                include: {
+                  cards: {
+                    select: {
+                      id: true,
+                      title: true,
+                      name: true,
+                      description: true,
+                      slug: true,
+                      category: true,
+                      subcategory: true,
+                      rarity: true,
+                      cardType: true,
+                      season: true,
+                      level: true,
+                      marketValue: true,
+                      totalSupply: true,
+                      artworkUrl: true,
+                      artwork: true,
+                      wikiSource: true,
+                      wikiArticleTitle: true,
+                      wikiPageId: true,
+                      wikiExcerpt: true,
+                      wikiImageUrl: true,
+                      stats: true,
+                      metadata: true,
+                      attributes: true,
+                      nsCardId: true,
+                      nsSeason: true,
+                      nsData: true,
+                    },
+                  },
+                },
+              }).catch(() => []),
+            ]);
+            if (myVault) {
+              base.credits = Math.floor(myVault.credits ?? 0);
+              // Live-parsed MyVault is source of truth — matches /vault (vault-ledger.ts:getBalance)
+              base.collectorLevel = myVault.vaultLevel ?? base.collectorLevel;
+              base.collectorXp = myVault.vaultXp ?? base.collectorXp;
+            }
+            // Live counts — matches vault/getUserStats (live CardOwnership, not stale User denorm)
+            if (typeof liveCount === "number") base.totalCards = liveCount;
+            if (Array.isArray(liveValueAgg)) {
+              const liveDeck = liveValueAgg.reduce((s: number, o: any) => s + (o.cards?.marketValue ?? 0) * (o.quantity ?? 1), 0);
+              base.deckValue = liveDeck;
+            }
+            if (Array.isArray(ownerships) && ownerships.length) {
+              base.topCards = ownerships.map((o: any) => {
+                const c = o.cards;
+                return {
+                  ownershipId: o.id,
+                  cardId: o.cardId,
+                  title: c?.title ?? c?.name ?? "IxCard",
+                  rarity: c?.rarity ?? "COMMON",
+                  marketValue: c?.marketValue ?? 0,
+                  artworkUrl: c?.artworkUrl ?? c?.artwork ?? c?.wikiImageUrl ?? null,
+                  cardType: c?.cardType ?? "UNKNOWN",
+                  // Full CardInstance passthrough for live 3D rendering
+                  card: c
+                    ? {
+                        id: c.id,
+                        title: c.title ?? c.name ?? "IxCard",
+                        description: c.description ?? null,
+                        artwork: c.artwork ?? "",
+                        artworkVariants: null,
+                        cardType: c.cardType ?? "UNKNOWN",
+                        category: c.category ?? null,
+                        subcategory: c.subcategory ?? null,
+                        artworkUrl: c.artworkUrl ?? null,
+                        artworkSource: null,
+                        artworkCredit: null,
+                        slug: c.slug ?? null,
+                        rarity: c.rarity ?? "COMMON",
+                        season: c.season ?? 1,
+                        nsCardId: c.nsCardId ?? null,
+                        nsSeason: c.nsSeason ?? null,
+                        nsData: c.nsData ?? null,
+                        wikiSource: c.wikiSource ?? null,
+                        wikiArticleTitle: c.wikiArticleTitle ?? null,
+                        wikiPageId: c.wikiPageId ?? null,
+                        wikiExcerpt: c.wikiExcerpt ?? null,
+                        wikiImageUrl: c.wikiImageUrl ?? null,
+                        wikiUrl: c.wikiArticleTitle
+                          ? `https://${c.wikiSource === "iiwiki" ? "iiwiki.com" : "ixwiki.com"}/wiki/${encodeURIComponent(c.wikiArticleTitle)}`
+                          : null,
+                        countryId: null,
+                        stats: c.stats ?? {},
+                        metadata: c.metadata ?? null,
+                        attributes: c.attributes ?? {},
+                        ownershipId: o.id,
+                        isLocked: o.isLocked ?? false,
+                        marketValue: c.marketValue ?? 0,
+                        totalSupply: c.totalSupply ?? 0,
+                        level: o.level ?? c.level ?? 1,
+                        evolutionStage: 0,
+                        enhancements: null,
+                        createdAt: o.createdAt ?? new Date(),
+                        updatedAt: o.updatedAt ?? new Date(),
+                        lastTrade: o.lastSaleDate ?? null,
+                        serialNumber: o.serialNumber ?? 0,
+                        experience: o.experience ?? 0,
+                        acquiredAt: o.acquiredAt ?? o.createdAt ?? new Date(),
+                      }
+                    : null,
+                  ownership: o,
+                };
+              });
+            }
+          } catch {}
+          return base;
+        })(),
         thinkpages: {
           linked: Boolean(thinkpagesAccount),
           username: thinkpagesAccount?.username ?? null,

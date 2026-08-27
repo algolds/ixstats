@@ -24,6 +24,8 @@ export const SidebarContext = createContext<SidebarContextProps>({
 
 export const useSidebar = () => useContext(SidebarContext);
 
+
+
 interface DashboardSidebarLayoutProps {
   children: ReactNode;
   heroSection?: ReactNode;

@@ -78,6 +78,10 @@ export function ArticleCompanionHUD({
     typeof creator === "object"
       ? (creator as any)?.username
       : (creator || (authorInfo as any)?.author || null);
+  const creatorAvatar =
+    (typeof creator === "object" ? (creator as any)?.avatar : null) ||
+    (authorInfo as any)?.creatorAvatar ||
+    null;
 
   const createdAt =
     authorInfo?.createdAt ||
@@ -90,6 +94,10 @@ export function ArticleCompanionHUD({
     typeof lastEditor === "object"
       ? (lastEditor as any)?.username
       : (lastEditor || null);
+  const lastEditorAvatar =
+    (typeof lastEditor === "object" ? (lastEditor as any)?.avatar : null) ||
+    (authorInfo as any)?.lastEditorAvatar ||
+    null;
 
   const effectiveLastModified =
     lastModified ||
@@ -116,7 +124,7 @@ export function ArticleCompanionHUD({
   return (
     <div className="wikios-companion-hud flex flex-col gap-3 select-none">
       {/* 1. Article Intelligence & Provenance Capsule */}
-      <div className="facet-surface rounded-2xl border border-white/10 bg-card/40 p-3.5 shadow-xs backdrop-blur-xl transition-all duration-300">
+      <div className="facet-surface rounded-2xl border border-white/10 bg-card/40 p-3 shadow-xs backdrop-blur-xl transition-all duration-300">
         <div className="flex items-center justify-between gap-2 border-b border-border/30 pb-2 mb-2.5">
           {awardsData?.hasLoreward && (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[9px] font-bold text-amber-400">
@@ -129,24 +137,34 @@ export function ArticleCompanionHUD({
         <div className="space-y-2 text-xs text-muted-foreground font-ui">
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-muted-foreground/70">Read Time</span>
-            <span className="font-semibold text-foreground tabular-nums">~{readingTime} min</span>
+            <span className="font-semibold text-foreground tabular-nums" title={`${wordCount.toLocaleString()} words`}>
+              ~{readingTime} min
+            </span>
           </div>
 
-          <div className="flex items-center justify-between text-[11px]">
-            <span className="text-muted-foreground/70">Length</span>
-            <span className="font-semibold text-foreground tabular-nums">{wordCount.toLocaleString()} words</span>
-          </div>
-
-          {/* Original Creator / Author */}
+          {/* Original Creator / Author — with IxnayID avatar when available */}
           {creatorName && (
             <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-border/20">
               <span className="text-muted-foreground/70">Created by</span>
               <Link
                 href={withBasePath(`/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`)}
-                className="font-semibold text-foreground hover:text-purple-400 truncate max-w-[120px] transition-colors"
+                className="inline-flex items-center gap-1.5 font-semibold text-foreground hover:text-purple-400 transition-colors max-w-[140px]"
                 title={`Original Author: ${creatorName}`}
               >
-                {creatorName}
+                {creatorAvatar ? (
+                  <img
+                    src={creatorAvatar}
+                    alt=""
+                    className="h-4 w-4 rounded-full object-cover shrink-0 border border-white/10"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[8px] font-bold leading-none text-muted-foreground">
+                    {creatorName.charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="truncate">{creatorName}</span>
               </Link>
             </div>
           )}
@@ -179,16 +197,29 @@ export function ArticleCompanionHUD({
             </div>
           )}
 
-          {/* Last Editor (if distinct) */}
+          {/* Last Editor (if distinct) — with IxnayID avatar when available */}
           {lastEditorName && lastEditorName.toLowerCase() !== creatorName?.toLowerCase() && (
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground/70">Last Editor</span>
               <Link
                 href={withBasePath(`/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`)}
-                className="font-medium text-foreground/90 hover:text-purple-400 truncate max-w-[120px] transition-colors"
+                className="inline-flex items-center gap-1.5 font-medium text-foreground/90 hover:text-purple-400 transition-colors max-w-[140px]"
                 title={`Last edited by ${lastEditorName}`}
               >
-                {lastEditorName}
+                {lastEditorAvatar ? (
+                  <img
+                    src={lastEditorAvatar}
+                    alt=""
+                    className="h-4 w-4 rounded-full object-cover shrink-0 border border-white/10"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[8px] font-bold leading-none text-muted-foreground">
+                    {lastEditorName.charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="truncate">{lastEditorName}</span>
               </Link>
             </div>
           )}
@@ -281,28 +312,6 @@ export function ArticleCompanionHUD({
           </button>
         )}
 
-        {/* Discussions & Margin Notes */}
-        <button
-          type="button"
-          onClick={() => {
-            soundEffects.bloom();
-            onOpenMargin?.("threads");
-          }}
-          className="flex w-full items-center justify-between rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 px-2.5 py-2 text-xs font-semibold text-foreground transition-all duration-200 cursor-pointer active:scale-[0.97]"
-        >
-          <div className="flex items-center gap-2">
-            <ChatBubble className="h-3.5 w-3.5 text-amber-400" />
-            <span>Margin Notes</span>
-          </div>
-          {hasNotes ? (
-            <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.2 text-[9px] font-bold text-amber-300 tabular-nums">
-              {marginThreadsCount + marginAnnotationsCount}
-            </span>
-          ) : (
-            <span className="text-[10px] text-muted-foreground/60">Open</span>
-          )}
-        </button>
-
         {/* Backlinks & Revision History Mini-Grid */}
         <div className="grid grid-cols-2 gap-1.5 pt-0.5">
           <button
@@ -332,7 +341,26 @@ export function ArticleCompanionHUD({
           </button>
         </div>
 
-      
+        {/* Margin notes — quiet status row (not a primary button). Left rail remains the control. */}
+        <button
+          type="button"
+          onClick={() => {
+            soundEffects.bloom();
+            onOpenMargin?.("threads");
+          }}
+          className="group flex w-full items-center justify-between border-t border-border/20 pt-2 mt-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+        >
+          <span className="flex items-center gap-1.5">
+            <ChatBubble className="h-3 w-3 text-amber-400/80 group-hover:text-amber-400" />
+            <span>Margin notes</span>
+            {hasNotes ? (
+              <span className="tabular-nums text-muted-foreground/60">· {marginThreadsCount + marginAnnotationsCount} {marginThreadsCount + marginAnnotationsCount === 1 ? "thread" : "threads"}</span>
+            ) : (
+              <span className="text-muted-foreground/40">· none yet</span>
+            )}
+          </span>
+          <span className="text-muted-foreground/40 transition-colors group-hover:text-foreground">→</span>
+        </button>
       </div>
 
       {/* 3. Top Categories / Domain Tags */}

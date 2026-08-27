@@ -1,6 +1,5 @@
 // src/components/wiki-os/reader/WikiOSMainPage.tsx
-// Custom WikiOS main page — Apple Design & Emil Design Engineering architecture.
-// Supports dual design archetypes: Editorial Masthead vs. Sculpted Emblem.
+// Custom WikiOS main page 
 
 "use client";
 

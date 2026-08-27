@@ -67,6 +67,7 @@ interface WikiOSUnifiedSidebarProps {
   isSpecialPage: boolean;
   pathname: string;
   forceCollapsed?: boolean;
+  // Deprecated: TOC now in right rail — prop kept for parity but ignored
   sections?: TocEntry[];
   onCreatePageClick?: () => void;
 }
@@ -588,37 +589,7 @@ export function WikiOSUnifiedSidebar({
               );
             })()}
 
-            {/* Table of Contents Sections */}
-            {isExpanded && sections && sections.length > 0 && (
-              <>
-                <div className="my-0.5 w-full border-t border-[var(--wikios-border)] opacity-30" />
-                <div className="flex max-h-48 scrollbar-thin flex-col gap-1 overflow-y-auto px-3 py-1 text-left">
-                  <div className="mb-1 text-[10px] font-bold tracking-wider text-[var(--wikios-text-muted)] uppercase opacity-60">
-                    Sections
-                  </div>
-                  {sections.map((sec) => (
-                    <button
-                      key={sec.id}
-                      onClick={() => {
-                        const el = document.getElementById(sec.id);
-                        if (el) el.scrollIntoView({ behavior: "smooth" });
-                      }}
-                      className={cn(
-                        "block cursor-pointer truncate py-0.5 text-left text-[11px] text-[var(--wikios-text-muted)] transition-colors outline-none hover:text-[var(--wikios-text)]",
-                        sec.level === 3
-                          ? "pl-2.5 opacity-80"
-                          : sec.level === 4
-                            ? "pl-5 opacity-60"
-                            : "pl-0.5 font-medium"
-                      )}
-                      type="button"
-                    >
-                      {sec.text}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+            {/* TOC now lives in WikiArticleRightRail (mirrored right rail) — left sidebar no longer renders Sections */}
           </>
         )}
 

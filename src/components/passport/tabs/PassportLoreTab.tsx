@@ -27,13 +27,14 @@ interface PassportLoreTabProps {
 }
 
 type LoreCategory = "all" | "articles" | "languages" | "directives" | "sports" | "feed";
+type LoreCategoryFilter = LoreCategory | null;
 
 export const PassportLoreTab = React.memo(function PassportLoreTab({
   work,
   wiki,
   cleanUsername,
 }: PassportLoreTabProps) {
-  const [selectedCategory, setSelectedCategory] = useState<LoreCategory>("all");
+  const [selectedCategory, setSelectedCategory] = useState<LoreCategoryFilter>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const feed = work?.wikiActivityFeed ?? [];
@@ -73,11 +74,12 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
       (item.summary && item.summary.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const showArticles = selectedCategory === "all" || selectedCategory === "articles";
-  const showLangs = selectedCategory === "all" || selectedCategory === "languages";
-  const showDirectives = selectedCategory === "all" || selectedCategory === "directives";
-  const showSports = selectedCategory === "all" || selectedCategory === "sports";
-  const showFeed = selectedCategory === "all" || selectedCategory === "feed";
+  const isAll = selectedCategory === null || selectedCategory === "all";
+  const showArticles = isAll || selectedCategory === "articles";
+  const showLangs = isAll || selectedCategory === "languages";
+  const showDirectives = isAll || selectedCategory === "directives";
+  const showSports = isAll || selectedCategory === "sports";
+  const showFeed = isAll || selectedCategory === "feed";
 
   return (
     <div className="space-y-6">
@@ -86,7 +88,8 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
         <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl border border-black/6 dark:border-white/8 bg-black/[0.02] dark:bg-white/[0.02] max-w-fit">
           <button
             type="button"
-            onClick={() => setSelectedCategory("all")}
+            onClick={() => setSelectedCategory((c) => (c === "all" ? null : "all"))}
+            aria-pressed={selectedCategory === "all"}
             data-cuelume-press="soft"
             className={cn(
               "rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97] cursor-pointer",
@@ -262,7 +265,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
       {/* 3. Canonical Creations (Languages, Directives, Clubs) */}
       {(showLangs || showDirectives || showSports) && (
         <div className="space-y-3 pt-2">
-          {selectedCategory === "all" && (
+          {isAll && (
             <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground">
               CANONICAL REALM & SYSTEM CREATIONS
             </h4>
@@ -420,9 +423,9 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
           </div>
 
           <div className="grid grid-cols-1 gap-2.5">
-            {filteredFeed.map((item) => (
+            {filteredFeed.map((item, idx) => (
               <FacetCard
-                key={item.id}
+                key={`${item.id}-${idx}`}
                 depth={1}
                 interactive="hover"
                 className="rounded-2xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-4 sm:p-4.5 shadow-xs hover:border-black/15 dark:hover:border-white/20 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3.5"

@@ -201,28 +201,24 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Sticky TOC — Glass Blur (matches Dynamic Island aesthetic)
-   --------------------------------------------------------------------------- */
+    Sticky TOC — Glass Blur (matches Dynamic Island aesthetic)
+    --------------------------------------------------------------------------- */
 .wikios-sticky-toc {
-  position: sticky;
-  top: 96px;
-  width: 200px;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
+  width: 100%;
+  max-height: none;
+  overflow-y: visible;
   padding: 12px 14px;
   font-family: var(--wikios-font-ui);
   display: flex;
   flex-direction: column;
   z-index: 5;
   transition:
-    width 0.2s,
     padding 0.2s,
     opacity 0.2s;
 
-  /* Matches the rail's transparent border-l layout */
+  /* In-panel TOC inherits the companion aside's border-l — no duplicate divider */
   background: transparent;
   border: none;
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: none;
 }
 
@@ -231,12 +227,11 @@
   display: none;
 }
 
-/* Light mode */
+/* Light mode — inherits panel transparency, no duplicate divider */
 [data-theme="light"] .wikios-sticky-toc,
 html:not([data-theme="dark"]) .wikios-sticky-toc {
   background: transparent;
   border: none;
-  border-left: 1px solid rgba(0, 0, 0, 0.05);
   box-shadow: none;
 }
 
