@@ -1,0 +1,818 @@
+/* ===========================================================================
+   WIKIOS FOUNDATIONS — TOKENS, CARDS & MEDIA THEME SYSTEM
+   Apple & Emil Design Engineering specifications + Facet Glass Physics
+   =========================================================================== */
+
+/* ─── 1. CSS Custom Properties & Design Tokens ──────────────────────────── */
+
+:root {
+  /* WikiOS color palette — dynamically inherited from themes.css */
+  --wikios-bg: var(--color-bg-primary);
+  --wikios-surface: var(--color-bg-secondary);
+  --wikios-surface-hover: var(--color-bg-tertiary);
+  --wikios-border: var(--color-border-primary);
+  --wikios-border-subtle: rgba(255, 255, 255, 0.05);
+  --wikios-border-strong: var(--color-border-accent);
+  
+  --wikios-text: var(--color-text-primary);
+  --wikios-text-muted: var(--color-text-muted);
+  --wikios-text-dim: var(--color-text-disabled);
+  
+  --wikios-accent: var(--color-info);
+  --wikios-accent-hover: var(--color-info-light);
+  --wikios-accent-subtle: rgba(59, 130, 246, 0.12);
+
+  /* Margin & Highlighter Suite Tokens (Dark Mode) */
+  --margin-accent: #fef036;
+  --margin-accent-hover: #fde047;
+  --margin-accent-text: #fef036;
+  --margin-accent-fg: #fef036;
+  --margin-accent-bg: rgba(254, 240, 54, 0.15);
+  --margin-accent-border: rgba(254, 240, 54, 0.4);
+  --margin-accent-glow: rgba(254, 240, 54, 0.35);
+  --margin-badge-bg: #fef036;
+  --margin-badge-text: #09090b;
+  
+  --wikios-link: #6890f0;
+  --wikios-link-visited: #a37cf0;
+  --wikios-link-hover: #8ab4f8;
+  --wikios-red: var(--color-error);
+  --wikios-green: var(--color-success);
+  --wikios-amber: var(--color-warning);
+  --wikios-purple: var(--color-chart-1);
+
+  /* Traditional Wikipedia body link colors (Dark Mode accessible) */
+  --wikios-body-link: #6890f0;
+  --wikios-body-link-visited: #a37cf0;
+  --wikios-body-link-hover: #8ab4f8;
+
+  /* Glassmorphism & Elevation */
+  --wikios-card-bg: var(--color-glass, rgba(22, 24, 29, 0.72));
+  --wikios-card-border: var(--color-border-primary);
+  --wikios-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  --wikios-popover-bg: var(--color-surface-blur);
+  --wikios-popover-border: var(--color-border-secondary);
+  --wikios-popover-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+
+  /* Layout dimensions */
+  --wikios-content-max-width: 960px;
+  --wikios-infobox-width: 320px;
+  --wikios-toc-width: 200px;
+
+  /* Typography (Apple Human Interface Guidelines) */
+  --wikios-font-reading: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --wikios-font-ui: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --wikios-font-brand: var(--font-host-grotesk), "Host Grotesk", sans-serif;
+  --wikios-font-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+
+  /* Motion & Easing Curves (Emil Kowalski Animation Framework) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --spring-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 160ms;
+  --duration-normal: 220ms;
+  --duration-drawer: 320ms;
+}
+
+/* Light mode token overrides */
+[data-theme="light"] {
+  --wikios-bg: #fafafa;
+  --wikios-surface: #ffffff;
+  --wikios-surface-hover: #f4f4f5;
+  --wikios-border: rgba(0, 0, 0, 0.08);
+  --wikios-border-subtle: rgba(0, 0, 0, 0.04);
+  --wikios-border-strong: rgba(0, 0, 0, 0.16);
+  
+  --wikios-text: #18181b;
+  --wikios-text-muted: #52525b;
+  --wikios-text-dim: #a1a1aa;
+  
+  --wikios-accent: #2563eb;
+  --wikios-accent-hover: #3b82f6;
+  --wikios-accent-subtle: rgba(37, 99, 235, 0.08);
+
+  /* Margin & Highlighter Suite Tokens (Light Mode) */
+  --margin-accent: #fef036;
+  --margin-accent-hover: #fde047;
+  --margin-accent-text: #18181b;
+  --margin-accent-fg: #fef036;
+  --margin-accent-bg: rgba(254, 240, 54, 0.22);
+  --margin-accent-border: rgba(250, 204, 21, 0.6);
+  --margin-accent-glow: rgba(254, 240, 54, 0.45);
+  --margin-badge-bg: #fef036;
+  --margin-badge-text: #09090b;
+  
+  --wikios-link: #36c;
+  --wikios-link-visited: #5a3696;
+  --wikios-link-hover: #447ff5;
+  --wikios-red: #dc2626;
+  --wikios-green: #16a34a;
+  --wikios-amber: #d97706;
+  --wikios-purple: #9333ea;
+
+  /* Traditional Wikipedia body link colors (Light Mode) */
+  --wikios-body-link: #36c;
+  --wikios-body-link-visited: #5a3696;
+  --wikios-body-link-hover: #447ff5;
+
+  /* Glassmorphism & Elevation */
+  --wikios-card-bg: rgba(255, 255, 255, 0.72);
+  --wikios-card-border: rgba(0, 0, 0, 0.08);
+  --wikios-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  --wikios-popover-bg: rgba(255, 255, 255, 0.96);
+  --wikios-popover-border: rgba(0, 0, 0, 0.1);
+  --wikios-popover-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+/* ─── 2. WikiOS Glass Cards & Section Frames ────────────────────────────── */
+
+.wikios-card {
+  position: relative;
+  border: 1px solid var(--wikios-border);
+  border-radius: 1rem;
+  background: var(--wikios-card-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--wikios-card-shadow);
+  overflow: hidden;
+}
+
+/* Chamfered edge glare (Facet refraction overlay) */
+.wikios-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+[data-theme="light"] .wikios-card::before {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
+}
+
+/* Interactive Card with Apple spring feedback and touch hysteresis */
+.wikios-card-interactive {
+  transition: transform var(--duration-fast) var(--ease-out);
+  will-change: transform;
+  cursor: pointer;
+  user-select: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wikios-card-interactive:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.wikios-card-interactive:active {
+  transform: scale(0.97);
+  transition-duration: 100ms;
+}
+
+/* Focus Ring for Keyboard Accessibility (WCAG 2.1 AA) */
+.wikios-card-interactive:focus-visible,
+.wikios-focus-ring:focus-visible {
+  outline: 2px solid var(--wikios-accent);
+  outline-offset: 2px;
+}
+
+/* Standardized Section Eyebrow Header (13-14px) */
+.wikios-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--wikios-border-subtle);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.wikios-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--wikios-text);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Major Section Anchor (H2, 18-22px) */
+.wikios-h2-anchor {
+  font-size: clamp(1.125rem, 2vw, 1.375rem);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--wikios-text);
+  letter-spacing: -0.015em;
+}
+
+/* ─── 3. Media Theme & Adaptive Image Inversion ─────────────────────────── */
+
+.wikios-article-content img,
+.wikios-infobox img,
+.wikios-lightbox-image,
+.thumbinner img,
+figure img {
+  transition:
+    filter 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-radius 180ms ease,
+    padding 180ms ease;
+  will-change: filter;
+}
+
+/* Global Plinth Mode (applied when root has data-media-theme="plinth" in Dark Mode) */
+:root:not([data-theme="light"])[data-media-theme="plinth"] .wikios-article-content img:not([data-media-filter="raw"]):not([data-media-filter="invert"]):not([data-media-filter="auto"]),
+:root:not([data-theme="light"])[data-media-theme="plinth"] .wikios-infobox img:not([data-media-filter="raw"]):not([data-media-filter="invert"]):not([data-media-filter="auto"]),
+:root:not([data-theme="light"])[data-media-theme="plinth"] .mwe-math-fallback-image-inline:not([data-media-filter="raw"]):not([data-media-filter="invert"]):not([data-media-filter="auto"]),
+:root:not([data-theme="light"])[data-media-theme="plinth"] .mwe-math-element img:not([data-media-filter="raw"]):not([data-media-filter="invert"]):not([data-media-filter="auto"]) {
+  filter: none !important;
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.25) !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+}
+
+/* Global Auto / Adaptive Invert Mode in Dark Mode */
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .wikios-article-content img[src*=".svg"]:not([data-media-filter="raw"]):not([data-media-filter="plinth"]):not([data-media-filter="plate"]):not([data-media-filter="original"]),
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .wikios-article-content img[src*=".svg.png"]:not([data-media-filter="raw"]):not([data-media-filter="plinth"]):not([data-media-filter="plate"]):not([data-media-filter="original"]),
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .wikios-article-content img[src*="/Special:FilePath/"]:not([data-media-filter="raw"]):not([data-media-filter="plinth"]):not([data-media-filter="plate"]):not([data-media-filter="original"]),
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .wikios-infobox img[src*=".svg"]:not([data-media-filter="raw"]):not([data-media-filter="plinth"]):not([data-media-filter="plate"]):not([data-media-filter="original"]),
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .mwe-math-fallback-image-inline:not([data-media-filter="raw"]):not([data-media-filter="plinth"]),
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .mwe-math-element img:not([data-media-filter="raw"]):not([data-media-filter="plinth"]) {
+  filter: invert(0.92) hue-rotate(180deg) brightness(1.05) contrast(1.02);
+}
+
+/* LaTeX / Math formula invert */
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .mwe-math-fallback-image-inline:not([data-media-filter="raw"]):not([data-media-filter="plinth"]),
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .mwe-math-element img:not([data-media-filter="raw"]):not([data-media-filter="plinth"]) {
+  filter: brightness(0) invert(1) brightness(0.95);
+}
+
+/* Light mode reset */
+[data-theme="light"] .wikios-article-content img,
+[data-theme="light"] .wikios-infobox img,
+[data-theme="light"] .mwe-math-fallback-image-inline,
+[data-theme="light"] .mwe-math-element img {
+  filter: none !important;
+}
+
+/* Forced Invert / Auto */
+:root:not([data-theme="light"]) img[data-media-filter="invert"],
+:root:not([data-theme="light"]) img[data-media-filter="auto"] {
+  filter: invert(0.92) hue-rotate(180deg) brightness(1.05) contrast(1.02) !important;
+}
+
+/* Frosted Light Plinth / Backplate (Dark Mode) */
+:root:not([data-theme="light"]) img[data-media-filter="plinth"],
+:root:not([data-theme="light"]) img[data-media-filter="plate"] {
+  filter: none !important;
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.25) !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+  display: inline-block;
+}
+
+/* Plinth in Light Mode */
+[data-theme="light"] img[data-media-filter="plinth"],
+[data-theme="light"] img[data-media-filter="plate"] {
+  filter: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Forced Raw / Original */
+img[data-media-filter="raw"],
+img[data-media-filter="original"] {
+  filter: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.wikios-article-content .thumb,
+.wikios-article-content figure,
+.wikios-infobox .infobox-image,
+.wikios-article-content .gallerybox {
+  position: relative;
+}
+
+/* ─── 4. Accessibility & Reduced Motion / Transparency Overrides ─────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .wikios-card-interactive {
+    transition: opacity 150ms ease !important;
+    transform: none !important;
+  }
+  .wikios-card-interactive:hover,
+  .wikios-card-interactive:active {
+    transform: none !important;
+  }
+  .wikios-article-content img,
+  .wikios-infobox img,
+  .wikios-lightbox-image {
+    transition: opacity 120ms ease !important;
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .wikios-card {
+    background: var(--wikios-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+
+/* ─── 5. WikiOS Micro-Animations & Celebratory Particle Physics ─────────── */
+
+/* ===========================================================================
+   WikiOS Left Rail Custom Animations & Hover Glows
+   =========================================================================== */
+
+/* Centralized spring transition for rail icons */
+.wikios-sidebar-icon-box {
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Apple Depth Lift & Glow Animation: scale up to 1.12, shift right 3px */
+.group:hover .wikios-sidebar-icon-box {
+  transform: scale(1.12) translateX(3px) !important;
+}
+
+/* Slide-right text animation synced with icon box hover shift */
+.wikios-sidebar span {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+.group:hover .wikios-sidebar span {
+  transform: translateX(3px);
+}
+
+@keyframes rail-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes rail-wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg) translateX(0);
+  }
+  25% {
+    transform: rotate(-8deg) translateX(-1px);
+  }
+  75% {
+    transform: rotate(8deg) translateX(1px);
+  }
+}
+
+@keyframes rail-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.rail-animate-rotate svg {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.group:hover .rail-animate-rotate svg,
+.rail-animate-rotate:hover svg {
+  transform: rotate(90deg);
+}
+
+.group:hover .rail-animate-bounce svg,
+.rail-animate-bounce:hover svg {
+  animation: rail-bounce 0.4s ease-in-out;
+}
+
+.group:hover .rail-animate-wiggle svg,
+.rail-animate-wiggle:hover svg {
+  animation: rail-wiggle 0.3s ease-in-out;
+}
+
+.group:hover .rail-animate-spin svg,
+.rail-animate-spin:hover svg {
+  animation: rail-spin 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes rail-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+.group:hover .rail-animate-pulse svg,
+.rail-animate-pulse:hover svg {
+  animation: rail-pulse 0.6s infinite ease-in-out;
+}
+
+/* Custom glows */
+.rail-glow-teal:hover,
+.group:hover .rail-glow-teal {
+  border-color: rgba(20, 184, 166, 0.45) !important;
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.25) !important;
+  background-color: rgba(20, 184, 166, 0.08) !important;
+  color: rgb(45, 212, 191) !important;
+}
+
+.rail-glow-blue:hover,
+.group:hover .rail-glow-blue {
+  border-color: rgba(59, 130, 246, 0.45) !important;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.25) !important;
+  background-color: rgba(59, 130, 246, 0.08) !important;
+  color: rgb(96, 165, 250) !important;
+}
+
+.rail-glow-amber:hover,
+.group:hover .rail-glow-amber {
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.25) !important;
+  background-color: rgba(245, 158, 11, 0.08) !important;
+  color: rgb(251, 191, 36) !important;
+}
+
+.rail-glow-highlighter:hover,
+.group:hover .rail-glow-highlighter {
+  border-color: rgba(250, 204, 21, 0.7) !important;
+  box-shadow: 0 0 14px rgba(254, 240, 54, 0.45) !important;
+  background-color: #fef036 !important;
+  color: #09090b !important;
+}
+
+.rail-glow-green:hover,
+.group:hover .rail-glow-green {
+  border-color: rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  color: rgb(52, 211, 153) !important;
+}
+
+.rail-glow-purple:hover,
+.group:hover .rail-glow-purple {
+  border-color: rgba(168, 85, 247, 0.45) !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.25) !important;
+  background-color: rgba(168, 85, 247, 0.08) !important;
+  color: rgb(192, 132, 252) !important;
+}
+
+.rail-glow-cyan:hover,
+.group:hover .rail-glow-cyan {
+  border-color: rgba(6, 182, 212, 0.45) !important;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.25) !important;
+  background-color: rgba(6, 182, 212, 0.08) !important;
+  color: rgb(34, 211, 238) !important;
+}
+
+.rail-glow-gold:hover,
+.group:hover .rail-glow-gold {
+  border-color: rgba(212, 175, 55, 0.5) !important;
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.25) !important;
+  background-color: rgba(212, 175, 55, 0.08) !important;
+}
+
+.rail-glow-gray:hover,
+.group:hover .rail-glow-gray {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.08) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: var(--wikios-text) !important;
+}
+
+[data-theme="light"] .rail-glow-gray:hover,
+[data-theme="light"] .group:hover .rail-glow-gray,
+html:not([data-theme="dark"]) .rail-glow-gray:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-gray {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05) !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  color: var(--wikios-text) !important;
+}
+
+.rail-glow-pink:hover,
+.group:hover .rail-glow-pink {
+  border-color: rgba(236, 72, 153, 0.45) !important;
+  box-shadow: 0 0 12px rgba(236, 72, 153, 0.25) !important;
+  background-color: rgba(236, 72, 153, 0.08) !important;
+  color: rgb(244, 114, 182) !important;
+}
+
+.rail-glow-indigo:hover,
+.group:hover .rail-glow-indigo {
+  border-color: rgba(99, 102, 241, 0.45) !important;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.25) !important;
+  background-color: rgba(99, 102, 241, 0.08) !important;
+  color: rgb(129, 140, 248) !important;
+}
+
+.rail-glow-di:hover,
+.group:hover .rail-glow-di {
+  border-color: rgba(139, 92, 246, 0.4) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.1),
+    rgba(168, 85, 247, 0.1),
+    rgba(6, 182, 212, 0.05)
+  ) !important;
+  box-shadow:
+    0 0 12px rgba(6, 182, 212, 0.3),
+    0 0 20px rgba(139, 92, 246, 0.2) !important;
+  color: #a78bfa !important;
+}
+
+[data-theme="light"] .rail-glow-di:hover,
+[data-theme="light"] .group:hover .rail-glow-di,
+html:not([data-theme="dark"]) .rail-glow-di:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-di {
+  border-color: rgba(139, 92, 246, 0.3) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.08),
+    rgba(168, 85, 247, 0.08)
+  ) !important;
+  box-shadow:
+    0 0 10px rgba(6, 182, 212, 0.15),
+    0 0 16px rgba(139, 92, 246, 0.1) !important;
+  color: #7c3aed !important;
+}
+
+.rail-glow-rose:hover,
+.group:hover .rail-glow-rose {
+  border-color: rgba(244, 63, 94, 0.45) !important;
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.25) !important;
+  background-color: rgba(244, 63, 94, 0.08) !important;
+  color: rgb(251, 113, 133) !important;
+}
+
+[data-theme="light"] .rail-glow-rose:hover,
+[data-theme="light"] .group:hover .rail-glow-rose,
+html:not([data-theme="dark"]) .rail-glow-rose:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-rose {
+  border-color: rgba(244, 63, 94, 0.3) !important;
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.15) !important;
+  background-color: rgba(244, 63, 94, 0.05) !important;
+  color: rgb(225, 29, 72) !important;
+}
+
+/* Light mode overrides for existing rail glows */
+[data-theme="light"] .rail-glow-teal:hover,
+[data-theme="light"] .group:hover .rail-glow-teal,
+html:not([data-theme="dark"]) .rail-glow-teal:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-teal {
+  border-color: rgba(13, 148, 136, 0.3) !important;
+  box-shadow: 0 0 10px rgba(13, 148, 136, 0.15) !important;
+  background-color: rgba(13, 148, 136, 0.05) !important;
+  color: rgb(13, 148, 136) !important;
+}
+
+[data-theme="light"] .rail-glow-blue:hover,
+[data-theme="light"] .group:hover .rail-glow-blue,
+html:not([data-theme="dark"]) .rail-glow-blue:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-blue {
+  border-color: rgba(37, 99, 235, 0.3) !important;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.15) !important;
+  background-color: rgba(37, 99, 235, 0.05) !important;
+  color: rgb(37, 99, 235) !important;
+}
+
+[data-theme="light"] .rail-glow-amber:hover,
+[data-theme="light"] .group:hover .rail-glow-amber,
+html:not([data-theme="dark"]) .rail-glow-amber:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-amber {
+  border-color: rgba(217, 119, 6, 0.3) !important;
+  box-shadow: 0 0 10px rgba(217, 119, 6, 0.15) !important;
+  background-color: rgba(217, 119, 6, 0.05) !important;
+  color: rgb(217, 119, 6) !important;
+}
+
+[data-theme="light"] .rail-glow-green:hover,
+[data-theme="light"] .group:hover .rail-glow-green,
+html:not([data-theme="dark"]) .rail-glow-green:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-green {
+  border-color: rgba(22, 163, 74, 0.3) !important;
+  box-shadow: 0 0 10px rgba(22, 163, 74, 0.15) !important;
+  background-color: rgba(22, 163, 74, 0.05) !important;
+  color: rgb(22, 163, 74) !important;
+}
+
+[data-theme="light"] .rail-glow-purple:hover,
+[data-theme="light"] .group:hover .rail-glow-purple,
+html:not([data-theme="dark"]) .rail-glow-purple:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-purple {
+  border-color: rgba(147, 51, 234, 0.3) !important;
+  box-shadow: 0 0 10px rgba(147, 51, 234, 0.15) !important;
+  background-color: rgba(147, 51, 234, 0.05) !important;
+  color: rgb(147, 51, 234) !important;
+}
+
+[data-theme="light"] .rail-glow-pink:hover,
+[data-theme="light"] .group:hover .rail-glow-pink,
+html:not([data-theme="dark"]) .rail-glow-pink:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-pink {
+  border-color: rgba(219, 39, 119, 0.3) !important;
+  box-shadow: 0 0 10px rgba(219, 39, 119, 0.15) !important;
+  background-color: rgba(219, 39, 119, 0.05) !important;
+  color: rgb(219, 39, 119) !important;
+}
+
+[data-theme="light"] .rail-glow-indigo:hover,
+[data-theme="light"] .group:hover .rail-glow-indigo,
+html:not([data-theme="dark"]) .rail-glow-indigo:hover,
+html:not([data-theme="dark"]) .group:hover .rail-glow-indigo {
+  border-color: rgba(79, 70, 229, 0.3) !important;
+  box-shadow: 0 0 10px rgba(79, 70, 229, 0.15) !important;
+  background-color: rgba(79, 70, 229, 0.05) !important;
+  color: rgb(79, 70, 229) !important;
+}
+
+/* ===========================================================================
+   Loreward Badge Celebration Particles & Animations
+   =========================================================================== */
+.loreward-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--color-warning); /* amber-500 */
+  box-shadow:
+    0 0 6px #f59e0b,
+    0 0 12px #fbbf24;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+  top: 50%;
+  left: 50%;
+}
+
+@keyframes loreward-particle-1 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-30px, -25px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-2 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(30px, -20px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-3 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-15px, -35px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-4 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(15px, -30px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-5 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-35px, 10px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-6 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(35px, 15px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-7 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-10px, 35px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes loreward-particle-8 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(10px, -40px) scale(0);
+    opacity: 0;
+  }
+}
+
+.loreward-particle-1 {
+  animation: loreward-particle-1 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-2 {
+  animation: loreward-particle-2 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-3 {
+  animation: loreward-particle-3 1.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-4 {
+  animation: loreward-particle-4 1.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-5 {
+  animation: loreward-particle-5 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-6 {
+  animation: loreward-particle-6 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-7 {
+  animation: loreward-particle-7 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.loreward-particle-8 {
+  animation: loreward-particle-8 1.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes loreward-badge-celebrate {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.45);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+  }
+}
+
+.loreward-badge-celebrate {
+  animation: loreward-badge-celebrate 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Reduced motion accessibility guard */
+@media (prefers-reduced-motion: reduce) {
+  .rail-bounce,
+  .rail-wiggle,
+  .rail-spin,
+  .rail-pulse,
+  .loreward-badge-celebrate,
+  [class*="loreward-particle-"] {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+

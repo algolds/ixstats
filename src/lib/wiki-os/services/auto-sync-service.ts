@@ -367,16 +367,21 @@ export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
 
 export function startWikiAutoSyncDaemon(intervalMs = 45000): void {
   if (syncTimer) return;
+  if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") {
+    return;
+  }
   console.log(`[WikiAutoSync] 🚀 MediaWiki auto-sync daemon initialized (Interval: ${intervalMs / 1000}s).`);
   
   // Run first cycle immediately in background
-  setTimeout(() => {
+  const initialTimer = setTimeout(() => {
     runAutoSyncCycle().catch(() => {});
   }, 3000);
+  if (initialTimer?.unref) initialTimer.unref();
 
   syncTimer = setInterval(() => {
     runAutoSyncCycle().catch(() => {});
   }, intervalMs);
+  if (syncTimer?.unref) syncTimer.unref();
 }
 
 export function stopWikiAutoSyncDaemon(): void {

@@ -35,6 +35,9 @@
     "importHelpers": true,
     /* Path Aliases */
     "paths": {
+      "server-only": [
+        "./jest-mocks/server-only.ts"
+      ],
       "*": [
         "./*"
       ],

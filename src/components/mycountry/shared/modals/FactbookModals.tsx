@@ -3,9 +3,9 @@
 import React from "react";
 import { useFactbookMetrics } from "~/components/mycountry/shared/headers/FactbookMetricsProvider";
 import { CardImageUploadModal, useCountryData } from "~/components/mycountry/shared/primitives";
-import { GdpDetailsModal } from "~/components/ui/modals/GdpDetailsModal";
-import { PopulationDetailsModal } from "~/components/ui/modals/PopulationDetailsModal";
 import {
+  GdpDetailsModal,
+  PopulationDetailsModal,
   LaborDetailsModal,
   GovernmentSpendingModal,
   DebtAnalysisModal,

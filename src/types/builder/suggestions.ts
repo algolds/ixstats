@@ -1,13 +1,6 @@
 /**
  * Builder Suggestions & Recommendations Types
+ * (Consolidated in ~/types/builder)
  */
 
-export interface SuggestionItem<T = any> {
-  id: string;
-  title: string;
-  description?: string;
-  severity: "info" | "warning" | "critical";
-  diff?: string;
-  payload?: T;
-  action?: () => void;
-}
+export type { SuggestionItem } from "../builder";

@@ -83,8 +83,8 @@ const CountryMapEmbed = dynamic(
 );
 
 import { VitalityBreakdownModal } from "~/components/ui/modals/VitalityBreakdownModal";
-import { GdpDetailsModal } from "~/components/ui/modals/GdpDetailsModal";
-import { PopulationDetailsModal } from "~/components/ui/modals/PopulationDetailsModal";
+import { GdpDetailsModal } from "~/components/ui/modals/metric-details/GdpDetailsModal";
+import { PopulationDetailsModal } from "~/components/ui/modals/metric-details/PopulationDetailsModal";
 import { GovernmentSpendingModal } from "~/components/ui/modals/metric-details/GovernmentSpendingModal";
 
 function normalizeGrowth(value: number | null | undefined): number {

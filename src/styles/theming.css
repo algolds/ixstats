@@ -1,0 +1,1542 @@
+/* ==========================================================================
+   THEMING ENGINE — DYNAMIC NATION FLAG PALETTES & STATECRAFT COLOR MATRICES
+   ========================================================================== */
+
+/* ─── 1. Dynamic Country Flag Color Theming ────────────────────────────── */
+
+/* === COUNTRY FLAG COLOR THEMING === */
+/* Apply to country pages to theme components based on flag colors */
+
+.country-themed .facet-card {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--country-primary) 20%, rgba(30, 41, 59, 0.95)) 0%,
+    color-mix(in srgb, var(--country-primary) 15%, rgba(15, 23, 42, 0.98)) 50%,
+    color-mix(in srgb, var(--country-primary) 10%, rgba(8, 16, 36, 1)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--country-primary) 30%, rgba(255, 255, 255, 0.1));
+  box-shadow: 
+    0 8px 32px color-mix(in srgb, var(--country-primary) 15%, rgba(0, 0, 0, 0.3)),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 color-mix(in srgb, var(--country-primary) 20%, rgba(255, 255, 255, 0.1)),
+    0 0 24px color-mix(in srgb, var(--country-primary) 8%, rgba(0, 0, 0, 0));
+}
+
+.country-themed .facet-card:hover {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--country-primary) 25%, rgba(45, 56, 79, 0.95)) 0%,
+    color-mix(in srgb, var(--country-primary) 20%, rgba(30, 41, 59, 0.98)) 50%,
+    color-mix(in srgb, var(--country-primary) 15%, rgba(15, 23, 42, 1)) 100%
+  );
+  border-color: color-mix(in srgb, var(--country-primary) 50%, rgba(255, 255, 255, 0.15));
+  box-shadow: 
+    0 16px 48px color-mix(in srgb, var(--country-primary) 20%, rgba(0, 0, 0, 0.2)),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 color-mix(in srgb, var(--country-primary) 25%, rgba(255, 255, 255, 0.15)),
+    0 0 40px color-mix(in srgb, var(--country-primary) 12%, rgba(0, 0, 0, 0));
+}
+
+.country-themed .facet-card-economic {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--country-secondary) 20%, rgba(30, 55, 39, 0.95)) 0%,
+    color-mix(in srgb, var(--country-secondary) 15%, rgba(16, 40, 24, 0.98)) 50%,
+    color-mix(in srgb, var(--country-secondary) 10%, rgba(8, 20, 12, 1)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--country-secondary) 40%, rgba(255, 255, 255, 0.1));
+  box-shadow: 
+    0 8px 32px color-mix(in srgb, var(--country-secondary) 20%, rgba(0, 0, 0, 0.2)),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 color-mix(in srgb, var(--country-secondary) 20%, rgba(255, 255, 255, 0.1)),
+    0 0 24px color-mix(in srgb, var(--country-secondary) 10%, rgba(0, 0, 0, 0));
+}
+
+.country-themed .facet-card-diplomatic {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--country-accent) 20%, rgba(30, 35, 55, 0.95)) 0%,
+    color-mix(in srgb, var(--country-accent) 15%, rgba(16, 24, 40, 0.98)) 50%,
+    color-mix(in srgb, var(--country-accent) 10%, rgba(8, 12, 20, 1)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--country-accent) 40%, rgba(255, 255, 255, 0.1));
+  box-shadow: 
+    0 8px 32px color-mix(in srgb, var(--country-accent) 20%, rgba(0, 0, 0, 0.2)),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 color-mix(in srgb, var(--country-accent) 20%, rgba(255, 255, 255, 0.1)),
+    0 0 24px color-mix(in srgb, var(--country-accent) 10%, rgba(0, 0, 0, 0));
+}
+
+.country-themed .facet-card-cultural {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--country-tertiary) 20%, rgba(39, 30, 55, 0.95)) 0%,
+    color-mix(in srgb, var(--country-tertiary) 15%, rgba(24, 16, 40, 0.98)) 50%,
+    color-mix(in srgb, var(--country-tertiary) 10%, rgba(12, 8, 20, 1)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--country-tertiary) 40%, rgba(255, 255, 255, 0.1));
+  box-shadow: 
+    0 8px 32px color-mix(in srgb, var(--country-tertiary) 20%, rgba(0, 0, 0, 0.2)),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 color-mix(in srgb, var(--country-tertiary) 20%, rgba(255, 255, 255, 0.1)),
+    0 0 24px color-mix(in srgb, var(--country-tertiary) 10%, rgba(0, 0, 0, 0));
+}
+
+/* Country-themed text and accents */
+.country-themed .country-accent {
+  color: var(--country-primary);
+}
+
+.country-themed .country-border {
+  border-color: var(--country-primary);
+}
+
+.country-themed .country-bg {
+  background: color-mix(in srgb, var(--country-primary) 10%, transparent);
+}
+
+.country-themed .country-bg-secondary {
+  background: color-mix(in srgb, var(--country-secondary) 10%, transparent);
+}
+
+/* Chart theming for country pages */
+.country-themed [data-chart] {
+  --chart-1: var(--country-primary);
+  --chart-2: var(--country-secondary);
+  --chart-3: var(--country-accent);
+  --chart-4: var(--country-tertiary);
+  --chart-5: color-mix(in srgb, var(--country-primary) 70%, var(--country-secondary) 30%);
+}
+
+
+/* Aurora Background specific to country pages */
+.aurora-bg {
+  background: linear-gradient(
+    45deg,
+    var(--color-blue-500),
+    var(--color-purple-500),
+    var(--color-emerald-500),
+    var(--color-amber-500),
+    var(--color-blue-500)
+  );
+  background-size: 400% 400%;
+  animation: aurora-simple 15s ease-in-out infinite;
+  opacity: 0.15;
+  z-index: -1;
+}
+
+/* Dark mode aurora */
+.dark .aurora-bg {
+  opacity: 0.08;
+}
+
+/* ─── 2. MyCountry Statecraft Domain & Theme Overrides ─────────────────── */
+
+/* === MYCOUNTRY TAB THEMING SYSTEM === */
+/* Unified color scheme and styling for MyCountry executive dashboard */
+
+/* === ENHANCED GLASS HIERARCHY SYSTEM === */
+/* Immersive executive dashboard glass effects */
+
+:root {
+  /* Base MyCountry Gold Theme */
+  --mycountry-gold: #FCD34D;
+  --mycountry-gold-light: #FDE68A;
+  --mycountry-gold-dark: #F59E0B;
+  --mycountry-gold-bg: rgba(252, 211, 77, 0.1);
+  --mycountry-gold-glow: rgba(252, 211, 77, 0.4);
+
+  /* Executive Tab - Authority & Leadership */
+  --tab-executive-primary: #B45309;
+  --tab-executive-secondary: #F59E0B;
+  --tab-executive-accent: #FBBF24;
+  --tab-executive-bg: rgba(180, 83, 9, 0.08);
+  --tab-executive-glow: rgba(180, 83, 9, 0.3);
+  --tab-executive-icon: #92400E;
+
+  /* Economy Tab - Prosperity & Growth */
+  --tab-economy-primary: #059669;
+  --tab-economy-secondary: #10B981;
+  --tab-economy-accent: #34D399;
+  --tab-economy-bg: rgba(5, 150, 105, 0.08);
+  --tab-economy-glow: rgba(5, 150, 105, 0.3);
+  --tab-economy-icon: #047857;
+
+  /* Labor Tab - Work & Industry */
+  --tab-labor-primary: #DC2626;
+  --tab-labor-secondary: #EF4444;
+  --tab-labor-accent: #F87171;
+  --tab-labor-bg: rgba(220, 38, 38, 0.08);
+  --tab-labor-glow: rgba(220, 38, 38, 0.3);
+  --tab-labor-icon: #B91C1C;
+
+  /* Government Tab - Governance & Authority */
+  --tab-government-primary: #7C3AED;
+  --tab-government-secondary: #8B5CF6;
+  --tab-government-accent: #A78BFA;
+  --tab-government-bg: rgba(124, 58, 237, 0.08);
+  --tab-government-glow: rgba(124, 58, 237, 0.3);
+  --tab-government-icon: #6D28D9;
+
+  /* Demographics Tab - Population & Society */
+  --tab-demographics-primary: #0891B2;
+  --tab-demographics-secondary: #06B6D4;
+  --tab-demographics-accent: #22D3EE;
+  --tab-demographics-bg: rgba(8, 145, 178, 0.08);
+  --tab-demographics-glow: rgba(8, 145, 178, 0.3);
+  --tab-demographics-icon: #0E7490;
+
+  /* Diplomacy Tab - International Relations */
+  --tab-diplomacy-primary: #0891B2;
+  --tab-diplomacy-secondary: #06B6D4;
+  --tab-diplomacy-accent: #22D3EE;
+  --tab-diplomacy-bg: rgba(8, 145, 178, 0.08);
+  --tab-diplomacy-glow: rgba(8, 145, 178, 0.3);
+  --tab-diplomacy-icon: #0E7490;
+
+  /* Intelligence Tab - Security & Intelligence */
+  --tab-intelligence-primary: #2563EB;
+  --tab-intelligence-secondary: #3B82F6;
+  --tab-intelligence-accent: #06B6D4;
+  --tab-intelligence-bg: rgba(37, 99, 235, 0.08);
+  --tab-intelligence-glow: rgba(37, 99, 235, 0.3);
+  --tab-intelligence-icon: #1E40AF;
+
+  /* Defense Tab - Military & Security */
+  --tab-defense-primary: #DC2626;
+  --tab-defense-secondary: #EF4444;
+  --tab-defense-accent: #F97316;
+  --tab-defense-bg: rgba(220, 38, 38, 0.08);
+  --tab-defense-glow: rgba(220, 38, 38, 0.3);
+  --tab-defense-icon: #B91C1C;
+
+  /* Detailed Tab - Analysis & Insights */
+  --tab-detailed-primary: #BE185D;
+  --tab-detailed-secondary: #EC4899;
+  --tab-detailed-accent: #F472B6;
+  --tab-detailed-bg: rgba(190, 24, 93, 0.08);
+  --tab-detailed-glow: rgba(190, 24, 93, 0.3);
+  --tab-detailed-icon: #9D174D;
+
+  /* Modeling Tab - Prediction & Modeling */
+  --tab-modeling-primary: #1E40AF;
+  --tab-modeling-secondary: #3B82F6;
+  --tab-modeling-accent: #60A5FA;
+  --tab-modeling-bg: rgba(30, 64, 175, 0.08);
+  --tab-modeling-glow: rgba(30, 64, 175, 0.3);
+  --tab-modeling-icon: #1E3A8A;
+
+  /* Politics Tab - Legislature & Elections */
+  --tab-politics-primary: #4F46E5;
+  --tab-politics-secondary: #6366F1;
+  --tab-politics-accent: #818CF8;
+  --tab-politics-bg: rgba(79, 70, 229, 0.08);
+  --tab-politics-glow: rgba(79, 70, 229, 0.3);
+  --tab-politics-icon: #4338CA;
+
+  /* Typography Scale */
+  --font-size-exec-title: 2.5rem;
+  --font-size-exec-subtitle: 1.5rem;
+  --font-size-tab-header: 1.25rem;
+  --font-size-tab-subheader: 1rem;
+  --font-size-metric-large: 2rem;
+  --font-size-metric-medium: 1.5rem;
+  --font-size-metric-small: 1.125rem;
+  --font-size-body: 0.875rem;
+  --font-size-caption: 0.75rem;
+
+  /* Font Weights */
+  --font-weight-exec: 700;
+  --font-weight-metric: 600;
+  --font-weight-tab: 500;
+  --font-weight-body: 400;
+
+  /* Spacing System */
+  --space-glass-xs: 0.5rem;
+  --space-glass-sm: 0.75rem;
+  --space-glass-md: 1rem;
+  --space-glass-lg: 1.5rem;
+  --space-glass-xl: 2rem;
+  --space-glass-2xl: 3rem;
+}
+
+/* === TAB CONTENT THEMING === */
+
+/* Executive Tab Styling */
+.tab-content-executive {
+  --current-tab-primary: var(--tab-executive-primary);
+  --current-tab-secondary: var(--tab-executive-secondary);
+  --current-tab-accent: var(--tab-executive-accent);
+  --current-tab-bg: var(--tab-executive-bg);
+  --current-tab-glow: var(--tab-executive-glow);
+  --current-tab-icon: var(--tab-executive-icon);
+}
+
+.tab-content-economy {
+  --current-tab-primary: var(--tab-economy-primary);
+  --current-tab-secondary: var(--tab-economy-secondary);
+  --current-tab-accent: var(--tab-economy-accent);
+  --current-tab-bg: var(--tab-economy-bg);
+  --current-tab-glow: var(--tab-economy-glow);
+  --current-tab-icon: var(--tab-economy-icon);
+}
+
+.tab-content-labor {
+  --current-tab-primary: var(--tab-labor-primary);
+  --current-tab-secondary: var(--tab-labor-secondary);
+  --current-tab-accent: var(--tab-labor-accent);
+  --current-tab-bg: var(--tab-labor-bg);
+  --current-tab-glow: var(--tab-labor-glow);
+  --current-tab-icon: var(--tab-labor-icon);
+}
+
+.tab-content-government {
+  --current-tab-primary: var(--tab-government-primary);
+  --current-tab-secondary: var(--tab-government-secondary);
+  --current-tab-accent: var(--tab-government-accent);
+  --current-tab-bg: var(--tab-government-bg);
+  --current-tab-glow: var(--tab-government-glow);
+  --current-tab-icon: var(--tab-government-icon);
+}
+
+.tab-content-demographics {
+  --current-tab-primary: var(--tab-demographics-primary);
+  --current-tab-secondary: var(--tab-demographics-secondary);
+  --current-tab-accent: var(--tab-demographics-accent);
+  --current-tab-bg: var(--tab-demographics-bg);
+  --current-tab-glow: var(--tab-demographics-glow);
+  --current-tab-icon: var(--tab-demographics-icon);
+}
+
+.tab-content-diplomacy {
+  --current-tab-primary: var(--tab-diplomacy-primary);
+  --current-tab-secondary: var(--tab-diplomacy-secondary);
+  --current-tab-accent: var(--tab-diplomacy-accent);
+  --current-tab-bg: var(--tab-diplomacy-bg);
+  --current-tab-glow: var(--tab-diplomacy-glow);
+  --current-tab-icon: var(--tab-diplomacy-icon);
+}
+
+.tab-content-intelligence {
+  --current-tab-primary: var(--tab-intelligence-primary);
+  --current-tab-secondary: var(--tab-intelligence-secondary);
+  --current-tab-accent: var(--tab-intelligence-accent);
+  --current-tab-bg: var(--tab-intelligence-bg);
+  --current-tab-glow: var(--tab-intelligence-glow);
+  --current-tab-icon: var(--tab-intelligence-icon);
+}
+
+.tab-content-defense {
+  --current-tab-primary: var(--tab-defense-primary);
+  --current-tab-secondary: var(--tab-defense-secondary);
+  --current-tab-accent: var(--tab-defense-accent);
+  --current-tab-bg: var(--tab-defense-bg);
+  --current-tab-glow: var(--tab-defense-glow);
+  --current-tab-icon: var(--tab-defense-icon);
+}
+
+.tab-content-politics {
+  --current-tab-primary: var(--tab-politics-primary);
+  --current-tab-secondary: var(--tab-politics-secondary);
+  --current-tab-accent: var(--tab-politics-accent);
+  --current-tab-bg: var(--tab-politics-bg);
+  --current-tab-glow: var(--tab-politics-glow);
+  --current-tab-icon: var(--tab-politics-icon);
+}
+
+.tab-content-detailed {
+  --current-tab-primary: var(--tab-detailed-primary);
+  --current-tab-secondary: var(--tab-detailed-secondary);
+  --current-tab-accent: var(--tab-detailed-accent);
+  --current-tab-bg: var(--tab-detailed-bg);
+  --current-tab-glow: var(--tab-detailed-glow);
+  --current-tab-icon: var(--tab-detailed-icon);
+}
+
+.tab-content-modeling {
+  --current-tab-primary: var(--tab-modeling-primary);
+  --current-tab-secondary: var(--tab-modeling-secondary);
+  --current-tab-accent: var(--tab-modeling-accent);
+  --current-tab-bg: var(--tab-modeling-bg);
+  --current-tab-glow: var(--tab-modeling-glow);
+  --current-tab-icon: var(--tab-modeling-icon);
+}
+
+/* === THEMED GLASS COMPONENTS === */
+
+/* Tab-themed glass cards */
+.facet-card-themed {
+  background: linear-gradient(135deg, 
+    rgba(30, 41, 59, 0.95) 0%,
+    rgba(15, 23, 42, 0.98) 50%,
+    rgba(8, 16, 36, 1) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px) saturate(150%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.facet-card-themed:hover {
+  background: linear-gradient(135deg, 
+    rgba(45, 56, 79, 0.95) 0%,
+    rgba(30, 41, 59, 0.98) 50%,
+    rgba(15, 23, 42, 1) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 16px 48px var(--current-tab-glow),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+
+/* Tab-themed interactive elements */
+.tab-interactive {
+  color: var(--current-tab-primary);
+  border-color: var(--current-tab-accent);
+  background: var(--current-tab-bg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px) saturate(120%);
+  border-radius: 0.5rem;
+}
+
+.tab-interactive:hover {
+  color: var(--current-tab-accent);
+  background: var(--current-tab-bg);
+  box-shadow: 
+    0 4px 24px var(--current-tab-glow),
+    0 0 0 1px var(--current-tab-accent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+.tab-interactive:focus-visible {
+  outline: 2px solid var(--current-tab-primary);
+  outline-offset: 2px;
+}
+
+/* Tab icon styling */
+.tab-icon {
+  color: var(--current-tab-icon);
+  transition: color 0.3s ease;
+}
+
+.tab-icon:hover {
+  color: var(--current-tab-accent);
+}
+
+/* Tab metrics and data display */
+.tab-metric-primary {
+  color: var(--current-tab-primary);
+  font-weight: var(--font-weight-metric);
+  font-size: var(--font-size-metric-large);
+}
+
+.tab-metric-secondary {
+  color: var(--current-tab-secondary);
+  font-weight: var(--font-weight-metric);
+  font-size: var(--font-size-metric-medium);
+}
+
+.tab-metric-small {
+  color: var(--current-tab-accent);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-metric-small);
+}
+
+/* === ANIMATIONS === */
+
+/* Tab activation animation */
+@keyframes tab-activate {
+  0% {
+    opacity: 0.8;
+    transform: translateY(4px) scale(0.98);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.tab-content-enter {
+  animation: tab-activate 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Tab-themed shimmer effect */
+@keyframes tab-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.tab-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--current-tab-glow),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: tab-shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Tab glow effect */
+.tab-glow {
+  position: relative;
+}
+
+.tab-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center,
+    var(--current-tab-glow) 0%,
+    transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.tab-glow:hover::after {
+  opacity: 1;
+}
+
+/* === RESPONSIVE ADAPTATIONS === */
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  :root {
+    /* Simplified color themes for mobile */
+    --tab-glow: color-mix(in srgb, var(--current-tab-primary) 20%, transparent);
+    
+    /* Reduced typography scale */
+    --font-size-metric-large: 1.5rem;
+    --font-size-exec-title: 2rem;
+    --font-size-tab-header: 1.125rem;
+    
+    /* Optimized spacing */
+    --space-glass-lg: 1rem;
+    --space-glass-xl: 1.5rem;
+  }
+  
+  .facet-card-themed {
+    /* Simplified glass effects for performance */
+    backdrop-filter: blur(8px) saturate(120%);
+    box-shadow: 
+      0 4px 16px color-mix(in srgb, var(--current-tab-primary) 8%, rgba(0, 0, 0, 0.2)),
+      0 1px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Touch-friendly interactions */
+  .tab-interactive {
+    min-height: 44px;
+    padding: var(--space-glass-md);
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .facet-card-themed {
+    backdrop-filter: blur(12px) saturate(140%);
+  }
+  
+  .tab-metric-primary {
+    font-size: var(--font-size-metric-medium);
+  }
+}
+
+/* Desktop enhancements */
+@media (min-width: 1025px) {
+  .facet-card-themed:hover {
+    backdrop-filter: blur(20px) saturate(160%);
+  }
+  
+  .tab-interactive:hover {
+    backdrop-filter: blur(16px) saturate(150%);
+  }
+}
+
+/* === DARK MODE ADAPTATIONS === */
+
+[data-theme="dark"] {
+  /* Enhanced glow effects for dark mode */
+  --tab-executive-glow: rgba(180, 83, 9, 0.5);
+  --tab-economy-glow: rgba(5, 150, 105, 0.5);
+  --tab-labor-glow: rgba(220, 38, 38, 0.5);
+  --tab-government-glow: rgba(124, 58, 237, 0.5);
+  --tab-demographics-glow: rgba(8, 145, 178, 0.5);
+  --tab-diplomacy-glow: rgba(8, 145, 178, 0.5);
+  --tab-intelligence-glow: rgba(37, 99, 235, 0.5);
+  --tab-defense-glow: rgba(220, 38, 38, 0.5);
+  --tab-politics-glow: rgba(79, 70, 229, 0.5);
+  --tab-detailed-glow: rgba(190, 24, 93, 0.5);
+  --tab-modeling-glow: rgba(30, 64, 175, 0.5);
+
+  /* Enhanced background opacity */
+  --tab-executive-bg: rgba(180, 83, 9, 0.15);
+  --tab-economy-bg: rgba(5, 150, 105, 0.15);
+  --tab-labor-bg: rgba(220, 38, 38, 0.15);
+  --tab-government-bg: rgba(124, 58, 237, 0.15);
+  --tab-demographics-bg: rgba(8, 145, 178, 0.15);
+  --tab-diplomacy-bg: rgba(8, 145, 178, 0.15);
+  --tab-intelligence-bg: rgba(37, 99, 235, 0.15);
+  --tab-defense-bg: rgba(220, 38, 38, 0.15);
+  --tab-politics-bg: rgba(79, 70, 229, 0.15);
+  --tab-detailed-bg: rgba(190, 24, 93, 0.15);
+  --tab-modeling-bg: rgba(30, 64, 175, 0.15);
+}
+
+[data-theme="dark"] .facet-card-themed {
+  background: linear-gradient(135deg,
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(8, 16, 36, 0.98) 50%,
+    rgba(2, 6, 23, 1) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .tab-icon {
+  opacity: 0.9;
+}
+
+/* === LIGHT MODE ADAPTATIONS === */
+
+[data-theme="light"] {
+  /* Adjusted colors for light backgrounds */
+  --tab-executive-bg: rgba(180, 83, 9, 0.06);
+  --tab-economy-bg: rgba(5, 150, 105, 0.06);
+  --tab-labor-bg: rgba(220, 38, 38, 0.06);
+  --tab-government-bg: rgba(124, 58, 237, 0.06);
+  --tab-demographics-bg: rgba(8, 145, 178, 0.06);
+  --tab-diplomacy-bg: rgba(8, 145, 178, 0.06);
+  --tab-intelligence-bg: rgba(37, 99, 235, 0.06);
+  --tab-defense-bg: rgba(220, 38, 38, 0.06);
+  --tab-politics-bg: rgba(79, 70, 229, 0.06);
+  --tab-detailed-bg: rgba(190, 24, 93, 0.06);
+  --tab-modeling-bg: rgba(30, 64, 175, 0.06);
+
+  /* Reduced glow for light mode */
+  --tab-executive-glow: rgba(180, 83, 9, 0.25);
+  --tab-economy-glow: rgba(5, 150, 105, 0.25);
+  --tab-labor-glow: rgba(220, 38, 38, 0.25);
+  --tab-government-glow: rgba(124, 58, 237, 0.25);
+  --tab-demographics-glow: rgba(8, 145, 178, 0.25);
+  --tab-diplomacy-glow: rgba(8, 145, 178, 0.25);
+  --tab-intelligence-glow: rgba(37, 99, 235, 0.25);
+  --tab-defense-glow: rgba(220, 38, 38, 0.25);
+  --tab-politics-glow: rgba(79, 70, 229, 0.25);
+  --tab-detailed-glow: rgba(190, 24, 93, 0.25);
+  --tab-modeling-glow: rgba(30, 64, 175, 0.25);
+}
+
+[data-theme="light"] .facet-card-themed {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(248, 250, 252, 0.98) 50%,
+    rgba(241, 245, 249, 1) 100%
+  );
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 1px 4px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* === ACCESSIBILITY === */
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .tab-interactive,
+  .facet-card-themed,
+  .tab-shimmer::before {
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+    animation: none;
+    transform: none;
+  }
+  
+  .tab-content-enter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+  .tab-interactive {
+    border-width: 2px;
+  }
+  
+  .tab-interactive:focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
+  
+  .facet-card-themed {
+    border-width: 2px;
+  }
+}
+
+/* === TAB TRIGGER THEMING === */
+
+/* Tab trigger hover effects with theme colors */
+.tab-trigger-executive:hover {
+  background: var(--tab-executive-bg);
+  color: var(--tab-executive-primary);
+}
+
+.tab-trigger-economy:hover {
+  background: var(--tab-economy-bg);
+  color: var(--tab-economy-primary);
+}
+
+.tab-trigger-labor:hover {
+  background: var(--tab-labor-bg);
+  color: var(--tab-labor-primary);
+}
+
+.tab-trigger-government:hover {
+  background: var(--tab-government-bg);
+  color: var(--tab-government-primary);
+}
+
+.tab-trigger-demographics:hover {
+  background: var(--tab-demographics-bg);
+  color: var(--tab-demographics-primary);
+}
+
+.tab-trigger-intelligence:hover {
+  background: var(--tab-intelligence-bg);
+  color: var(--tab-intelligence-primary);
+}
+
+.tab-trigger-detailed:hover {
+  background: var(--tab-detailed-bg);
+  color: var(--tab-detailed-primary);
+}
+
+.tab-trigger-modeling:hover {
+  background: var(--tab-modeling-bg);
+  color: var(--tab-modeling-primary);
+}
+
+/* Active tab trigger states */
+.tab-trigger-executive[data-state="active"] {
+  background: var(--tab-executive-bg) !important;
+  color: var(--tab-executive-primary) !important;
+  border-bottom: 2px solid var(--tab-executive-primary) !important;
+}
+
+.tab-trigger-economy[data-state="active"] {
+  background: var(--tab-economy-bg) !important;
+  color: var(--tab-economy-primary) !important;
+  border-bottom: 2px solid var(--tab-economy-primary) !important;
+}
+
+.tab-trigger-labor[data-state="active"] {
+  background: var(--tab-labor-bg) !important;
+  color: var(--tab-labor-primary) !important;
+  border-bottom: 2px solid var(--tab-labor-primary) !important;
+}
+
+.tab-trigger-government[data-state="active"] {
+  background: var(--tab-government-bg) !important;
+  color: var(--tab-government-primary) !important;
+  border-bottom: 2px solid var(--tab-government-primary) !important;
+}
+
+.tab-trigger-demographics[data-state="active"] {
+  background: var(--tab-demographics-bg) !important;
+  color: var(--tab-demographics-primary) !important;
+  border-bottom: 2px solid var(--tab-demographics-primary) !important;
+}
+
+.tab-trigger-intelligence[data-state="active"] {
+  background: var(--tab-intelligence-bg) !important;
+  color: var(--tab-intelligence-primary) !important;
+  border-bottom: 2px solid var(--tab-intelligence-primary) !important;
+}
+
+.tab-trigger-detailed[data-state="active"] {
+  background: var(--tab-detailed-bg) !important;
+  color: var(--tab-detailed-primary) !important;
+  border-bottom: 2px solid var(--tab-detailed-primary) !important;
+}
+
+.tab-trigger-modeling[data-state="active"] {
+  background: var(--tab-modeling-bg) !important;
+  color: var(--tab-modeling-primary) !important;
+  border-bottom: 2px solid var(--tab-modeling-primary) !important;
+}
+
+.tab-trigger-diplomacy:hover {
+  background: var(--tab-diplomacy-bg);
+  color: var(--tab-diplomacy-primary);
+}
+
+.tab-trigger-diplomacy[data-state="active"] {
+  background: var(--tab-diplomacy-bg) !important;
+  color: var(--tab-diplomacy-primary) !important;
+  border-bottom: 2px solid var(--tab-diplomacy-primary) !important;
+}
+
+.tab-trigger-defense:hover {
+  background: var(--tab-defense-bg);
+  color: var(--tab-defense-primary);
+}
+
+.tab-trigger-defense[data-state="active"] {
+  background: var(--tab-defense-bg) !important;
+  color: var(--tab-defense-primary) !important;
+  border-bottom: 2px solid var(--tab-defense-primary) !important;
+}
+
+.tab-trigger-politics:hover {
+  background: var(--tab-politics-bg);
+  color: var(--tab-politics-primary);
+}
+
+.tab-trigger-politics[data-state="active"] {
+  background: var(--tab-politics-bg) !important;
+  color: var(--tab-politics-primary) !important;
+  border-bottom: 2px solid var(--tab-politics-primary) !important;
+}
+
+/* === SUB-TAB PILL STYLING === */
+/* Modern pill-style nested tabs for Economy and Government sections */
+
+/* Sub-tab container with rounded pill background */
+.subtab-pills {
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.375rem;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 9999px;
+  width: fit-content;
+}
+
+.dark .subtab-pills {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Individual pill trigger base styles */
+.subtab-pill {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  transition: all 200ms ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.subtab-pill:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--foreground);
+}
+
+.dark .subtab-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Active pill state */
+.subtab-pill[data-state="active"] {
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.dark .subtab-pill[data-state="active"] {
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Themed pill variants - Economy */
+.subtab-pills-economy {
+  background: rgba(5, 150, 105, 0.06);
+}
+
+.dark .subtab-pills-economy {
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.subtab-pill-economy:hover {
+  background: var(--tab-economy-bg);
+  color: var(--tab-economy-primary);
+}
+
+.subtab-pill-economy[data-state="active"] {
+  background: linear-gradient(135deg, var(--tab-economy-primary), var(--tab-economy-secondary));
+  color: white;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+
+/* Themed pill variants - Government */
+.subtab-pills-government {
+  background: rgba(124, 58, 237, 0.06);
+}
+
+.dark .subtab-pills-government {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.subtab-pill-government:hover {
+  background: var(--tab-government-bg);
+  color: var(--tab-government-primary);
+}
+
+.subtab-pill-government[data-state="active"] {
+  background: linear-gradient(135deg, var(--tab-government-primary), var(--tab-government-secondary));
+  color: white;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+/* Themed pill variants - Labor */
+.subtab-pills-labor {
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.dark .subtab-pills-labor {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.subtab-pill-labor:hover {
+  background: var(--tab-labor-bg);
+  color: var(--tab-labor-primary);
+}
+
+.subtab-pill-labor[data-state="active"] {
+  background: linear-gradient(135deg, var(--tab-labor-primary), var(--tab-labor-secondary));
+  color: white;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+/* Themed pill variants - Demographics */
+.subtab-pills-demographics {
+  background: rgba(8, 145, 178, 0.06);
+}
+
+.dark .subtab-pills-demographics {
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.subtab-pill-demographics:hover {
+  background: var(--tab-demographics-bg);
+  color: var(--tab-demographics-primary);
+}
+
+.subtab-pill-demographics[data-state="active"] {
+  background: linear-gradient(135deg, var(--tab-demographics-primary), var(--tab-demographics-secondary));
+  color: white;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+}
+
+/* Pill icon styling */
+.subtab-pill .subtab-icon {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 200ms ease;
+}
+
+.subtab-pill:hover .subtab-icon {
+  transform: scale(1.1);
+}
+
+.subtab-pill[data-state="active"] .subtab-icon {
+  transform: scale(1.15);
+}
+
+/* Responsive adjustments for pills */
+@media (max-width: 640px) {
+  .subtab-pills {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .subtab-pill {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .subtab-pill span:not(.subtab-icon) {
+    display: none;
+  }
+  
+  .subtab-pill .subtab-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+}
+
+/* === ANIMATION UTILITIES === */
+
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift {
+  transition: transform 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* === UTILITY CLASSES === */
+
+.mycountry-executive {
+  --current-tab-primary: var(--tab-executive-primary);
+  --current-tab-secondary: var(--tab-executive-secondary);
+  --current-tab-accent: var(--tab-executive-accent);
+  --current-tab-bg: var(--tab-executive-bg);
+  --current-tab-glow: var(--tab-executive-glow);
+  --current-tab-icon: var(--tab-executive-icon);
+}
+
+.mycountry-economy {
+  --current-tab-primary: var(--tab-economy-primary);
+  --current-tab-secondary: var(--tab-economy-secondary);
+  --current-tab-accent: var(--tab-economy-accent);
+  --current-tab-bg: var(--tab-economy-bg);
+  --current-tab-glow: var(--tab-economy-glow);
+  --current-tab-icon: var(--tab-economy-icon);
+}
+
+.mycountry-labor {
+  --current-tab-primary: var(--tab-labor-primary);
+  --current-tab-secondary: var(--tab-labor-secondary);
+  --current-tab-accent: var(--tab-labor-accent);
+  --current-tab-bg: var(--tab-labor-bg);
+  --current-tab-glow: var(--tab-labor-glow);
+  --current-tab-icon: var(--tab-labor-icon);
+}
+
+.mycountry-government {
+  --current-tab-primary: var(--tab-government-primary);
+  --current-tab-secondary: var(--tab-government-secondary);
+  --current-tab-accent: var(--tab-government-accent);
+  --current-tab-bg: var(--tab-government-bg);
+  --current-tab-glow: var(--tab-government-glow);
+  --current-tab-icon: var(--tab-government-icon);
+}
+
+.mycountry-demographics {
+  --current-tab-primary: var(--tab-demographics-primary);
+  --current-tab-secondary: var(--tab-demographics-secondary);
+  --current-tab-accent: var(--tab-demographics-accent);
+  --current-tab-bg: var(--tab-demographics-bg);
+  --current-tab-glow: var(--tab-demographics-glow);
+  --current-tab-icon: var(--tab-demographics-icon);
+}
+
+.mycountry-intelligence {
+  --current-tab-primary: var(--tab-intelligence-primary);
+  --current-tab-secondary: var(--tab-intelligence-secondary);
+  --current-tab-accent: var(--tab-intelligence-accent);
+  --current-tab-bg: var(--tab-intelligence-bg);
+  --current-tab-glow: var(--tab-intelligence-glow);
+  --current-tab-icon: var(--tab-intelligence-icon);
+}
+
+.mycountry-diplomacy {
+  --current-tab-primary: var(--tab-diplomacy-primary);
+  --current-tab-secondary: var(--tab-diplomacy-secondary);
+  --current-tab-accent: var(--tab-diplomacy-accent);
+  --current-tab-bg: var(--tab-diplomacy-bg);
+  --current-tab-glow: var(--tab-diplomacy-glow);
+  --current-tab-icon: var(--tab-diplomacy-icon);
+}
+
+.mycountry-defense {
+  --current-tab-primary: var(--tab-defense-primary);
+  --current-tab-secondary: var(--tab-defense-secondary);
+  --current-tab-accent: var(--tab-defense-accent);
+  --current-tab-bg: var(--tab-defense-bg);
+  --current-tab-glow: var(--tab-defense-glow);
+  --current-tab-icon: var(--tab-defense-icon);
+}
+
+.mycountry-politics {
+  --current-tab-primary: var(--tab-politics-primary);
+  --current-tab-secondary: var(--tab-politics-secondary);
+  --current-tab-accent: var(--tab-politics-accent);
+  --current-tab-bg: var(--tab-politics-bg);
+  --current-tab-glow: var(--tab-politics-glow);
+  --current-tab-icon: var(--tab-politics-icon);
+}
+
+.mycountry-detailed {
+  --current-tab-primary: var(--tab-detailed-primary);
+  --current-tab-secondary: var(--tab-detailed-secondary);
+  --current-tab-accent: var(--tab-detailed-accent);
+  --current-tab-bg: var(--tab-detailed-bg);
+  --current-tab-glow: var(--tab-detailed-glow);
+  --current-tab-icon: var(--tab-detailed-icon);
+}
+
+.mycountry-modeling {
+  --current-tab-primary: var(--tab-modeling-primary);
+  --current-tab-secondary: var(--tab-modeling-secondary);
+  --current-tab-accent: var(--tab-modeling-accent);
+  --current-tab-bg: var(--tab-modeling-bg);
+  --current-tab-glow: var(--tab-modeling-glow);
+  --current-tab-icon: var(--tab-modeling-icon);
+}
+
+/* Component shortcuts - Use proper inheritance */
+.themed-glass {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px) saturate(150%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.themed-interactive {
+  color: var(--current-tab-primary);
+  border-color: var(--current-tab-accent);
+  background: var(--current-tab-bg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px) saturate(120%);
+  border-radius: 0.5rem;
+}
+
+.themed-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.themed-glow {
+  position: relative;
+}
+
+/* MyCountry Card specific styling */
+.mycountry-card {
+  background: linear-gradient(135deg, 
+    var(--tab-executive-bg) 0%,
+    rgba(252, 211, 77, 0.05) 25%,
+    var(--tab-executive-bg) 50%,
+    rgba(252, 211, 77, 0.03) 75%,
+    var(--tab-executive-bg) 100%
+  );
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 
+    0 4px 24px rgba(255, 215, 0, 0.1),
+    0 0 0 1px rgba(255, 215, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mycountry-card:hover {
+  background: linear-gradient(135deg, 
+    rgba(252, 211, 77, 0.12) 0%,
+    var(--tab-executive-bg) 25%,
+    rgba(252, 211, 77, 0.08) 50%,
+    var(--tab-executive-bg) 75%,
+    rgba(252, 211, 77, 0.12) 100%
+  );
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 40px rgba(255, 215, 0, 0.2),
+    0 0 0 1px rgba(255, 215, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Dark mode MyCountry gradient overlay */
+.dark .mycountry-card {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.12) 0%,
+    rgba(255, 223, 0, 0.08) 25%,
+    rgba(255, 215, 0, 0.12) 50%,
+    rgba(255, 223, 0, 0.06) 75%,
+    rgba(255, 215, 0, 0.12) 100%
+  );
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 
+    0 6px 32px rgba(255, 215, 0, 0.15),
+    0 0 0 1px rgba(255, 215, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Light mode MyCountry gradient overlay */
+.light .mycountry-card {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.06) 0%,
+    rgba(255, 223, 0, 0.04) 25%,
+    rgba(255, 215, 0, 0.06) 50%,
+    rgba(255, 223, 0, 0.02) 75%,
+    rgba(255, 215, 0, 0.06) 100%
+  ),
+  rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 215, 0, 0.25);
+  box-shadow: 
+    0 2px 16px rgba(255, 215, 0, 0.08),
+    0 0 0 1px rgba(255, 215, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Light mode MyCountry hover overlay */
+.light .mycountry-card:hover {
+  box-shadow: 
+    0 4px 24px rgba(255, 215, 0, 0.12),
+    0 0 0 1px rgba(255, 215, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Gold shimmer animation */
+.mycountry-gold-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.mycountry-gold-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(252, 211, 77, 0.4),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: mycountry-shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes mycountry-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* === UNIFIED LAYOUT THEME EXTENSIONS === */
+
+/* Glass hierarchy system matching dashboard patterns */
+.glass-mycountry {
+  --primary-color: var(--tab-executive-primary);
+  --secondary-color: var(--tab-executive-secondary);
+  --accent-color: var(--tab-executive-accent);
+  --bg-color: var(--tab-executive-bg);
+  --glow-color: var(--tab-executive-glow);
+}
+
+.glass-eci {
+  --primary-color: var(--tab-government-primary);
+  --secondary-color: var(--tab-government-secondary);
+  --accent-color: var(--tab-government-accent);
+  --bg-color: var(--tab-government-bg);
+  --glow-color: var(--tab-government-glow);
+}
+
+.glass-sdi {
+  --primary-color: var(--tab-intelligence-primary);
+  --secondary-color: var(--tab-intelligence-secondary);
+  --accent-color: var(--tab-intelligence-accent);
+  --bg-color: var(--tab-intelligence-bg);
+  --glow-color: var(--tab-intelligence-glow);
+}
+
+.glass-global {
+  --primary-color: var(--tab-modeling-primary);
+  --secondary-color: var(--tab-modeling-secondary);
+  --accent-color: var(--tab-modeling-accent);
+  --bg-color: var(--tab-modeling-bg);
+  --glow-color: var(--tab-modeling-glow);
+}
+
+/* Unified collapsible section styling */
+.unified-section {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.03) 50%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px) saturate(150%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.unified-section:hover {
+  background: linear-gradient(135deg, 
+    var(--bg-color) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    var(--bg-color) 100%
+  );
+  border-color: var(--accent-color);
+  box-shadow: 
+    0 8px 32px var(--glow-color),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Section header styling */
+.section-header {
+  transition: all 0.2s ease;
+}
+
+.section-header:hover {
+  background: rgba(var(--primary-color), 0.05);
+}
+
+/* Icon theming for sections */
+.section-icon {
+  color: var(--primary-color);
+  background: var(--bg-color);
+  border: 1px solid var(--accent-color);
+  transition: all 0.3s ease;
+}
+
+.section-icon:hover {
+  color: var(--accent-color);
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 16px var(--glow-color);
+}
+
+/* Unified grid system matching dashboard */
+.unified-grid-main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .unified-grid-main {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+/* Metric styling consistency */
+.unified-metric {
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.unified-metric-small {
+  color: var(--secondary-color);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+/* Badge theming */
+.unified-badge {
+  background: var(--bg-color);
+  color: var(--primary-color);
+  border: 1px solid var(--accent-color);
+}
+
+/* Interactive elements */
+.unified-interactive {
+  background: var(--bg-color);
+  border: 1px solid var(--accent-color);
+  color: var(--primary-color);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.unified-interactive:hover {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 16px var(--glow-color);
+  transform: translateY(-1px);
+}
+
+/* Command palette integration */
+.command-button {
+  background: var(--bg-color);
+  border: 1px solid var(--accent-color);
+  color: var(--primary-color);
+  backdrop-filter: blur(8px) saturate(120%);
+}
+
+.command-button:hover {
+  background: var(--glow-color);
+  border-color: var(--primary-color);
+  color: var(--accent-color);
+  box-shadow: 0 4px 16px var(--glow-color);
+}
+
+/* Mode toggle styling */
+.mode-toggle {
+  background: var(--bg-color);
+  border: 1px solid var(--accent-color);
+  color: var(--primary-color);
+  backdrop-filter: blur(8px) saturate(120%);
+  transition: all 0.3s ease;
+}
+
+.mode-toggle:hover {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 16px var(--glow-color);
+}
+
+/* === IMMERSIVE EXECUTIVE DASHBOARD ENHANCEMENTS === */
+/* Enhanced glass effects and cinematic styling for executive mode */
+
+.executive-immersive {
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(180, 83, 9, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(252, 211, 77, 0.05) 0%, transparent 50%);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.executive-immersive::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(135deg, 
+      rgba(180, 83, 9, 0.03) 0%, 
+      transparent 30%, 
+      rgba(124, 58, 237, 0.02) 70%, 
+      rgba(252, 211, 77, 0.03) 100%
+    );
+  pointer-events: none;
+  z-index: -1;
+}
+
+
+/* Cinematic transitions for executive mode */
+.executive-enter {
+  animation: executive-enter 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes executive-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+    filter: blur(8px);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.98) translateY(10px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* Enhanced command interface styling */
+.command-interface {
+  background: 
+    linear-gradient(135deg, 
+      rgba(180, 83, 9, 0.1) 0%, 
+      rgba(124, 58, 237, 0.05) 50%, 
+      rgba(252, 211, 77, 0.08) 100%
+    );
+  border: 1px solid rgba(180, 83, 9, 0.2);
+  backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 
+    0 16px 64px rgba(180, 83, 9, 0.15),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.command-interface::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(180, 83, 9, 0.05) 40%,
+      rgba(124, 58, 237, 0.03) 50%,
+      rgba(252, 211, 77, 0.05) 60%,
+      transparent 70%
+    );
+  background-size: 300% 300%;
+  animation: prismatic-flow 15s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes prismatic-flow {
+  0% { background-position: 0% 0%; }
+  25% { background-position: 100% 100%; }
+  50% { background-position: 0% 100%; }
+  75% { background-position: 100% 0%; }
+  100% { background-position: 0% 0%; }
+}
+
+/* ==========================================================================
+   VOLUMETRIC THEMED GRADIENTS FOR CONTAINER CARDS
+   ========================================================================== */
+
+/* Overview Tab - Amber/Gold Volumetric Glow */
+.bg-gradient-overview {
+  background: linear-gradient(
+    to bottom, 
+    var(--bg-gradient-overview-start), 
+    var(--bg-gradient-overview-end)
+  ) !important;
+}
+
+/* Economy Tab - Emerald/Green Volumetric Glow */
+.bg-gradient-economy {
+  background: linear-gradient(
+    to bottom, 
+    var(--bg-gradient-economy-start), 
+    var(--bg-gradient-economy-end)
+  ) !important;
+}
+
+/* Labor Tab - Red/Burgundy Volumetric Glow */
+.bg-gradient-labor {
+  background: linear-gradient(
+    to bottom, 
+    var(--bg-gradient-labor-start), 
+    var(--bg-gradient-labor-end)
+  ) !important;
+}
+
+/* Government Tab - Violet/Amethyst Volumetric Glow */
+.bg-gradient-government {
+  background: linear-gradient(
+    to bottom, 
+    var(--bg-gradient-government-start), 
+    var(--bg-gradient-government-end)
+  ) !important;
+}

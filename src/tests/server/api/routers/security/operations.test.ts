@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
-import { securityOperationsRouter } from "~/server/api/routers/security/operations";
+import { securityConflictsRouter } from "~/server/api/routers/security/conflicts";
 import { newsGenerator } from "~/lib/diplomacy/news-generator";
 import { notificationAPI } from "~/lib/notifications/api";
 
@@ -72,7 +72,7 @@ const acceptedConflict = {
   defender: { id: "country_2", name: "Defenderland" },
 };
 
-describe("securityOperationsRouter conflict news", () => {
+describe("securityConflictsRouter conflict news", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockDb.systemLog.create.mockResolvedValue({ id: "log_1" });
@@ -89,7 +89,7 @@ describe("securityOperationsRouter conflict news", () => {
       users: [{ clerkUserId: "user_2" }],
     });
 
-    const caller = securityOperationsRouter.createCaller(baseContext);
+    const caller = securityConflictsRouter.createCaller(baseContext);
 
     await caller.proposePvPConflict({ defenderId: "country_2", reason: "Border dispute" });
 
@@ -124,7 +124,7 @@ describe("securityOperationsRouter conflict news", () => {
       users: [{ clerkUserId: "user_1" }],
     });
 
-    const caller = securityOperationsRouter.createCaller(defenderContext);
+    const caller = securityConflictsRouter.createCaller(defenderContext);
 
     await caller.respondToConflict({ conflictId: "conflict_1", accept: true });
 
@@ -161,7 +161,7 @@ describe("securityOperationsRouter conflict news", () => {
       users: [{ clerkUserId: "user_1" }],
     });
 
-    const caller = securityOperationsRouter.createCaller(defenderContext);
+    const caller = securityConflictsRouter.createCaller(defenderContext);
 
     await caller.respondToConflict({ conflictId: "conflict_1", accept: false });
 
@@ -214,7 +214,7 @@ describe("securityOperationsRouter conflict news", () => {
     });
     mockDb.storytellerEffect.createMany.mockResolvedValue({ count: 2 });
 
-    const caller = securityOperationsRouter.createCaller(baseContext);
+    const caller = securityConflictsRouter.createCaller(baseContext);
 
     await caller.resolvePvNPCConflict({ targetCountryId: "country_2", reason: "Skirmish" });
 

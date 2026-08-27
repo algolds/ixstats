@@ -1,0 +1,408 @@
+/* ==========================================================================
+   FACET DESIGN SYSTEM — CORE TOKENS, VOLUMETRIC DEPTHS & LAYOUTS
+   ========================================================================== */
+
+/* ─── 1. Core Tokens & Custom Properties ───────────────────────────────── */
+
+:root {
+  /* Core Brand & Theme Colors */
+  --facet-mycountry: var(--color-theme-gold);
+  --facet-global: var(--color-theme-ocean);
+  --facet-overview: var(--color-brand-darker);
+  --facet-economy: var(--color-theme-emerald);
+  --facet-military: var(--color-theme-crimson);
+  --facet-cultural: var(--color-theme-amethyst);
+  --facet-security: var(--color-theme-ocean);
+  --facet-builder: var(--color-forum-accent-hover);
+  --facet-forum: var(--color-forum-accent-hover);
+
+  /* Volumetric Z-axis Depth Aliases (Canonical tokens defined in themes.css) */
+
+  /* Aliases for --z-depth-* */
+  --z-depth-background: var(--z-background);
+  --z-depth-surface: var(--z-surface);
+  --z-depth-floating: var(--z-floating);
+  --z-depth-overlay: var(--z-overlay);
+  --z-depth-navigation: var(--z-navigation);
+  --z-depth-popover: var(--z-popover);
+  --z-depth-tooltip: var(--z-tooltip);
+  --z-depth-toast: var(--z-toast);
+  --z-depth-backdrop: var(--z-backdrop);
+  --z-depth-modal: var(--z-modal);
+  --z-depth-command: var(--z-command);
+
+  /* Blur Intensities */
+  --blur-subtle: 8px;
+  --blur-moderate: 16px;
+  --blur-prominent: 24px;
+  --blur-intense: 32px;
+
+  /* Edge Refraction Sheen Coefficients */
+  --refraction-light: 0.1;
+  --refraction-medium: 0.15;
+  --refraction-strong: 0.25;
+  --refraction-intense: 0.35;
+
+  /* Adaptive Light Mode Base Values */
+  --facet-light-bg: rgba(255, 255, 255, 0.88);
+  --facet-light-border: rgba(0, 0, 0, 0.08);
+  --facet-light-shadow: rgba(0, 0, 0, 0.06);
+
+  /* Texture Patterns Foreground Base Color */
+  --facet-texture-color: rgba(0, 0, 0, 0.25);
+
+  /* Halo (Formerly Dynamic Island) Specific Properties */
+  --facet-halo-height-compact: 40px;
+  --facet-halo-glow-color: rgba(59, 130, 246, 0.3);
+}
+
+.dark {
+  /* Texture Patterns dynamically adapt to translucent white in Dark Mode */
+  --facet-texture-color: rgba(255, 255, 255, 0.08);
+
+  /* High-luminance domain accents tuned for dark surfaces */
+  --facet-mycountry: var(--color-amber-400);
+  --facet-global: var(--color-blue-400);
+  --facet-overview: var(--color-indigo-400);
+  --facet-economy: var(--color-emerald-400);
+  --facet-military: var(--color-red-400);
+  --facet-cultural: var(--color-purple-400);
+  --facet-security: var(--color-sky-400);
+  --facet-builder: var(--color-orange-400);
+  --facet-forum: var(--color-orange-400);
+}
+
+/* ─── 2. Base Depths & Volumetric Surfaces ──────────────────────────────── */
+
+.facet-base,
+.facet-surface,
+.facet-floating,
+.facet-overlay,
+.facet-depth-1,
+.facet-depth-2,
+.facet-depth-3,
+.facet-depth-4 {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.facet-surface { z-index: var(--z-depth-surface, 0); }
+.facet-floating { z-index: var(--z-depth-floating, 100); }
+.facet-overlay { z-index: var(--z-depth-overlay, 1000); }
+
+.facet-depth-1 {
+  backdrop-filter: blur(var(--blur-moderate, 16px)) saturate(var(--facet-saturate, 150%));
+  -webkit-backdrop-filter: blur(var(--blur-moderate, 16px)) saturate(var(--facet-saturate, 150%));
+  border: 1px solid var(--facet-border-1, var(--border, rgba(255, 255, 255, 0.1)));
+  background: var(--facet-bg-1, rgba(var(--card-rgb, 24, 24, 27), 0.7));
+  box-shadow: var(--facet-shadow-1, 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.08));
+  z-index: var(--z-depth-surface, 0);
+}
+
+.facet-depth-2 {
+  backdrop-filter: blur(var(--blur-prominent, 24px)) saturate(var(--facet-saturate, 160%));
+  -webkit-backdrop-filter: blur(var(--blur-prominent, 24px)) saturate(var(--facet-saturate, 160%));
+  border: 1px solid var(--facet-border-2, var(--border, rgba(255, 255, 255, 0.15)));
+  background: var(--facet-bg-2, rgba(var(--card-rgb, 24, 24, 27), 0.85));
+  box-shadow: var(--facet-shadow-2, 0 12px 36px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12));
+  z-index: var(--z-depth-floating, 100);
+}
+
+.facet-depth-3 {
+  backdrop-filter: blur(var(--blur-intense, 32px)) saturate(var(--facet-saturate, 180%));
+  -webkit-backdrop-filter: blur(var(--blur-intense, 32px)) saturate(var(--facet-saturate, 180%));
+  border: 1px solid var(--facet-border-3, var(--border, rgba(255, 255, 255, 0.18)));
+  background: var(--facet-bg-3, rgba(var(--card-rgb, 24, 24, 27), 0.92));
+  box-shadow: var(--facet-shadow-3, 0 20px 60px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15));
+  z-index: var(--z-depth-overlay, 1000);
+}
+
+.facet-depth-4 {
+  backdrop-filter: blur(var(--blur-intense, 32px)) saturate(var(--facet-saturate, 200%));
+  -webkit-backdrop-filter: blur(var(--blur-intense, 32px)) saturate(var(--facet-saturate, 200%));
+  border: 1px solid var(--facet-border-4, var(--border, rgba(255, 255, 255, 0.2)));
+  background: var(--facet-bg-4, rgba(var(--card-rgb, 24, 24, 27), 0.98));
+  box-shadow: var(--facet-shadow-4, 0 32px 80px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2));
+  z-index: var(--z-depth-modal, 100001);
+}
+
+/* Background Adaptivity Reaction Fields */
+.facet-adapt-light {
+  --refraction-light: 0.08;
+  --refraction-medium: 0.12;
+  --refraction-strong: 0.18;
+  --refraction-intense: 0.25;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.facet-adapt-dark {
+  --refraction-light: 0.15;
+  --refraction-medium: 0.22;
+  --refraction-strong: 0.32;
+  --refraction-intense: 0.45;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dark .facet-adapt-light {
+  --refraction-light: 0.12;
+  --refraction-medium: 0.18;
+  --refraction-strong: 0.28;
+  --refraction-intense: 0.35;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .facet-adapt-dark {
+  --refraction-light: 0.18;
+  --refraction-medium: 0.28;
+  --refraction-strong: 0.38;
+  --refraction-intense: 0.5;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* ─── 3. Grid & Column Layout Helpers ──────────────────────────────────── */
+
+/* 3-Column Dashboard/Vault Grid Container */
+.facet-layout-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem; /* gap-5 */
+}
+
+@media (min-width: 1024px) {
+  .facet-layout-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem; /* gap-6 */
+  }
+}
+
+/* Main content stream (covers 2/3 of space on desktop) */
+.facet-layout-main-span-2 {
+  grid-column: span 1 / span 1;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .facet-layout-main-span-2 {
+    grid-column: span 2 / span 2;
+  }
+}
+
+/* Sidebar column (covers 1/3 of space on desktop) */
+.facet-layout-sidebar-span-1 {
+  grid-column: span 1 / span 1;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .facet-layout-sidebar-span-1 {
+    grid-column: span 1 / span 1;
+  }
+}
+
+
+/* ─── 4. Stacking Hierarchy & Elevation Relationships ──────────────────── */
+
+/* ==========================================================================
+   FACET DESIGN SYSTEM — HIERARCHICAL PHYSICS & RELATION FIELDS
+   ========================================================================== */
+
+/* Parent container establishes initial blur saturation backdrop */
+.facet-hierarchy-parent {
+  position: relative;
+  backdrop-filter: blur(var(--blur-subtle)) saturate(120%);
+  -webkit-backdrop-filter: blur(var(--blur-subtle)) saturate(120%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(248, 250, 252, 0.65) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  color: var(--foreground);
+}
+
+/* Child elements nested in parent inherit and compound parent blur */
+.facet-hierarchy-child {
+  position: relative;
+  backdrop-filter: blur(var(--blur-moderate)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(150%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.85) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 1);
+  color: var(--foreground);
+}
+
+/* Interactive sibling/child buttons increase saturation, sheens and depth on focus */
+.facet-hierarchy-interactive {
+  position: relative;
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+              box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1),
+              background-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+              border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
+  cursor: pointer;
+  color: var(--foreground);
+}
+
+.facet-hierarchy-interactive:hover {
+  backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(248, 250, 252, 0.98) 100%);
+  border-color: rgba(0, 0, 0, 0.14);
+  box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
+  color: var(--foreground);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   DARK MODE SPECIFIC HIERARCHY OVERRIDES
+   ────────────────────────────────────────────────────────────────────────── */
+
+.dark .facet-hierarchy-parent,
+[data-theme="dark"] .facet-hierarchy-parent {
+  background: linear-gradient(135deg, rgba(22, 24, 29, 0.6) 0%, rgba(15, 17, 20, 0.7) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.dark .facet-hierarchy-child,
+[data-theme="dark"] .facet-hierarchy-child {
+  background: linear-gradient(135deg, rgba(30, 32, 40, 0.6) 0%, rgba(22, 24, 29, 0.7) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.dark .facet-hierarchy-interactive,
+[data-theme="dark"] .facet-hierarchy-interactive {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.dark .facet-hierarchy-interactive:hover,
+[data-theme="dark"] .facet-hierarchy-interactive:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Contextual popovers respond dynamically to the depth of parent containers */
+.facet-contextual-popover {
+  position: relative;
+  backdrop-filter: blur(var(--blur-intense)) saturate(220%);
+  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background-color: var(--popover);
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-strong)) 0%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  box-shadow:
+    0 20px 80px rgba(0, 0, 0, 0.2),
+    0 10px 40px rgba(0, 0, 0, 0.15),
+    inset 0 2px 0 rgba(255, 255, 255, 0.5);
+  z-index: var(--z-depth-tooltip);
+  transform: translateZ(75px);
+}
+
+.facet-depth-1 .facet-contextual-popover {
+  backdrop-filter: blur(calc(var(--blur-intense) + 8px)) saturate(240%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-intense) + 8px)) saturate(240%);
+}
+
+.facet-depth-2 .facet-contextual-popover {
+  backdrop-filter: blur(calc(var(--blur-intense) + 12px)) saturate(260%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-intense) + 12px)) saturate(260%);
+}
+
+.facet-depth-3 .facet-contextual-popover {
+  backdrop-filter: blur(calc(var(--blur-intense) + 16px)) saturate(280%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-intense) + 16px)) saturate(280%);
+}
+
+.dark .facet-contextual-popover {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: var(--popover);
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, calc(var(--refraction-strong) * 0.8)) 0%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  box-shadow:
+    0 24px 96px rgba(0, 0, 0, 0.5),
+    0 12px 48px rgba(0, 0, 0, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3);
+}
+
+.dark .facet-depth-1 .facet-contextual-popover {
+  backdrop-filter: blur(calc(var(--blur-intense) + 12px)) saturate(280%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-intense) + 12px)) saturate(280%);
+  box-shadow:
+    0 28px 112px rgba(0, 0, 0, 0.6),
+    0 14px 56px rgba(0, 0, 0, 0.35),
+    inset 0 3px 0 rgba(255, 255, 255, 0.35);
+}
+
+.dark .facet-depth-2 .facet-contextual-popover {
+  backdrop-filter: blur(calc(var(--blur-intense) + 16px)) saturate(300%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-intense) + 16px)) saturate(300%);
+  box-shadow:
+    0 32px 128px rgba(0, 0, 0, 0.7),
+    0 16px 64px rgba(0, 0, 0, 0.4),
+    inset 0 3px 0 rgba(255, 255, 255, 0.4);
+}
+
+.dark .facet-depth-3 .facet-contextual-popover {
+  backdrop-filter: blur(calc(var(--blur-intense) + 20px)) saturate(320%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-intense) + 20px)) saturate(320%);
+  box-shadow:
+    0 36px 144px rgba(0, 0, 0, 0.8),
+    0 18px 72px rgba(0, 0, 0, 0.45),
+    inset 0 4px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   LIGHT MODE SPECIFIC HIERARCHY OVERRIDES
+   ────────────────────────────────────────────────────────────────────────── */
+
+[data-theme="light"] .facet-hierarchy-parent,
+html:not([data-theme="dark"]) .facet-hierarchy-parent {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .facet-hierarchy-child,
+html:not([data-theme="dark"]) .facet-hierarchy-child {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.06),
+    0 1px 6px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .facet-hierarchy-interactive,
+html:not([data-theme="dark"]) .facet-hierarchy-interactive {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.85) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 1px 8px rgba(0, 0, 0, 0.05),
+    0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .facet-hierarchy-interactive:hover,
+html:not([data-theme="dark"]) .facet-hierarchy-interactive:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.9) 100%);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+

@@ -38,5 +38,15 @@ jest.mock("@number-flow/react", () => {
   };
 });
 
-
-
+// Graceful cleanup after all tests complete in a worker
+afterAll(async () => {
+  try {
+    // 1. Disconnect PrismaClient if loaded
+    const globalPrisma = (globalThis as any).prisma;
+    if (globalPrisma && typeof globalPrisma.$disconnect === "function") {
+      await globalPrisma.$disconnect();
+    }
+  } catch {
+    // Ignore teardown disconnect errors
+  }
+});

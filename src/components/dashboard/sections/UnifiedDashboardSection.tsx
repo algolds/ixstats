@@ -16,9 +16,11 @@ import {
   staggerItem,
 } from "~/components/mycountry/shared/primitives/tabs/TabMotionConfig";
 import { useUser } from "~/context/auth-context";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { FacetTabs } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
+
+type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
 
 import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
 import { AccountSettingsModal } from "~/components/thinkpages/AccountSettingsModal";
@@ -68,10 +70,10 @@ export function UnifiedDashboardSection({
 
   // ── Feed state ──
   const [activeTab, setActiveTab] = useState<FeedTab>("all");
-  const [selectedAccount, setSelectedAccount] = useState<any>(null);
+  const [selectedAccount, setSelectedAccount] = useState<ThinkpagesAccountItem | null>(null);
   const [showAccountCreation, setShowAccountCreation] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
-  const [settingsAccount, setSettingsAccount] = useState<any>(null);
+  const [settingsAccount, setSettingsAccount] = useState<ThinkpagesAccountItem | null>(null);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [repostingPost, setRepostingPost] = useState<any>(null);

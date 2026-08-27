@@ -8,6 +8,7 @@
  */
 
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
@@ -32,7 +33,7 @@ const WEEKLY_CAP = 3; // safety ceiling on intents resolved per IxTime-week
 const BUDGET_PCT_MAX = 60; // clamp a single department's allocatedPercent
 
 /** Load active Power Brokers for a country (mirrors elections.getPowerBrokers). */
-async function loadBrokers(db: any, countryId: string): Promise<ActiveBroker[]> {
+async function loadBrokers(db: PrismaClient, countryId: string): Promise<ActiveBroker[]> {
   const [components, allocations] = await Promise.all([
     db.governmentComponent.findMany({
       where: { countryId, isActive: true },
@@ -62,7 +63,7 @@ function alignedBroker(brokers: ActiveBroker[], category: Category): ActiveBroke
   return id ? brokers.find((b) => b.id === id) : undefined;
 }
 
-async function cooldownStatus(db: any, countryId: string) {
+async function cooldownStatus(db: PrismaClient, countryId: string) {
   const now = IxTime.getCurrentIxTime();
   const weekAgo = now - WEEK_MS;
   const recent = await db.intent.findMany({

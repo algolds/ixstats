@@ -9,7 +9,7 @@ import { execSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 
-const routers = ["admin", "sports", "activities", "security"];
+const routers = ["admin", "sports", "activities", "security", "ixnayid"];
 const base = "src/server/api/routers";
 const proj = new Project({ skipAddingFilesFromTsConfig: true });
 

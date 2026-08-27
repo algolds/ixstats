@@ -2,7 +2,7 @@
 
 import React, { useRef, useCallback } from "react";
 import { formatExactCurrency } from "~/lib/utils";
-import { usePendingLocks } from "~/app/mycountry/editor/hooks/usePendingLocks";
+import { usePendingLocks } from "~/hooks/usePendingLocks";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Slider } from "~/components/ui/slider";

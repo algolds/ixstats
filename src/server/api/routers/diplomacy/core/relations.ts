@@ -1,4 +1,4 @@
-import type { DiplomaticRelationDto } from "~/shared/types/diplomacy.dto";
+import type { DiplomaticRelationDto } from "~/types/diplomacy.dto";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";

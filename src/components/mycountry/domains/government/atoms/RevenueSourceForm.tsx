@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useCallback } from "react";
 import { formatExactCurrency } from "~/lib/utils";
-import { usePendingLocks } from "~/app/mycountry/editor/hooks/usePendingLocks";
+import { usePendingLocks } from "~/hooks/usePendingLocks";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
@@ -21,7 +21,7 @@ import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
 import {
   revenueTaxIntegrationService,
   type CollectionMethod,
-} from "~/app/builder/services/RevenueTaxIntegrationService";
+} from "~/lib/builder/services/RevenueTaxIntegrationService";
 
 interface RevenueSourceFormProps {
   data: RevenueSourceInput[];

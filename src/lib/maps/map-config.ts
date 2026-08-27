@@ -219,6 +219,11 @@ export const ROUTE_STYLES: Record<string, RouteStyle> = {
 /** Ordered list of all route type keys for consistent UI rendering */
 export const ROUTE_TYPE_KEYS = Object.keys(ROUTE_STYLES) as (keyof typeof ROUTE_STYLES)[];
 
+/** Map of route types to hex colors */
+export const ROUTE_COLORS: Record<string, string> = Object.fromEntries(
+  Object.entries(ROUTE_STYLES).map(([k, v]) => [k, v.color])
+);
+
 /** Distinct saturated colors for country fills (Google Maps-style) */
 export const DEFAULT_COUNTRY_COLORS = [
   "#f8bbd0", // pink

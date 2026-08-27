@@ -49,7 +49,7 @@ function leavesToWikitext(children: Descendant[]): string {
  * Serialize the Plate value to canonical MediaWiki wikitext.
  */
 export function serializePlateToWikitext(nodes: Descendant[]): WikitextSerializeResult {
-  const complete = true;
+  let complete = true;
   const parts: string[] = [];
 
   const walkInline = (children: Descendant[]): string => {
@@ -167,8 +167,11 @@ export function serializePlateToWikitext(nodes: Descendant[]): WikitextSerialize
         break;
       }
       case "raw-html": {
-        const wt = el.rawWikitext || el.wikitext || el.html || "";
-        parts.push(`${wt}\n`);
+        const wt = el.rawWikitext || el.wikitext;
+        if (!wt) {
+          complete = false;
+        }
+        parts.push(`${wt || el.html || ""}\n`);
         break;
       }
       default: {

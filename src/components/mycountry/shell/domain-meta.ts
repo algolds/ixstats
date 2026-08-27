@@ -29,7 +29,7 @@ export const DOMAIN_META: Record<
       "Forge alliances, establish embassies, negotiate trade pacts, and project diplomatic influence",
     section: "diplomacy",
     href: "/mycountry/diplomacy",
-    prefilledGoal: "Advance our foreign policy and strengthen diplomatic relations",
+    prefilledGoal: "Fund foreign ministry diplomatic consular service and trade promotion",
   },
   defense: {
     title: "Defense",

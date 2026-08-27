@@ -259,3 +259,52 @@ describe("MyLeague Sports Engine", () => {
     });
   });
 });
+
+
+import { playerWage, teamWageBill } from "~/lib/sports/team-rating";
+import { matchIntervalMs, raceIntervalMs } from "~/lib/sports/scheduler";
+
+describe("MyClub wages", () => {
+  it("scales wage with overall rating (monotonic)", () => {
+    expect(playerWage({ overall: 99 })).toBeGreaterThan(playerWage({ overall: 50 }));
+    expect(playerWage({ overall: 50 })).toBeGreaterThan(0);
+  });
+
+  it("falls back to averaging attributes when no overall present", () => {
+    expect(playerWage({ pace: 60, shooting: 60 })).toBe(playerWage({ overall: 60 }));
+  });
+
+  it("sums only active players in the wage bill", () => {
+    const players = [
+      { isActive: true, ratings: { overall: 80 } },
+      { isActive: false, ratings: { overall: 80 } },
+      { isActive: true, ratings: { overall: 80 } },
+    ];
+    expect(teamWageBill(players)).toBe(playerWage({ overall: 80 }) * 2);
+  });
+});
+
+describe("matchIntervalMs & raceIntervalMs", () => {
+  const IXDAY = 86_400_000;
+
+  it("defaults to 1 IxDay when unset/invalid", () => {
+    expect(matchIntervalMs(null)).toBe(IXDAY);
+    expect(matchIntervalMs({})).toBe(IXDAY);
+    expect(matchIntervalMs({ matchIntervalDays: 0 })).toBe(IXDAY);
+    expect(matchIntervalMs({ matchIntervalDays: -5 })).toBe(IXDAY);
+    expect(matchIntervalMs({ matchIntervalDays: "7" as any })).toBe(IXDAY);
+  });
+
+  it("honors a valid override (weekly = 7 IxDays)", () => {
+    expect(matchIntervalMs({ matchIntervalDays: 7 })).toBe(7 * IXDAY);
+    expect(matchIntervalMs({ matchIntervalDays: 3 })).toBe(3 * IXDAY);
+  });
+
+  it("raceIntervalMs defaults to 3 IxDays", () => {
+    expect(raceIntervalMs(null)).toBe(3 * IXDAY);
+  });
+
+  it("raceIntervalMs honors a valid override", () => {
+    expect(raceIntervalMs({ raceIntervalDays: 5 })).toBe(5 * IXDAY);
+  });
+});

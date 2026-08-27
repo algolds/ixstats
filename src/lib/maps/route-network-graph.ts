@@ -1,4 +1,4 @@
-import { ROUTE_COLORS } from "~/components/maps/overlays/TransportOverlay";
+import { ROUTE_COLORS } from "./map-config";
 
 export interface NetworkHub {
   id: string;

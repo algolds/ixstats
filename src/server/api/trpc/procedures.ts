@@ -53,15 +53,6 @@ export const adminProcedure = t.procedure
   .use(auditLogMiddleware)
   .use(userLoggingMiddleware.admin);
 
-export const executiveProcedure = t.procedure
-  .use(authMiddleware)
-  .use(countryOwnerMiddleware)
-  .use(inputValidationMiddleware)
-  .use(rateLimitMiddleware)
-  .use(auditLogMiddleware)
-  .use(userLoggingMiddleware.sensitive);
-
-// Rate-limited procedure variants
 export const standardMutationCountryOwnerProcedure = countryOwnerProcedure
   .use(standardMutationRateLimit)
   .use(inputValidationMiddleware);

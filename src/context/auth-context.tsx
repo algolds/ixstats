@@ -10,7 +10,7 @@ import {
 } from "@clerk/nextjs";
 import type { GetTokenOptions, SignOutOptions } from "@clerk/types";
 import { Link as Link2 } from "iconoir-react";
-import { IxnayIDCard } from "~/app/settings/_components/IxnayIDCard";
+import { IxnayIDCard } from "~/components/settings/IxnayIDCard";
 import { initConsoleCapture } from "~/lib/logging";
 
 if (typeof window !== "undefined") {

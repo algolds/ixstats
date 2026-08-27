@@ -5,7 +5,7 @@ import { StatsReport as BarChart3, OpenBook as BookOpen, Compass, Crown, Globe, 
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { GiCardRandom } from "react-icons/gi";
 import { GiSoapExperiment } from "react-icons/gi";
-import { OnomaNavIcon } from "~/app/labs/onoma/components/shared/OnomaBrandLogo";
+import { OnomaNavIcon } from "~/components/onoma/OnomaBrandLogo";
 import type { NavigationItem } from "~/lib/navigation-config";
 
 export interface UseNavigationItemsParams {

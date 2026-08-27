@@ -399,7 +399,12 @@ export { db as prisma };
 // Export read-only mode flag for use in other parts of the application
 export const isDatabaseReadOnly = isReadOnlyMode;
 
-if (typeof (globalThis as any).window === "undefined" && !isReadOnlyMode) {
+if (
+  typeof (globalThis as any).window === "undefined" &&
+  !isReadOnlyMode &&
+  env.NODE_ENV !== "test" &&
+  typeof process.env.JEST_WORKER_ID === "undefined"
+) {
   // Asynchronously synchronize baseline achievements in background on server start
   import("~/lib/achievements/sync")
     .then(({ syncAchievements }) => {

@@ -22,7 +22,9 @@ export const IntentComposer = React.memo(function IntentComposer({
   const { country } = useCountryData();
   const [goal, setGoal] = useState(initialGoal);
   const [queryInput, setQueryInput] = useState(initialGoal);
-  const [tier, setTier] = useState<"measured" | "moderate" | "extreme">("moderate");
+  const [tier, setTier] = useState<
+    "measured" | "moderate" | "extreme" | "broker_unlocked" | "structural_unlocked"
+  >("moderate");
   const [showPolicySheet, setShowPolicySheet] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [justCommitted, setJustCommitted] = useState<{ id: string; goal: string } | null>(null);
@@ -239,7 +241,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 {
                   id: "measured" as const,
                   label: "Measured",
-                  defaultCap: "-15 CivCap",
+                  defaultCap: "-5 CivCap",
                   defaultDesc: "Targeted administrative adjustment with low political friction.",
                   borderCls:
                     "border-emerald-500/50 bg-emerald-500/10 text-emerald-950 dark:text-emerald-300",
@@ -248,7 +250,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 {
                   id: "moderate" as const,
                   label: "Moderate",
-                  defaultCap: "-35 CivCap",
+                  defaultCap: "-12 CivCap",
                   defaultDesc:
                     "Comprehensive structural reform carrying moderate stakeholder interest.",
                   borderCls:
@@ -258,11 +260,25 @@ export const IntentComposer = React.memo(function IntentComposer({
                 {
                   id: "extreme" as const,
                   label: "Extreme",
-                  defaultCap: "-60 CivCap",
+                  defaultCap: "-25 CivCap",
                   defaultDesc: "Transformative executive decree reshaping statecraft baselines.",
                   borderCls: "border-red-500/50 bg-red-500/10 text-red-950 dark:text-red-300",
                   badgeCls: "bg-red-500/20 text-red-800 dark:text-red-300",
                 },
+                ...(suggestQuery.data?.broker?.unlocked
+                  ? [
+                      {
+                        id: "broker_unlocked" as const,
+                        label: "Broker Option",
+                        defaultCap: "-8 CivCap",
+                        defaultDesc:
+                          "Leverage aligned power broker network and private co-investment deal.",
+                        borderCls:
+                          "border-cyan-500/50 bg-cyan-500/10 text-cyan-950 dark:text-cyan-300",
+                        badgeCls: "bg-cyan-500/20 text-cyan-800 dark:text-cyan-300",
+                      },
+                    ]
+                  : []),
               ].map((tierItem) => {
                 const isSelected = tier === tierItem.id;
                 const pkg = suggestQuery.data?.packages.find((p) => p.tier === tierItem.id);

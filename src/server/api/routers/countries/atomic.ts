@@ -5,7 +5,7 @@ import {
   getAtomicIntelligenceRecommendations,
 } from "~/lib/economy/atomic-integration.server";
 import { type CountryWithAtomicComponents } from "~/lib/economy/atomic-integration";
-import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
+import { getAtomicEffectivenessService } from "~/server/services/AtomicEffectivenessService";
 import { ComponentType } from "@prisma/client";
 
 export const atomicProcedures = {

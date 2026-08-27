@@ -183,31 +183,7 @@ export interface NationCardInstance extends CardInstance {
 
 export type DiscriminatedCardInstance = LoreCardInstance | NSCardInstance | NationCardInstance;
 
-/**
- * Type predicates (Guards)
- */
-export function isLoreCard(card: CardInstance | null | undefined): card is LoreCardInstance {
-  if (!card) return false;
-  const t = card.cardType as string;
-  return (
-    t === "LORE" ||
-    t === "LORE_BATCH" ||
-    Boolean(card.category && card.category !== "NS_IMPORT") ||
-    Boolean(card.wikiPageId) ||
-    Boolean(card.wikiSource) ||
-    Boolean(card.slug)
-  );
-}
 
-export function isNSCard(card: CardInstance | null | undefined): card is NSCardInstance {
-  if (!card) return false;
-  return card.cardType === "NS_IMPORT" && typeof card.nsCardId === "number";
-}
-
-export function isNationCard(card: CardInstance | null | undefined): card is NationCardInstance {
-  if (!card) return false;
-  return card.cardType === "NATION" && typeof card.countryId === "string";
-}
 
 /**
  * Formatted card stats for display

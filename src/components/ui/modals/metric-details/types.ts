@@ -26,11 +26,8 @@ export interface BaseMetricModalProps {
   onRefresh?: () => void;
 }
 
-/**
- * Time range options for historical charts
- * Includes extended 4y/5y/20y selectors per Dashboard unification.
- */
-export type TimeRange = "3m" | "6m" | "1y" | "2y" | "4y" | "5y" | "20y" | "all";
+import type { TimeRange } from "~/types/ixtime";
+export type { TimeRange };
 
 /**
  * Chart type options for data visualization

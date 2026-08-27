@@ -1,7 +1,7 @@
 import React from "react";
 import { Emoji as Smile, Emoji as Angry, ThumbsUp, ThumbsDown, FireFlame as Flame, Heart, Crown, Journal as Newspaper, Group as Users } from "iconoir-react";
-import { withBasePath } from "../../../lib/base-path";
-import { useRelativeTime } from "../../../hooks/useRelativeTime";
+import { withBasePath } from "~/lib/base-path";
+import { useRelativeTime } from "~/hooks/useRelativeTime";
 
 export const ACCOUNT_TYPE_ICONS: Record<string, React.ElementType> = {
   government: Crown,
@@ -63,9 +63,7 @@ export function proxyDiscordUrl(url: string): string {
   } catch {}
   if (url.startsWith("/")) {
     let cleanPath = url;
-    if (cleanPath.startsWith("/projects/ixstates/")) {
-      cleanPath = cleanPath.slice("/projects/ixstates".length);
-    } else if (cleanPath.startsWith("/projects/ixstates")) {
+    if (cleanPath.startsWith("/projects/ixstates")) {
       cleanPath = cleanPath.slice("/projects/ixstates".length);
     }
     if (cleanPath.includes("/images/discord/")) {

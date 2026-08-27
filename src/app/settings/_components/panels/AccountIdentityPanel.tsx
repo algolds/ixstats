@@ -38,7 +38,7 @@ import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
 import { formatMembershipTier } from "~/lib/tier-utils";
 import { soundEffects } from "~/lib/sound/cuelume";
-import CountryFlag from "~/app/_components/CountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 
 function formatRoleName(role?: string | null): string {
   if (!role) return "Member";
@@ -247,9 +247,9 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                     className="flex items-center gap-1.5 font-medium text-foreground hover:underline"
                   >
                     <div className="h-3.5 w-5 overflow-hidden rounded-[2px] border border-border/40">
-                      <CountryFlag
-                        countryCode={userProfile.country.name.substring(0, 2).toUpperCase()}
+                      <UnifiedCountryFlag
                         countryName={userProfile.country.name}
+                        flagUrl={userProfile.country.flagUrl}
                         className="h-full w-full object-cover"
                       />
                     </div>

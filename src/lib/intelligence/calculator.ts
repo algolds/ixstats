@@ -6,7 +6,7 @@
 import { db } from "~/server/db";
 import { IxTime } from "~/lib/ixtime";
 import { generateIntelligenceReport } from "./engine";
-import { transformApiDataToVitalityIntelligence } from "~/app/mycountry/utils/liveDataTransformers";
+import { transformApiDataToVitalityIntelligence } from "~/lib/intelligence/live-data-transformers";
 import type { Category, BriefingType, Priority, Urgency, Difficulty, Trend } from "@prisma/client";
 
 interface CalculateIntelligenceOptions {

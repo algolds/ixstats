@@ -4,7 +4,7 @@ import { IxTime } from "./core";
  * IxTime-aware range helper for metric trend charts.
  * Uses game-year arithmetic, not real-wall 30-day months.
  */
-import type { TimeRange } from "~/components/ui/modals/metric-details/types";
+import type { TimeRange } from "~/types/ixtime";
 
 export const TIME_RANGE_TO_MONTHS: Record<TimeRange, number> = {
   "3m": 3,

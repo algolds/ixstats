@@ -6,7 +6,7 @@
  */
 
 import { db } from "~/server/db";
-import { rarityRank, formatValue, getRarityColors } from "~/shared/forum-utils";
+import { rarityRank, formatValue, getRarityColors } from "~/lib/forum/forum-utils";
 import { styles } from "../widget-styles";
 import { withBasePath } from "~/lib/base-path";
 

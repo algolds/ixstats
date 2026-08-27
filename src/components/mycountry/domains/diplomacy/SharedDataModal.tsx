@@ -4,61 +4,45 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
-import { Xmark as X, StatUp as TrendingUp, Eye, Flask as Beaker, Palette, Page as FileText, ShareAndroid as Share2, Lock, LockSlash as Unlock, StatsReport as BarChart3, Group as Users, City as Building2, Trophy as Award, Calendar, WarningCircle as AlertCircle, CheckCircle, InfoCircle as Info, Database, CreditCard } from "iconoir-react";
+import {
+  Xmark as X,
+  ShareAndroid as Share2,
+  Lock,
+  LockSlash as Unlock,
+  StatsReport as BarChart3,
+  Group as Users,
+  City as Building2,
+  Trophy as Award,
+  Calendar,
+  CheckCircle,
+  InfoCircle as Info,
+  Database,
+  CreditCard,
+} from "iconoir-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Progress } from "~/components/ui/progress";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import type { SharedDataType, SharedDataCollection } from "~/types/diplomatic-network";
+import type { SharedDataType } from "~/types/diplomatic-network";
 import { MultiSelect } from "~/components/ui/multi-select";
+import {
+  DATA_TYPE_CONFIG,
+  EconomicDataTab,
+  IntelligenceDataTab,
+  ResearchDataTab,
+  CulturalDataTab,
+  PolicyDataTab,
+  AllDataTab,
+} from "./shared-data/shared-data-views";
 
 interface SharedDataModalProps {
   embassyId: string;
   onClose: () => void;
-  isOwner: boolean; // Whether the current user owns the embassy (guestCountry)
+  isOwner: boolean;
 }
-
-const DATA_TYPE_CONFIG = {
-  economic: {
-    icon: TrendingUp,
-    label: "Economic",
-    color: "text-green-500",
-    bgColor: "bg-green-500/10",
-    borderColor: "border-green-500/20",
-  },
-  intelligence: {
-    icon: Eye,
-    label: "Intelligence",
-    color: "text-blue-500",
-    bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/20",
-  },
-  research: {
-    icon: Beaker,
-    label: "Research",
-    color: "text-purple-500",
-    bgColor: "bg-purple-500/10",
-    borderColor: "border-purple-500/20",
-  },
-  cultural: {
-    icon: Palette,
-    label: "Cultural",
-    color: "text-pink-500",
-    bgColor: "bg-pink-500/10",
-    borderColor: "border-pink-500/20",
-  },
-  policy: {
-    icon: FileText,
-    label: "Policy",
-    color: "text-amber-500",
-    bgColor: "bg-amber-500/10",
-    borderColor: "border-amber-500/20",
-  },
-} as const;
 
 export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModalProps) {
   const notify = useNotify();
@@ -73,33 +57,25 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
   });
 
   React.useEffect(() => {
-    // oxlint-disable-next-line
     setMounted(true);
-    // Prevent body scroll when modal is open
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "unset";
     };
   }, []);
 
-  // Fetch embassy details
   const { data: embassy, isLoading: isLoadingEmbassy } =
     api.diplomaticEmbassies.getEmbassyDetails.useQuery(
       { embassyId },
-      { enabled: !!embassyId, refetchInterval: 30000 } // Refetch every 30s for real-time updates
+      { enabled: !!embassyId, refetchInterval: 30000 }
     );
 
-  // Get current user's country ID (from session or context)
-  // For now, we'll determine access based on isOwner and embassy data
-  const currentUserCountryId = embassy?.guestCountryId; // Simplified - in production get from auth
-
-  // Check if current user has access to shared data
+  const currentUserCountryId = embassy?.guestCountryId;
   const hasDataAccess =
     embassy &&
     (currentUserCountryId === embassy.hostCountryId ||
       currentUserCountryId === embassy.guestCountryId);
 
-  // Fetch shared data (only when not on overview tab AND user has access)
   const shouldFetchData = activeTab !== "overview" && hasDataAccess;
   const dataType = activeTab === "all" || activeTab === "overview" ? undefined : activeTab;
 
@@ -112,13 +88,11 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
     { enabled: !!embassyId && shouldFetchData, refetchInterval: 30000 }
   );
 
-  // Fetch diplomatic options from database (with fallback to hardcoded values)
   const { data: diplomaticOptions } = api.diplomaticCore.getAllDiplomaticOptions.useQuery(
     undefined,
-    { staleTime: 5 * 60 * 1000 } // Cache for 5 minutes
+    { staleTime: 5 * 60 * 1000 }
   );
 
-  // Mutation for updating embassy profile
   const updateProfileMutation = api.diplomaticEmbassies.updateEmbassyProfile.useMutation({
     onSuccess: () => {
       notify.success("Embassy profile updated successfully");
@@ -131,11 +105,9 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
 
   const isLoading = isLoadingEmbassy || isLoadingData;
 
-  // Load embassy profile data into state when embassy data loads
   React.useEffect(() => {
     if (embassy && !isEditingOverview) {
       try {
-        // oxlint-disable-next-line
         setOverviewData({
           description: embassy.description || "",
           priorities: embassy.strategicPriorities ? JSON.parse(embassy.strategicPriorities) : [],
@@ -154,7 +126,6 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
     }
   }, [embassy, isEditingOverview]);
 
-  // Handle ESC key to close
   React.useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -229,7 +200,6 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Embassy Overview */}
                 {embassy && (
                   <Card className="facet-hierarchy-child border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-purple-500/5">
                     <CardHeader>
@@ -255,72 +225,64 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                         <div className="space-y-1">
                           <div className="text-muted-foreground text-xs">Staff</div>
                           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                            {embassy.staffCount || 1}
+                            {embassy.staffCount || 0}
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <div className="text-muted-foreground text-xs">Status</div>
-                          <Badge variant={embassy.status === "ACTIVE" ? "default" : "secondary"}>
-                            {embassy.status}
-                          </Badge>
+                          <div className="text-muted-foreground text-xs">Established</div>
+                          <div className="text-sm font-semibold">
+                            {embassy.establishedAt
+                              ? new Date(embassy.establishedAt).toLocaleDateString()
+                              : "N/A"}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 )}
 
-                {/* Tabs for data types */}
-                <Tabs
-                  value={activeTab}
-                  onValueChange={(v) => setActiveTab(v as typeof activeTab)}
-                  className="w-full"
-                >
-                  <TabsList
-                    className={cn(
-                      "facet-hierarchy-child",
-                      hasDataAccess ? "grid w-full grid-cols-7" : "flex w-full justify-center"
-                    )}
-                  >
+                {/* Tabs */}
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+                  <TabsList className="grid w-full grid-cols-7">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
-                    {hasDataAccess && (
-                      <>
-                        <TabsTrigger value="all">All Data</TabsTrigger>
-                        <TabsTrigger value="economic">Economic</TabsTrigger>
-                        <TabsTrigger value="intelligence">Intel</TabsTrigger>
-                        <TabsTrigger value="research">Research</TabsTrigger>
-                        <TabsTrigger value="cultural">Cultural</TabsTrigger>
-                        <TabsTrigger value="policy">Policy</TabsTrigger>
-                      </>
-                    )}
+                    <TabsTrigger value="all" disabled={!hasDataAccess}>
+                      All Data
+                    </TabsTrigger>
+                    <TabsTrigger value="economic" disabled={!hasDataAccess}>
+                      Economic
+                    </TabsTrigger>
+                    <TabsTrigger value="intelligence" disabled={!hasDataAccess}>
+                      Intelligence
+                    </TabsTrigger>
+                    <TabsTrigger value="research" disabled={!hasDataAccess}>
+                      Research
+                    </TabsTrigger>
+                    <TabsTrigger value="cultural" disabled={!hasDataAccess}>
+                      Cultural
+                    </TabsTrigger>
+                    <TabsTrigger value="policy" disabled={!hasDataAccess}>
+                      Policy
+                    </TabsTrigger>
                   </TabsList>
 
                   <div className="mt-6">
-                    {/* Overview Tab */}
                     <TabsContent value="overview" className="space-y-6">
-                      <Card className="facet-hierarchy-child border-primary/20 from-primary/5 bg-gradient-to-br to-blue-500/5">
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2">
-                              <Building2 className="text-primary h-5 w-5" />
-                              Embassy Profile
-                            </CardTitle>
-                            {isOwner && (
-                              <div className="flex gap-2">
-                                {isEditingOverview && (
+                      {/* Strategic Profile */}
+                      <Card className="facet-hierarchy-child border-blue-500/20">
+                        <CardHeader className="flex flex-row items-center justify-between pb-3">
+                          <div>
+                            <CardTitle className="text-lg">Strategic Profile</CardTitle>
+                            <CardDescription>
+                              Mission, priorities, and partnership objectives
+                            </CardDescription>
+                          </div>
+                          {isOwner && (
+                            <div className="flex gap-2">
+                              {isEditingOverview ? (
+                                <>
                                   <Button
-                                    variant="ghost"
                                     size="sm"
-                                    onClick={() => setIsEditingOverview(false)}
-                                  >
-                                    Cancel
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    if (isEditingOverview) {
-                                      // Save the changes
+                                    onClick={() => {
                                       updateProfileMutation.mutate({
                                         embassyId,
                                         description: overviewData.description,
@@ -328,55 +290,40 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                           overviewData.priorities
                                         ),
                                         partnershipGoals: JSON.stringify(overviewData.goals),
-                                        keyAchievements: JSON.stringify(overviewData.achievements),
+                                        keyAchievements: JSON.stringify(
+                                          overviewData.achievements
+                                        ),
                                       });
-                                    } else {
-                                      setIsEditingOverview(true);
-                                    }
-                                  }}
-                                  disabled={updateProfileMutation.isPending}
+                                    }}
+                                    disabled={updateProfileMutation.isPending}
+                                  >
+                                    Save Profile
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setIsEditingOverview(false)}
+                                    disabled={updateProfileMutation.isPending}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setIsEditingOverview(true)}
                                 >
-                                  {updateProfileMutation.isPending
-                                    ? "Saving..."
-                                    : isEditingOverview
-                                      ? "Save"
-                                      : "Edit"}
+                                  Edit Profile
                                 </Button>
-                              </div>
-                            )}
-                          </div>
+                              )}
+                            </div>
+                          )}
                         </CardHeader>
                         <CardContent className="space-y-6">
-                          {/* Description */}
+                          {/* Strategic Priorities */}
                           <div>
-                            <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                              <FileText className="h-4 w-4" />
-                              Description
-                            </h4>
-                            {isEditingOverview ? (
-                              <textarea
-                                value={overviewData.description}
-                                onChange={(e) =>
-                                  setOverviewData((prev) => ({
-                                    ...prev,
-                                    description: e.target.value,
-                                  }))
-                                }
-                                placeholder="Describe the nature and purpose of this diplomatic relationship..."
-                                className="bg-background/50 border-border min-h-[100px] w-full resize-none rounded-lg border p-3"
-                              />
-                            ) : (
-                              <p className="text-muted-foreground text-sm leading-relaxed">
-                                {overviewData.description ||
-                                  "No description set. Click Edit to add one."}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Priorities */}
-                          <div>
-                            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-                              <Award className="h-4 w-4" />
+                            <h4 className="mb-3 text-sm font-semibold">
                               Strategic Priorities (max 3)
                             </h4>
                             {isEditingOverview ? (
@@ -395,8 +342,8 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                   overviewData.priorities.map((priority, idx) => (
                                     <Badge
                                       key={idx}
-                                      variant="secondary"
-                                      className="justify-center py-2"
+                                      variant="outline"
+                                      className="justify-center py-2 text-center"
                                     >
                                       {priority}
                                     </Badge>
@@ -455,7 +402,10 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                 options={diplomaticOptions?.keyAchievements ?? []}
                                 value={overviewData.achievements}
                                 onChange={(value) =>
-                                  setOverviewData((prev) => ({ ...prev, achievements: value }))
+                                  setOverviewData((prev) => ({
+                                    ...prev,
+                                    achievements: value,
+                                  }))
                                 }
                                 placeholder="Select up to 5 key achievements..."
                                 maxSelections={5}
@@ -516,7 +466,6 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                       {/* Shared Data Access Cards */}
                       {hasDataAccess && embassy && (
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                          {/* Host Country Data Access */}
                           <Card className="facet-hierarchy-child border-blue-500/20 transition-colors hover:border-blue-500/40">
                             <CardHeader className="pb-3">
                               <CardTitle className="flex items-center gap-2 text-base">
@@ -563,7 +512,6 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                             </CardContent>
                           </Card>
 
-                          {/* Guest Country Data Access */}
                           <Card className="facet-hierarchy-child border-purple-500/20 transition-colors hover:border-purple-500/40">
                             <CardHeader className="pb-3">
                               <CardTitle className="flex items-center gap-2 text-base">
@@ -612,7 +560,6 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                         </div>
                       )}
 
-                      {/* Access Denied Message for Non-Members */}
                       {!hasDataAccess && (
                         <Card className="facet-hierarchy-child border-amber-500/20 bg-amber-500/5">
                           <CardContent className="py-8">
@@ -633,29 +580,31 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                     {hasDataAccess && (
                       <>
                         <TabsContent value="all" className="space-y-4">
-                          {renderAllData(sharedData, isOwner)}
+                          <AllDataTab data={sharedData} isOwner={isOwner} />
                         </TabsContent>
                         <TabsContent value="economic" className="space-y-4">
-                          {renderEconomicData(sharedData?.economic)}
+                          <EconomicDataTab data={sharedData?.economic} />
                         </TabsContent>
                         <TabsContent value="intelligence" className="space-y-4">
-                          {renderIntelligenceData(sharedData?.intelligence, isOwner)}
+                          <IntelligenceDataTab
+                            data={sharedData?.intelligence}
+                            isOwner={isOwner}
+                          />
                         </TabsContent>
                         <TabsContent value="research" className="space-y-4">
-                          {renderResearchData(sharedData?.research)}
+                          <ResearchDataTab data={sharedData?.research} />
                         </TabsContent>
                         <TabsContent value="cultural" className="space-y-4">
-                          {renderCulturalData(sharedData?.cultural)}
+                          <CulturalDataTab data={sharedData?.cultural} />
                         </TabsContent>
                         <TabsContent value="policy" className="space-y-4">
-                          {renderPolicyData(sharedData?.policy)}
+                          <PolicyDataTab data={sharedData?.policy} />
                         </TabsContent>
                       </>
                     )}
                   </div>
                 </Tabs>
 
-                {/* Action Buttons (Owner Only with Data Access) */}
                 {isOwner && hasDataAccess && (
                   <Card className="facet-hierarchy-child border-amber-500/20 bg-amber-500/5">
                     <CardContent className="py-4">
@@ -692,294 +641,4 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
   );
 
   return createPortal(modalContent, document.body);
-}
-
-// Render functions for different data types
-function renderAllData(data: SharedDataCollection | undefined, isOwner: boolean) {
-  if (!data) {
-    return (
-      <div className="text-muted-foreground py-8 text-center">
-        <AlertCircle className="mx-auto mb-4 h-12 w-12 opacity-50" />
-        <p>No shared data available yet</p>
-        {isOwner && (
-          <p className="mt-2 text-xs">
-            Share data with your embassy partner to strengthen cooperation
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  const hasData =
-    data.economic ||
-    data.intelligence?.length ||
-    data.research?.length ||
-    data.cultural ||
-    data.policy?.length;
-
-  if (!hasData) {
-    return (
-      <div className="text-muted-foreground py-8 text-center">
-        <AlertCircle className="mx-auto mb-4 h-12 w-12 opacity-50" />
-        <p>No shared data available yet</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {data.economic && renderEconomicData(data.economic)}
-      {data.intelligence && data.intelligence.length > 0 && (
-        <div className="space-y-4">{renderIntelligenceData(data.intelligence, isOwner)}</div>
-      )}
-      {data.research && data.research.length > 0 && renderResearchData(data.research)}
-      {data.cultural && renderCulturalData(data.cultural)}
-      {data.policy && data.policy.length > 0 && renderPolicyData(data.policy)}
-    </div>
-  );
-}
-
-function renderEconomicData(data: any) {
-  if (!data) return <EmptyState type="economic" />;
-
-  return (
-    <Card className="facet-hierarchy-child border-green-500/20 bg-green-500/5">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-green-500" />
-          Economic Cooperation
-        </CardTitle>
-        <CardDescription>Trade volume, joint ventures, and economic benefits</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          <MetricCard
-            label="Trade Volume"
-            value={`$${(data.tradeVolume || 0).toLocaleString()}M`}
-            trend={data.tradeGrowth}
-          />
-          <MetricCard label="Joint Ventures" value={data.jointVentures || 0} />
-          <MetricCard
-            label="Investment"
-            value={`$${(data.investmentValue || 0).toLocaleString()}M`}
-          />
-          <MetricCard label="Tariffs Reduced" value={`${data.tariffsReduced || 0}%`} positive />
-          <MetricCard
-            label="Economic Benefit"
-            value={`+${(data.economicBenefit || 0).toFixed(1)}%`}
-            positive
-          />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// oxlint-disable-next-line eslint/no-unused-vars
-function renderIntelligenceData(data: any[] | undefined, isOwner: boolean) {
-  if (!data || data.length === 0) return <EmptyState type="intelligence" />;
-
-  return (
-    <>
-      {data.map((report, idx) => (
-        <Card key={idx} className="facet-hierarchy-child border-blue-500/20 bg-blue-500/5">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Eye className="h-5 w-5 text-blue-500" />
-                  Intelligence Report - {report.reportType}
-                </CardTitle>
-                <CardDescription>{report.summary}</CardDescription>
-              </div>
-              <Badge variant={report.classification === "PUBLIC" ? "default" : "secondary"}>
-                {report.classification}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="text-sm font-semibold">Key Findings:</div>
-              <ul className="space-y-1">
-                {report.keyFindings?.map((finding: string, i: number) => (
-                  <li key={i} className="text-muted-foreground flex items-start gap-2 text-sm">
-                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
-                    <span>{finding}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="flex items-center justify-between border-t pt-4">
-              <div className="text-muted-foreground text-xs">Confidence: {report.confidence}%</div>
-              <div className="text-muted-foreground text-xs">
-                Updated: {new Date(report.lastUpdated).toLocaleDateString()}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </>
-  );
-}
-
-function renderResearchData(data: any[] | undefined) {
-  if (!data || data.length === 0) return <EmptyState type="research" />;
-
-  return (
-    <>
-      {data.map((project, idx) => (
-        <Card key={idx} className="facet-hierarchy-child border-purple-500/20 bg-purple-500/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Beaker className="h-5 w-5 text-purple-500" />
-              {project.researchArea}
-            </CardTitle>
-            <CardDescription>{project.collaborators?.length || 0} collaborator(s)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Progress</span>
-                <span className="font-semibold">{project.progress}%</span>
-              </div>
-              <Progress value={project.progress} className="h-2" />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <MetricCard label="Breakthroughs" value={project.breakthroughs?.length || 0} />
-              <MetricCard label="Publications" value={project.publications || 0} />
-              <MetricCard label="Patents" value={project.patents || 0} />
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </>
-  );
-}
-
-function renderCulturalData(data: any) {
-  if (!data) return <EmptyState type="cultural" />;
-
-  return (
-    <Card className="facet-hierarchy-child border-pink-500/20 bg-pink-500/5">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Palette className="h-5 w-5 text-pink-500" />
-          Cultural Exchange
-        </CardTitle>
-        <CardDescription>Programs, events, and cultural impact</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          <MetricCard label="Exchange Programs" value={data.exchangePrograms || 0} />
-          <MetricCard label="Cultural Events" value={data.culturalEvents || 0} />
-          <MetricCard label="Artists Exchanged" value={data.artistsExchanged || 0} />
-          <MetricCard label="Students Exchanged" value={data.studentsExchanged || 0} />
-        </div>
-        <div className="space-y-2 border-t pt-4">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Cultural Impact</span>
-            <span className="font-semibold">{data.culturalImpactScore || 0}%</span>
-          </div>
-          <Progress value={data.culturalImpactScore || 0} className="h-2" />
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Diplomatic Goodwill</span>
-            <span className="font-semibold">{data.diplomaticGoodwill || 0}%</span>
-          </div>
-          <Progress value={data.diplomaticGoodwill || 0} className="h-2" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function renderPolicyData(data: any[] | undefined) {
-  if (!data || data.length === 0) return <EmptyState type="policy" />;
-
-  return (
-    <>
-      {data.map((policy, idx) => (
-        <Card key={idx} className="facet-hierarchy-child border-amber-500/20 bg-amber-500/5">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-amber-500" />
-                  {policy.policyFramework}
-                </CardTitle>
-                <CardDescription>{policy.agreementType} agreement</CardDescription>
-              </div>
-              <Badge variant={policy.status === "ratified" ? "default" : "secondary"}>
-                {policy.status}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {policy.keyProvisions && (policy.keyProvisions as string[]).length > 0 && (
-              <div className="space-y-2">
-                <div className="text-sm font-semibold">Key Provisions:</div>
-                <ul className="space-y-1">
-                  {(policy.keyProvisions as string[]).map((provision: string, i: number) => (
-                    <li key={i} className="text-muted-foreground flex items-start gap-2 text-sm">
-                      <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
-                      <span>{provision}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <div className="flex items-center justify-between border-t pt-4">
-              <div className="text-muted-foreground text-xs">Compliance: {policy.compliance}%</div>
-              {policy.effectiveDate && (
-                <div className="text-muted-foreground text-xs">
-                  Effective: {new Date(policy.effectiveDate).toLocaleDateString()}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </>
-  );
-}
-
-function EmptyState({ type }: { type: string }) {
-  const config = DATA_TYPE_CONFIG[type as keyof typeof DATA_TYPE_CONFIG];
-  const Icon = config?.icon || AlertCircle;
-
-  return (
-    <div className="text-muted-foreground py-8 text-center">
-      <Icon className="mx-auto mb-4 h-12 w-12 opacity-50" />
-      <p>No {config?.label || type} data shared yet</p>
-    </div>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  trend,
-  positive,
-}: {
-  label: string;
-  value: string | number;
-  trend?: number;
-  positive?: boolean;
-}) {
-  return (
-    <div className="bg-background/50 border-border/50 space-y-1 rounded-lg border p-3">
-      <div className="text-muted-foreground text-xs">{label}</div>
-      <div className="flex items-baseline gap-2">
-        <div className="text-xl font-bold">{value}</div>
-        {trend !== undefined && (
-          <span className={cn("text-xs", trend > 0 ? "text-green-500" : "text-red-500")}>
-            {trend > 0 ? "+" : ""}
-            {trend}%
-          </span>
-        )}
-        {positive && <CheckCircle className="h-4 w-4 text-green-500" />}
-      </div>
-    </div>
-  );
 }

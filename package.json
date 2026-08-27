@@ -119,7 +119,7 @@
     "start:next": "NODE_ENV=production ./scripts/with-base-path.sh next start -p ${PORT:-3550}",
     "start:prod": "./start-production.sh",
     "sync:owners": "bun scripts/sync-system-owner-roles.ts",
-    "test": "jest --forceExit",
+    "test": "jest",
     "test:all": "bun scripts/audit/run-all-tests.ts",
     "test:builder-perf": "bun scripts/audit/test-builder-performance.ts",
     "test:coverage": "jest --coverage",

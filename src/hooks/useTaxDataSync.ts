@@ -16,8 +16,8 @@ import type { TaxBuilderState } from "./useTaxBuilderState";
 import type { TaxBracketInput } from "~/types/tax-system";
 import type { SuggestionItem } from "~/components/mycountry/domains/government/builder/SuggestionsPanel";
 import { parseEconomicDataForTaxSystem } from "~/lib/economy/tax-data-parser";
-import { revenueTaxIntegrationService } from "~/app/builder/services/RevenueTaxIntegrationService";
-import { bidirectionalTaxSyncService } from "~/app/builder/services/BidirectionalTaxSyncService";
+import { revenueTaxIntegrationService } from "~/lib/builder/services/RevenueTaxIntegrationService";
+import { bidirectionalTaxSyncService } from "~/lib/builder/services/BidirectionalTaxSyncService";
 import type { TaxSystem } from "~/types/tax-system";
 
 // Dev-only logger to avoid noisy logs in production

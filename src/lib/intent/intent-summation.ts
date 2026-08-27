@@ -1,3 +1,4 @@
+import type { PrismaClient } from "@prisma/client";
 
 export interface SummationDraftResult {
   postId: string;
@@ -12,7 +13,7 @@ export interface SummationDraftResult {
  * (v2 Design Bible & Migration Plan §1: Auto-summation → ThinkPages draft post)
  */
 export async function generateIntentSummationDraft(params: {
-  db: any;
+  db: PrismaClient | any;
   intentId: string;
   countryId: string;
   visibility?: "draft" | "public";
@@ -58,32 +59,52 @@ export async function generateIntentSummationDraft(params: {
   // 3. Find or ensure official ThinkPages account for this country
   let account = await db.thinkpagesAccount.findFirst({
     where: {
-      OR: [
-        { handle: `@${country.slug}` },
-        { handle: `@gov_${country.slug}` },
-        { name: `${countryName} Executive` },
-      ],
+      countryId,
+      isActive: true,
+      accountType: { in: ["GOVERNMENT", "government", "OFFICIAL", "official"] },
     },
   });
 
   if (!account) {
-    // Look up any account linked to this country's user/owner
-    account =
-      (await db.thinkpagesAccount.findFirst({
-        where: { verifiedBadge: true },
-      })) || (await db.thinkpagesAccount.findFirst());
+    account = await db.thinkpagesAccount.findFirst({
+      where: { countryId, isActive: true },
+      orderBy: { createdAt: "asc" },
+    });
   }
 
   if (!account) {
-    // Create an official account fallback
+    // Look up country owner user to link clerkUserId
+    const user = await db.user.findFirst({
+      where: { countryId },
+      select: { clerkUserId: true },
+    });
+    const clerkUserId = user?.clerkUserId || `official_${countryId}`;
+    const rawSlug = country.slug || countryName.toLowerCase().replace(/[^a-z0-9]/g, "_");
+    const baseUsername = `gov_${rawSlug}`.slice(0, 24);
+
+    const existingUsername = await db.thinkpagesAccount.findUnique({
+      where: { username: baseUsername },
+      select: { id: true },
+    });
+
+    const finalUsername = existingUsername
+      ? `gov_${rawSlug.slice(0, 16)}_${Date.now().toString(36).slice(-5)}`
+      : baseUsername;
+
+    // Create an official account fallback matching Prisma schema
     account = await db.thinkpagesAccount.create({
       data: {
-        name: `${countryName} Executive`,
-        handle: `@gov_${country.slug || "official"}`,
+        clerkUserId,
+        countryId,
         accountType: "GOVERNMENT",
-        verifiedBadge: true,
-        bio: `Official executive channel for ${countryName}`,
-        avatarUrl: country.flag || undefined,
+        username: finalUsername,
+        displayName: `${countryName} Executive`,
+        firstName: countryName,
+        lastName: "Executive",
+        bio: `Official executive channel for ${countryName}.`,
+        profileImageUrl: country.flag || undefined,
+        verified: true,
+        isActive: true,
       },
     });
   }

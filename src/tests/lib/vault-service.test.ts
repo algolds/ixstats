@@ -304,3 +304,33 @@ describe("VaultService - Upgrades & Perks", () => {
     });
   });
 });
+
+
+import { VAULT_BONUS_DEFAULTS as B, achievementBonus, nsImportBonus } from "~/lib/vault/vault-bonus";
+import { classifyLoreArticle } from "~/lib/cards/category-classifier";
+import { LoreCategory } from "~/lib/cards/category-enums";
+
+describe("Vault Bonuses & Lore Card Classification", () => {
+  it("achievement bonus scales by rarity, case-insensitive", () => {
+    expect(achievementBonus(B, "Common")).toBe(100);
+    expect(achievementBonus(B, "legendary")).toBe(2500);
+    expect(achievementBonus(B, "EPIC")).toBe(1000);
+    expect(achievementBonus(B, "???")).toBe(100); // unknown → common floor
+  });
+
+  it("NS import bonus is per-card and capped", () => {
+    expect(nsImportBonus(B, 10)).toBe(500); // 10 * 50
+    expect(nsImportBonus(B, 1000)).toBe(B.nsCap); // capped at 5000
+    expect(nsImportBonus(B, 0)).toBe(0);
+  });
+
+  it("classifies lore article categories accurately from multi-signals", () => {
+    const result = classifyLoreArticle({
+      title: "King William IV",
+      text: "William IV was monarch of Burgundie during the Great War.",
+      infoboxes: ["infobox monarch"],
+      categories: ["Category:Monarchs of Burgundie"],
+    });
+    expect(result).toBe(LoreCategory.PEOPLE);
+  });
+});

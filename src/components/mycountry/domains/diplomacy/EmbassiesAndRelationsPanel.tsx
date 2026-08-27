@@ -29,7 +29,7 @@ import { AllianceDashboard } from "./alliances/AllianceDashboard";
 import { CulturalExchangeProgram } from "./CulturalExchangeProgram";
 
 // Diplomatic events
-import { DiplomaticEventsHub } from "~/app/mycountry/diplomacy/_components/DiplomaticEventsHub";
+import { DiplomaticEventsHub } from "./DiplomaticEventsHub";
 
 // Sheets
 import { EmbassyCreatorSheet } from "./EmbassyCreatorSheet";

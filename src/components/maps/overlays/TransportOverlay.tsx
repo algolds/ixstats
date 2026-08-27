@@ -17,7 +17,8 @@
 import { useEffect, useRef, useCallback } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
-import { ROUTE_STYLES } from "~/lib/maps/map-config";
+import { ROUTE_STYLES, ROUTE_COLORS } from "~/lib/maps/map-config";
+export { ROUTE_COLORS };
 
 // ── Layer / Source IDs ──────────────────────────────────────────────
 
@@ -29,14 +30,6 @@ const HUBS_SOURCE = "transport-hubs-source";
 const HUBS_LAYER = "transport-hubs-circle";
 
 // ── Color & Width Config — derived from ROUTE_STYLES (single source of truth) ──
-
-/**
- * Route color map re-exported for backward compat (e.g. analytics that read it).
- * New code should import ROUTE_STYLES from ~/lib/map-config directly.
- */
-export const ROUTE_COLORS: Record<string, string> = Object.fromEntries(
-  Object.entries(ROUTE_STYLES).map(([k, v]) => [k, v.color])
-);
 
 const ROUTE_WIDTHS: Record<string, number> = Object.fromEntries(
   Object.entries(ROUTE_STYLES).map(([k, v]) => [k, v.width])

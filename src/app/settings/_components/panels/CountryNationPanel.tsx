@@ -17,7 +17,7 @@ import {
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useProfileSettings } from "../../_hooks/useProfileSettings";
-import CountryFlag from "~/app/_components/CountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow, SettingsSelectRow } from "../primitives";
 import { Input } from "~/components/ui/input";
@@ -26,6 +26,7 @@ import { soundEffects } from "~/lib/sound/cuelume";
 
 interface CountryNationPanelProps {
   country: {
+    flagUrl: string | null | undefined;
     id: string;
     name: string;
     economicTier: string | null;
@@ -133,9 +134,9 @@ export function CountryNationPanel({
         >
           <div className="flex items-center gap-3">
             <div className="relative flex h-8 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border/60 bg-muted/60 shadow-2xs">
-              <CountryFlag
-                countryCode={country.slug ?? country.name}
+              <UnifiedCountryFlag
                 countryName={country.name}
+                flagUrl={country.flagUrl}
                 className="h-full w-full object-cover"
               />
             </div>

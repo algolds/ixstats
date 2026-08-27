@@ -57,14 +57,14 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
 });
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const headersList = await headers();
-  const isStandalone = isStandaloneRequest(headersList);
-  const dashboardPath = withBasePath("/dashboard");
-  const signInPath = withBasePath("/sign-in");
-  const signUpPath = withBasePath("/sign-up");
-
-  const AppContent = () => (
+function AppContent({
+  children,
+  isStandalone,
+}: {
+  children: React.ReactNode;
+  isStandalone: boolean;
+}) {
+  return (
     <TRPCReactProvider>
       <GlobalLinkTooltipProvider>
         <ThemeProvider>
@@ -89,7 +89,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                           ) : (
                             <div className="flex min-h-screen flex-col">
                               <Navigation />
-                              {/* <GlobalActivityMarquee /> */}
                               <SetupRedirect />
                               <main className="flex flex-1 flex-col">
                                 <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
@@ -109,6 +108,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </GlobalLinkTooltipProvider>
     </TRPCReactProvider>
   );
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const headersList = await headers();
+  const isStandalone = isStandaloneRequest(headersList);
+  const dashboardPath = withBasePath("/dashboard");
+  const signInPath = withBasePath("/sign-in");
+  const signUpPath = withBasePath("/sign-up");
 
   if (!isClerkConfigured) {
     throw new Error(
@@ -135,11 +142,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           >
             <AuthProvider>
               <MediaContextProvider>
-                <AppContent />
+                <AppContent isStandalone={isStandalone}>{children}</AppContent>
               </MediaContextProvider>
             </AuthProvider>
           </ClerkProvider>
-          {/* ToasterProvider removed — DynamicIslandToastManager handles rendering */}
         </ChunkLoadErrorBoundary>
       </body>
     </html>

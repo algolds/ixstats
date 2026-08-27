@@ -983,3 +983,12 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Reduced motion accessibility guard */
+@media (prefers-reduced-motion: reduce) {
+  .forum-skeleton,
+  .forum-fade-in {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -34,6 +34,7 @@ import { getNationalIssuesConfig } from "./config";
 import { INTENT_CATEGORY_TO_TEMPLATE } from "~/lib/intent/resistance";
 import { buildGroundedContext } from "./snapshot";
 import { resolveNeighbors } from "./neighbors";
+import { NationalIssuesConsequences } from "./consequences";
 
 // ==================== TYPES ====================
 
@@ -1301,25 +1302,22 @@ export class NationalIssuesEngine {
     for (const issue of expiredIssues) {
       try {
         if (issue.autoResolveOptionId) {
-          // Auto-resolve with the default option
-          await db.nationalIssue.update({
-            where: { id: issue.id },
-            data: {
-              status: "auto_resolved",
-              chosenOptionId: issue.autoResolveOptionId,
-              chosenOptionLabel: issue.autoResolveLabel,
-              respondedAt: new Date(),
-              respondedIxTime: currentIxTime,
-              consequenceLog:
-                "This issue was auto-resolved due to inaction. The default outcome was applied.",
-            },
-          });
+          // Auto-resolve via the consequence system to apply consequences and update intent progress
+          await NationalIssuesConsequences.resolveIssue(
+            issue.id,
+            issue.autoResolveOptionId,
+            db,
+            true
+          );
         } else {
           // No auto-resolve option, just expire
           await db.nationalIssue.update({
             where: { id: issue.id },
             data: { status: "expired" },
           });
+          if (issue.intentId) {
+            await NationalIssuesConsequences.recomputeIntentProgress(issue.intentId, db);
+          }
         }
         resolved++;
       } catch (err) {

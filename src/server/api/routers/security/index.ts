@@ -19,6 +19,7 @@ import { securityDefenseRouter } from "./defense";
 import { securityStabilityRouter } from "./stability";
 import { securityBordersRouter } from "./borders";
 import { securityOperationsRouter } from "./operations";
+import { securityConflictsRouter } from "./conflicts";
 
 export const securityRouter = mergeRouters(
   securityAssessmentRouter,
@@ -26,5 +27,6 @@ export const securityRouter = mergeRouters(
   securityDefenseRouter,
   securityStabilityRouter,
   securityBordersRouter,
-  securityOperationsRouter
+  securityOperationsRouter,
+  securityConflictsRouter
 );

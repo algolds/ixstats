@@ -313,54 +313,54 @@ export const DOMESTIC_SUGGESTIONS: DomesticSuggestion[] = [
     icon: "🛰️",
   },
 
-  // Diplomacy (8 presets)
+  // Diplomacy & Foreign Affairs (8 presets)
   {
     category: "Diplomacy",
-    label: "Sign bilateral free trade agreement",
-    keywords: ["trade", "pact", "agreement", "treaty", "ally"],
-    icon: "🤝",
-  },
-  {
-    category: "Diplomacy",
-    label: "Expand international embassy footprint",
-    keywords: ["embassy", "diplomat", "consulate", "foreign"],
+    label: "Fund foreign ministry diplomatic consular service",
+    keywords: ["consular", "service", "diplomatic", "staff", "ministry"],
     icon: "🏛️",
   },
   {
     category: "Diplomacy",
-    label: "Join regional economic trade coalition",
-    keywords: ["coalition", "alliance", "trade", "pact"],
+    label: "Establish export trade promotion agency",
+    keywords: ["export", "trade", "agency", "promotion", "business"],
     icon: "🌐",
   },
   {
     category: "Diplomacy",
-    label: "Broker regional peace treaty mediation",
-    keywords: ["peace", "treaty", "mediation", "truce"],
-    icon: "🕊️",
+    label: "Subsidize international commercial trade missions",
+    keywords: ["commercial", "trade", "mission", "business", "market"],
+    icon: "🤝",
   },
   {
     category: "Diplomacy",
-    label: "Negotiate mutual visa-free travel pacts",
-    keywords: ["visa", "travel", "border", "passport"],
+    label: "Modernize border customs screening infrastructure",
+    keywords: ["border", "customs", "trade", "port", "entry", "infrastructure"],
     icon: "🛂",
   },
   {
     category: "Diplomacy",
-    label: "Provide international foreign humanitarian aid",
-    keywords: ["aid", "relief", "humanitarian", "global"],
+    label: "Authorize overseas humanitarian relief fund",
+    keywords: ["aid", "relief", "fund", "humanitarian", "global"],
     icon: "❤️",
   },
   {
     category: "Diplomacy",
-    label: "Host global environmental climate summit",
-    keywords: ["summit", "climate", "global", "conference"],
-    icon: "🌍",
+    label: "Promote domestic green export technology initiatives",
+    keywords: ["export", "clean", "technology", "initiative", "energy"],
+    icon: "🌱",
   },
   {
     category: "Diplomacy",
-    label: "Apply for international trade organization seat",
-    keywords: ["seat", "member", "organization", "global"],
-    icon: "🏛️",
+    label: "Expand national trade exhibition centers",
+    keywords: ["trade", "exhibition", "commerce", "center"],
+    icon: "🏢",
+  },
+  {
+    category: "Diplomacy",
+    label: "Streamline international student visa processing",
+    keywords: ["student", "visa", "education", "processing", "academic"],
+    icon: "🎓",
   },
 
   // Governance (8 presets)

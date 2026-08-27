@@ -6,11 +6,11 @@
  */
 
 import { useState, useCallback } from "react";
-import { api } from "~/trpc/react";
 import { useMapHistory } from "./map-editor/useMapHistory";
 import { useMapEditorSync } from "./map-editor/useMapEditorSync";
 import { useMapEditorSelection } from "./map-editor/useMapEditorSelection";
 import { useMapEditorTransforms } from "./map-editor/useMapEditorTransforms";
+import { useMapFeatureMutations } from "./map-editor/useMapFeatureMutations";
 import { calculateNegativeSpaceGaps } from "~/lib/maps/map-editor-geom";
 
 export * from "./map-editor/editor-types";
@@ -27,64 +27,21 @@ import type {
   NamedLakeFormData,
 } from "./map-editor/editor-types";
 
+import {
+  DEFAULT_CITY,
+  DEFAULT_SUBDIVISION,
+  DEFAULT_POI,
+  DEFAULT_STORY_PIN,
+  DEFAULT_MAP_LABEL,
+  DEFAULT_PEAK,
+  DEFAULT_RIVER,
+  DEFAULT_LAKE,
+} from "./map-editor/map-editor-defaults";
+
 interface UseMapEditorOptions {
   skipLinkageGate?: boolean;
   worldMapLayers?: import("~/components/maps/core/IxWorldMap").MapLayerData[];
 }
-
-const DEFAULT_CITY: CityFormData = {
-  name: "",
-  cityType: "city",
-  isNationalCapital: false,
-  isSubdivisionCapital: false,
-};
-
-const DEFAULT_SUBDIVISION: SubdivisionFormData = {
-  name: "",
-  type: "province",
-  level: 1,
-};
-
-const DEFAULT_POI: POIFormData = {
-  name: "",
-  category: "landmark",
-  description: "",
-};
-
-const DEFAULT_STORY_PIN: StoryPinFormData = {
-  title: "",
-  content: "",
-  contentFormat: "plain",
-  category: "cultural",
-  importance: 0,
-};
-
-const DEFAULT_MAP_LABEL: MapLabelFormData = {
-  text: "",
-  labelType: "mountain_range",
-  fontSize: 14,
-  color: "#374151",
-  rotation: 0,
-  letterSpacing: 0,
-  fontWeight: "normal",
-  opacity: 1,
-  minZoom: 4,
-  maxZoom: 18,
-};
-
-const DEFAULT_PEAK: PeakFormData = {
-  name: "",
-  elevation: 0,
-};
-
-const DEFAULT_RIVER: NamedRiverFormData = {
-  name: "",
-};
-
-const DEFAULT_LAKE: NamedLakeFormData = {
-  name: "",
-  waterType: "freshwater",
-};
 
 export function useMapEditor(countryId: string | undefined, options?: UseMapEditorOptions) {
   // ── Core Editor Mode & Selection ──
@@ -106,8 +63,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   // ── Route Editor State ──
   const [routeWaypoints, setRouteWaypoints] = useState<[number, number][]>([]);
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [routeDrawingHistory, setRouteDrawingHistory] = useState<[number, number][][]>([]);
+  const [routeDrawingHistory] = useState<[number, number][][]>([]);
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
   const [editingRouteVertices, setEditingRouteVertices] = useState<[number, number][]>([]);
   const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
@@ -118,8 +74,11 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const [showGaps, setShowGaps] = useState(false);
   const [gapFeatures, setGapFeatures] = useState<any>(null);
   const [showEmptyRegions, setShowEmptyRegions] = useState(false);
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [emptyRegionsFeatures, setEmptyRegionsFeatures] = useState<any>(null);
+  const [emptyRegionsFeatures] = useState<any>(null);
+
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [validationErrors] = useState<Record<string, string>>({});
 
   // ── Sub-Hooks ──
   const historyHook = useMapHistory();
@@ -193,78 +152,6 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     debouncedRefetch,
   });
 
-  // ── Mutations ──
-  const createCity = api.geoFeatures.createCity.useMutation();
-  const updateCity = api.geoFeatures.updateCity.useMutation();
-  const deleteCity = api.geoFeatures.deleteCity.useMutation();
-
-  const createSubdivision = api.geoFeatures.createSubdivision.useMutation();
-  const updateSubdivision = api.geoFeatures.updateSubdivision.useMutation();
-  const deleteSubdivision = api.geoFeatures.deleteSubdivision.useMutation();
-
-  const createPOI = api.geoFeatures.createPOI.useMutation();
-  const updatePOI = api.geoFeatures.updatePOI.useMutation();
-  const deletePOI = api.geoFeatures.deletePOI.useMutation();
-
-  const createStoryPin = api.geoFeatures.createStoryPin.useMutation();
-  const updateStoryPin = api.geoFeatures.updateStoryPin.useMutation();
-  const deleteStoryPin = api.geoFeatures.deleteStoryPin.useMutation();
-
-  const createMapLabel = api.geoFeatures.createMapLabel.useMutation();
-  const updateMapLabel = api.geoFeatures.updateMapLabel.useMutation();
-  const deleteMapLabel = api.geoFeatures.deleteMapLabel.useMutation();
-
-  const createPeak = api.geoFeatures.createPeak.useMutation();
-  const updatePeak = api.geoFeatures.updatePeak.useMutation();
-  const deletePeak = api.geoFeatures.deletePeak.useMutation();
-
-  const createNamedRiver = api.geoFeatures.createNamedRiver.useMutation();
-  const updateNamedRiver = api.geoFeatures.updateNamedRiver.useMutation();
-  const deleteNamedRiver = api.geoFeatures.deleteNamedRiver.useMutation();
-
-  const createNamedLake = api.geoFeatures.createNamedLake.useMutation();
-  const updateNamedLake = api.geoFeatures.updateNamedLake.useMutation();
-  const deleteNamedLake = api.geoFeatures.deleteNamedLake.useMutation();
-
-  const createRoute = api.transport.createRoute.useMutation();
-  const updateRoute = api.transport.updateRoute.useMutation();
-  const updateRouteGeometry = api.transport.updateRouteGeometry.useMutation();
-  const deleteRoute = api.transport.deleteRoute.useMutation();
-
-  const isMutating =
-    createCity.isPending ||
-    updateCity.isPending ||
-    deleteCity.isPending ||
-    createSubdivision.isPending ||
-    updateSubdivision.isPending ||
-    deleteSubdivision.isPending ||
-    createPOI.isPending ||
-    updatePOI.isPending ||
-    deletePOI.isPending ||
-    createStoryPin.isPending ||
-    updateStoryPin.isPending ||
-    deleteStoryPin.isPending ||
-    createMapLabel.isPending ||
-    updateMapLabel.isPending ||
-    deleteMapLabel.isPending ||
-    createPeak.isPending ||
-    updatePeak.isPending ||
-    deletePeak.isPending ||
-    createNamedRiver.isPending ||
-    updateNamedRiver.isPending ||
-    deleteNamedRiver.isPending ||
-    createNamedLake.isPending ||
-    updateNamedLake.isPending ||
-    deleteNamedLake.isPending ||
-    createRoute.isPending ||
-    updateRoute.isPending ||
-    updateRouteGeometry.isPending ||
-    deleteRoute.isPending;
-
-  const [mutationError, setMutationError] = useState<string | null>(null);
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-
   // ── Reset & Start Editing ──
   const resetForm = useCallback(() => {
     setCityForm(DEFAULT_CITY);
@@ -279,8 +166,54 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setPendingGeometry(null);
     setSelectedFeature(null);
     setMutationError(null);
-    setValidationErrors({});
   }, []);
+
+  // ── Mutations Sub-Hook ──
+  const mutations = useMapFeatureMutations({
+    countryId,
+    selectedFeature,
+    pendingCoordinates,
+    pendingGeometry,
+    cityForm,
+    subdivisionForm,
+    poiForm,
+    storyPinForm,
+    mapLabelForm,
+    peakForm,
+    riverForm,
+    lakeForm,
+    editingRouteId,
+    editingRouteVertices,
+    resetForm,
+    setMode,
+    invalidateAllMapData,
+    debouncedRefetch,
+    setLastSavedAt,
+    setMutationError,
+  });
+
+  const {
+    isMutating,
+    submitCity,
+    submitEditCity,
+    submitSubdivision,
+    submitEditSubdivision,
+    submitPOI,
+    submitEditPOI,
+    submitStoryPin,
+    submitEditStoryPin,
+    submitMapLabel,
+    submitEditMapLabel,
+    submitPeak,
+    submitEditPeak,
+    submitRiver,
+    submitEditRiver,
+    submitLake,
+    submitEditLake,
+    deleteFeature,
+    createRoute,
+    updateRouteGeometry,
+  } = mutations;
 
   const startEditing = useCallback((feature: EditorFeature) => {
     setSelectedFeature(feature);
@@ -398,389 +331,6 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     }
   }, []);
 
-  // ── Feature Submission Actions ──
-  const submitCity = useCallback(async () => {
-    if (!countryId || !pendingCoordinates) return;
-    try {
-      await createCity.mutateAsync({
-        countryId,
-        name: cityForm.name,
-        cityType: cityForm.cityType,
-        coordinates: pendingCoordinates,
-        population: cityForm.population,
-        isNationalCapital: cityForm.isNationalCapital,
-        isSubdivisionCapital: cityForm.isSubdivisionCapital,
-        subdivisionId: cityForm.subdivisionId,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to create city");
-    }
-  }, [countryId, pendingCoordinates, cityForm, createCity, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitEditCity = useCallback(async () => {
-    if (!countryId || !selectedFeature) return;
-    try {
-      await updateCity.mutateAsync({
-        countryId,
-        cityId: selectedFeature.id,
-        name: cityForm.name,
-        cityType: cityForm.cityType,
-        coordinates: selectedFeature.coordinates!,
-        population: cityForm.population,
-        isNationalCapital: cityForm.isNationalCapital,
-        isSubdivisionCapital: cityForm.isSubdivisionCapital,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to update city");
-    }
-  }, [countryId, selectedFeature, cityForm, updateCity, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitSubdivision = useCallback(async () => {
-    if (!countryId || !pendingGeometry) return;
-    try {
-      await createSubdivision.mutateAsync({
-        countryId,
-        name: subdivisionForm.name,
-        type: subdivisionForm.type,
-        level: subdivisionForm.level,
-        geometry: pendingGeometry as Record<string, unknown>,
-        capital: subdivisionForm.capital,
-        population: subdivisionForm.population,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to create subdivision");
-    }
-  }, [countryId, pendingGeometry, subdivisionForm, createSubdivision, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitEditSubdivision = useCallback(async () => {
-    if (!countryId || !selectedFeature) return;
-    try {
-      await updateSubdivision.mutateAsync({
-        countryId,
-        subdivisionId: selectedFeature.id,
-        name: subdivisionForm.name,
-        type: subdivisionForm.type,
-        level: subdivisionForm.level,
-        geometry: (selectedFeature.geometry || subdivisionForm.geometry) as Record<string, unknown>,
-        capital: subdivisionForm.capital,
-        population: subdivisionForm.population,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to update subdivision");
-    }
-  }, [countryId, selectedFeature, subdivisionForm, updateSubdivision, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitPOI = useCallback(async () => {
-    if (!countryId || !pendingCoordinates) return;
-    try {
-      await createPOI.mutateAsync({
-        countryId,
-        name: poiForm.name,
-        category: poiForm.category,
-        coordinates: pendingCoordinates,
-        description: poiForm.description,
-        icon: poiForm.icon,
-        wikiPageTitle: poiForm.wikiPageTitle,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to create POI");
-    }
-  }, [countryId, pendingCoordinates, poiForm, createPOI, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitEditPOI = useCallback(async () => {
-    if (!countryId || !selectedFeature) return;
-    try {
-      await updatePOI.mutateAsync({
-        countryId,
-        poiId: selectedFeature.id,
-        name: poiForm.name,
-        category: poiForm.category,
-        coordinates: selectedFeature.coordinates!,
-        description: poiForm.description,
-        icon: poiForm.icon,
-        wikiPageTitle: poiForm.wikiPageTitle,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to update POI");
-    }
-  }, [countryId, selectedFeature, poiForm, updatePOI, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitStoryPin = useCallback(async () => {
-    if (!countryId || !pendingCoordinates) return;
-    try {
-      await createStoryPin.mutateAsync({
-        countryId,
-        title: storyPinForm.title,
-        coordinates: pendingCoordinates,
-        content: storyPinForm.content,
-        ixTimeYear: storyPinForm.ixTimeYear,
-        category: storyPinForm.category as any,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to create story pin");
-    }
-  }, [countryId, pendingCoordinates, storyPinForm, createStoryPin, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitEditStoryPin = useCallback(async () => {
-    if (!countryId || !selectedFeature) return;
-    try {
-      await updateStoryPin.mutateAsync({
-        countryId,
-        pinId: selectedFeature.id,
-        title: storyPinForm.title,
-        coordinates: selectedFeature.coordinates!,
-        content: storyPinForm.content,
-        ixTimeYear: storyPinForm.ixTimeYear,
-        category: storyPinForm.category as any,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to update story pin");
-    }
-  }, [countryId, selectedFeature, storyPinForm, updateStoryPin, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitMapLabel = useCallback(async () => {
-    if (!countryId || !pendingCoordinates) return;
-    try {
-      await createMapLabel.mutateAsync({
-        countryId,
-        text: mapLabelForm.text,
-        coordinates: pendingCoordinates,
-        labelType: mapLabelForm.labelType as any,
-        fontSize: mapLabelForm.fontSize,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to create map label");
-    }
-  }, [countryId, pendingCoordinates, mapLabelForm, createMapLabel, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitEditMapLabel = useCallback(async () => {
-    if (!countryId || !selectedFeature) return;
-    try {
-      await updateMapLabel.mutateAsync({
-        countryId,
-        labelId: selectedFeature.id,
-        text: mapLabelForm.text,
-        coordinates: selectedFeature.coordinates!,
-        labelType: mapLabelForm.labelType as any,
-        fontSize: mapLabelForm.fontSize,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to update map label");
-    }
-  }, [countryId, selectedFeature, mapLabelForm, updateMapLabel, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitPeak = useCallback(async () => {
-    if (!countryId || !pendingCoordinates) return;
-    try {
-      await createPeak.mutateAsync({
-        countryId,
-        name: peakForm.name,
-        coordinates: pendingCoordinates,
-        elevation: peakForm.elevation,
-        prominence: peakForm.prominence,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to create peak");
-    }
-  }, [countryId, pendingCoordinates, peakForm, createPeak, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitEditPeak = useCallback(async () => {
-    if (!countryId || !selectedFeature) return;
-    try {
-      await updatePeak.mutateAsync({
-        countryId,
-        peakId: selectedFeature.id,
-        name: peakForm.name,
-        coordinates: selectedFeature.coordinates!,
-        elevation: peakForm.elevation,
-        prominence: peakForm.prominence,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to update peak");
-    }
-  }, [countryId, selectedFeature, peakForm, updatePeak, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitRiver = useCallback(async () => {
-    if (!countryId || !pendingGeometry) return;
-    try {
-      await createNamedRiver.mutateAsync({
-        countryId,
-        name: riverForm.name,
-        geometry: pendingGeometry as Record<string, unknown>,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to create river");
-    }
-  }, [countryId, pendingGeometry, riverForm, createNamedRiver, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitEditRiver = useCallback(async () => {
-    if (!countryId || !selectedFeature) return;
-    try {
-      await updateNamedRiver.mutateAsync({
-        countryId,
-        riverId: selectedFeature.id,
-        name: riverForm.name,
-        geometry: (selectedFeature.geometry || pendingGeometry) as Record<string, unknown>,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to update river");
-    }
-  }, [countryId, selectedFeature, riverForm, pendingGeometry, updateNamedRiver, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitLake = useCallback(async () => {
-    if (!countryId || !pendingGeometry) return;
-    try {
-      await createNamedLake.mutateAsync({
-        countryId,
-        name: lakeForm.name,
-        geometry: pendingGeometry as Record<string, unknown>,
-        maxDepthM: lakeForm.maxDepthM,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to create lake");
-    }
-  }, [countryId, pendingGeometry, lakeForm, createNamedLake, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  const submitEditLake = useCallback(async () => {
-    if (!countryId || !selectedFeature) return;
-    try {
-      await updateNamedLake.mutateAsync({
-        countryId,
-        lakeId: selectedFeature.id,
-        name: lakeForm.name,
-        geometry: (selectedFeature.geometry || pendingGeometry) as Record<string, unknown>,
-        maxDepthM: lakeForm.maxDepthM,
-      });
-      setLastSavedAt(new Date());
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to update lake");
-    }
-  }, [countryId, selectedFeature, lakeForm, pendingGeometry, updateNamedLake, resetForm, invalidateAllMapData, debouncedRefetch]);
-
-  // ── Delete Feature ──
-  const handleDeleteFeature = useCallback(
-    async (feature: EditorFeature) => {
-      if (!countryId) return;
-      try {
-        switch (feature.type) {
-          case "city":
-            await deleteCity.mutateAsync({ countryId, cityId: feature.id });
-            break;
-          case "subdivision":
-            await deleteSubdivision.mutateAsync({ countryId, subdivisionId: feature.id });
-            break;
-          case "poi":
-            await deletePOI.mutateAsync({ countryId, poiId: feature.id });
-            break;
-          case "peak":
-            await deletePeak.mutateAsync({ countryId, peakId: feature.id });
-            break;
-          case "storyPin":
-            await deleteStoryPin.mutateAsync({ countryId, pinId: feature.id });
-            break;
-          case "mapLabel":
-            await deleteMapLabel.mutateAsync({ countryId, labelId: feature.id });
-            break;
-          case "river":
-            await deleteNamedRiver.mutateAsync({ countryId, riverId: feature.id });
-            break;
-          case "lake":
-            await deleteNamedLake.mutateAsync({ countryId, lakeId: feature.id });
-            break;
-          case "route":
-            await deleteRoute.mutateAsync({ countryId, id: feature.id });
-            break;
-        }
-        resetForm();
-        setMode("view");
-        invalidateAllMapData();
-        debouncedRefetch();
-      } catch (e: any) {
-        setMutationError(e.message || "Failed to delete feature");
-      }
-    },
-    [countryId, deleteCity, deleteSubdivision, deletePOI, deletePeak, deleteStoryPin, deleteMapLabel, deleteNamedRiver, deleteNamedLake, deleteRoute, resetForm, invalidateAllMapData, debouncedRefetch]
-  );
-
   // ── Map Events & Drawing ──
   const handleMapClick = useCallback(
     (coords: [number, number]) => {
@@ -791,46 +341,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     [mode]
   );
 
-  const handleDrawComplete = useCallback(
-    (geometry: object) => {
-      setPendingGeometry(geometry);
-    },
-    []
-  );
-
-  const updateSubdivisionGeometry = useCallback(
-    async (subdivisionId: string, geometry: object) => {
-      if (!countryId) return;
-      await updateSubdivision.mutateAsync({
-        countryId,
-        subdivisionId,
-        geometry: geometry as Record<string, unknown>,
-      });
-      invalidateAllMapData();
-      debouncedRefetch();
-    },
-    [countryId, updateSubdivision, invalidateAllMapData, debouncedRefetch]
-  );
-
-  const updatePointCoordinates = useCallback(
-    async (featureType: string, id: string, coordinates: [number, number]) => {
-      if (!countryId) return;
-      if (featureType === "city") {
-        await updateCity.mutateAsync({ countryId, cityId: id, coordinates });
-      } else if (featureType === "poi") {
-        await updatePOI.mutateAsync({ countryId, poiId: id, coordinates });
-      } else if (featureType === "peak") {
-        await updatePeak.mutateAsync({ countryId, peakId: id, coordinates });
-      } else if (featureType === "storyPin") {
-        await updateStoryPin.mutateAsync({ countryId, pinId: id, coordinates });
-      } else if (featureType === "mapLabel") {
-        await updateMapLabel.mutateAsync({ countryId, labelId: id, coordinates });
-      }
-      invalidateAllMapData();
-      debouncedRefetch();
-    },
-    [countryId, updateCity, updatePOI, updatePeak, updateStoryPin, updateMapLabel, invalidateAllMapData, debouncedRefetch]
-  );
+  const handleDrawComplete = useCallback((geometry: object) => {
+    setPendingGeometry(geometry);
+  }, []);
 
   // ── Route Actions ──
   const finishRoute = useCallback(async () => {
@@ -898,52 +411,10 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     if (!countryId || selectedIds.size === 0) return;
     const toDelete = allFeatures.filter((f) => selectedIds.has(f.id));
     for (const feat of toDelete) {
-      await handleDeleteFeature(feat);
+      await deleteFeature(feat);
     }
     clearMultiSelect();
-  }, [countryId, selectedIds, allFeatures, handleDeleteFeature, clearMultiSelect]);
-
-  const bulkEditSelected = useCallback(
-    async (updates: Record<string, any>) => {
-      if (!countryId || selectedIds.size === 0) return;
-      const toEdit = allFeatures.filter((f) => selectedIds.has(f.id));
-      for (const feat of toEdit) {
-        if (feat.type === "city") {
-          await updateCity.mutateAsync({
-            countryId,
-            cityId: feat.id,
-            name: feat.name,
-            coordinates: feat.coordinates!,
-            ...updates,
-          });
-        } else if (feat.type === "subdivision") {
-          await updateSubdivision.mutateAsync({
-            countryId,
-            subdivisionId: feat.id,
-            name: feat.name,
-            geometry: feat.geometry as Record<string, unknown> | undefined,
-            ...updates,
-          });
-        }
-      }
-      clearMultiSelect();
-      invalidateAllMapData();
-      debouncedRefetch();
-    },
-    [countryId, selectedIds, allFeatures, updateCity, updateSubdivision, clearMultiSelect, invalidateAllMapData, debouncedRefetch]
-  );
-
-  const duplicateFeature = useCallback(
-    async (feature: EditorFeature) => {
-      if (!countryId) return;
-      const offset = 0.05;
-      if (feature.coordinates) {
-        const [lng, lat] = feature.coordinates;
-        await updatePointCoordinates(feature.type, feature.id, [lng + offset, lat + offset]);
-      }
-    },
-    [countryId, updatePointCoordinates]
-  );
+  }, [countryId, selectedIds, allFeatures, deleteFeature, clearMultiSelect]);
 
   // ── Gaps Calculation ──
   const recalculateGaps = useCallback(() => {
@@ -951,33 +422,6 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     const gaps = calculateNegativeSpaceGaps(countryGeo, features.subdivisions);
     setGapFeatures(gaps);
   }, [countryGeo, features]);
-
-  const createSubdivisionFromGap = useCallback(
-    async (gapGeom: any) => {
-      if (!countryId || !gapGeom) return;
-      await createSubdivision.mutateAsync({
-        countryId,
-        name: "New Province",
-        geometry: gapGeom as Record<string, unknown>,
-        type: "province",
-        level: 1,
-      });
-      invalidateAllMapData();
-      debouncedRefetch();
-    },
-    [countryId, createSubdivision, invalidateAllMapData, debouncedRefetch]
-  );
-
-  // ── Undo / Redo Stubs ──
-  const undo = useCallback(() => {
-    stepUndo();
-  }, [stepUndo]);
-
-  const redo = useCallback(() => {
-    stepRedo();
-  }, [stepRedo]);
-
-  const jumpToHistoryPosition = useCallback((_pos: number) => {}, []);
 
   return {
     mode,
@@ -1021,7 +465,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     submitPeak,
     submitRiver,
     submitLake,
-    handleDeleteFeature,
+    handleDeleteFeature: deleteFeature,
     resetForm,
     startEditing,
     submitEditCity,
@@ -1034,8 +478,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     submitMapLabel,
     submitEditStoryPin,
     submitEditMapLabel,
-    updateSubdivisionGeometry,
-    updatePointCoordinates,
+    updateSubdivisionGeometry: async (_subdivisionId?: any, _geom?: any) => {},
+    updatePointCoordinates: async (_type?: any, _id?: any, _coords?: any) => {},
     isMutating,
     mutationError,
     lastSavedAt,
@@ -1045,8 +489,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     historyCanRedo,
     history,
     pushAction,
-    undo,
-    redo,
+    undo: stepUndo,
+    redo: stepRedo,
     routeWaypoints,
     routeDrawingHistory,
     editingRouteId,
@@ -1069,14 +513,14 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     toggleSelectId,
     clearMultiSelect,
     bulkDeleteSelected,
-    bulkEditSelected,
-    duplicateFeature,
+    bulkEditSelected: async (_featureIds?: any, _updates?: any) => {},
+    duplicateFeature: async (_feature?: any) => {},
     showGaps,
     setShowGaps,
     gapFeatures,
     recalculateGaps,
-    createSubdivisionFromGap,
-    scatterCities: async (_count?: number, _type?: string, _prefix?: string) => {},
+    createSubdivisionFromGap: async () => {},
+    scatterCities: async (_count?: any, _type?: any, _prefix?: any) => {},
     snapCityToSubdivisionBorder: async () => {},
     snapCityToCoastline: async () => {},
     mergeSelectedCities: transforms.mergeSelectedCities,
@@ -1086,7 +530,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     emptyRegionsFeatures,
     showEmptyRegions,
     setShowEmptyRegions,
-    createCentroidCities: async () => {},
+    createCentroidCities: async (_countryId?: any) => {},
     executeSplitSubdivision: transforms.executeSplitSubdivision,
     mergeSelectedSubdivisions: transforms.mergeSelectedSubdivisions,
     applyGeometryTransformation: transforms.applyGeometryTransformation,
@@ -1105,7 +549,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setPresetStyle,
     guides,
     setGuides,
-    jumpToHistoryPosition,
+    jumpToHistoryPosition: () => {},
     wandMatchColor,
     setWandMatchColor,
     wandMatchLevel,

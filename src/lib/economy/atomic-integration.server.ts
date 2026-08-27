@@ -1,7 +1,7 @@
 // src/lib/atomic-economic-integration.server.ts
 // Server-side functions that require database access
 import { ComponentType, type AtomicEffectiveness } from "@prisma/client";
-import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
+import { getAtomicEffectivenessService } from "~/server/services/AtomicEffectivenessService";
 import { db } from "~/server/db";
 import type {
   AtomicEconomicModifiers,

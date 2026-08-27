@@ -2,15 +2,9 @@
    FACET DESIGN SYSTEM — ENTRYPOINT INDEX
    ========================================================================== */
 
-@import "./facet/tokens.css";
-@import "./facet/hierarchy.css";
-@import "./facet/effects.css";
-@import "./facet/materials.css";
-@import "./facet/base.css";
-@import "./facet/variants.css";
-@import "./facet/layout.css";
-@import "./facet/integrations.css";
-@import "./facet/accessibility.css";
+@import "./facet/core.css";
+@import "./facet/physics.css";
+@import "./facet/components.css";
 
 /* ==========================================================================
    NESTED COMPONENTS OVERRIDES FOR FACET MODALS

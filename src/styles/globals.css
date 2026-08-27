@@ -121,27 +121,16 @@
 }
 
 /* Import modular CSS files */
-@import "./fonts.css";
-@import "./shared-utilities.css";
-@import "./animations.css";
-@import "./performance.css";
-@import "./compact-mode.css";
-@import "./themes.css";
 @import "./typography.css";
+@import "./utilities.css";
+@import "./animations.css";
+@import "./themes.css";
+@import "./theming.css";
 @import "./components.css";
-@import "./charts.css";
-@import "./light-mode-overrides.css";
-@import "./country-theming.css";
-@import "./mycountry-theming.css";
+@import "./domains.css";
 @import "./facet.css";
-@import "./vault/vault.css";
-@import "./dashboard/dashboard.css";
-@import "./integrations/maps.css";
-@import "./integrations/toast.css";
-@import "./layout/navigation.css";
-@import "./layout/z-index.css";
-@import "./layout/scrollbars.css";
-@import "./onoma.css";
+@import "./integrations.css";
+@import "./layout.css";
 @import "./clerk.css";
 
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
@@ -281,4 +270,16 @@
    body child, so this only hides the escapee. Upstream fix: pass the element ref. */
 body > canvas[id^="cosmetic-particles-"] {
   display: none !important;
+}
+
+/* Reduced motion accessibility guard */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-marquee-vertical,
+  .animate-glow-pulse,
+  .animate-shine,
+  .ripple-effect::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

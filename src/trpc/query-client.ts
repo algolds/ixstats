@@ -1,19 +1,6 @@
 import { defaultShouldDehydrateQuery, QueryClient } from "@tanstack/react-query";
 import SuperJSON from "superjson";
 
-// Selective logger - suppress verbose logs but keep errors
-// oxlint-disable-next-line typescript/no-unused-vars
-const selectiveLogger = {
-  log: () => {}, // Suppress info logs
-  warn: () => {}, // Suppress warnings
-  error: (...args: any[]) => {
-    // Only log actual query errors, not React Query internals
-    if (args[0]?.message && !args[0].message.includes("No QueryClient set")) {
-      console.error("[React Query Error]", ...args);
-    }
-  },
-};
-
 export const createQueryClient = () =>
   new QueryClient({
     defaultOptions: {

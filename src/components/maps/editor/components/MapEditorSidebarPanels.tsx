@@ -8,7 +8,7 @@ import { LinkageValidationPanel } from "./LinkageValidationPanel";
 import { SovereigntyPanel } from "./SovereigntyPanel";
 import { PropertiesPanelContent } from "./PropertiesPanelContent";
 import { HistoryPanel } from "./HistoryPanel";
-import { EditQueuePanel } from "~/app/admin/maps/_components/EditQueuePanel";
+import { EditQueuePanel } from "../panels/EditQueuePanel";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 
 export type PanelPlacement = "left" | "right" | "bottom";

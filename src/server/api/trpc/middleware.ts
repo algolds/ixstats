@@ -364,18 +364,6 @@ export const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   });
 });
 
-export const dataPrivacyMiddleware = t.middleware(async ({ ctx, next, path }) => {
-  const result = await next();
-  if (path.includes("Intelligence") || path.includes("executive")) {
-    if (VERBOSE) {
-      console.log(
-        `[DATA_PRIVACY] User ${ctx.auth?.userId} accessed ${path} at ${new Date().toISOString()}`
-      );
-    }
-  }
-  return result;
-});
-
 export const inputValidationMiddleware = t.middleware(async ({ ctx, next, input, path }) => {
   if (!path.includes("execute") && !path.includes("Action")) {
     return next();

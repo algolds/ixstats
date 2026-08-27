@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
+import { getAtomicEffectivenessService } from "~/server/services/AtomicEffectivenessService";
 import { invalidateCache } from "~/lib/cache";
 
 export const managementAdminProcedures = {

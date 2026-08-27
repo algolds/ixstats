@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import { AuthenticationGuard, CountryDataProvider, useCountryData } from "~/components/mycountry/shared/primitives";
-import { MobileOptimized } from "~/app/mycountry/components/MobileOptimizations";
+import { MobileOptimized } from "./MobileOptimizations";
 import { getSectionFromPathname, type MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
 import { MyCountryComplianceModal } from "~/components/mycountry/shared/modals/MyCountryComplianceModal";

@@ -1,58 +1,21 @@
-// src/server/api/routers/quickactions.ts
-// Comprehensive Quick Actions tRPC router with government integration, IxTime sync, and economic system integration
+/**
+ * Quick Actions Cabinet Meetings Router (Plan 163 / Plan 191)
+ *
+ * Handles cabinet meeting lifecycle, agenda items, attendance tracking,
+ * and meeting completion decision recommendations.
+ */
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { CountryEventSpine } from "~/lib/activity";
-import { applyPolicyEffect } from "~/lib/policies";
-
-/**
- * QUICK ACTIONS ROUTER
- *
- * Integrated system for managing:
- * - Cabinet meetings with government official sync
- * - Policy creation with economic effect tracking
- * - Activity scheduling with IxTime integration
- * - Government officials management
- * - Meeting agendas with tagging and categorization
- */
-
-// ============================================================================
-// INPUT VALIDATION SCHEMAS
-// ============================================================================
-
-// Base schema for government officials
-const governmentOfficialBaseSchema = z.object({
-  governmentStructureId: z.string().optional(),
-  departmentId: z.string().optional(),
-  name: z.string().min(1, "Name is required"),
-  title: z.string().min(1, "Title is required"),
-  role: z.enum(["Cabinet Member", "Department Head", "Advisor", "Staff", "External Consultant"]),
-  email: z.string().email().optional().nullable(),
-  phone: z.string().optional().nullable(),
-  bio: z.string().optional().nullable(),
-  photoUrl: z.string().url().optional().nullable(),
-  appointedDate: z.date().optional(),
-  termEndDate: z.date().optional().nullable(),
-  responsibilities: z.array(z.string()).optional(),
-  priority: z.number().int().min(0).max(100).default(50),
-  isActive: z.boolean().default(true),
-});
-
-// Create schema - all required fields with defaults
-const _governmentOfficialCreateSchema = governmentOfficialBaseSchema;
-
-// Update schema - all fields optional
-const _governmentOfficialUpdateSchema = governmentOfficialBaseSchema.partial();
 
 const meetingInputSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional().nullable(),
   scheduledDate: z.date(),
-  scheduledIxTime: z.number().optional(), // Optional IxTime override (if provided, scheduledDate is treated as IxTime)
+  scheduledIxTime: z.number().optional(),
   duration: z.number().int().min(15).max(480).default(60),
   attendeeIds: z.array(z.string()).default([]),
   customAttendees: z
@@ -79,75 +42,7 @@ const meetingInputSchema = z.object({
     .default([]),
 });
 
-// Base schema for policies
-const policyBaseSchema = z.object({
-  name: z.string().min(1, "Policy name is required"),
-  description: z.string().min(10, "Description is required (min 10 characters)"),
-  policyType: z.enum(["economic", "social", "diplomatic", "infrastructure", "governance"]),
-  category: z.string().min(1, "Category is required"),
-  priority: z.enum(["critical", "high", "medium", "low"]).default("medium"),
-  objectives: z.array(z.string()).optional().default([]),
-  targetMetrics: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
-  implementationCost: z.number().min(0).default(0),
-  maintenanceCost: z.number().min(0).default(0),
-  estimatedBenefit: z.string().optional().nullable(),
-  effectiveDate: z.date().optional().nullable(),
-  expiryDate: z.date().optional().nullable(),
-  // Economic effects
-  gdpEffect: z.number().default(0),
-  employmentEffect: z.number().default(0),
-  inflationEffect: z.number().default(0),
-  taxRevenueEffect: z.number().default(0),
-  customEffects: z.record(z.string(), z.number()).optional(),
-  approvalRequired: z.boolean().default(false),
-  isActive: z.boolean().default(true),
-});
-
-// Create schema - all required fields with defaults
-const _policyCreateSchema = policyBaseSchema;
-
-// Update schema - all fields optional
-const _policyUpdateSchema = policyBaseSchema.partial();
-
-const _activityScheduleInputSchema = z.object({
-  activityType: z.enum([
-    "meeting",
-    "policy_review",
-    "economic_review",
-    "diplomatic_event",
-    "custom",
-  ]),
-  title: z.string().min(1),
-  description: z.string().optional().nullable(),
-  scheduledDate: z.date(),
-  duration: z.number().int().min(15).optional().nullable(),
-  priority: z.enum(["urgent", "high", "normal", "low"]).default("normal"),
-  category: z.string().optional().nullable(),
-  tags: z.array(z.string()).optional().default([]),
-  relatedIds: z.record(z.string(), z.string()).optional(),
-  recurrence: z
-    .object({
-      frequency: z.enum(["daily", "weekly", "monthly", "yearly"]),
-      interval: z.number().int().min(1),
-      endDate: z.date().optional(),
-    })
-    .optional()
-    .nullable(),
-});
-
-// ============================================================================
-// ROUTER DEFINITION
-// ============================================================================
-
 export const quickActionsMeetingsRouter = createTRPCRouter({
-  // ==========================================================================
-  // GOVERNMENT OFFICIALS
-  // ==========================================================================
-
-  // ==========================================================================
-  // CABINET MEETINGS
-  // ==========================================================================
-
   /**
    * Get all meetings for a country
    */
@@ -217,11 +112,8 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Get current IxTime
       const _currentIxTime = IxTime.getCurrentIxTime();
 
-      // Use provided IxTime if available, otherwise convert from scheduledDate
-      // If scheduledIxTime is provided, scheduledDate is already an IxTime date
       const scheduledIxTime =
         input.meeting.scheduledIxTime ??
         IxTime.convertToIxTime(input.meeting.scheduledDate.getTime());
@@ -246,7 +138,7 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
           data: input.meeting.attendeeIds.map((officialId) => ({
             meetingId: meeting.id,
             officialId,
-            attendeeName: "", // Will be filled from official relation
+            attendeeName: "",
             attendanceStatus: "invited",
           })),
         });
@@ -385,22 +277,6 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
       return { agendaItem, success: true };
     }),
 
-  // ==========================================================================
-  // POLICIES
-  // ==========================================================================
-
-  // ==========================================================================
-  // ACTIVITY SCHEDULE
-  // ==========================================================================
-
-  // ==========================================================================
-  // AGGREGATE VIEWS
-  // ==========================================================================
-
-  // ==========================================================================
-  // MEETING DECISIONS & ACTION ITEMS
-  // ==========================================================================
-
   /**
    * Complete a meeting and trigger decision/action prompts
    */
@@ -412,7 +288,6 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Get the meeting with agenda items
       const meeting = await ctx.db.cabinetMeeting.findUnique({
         where: { id: input.meetingId },
         include: {
@@ -523,295 +398,6 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
         success: true,
         message: "Meeting completed successfully",
         suggestedDecisions,
-      };
-    }),
-
-  /**
-   * Create a meeting decision
-   */
-  createDecision: protectedProcedure
-    .input(
-      z.object({
-        meetingId: z.string(),
-        agendaItemId: z.string().optional(),
-        title: z.string(),
-        description: z.string(),
-        decisionType: z.enum([
-          "policy_approval",
-          "budget_allocation",
-          "appointment",
-          "directive",
-          "resolution",
-          "other",
-        ]),
-        impact: z.enum(["high", "medium", "low"]).optional(),
-        createPolicy: z.boolean().default(false),
-        policyData: z
-          .object({
-            name: z.string(),
-            policyType: z.enum([
-              "economic",
-              "social",
-              "diplomatic",
-              "infrastructure",
-              "governance",
-            ]),
-            category: z.string(),
-            gdpEffect: z.number().default(0),
-            employmentEffect: z.number().default(0),
-            inflationEffect: z.number().default(0),
-            taxRevenueEffect: z.number().default(0),
-          })
-          .optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const meeting = await ctx.db.cabinetMeeting.findUnique({
-        where: { id: input.meetingId },
-      });
-
-      if (!meeting) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Meeting not found",
-        });
-      }
-
-      // Create the decision
-      const decision = await ctx.db.meetingDecision.create({
-        data: {
-          meetingId: input.meetingId,
-          agendaItemId: input.agendaItemId ?? null,
-          title: input.title,
-          description: input.description,
-          decisionType: input.decisionType,
-          impact: input.impact ?? null,
-          implementationStatus: "pending",
-        },
-      });
-
-      // If creating a policy from this decision
-      let policy = null;
-      if (input.createPolicy && input.policyData) {
-        const currentIxTime = IxTime.getCurrentIxTime();
-
-        policy = await ctx.db.policy.create({
-          data: {
-            countryId: meeting.countryId,
-            userId: meeting.userId,
-            name: input.policyData.name,
-            description: input.description,
-            policyType: input.policyData.policyType,
-            category: input.policyData.category,
-            status: "proposed",
-            priority: "medium",
-            proposedDate: new Date(),
-            proposedIxTime: currentIxTime,
-            gdpEffect: input.policyData.gdpEffect,
-            employmentEffect: input.policyData.employmentEffect,
-            inflationEffect: input.policyData.inflationEffect,
-            taxRevenueEffect: input.policyData.taxRevenueEffect,
-          },
-        });
-
-        // Link policy to decision
-        await ctx.db.meetingDecision.update({
-          where: { id: decision.id },
-          data: { relatedPolicyId: policy.id },
-        });
-      }
-
-      return {
-        decision,
-        policy,
-        success: true,
-        message: "Decision recorded successfully",
-      };
-    }),
-
-  /**
-   * Create action items from a meeting
-   */
-  createActionItems: protectedProcedure
-    .input(
-      z.object({
-        meetingId: z.string(),
-        items: z.array(
-          z.object({
-            title: z.string(),
-            description: z.string().optional(),
-            assignedTo: z.string().optional(),
-            dueDate: z.date().optional(),
-            priority: z.enum(["urgent", "high", "normal", "low"]).default("normal"),
-            category: z.string().optional(),
-            tags: z.array(z.string()).optional(),
-          })
-        ),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const actionItems = await Promise.all(
-        input.items.map((item) => {
-          const dueIxTime = item.dueDate ? IxTime.convertToIxTime(item.dueDate.getTime()) : null;
-
-          return ctx.db.meetingActionItem.create({
-            data: {
-              meetingId: input.meetingId,
-              title: item.title,
-              description: item.description ?? null,
-              assignedTo: item.assignedTo ?? null,
-              dueDate: item.dueDate ?? null,
-              dueIxTime,
-              priority: item.priority,
-              category: item.category ?? null,
-              tags: item.tags ? JSON.stringify(item.tags) : null,
-              status: "pending",
-            },
-          });
-        })
-      );
-
-      return {
-        actionItems,
-        success: true,
-        message: `${actionItems.length} action items created`,
-      };
-    }),
-
-  // ==========================================================================
-  // INTELLIGENT POLICY RECOMMENDATIONS
-  // ==========================================================================
-
-  implementDecision: protectedProcedure
-    .input(
-      z.object({
-        decisionId: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const decision = await ctx.db.meetingDecision.findUnique({
-        where: { id: input.decisionId },
-        include: { meeting: true },
-      });
-
-      if (!decision) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Decision not found",
-        });
-      }
-
-      if (decision.implementationStatus === "implemented") {
-        return { success: true, message: "Decision already implemented" };
-      }
-
-      // Parse estimatedEffect (consequences JSON)
-      let consequences: any[] = [];
-      if (decision.estimatedEffect) {
-        try {
-          consequences = JSON.parse(decision.estimatedEffect);
-        } catch (e) {
-          console.error("[Meetings] Failed to parse estimatedEffect JSON:", e);
-        }
-      }
-
-      // Apply consequences via spine
-      let applied = [];
-      if (consequences.length > 0) {
-        applied = await CountryEventSpine.recordCountryEvent({
-          db: ctx.db,
-          countryId: decision.meeting.countryId,
-          sourceType: "decision",
-          sourceId: decision.id,
-          description: `Implemented cabinet decision: "${decision.title}"`,
-          consequences: consequences.map((c: any) => ({
-            targetModel: c.targetModel,
-            targetField: c.targetField,
-            operation: c.operation || "add",
-            value: c.value,
-            effectType: c.effectType,
-            durationDays: c.durationDays,
-          })),
-        });
-      } else {
-        // Record a trace in ledger even if no consequences are present
-        await CountryEventSpine.recordCountryEvent({
-          db: ctx.db,
-          countryId: decision.meeting.countryId,
-          sourceType: "decision",
-          sourceId: decision.id,
-          description: `Implemented cabinet decision: "${decision.title}"`,
-        });
-      }
-
-      // Update implementationStatus to "implemented"
-      const updatedDecision = await ctx.db.meetingDecision.update({
-        where: { id: decision.id },
-        data: {
-          implementationStatus: "implemented",
-        },
-      });
-
-      // If there is a related policy, we can activate it!
-      let activatedPolicy = null;
-      if (decision.relatedPolicyId) {
-        const policy = await ctx.db.policy.findUnique({
-          where: { id: decision.relatedPolicyId },
-        });
-
-        if (policy && policy.status !== "active") {
-          // Check budget
-          const structure = await ctx.db.governmentStructure.findUnique({
-            where: { countryId: policy.countryId },
-          });
-
-          if (structure && structure.totalBudget >= policy.implementationCost) {
-            // Deduct budget
-            if (policy.implementationCost > 0) {
-              await ctx.db.governmentStructure.update({
-                where: { countryId: policy.countryId },
-                data: { totalBudget: { decrement: policy.implementationCost } },
-              });
-
-              // Log budget deduction consequence via Event Spine
-              await CountryEventSpine.recordCountryEvent({
-                db: ctx.db,
-                countryId: policy.countryId,
-                sourceType: "policy",
-                sourceId: policy.id,
-                description: `Enacted policy "${policy.name}" via decision: Cost of ${policy.implementationCost} deducted from treasury`,
-                consequences: [
-                  {
-                    targetModel: "GovernmentStructure",
-                    targetField: "totalBudget",
-                    operation: "subtract",
-                    value: policy.implementationCost,
-                  },
-                ],
-              });
-            }
-
-            activatedPolicy = await ctx.db.policy.update({
-              where: { id: policy.id },
-              data: {
-                status: "active",
-                effectiveDate: new Date(),
-              },
-            });
-
-            // Make the policy real in the simulation
-            await applyPolicyEffect(ctx.db, activatedPolicy).catch((err) =>
-              console.error("[Meetings] Failed to apply policy effect on decision resolve:", err)
-            );
-          }
-        }
-      }
-
-      return {
-        success: true,
-        decision: updatedDecision,
-        policy: activatedPolicy,
-        appliedConsequencesCount: applied.length,
       };
     }),
 });

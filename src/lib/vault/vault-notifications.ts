@@ -7,7 +7,7 @@
 
 "use client";
 
-import { notifyFromStore } from "~/hooks/useNotify";
+import { notifyFromStore } from "~/lib/notifications/notify-store";
 import type { NotificationCategory } from "~/types/unified-notifications";
 
 type ToastType = "success" | "error" | "warning" | "info";

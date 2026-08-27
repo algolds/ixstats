@@ -116,6 +116,7 @@ const KEYWORDS: Record<Category, string[]> = {
     "commerce",
   ],
   social: [
+    "healthcare",
     "health",
     "education",
     "welfare",
@@ -144,6 +145,12 @@ const KEYWORDS: Record<Category, string[]> = {
     "coast",
     "capital",
     "utility",
+    "green",
+    "renewable",
+    "clean energy",
+    "solar",
+    "wind",
+    "power",
   ],
   security: [
     "crime",
@@ -198,27 +205,25 @@ export function weightAcceptance(
 export function classifyGoal(goal: string): { category: Category } {
   const g = goal.toLowerCase();
 
-  // Enforce domestic policy goals only (block diplomatic/foreign affairs keywords)
-  const FOREIGN_KEYWORDS = [
-    "ally",
-    "alliance",
-    "treaty",
-    "diplomat",
-    "foreign",
-    "embassy",
-    "relations with",
+  // Enforce domestic policy goals only (block bilateral diplomatic / military foreign affairs)
+  const EXPLICIT_BILATERAL_KEYWORDS = [
     "war with",
-    "trade deal",
-    "relations",
-    "summit",
-    "envoy",
-    "ambassador",
-    "burgundie",
-    "urcea",
+    "peace treaty",
+    "trade treaty",
+    "military alliance",
+    "open embassy",
+    "close embassy",
+    "expel ambassador",
+    "sever relations",
+    "bilateral treaty",
+    "impose sanctions on",
+    "embargo on",
+    "declare war",
+    "invade",
   ];
   if (
-    FOREIGN_KEYWORDS.some((k) => g.includes(k)) ||
-    goal.match(/\b(?:with|against|toward|to)\s+([A-Z][A-Za-z'\- ]{2,30})/)
+    EXPLICIT_BILATERAL_KEYWORDS.some((k) => g.includes(k)) ||
+    g.match(/\b(?:war with|treaty with|alliance with|sanctions on|embargo on)\b/i)
   ) {
     throw new Error(
       "Cabinet Directives are restricted to domestic policy. For foreign affairs, embassies, or treaties, please use the Diplomacy tab."
@@ -485,7 +490,7 @@ export function demo() {
   };
   const def = assemblePackages("Build military defenses");
   assert(def.category === "defense", "defense classification");
-  assert(def.packages.length === 3, "3 tiers");
+  assert(def.packages.length === 5, "5 packages");
   for (const p of def.packages) assert(p.changes.length <= 4, "≤4 changes");
   assert(
     def.packages[0]!.acceptance === "good" && def.packages[2]!.acceptance === "bad",

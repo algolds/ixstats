@@ -92,6 +92,7 @@ export function getSectionFromPathname(rawPathname: string): MyCountrySection {
   if (pathname.startsWith("/mycountry/map-editor")) return "map-editor";
   if (pathname.startsWith("/mycountry/executive")) return "executive";
   if (pathname.startsWith("/mycountry/economy")) return "economy";
+  if (pathname.startsWith("/mycountry/intelligence")) return "defense";
   for (const item of NAV_ITEMS) {
     if (item.id !== "overview" && pathname.startsWith(item.href)) return item.id;
   }

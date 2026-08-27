@@ -498,58 +498,15 @@ export interface CalculationLog {
   notes?: string | null;
 }
 
-// FIXED: Tier mapping utilities
-export const ECONOMIC_TIER_INFO: Record<
-  EconomicTier,
-  { min: number; max: number; maxGrowth: number }
-> = {
-  [EconomicTier.IMPOVERISHED]: { min: 0, max: 9999, maxGrowth: 0.1 },
-  [EconomicTier.DEVELOPING]: { min: 10000, max: 24999, maxGrowth: 0.075 },
-  [EconomicTier.DEVELOPED]: { min: 25000, max: 34999, maxGrowth: 0.05 },
-  [EconomicTier.HEALTHY]: { min: 35000, max: 44999, maxGrowth: 0.035 },
-  [EconomicTier.STRONG]: { min: 45000, max: 54999, maxGrowth: 0.0275 },
-  [EconomicTier.VERY_STRONG]: { min: 55000, max: 64999, maxGrowth: 0.015 },
-  [EconomicTier.EXTRAVAGANT]: { min: 65000, max: Infinity, maxGrowth: 0.005 },
-};
-
-export const POPULATION_TIER_INFO: Record<PopulationTier, { min: number; max: number }> = {
-  [PopulationTier.TIER_1]: { min: 0, max: 9_999_999 },
-  [PopulationTier.TIER_2]: { min: 10_000_000, max: 29_999_999 },
-  [PopulationTier.TIER_3]: { min: 30_000_000, max: 49_999_999 },
-  [PopulationTier.TIER_4]: { min: 50_000_000, max: 79_999_999 },
-  [PopulationTier.TIER_5]: { min: 80_000_000, max: 119_999_999 },
-  [PopulationTier.TIER_6]: { min: 120_000_000, max: 349_999_999 },
-  [PopulationTier.TIER_7]: { min: 350_000_000, max: 499_999_999 },
-  [PopulationTier.TIER_X]: { min: 500_000_000, max: Infinity },
-};
-
-// Helper functions for tier determination
-export function getEconomicTierFromGdpPerCapita(gdpPerCapita: number): EconomicTier {
-  for (const [tier, info] of Object.entries(ECONOMIC_TIER_INFO)) {
-    if (gdpPerCapita >= info.min && gdpPerCapita <= info.max) {
-      return tier as EconomicTier;
-    }
-  }
-  return EconomicTier.IMPOVERISHED;
-}
-
-export function getPopulationTierFromPopulation(population: number): PopulationTier {
-  for (const [tier, info] of Object.entries(POPULATION_TIER_INFO)) {
-    if (population >= info.min && population <= info.max) {
-      return tier as PopulationTier;
-    }
-  }
-  return PopulationTier.TIER_X;
-}
-
-// FIXED: Growth rate conversion utilities
-export function decimalToPercentage(decimal: number): number {
-  return decimal * 100;
-}
-
-export function percentageToDecimal(percentage: number): number {
-  return percentage / 100;
-}
+// Tier mapping utilities & calculation functions (Canonical implementation in ~/lib/tier-utils)
+export {
+  ECONOMIC_TIER_INFO,
+  POPULATION_TIER_INFO,
+  getEconomicTierFromGdpPerCapita,
+  getPopulationTierFromPopulation,
+  decimalToPercentage,
+  percentageToDecimal,
+} from "~/lib/tier-utils";
 
 // Define explicit types for complex fields
 export interface CalculatedStats {
@@ -814,3 +771,19 @@ export interface EconomicPolicy {
   createdAt: Date;
   updatedAt: Date;
 }
+
+/**
+ * Time range options for historical charts & metric trend queries.
+ * Includes extended 4y/5y/20y selectors per Dashboard unification.
+ */
+export type TimeRange = "3m" | "6m" | "1y" | "2y" | "4y" | "5y" | "20y" | "all";
+
+export interface IxTimeDate {
+  year: number;
+  month: number;
+  day: number;
+  hour?: number;
+  minute?: number;
+  second?: number;
+}
+
