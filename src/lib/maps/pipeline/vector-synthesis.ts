@@ -127,6 +127,7 @@ export interface HybridVectorWorld {
  * Main Hybrid Vector Synthesis entry point.
  */
 export function synthesizeHybridVectorWorld(seed: number): HybridVectorWorld {
+  // oxlint-disable-next-line typescript/no-unused-vars
   const rng = makeRng(seed);
 
   // 1. Synthesize background (landmass)

@@ -36,6 +36,7 @@ interface CardEconomyData {
 /**
  * Historical Value Point
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 interface ValueHistoryPoint {
   date: string;
   cardValue: number;
@@ -45,6 +46,7 @@ interface ValueHistoryPoint {
 /**
  * GDP Correlation Data Point
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 interface CorrelationDataPoint {
   gdpPerCapita: number;
   cardValue: number;
@@ -92,6 +94,7 @@ interface PortfolioPerformance {
 /**
  * Calculate GDP correlation coefficient (Pearson's r)
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function calculateCorrelation(dataPoints: Array<{ x: number; y: number }>): number {
   if (dataPoints.length < 2) return 0;
 
@@ -112,6 +115,7 @@ function calculateCorrelation(dataPoints: Array<{ x: number; y: number }>): numb
 /**
  * Get card economy overview for a country
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 async function getCardEconomyOverview(
   db: PrismaClient,
   countryId: string

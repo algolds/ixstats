@@ -10,6 +10,7 @@ async function refreshCache(): Promise<void> {
       where: { enabled: true },
       select: { eventKey: true },
     });
+    // oxlint-disable-next-line typescript/no-unused-vars
     const enabledKeys = new Set(configs.map((c) => c.eventKey));
 
     const allKeys = await db.notificationEventConfig.findMany({

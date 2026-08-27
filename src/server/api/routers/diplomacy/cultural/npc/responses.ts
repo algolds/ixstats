@@ -94,7 +94,9 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
       }
 
       // Generate NPC personality based on observables
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'NPCPersonalitySystem' is intentional in this scope
       const { NPCPersonalitySystem } = await import("~/lib/diplomacy/npc-personality");
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'NPCCulturalParticipation' is intentional in this scope
       const { NPCCulturalParticipation } =
         await import("~/lib/diplomacy/npc-cultural-participation");
 

@@ -50,13 +50,13 @@ export function GovernmentHelpSystem({ section, className }: HelpSystemProps) {
           <DialogDescription>{helpContent.description}</DialogDescription>
         </DialogHeader>
         <div className="space-y-6 text-sm">
-          {helpContent.sections.map((section, index) => (
+          {helpContent.sections.map((helpSection, index) => (
             <div key={index}>
               <h3 className="mb-3 flex items-center gap-2 text-base font-semibold">
-                {section.icon}
-                {section.title}
+                {helpSection.icon}
+                {helpSection.title}
               </h3>
-              <div className="space-y-3">{section.content}</div>
+              <div className="space-y-3">{helpSection.content}</div>
               {index < helpContent.sections.length - 1 && <Separator className="my-6" />}
             </div>
           ))}

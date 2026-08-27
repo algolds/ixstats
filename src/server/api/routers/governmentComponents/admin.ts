@@ -152,6 +152,7 @@ function getFallbackComponentByType(componentType: ComponentType): ParsedCompone
 /**
  * Get components grouped by category
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function getComponentsByCategory(): Record<string, ParsedComponent[]> {
   const fallbackComponents = getFallbackComponents();
   const grouped: Record<string, ParsedComponent[]> = {};

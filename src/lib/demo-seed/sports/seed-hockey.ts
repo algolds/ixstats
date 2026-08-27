@@ -16,6 +16,7 @@ export async function seedOHLHockeyLeague(
   ixNow: number
 ): Promise<number> {
   let count = 0;
+  // oxlint-disable-next-line typescript/no-unused-vars
   const leagueSeed = hashString("Occidental Hockey League");
 
   const tierradorCountry = await prisma.country.findFirst({

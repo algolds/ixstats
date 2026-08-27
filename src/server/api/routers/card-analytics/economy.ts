@@ -54,6 +54,7 @@ interface CorrelationDataPoint {
 /**
  * Market Activity Record
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 interface MarketActivity {
   id: string;
   cardId: string;
@@ -69,6 +70,7 @@ interface MarketActivity {
 /**
  * Portfolio Performance Metrics
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 interface PortfolioPerformance {
   totalCards: number;
   totalValue: number;

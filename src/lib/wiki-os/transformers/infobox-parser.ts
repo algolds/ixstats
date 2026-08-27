@@ -313,10 +313,12 @@ function parseField(fieldStr: string): InfoboxField | null {
  */
 export function extractCoordsFromFields(fields: InfoboxField[]): [number, number] | null {
   const get = (key: string) => {
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'f' is intentional in this scope
     const f = fields.find((f) => f.key.toLowerCase() === key);
     return f ? parseFloat(f.cleanValue) : NaN;
   };
   const getStr = (key: string) => {
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'f' is intentional in this scope
     const f = fields.find((f) => f.key.toLowerCase() === key);
     return f?.cleanValue?.toUpperCase() ?? "";
   };

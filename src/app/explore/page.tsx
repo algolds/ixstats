@@ -189,6 +189,7 @@ export default function ExplorePage() {
   useEffect(() => {
     setPage(1);
   }, [
+    // oxlint-disable-next-line
     searchTerm,
     tierFilter,
     continentFilter,

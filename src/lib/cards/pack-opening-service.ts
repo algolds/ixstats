@@ -19,6 +19,7 @@ const RARITY_COLORS: Record<CardRarity, string> = {
 /**
  * Sound file paths for different rarities
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 const RARITY_SOUNDS: Record<CardRarity, string> = {
   COMMON: "/sounds/common-reveal.mp3",
   UNCOMMON: "/sounds/common-reveal.mp3",
@@ -54,6 +55,7 @@ export class PackOpeningService {
   /**
    * Play rarity-specific sound effect (silenced)
    */
+  // oxlint-disable-next-line typescript/no-unused-vars
   playRaritySound(rarity: CardRarity): void {
     // Silenced for compliance with no-audio constraints
   }

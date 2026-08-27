@@ -57,6 +57,7 @@ export function NationStatesCardsPanel() {
         String(c.nsCardId).includes(query) ||
         `s${c.nsSeason}`.toLowerCase().includes(query)
     );
+  // oxlint-disable-next-line
   }, [cards, searchQuery]);
 
   return (

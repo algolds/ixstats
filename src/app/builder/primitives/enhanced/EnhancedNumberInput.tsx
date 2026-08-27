@@ -233,6 +233,7 @@ export function EnhancedNumberInput({
       onChange(displayValue);
     } else {
       // Use smart number parser to handle "1.5M", "50k", "1,000,000", etc.
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'numericValue' is intentional in this scope
       const numericValue = parseNumberInput(displayValue);
 
       if (!isNaN(numericValue)) {

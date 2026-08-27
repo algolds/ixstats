@@ -1287,6 +1287,7 @@ export function alignSharedVertices(
  */
 export function sanitizeRegionShape(
   geometry: Polygon | MultiPolygon,
+  // oxlint-disable-next-line typescript/no-unused-vars
   countryBorder: Polygon | MultiPolygon
 ): { geometry: Polygon | MultiPolygon; issues: string[] } {
   const issues: string[] = [];

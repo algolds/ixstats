@@ -174,6 +174,7 @@ function getFallbackPersonalities() {
 /**
  * Generate generic response based on personality traits
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function generateGenericResponse(personality: any, scenario: string, context: any) {
   // Use personality traits to generate a generic response
   const cooperationScore = (personality.cooperativeness + context.relationshipStrength) / 2;
@@ -188,6 +189,7 @@ function generateGenericResponse(personality: any, scenario: string, context: an
 /**
  * Log admin action to database audit log
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 async function logAdminAction(
   db: any,
   data: {

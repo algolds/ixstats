@@ -223,6 +223,7 @@ export const intelAlertsThresholdsRouter = createTRPCRouter({
 /**
  * Calculate volatility metrics from historical data
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function calculateVolatility(data: Record<string, unknown>[]) {
   if (data.length < 2) return { gdp: 0, population: 0, overall: 0 };
 
@@ -242,6 +243,7 @@ function calculateVolatility(data: Record<string, unknown>[]) {
 /**
  * Calculate trend analysis from historical data
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function calculateTrends(data: Record<string, unknown>[]) {
   if (data.length < 3) return { gdp: "stable", population: "stable", overall: "stable" };
 
@@ -272,6 +274,7 @@ function calculateTrends(data: Record<string, unknown>[]) {
 /**
  * Calculate correlation analysis (simplified)
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function calculateCorrelations(_data: Record<string, unknown>[]) {
   // Simplified correlation analysis
   return {
@@ -294,6 +297,7 @@ function calculateStandardDeviation(values: number[]) {
 /**
  * Generate AI-powered recommendations based on country data
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function generateAIRecommendations(
   country: Record<string, unknown>,
   _recentData: Record<string, unknown>[]

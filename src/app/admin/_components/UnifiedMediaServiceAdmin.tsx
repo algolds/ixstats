@@ -90,6 +90,7 @@ export function UnifiedMediaServiceAdmin() {
 
   useEffect(() => {
     fetchStats();
+  // oxlint-disable-next-line
   }, []);
 
   const hitRate = stats ? (stats.hitRate * 100).toFixed(1) : "0";

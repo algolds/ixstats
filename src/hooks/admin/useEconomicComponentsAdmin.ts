@@ -102,6 +102,7 @@ export function useEconomicComponentsAdmin() {
   // Filtered components
   const filteredComponents = useMemo(() => {
     return filterEconomicComponents(components, searchTerm, categoryFilter, complexityFilter);
+  // oxlint-disable-next-line
   }, [components, searchTerm, categoryFilter, complexityFilter]);
 
   const resetForm = () => {

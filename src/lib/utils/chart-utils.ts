@@ -307,6 +307,7 @@ export function getGrowthColor(decimalValue: number | null | undefined): string 
   return "text-gray-500";
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function smartNormalizeGrowthRate(value: number | null | undefined, fallback = 3.0): number {
   if (!value || !isFinite(value)) return fallback;
 

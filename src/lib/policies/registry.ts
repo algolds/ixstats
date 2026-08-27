@@ -155,6 +155,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
         ],
       },
     ],
+    // oxlint-disable-next-line typescript/no-unused-vars
     calculate: (settings, countryMetrics) => {
       const rate = settings.tariffRate ?? 0;
       const exceptions = settings.exceptions ?? 0;
@@ -226,6 +227,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
         ],
       },
     ],
+    // oxlint-disable-next-line typescript/no-unused-vars
     calculate: (settings, countryMetrics) => {
       const level = settings.surveillance ?? 0;
 

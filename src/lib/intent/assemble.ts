@@ -372,6 +372,7 @@ function scale(c: IntentConsequence, f: number): IntentConsequence {
   return { ...c, value: Math.round(c.value * f * 100) / 100 };
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function buildPackage(tier: Tier, cat: Category, goal: string, target?: string): IntentPackage {
   const r = RECIPES[cat];
   const f = TIER_SCALE[tier];

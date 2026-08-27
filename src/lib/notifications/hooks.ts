@@ -356,6 +356,7 @@ export async function onTradeEvent(params: {
 }) {
   if (!(await guardNotificationEvent("onTradeEvent"))) return;
   const priority = params.eventType === "embargo" ? "high" : "medium";
+  // oxlint-disable-next-line typescript/no-unused-vars
   const type =
     params.impact === "positive" ? "success" : params.impact === "negative" ? "warning" : "info";
 

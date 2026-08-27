@@ -3,6 +3,7 @@
 
 import type { CardRarity, CardType } from "@prisma/client";
 import type {
+  // oxlint-disable-next-line typescript/no-unused-vars
   CardStatsData,
   CardInstance,
 } from "./cards-display";

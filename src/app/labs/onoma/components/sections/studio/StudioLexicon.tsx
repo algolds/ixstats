@@ -85,6 +85,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
       setIpaDraft(over?.ipa || "");
       setVoiceDraft(over?.voice || "");
     }
+  // oxlint-disable-next-line
   }, [selectedTerm, overridesVersion]);
 
   const hasOverride = selectedTerm ? !!getNameOverride(selectedTerm) : false;

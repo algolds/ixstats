@@ -12,6 +12,7 @@ function NavigationTransitionHandlerContent() {
   useEffect(() => {
     setIsPending(false);
     window.dispatchEvent(new CustomEvent("ixstats-nav-end"));
+  // oxlint-disable-next-line
   }, [pathname, searchParams]);
 
   useEffect(() => {

@@ -256,6 +256,7 @@ export function createCountrySpecificConfig(
   baseConfig: EconomicConfig,
   countryGdpPerCapita: number,
   countryPopulation: number,
+  // oxlint-disable-next-line typescript/no-unused-vars
   localGrowthFactor = 1.0
 ): EconomicConfig & {
   countryEconomicTier: string;

@@ -308,6 +308,7 @@ export const transportRouteQueriesRouter = createTRPCRouter({
 
 // ── Helpers ──────────────────────────────────────────────────────
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function extractBoundaryCoords(geometry: import("geojson").Geometry): [number, number][] {
   const coords: [number, number][] = [];
   function walk(obj: unknown): void {

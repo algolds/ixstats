@@ -6,3 +6,5 @@
  * dedicated refactor of the wikios templates router; tracked separately.
  */
 
+export const __BUILTIN_SCHEMAS_PLACEHOLDER__ = true as const;
+

@@ -325,6 +325,7 @@ export async function cloneOrSeedElections(
   );
   count += electCount;
 
+  // oxlint-disable-next-line typescript/no-unused-vars
   const { count: legCount, idMap: legIdMap } = await cloneParentChildren(
     prisma,
     "legislature",

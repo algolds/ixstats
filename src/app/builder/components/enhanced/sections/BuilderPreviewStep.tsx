@@ -153,6 +153,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
     }
 
     // If it's a GovernmentBuilderState, convert it
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'builderState' is intentional in this scope
     const builderState = governmentStructure;
     return {
       id: "preview",

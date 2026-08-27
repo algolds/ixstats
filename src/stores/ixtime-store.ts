@@ -98,6 +98,7 @@ const calculateProgressingTime = (state: IxTimeState): IxTimeState => {
   };
 };
 
+// oxlint-disable-next-line typescript/no-unused-vars
 export const useIxTimeStore = create<IxTimeStore>()((set, get) => ({
   ...initialState,
 

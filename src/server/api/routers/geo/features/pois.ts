@@ -247,6 +247,7 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
       });
 
       try {
+        // oxlint-disable-next-line eslint/no-shadow -- shadowed 'country' is intentional in this scope
         const country = await ctx.db.country.findUnique({
           where: { id: input.countryId },
           select: { name: true },

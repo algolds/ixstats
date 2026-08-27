@@ -561,6 +561,7 @@ export class UnifiedAtomicStateManager {
   }
 
   private generateIntelligenceFeeds() {
+    // oxlint-disable-next-line typescript/no-unused-vars
     const { selectedComponents, effectivenessScore, synergies, conflicts, economicModifiers } =
       this.state;
 

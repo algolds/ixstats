@@ -293,6 +293,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
         // Direct shadow and bridge fallback
         const shadowRes = await getArticleWikitextShadow(resolvedTitle, "ixwiki");
         if (shadowRes?.wikitext) {
+          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'parseWikitextToHtml' is intentional in this scope
           const { parseWikitextToHtml } = await import("~/lib/wiki-os/transformers/wikitext-parser");
           article = {
             html: parseWikitextToHtml(shadowRes.wikitext, "ixwiki"),
@@ -305,6 +306,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
         } else {
           const wikiRes = await getArticleWikitext(resolvedTitle, "ixwiki");
           if (wikiRes?.wikitext) {
+            // oxlint-disable-next-line eslint/no-shadow -- shadowed 'parseWikitextToHtml' is intentional in this scope
             const { parseWikitextToHtml } = await import("~/lib/wiki-os/transformers/wikitext-parser");
             article = {
               html: parseWikitextToHtml(wikiRes.wikitext, "ixwiki"),

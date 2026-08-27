@@ -329,6 +329,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   }, [activeSection]);
 
   // oxlint-disable-next-line eslint/no-unused-vars
+  // oxlint-disable-next-line
   const currentSubStepLabel = useMemo(() => {
     if (activeSection === "identity") {
       const tab = builderState.activeIdentitySubTab || (mode === "edit" ? "basic" : "archetype");

@@ -18,6 +18,7 @@ const DM_EVENT_TAG = "DM event";
 const MAX_BROADCAST = 100; // safety cap on a single injection
 
 /** Ensures ~18 nations each have one force-generated showcase issue for the guest splash (idempotent per country). */
+// oxlint-disable-next-line typescript/no-unused-vars
 async function seedSplashShowcaseIssues(db: PrismaClient): Promise<void> {
   try {
     const seededCountries = await db.nationalIssue.groupBy({

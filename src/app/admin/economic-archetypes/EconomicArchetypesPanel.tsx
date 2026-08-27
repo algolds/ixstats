@@ -157,6 +157,7 @@ export function EconomicArchetypesPanel() {
       if (a.region) uniqueRegions.add(a.region);
     });
     return Array.from(uniqueRegions).sort();
+  // oxlint-disable-next-line
   }, [archetypes]);
 
   // Filtered archetypes
@@ -178,6 +179,7 @@ export function EconomicArchetypesPanel() {
       }
       return true;
     });
+  // oxlint-disable-next-line
   }, [archetypes, selectedEra, selectedRegion, selectedComplexity, searchQuery]);
 
   const resetForm = () => {

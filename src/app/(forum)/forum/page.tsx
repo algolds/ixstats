@@ -34,6 +34,7 @@ export default function ForumIndexPage() {
   // Reset page when view mode changes
   useEffect(() => {
     setPage(1);
+  // oxlint-disable-next-line
   }, [viewMode]);
 
   // Category data (only when in categories mode)

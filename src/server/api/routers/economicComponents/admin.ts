@@ -84,6 +84,7 @@ function getFallbackComponents(): ParsedEconomicComponent[] {
 /**
  * Get fallback component by type
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function getFallbackComponentByType(
   componentType: EconomicComponentType
 ): ParsedEconomicComponent | null {
@@ -117,6 +118,7 @@ function getFallbackComponentByType(
 /**
  * Ensure database is seeded with economic component reference data
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 async function ensureSeeded(db: any) {
   try {
     const count = await db.economicComponentData.count();

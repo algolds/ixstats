@@ -1126,7 +1126,9 @@ const CONFLICT_COMBINATIONS: Array<{
  */
 export function calculateClientAtomicEconomicImpact(
   components: ComponentType[],
+  // oxlint-disable-next-line typescript/no-unused-vars
   baseGdpPerCapita: number = 15000,
+  // oxlint-disable-next-line typescript/no-unused-vars
   baseTaxRevenue: number = 0.2
 ): ClientAtomicEconomicModifiers {
   if (components.length === 0) {

@@ -55,6 +55,7 @@ export default function StashesPage() {
   useEffect(() => {
     setStashTab("articles");
     setSearchQuery("");
+  // oxlint-disable-next-line
   }, [selectedStashId]);
 
   const utils = api.useUtils();
@@ -114,6 +115,7 @@ export default function StashesPage() {
           item.contentType === "wiki" ||
           (!item.pageTitle.startsWith("commons:") && !item.pageTitle.startsWith("forum:thread:"))
       ),
+    // oxlint-disable-next-line
     [items]
   );
 
@@ -130,6 +132,7 @@ export default function StashesPage() {
     return items
       .filter((item) => item.contentType === "image" || item.pageTitle.startsWith("commons:"))
       .map((item) => item.pageTitle.replace(/^commons:/, ""));
+  // oxlint-disable-next-line
   }, [items]);
 
   const { data: resolvedCommonsImages } = api.commons.getImageInfoByTitles.useQuery(
@@ -154,6 +157,7 @@ export default function StashesPage() {
       items.filter(
         (item) => item.contentType === "image" || item.pageTitle.startsWith("commons:")
       ),
+    // oxlint-disable-next-line
     [items]
   );
 
@@ -162,6 +166,7 @@ export default function StashesPage() {
       items.filter(
         (item) => item.contentType === "forum_thread" || item.pageTitle.startsWith("forum:thread:")
       ),
+    // oxlint-disable-next-line
     [items]
   );
 

@@ -365,6 +365,7 @@ function exportLakes(graph: PackedGraph): FeatureCollection {
   return { type: "FeatureCollection", features };
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function exportIcecaps(graph: PackedGraph): FeatureCollection {
   const features: Feature[] = [];
 
@@ -460,6 +461,7 @@ function findContiguousGroups(graph: PackedGraph, cellSet: number[]): number[][]
  * Returns array of polygon coordinate rings (each ring = Position[]).
  */
 function mergeCellsToPolygons(graph: PackedGraph, cellSet: number[]): Position[][][] {
+  // oxlint-disable-next-line typescript/no-unused-vars
   const inSet = new Set(cellSet);
 
   // For each cell, emit its polygon edges. Track which edges are shared.

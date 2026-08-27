@@ -88,6 +88,7 @@ export function CountrySelector({
       {selectedIds.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {selectedIds.slice(0, 10).map((id) => {
+            // oxlint-disable-next-line eslint/no-shadow -- shadowed 'c' is intentional in this scope
             const c = countries.find((c) => c.id === id);
             if (!c) return null;
             return (

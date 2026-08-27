@@ -198,6 +198,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
       element.removeEventListener("pointermove", handlePointerMove);
       element.removeEventListener("pointerleave", handlePointerLeave);
     };
+  // oxlint-disable-next-line
   }, [lightInteraction, template]);
 
   // Poll computed styles for debug panel
@@ -232,6 +233,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
     return () => cancelAnimationFrame(rafRef.current);
   }, [
     showDebug,
+    // oxlint-disable-next-line
     template,
     depth,
     material,

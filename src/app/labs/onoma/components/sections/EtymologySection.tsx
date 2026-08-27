@@ -121,6 +121,7 @@ export default function EtymologySection() {
     const map = new Map<string, DerivationNode>();
     list.forEach((node) => map.set(node.id, node));
 
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'roots' is intentional in this scope
     const roots: DerivationNode[] = [];
     list.forEach((node) => {
       if (node.parentId && map.has(node.parentId)) {

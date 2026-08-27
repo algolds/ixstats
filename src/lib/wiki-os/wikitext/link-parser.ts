@@ -4,8 +4,11 @@
 
 import type {
   WikiInlineNode,
+  // oxlint-disable-next-line typescript/no-unused-vars
   WikiExternalLinkInline,
+  // oxlint-disable-next-line typescript/no-unused-vars
   EngineDataChipInline,
+  // oxlint-disable-next-line typescript/no-unused-vars
   MediaBlock,
 } from "./types";
 

@@ -99,7 +99,9 @@ export function useWikiScanner(params: {
 
   // Separate linked and unlinked features
   const { linked, unlinked } = useMemo(() => {
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'linked' is intentional in this scope
     const linked: EditorFeature[] = [];
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'unlinked' is intentional in this scope
     const unlinked: EditorFeature[] = [];
     for (const f of features) {
       const wikiTitle = f.properties.wikiPageTitle as string | undefined;

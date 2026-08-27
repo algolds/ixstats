@@ -120,6 +120,7 @@ export const COMPONENT_CATEGORIES: Record<string, string[]> = {
 export function calculateAtomicSynergies(
   myComponents: AtomicComponent[] | undefined,
   embassy: Embassy,
+  // oxlint-disable-next-line typescript/no-unused-vars
   dbSynergies?: DatabaseSynergy[]
 ): AtomicSynergy[] {
   // Early return if no components available

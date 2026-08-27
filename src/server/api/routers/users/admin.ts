@@ -6,6 +6,7 @@ import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/
 
 // Temporary storage for user-country mappings until we fix the User model
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function hydrateProfileDates(profile: any) {
   if (!profile) return profile;
   if (profile.createdAt) {

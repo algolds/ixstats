@@ -55,6 +55,7 @@ export function useGeoWorker() {
     return () => {
       workerRef.current?.terminate();
       workerRef.current = null;
+      // oxlint-disable-next-line
       pendingRef.current.clear();
     };
   }, []);

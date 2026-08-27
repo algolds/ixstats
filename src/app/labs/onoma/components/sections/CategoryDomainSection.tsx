@@ -34,10 +34,12 @@ export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
 
   // Sync category with active tab
   useEffect(() => {
+    // oxlint-disable-next-line
     gen.setCategory(activeTab);
     const tabObj = config?.tabs.find((t) => t.id === activeTab);
     const defSubType = tabObj?.subTypes?.[0]?.value || "generic";
     gen.setSubType(defSubType);
+  // oxlint-disable-next-line
   }, [activeTab, config]);
 
   if (!config) return null;

@@ -648,6 +648,7 @@ const POLICY_TEMPLATES: Record<
 export function getPolicyRecommendations(context: CountryContext): PolicyRecommendation[] {
   const recommendations: PolicyRecommendation[] = [];
 
+  // oxlint-disable-next-line typescript/no-unused-vars
   for (const [key, template] of Object.entries(POLICY_TEMPLATES)) {
     const evaluation = template.conditions(context);
 

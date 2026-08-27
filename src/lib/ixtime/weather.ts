@@ -40,6 +40,7 @@ function pseudoRandom(seed: number): number {
  */
 export function getPrimeMeridianWeather(date: Date): PrimeMeridianWeather {
   const month = date.getUTCMonth(); // 0-11
+  // oxlint-disable-next-line typescript/no-unused-vars
   const day = date.getUTCDate();
   const year = date.getUTCFullYear();
   const hours = date.getUTCHours() + date.getUTCMinutes() / 60;

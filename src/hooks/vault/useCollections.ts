@@ -64,6 +64,7 @@ export function useCollections() {
 
   const updateCollection = async (
     id: string,
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'data' is intentional in this scope
     data: {
       name?: string;
       description?: string;

@@ -407,6 +407,7 @@ function validateIndividualFeatures(provinces: ProvinceFeature[]): TopologyRepor
     }
 
     // Check minimum area
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'area' is intentional in this scope
     const area = computeAreaSqKm(p.geometry);
     if (area < 0.1) {
       featureIssues.push(`Very small area (${area.toFixed(2)} sq km)`);
@@ -682,6 +683,7 @@ export function isPointInPolygon(
       const xj = pj[0],
         yj = pj[1];
 
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'intersect' is intentional in this scope
       const intersect = yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
       if (intersect) ringInside = !ringInside;
     }
@@ -702,6 +704,7 @@ export function isPointInPolygon(
           const xj = pj[0],
             yj = pj[1];
 
+          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'intersect' is intentional in this scope
           const intersect =
             yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
           if (intersect) holeInside = !holeInside;

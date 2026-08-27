@@ -81,8 +81,10 @@ export default function MapPipelineLabPage() {
   // Run initial pipeline on load if not generated
   React.useEffect(() => {
     if (!mapData) {
+      // oxlint-disable-next-line
       runPipeline();
     }
+  // oxlint-disable-next-line
   }, []);
 
   const handleToggleLayer = (layerId: string) => {

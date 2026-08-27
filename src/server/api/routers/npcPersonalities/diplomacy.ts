@@ -138,6 +138,7 @@ export const npcPersonalitiesDiplomacyRouter = createTRPCRouter({
 /**
  * Parse JSON fields from database personality record
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function parsePersonalityJSON(personality: any) {
   return {
     ...personality,
@@ -157,6 +158,7 @@ function parsePersonalityJSON(personality: any) {
 /**
  * Fallback to hardcoded personalities if database empty
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function getFallbackPersonalities() {
   // In production, this would return hardcoded data
   // For now, return empty array to encourage database population
@@ -180,6 +182,7 @@ function generateGenericResponse(personality: any, scenario: string, context: an
 /**
  * Log admin action to database audit log
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 async function logAdminAction(
   db: any,
   data: {

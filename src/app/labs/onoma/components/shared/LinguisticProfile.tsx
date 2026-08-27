@@ -3,7 +3,7 @@
 // src/app/labs/onoma/components/shared/LinguisticProfile.tsx
 // Onoma Custom Studio Workshop — Linguistic Profile Details Component
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Select,
   SelectContent,
@@ -54,7 +54,7 @@ export function LinguisticProfile({
   const [editMeaning, setEditMeaning] = useState("");
   const [editOrigin, setEditOrigin] = useState("");
 
-  const loadDefinition = () => {
+  const loadDefinition = useCallback(() => {
     if (typeof window !== "undefined") {
       const defsJson = localStorage.getItem("onoma-lexicon-definitions");
       if (defsJson) {
@@ -69,15 +69,17 @@ export function LinguisticProfile({
         }
       }
     }
-  };
+  }, [name]);
 
+  // Sync lexicon from localStorage + custom event — external system, setState in effect is intentional
+  // oxlint-disable-next-line
   useEffect(() => {
     loadDefinition();
     window.addEventListener("onoma-definitions-updated", loadDefinition);
     return () => {
       window.removeEventListener("onoma-definitions-updated", loadDefinition);
     };
-  }, [name]);
+  }, [loadDefinition]);
 
   const handleSaveDefinition = (e: React.FormEvent) => {
     e.preventDefault();

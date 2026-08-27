@@ -148,6 +148,8 @@ export function EnhancedDial({
   const ticks = generateTicks();
 
   // SVG path for the arc
+  // oxlint-disable-next-line eslint/no-shadow -- shadowed 'endAngle' is intentional in this scope
+  // oxlint-disable-next-line eslint/no-shadow -- shadowed 'startAngle' is intentional in this scope
   const createArcPath = (startAngle: number, endAngle: number, r: number) => {
     const start = angleToRadians(startAngle - 90);
     const end = angleToRadians(endAngle - 90);

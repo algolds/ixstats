@@ -26,6 +26,7 @@ export class MemoryOptimizer {
   static async monitorMemoryUsage(): Promise<void> {
     if (typeof process !== "undefined" && typeof process.memoryUsage === "function") {
       const stats = getMemoryStats();
+      // oxlint-disable-next-line typescript/no-unused-vars
       const { heapUsedMB, heapTotalMB, usagePercent, rssMB } = stats;
 
       // Dev mode: Proactive cache clearing at 70% threshold
@@ -591,6 +592,7 @@ export class ProductionStartup {
     console.log("[ProductionStartup] Warming up caches...");
 
     try {
+      // oxlint-disable-next-line typescript/no-unused-vars
       const { globalCache } = await import("~/lib/cache");
       const { OptimizedCountryQueries } = await import("./database-optimizations");
       const { db } = await import("~/server/db");

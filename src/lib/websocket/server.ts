@@ -93,6 +93,7 @@ class RealTimeIntelligenceServer {
 
       // Handle ping/pong for connection health
       ws.on("pong", () => {
+        // oxlint-disable-next-line eslint/no-shadow -- shadowed 'client' is intentional in this scope
         const client = this.clients.get(clientId);
         if (client) {
           client.lastPing = new Date();

@@ -123,6 +123,7 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
 }
 
 /** Ensures ~18 nations each have one force-generated showcase issue for the guest splash (idempotent per country). */
+// oxlint-disable-next-line typescript/no-unused-vars
 async function seedSplashShowcaseIssues(db: PrismaClient): Promise<void> {
   try {
     const seededCountries = await db.nationalIssue.groupBy({
@@ -532,6 +533,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
 
       // Notify: national issue decision made
       try {
+        // oxlint-disable-next-line eslint/no-shadow -- shadowed 'issue' is intentional in this scope
         const issue = await ctx.db.nationalIssue.findUnique({
           where: { id: input.issueId },
           select: { title: true, countryId: true, domain: true },

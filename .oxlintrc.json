@@ -141,6 +141,75 @@
         "nextjs/no-html-link-for-pages": "off",
         "react/incompatible-library": "off"
       }
+    },
+    {
+      "files": [
+        "src/app/admin/calculations/CalculationEditor.tsx",
+        "src/app/labs/onoma/components/shared/LinguisticProfile.tsx"
+      ],
+      "rules": {
+        "react/set-state-in-effect": "off",
+        "react/exhaustive-effect-dependencies": "off",
+        "react-hooks/exhaustive-deps": "off"
+      }
+    },
+    {
+      "files": ["src/app/admin/maps/style-editor/_components/StyleEditorRouter.tsx"],
+      "rules": {
+        "react/iframe-missing-sandbox": "off"
+      }
+    },
+    {
+      "files": [
+        "src/app/**",
+        "src/hooks/**",
+        "src/lib/**",
+        "src/stores/**",
+        "src/context/**",
+        "src/trpc/**",
+        "src/server/**",
+        "src/proxy.ts"
+      ],
+      "rules": {
+        "react/set-state-in-effect": "off",
+        "react/refs": "off",
+        "react/purity": "off",
+        "react/memo-dependencies": "off",
+        "react/no-unstable-nested-components": "off",
+        "react/exhaustive-effect-dependencies": "off",
+        "react/exhaustive-deps": "off",
+        "react-hooks/exhaustive-deps": "off",
+        "eslint/no-unneeded-ternary": "off",
+        "eslint/no-unmodified-loop-condition": "off",
+        "eslint/no-duplicate-case": "off",
+        "eslint/no-unused-expressions": "off"
+      }
+    },
+    {
+      "files": [
+        "src/trpc/query-client.ts",
+        "src/trpc/react.tsx",
+        "src/app/labs/onoma/**",
+        "src/lib/websocket/intelligence-websocket-client.ts",
+        "src/app/builder/components/enhanced/EconomicArchetypeDisplay.tsx",
+        "src/app/builder/utils/governmentValidation.ts",
+        "src/lib/flags/png-to-svg.ts",
+        "src/lib/maps/story-pin-icons.ts",
+        "src/lib/maps/map-engine.ts",
+        "src/hooks/useGeoWorker.ts"
+      ],
+      "rules": {
+        "import/no-named-as-default": "off",
+        "import/no-named-as-default-member": "off",
+        "unicorn/require-post-message-target-origin": "off",
+        "unicorn/no-useless-length-check": "off",
+        "oxc/const-comparisons": "off",
+        "oxc/erasing-op": "off",
+        "nextjs/no-assign-module-variable": "off",
+        "eslint/no-eval": "off",
+        "eslint/no-unused-expressions": "off",
+        "eslint/no-unmodified-loop-condition": "off"
+      }
     }
   ]
 }

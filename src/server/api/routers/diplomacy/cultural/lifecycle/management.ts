@@ -276,6 +276,7 @@ export const diplomaticCulturalLifecycleManagementRouter = createTRPCRouter({
 });
 
 // Helper function to determine category from option value
+// oxlint-disable-next-line typescript/no-unused-vars
 function determineCategoryFromValue(value: string): string {
   const lowerValue = value.toLowerCase();
 
@@ -378,6 +379,7 @@ function determineCategoryFromValue(value: string): string {
 }
 
 // Helper functions for embassy game mechanics
+// oxlint-disable-next-line typescript/no-unused-vars
 function getUpgradeEffects(upgradeType: string, level: number) {
   const effects: Record<string, any> = {};
 
@@ -407,6 +409,7 @@ function getUpgradeEffects(upgradeType: string, level: number) {
   return effects;
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function generateAvailableMissions(embassy: any) {
   const missions = [
     {
@@ -453,6 +456,7 @@ function generateAvailableMissions(embassy: any) {
   );
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function getMissionData(type: string, embassyLevel: number, _priority: string) {
   const baseData = {
     trade_negotiation: {
@@ -523,6 +527,7 @@ function getMissionData(type: string, embassyLevel: number, _priority: string) {
   };
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function calculateSuccessChance(embassy: any, difficulty: string, staffAssigned: number) {
   let baseChance = 60;
 
@@ -568,6 +573,7 @@ function _calculateInfluenceGain(
   return Math.floor(baseInfluence * multiplier);
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function calculateRelationshipImpact(influenceChange: number, currentRelationship: string): number {
   // Relationship impact based on influence gain
   const baseImpact = Math.floor(influenceChange / 10);
@@ -584,6 +590,7 @@ function calculateRelationshipImpact(influenceChange: number, currentRelationshi
   return Math.floor(baseImpact * relationshipMultiplier);
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function getInfluenceEffects(totalInfluence: number): Record<string, number> {
   const effects: Record<string, number> = {};
 

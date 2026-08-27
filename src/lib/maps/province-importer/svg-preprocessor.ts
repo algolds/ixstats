@@ -28,6 +28,7 @@ export interface PreprocessResult {
   };
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 /** Tags that carry no visible shape data and can be stripped. */

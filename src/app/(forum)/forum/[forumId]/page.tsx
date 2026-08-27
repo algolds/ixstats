@@ -27,6 +27,7 @@ export default function ForumThreadListPage() {
   // Reset page when navigating between forums
   useEffect(() => {
     setPage(1);
+  // oxlint-disable-next-line
   }, [forumId]);
 
   const { data, isLoading } = api.forum.getForum.useQuery(

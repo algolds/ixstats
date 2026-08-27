@@ -27,8 +27,6 @@ export async function POST(request: Request) {
       }
     }
 
-    let botData;
-
     // Try to parse request body first (for auto-sync)
     try {
       const body = await request.json();
@@ -68,7 +66,7 @@ export async function POST(request: Request) {
       "http://localhost:3001";
 
     // Check if bot is available first
-    let response;
+    let response: Response | undefined;
     try {
       response = await fetch(`${BOT_URL}/health`, {
         method: "GET",
@@ -78,7 +76,7 @@ export async function POST(request: Request) {
       if (!response.ok) {
         throw new Error(`Discord bot health check failed: ${response.status}`);
       }
-    } catch  {
+    } catch {
       // Bot is not available, return graceful fallback
       console.warn("Discord bot is not available, using local time state");
       const currentState = {
@@ -109,8 +107,13 @@ export async function POST(request: Request) {
       throw new Error(`Discord bot API returned ${response.status}`);
     }
 
-    // eslint-disable-next-line prefer-const
-    botData = await response.json();
+    const botData = (await response.json()) as {
+      ixTimeTimestamp?: number;
+      ixTimeFormatted?: string;
+      multiplier?: number;
+      hasTimeOverride?: boolean;
+      hasMultiplierOverride?: boolean;
+    };
 
     // Apply bot's current time and multiplier to IxStats (always sync to match bot)
     if (botData.ixTimeTimestamp) {

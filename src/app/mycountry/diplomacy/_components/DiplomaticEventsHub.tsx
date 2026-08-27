@@ -273,6 +273,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
     if (!scenarioHistory) return [];
     if (historyFilter === "all") return scenarioHistory;
     return scenarioHistory.filter((s: any) => s.type === historyFilter);
+  // oxlint-disable-next-line
   }, [scenarioHistory, historyFilter]);
 
   // Handle event response

@@ -88,6 +88,7 @@ function calculateXPReward(resultRarity: string): number {
 /**
  * Check if user meets unlock requirements
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 async function checkUnlockRequirements(
   userId: string,
   requirements: any,

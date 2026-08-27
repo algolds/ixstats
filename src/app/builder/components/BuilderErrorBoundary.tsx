@@ -191,6 +191,7 @@ export function useBuilderErrorBoundary(onError?: (error: Error) => void) {
   }, []);
 
   const captureError = React.useCallback(
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'error' is intentional in this scope
     (error: Error) => {
       setError(error);
       onError?.(error);

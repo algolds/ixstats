@@ -150,6 +150,7 @@ export const meetingsMeetingsRouter = createTRPCRouter({
       if (input.status && oldMeeting) {
         const participants = oldMeeting.attendances
           .map((a) => a.officialId)
+          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'id' is intentional in this scope
           .filter((id): id is string => id !== null);
 
         if (input.status === "cancelled") {

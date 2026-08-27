@@ -27,6 +27,7 @@ const SHAPES: ShieldShape[] = [
 
 const METALS: Tincture[] = ["or", "argent"];
 const COLOURS: Tincture[] = ["gules", "azure", "vert", "purpure", "sable"];
+// oxlint-disable-next-line typescript/no-unused-vars
 const NEUTRALS: Tincture[] = ["ermine", "vair"];
 
 const DIVISION_POOL: Division[] = [

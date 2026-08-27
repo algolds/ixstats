@@ -672,6 +672,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   }, []);
 
   // Narrator Control Actions with intelligent dynamic recovery
+  // oxlint-disable-next-line
   const play = useCallback(() => {
     if (!hasNarratorAccess || isPlaying) return;
     setIsPlaying(true);

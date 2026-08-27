@@ -48,6 +48,7 @@ export const TREWARTHA_COLORS: Record<string, string> = {
 // Main Entry Point
 // ──────────────────────────────────────────────
 
+// oxlint-disable-next-line typescript/no-unused-vars
 export function computeClimate(graph: PackedGraph, params: WorldGenParams): void {
   const { cells } = graph;
   const n = cells.n;

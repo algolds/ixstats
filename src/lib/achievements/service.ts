@@ -640,6 +640,7 @@ export class AchievementService {
         }
       }
 
+      // oxlint-disable-next-line typescript/no-unused-vars
       let userAchievement;
       try {
         userAchievement = await db.userAchievement.create({

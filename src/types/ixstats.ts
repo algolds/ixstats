@@ -418,6 +418,7 @@ export interface FormState {
 }
 
 // UI State types
+// oxlint-disable-next-line typescript/no-unused-vars
 type LoadingState<T = unknown> = {
   isLoading: boolean;
   error?: string | null;

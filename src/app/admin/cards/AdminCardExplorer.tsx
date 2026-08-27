@@ -119,6 +119,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
       Boolean(card.wikiSource) ||
       Boolean(card.slug);
 
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'initialCategory' is intentional in this scope
     const initialCategory: LoreCategory | "" =
       card.category && card.category !== "NS_IMPORT"
         ? (card.category as LoreCategory)
@@ -359,6 +360,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
     setSelectedCardForEdit(null);
   };
 
+  // oxlint-disable-next-line
   const columns = useMemo<FacetColumn<any>[]>(
     () => [
       {

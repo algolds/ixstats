@@ -47,6 +47,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
     // Reset error when resolved flag changes
     React.useEffect(() => {
       setImgError(false);
+    // oxlint-disable-next-line
     }, [resolvedFlagUrl, country.name]);
 
     const _isLoaded = !!resolvedFlagUrl;

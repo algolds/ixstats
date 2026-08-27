@@ -103,6 +103,7 @@ export function BotControlCard({
   useEffect(() => {
     setOptionValues({});
     setSimulationResult(null);
+  // oxlint-disable-next-line
   }, [selectedCommandName]);
 
   const handleSimulate = async () => {

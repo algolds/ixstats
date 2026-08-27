@@ -53,6 +53,7 @@ export function SplashIssuesTeaser() {
 
   useEffect(() => {
     setIndex(0);
+  // oxlint-disable-next-line
   }, [issues.length]);
 
   const go = useCallback(

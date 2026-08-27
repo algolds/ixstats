@@ -211,6 +211,7 @@ function rewriteXFHtml(html: string): string {
   return result;
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function normalizeNode(n: XFForum): ForumNode {
   return {
     nodeId: n.node_id,

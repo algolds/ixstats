@@ -98,6 +98,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
   useEffect(() => {
     setActiveSegmentIndex(null);
     setSelectedSound(null);
+  // oxlint-disable-next-line
   }, [previewText, culture]);
 
   const updateRow = (i: number, idx: 0 | 1, value: string) => {

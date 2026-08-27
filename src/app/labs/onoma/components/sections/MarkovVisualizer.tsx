@@ -144,6 +144,7 @@ function FlowFitViewController({ activePrefix }: { activePrefix: string }) {
       fitView({ padding: 0.28, duration: 400 });
     }, 60);
     return () => clearTimeout(timer);
+  // oxlint-disable-next-line
   }, [activePrefix, fitView]);
 
   return null;

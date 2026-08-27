@@ -120,6 +120,7 @@ export function QuickGeneratorControls({
     } else {
       setWordDraft(defaultValues.join(", "));
     }
+  // oxlint-disable-next-line
   }, [selectedDictId, defaultValues, customWords]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -164,6 +165,7 @@ export function QuickGeneratorControls({
   const handleCleanWords = () => {
     const seen = new Set<string>();
     const unique: string[] = [];
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'w' is intentional in this scope
     for (const w of wordDraft.split(/[,\r\n]+/).map((w) => w.trim()).filter(Boolean)) {
       const normalized = w.toLowerCase();
       if (!seen.has(normalized)) {

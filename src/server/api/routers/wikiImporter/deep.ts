@@ -96,6 +96,7 @@ async function fetchFromWikiSource(pageName: string, source: WikiSource) {
 /**
  * Search for page across all wiki sources
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 async function searchAcrossWikis(pageName: string, preferredSource?: WikiSource) {
   const sources: WikiSource[] = preferredSource
     ? [

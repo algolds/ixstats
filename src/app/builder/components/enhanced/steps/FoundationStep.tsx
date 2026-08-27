@@ -130,6 +130,7 @@ export function FoundationStep({
         hasRestoredArchetypeRef.current = true;
       }
     }
+  // oxlint-disable-next-line
   }, [builderState.selectedArchetypeId, archetypes]);
 
   // Reset visibleCount when activeEra changes

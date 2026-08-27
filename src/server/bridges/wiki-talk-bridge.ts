@@ -11,6 +11,7 @@ import type { BridgeAdapter, BridgeSyncResult } from "./bridge-types";
 import { getArticleWikitext, getRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
 /** Fetch recent changes to pages (watchlist proxy). */
+// oxlint-disable-next-line typescript/no-unused-vars
 async function getUserWatchlistChanges(
   wikiUsername: string,
   limit = 20

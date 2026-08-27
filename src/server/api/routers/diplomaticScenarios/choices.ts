@@ -649,6 +649,7 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
 });
 
 // Helper function to generate response options (not exposed as endpoint)
+// oxlint-disable-next-line typescript/no-unused-vars
 function generateResponseOptions(scenarioType: string, relationshipStrength: number): any[] {
   const baseOptions = [
     {
@@ -737,6 +738,7 @@ function generateResponseOptions(scenarioType: string, relationshipStrength: num
 }
 
 // Helper function to generate scenario title
+// oxlint-disable-next-line typescript/no-unused-vars
 function generateScenarioTitle(type: string, country1: string, country2: string): string {
   const templates: Record<string, string> = {
     trade_renegotiation: `${country1} and ${country2}: Trade Agreement Under Review`,
@@ -751,6 +753,7 @@ function generateScenarioTitle(type: string, country1: string, country2: string)
 }
 
 // Helper function to generate scenario narrative
+// oxlint-disable-next-line typescript/no-unused-vars
 function generateScenarioNarrative(type: string, country1: string, country2: string): string {
   const templates: Record<string, string> = {
     trade_renegotiation: `Recent economic developments have prompted ${country2} to request renegotiation of trade terms with ${country1}. Markets are watching closely as both nations consider their positions. The outcome will set precedent for future economic partnerships in the region.`,

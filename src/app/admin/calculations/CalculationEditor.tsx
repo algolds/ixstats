@@ -45,7 +45,8 @@ export function CalculationEditor() {
   const testFormulaMutation = api.formulas.testFormula.useMutation();
   const updateFormulaMutation = api.formulas.update.useMutation();
 
-  // Merge API formulas
+  // Merge API formulas — sync external API data to local state
+  // oxlint-disable-next-line
   useEffect(() => {
     if (formulasData?.formulas) {
       const apiModules: CalculationModule[] = formulasData.formulas.map((f: any) => ({
@@ -73,14 +74,16 @@ export function CalculationEditor() {
     }
   }, [formulasData]);
 
-  // Set default selected module
+  // Set default selected module — initialise selection once
+  // oxlint-disable-next-line
   useEffect(() => {
     if (!selectedModule && modules.length > 0) {
       setSelectedModule(modules[0] || null);
     }
   }, [modules, selectedModule]);
 
-  // Reset sandbox when selected module changes
+  // Reset sandbox when selected module changes — intentionally keyed on id only
+  // oxlint-disable-next-line
   useEffect(() => {
     if (selectedModule) {
       const inputs: Record<string, number> = {};

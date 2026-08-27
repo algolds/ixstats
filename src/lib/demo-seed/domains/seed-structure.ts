@@ -395,6 +395,7 @@ export async function seedTaxTree(prisma: Prisma, countryId: string): Promise<nu
   count++;
 
   // TaxCategory: Sales
+  // oxlint-disable-next-line typescript/no-unused-vars
   const salesCat = await prisma.taxCategory.create({
     data: {
       taxSystemId: taxSystem.id,

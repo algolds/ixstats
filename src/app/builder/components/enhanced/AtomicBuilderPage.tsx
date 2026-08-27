@@ -174,6 +174,7 @@ function AtomicBuilderPageInner({
         setCountryLoadError(null);
         const countryData = await parseEconomyData();
         setCountries(countryData);
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'error' is intentional in this scope
       } catch (error) {
         setCountryLoadError(error instanceof Error ? error.message : "Failed to load countries");
       } finally {
@@ -279,6 +280,7 @@ function AtomicBuilderPageInner({
 
   // Check for tutorial mode on mount
   useEffect(() => {
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'tutorialMode' is intentional in this scope
     const tutorialMode = safeGetItemSync("builder_tutorial_mode");
     if (tutorialMode) {
       setTutorialMode(tutorialMode);
@@ -324,6 +326,7 @@ function AtomicBuilderPageInner({
         router.push(createUrl(`/mycountry`));
       }, 1000);
     },
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'error' is intentional in this scope
     onError: (error: any) => {
       const errorMessage = error instanceof Error ? error.message : "Failed to create country";
       setError(errorMessage);
@@ -379,6 +382,7 @@ function AtomicBuilderPageInner({
         router.push(createUrl(`/mycountry`));
       }, 1000);
     },
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'error' is intentional in this scope
     onError: (error: any) => {
       const errorMessage = error instanceof Error ? error.message : "Failed to update country";
       setError(errorMessage);
@@ -468,7 +472,9 @@ function AtomicBuilderPageInner({
     }
   }, [
     builderState,
+    // oxlint-disable-next-line
     createCountryMutation,
+    // oxlint-disable-next-line
     updateCountryMutation,
     isSubmitting,
     isEditMode,

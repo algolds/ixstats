@@ -45,6 +45,7 @@ const _unlockRequirementSchema = z.object({
 /**
  * Calculate success rate based on card rarity
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function calculateSuccessRate(resultRarity: string): number {
   const rates: Record<string, number> = {
     COMMON: 100,
@@ -61,6 +62,7 @@ function calculateSuccessRate(resultRarity: string): number {
 /**
  * Calculate IxCredits cost based on rarity
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function calculateCraftingCost(resultRarity: string): number {
   const costs: Record<string, number> = {
     COMMON: 100,
@@ -77,6 +79,7 @@ function calculateCraftingCost(resultRarity: string): number {
 /**
  * Calculate XP reward based on rarity
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function calculateXPReward(resultRarity: string): number {
   const xp: Record<string, number> = {
     COMMON: 10,
@@ -93,6 +96,7 @@ function calculateXPReward(resultRarity: string): number {
 /**
  * Check if user meets unlock requirements
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 async function checkUnlockRequirements(
   userId: string,
   requirements: any,

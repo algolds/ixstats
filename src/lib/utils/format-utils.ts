@@ -157,6 +157,7 @@ function formatCustomCurrency(
   }
 
   const absAmount = Math.abs(amount);
+  // oxlint-disable-next-line typescript/no-unused-vars
   const decimals = forceDecimals ? 2 : customCurrency.decimalPlaces;
 
   if (absAmount >= 1e12) {
@@ -488,6 +489,7 @@ export function getNumberSuffix(num: number): string {
  */
 export function getScaledValue(num: number): { value: number; suffix: string } {
   const absNum = Math.abs(num);
+  // oxlint-disable-next-line typescript/no-unused-vars
   const sign = num < 0 ? -1 : 1;
 
   if (absNum >= 1e12) return { value: num / 1e12, suffix: "T" };

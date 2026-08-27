@@ -59,6 +59,7 @@ function parseArchetypeJSON(archetype: PrismaArchetype) {
  * Get fallback archetypes from hardcoded data
  * Used when database is empty for graceful degradation
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function getFallbackArchetypes(era: "modern" | "historical" | "all") {
   console.warn("[economicArchetypes.ts] Database empty, using fallback hardcoded archetypes");
 

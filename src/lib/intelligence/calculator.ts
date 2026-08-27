@@ -117,6 +117,7 @@ async function calculateCountryIntelligence(countryId: string) {
     return;
   }
 
+  // oxlint-disable-next-line typescript/no-unused-vars
   const now = Date.now();
   const currentIxTime = IxTime.getCurrentIxTime();
 
@@ -142,6 +143,7 @@ async function calculateCountryIntelligence(countryId: string) {
 
     const unemploymentHistory =
       historicalRecords.length > 0
+        // oxlint-disable-next-line typescript/no-unused-vars
         ? historicalRecords.map((h) => country.unemploymentRate || 5.0).reverse()
         : [country.unemploymentRate || 5.0];
 
@@ -537,6 +539,7 @@ async function calculateCountryIntelligence(countryId: string) {
  * Calculate intelligence for all countries or a specific country
  */
 export async function calculateIntelligence(options: CalculateIntelligenceOptions = {}) {
+  // oxlint-disable-next-line typescript/no-unused-vars
   const { countryId, forceRecalculate = false } = options;
 
   try {

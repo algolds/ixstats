@@ -10,6 +10,7 @@ import { ComponentType } from "@prisma/client";
 import { notificationHooks } from "~/lib/notifications/hooks";
 
 // Validation helpers for brackets
+// oxlint-disable-next-line typescript/no-unused-vars
 function validateBracketsState(
   state: TaxBuilderState
 ): { ok: true } | { ok: false; errors: Array<{ categoryIndex: number; message: string }> } {

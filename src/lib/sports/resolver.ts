@@ -1102,7 +1102,9 @@ export function resolveMatch(args: {
       // Sim 10 possessions in OT
       for (let pos = 1; pos <= 10; pos++) {
         const team = pos % 2 === 0 ? "home" : "away";
+        // oxlint-disable-next-line typescript/no-unused-vars
         const offRatings = team === "home" ? homeTeamModified : awayTeamModified;
+        // oxlint-disable-next-line typescript/no-unused-vars
         const defRatings = team === "home" ? awayTeamModified : homeTeamModified;
         const offLine = team === "home" ? homeLine : awayLine;
         const offOffense = team === "home" ? homeOffense : awayOffense;
@@ -1899,8 +1901,7 @@ export function resolveMatch(args: {
       // Top Half
       {
         let outs = 0;
-        // eslint-disable-next-line prefer-const
-        let bases = [false, false, false];
+        const _bases = [false, false, false];
         while (outs < 3) {
           const awayBatter = args.awayRoster?.[awayOrderIdx % (args.awayRoster.length || 9)] ?? {
             id: `away_batter_${awayOrderIdx}`,
@@ -1934,8 +1935,7 @@ export function resolveMatch(args: {
       // Bottom Half
       {
         let outs = 0;
-        // eslint-disable-next-line prefer-const
-        let bases = [false, false, false];
+        const _bases = [false, false, false];
         while (outs < 3) {
           const homeBatter = args.homeRoster?.[homeOrderIdx % (args.homeRoster.length || 9)] ?? {
             id: `home_batter_${homeOrderIdx}`,

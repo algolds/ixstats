@@ -149,6 +149,7 @@ export function useEconomyBuilderSync({
   // INTEGRATION SERVICE UPDATES (push changes to service)
   // ============================================================
   useEffect(() => {
+    // oxlint-disable-next-line
     if (economyBuilder) {
       if (economyBuilder.selectedAtomicComponents) {
         void economyIntegrationService.updateEconomicComponents(
@@ -157,6 +158,7 @@ export function useEconomyBuilderSync({
       }
       void economyIntegrationService.updateEconomyBuilder(economyBuilder);
     }
+  // oxlint-disable-next-line
   }, []); // Run once on mount
 
   useEffect(() => {

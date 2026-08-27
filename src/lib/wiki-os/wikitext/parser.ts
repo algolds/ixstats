@@ -123,7 +123,9 @@ export function parse(
 function parseTextBlocks(
   text: string,
   nodes: WikiBlockNode[],
+  // oxlint-disable-next-line typescript/no-unused-vars
   diagnostics: Diagnostic[],
+  // oxlint-disable-next-line typescript/no-unused-vars
   baseOffset: number
 ): void {
   const lines = text.split("\n");

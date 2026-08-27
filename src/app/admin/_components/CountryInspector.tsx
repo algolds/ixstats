@@ -152,6 +152,7 @@ export function CountryInspector() {
     setLocalMultiplier(1.0);
     setMockEffects([]);
     setDisabledEffects({});
+  // oxlint-disable-next-line
   }, [selectedCountryId]);
 
   // Format helper functions

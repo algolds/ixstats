@@ -22,6 +22,7 @@ export class CategoryService {
    */
   static async getCategoryDetails(
     categorySlug: string,
+    // oxlint-disable-next-line typescript/no-unused-vars
     source = "ixwiki"
   ): Promise<{
     category: { id: string; slug: string; name: string; description: string | null } | null;

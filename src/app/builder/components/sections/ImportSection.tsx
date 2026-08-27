@@ -143,10 +143,7 @@ export const ImportSection = React.memo(function ImportSection({
       setParsedData(null);
 
       try {
-        let results: SearchResult[];
-
-        // eslint-disable-next-line prefer-const
-        results = await searchWikiMutation.mutateAsync({
+        const results = await searchWikiMutation.mutateAsync({
           query: currentSearchTerm,
           site: currentSite.name as "ixwiki" | "iiwiki" | "althistory",
           categoryFilter,

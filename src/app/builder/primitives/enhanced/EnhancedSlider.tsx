@@ -129,12 +129,14 @@ export function EnhancedSlider({
       const trackSize = orientation === "horizontal" ? rect.width : rect.height;
 
       // For touch events, calculate from current position + delta
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'percentage' is intentional in this scope
       let percentage = (position / trackSize) * 100;
 
       // Strictly clamp position to track bounds (no out-of-bounds allowed)
       percentage = Math.max(0, Math.min(100, percentage));
 
       // Calculate new value with proper stepping
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'range' is intentional in this scope
       const range = max - min;
       const rawValue = min + (percentage / 100) * range;
       const steppedValue = Math.round(rawValue / step) * step;
@@ -185,6 +187,7 @@ export function EnhancedSlider({
       e.preventDefault();
       handleStart(e.clientX, e.clientY);
 
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'e' is intentional in this scope
       const handleMouseMove = (e: MouseEvent) => {
         handleMove(e.clientX, e.clientY);
       };
@@ -209,7 +212,9 @@ export function EnhancedSlider({
 
       handleStart(touch.clientX, touch.clientY);
 
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'e' is intentional in this scope
       const handleTouchMove = (e: TouchEvent) => {
+        // oxlint-disable-next-line eslint/no-shadow -- shadowed 'touch' is intentional in this scope
         const touch = e.touches[0];
         if (!touch) return;
         handleMove(touch.clientX, touch.clientY);

@@ -188,6 +188,7 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
   ];
 
   // Calculate momentum rotation speed (degrees per second)
+  // oxlint-disable-next-line eslint/no-shadow -- shadowed 'momentum' is intentional in this scope
   const getMomentumRotation = (momentum: number) => {
     return Math.abs(momentum) * 10; // 10 degrees per momentum point
   };

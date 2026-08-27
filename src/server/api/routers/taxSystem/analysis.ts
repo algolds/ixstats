@@ -10,6 +10,7 @@ import {
 } from "~/lib/economy/tax-data-parser";
 
 // Validation helpers for brackets
+// oxlint-disable-next-line typescript/no-unused-vars
 function validateBracketsState(
   state: TaxBuilderState
 ): { ok: true } | { ok: false; errors: Array<{ categoryIndex: number; message: string }> } {

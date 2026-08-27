@@ -171,6 +171,7 @@ export function useMapPrefetch() {
     utils.geoCore.getMapBundle.prefetch({ layers: ALL_PREFETCH_LAYERS }, MAP_QUERY_OPTIONS);
     // Also prefetch individual endpoints for backward compatibility with non-batched consumers
     utils.geoCore.getWorldMap.prefetch({ layers: ALL_PREFETCH_LAYERS }, MAP_QUERY_OPTIONS);
+  // oxlint-disable-next-line
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // After political layer is available, warm ALL per-country data

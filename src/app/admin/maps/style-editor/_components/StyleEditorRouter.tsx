@@ -79,9 +79,11 @@ export function StyleEditorRouter() {
 
       {/* Embedded Maputnik Iframe */}
       <div className="relative w-full flex-1 bg-slate-900">
+        {/* oxlint-disable-next-line -- Maputnik admin editor requires scripts + same-origin for style-store API, trusted same-origin iframe */}
         <iframe
           key={key}
           src={iframeUrl}
+          sandbox="allow-scripts allow-same-origin"
           className="absolute inset-0 h-full w-full border-none bg-slate-900"
           title="Maputnik Visual Style Editor"
         />

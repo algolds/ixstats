@@ -123,6 +123,7 @@ export class MediaAssetService {
    * Register or update a media asset in PostgreSQL `wiki_assets`
    */
   static async registerAsset(data: RegisterAssetInput): Promise<MediaAssetRecord> {
+    // oxlint-disable-next-line typescript/no-unused-vars
     const { shard, fullPath, hash, cleanName } = this.getMd5ShardPath(data.filename);
     const title = data.title || cleanName.replace(/_/g, " ");
     let slug = cleanName.toLowerCase();

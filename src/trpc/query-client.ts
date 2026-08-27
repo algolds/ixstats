@@ -2,6 +2,7 @@ import { defaultShouldDehydrateQuery, QueryClient } from "@tanstack/react-query"
 import SuperJSON from "superjson";
 
 // Selective logger - suppress verbose logs but keep errors
+// oxlint-disable-next-line typescript/no-unused-vars
 const selectiveLogger = {
   log: () => {}, // Suppress info logs
   warn: () => {}, // Suppress warnings

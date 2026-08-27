@@ -10,6 +10,7 @@ import {
   toArticleSlug,
   toArticleId,
   toRevisionId,
+  // oxlint-disable-next-line typescript/no-unused-vars
   type ArticleId,
   type RevisionId,
   type SaveArticleInput,

@@ -9,7 +9,7 @@ import { api } from "~/trpc/react";
 import { navigateTo } from "~/lib/utils";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, Link, ArrowRight, City as Building2, Group as Users, StatUp as TrendingUp, CheckCircle, WarningCircle as AlertCircle, Crown, ArrowLeft, Search, MapPin, Star } from "iconoir-react";
+import { Plus, Link as LinkIcon, ArrowRight, City as Building2, Group as Users, StatUp as TrendingUp, CheckCircle, WarningCircle as AlertCircle, Crown, ArrowLeft, Search, MapPin, Star } from "iconoir-react";
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -157,9 +157,9 @@ export default function SetupPage() {
       // Refetch profile to get updated data
       await refetchProfile();
       setCurrentStep("complete");
-    } catch (error) {
-      console.error("Failed to link country:", error);
-      setError(error instanceof Error ? error.message : "Failed to link country");
+    } catch (_error) {
+      console.error("Failed to link country:", _error);
+      setError(_error instanceof Error ? _error.message : "Failed to link country");
     } finally {
       setIsLinking(false);
     }
@@ -337,7 +337,7 @@ export default function SetupPage() {
                         <div className="mb-4 flex items-center justify-between">
                           <div className="flex items-center">
                             <div className="facet-hierarchy-child mr-4 rounded-xl p-3">
-                              <Link className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                              <LinkIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                             </div>
                             <h4 className="text-foreground text-xl font-bold">
                               Link Existing Country
@@ -509,7 +509,7 @@ export default function SetupPage() {
                                 </>
                               ) : (
                                 <>
-                                  <Link className="mr-4 h-6 w-6" />
+                                  <LinkIcon className="mr-4 h-6 w-6" />
                                   Link Country
                                 </>
                               )}

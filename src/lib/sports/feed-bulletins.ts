@@ -347,6 +347,7 @@ export function formatMatchDayBulletin(args: {
   movers?: StandingMover[];
   llmSummary?: string;
 }): string {
+  // oxlint-disable-next-line typescript/no-unused-vars
   const { leagueName, leagueId, sportEmoji, matchDay, results, movers, llmSummary } = args;
 
   const leagueFormatted = leagueId ? `[${leagueName}](/myleague/${leagueId})` : leagueName;
@@ -433,6 +434,7 @@ export function formatSeasonChampionBulletin(args: {
   championId?: string;
   llmSummary?: string;
 }): string {
+  // oxlint-disable-next-line typescript/no-unused-vars
   const { leagueName, leagueId, sportEmoji, championName, championId, llmSummary } = args;
   const leagueFormatted = leagueId ? `[${leagueName}](/myleague/${leagueId})` : leagueName;
   const header = `🏆 **${leagueFormatted} CHAMPION CROWNED!**`;
@@ -455,6 +457,7 @@ export function formatPlayoffBulletin(args: {
   results: MatchDayResultLine[];
   llmSummary?: string;
 }): string {
+  // oxlint-disable-next-line typescript/no-unused-vars
   const { leagueName, leagueId, sportEmoji, roundName, results, llmSummary } = args;
   const leagueFormatted = leagueId ? `[${leagueName}](/myleague/${leagueId})` : leagueName;
   const header = `**${leagueFormatted} Playoff ${roundName} Results**`;

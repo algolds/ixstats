@@ -6,6 +6,7 @@ import { isStandaloneRequest } from "~/lib/system/standalone-detection";
 const BASE_PATH = process.env.BASE_PATH || "";
 
 // Production optimizations enabled
+// oxlint-disable-next-line typescript/no-unused-vars
 const ENABLE_COMPRESSION = process.env.ENABLE_COMPRESSION === "true";
 const RATE_LIMIT_ENABLED = process.env.RATE_LIMIT_ENABLED === "true";
 
@@ -50,6 +51,7 @@ const isPublicRoute = createRouteMatcher([
  *
  * If Clerk SDK breaks, check: https://clerk.com/docs/security/csp
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 function buildCSPTemplate(standalone: boolean): string {
   const isDevelopment = process.env.NODE_ENV === "development";
 

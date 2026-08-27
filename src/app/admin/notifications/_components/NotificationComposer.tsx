@@ -636,7 +636,9 @@ export function NotificationComposer() {
                 <div className="flex items-center justify-between gap-2 mb-1.5">
                   <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-400">
                     <Globe className="h-3 w-3" />
-                    {form.classification} // {form.conversationType.toUpperCase()}
+                    {form.classification}
+                    {" // "}
+                    {form.conversationType.toUpperCase()}
                   </span>
                   <span className="text-[10px] text-muted-foreground tabular-nums">Just now</span>
                 </div>

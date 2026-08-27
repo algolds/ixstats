@@ -126,6 +126,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
       timeDisplay,
       multiplier,
     });
+  // oxlint-disable-next-line
   }, [ixTimeTimestamp, multiplier]);
 
   useEffect(() => {

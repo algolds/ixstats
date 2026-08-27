@@ -24,6 +24,7 @@ const DEFAULT_OPTIONS: RetryOptions = {
   maxDelayMs: 30000,
 };
 
+// oxlint-disable-next-line eslint/no-shadow -- shadowed 'attempt' is intentional in this scope
 function calculateDelay(attempt: number, options: RetryOptions): number {
   const { strategy, baseDelayMs, maxDelayMs } = options;
   let delay: number;

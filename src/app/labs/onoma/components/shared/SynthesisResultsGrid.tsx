@@ -96,6 +96,7 @@ export function SynthesisResultsGrid({
   // Clear selections when new names are generated
   useEffect(() => {
     setSelectedNames(new Set());
+  // oxlint-disable-next-line
   }, [generatedNames]);
 
   // Transform names array to full BatchNameResult objects

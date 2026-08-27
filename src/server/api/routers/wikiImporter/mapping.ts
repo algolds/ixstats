@@ -96,6 +96,7 @@ async function fetchFromWikiSource(pageName: string, source: WikiSource) {
 /**
  * Search for page across all wiki sources
  */
+// oxlint-disable-next-line typescript/no-unused-vars
 async function searchAcrossWikis(pageName: string, preferredSource?: WikiSource) {
   const sources: WikiSource[] = preferredSource
     ? [
@@ -255,6 +256,7 @@ export const wikiImporterMappingRouter = createTRPCRouter({
           await import("~/types/ixstats");
 
         // Calculate derived values from wiki data
+        // oxlint-disable-next-line eslint/no-shadow -- shadowed 'population' is intentional in this scope
         const population =
           mappedData.currentPopulation || mappedData.baselinePopulation || 10000000;
         const gdpPerCapita = 25000;

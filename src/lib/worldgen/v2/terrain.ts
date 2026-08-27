@@ -93,6 +93,7 @@ export function generateTerrain(graph: WorldGraph, params: WorldGenParams): void
 
     // Find nearest neighbor across plate boundary to classify boundary type
     let boundaryType: "convergent" | "divergent" | "transform" | null = null;
+    // oxlint-disable-next-line typescript/no-unused-vars
     let closestNb = -1;
     for (const nb of cells.neighbors[i]!) {
       if (cells.plate[nb]! !== cells.plate[i]!) {

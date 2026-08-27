@@ -427,6 +427,7 @@ export class AtomicEffectivenessService {
       where: { countryId, isActive: true },
     });
 
+    // oxlint-disable-next-line typescript/no-unused-vars
     const existingSynergies = await this.db.componentSynergy.findMany({
       where: { countryId },
     });

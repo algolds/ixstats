@@ -707,6 +707,7 @@ export function LoreCardBatchAdmin() {
     }
 
     setIsProcessingBatch(true);
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'successCount' is intentional in this scope
     let successCount = 0;
     let failCount = 0;
 

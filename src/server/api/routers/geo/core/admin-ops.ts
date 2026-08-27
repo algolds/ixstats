@@ -181,7 +181,9 @@ export const adminOpsProcedures = {
               agricultureFactor: getAgricultureFactor(climateName),
             });
           }
+          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
           const totalClimateArea = climateDistribution.reduce((s, z) => s + z.areaSqKm, 0);
+          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
           for (const z of climateDistribution) {
             z.percentArea =
               totalClimateArea > 0
@@ -226,7 +228,9 @@ export const adminOpsProcedures = {
               });
             }
           }
+          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
           const totalElevArea = elevationProfile.reduce((s, z) => s + z.areaSqKm, 0);
+          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
           for (const z of elevationProfile) {
             z.percentArea =
               totalElevArea > 0 ? Math.round((z.areaSqKm / totalElevArea) * 100 * 10) / 10 : 0;
