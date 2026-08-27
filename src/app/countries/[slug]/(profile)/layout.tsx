@@ -123,12 +123,15 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
       <CountryHeader
         country={{
           name: country.name,
+          slug: (country as any).slug ?? country.name.replace(/\s+/g, "_"),
           currentPopulation: country.currentPopulation,
           currentGdpPerCapita: country.currentGdpPerCapita,
           currentTotalGdp: country.currentTotalGdp,
           landArea: country.landArea ?? null,
           adjustedGdpGrowth: country.adjustedGdpGrowth,
           continent: country.continent,
+          realm: (country as any).realm ?? null,
+          sovereignUser: (country as any).sovereignUser ?? null,
         }}
         flagUrl={flagUrl}
         flagLoading={flagLoading}

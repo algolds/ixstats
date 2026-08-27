@@ -13,6 +13,7 @@ import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extr
 import { cn } from "~/lib/utils";
 import type { BannerMode, BannerOption } from "../_types";
 import { FloatingRibbonRack } from "~/components/achievements/FloatingRibbonRack";
+import { CountryIdentityStrip } from "./CountryIdentityStrip";
 
 const MediaSearchModal = dynamic(
   () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
@@ -28,6 +29,9 @@ interface CountryHeaderProps {
     landArea: number | null | undefined;
     adjustedGdpGrowth: number | null | undefined;
     continent: string | null | undefined;
+    slug?: string | null;
+    realm?: { id: string; name: string; slug: string } | null;
+    sovereignUser?: { username: string | null; roleName?: string | null } | null;
   };
   flagUrl: string | null | undefined;
   flagLoading: boolean;
@@ -233,6 +237,14 @@ export function CountryHeader({
                     {country.name.replace(/_/g, " ")}
                   </h1>
                   <FloatingRibbonRack />
+                </div>
+                {/* Variant A — IxnayID / Realm / Passport rail (between title and stats) */}
+                <div className="mb-2.5">
+                  <CountryIdentityStrip
+                    hasImage={hasImage}
+                    realm={country.realm ?? null}
+                    sovereignUser={country.sovereignUser ?? null}
+                  />
                 </div>
                 <div className="mb-2 flex flex-wrap items-center gap-2 md:gap-3">
                   <Badge

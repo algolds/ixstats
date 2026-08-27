@@ -49,6 +49,7 @@ export const economyProcedures = {
           },
           take: 1,
         },
+        realm: { select: { id: true, name: true, slug: true } },
       };
 
       if (availableRelations.economicProfile) includeObject.economicProfile = true;
@@ -90,6 +91,7 @@ export const economyProcedures = {
               },
               take: 1,
             },
+            realm: { select: { id: true, name: true, slug: true } },
           },
         });
       }
