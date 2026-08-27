@@ -1,4 +1,12 @@
-import { Bank as Landmark, MapPin, Globe as Globe2, Dollar as DollarSign, Group as Users, Globe, Clock } from "iconoir-react";
+import {
+  Bank as Landmark,
+  MapPin,
+  Globe as Globe2,
+  Dollar as DollarSign,
+  Group as Users,
+  Globe,
+  Clock,
+} from "iconoir-react";
 
 import { toTitleCase } from "~/lib/utils";
 

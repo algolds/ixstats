@@ -2,7 +2,18 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Link as Link2, LinkSlash as Unlink, ChatBubble as MessageSquare, OpenBook as BookOpen, SystemRestart as Loader2, Check, Search, OpenNewWindow as ExternalLink, Discord, User as UserIcon } from "iconoir-react";
+import {
+  Link as Link2,
+  LinkSlash as Unlink,
+  ChatBubble as MessageSquare,
+  OpenBook as BookOpen,
+  SystemRestart as Loader2,
+  Check,
+  Search,
+  OpenNewWindow as ExternalLink,
+  Discord,
+  User as UserIcon,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Input } from "~/components/ui/input";
@@ -231,7 +242,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
             {status?.passportHandle && (
               <Link
                 href={`/id/@${status.passportHandle}`}
-                className="facet-interactive flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95 cursor-pointer"
+                className="facet-interactive flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95"
               >
                 <UserIcon className="h-3.5 w-3.5" />
                 <span>View Passport</span>
@@ -347,7 +358,8 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
           {showWikiInput && (
             <div className="ml-14 space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Claim a legacy MediaWiki account to preserve your historical edits and contributions.
+                Claim a legacy MediaWiki account to preserve your historical edits and
+                contributions.
               </div>
               <div className="flex gap-2">
                 <Input
@@ -411,7 +423,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
           {/* Discord */}
           <ServiceRow
             name="Discord Global"
-            icon={<Discord className="h-6 w-6 text-discord" />}
+            icon={<Discord className="text-discord h-6 w-6" />}
             color="bg-indigo-100 dark:bg-indigo-900/30"
             linked={status?.discord.linked ?? false}
             username={status?.discord.username ?? null}

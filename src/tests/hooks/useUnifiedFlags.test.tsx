@@ -11,7 +11,8 @@ jest.mock("~/trpc/react", () => ({
           useQuery: jest.fn().mockImplementation(({ countryNames }: { countryNames: string[] }) => {
             const data: Record<string, string | null> = {};
             for (const name of countryNames || []) {
-              data[name] = name === "Unknown" ? null : `https://example.com/flags/${name.toLowerCase()}.svg`;
+              data[name] =
+                name === "Unknown" ? null : `https://example.com/flags/${name.toLowerCase()}.svg`;
             }
             return {
               data,

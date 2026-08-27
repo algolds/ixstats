@@ -81,7 +81,9 @@ const TOP_AUTHORS = [
   { name: "Music is a Drug", edits: 10 },
 ];
 
-async function fetchUserTopPages(username: string): Promise<Array<{ title: string; count: number }>> {
+async function fetchUserTopPages(
+  username: string
+): Promise<Array<{ title: string; count: number }>> {
   const url = new URL(API_URL);
   url.searchParams.set("action", "query");
   url.searchParams.set("list", "usercontribs");
@@ -102,7 +104,13 @@ async function fetchUserTopPages(username: string): Promise<Array<{ title: strin
     const counts = new Map<string, number>();
     for (const c of contribs) {
       const title = String(c.title || "").trim();
-      if (!title || title.startsWith("User:") || title.startsWith("User talk:") || title.startsWith("Template:") || title.startsWith("Category:")) {
+      if (
+        !title ||
+        title.startsWith("User:") ||
+        title.startsWith("User talk:") ||
+        title.startsWith("Template:") ||
+        title.startsWith("Category:")
+      ) {
         continue;
       }
       counts.set(title, (counts.get(title) || 0) + 1);

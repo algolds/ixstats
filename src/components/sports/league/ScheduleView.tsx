@@ -11,7 +11,12 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { cn } from "~/lib/utils";
-import { MapPin, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, Calendar } from "iconoir-react";
+import {
+  MapPin,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+  Calendar,
+} from "iconoir-react";
 import { useState } from "react";
 import { MatchCommentary } from "~/components/sports/MatchCommentary";
 import MatchSchedule1 from "~/components/sports/match-schedules/MatchSchedule1";

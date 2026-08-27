@@ -81,7 +81,9 @@ function EconomicManager() {
 
       {components.length === 0 ? (
         <div className="border-border/40 bg-card/20 rounded-2xl border p-12 text-center backdrop-blur-md">
-          <p className="text-muted-foreground text-sm">No economic components found matching current filters.</p>
+          <p className="text-muted-foreground text-sm">
+            No economic components found matching current filters.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -183,7 +185,9 @@ function GovernmentManager() {
 
       {components.length === 0 ? (
         <div className="border-border/40 bg-card/20 rounded-2xl border p-12 text-center backdrop-blur-md">
-          <p className="text-muted-foreground text-sm">No government components found matching current filters.</p>
+          <p className="text-muted-foreground text-sm">
+            No government components found matching current filters.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

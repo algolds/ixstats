@@ -28,10 +28,7 @@ describe("Plan 153: AST-Backed Router Import Boundary Guard", () => {
   });
 
   describe("resolveModuleTarget", () => {
-    const importerAbs = path.join(
-      fixturesRoot,
-      "src/server/api/routers/groupB/index.ts"
-    );
+    const importerAbs = path.join(fixturesRoot, "src/server/api/routers/groupB/index.ts");
 
     it("resolves ~/ and @/ path aliases to src directory", () => {
       const resolvedTilde = resolveModuleTarget(
@@ -39,29 +36,19 @@ describe("Plan 153: AST-Backed Router Import Boundary Guard", () => {
         "~/server/api/routers/groupA",
         fixturesRoot
       );
-      expect(resolvedTilde).toBe(
-        path.join(fixturesRoot, "src/server/api/routers/groupA/index.ts")
-      );
+      expect(resolvedTilde).toBe(path.join(fixturesRoot, "src/server/api/routers/groupA/index.ts"));
 
       const resolvedAt = resolveModuleTarget(
         importerAbs,
         "@/server/api/routers/groupA",
         fixturesRoot
       );
-      expect(resolvedAt).toBe(
-        path.join(fixturesRoot, "src/server/api/routers/groupA/index.ts")
-      );
+      expect(resolvedAt).toBe(path.join(fixturesRoot, "src/server/api/routers/groupA/index.ts"));
     });
 
     it("resolves relative paths with extension or index", () => {
-      const resolvedRel = resolveModuleTarget(
-        importerAbs,
-        "../groupA/helper",
-        fixturesRoot
-      );
-      expect(resolvedRel).toBe(
-        path.join(fixturesRoot, "src/server/api/routers/groupA/helper.ts")
-      );
+      const resolvedRel = resolveModuleTarget(importerAbs, "../groupA/helper", fixturesRoot);
+      expect(resolvedRel).toBe(path.join(fixturesRoot, "src/server/api/routers/groupA/helper.ts"));
     });
 
     it("returns null for bare package imports", () => {
@@ -91,9 +78,7 @@ describe("Plan 153: AST-Backed Router Import Boundary Guard", () => {
 
       expect(violations).toHaveLength(8);
 
-      const groupBViolations = violations.filter((v) =>
-        v.importer.endsWith("groupB/index.ts")
-      );
+      const groupBViolations = violations.filter((v) => v.importer.endsWith("groupB/index.ts"));
       expect(groupBViolations).toHaveLength(5);
       expect(groupBViolations.map((v) => v.kind)).toEqual([
         "import",
@@ -103,25 +88,15 @@ describe("Plan 153: AST-Backed Router Import Boundary Guard", () => {
         "dynamic-import",
       ]);
 
-      const flatAViolations = violations.filter((v) =>
-        v.importer.endsWith("flatA.ts")
-      );
+      const flatAViolations = violations.filter((v) => v.importer.endsWith("flatA.ts"));
       expect(flatAViolations).toHaveLength(3);
-      expect(flatAViolations.map((v) => v.kind)).toEqual([
-        "import",
-        "import",
-        "import",
-      ]);
+      expect(flatAViolations.map((v) => v.kind)).toEqual(["import", "import", "import"]);
 
       // groupA and flatB should have 0 violations
-      const groupAViolations = violations.filter((v) =>
-        v.importer.includes("groupA")
-      );
+      const groupAViolations = violations.filter((v) => v.importer.includes("groupA"));
       expect(groupAViolations).toHaveLength(0);
 
-      const flatBViolations = violations.filter((v) =>
-        v.importer.endsWith("flatB.ts")
-      );
+      const flatBViolations = violations.filter((v) => v.importer.endsWith("flatB.ts"));
       expect(flatBViolations).toHaveLength(0);
     });
 
@@ -131,9 +106,7 @@ describe("Plan 153: AST-Backed Router Import Boundary Guard", () => {
         routersRelDir: "src/server/api/routers",
       });
 
-      const groupAViolations = violations.filter((v) =>
-        v.importer.includes("groupA/index.ts")
-      );
+      const groupAViolations = violations.filter((v) => v.importer.includes("groupA/index.ts"));
       expect(groupAViolations).toHaveLength(0);
     });
   });

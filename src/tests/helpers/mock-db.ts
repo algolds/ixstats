@@ -38,9 +38,7 @@ export function createMockPrisma(overrides: Record<string, any> = {}): MockPrism
               return undefined;
             }
 
-            modelTarget[method] = jest
-              .fn()
-              .mockResolvedValue(method === "findMany" ? [] : null);
+            modelTarget[method] = jest.fn().mockResolvedValue(method === "findMany" ? [] : null);
             return modelTarget[method];
           },
         }

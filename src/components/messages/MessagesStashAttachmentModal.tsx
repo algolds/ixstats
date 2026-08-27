@@ -3,7 +3,15 @@
 import React, { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { api } from "~/trpc/react";
-import { Bookmark, Folder, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Search, SystemRestart as Loader2, ArrowRight } from "iconoir-react";
+import {
+  Bookmark,
+  Folder,
+  NavArrowLeft as ChevronLeft,
+  NavArrowRight as ChevronRight,
+  Search,
+  SystemRestart as Loader2,
+  ArrowRight,
+} from "iconoir-react";
 import { Input } from "~/components/ui/input";
 
 interface MessagesStashAttachmentModalProps {

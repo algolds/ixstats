@@ -29,7 +29,21 @@ import {
   type LeagueSection,
 } from "~/components/sports/league/LeagueSidebarNav";
 import { getSportColors, getPreset, type SportPresetKey } from "~/lib/sports/presets";
-import { ArrowLeft, Play, Trophy, Group as Users, Calendar, Medal, Tournament as Swords, MapPin, Shield, Settings, SystemRestart as Loader2, Activity, FastArrowRight as FastForward } from "iconoir-react";
+import {
+  ArrowLeft,
+  Play,
+  Trophy,
+  Group as Users,
+  Calendar,
+  Medal,
+  Tournament as Swords,
+  MapPin,
+  Shield,
+  Settings,
+  SystemRestart as Loader2,
+  Activity,
+  FastArrowRight as FastForward,
+} from "iconoir-react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -591,7 +605,9 @@ export default function LeagueDetailPage() {
                                   ) : (
                                     <span
                                       className="h-2 w-2 shrink-0 rounded-full"
-                                      style={{ backgroundColor: s.team.color ?? "var(--color-text-muted)" }}
+                                      style={{
+                                        backgroundColor: s.team.color ?? "var(--color-text-muted)",
+                                      }}
                                     />
                                   )}
                                   <span className="text-foreground truncate">{s.team.name}</span>
@@ -807,7 +823,9 @@ export default function LeagueDetailPage() {
                               ) : (
                                 <div
                                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 text-[9px] font-black text-white shadow"
-                                  style={{ backgroundColor: team.color ?? "var(--color-text-muted)" }}
+                                  style={{
+                                    backgroundColor: team.color ?? "var(--color-text-muted)",
+                                  }}
                                 >
                                   {team.shortName || team.name.slice(0, 2).toUpperCase()}
                                 </div>

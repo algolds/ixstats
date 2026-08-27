@@ -2,8 +2,6 @@
 // Shared admin page header with title, description, and optional actions
 "use client";
 
-
-
 interface AdminHeaderProps {
   icon: React.ComponentType<{ className?: string }>;
   title: string;

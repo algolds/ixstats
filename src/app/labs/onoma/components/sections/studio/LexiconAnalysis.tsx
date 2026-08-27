@@ -49,7 +49,7 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
           <span className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
             Phonotactic Pattern
           </span>
-          <span className="font-mono text-sm font-bold text-onoma-primary">
+          <span className="text-onoma-primary font-mono text-sm font-bold">
             {getCvPattern(selectedTerm)}
           </span>
         </div>

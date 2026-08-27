@@ -1,7 +1,24 @@
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
-import { Eye, EyeClosed as EyeOff, Lock, LockSlash as Unlock, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, Crown, EditPencil as Pencil, Trash as Trash2, MapPin, Hexagon, Bank as Landmark, Bookmark as BookMarked, Type, Navigator as Route, Ruler } from "iconoir-react";
+import {
+  Eye,
+  EyeClosed as EyeOff,
+  Lock,
+  LockSlash as Unlock,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  Crown,
+  EditPencil as Pencil,
+  Trash as Trash2,
+  MapPin,
+  Hexagon,
+  Bank as Landmark,
+  Bookmark as BookMarked,
+  Type,
+  Navigator as Route,
+  Ruler,
+} from "iconoir-react";
 import { WikiPreviewTooltip } from "~/components/maps/editor/WikiPreviewTooltip";
 
 export interface LayerState {
@@ -128,9 +145,9 @@ export const LayerPanel = React.memo(function LayerPanel({
     const row = (
       <div
         key={feature.id}
-        className={`group flex items-center gap-1.5 rounded px-2 py-1.5 pl-8 transition-all duration-100 ease-out active:scale-[0.99] select-none ${
+        className={`group flex items-center gap-1.5 rounded px-2 py-1.5 pl-8 transition-all duration-100 ease-out select-none active:scale-[0.99] ${
           isSelected
-            ? "bg-primary/10 ring-primary/30 font-semibold ring-1 shadow-xs"
+            ? "bg-primary/10 ring-primary/30 font-semibold shadow-xs ring-1"
             : isMultiSelected
               ? "bg-indigo-500/10 ring-1 ring-indigo-500/30"
               : "hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
@@ -165,7 +182,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 e.stopPropagation();
                 onEditFeature(feature);
               }}
-              className="rounded p-0.5 text-neutral-500 transition-all duration-100 active:scale-90 hover:bg-neutral-200 hover:text-blue-600 dark:hover:bg-neutral-700 dark:hover:text-blue-400"
+              className="rounded p-0.5 text-neutral-500 transition-all duration-100 hover:bg-neutral-200 hover:text-blue-600 active:scale-90 dark:hover:bg-neutral-700 dark:hover:text-blue-400"
               title="Edit"
             >
               <Pencil className="h-3 w-3" />
@@ -177,7 +194,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 e.stopPropagation();
                 onDeleteFeature(feature);
               }}
-              className="rounded p-0.5 text-neutral-500 transition-all duration-100 active:scale-90 hover:bg-neutral-200 hover:text-red-500 dark:hover:bg-neutral-700 dark:hover:text-red-400"
+              className="rounded p-0.5 text-neutral-500 transition-all duration-100 hover:bg-neutral-200 hover:text-red-500 active:scale-90 dark:hover:bg-neutral-700 dark:hover:text-red-400"
               title="Delete"
             >
               <Trash2 className="h-3 w-3" />
@@ -207,7 +224,7 @@ export const LayerPanel = React.memo(function LayerPanel({
     ];
 
     return (
-      <div className="flex flex-col text-xs text-foreground select-none">
+      <div className="text-foreground flex flex-col text-xs select-none">
         <div className="flex flex-col">
           {defaultFeatureGroups.map((group) => {
             const Icon = group.icon;
@@ -216,24 +233,24 @@ export const LayerPanel = React.memo(function LayerPanel({
             const isExpanded = expandedLayers.has(group.id);
 
             return (
-              <div key={group.id} className="border-b border-border/40">
+              <div key={group.id} className="border-border/40 border-b">
                 <button
                   onClick={() => toggleLayerExpanded(group.id)}
-                  className="flex h-8 w-full items-center gap-1.5 px-2 hover:bg-accent/50 text-left transition-colors"
+                  className="hover:bg-accent/50 flex h-8 w-full items-center gap-1.5 px-2 text-left transition-colors"
                 >
                   {isExpanded ? (
-                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
                   ) : (
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                    <ChevronRight className="text-muted-foreground h-3.5 w-3.5" />
                   )}
-                  <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="flex-1 truncate font-medium text-[11px]">{group.name}</span>
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
+                  <Icon className="text-muted-foreground h-3.5 w-3.5" />
+                  <span className="flex-1 truncate text-[11px] font-medium">{group.name}</span>
+                  <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[9px]">
                     {groupFeats.length}
                   </span>
                 </button>
                 {isExpanded && (
-                  <div className="flex flex-col gap-0.5 pb-1 px-1">
+                  <div className="flex flex-col gap-0.5 px-1 pb-1">
                     {groupFeats.map((feat: any) => renderFeatureRow(feat))}
                   </div>
                 )}

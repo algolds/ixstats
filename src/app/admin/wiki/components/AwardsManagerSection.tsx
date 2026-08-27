@@ -12,7 +12,16 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
-import { Trophy as AwardIcon, Sparks as Sparkles, ClockRotateRight as History, Refresh as RefreshCw, OpenNewWindow as ExternalLink, Search, Trash as Trash2, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Trophy as AwardIcon,
+  Sparks as Sparkles,
+  ClockRotateRight as History,
+  Refresh as RefreshCw,
+  OpenNewWindow as ExternalLink,
+  Search,
+  Trash as Trash2,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { getIconComponent, getColorClass, getColorHex } from "./types";
 

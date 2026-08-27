@@ -2,7 +2,11 @@
 
 import React from "react";
 import Link from "next/link";
-import { OpenBook as BookOpen, OpenNewWindow as ExternalLink, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  OpenBook as BookOpen,
+  OpenNewWindow as ExternalLink,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useWikiSectionMap } from "~/hooks/useWikiSectionMap";

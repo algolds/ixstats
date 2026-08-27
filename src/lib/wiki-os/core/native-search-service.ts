@@ -83,7 +83,10 @@ export class NativeSearchService {
           a.summary ||
           (a.wikitext
             ? extractIntroFromWikitext(a.wikitext).slice(0, 160) ||
-              a.wikitext.replace(/^[=\s]+/, "").replace(/[{}[\]]/g, "").slice(0, 160)
+              a.wikitext
+                .replace(/^[=\s]+/, "")
+                .replace(/[{}[\]]/g, "")
+                .slice(0, 160)
             : "WikiOS article entry."),
         readingTime: a.readingTime || 1,
         leadImageUrl: a.leadImageUrl ?? null,
@@ -158,7 +161,10 @@ export class NativeSearchService {
             snippet:
               r.summary ||
               (r.preview
-                ? r.preview.replace(/^[=\s]+/, "").replace(/[{}[\]]/g, "").slice(0, 160)
+                ? r.preview
+                    .replace(/^[=\s]+/, "")
+                    .replace(/[{}[\]]/g, "")
+                    .slice(0, 160)
                 : "WikiOS article entry."),
             readingTime: r.readingTime || 1,
             leadImageUrl: r.leadImageUrl || null,
@@ -280,7 +286,7 @@ export async function getArticleSummaryFromShadow(
         leadImageUrl: null,
       };
     }
-  } catch  {
+  } catch {
     // Postgres table column not present yet or read-only shadow miss — fall through
   }
 

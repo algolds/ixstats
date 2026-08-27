@@ -1,6 +1,11 @@
 "use client";
 
-import { ArrowSeparate as ArrowRightLeft, StatDown as TrendingDown, StatUp as TrendingUp, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  ArrowSeparate as ArrowRightLeft,
+  StatDown as TrendingDown,
+  StatUp as TrendingUp,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import {
   Select,
   SelectContent,

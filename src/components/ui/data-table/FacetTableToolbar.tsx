@@ -47,14 +47,12 @@ export function FacetTableToolbar({
       {(title || description) && (
         <div className="min-w-0 flex-1">
           {title && (
-            <h3 className="text-foreground text-base sm:text-lg font-bold tracking-tight truncate">
+            <h3 className="text-foreground truncate text-base font-bold tracking-tight sm:text-lg">
               {title}
             </h3>
           )}
           {description && (
-            <p className="text-muted-foreground mt-0.5 text-xs font-normal">
-              {description}
-            </p>
+            <p className="text-muted-foreground mt-0.5 text-xs font-normal">{description}</p>
           )}
         </div>
       )}
@@ -69,7 +67,7 @@ export function FacetTableToolbar({
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="border-border/50 bg-background/50 focus:border-primary/50 focus-visible:ring-primary/20 text-foreground h-9 rounded-xl pl-9 pr-8 text-xs backdrop-blur-md transition-all"
+              className="border-border/50 bg-background/50 focus:border-primary/50 focus-visible:ring-primary/20 text-foreground h-9 rounded-xl pr-8 pl-9 text-xs backdrop-blur-md transition-all"
             />
             {searchTerm && (
               <button

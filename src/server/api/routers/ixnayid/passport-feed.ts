@@ -41,7 +41,9 @@ export function buildAuthoredArticles(rawAuthored: any[], mwCreatedPages: any[])
     }
   }
 
-  authoredArticles.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  authoredArticles.sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
   return authoredArticles;
 }
 
@@ -71,7 +73,8 @@ export function buildWikiActivityFeed(
       type: rev.minor ? "minor_edit" : "revision",
       title: articleTitle,
       articleSlug,
-      summary: rev.summary || (rev.minor ? "Minor formatting & copyedit" : "Revised article content"),
+      summary:
+        rev.summary || (rev.minor ? "Minor formatting & copyedit" : "Revised article content"),
       byteDiff: null,
       timestamp: new Date(rev.createdAt).toISOString(),
       url: `/wiki/${encodeURIComponent(articleSlug || articleTitle)}`,
@@ -79,9 +82,14 @@ export function buildWikiActivityFeed(
   }
 
   for (const [idx, c] of wikiContribs.entries()) {
-    const cTitle: string = (c as any).title ?? (c as any).page_title ?? (c as any).pageTitle ?? "Untitled";
+    const cTitle: string =
+      (c as any).title ?? (c as any).page_title ?? (c as any).pageTitle ?? "Untitled";
     const cRevid = (c as any).revid ?? (c as any).rev_id ?? (c as any).revId ?? 0;
-    const cTimestamp: string = (c as any).timestamp ?? (c as any).rev_timestamp ?? (c as any).revTimestamp ?? new Date().toISOString();
+    const cTimestamp: string =
+      (c as any).timestamp ??
+      (c as any).rev_timestamp ??
+      (c as any).revTimestamp ??
+      new Date().toISOString();
     const cSize = (c as any).size ?? (c as any).rev_len ?? (c as any).revLen ?? null;
     const cComment: string | null = (c as any).comment ?? (c as any).rev_comment ?? null;
     const cIsNew: boolean = Boolean((c as any).isNew ?? (c as any).is_new);
@@ -90,7 +98,10 @@ export function buildWikiActivityFeed(
       continue;
     }
     const ts = new Date(cTimestamp).getTime() || idx;
-    const safeSlug = cTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 24);
+    const safeSlug = cTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .slice(0, 24);
     wikiActivityFeed.push({
       id: `mw-${cRevid || 0}-${safeSlug}-${ts}-${idx}`,
       type: cIsNew ? "publish" : cIsMinor ? "minor_edit" : "revision",
@@ -111,7 +122,8 @@ export function buildWikiActivityFeed(
       type: "discussion",
       title: threadTitle,
       articleSlug: articleTitle,
-      summary: comment.content.length > 120 ? `${comment.content.slice(0, 117)}...` : comment.content,
+      summary:
+        comment.content.length > 120 ? `${comment.content.slice(0, 117)}...` : comment.content,
       byteDiff: null,
       timestamp: new Date(comment.createdAt).toISOString(),
       url: articleTitle ? `/wiki/${encodeURIComponent(articleTitle)}` : `/wiki`,
@@ -119,10 +131,17 @@ export function buildWikiActivityFeed(
   }
 
   for (const award of loreAwards) {
-    const isWinner = resolvedWikiName && award.winnerUser?.toLowerCase() === resolvedWikiName.toLowerCase();
-    const articleName = (isWinner ? award.winnerPage : award.runnerUpPage) || award.winnerPage || "Wiki Lore";
+    const isWinner =
+      resolvedWikiName && award.winnerUser?.toLowerCase() === resolvedWikiName.toLowerCase();
+    const articleName =
+      (isWinner ? award.winnerPage : award.runnerUpPage) || award.winnerPage || "Wiki Lore";
     const score = isWinner ? award.winnerScore : award.runnerUpScore;
-    const distinction = award.type === "daily" ? "Lore of the Day" : award.type === "weekly" ? "Lore of the Week" : "Monthly Laureate";
+    const distinction =
+      award.type === "daily"
+        ? "Lore of the Day"
+        : award.type === "weekly"
+          ? "Lore of the Week"
+          : "Monthly Laureate";
 
     wikiActivityFeed.push({
       id: `laurel-${award.id}`,
@@ -136,6 +155,8 @@ export function buildWikiActivityFeed(
     });
   }
 
-  wikiActivityFeed.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  wikiActivityFeed.sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
   return wikiActivityFeed;
 }

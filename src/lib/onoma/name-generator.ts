@@ -169,8 +169,7 @@ export function generatePresetName(ctx: PresetGenerationContext): string | null 
     if (subType === "mystic-order") return generateMysticOrderName(characterChain, options);
     if (subType === "military-unit") return generateMilitaryUnitName(characterChain, options);
     if (subType === "covert-org") return generateCovertOrgName(characterChain, options);
-    if (subType === "business-company")
-      return generateBusinessCompanyName(characterChain, options);
+    if (subType === "business-company") return generateBusinessCompanyName(characterChain, options);
     if (subType === "academic-institution")
       return generateAcademicInstitutionName(characterChain, options);
     if (subType === "political-party") return generatePoliticalPartyName(characterChain, options);
@@ -222,8 +221,7 @@ export function generatePresetName(ctx: PresetGenerationContext): string | null 
 
   if (category === "dynasty") {
     if (subType === "fantasy-syllable") return generateFantasySyllableName();
-    if (subType === "noble-surname")
-      return generateNobleSurname(culture, characterChain, options);
+    if (subType === "noble-surname") return generateNobleSurname(culture, characterChain, options);
   }
 
   if (category === "city" && subType === "settlement-colony") {
@@ -281,7 +279,11 @@ function escapeCSVCell(val: string | number | null | undefined): string {
 }
 
 function triggerBlobDownload(blob: Blob, filename: string): void {
-  if (typeof window === "undefined" || typeof URL === "undefined" || typeof URL.createObjectURL !== "function") {
+  if (
+    typeof window === "undefined" ||
+    typeof URL === "undefined" ||
+    typeof URL.createObjectURL !== "function"
+  ) {
     return;
   }
 

@@ -3,17 +3,9 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import {
-  generateSchedule,
-  matchIntervalMs,
-  raceIntervalMs,
-} from "~/lib/sports";
+import { generateSchedule, matchIntervalMs, raceIntervalMs } from "~/lib/sports";
 import { isSystemOwner } from "~/lib/auth";
 import { IxTime } from "~/lib/ixtime";
 import { generateMatchReport, generateMatchPreview } from "~/lib/sports/commentary/narrator";

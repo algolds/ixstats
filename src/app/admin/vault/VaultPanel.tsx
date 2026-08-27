@@ -3,7 +3,14 @@
 "use client";
 
 import { useState } from "react";
-import { Group as Users, ShoppingBag, ClockRotateRight as History, Settings, Coins, Gift } from "iconoir-react";
+import {
+  Group as Users,
+  ShoppingBag,
+  ClockRotateRight as History,
+  Settings,
+  Coins,
+  Gift,
+} from "iconoir-react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -29,39 +36,43 @@ export default function AdminVaultPage() {
         description="Oversee user credit balances, store catalog items, metagame bonuses, and real-time transaction purchase logs."
       />
 
-      <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as VaultTab)} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={(val) => setActiveTab(val as VaultTab)}
+        className="w-full"
+      >
         <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
           <TabsTrigger
             value="users"
-            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Users className="h-4 w-4" />
             Users & Balances
           </TabsTrigger>
           <TabsTrigger
             value="store"
-            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <ShoppingBag className="h-4 w-4" />
             Store Inventory
           </TabsTrigger>
           <TabsTrigger
             value="bonuses"
-            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Gift className="h-4 w-4" />
             Metagame Bonuses
           </TabsTrigger>
           <TabsTrigger
             value="logs"
-            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <History className="h-4 w-4" />
             Purchase Logs
           </TabsTrigger>
           <TabsTrigger
             value="config"
-            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Settings className="h-4 w-4" />
             System Config

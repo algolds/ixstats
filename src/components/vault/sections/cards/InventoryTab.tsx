@@ -3,7 +3,14 @@
 import React, { useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import { CheckSquare, Folder, ShoppingBag, Trash as Trash2, WarningCircle as AlertCircle, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  CheckSquare,
+  Folder,
+  ShoppingBag,
+  Trash as Trash2,
+  WarningCircle as AlertCircle,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { api } from "~/trpc/react";

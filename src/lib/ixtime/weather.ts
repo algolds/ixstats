@@ -3,13 +3,7 @@
 
 export type Season = "Spring" | "Summer" | "Autumn" | "Winter";
 
-export type WeatherIconType =
-  | "Sun"
-  | "CloudSun"
-  | "Cloud"
-  | "CloudRain"
-  | "Moon"
-  | "Snowflake";
+export type WeatherIconType = "Sun" | "CloudSun" | "Cloud" | "CloudRain" | "Moon" | "Snowflake";
 
 export interface PrimeMeridianWeather {
   tempC: number;

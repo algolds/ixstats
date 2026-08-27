@@ -3,7 +3,25 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Refresh as RefreshCw, Database, Globe, MapPin, Search, Group as Users, Play, Pause, Square, WarningTriangle as AlertTriangle, Filter, Xmark as X, Component as Layers, Clock, ArrowRight, Sparks as Sparkles, Page as FileText } from "iconoir-react";
+import {
+  Refresh as RefreshCw,
+  Database,
+  Globe,
+  MapPin,
+  Search,
+  Group as Users,
+  Play,
+  Pause,
+  Square,
+  WarningTriangle as AlertTriangle,
+  Filter,
+  Xmark as X,
+  Component as Layers,
+  Clock,
+  ArrowRight,
+  Sparks as Sparkles,
+  Page as FileText,
+} from "iconoir-react";
 
 import { api } from "~/trpc/react";
 import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
@@ -535,7 +553,7 @@ export function NSImportSuiteAdmin() {
             {/* Import run selector dropdown */}
             <div className="flex items-center gap-1.5">
               <label className="text-muted-foreground flex items-center gap-1 text-[11px] font-semibold">
-                <Layers className="h-3 w-3 text-primary" /> Import:
+                <Layers className="text-primary h-3 w-3" /> Import:
               </label>
               <select
                 value={selectedSyncLogId || "ALL"}

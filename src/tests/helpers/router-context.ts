@@ -45,9 +45,7 @@ export interface MockRouterContext {
  * Creates a mock tRPC context for characterization and router testing.
  * Defaults to an authenticated DB user with a linked country.
  */
-export function createMockRouterContext(
-  options: MockRouterContextOptions = {}
-): MockRouterContext {
+export function createMockRouterContext(options: MockRouterContextOptions = {}): MockRouterContext {
   const defaultAuth: MockAuthContext = {
     userId: "test_user_clerk_id",
     sessionId: "test_session_id",

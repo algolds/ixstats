@@ -8,7 +8,19 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, OpenBook as BookOpen, Folder as FolderOpen, Check, Globe, BookStack as Library, Label as Tag, Coins, Page as FileText, SystemRestart as Loader2, Xmark as X } from "iconoir-react";
+import {
+  Search,
+  OpenBook as BookOpen,
+  Folder as FolderOpen,
+  Check,
+  Globe,
+  BookStack as Library,
+  Label as Tag,
+  Coins,
+  Page as FileText,
+  SystemRestart as Loader2,
+  Xmark as X,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import {

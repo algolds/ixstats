@@ -62,26 +62,28 @@ export class MediaWikiExportWorker {
 
       if (res.revisionId) {
         // Record mwLatestRevId on PostgreSQL article to prevent inbound CDC echo loops
-        await db.wikiArticle.updateMany({
-          where: {
-            source: "ixwiki",
-            OR: [
-              { title: job.title },
-              { title: job.title.replace(/_/g, " ") },
-              { slug: job.slug },
-            ],
-          },
-          data: {
-            mwLatestRevId: res.revisionId,
-            lastMwSyncAt: new Date(),
-          },
-        }).catch(() => null);
+        await db.wikiArticle
+          .updateMany({
+            where: {
+              source: "ixwiki",
+              OR: [
+                { title: job.title },
+                { title: job.title.replace(/_/g, " ") },
+                { slug: job.slug },
+              ],
+            },
+            data: {
+              mwLatestRevId: res.revisionId,
+              lastMwSyncAt: new Date(),
+            },
+          })
+          .catch(() => null);
 
         if (job.authorWikiUsername) {
           await updateRevisionActor(res.revisionId, job.authorWikiUsername);
         }
       }
-    } catch  {
+    } catch {
       if (job.attempts < 3) {
         job.attempts++;
         const delayMs = Math.pow(2, job.attempts) * 1000;

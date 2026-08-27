@@ -2,8 +2,32 @@
 // Refactored from GovernmentSpendingSectionEnhanced.tsx
 // Contains all spending policy definitions and utility functions
 
-
-import { Shield, Heart, GraduationCap, City as Building2, Tree as Trees, Suitcase as Briefcase, Group as Users, StatUp as TrendingUp, Coins, Archery as Target, SystemRestart as Recycle, Wifi, Dollar as DollarSign, Lullaby as Baby, Bank as Landmark, Microscope, Airplane as Plane, Sparks as Sparkles, WarningTriangle as AlertTriangle, ScaleFrameEnlarge as Scale, Globe, Page as FileText, UserBadgeCheck as UserCheck, HomeSimple as Home } from "iconoir-react";
+import {
+  Shield,
+  Heart,
+  GraduationCap,
+  City as Building2,
+  Tree as Trees,
+  Suitcase as Briefcase,
+  Group as Users,
+  StatUp as TrendingUp,
+  Coins,
+  Archery as Target,
+  SystemRestart as Recycle,
+  Wifi,
+  Dollar as DollarSign,
+  Lullaby as Baby,
+  Bank as Landmark,
+  Microscope,
+  Airplane as Plane,
+  Sparks as Sparkles,
+  WarningTriangle as AlertTriangle,
+  ScaleFrameEnlarge as Scale,
+  Globe,
+  Page as FileText,
+  UserBadgeCheck as UserCheck,
+  HomeSimple as Home,
+} from "iconoir-react";
 import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 
 export interface SpendingPolicy {

@@ -2,11 +2,7 @@
 
 import React, { memo } from "react";
 import { MagicWand as Wand2 } from "iconoir-react";
-import {
-  ToolLabel,
-  dividerClass,
-  labelClass,
-} from "./CoordinateSnappingControls";
+import { ToolLabel, dividerClass, labelClass } from "./CoordinateSnappingControls";
 
 interface MagicWandOptionsProps {
   wandMatchColor?: boolean;

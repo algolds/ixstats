@@ -19,14 +19,11 @@ import {
 export function DiplomacyGraphic({ className }: { className?: string }) {
   return (
     <div
-      className={cn(
-        "pointer-events-none absolute inset-0 overflow-hidden select-none",
-        className
-      )}
+      className={cn("pointer-events-none absolute inset-0 overflow-hidden select-none", className)}
     >
       {/* Background Treaty Rings & Global Meridian Arcs */}
       <svg
-        className="text-teal-500/15 absolute -right-6 -bottom-6 h-36 w-36 transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-80 dark:text-teal-400/15"
+        className="absolute -right-6 -bottom-6 h-36 w-36 text-teal-500/15 transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-80 dark:text-teal-400/15"
         viewBox="0 0 100 100"
         fill="none"
         stroke="currentColor"
@@ -50,14 +47,11 @@ export function DiplomacyGraphic({ className }: { className?: string }) {
 export function DefenseGraphic({ className }: { className?: string }) {
   return (
     <div
-      className={cn(
-        "pointer-events-none absolute inset-0 overflow-hidden select-none",
-        className
-      )}
+      className={cn("pointer-events-none absolute inset-0 overflow-hidden select-none", className)}
     >
       {/* Background Tactical Radar & Chevrons */}
       <svg
-        className="text-red-500/15 absolute -right-6 -bottom-6 h-36 w-36 transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-80 dark:text-red-400/15"
+        className="absolute -right-6 -bottom-6 h-36 w-36 text-red-500/15 transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-80 dark:text-red-400/15"
         viewBox="0 0 100 100"
         fill="none"
         stroke="currentColor"
@@ -82,14 +76,11 @@ export function DefenseGraphic({ className }: { className?: string }) {
 export function PoliticsGraphic({ className }: { className?: string }) {
   return (
     <div
-      className={cn(
-        "pointer-events-none absolute inset-0 overflow-hidden select-none",
-        className
-      )}
+      className={cn("pointer-events-none absolute inset-0 overflow-hidden select-none", className)}
     >
       {/* Background Legislative Hemicycle & Column Lines */}
       <svg
-        className="text-violet-500/15 absolute -right-6 -bottom-6 h-36 w-36 transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-80 dark:text-violet-400/15"
+        className="absolute -right-6 -bottom-6 h-36 w-36 text-violet-500/15 transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-80 dark:text-violet-400/15"
         viewBox="0 0 100 100"
         fill="none"
         stroke="currentColor"
@@ -114,14 +105,11 @@ export function PoliticsGraphic({ className }: { className?: string }) {
 export function EconomyGraphic({ className }: { className?: string }) {
   return (
     <div
-      className={cn(
-        "pointer-events-none absolute inset-0 overflow-hidden select-none",
-        className
-      )}
+      className={cn("pointer-events-none absolute inset-0 overflow-hidden select-none", className)}
     >
       {/* Background Market Grid & Ascending Trend Vectors */}
       <svg
-        className="text-emerald-500/15 absolute -right-6 -bottom-6 h-36 w-36 transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-80 dark:text-emerald-400/15"
+        className="absolute -right-6 -bottom-6 h-36 w-36 text-emerald-500/15 transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-80 dark:text-emerald-400/15"
         viewBox="0 0 100 100"
         fill="none"
         stroke="currentColor"
@@ -142,4 +130,3 @@ export function EconomyGraphic({ className }: { className?: string }) {
     </div>
   );
 }
-

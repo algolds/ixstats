@@ -1,7 +1,16 @@
 "use client";
 
 import React from "react";
-import { Globe, Hexagon, MapPin, Bank as Landmark, Bookmark as BookMarked, Type as TypeIcon, Navigator as Route, CloudSunny as CloudSun } from "iconoir-react";
+import {
+  Globe,
+  Hexagon,
+  MapPin,
+  Bank as Landmark,
+  Bookmark as BookMarked,
+  Type as TypeIcon,
+  Navigator as Route,
+  CloudSunny as CloudSun,
+} from "iconoir-react";
 import { EditorPanel } from "~/components/maps/editor/EditorPanel";
 import { LayerPanel } from "~/components/maps/editor/LayerPanel";
 import { LinkageValidationPanel } from "./LinkageValidationPanel";
@@ -32,7 +41,9 @@ interface MapEditorSidebarPanelsProps {
     panelA: PanelConfig;
     panelB: PanelConfig;
   };
-  setPanelConfigs: React.Dispatch<React.SetStateAction<{ panelA: PanelConfig; panelB: PanelConfig }>>;
+  setPanelConfigs: React.Dispatch<
+    React.SetStateAction<{ panelA: PanelConfig; panelB: PanelConfig }>
+  >;
   activeSidebarTab: TabId;
   setActiveSidebarTab: (tab: TabId) => void;
   handleMoveTab: (tabId: string, panelId: "panelA" | "panelB") => void;

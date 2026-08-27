@@ -6,7 +6,13 @@
 import { useRef, useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import { EditPencil as Edit, Send, SystemRestart as Loader2, Xmark as X, MediaImage as Image } from "iconoir-react";
+import {
+  EditPencil as Edit,
+  Send,
+  SystemRestart as Loader2,
+  Xmark as X,
+  MediaImage as Image,
+} from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -20,7 +26,8 @@ import { useUser } from "~/context/auth-context";
 import { cn } from "~/lib/utils";
 
 const MediaSearchModal = dynamic(
-  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 
@@ -99,10 +106,13 @@ export function PostComposers({
     [setReplyText]
   );
 
-  const handleInsertGif = useCallback((gifUrl: string) => {
-    if (selectedImages.length >= 4) return;
-    setSelectedImages((prev) => [...prev, gifUrl]);
-  }, [selectedImages.length]);
+  const handleInsertGif = useCallback(
+    (gifUrl: string) => {
+      if (selectedImages.length >= 4) return;
+      setSelectedImages((prev) => [...prev, gifUrl]);
+    },
+    [selectedImages.length]
+  );
 
   const handleRemoveImage = useCallback((indexToRemove: number) => {
     setSelectedImages((prev) => prev.filter((_, i) => i !== indexToRemove));
@@ -155,13 +165,15 @@ export function PostComposers({
                     <Edit className="h-3.5 w-3.5" />
                     <span>Editing Post</span>
                   </div>
-                  <span className="text-muted-foreground/60 text-[10px] font-normal">Esc to cancel</span>
+                  <span className="text-muted-foreground/60 text-[10px] font-normal">
+                    Esc to cancel
+                  </span>
                 </div>
                 <Textarea
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
                   placeholder="Edit your post content..."
-                  className="border-border/30 bg-background/50 text-foreground placeholder:text-muted-foreground focus-visible:ring-amber-500/50 rounded-xl text-xs focus-visible:ring-1"
+                  className="border-border/30 bg-background/50 text-foreground placeholder:text-muted-foreground rounded-xl text-xs focus-visible:ring-1 focus-visible:ring-amber-500/50"
                   rows={3}
                   autoFocus
                 />
@@ -178,7 +190,7 @@ export function PostComposers({
                     size="sm"
                     onClick={handleSubmitEdit}
                     disabled={!editText.trim() || editText === post.content || isEditPending}
-                    className="shadow-amber-600/25 h-8 rounded-xl bg-amber-600 px-4 text-xs font-bold text-white shadow-md transition-all hover:bg-amber-500 active:scale-95"
+                    className="h-8 rounded-xl bg-amber-600 px-4 text-xs font-bold text-white shadow-md shadow-amber-600/25 transition-all hover:bg-amber-500 active:scale-95"
                   >
                     {isEditPending ? "Saving..." : "Save Changes"}
                   </Button>
@@ -202,25 +214,29 @@ export function PostComposers({
               damping: 30,
             }}
             className={cn(
-              "relative mt-3 flex flex-col gap-0 rounded-2xl border border-black/10 bg-white/70 p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:shadow-2xl dark:border-border/80 dark:bg-card/90 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              "dark:border-border/80 dark:bg-card/90 relative mt-3 flex flex-col gap-0 rounded-2xl border border-black/10 bg-white/70 p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
             )}
           >
             <TextureOverlay texture="paperGrain" opacity={0.03} className="rounded-2xl" />
 
             {/* Header info */}
-            <div className="relative mb-2.5 flex items-center justify-between border-b border-black/5 pb-2 text-xs text-muted-foreground dark:border-white/5">
+            <div className="text-muted-foreground relative mb-2.5 flex items-center justify-between border-b border-black/5 pb-2 text-xs dark:border-white/5">
               <div className="flex items-center gap-1.5 font-medium">
                 <span className="text-muted-foreground/70">Replying to</span>
-                <span className="font-semibold text-blue-500 hover:underline">@{post.account?.username}</span>
+                <span className="font-semibold text-blue-500 hover:underline">
+                  @{post.account?.username}
+                </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="hidden text-[10px] text-muted-foreground/50 sm:inline">Esc to cancel</span>
+                <span className="text-muted-foreground/50 hidden text-[10px] sm:inline">
+                  Esc to cancel
+                </span>
                 <button
                   onClick={() => {
                     setShowReplyComposer(false);
                     setSelectedImages([]);
                   }}
-                  className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
+                  className="text-muted-foreground hover:text-foreground rounded-full p-1 transition-colors hover:bg-black/5 dark:hover:bg-white/10"
                   title="Close (Esc)"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -245,10 +261,7 @@ export function PostComposers({
               ) : (
                 <Avatar className="mt-0.5 h-9 w-9 shrink-0 border border-white/20 shadow-md dark:border-white/10">
                   {replyAvatarUrl && (
-                    <AvatarImage
-                      src={proxyDiscordUrl(replyAvatarUrl)}
-                      alt={replyDisplayName}
-                    />
+                    <AvatarImage src={proxyDiscordUrl(replyAvatarUrl)} alt={replyDisplayName} />
                   )}
                   <AvatarFallback className="bg-blue-600 text-xs font-bold text-white">
                     {replyDisplayName
@@ -280,7 +293,7 @@ export function PostComposers({
 
                 {/* Attached Images / GIFs Grid */}
                 {selectedImages.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 pt-1">
+                  <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4">
                     {selectedImages.map((imageUrl, index) => (
                       <div
                         key={imageUrl + index}
@@ -315,7 +328,7 @@ export function PostComposers({
                           size="sm"
                           onClick={() => setShowMediaModal(true)}
                           disabled={selectedImages.length >= 4}
-                          className="h-8 w-8 rounded-xl p-0 text-emerald-600 transition-all hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 active:scale-95"
+                          className="h-8 w-8 rounded-xl p-0 text-emerald-600 transition-all hover:bg-emerald-500/10 hover:text-emerald-700 active:scale-95 dark:text-emerald-400 dark:hover:text-emerald-300"
                           aria-label="Add media / images"
                         >
                           <div className="relative">
@@ -349,11 +362,11 @@ export function PostComposers({
                       </TooltipContent>
                     </Tooltip>
 
-                    <div className="hidden h-4 w-px bg-black/10 dark:bg-white/10 sm:block" />
+                    <div className="hidden h-4 w-px bg-black/10 sm:block dark:bg-white/10" />
 
-                    <div className="hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex">
+                    <div className="text-muted-foreground hidden items-center gap-1.5 text-[11px] sm:flex">
                       <span>Press</span>
-                      <kbd className="rounded-md border border-black/10 bg-black/5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
+                      <kbd className="text-muted-foreground rounded-md border border-black/10 bg-black/5 px-1.5 py-0.5 text-[10px] font-medium dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
                         Enter
                       </kbd>
                       <span>to reply</span>
@@ -368,14 +381,16 @@ export function PostComposers({
                         setShowReplyComposer(false);
                         setSelectedImages([]);
                       }}
-                      className="h-8 rounded-xl px-3 text-xs font-semibold text-muted-foreground transition-all hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white active:scale-95"
+                      className="text-muted-foreground hover:text-foreground h-8 rounded-xl px-3 text-xs font-semibold transition-all hover:bg-black/5 active:scale-95 dark:hover:bg-white/10 dark:hover:text-white"
                     >
                       Cancel
                     </Button>
                     <Button
                       size="sm"
                       onClick={onSubmitReply}
-                      disabled={(!replyText.trim() && selectedImages.length === 0) || isReplyPending}
+                      disabled={
+                        (!replyText.trim() && selectedImages.length === 0) || isReplyPending
+                      }
                       className={cn(
                         "h-8 gap-1.5 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-md transition-all hover:bg-blue-500 active:scale-95",
                         isReplyPending && "opacity-60"

@@ -111,7 +111,13 @@ export function SyntaxSentenceBuilder({
   };
 
   // Build the translated sentence
-  const subjectPhrase = inflectNoun(subject, true, subjectPlural, subjectDefinite, subjectAdjective);
+  const subjectPhrase = inflectNoun(
+    subject,
+    true,
+    subjectPlural,
+    subjectDefinite,
+    subjectAdjective
+  );
   const verbPhrase = inflectVerb(verb, verbTense);
   const objectPhrase = inflectNoun(object, false, objectPlural, objectDefinite, objectAdjective);
 
@@ -140,44 +146,47 @@ export function SyntaxSentenceBuilder({
   const englishSentence = `${engSubjArt} ${engSubjAdj}${engSubjNoun} ${engVerb} ${engObjArt} ${engObjAdj}${engObjNoun}.`;
 
   return (
-    <FacetMaterial material="satin" className="rounded-xl border border-border/40 p-5 shadow-sm space-y-4 text-left">
-      <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+    <FacetMaterial
+      material="satin"
+      className="border-border/40 space-y-4 rounded-xl border p-5 text-left shadow-sm"
+    >
+      <h4 className="text-foreground flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
         <Cpu className="h-4 w-4 text-fuchsia-500" /> Live Sentence Generator
       </h4>
 
       {/* Translation Output Banner */}
-      <div className="rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/5 p-4 space-y-2">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+      <div className="space-y-2 rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/5 p-4">
+        <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
           <span>Source (English):</span>
           <span className="text-foreground italic">{englishSentence}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+        <div className="text-foreground flex items-center gap-2 text-sm font-bold">
           <ArrowRight className="h-4 w-4 text-fuchsia-500" />
-          <span className="font-mono text-fuchsia-500 text-base">{sentence}.</span>
+          <span className="font-mono text-base text-fuchsia-500">{sentence}.</span>
         </div>
       </div>
 
       {/* Interactive Phrase Tuning */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-xs">
+      <div className="grid grid-cols-1 gap-4 pt-2 text-xs md:grid-cols-3">
         {/* Subject */}
-        <div className="space-y-2 rounded-lg border border-border/40 p-3 bg-secondary/10">
-          <span className="font-bold text-foreground block">Subject Noun</span>
+        <div className="border-border/40 bg-secondary/10 space-y-2 rounded-lg border p-3">
+          <span className="text-foreground block font-bold">Subject Noun</span>
           <input
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full rounded border border-border/60 bg-background px-2 py-1 focus:outline-none"
+            className="border-border/60 bg-background w-full rounded border px-2 py-1 focus:outline-none"
             placeholder="e.g. dog"
           />
           <input
             type="text"
             value={subjectAdjective}
             onChange={(e) => setSubjectAdjective(e.target.value)}
-            className="w-full rounded border border-border/60 bg-background px-2 py-1 focus:outline-none"
+            className="border-border/60 bg-background w-full rounded border px-2 py-1 focus:outline-none"
             placeholder="Adjective (e.g. quick)"
           />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <label className="flex items-center gap-1 cursor-pointer">
+          <div className="text-muted-foreground flex justify-between text-[10px]">
+            <label className="flex cursor-pointer items-center gap-1">
               <input
                 type="checkbox"
                 checked={subjectPlural}
@@ -186,7 +195,7 @@ export function SyntaxSentenceBuilder({
               />{" "}
               Plural
             </label>
-            <label className="flex items-center gap-1 cursor-pointer">
+            <label className="flex cursor-pointer items-center gap-1">
               <input
                 type="checkbox"
                 checked={subjectDefinite}
@@ -199,19 +208,19 @@ export function SyntaxSentenceBuilder({
         </div>
 
         {/* Verb */}
-        <div className="space-y-2 rounded-lg border border-border/40 p-3 bg-secondary/10">
-          <span className="font-bold text-foreground block">Action Verb</span>
+        <div className="border-border/40 bg-secondary/10 space-y-2 rounded-lg border p-3">
+          <span className="text-foreground block font-bold">Action Verb</span>
           <input
             type="text"
             value={verb}
             onChange={(e) => setVerb(e.target.value)}
-            className="w-full rounded border border-border/60 bg-background px-2 py-1 focus:outline-none"
+            className="border-border/60 bg-background w-full rounded border px-2 py-1 focus:outline-none"
             placeholder="e.g. eat"
           />
           <select
             value={verbTense}
             onChange={(e) => setVerbTense(e.target.value)}
-            className="w-full rounded border border-border/60 bg-background px-2 py-1 focus:outline-none text-xs"
+            className="border-border/60 bg-background w-full rounded border px-2 py-1 text-xs focus:outline-none"
           >
             <option value="present">Present Tense</option>
             <option value="past">Past Tense</option>
@@ -220,24 +229,24 @@ export function SyntaxSentenceBuilder({
         </div>
 
         {/* Object */}
-        <div className="space-y-2 rounded-lg border border-border/40 p-3 bg-secondary/10">
-          <span className="font-bold text-foreground block">Object Noun</span>
+        <div className="border-border/40 bg-secondary/10 space-y-2 rounded-lg border p-3">
+          <span className="text-foreground block font-bold">Object Noun</span>
           <input
             type="text"
             value={object}
             onChange={(e) => setObject(e.target.value)}
-            className="w-full rounded border border-border/60 bg-background px-2 py-1 focus:outline-none"
+            className="border-border/60 bg-background w-full rounded border px-2 py-1 focus:outline-none"
             placeholder="e.g. fish"
           />
           <input
             type="text"
             value={objectAdjective}
             onChange={(e) => setObjectAdjective(e.target.value)}
-            className="w-full rounded border border-border/60 bg-background px-2 py-1 focus:outline-none"
+            className="border-border/60 bg-background w-full rounded border px-2 py-1 focus:outline-none"
             placeholder="Adjective (e.g. small)"
           />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <label className="flex items-center gap-1 cursor-pointer">
+          <div className="text-muted-foreground flex justify-between text-[10px]">
+            <label className="flex cursor-pointer items-center gap-1">
               <input
                 type="checkbox"
                 checked={objectPlural}
@@ -246,7 +255,7 @@ export function SyntaxSentenceBuilder({
               />{" "}
               Plural
             </label>
-            <label className="flex items-center gap-1 cursor-pointer">
+            <label className="flex cursor-pointer items-center gap-1">
               <input
                 type="checkbox"
                 checked={objectDefinite}

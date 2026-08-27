@@ -224,7 +224,9 @@ export const vaultStoreRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] purchaseStoreItem error:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to purchase store item", { cause: error });
+        throw new Error(error instanceof Error ? error.message : "Failed to purchase store item", {
+          cause: error,
+        });
       }
     }),
 
@@ -348,7 +350,8 @@ export const vaultStoreRouter = createTRPCRouter({
       } catch (error) {
         console.error("[Vault Router] toggleEquipCosmetic error:", error);
         throw new Error(
-          error instanceof Error ? error.message : "Failed to toggle equipped cosmetic", { cause: error }
+          error instanceof Error ? error.message : "Failed to toggle equipped cosmetic",
+          { cause: error }
         );
       }
     }),

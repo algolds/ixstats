@@ -2,7 +2,14 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Play, Sparks as Sparkles, WarningTriangle as AlertTriangle, ShieldAlert, Trophy as Award } from "iconoir-react";
+import {
+  Bell,
+  Play,
+  Sparks as Sparkles,
+  WarningTriangle as AlertTriangle,
+  ShieldAlert,
+  Trophy as Award,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

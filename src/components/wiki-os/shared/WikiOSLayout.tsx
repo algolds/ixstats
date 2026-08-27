@@ -66,7 +66,6 @@ export function WikiOSLayout({
     }
   }, []);
 
-
   const activeTitle = title || articleTitle || "";
   const slug = activeTitle ? encodeURIComponent(activeTitle.replace(/ /g, "_")) : null;
 
@@ -159,7 +158,12 @@ export function WikiOSLayout({
     cleanPath.startsWith("/stashes/");
   // Not under /wiki/<slug> at all → not an article either.
   const isSpecialPage =
-    isMainPage || isReservedWikiPage || isSpecialNamespace || isLibraryRoute || isUtilRoute || !wikiSlug;
+    isMainPage ||
+    isReservedWikiPage ||
+    isSpecialNamespace ||
+    isLibraryRoute ||
+    isUtilRoute ||
+    !wikiSlug;
 
   const sidebarContent = (
     <WikiOSUnifiedSidebar
@@ -189,7 +193,7 @@ export function WikiOSLayout({
         expandedWidthStyle="12rem"
         disableGlobalHover={true}
       >
-          <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>
+        <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>
           {/*{(showUtilitiesRibbon ?? isSpecialPage) && (
           //  <WikiUtilitiesRibbon
           //    onSearchClick={() => setSearchOpen(true)}
@@ -203,21 +207,26 @@ export function WikiOSLayout({
       <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3.5 border-t border-white/5 pt-8 pb-10 text-center text-xs font-[var(--wikios-font-brand)]">
         <Popover>
           <PopoverTrigger asChild>
-            <button className="group flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 select-none opacity-80 hover:opacity-100 active:scale-95">
-              <WikiOSLogomark className="h-7 w-auto text-zinc-900 dark:text-zinc-100 transition-transform duration-300 group-hover:scale-105" />
-              <div className="flex items-center gap-1.5 font-[var(--wikios-font-brand)] text-[11px] font-medium tracking-wide text-muted-foreground/70 group-hover:text-muted-foreground">
-                <span className="font-semibold text-foreground/80 group-hover:text-foreground">Powered by wikiOS</span>
+            <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 opacity-80 transition-all duration-200 select-none hover:opacity-100 active:scale-95">
+              <WikiOSLogomark className="h-7 w-auto text-zinc-900 transition-transform duration-300 group-hover:scale-105 dark:text-zinc-100" />
+              <div className="text-muted-foreground/70 group-hover:text-muted-foreground flex items-center gap-1.5 text-[11px] font-[var(--wikios-font-brand)] font-medium tracking-wide">
+                <span className="text-foreground/80 group-hover:text-foreground font-semibold">
+                  Powered by wikiOS
+                </span>
                 <span className="text-muted-foreground/40">•</span>
-                <span className="tabular-nums text-muted-foreground/60 font-medium">v{WIKIOS_VERSION}</span>
+                <span className="text-muted-foreground/60 font-medium tabular-nums">
+                  v{WIKIOS_VERSION}
+                </span>
               </div>
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-80 p-4 text-left font-[var(--wikios-font-ui)]">
-            <PopoverTitle className="mb-1 font-[var(--wikios-font-brand)] text-sm font-bold text-[var(--wikios-text)]">
+            <PopoverTitle className="mb-1 text-sm font-[var(--wikios-font-brand)] font-bold text-[var(--wikios-text)]">
               About WikiOS
             </PopoverTitle>
             <PopoverDescription className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
-              WikiOS is the next-generation sovereign wiki engine and reading environment for IxStates and worldbuilding communities.
+              WikiOS is the next-generation sovereign wiki engine and reading environment for
+              IxStates and worldbuilding communities.
             </PopoverDescription>
           </PopoverContent>
         </Popover>

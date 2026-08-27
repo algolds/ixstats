@@ -73,14 +73,24 @@ async function runApiParityAudit() {
   const pgNs0 = await prisma.wikiArticle.count({ where: { source: "ixwiki", namespace: 0 } });
   const pgRevs = await prisma.wikiRevision.count({ where: { source: "ixwiki" } });
 
-  console.log(`   - Total Pages:     MediaWiki: ${mwPages.toLocaleString()} | PostgreSQL: ${pgTotal.toLocaleString()}`);
-  console.log(`   - Articles (NS 0): MediaWiki: ${mwArticles.toLocaleString()} | PostgreSQL: ${pgNs0.toLocaleString()}`);
-  console.log(`   - Total Edits:     MediaWiki: ${mwEdits.toLocaleString()} | PostgreSQL Revisions: ${pgRevs.toLocaleString()}`);
+  console.log(
+    `   - Total Pages:     MediaWiki: ${mwPages.toLocaleString()} | PostgreSQL: ${pgTotal.toLocaleString()}`
+  );
+  console.log(
+    `   - Articles (NS 0): MediaWiki: ${mwArticles.toLocaleString()} | PostgreSQL: ${pgNs0.toLocaleString()}`
+  );
+  console.log(
+    `   - Total Edits:     MediaWiki: ${mwEdits.toLocaleString()} | PostgreSQL Revisions: ${pgRevs.toLocaleString()}`
+  );
 
   if (pgTotal >= 4000 && pgNs0 >= 3500) {
-    console.log(`   ✅ Article Volume Target Met: ${pgTotal.toLocaleString()} total pages (${pgNs0.toLocaleString()} articles) in PostgreSQL`);
+    console.log(
+      `   ✅ Article Volume Target Met: ${pgTotal.toLocaleString()} total pages (${pgNs0.toLocaleString()} articles) in PostgreSQL`
+    );
   } else {
-    console.error(`   ❌ Article Count Mismatch: PostgreSQL has only ${pgNs0.toLocaleString()} articles (MediaWiki has ${mwArticles.toLocaleString()}).`);
+    console.error(
+      `   ❌ Article Count Mismatch: PostgreSQL has only ${pgNs0.toLocaleString()} articles (MediaWiki has ${mwArticles.toLocaleString()}).`
+    );
     console.error(`      Run 'bun run wiki:sync:live' to populate the database!`);
     parityErrors++;
   }
@@ -101,7 +111,9 @@ async function runApiParityAudit() {
   let matches = 0;
 
   for (const p of randomPages) {
-    const rawTitle = String(p.title || "").replace(/_/g, " ").trim();
+    const rawTitle = String(p.title || "")
+      .replace(/_/g, " ")
+      .trim();
     const rev = p.revisions?.[0];
     const mwWikitext = String(rev?.slots?.main?.["*"] || rev?.["*"] || "");
 
@@ -118,7 +130,9 @@ async function runApiParityAudit() {
       if (lengthDiff <= 20) {
         matches++;
       } else {
-        console.warn(`   ⚠️ Wikitext size divergence on "${rawTitle}": Live=${mwWikitext.length}b, PG=${pgArticle.wikitext.length}b`);
+        console.warn(
+          `   ⚠️ Wikitext size divergence on "${rawTitle}": Live=${mwWikitext.length}b, PG=${pgArticle.wikitext.length}b`
+        );
         parityWarnings++;
       }
     }
@@ -127,7 +141,9 @@ async function runApiParityAudit() {
   if (matches >= 7) {
     console.log(`   ✅ Sampled ${randomPages.length} live pages: ${matches} exact 1:1 matches.`);
   } else {
-    console.error(`   ❌ Content Sample Check Failed: Only ${matches}/${randomPages.length} matches found.`);
+    console.error(
+      `   ❌ Content Sample Check Failed: Only ${matches}/${randomPages.length} matches found.`
+    );
     parityErrors++;
   }
 
@@ -135,8 +151,12 @@ async function runApiParityAudit() {
   if (parityErrors === 0) {
     console.log(`🎉 1:1 MediaWiki API ↔ PostgreSQL Parity Verification PASSED!`);
   } else {
-    console.error(`❌ Parity Verification Failed with ${parityErrors} errors and ${parityWarnings} warnings.`);
-    console.error(`👉 Remedy: Run 'bun run wiki:sync:live' followed by 'bun run wiki:seed:categories'.`);
+    console.error(
+      `❌ Parity Verification Failed with ${parityErrors} errors and ${parityWarnings} warnings.`
+    );
+    console.error(
+      `👉 Remedy: Run 'bun run wiki:sync:live' followed by 'bun run wiki:seed:categories'.`
+    );
   }
   console.log("==================================================================");
 
@@ -147,7 +167,9 @@ async function main() {
   console.log("==================================================================");
   console.log("⚖️  WikiOS MediaWiki MariaDB ↔ PostgreSQL 1:1 Parity Audit");
   console.log(`   MariaDB Source:  ${IXWIKI_DB_HOST}:${IXWIKI_DB_PORT}/${IXWIKI_DB_NAME}`);
-  console.log(`   Postgres Target: ${process.env.DATABASE_URL?.split("@")[1] || "Local PostgreSQL"}`);
+  console.log(
+    `   Postgres Target: ${process.env.DATABASE_URL?.split("@")[1] || "Local PostgreSQL"}`
+  );
   console.log("==================================================================");
 
   let connection: mysql.Connection | null = null;
@@ -190,16 +212,26 @@ async function main() {
     const pgNs14 = await prisma.wikiArticle.count({ where: { source: "ixwiki", namespace: 14 } });
     const pgNs10 = await prisma.wikiArticle.count({ where: { source: "ixwiki", namespace: 10 } });
 
-    console.log(`   - Total Pages:       MariaDB: ${mariaTotal.toLocaleString()} | PostgreSQL: ${pgTotal.toLocaleString()}`);
-    console.log(`   - Articles (NS 0):   MariaDB: ${mariaNs0.toLocaleString()} | PostgreSQL: ${pgNs0.toLocaleString()}`);
-    console.log(`   - Categories (NS 14): MariaDB: ${mariaNs14.toLocaleString()} | PostgreSQL: ${pgNs14.toLocaleString()}`);
-    console.log(`   - Templates (NS 10):  MariaDB: ${mariaNs10.toLocaleString()} | PostgreSQL: ${pgNs10.toLocaleString()}`);
+    console.log(
+      `   - Total Pages:       MariaDB: ${mariaTotal.toLocaleString()} | PostgreSQL: ${pgTotal.toLocaleString()}`
+    );
+    console.log(
+      `   - Articles (NS 0):   MariaDB: ${mariaNs0.toLocaleString()} | PostgreSQL: ${pgNs0.toLocaleString()}`
+    );
+    console.log(
+      `   - Categories (NS 14): MariaDB: ${mariaNs14.toLocaleString()} | PostgreSQL: ${pgNs14.toLocaleString()}`
+    );
+    console.log(
+      `   - Templates (NS 10):  MariaDB: ${mariaNs10.toLocaleString()} | PostgreSQL: ${pgNs10.toLocaleString()}`
+    );
 
     const articleRatio = pgTotal / Math.max(1, mariaTotal);
     if (articleRatio >= 0.99) {
       console.log(`   ✅ Article Parity: ${(articleRatio * 100).toFixed(2)}% (Target achieved)`);
     } else {
-      console.warn(`   ⚠️ Article Parity Mismatch: PostgreSQL has ${(articleRatio * 100).toFixed(2)}% of MariaDB pages.`);
+      console.warn(
+        `   ⚠️ Article Parity Mismatch: PostgreSQL has ${(articleRatio * 100).toFixed(2)}% of MariaDB pages.`
+      );
       parityWarnings++;
     }
 
@@ -209,7 +241,9 @@ async function main() {
     const mariaRevs = Number(mariaRevRes[0]?.total || 0);
     const pgRevs = await prisma.wikiRevision.count({ where: { source: "ixwiki" } });
 
-    console.log(`   - Total Revisions:   MariaDB: ${mariaRevs.toLocaleString()} | PostgreSQL: ${pgRevs.toLocaleString()}`);
+    console.log(
+      `   - Total Revisions:   MariaDB: ${mariaRevs.toLocaleString()} | PostgreSQL: ${pgRevs.toLocaleString()}`
+    );
     if (pgRevs > 0) {
       console.log(`   ✅ Revisions Ingested: ${pgRevs.toLocaleString()} rows in PostgreSQL`);
     } else {
@@ -249,22 +283,27 @@ async function main() {
         if (textMatch) {
           sampleMatches++;
         } else {
-          console.warn(`   ⚠️ Text length variance on "${rawTitle}": MariaDB=${mariaText.length}b, PG=${pgArticle.wikitext.length}b`);
+          console.warn(
+            `   ⚠️ Text length variance on "${rawTitle}": MariaDB=${mariaText.length}b, PG=${pgArticle.wikitext.length}b`
+          );
           parityWarnings++;
         }
       }
     }
 
-    console.log(`   ✅ Sampled ${samplePages.length} articles: ${sampleMatches} exact 1:1 content matches.`);
+    console.log(
+      `   ✅ Sampled ${samplePages.length} articles: ${sampleMatches} exact 1:1 content matches.`
+    );
 
     console.log("\n==================================================================");
     if (parityErrors === 0) {
       console.log(`🎉 1:1 MediaWiki MariaDB ↔ PostgreSQL Parity Verification PASSED!`);
     } else {
-      console.error(`❌ Parity Verification Failed with ${parityErrors} errors and ${parityWarnings} warnings.`);
+      console.error(
+        `❌ Parity Verification Failed with ${parityErrors} errors and ${parityWarnings} warnings.`
+      );
     }
     console.log("==================================================================");
-
   } catch (err: any) {
     console.warn(`⚠️ MariaDB direct socket connection refused (${err.message}).`);
     await runApiParityAudit();

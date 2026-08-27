@@ -1,12 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Xmark as X,
-  Map as MapIcon,
-  SystemRestart as Loader2,
-  Compass,
-} from "iconoir-react";
+import { Xmark as X, Map as MapIcon, SystemRestart as Loader2, Compass } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
@@ -28,9 +23,9 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
 
   // Map rendering refs/state
   const mapContainerRef = useRef<HTMLDivElement>(null);
-   
+
   const mapRef = useRef<any>(null);
-   
+
   const markerRef = useRef<any>(null);
   const [_mapLoaded, setMapLoaded] = useState(false);
   const labelInputRef = useRef<HTMLInputElement>(null);
@@ -117,7 +112,6 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
       mapRef.current = null;
     }
 
-     
     const baseStyle = buildBaseStyle() as any;
     delete baseStyle.projection; // Enforce Mercator projection
 
@@ -143,7 +137,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
             (f) => f.properties?._countryId !== viewerCountryId
           ),
         };
-         
+
         map.addSource("other-countries", { type: "geojson", data: otherCountries as any });
         map.addLayer({
           id: "other-countries-fill",
@@ -161,10 +155,10 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
         const activeColor = fillColor || (featureId ? getCountryColor(featureId) : "#6366f1");
         const activeGeo = {
           type: "FeatureCollection",
-           
+
           features: [{ type: "Feature", properties: {}, geometry: geometry as any }],
         };
-         
+
         map.addSource("active-country", { type: "geojson", data: activeGeo as any });
         map.addLayer({
           id: "active-country-stroke",
@@ -181,17 +175,17 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
           const subGeo = {
             type: "FeatureCollection",
             features: subdivisions
-               
+
               .filter((s: any) => s.geometry)
-               
+
               .map((s: any) => ({
                 type: "Feature",
                 properties: {},
-                 
+
                 geometry: s.geometry as any,
               })),
           };
-           
+
           map.addSource("active-subdivisions", { type: "geojson", data: subGeo as any });
           map.addLayer({
             id: "active-subdivisions-stroke",
@@ -225,7 +219,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
       markerRef.current = startMarker;
 
       // Click listener to grab coordinates
-       
+
       map.on("click", (e: any) => {
         const clickedLng = e.lngLat.lng;
         const clickedLat = e.lngLat.lat;
@@ -302,11 +296,11 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
         onClick={onClose}
       >
         <div
-          className="relative flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card/95 text-foreground shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-card/95"
+          className="border-border bg-card/95 text-foreground dark:bg-card/95 relative flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl dark:border-white/15"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4 dark:border-white/10 dark:bg-white/5">
+          <div className="border-border bg-muted/30 flex items-center justify-between border-b px-6 py-4 dark:border-white/10 dark:bg-white/5">
             <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
               <MapIcon className="h-5 w-5 text-emerald-400" />
               Insert Map Coords &amp; Embeds
@@ -367,7 +361,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                 <label className="text-foreground block text-xs font-semibold">
                   Quick Select Existing Marker
                 </label>
-                <div className="scrollbar-thin border-border divide-border bg-muted/20 max-h-36 divide-y overflow-y-auto rounded-lg border text-xs">
+                <div className="border-border divide-border bg-muted/20 max-h-36 scrollbar-thin divide-y overflow-y-auto rounded-lg border text-xs">
                   {isMapBundleLoading && (
                     <div className="text-muted-foreground flex items-center gap-1.5 p-3">
                       <Loader2 className="h-3 w-3 animate-spin text-emerald-400" /> Loading
@@ -375,7 +369,6 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                     </div>
                   )}
                   {!isMapBundleLoading &&
-                     
                     cities.map((c: any) => (
                       <button
                         key={`city-${c.id}`}
@@ -383,7 +376,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                         onClick={() =>
                           handleMarkerSelect(c.coordinates[1], c.coordinates[0], c.name)
                         }
-                        className="flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors hover:bg-muted/50"
+                        className="hover:bg-muted/50 flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors"
                       >
                         <span className="text-foreground font-semibold">{c.name}</span>
                         <span className="text-muted-foreground text-[9px] font-bold uppercase">
@@ -392,7 +385,6 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                       </button>
                     ))}
                   {!isMapBundleLoading &&
-                     
                     pois.map((p: any) => (
                       <button
                         key={`poi-${p.id}`}
@@ -400,7 +392,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                         onClick={() =>
                           handleMarkerSelect(p.coordinates[1], p.coordinates[0], p.name)
                         }
-                        className="flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors hover:bg-muted/50"
+                        className="hover:bg-muted/50 flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors"
                       >
                         <span className="text-foreground">{p.name}</span>
                         <span className="bg-muted text-muted-foreground rounded px-1.5 text-[9px] capitalize">
@@ -449,7 +441,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                         mapRef.current.setZoom(newZ);
                       }
                     }}
-                    className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-muted accent-emerald-500"
+                    className="bg-muted h-1 w-full cursor-pointer appearance-none rounded-lg accent-emerald-500"
                   />
                 </div>
               </div>
@@ -469,7 +461,9 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-foreground block text-xs font-semibold">Embed Width</label>
+                    <label className="text-foreground block text-xs font-semibold">
+                      Embed Width
+                    </label>
                     <input
                       type="text"
                       value={embedWidth}
@@ -482,7 +476,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                       type="checkbox"
                       checked={embedInteractive}
                       onChange={(e) => setEmbedInteractive(e.target.checked)}
-                      className="border-input bg-secondary text-emerald-600 focus:ring-emerald-500 rounded"
+                      className="border-input bg-secondary rounded text-emerald-600 focus:ring-emerald-500"
                     />
                     <span className="text-foreground text-xs">Interactive panning / zoom</span>
                   </label>

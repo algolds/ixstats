@@ -19,7 +19,15 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { SportsLabsInspector } from "~/components/admin/sports-labs/SportsLabsInspector";
 import { cn } from "~/lib/utils";
-import { Trophy, Group as Users, Calendar, Tournament as Swords, ControlSlider as Sliders, Database, Flask as FlaskConical } from "iconoir-react";
+import {
+  Trophy,
+  Group as Users,
+  Calendar,
+  Tournament as Swords,
+  ControlSlider as Sliders,
+  Database,
+  Flask as FlaskConical,
+} from "iconoir-react";
 
 // Custom Node Component
 function PipelineNode({ data, selected }: NodeProps) {

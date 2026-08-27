@@ -50,19 +50,20 @@ export function CosmeticsUpgradesPanel() {
   const utils = api.useUtils();
 
   // Queries for live store, purchased items, and equipped cosmetics
-  const { data: storeItems, isLoading: storeLoading } = api.vault.listStoreItems.useQuery(undefined, {
-    refetchOnWindowFocus: false,
-  });
+  const { data: storeItems, isLoading: storeLoading } = api.vault.listStoreItems.useQuery(
+    undefined,
+    {
+      refetchOnWindowFocus: false,
+    }
+  );
 
   const { data: purchasedData, isLoading: purchasedLoading } = api.vault.getPurchasedItems.useQuery(
     undefined,
     { refetchOnWindowFocus: false }
   );
 
-  const { data: equippedData, isLoading: equippedLoading } = api.vault.getEquippedCosmetics.useQuery(
-    undefined,
-    { refetchOnWindowFocus: false }
-  );
+  const { data: equippedData, isLoading: equippedLoading } =
+    api.vault.getEquippedCosmetics.useQuery(undefined, { refetchOnWindowFocus: false });
 
   const purchasedItemIds = purchasedData?.purchasedItemIds ?? [];
   const purchaseCounts = purchasedData?.purchaseCounts ?? {};
@@ -113,7 +114,7 @@ export function CosmeticsUpgradesPanel() {
             <Link
               href="/vault"
               data-cuelume-press="soft"
-              className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/60 bg-secondary/80 px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-secondary active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
             >
               <ShoppingCart className="h-3.5 w-3.5" />
               <span>Vault Store</span>
@@ -124,7 +125,7 @@ export function CosmeticsUpgradesPanel() {
               onClick={handleRefreshAll}
               data-cuelume-press="soft"
               title="Sync with server"
-              className="facet-interactive flex h-8 w-8 items-center justify-center rounded-xl border border-border/60 bg-muted/30 text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground active:scale-[0.97]"
+              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-all active:scale-[0.97]"
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </button>
@@ -138,20 +139,22 @@ export function CosmeticsUpgradesPanel() {
         description="Visual flair, glowing card frames, and avatar accents currently in your inventory."
       >
         {isDataLoading ? (
-          <div className="p-4 text-center text-xs text-muted-foreground">
+          <div className="text-muted-foreground p-4 text-center text-xs">
             Loading owned inventory...
           </div>
         ) : ownedCosmetics.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-6 text-center">
-            <Palette className="h-8 w-8 text-muted-foreground/40 mb-2" />
-            <p className="text-xs font-semibold text-muted-foreground">No purchased cosmetics in inventory</p>
-            <p className="text-[11px] text-muted-foreground/70 mt-0.5 max-w-sm">
+            <Palette className="text-muted-foreground/40 mb-2 h-8 w-8" />
+            <p className="text-muted-foreground text-xs font-semibold">
+              No purchased cosmetics in inventory
+            </p>
+            <p className="text-muted-foreground/70 mt-0.5 max-w-sm text-[11px]">
               Purchase profile glows, card borders, and elite chat badges from the Vault Store.
             </p>
             <Link
               href="/vault"
               data-cuelume-press="soft"
-              className="facet-interactive mt-3 flex items-center gap-1.5 rounded-xl border border-border/60 bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-secondary/80 active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-secondary text-foreground hover:bg-secondary/80 mt-3 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
             >
               <ShoppingCart className="h-3.5 w-3.5" />
               <span>Browse Vault Store</span>
@@ -169,14 +172,16 @@ export function CosmeticsUpgradesPanel() {
               <SettingsRow
                 key={item.id}
                 label={item.name}
-                description={item.description ?? "Visual cosmetic enhancement for profile and card showcase"}
+                description={
+                  item.description ?? "Visual cosmetic enhancement for profile and card showcase"
+                }
                 icon={Icon}
                 glyphClass="bg-muted/60 text-foreground"
               >
                 <div className="flex items-center gap-2.5">
                   <span
                     className={cn(
-                      "hidden sm:inline-block rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase",
+                      "hidden rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase sm:inline-block",
                       qualityMeta.class
                     )}
                   >
@@ -191,7 +196,7 @@ export function CosmeticsUpgradesPanel() {
                     className={cn(
                       "facet-interactive flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98] disabled:opacity-50",
                       isEquipped
-                        ? "border-foreground/20 bg-foreground text-background shadow-2xs hover:bg-foreground/90"
+                        ? "border-foreground/20 bg-foreground text-background hover:bg-foreground/90 shadow-2xs"
                         : "border-border/60 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted/70"
                     )}
                   >
@@ -211,20 +216,22 @@ export function CosmeticsUpgradesPanel() {
         description="Permanent platform enhancements, card capacity expansions, and passive dividend yield boosts."
       >
         {isDataLoading ? (
-          <div className="p-4 text-center text-xs text-muted-foreground">
+          <div className="text-muted-foreground p-4 text-center text-xs">
             Loading purchased upgrades...
           </div>
         ) : ownedUpgrades.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-6 text-center">
-            <Gem className="h-8 w-8 text-muted-foreground/40 mb-2" />
-            <p className="text-xs font-semibold text-muted-foreground">No purchased upgrades in inventory</p>
-            <p className="text-[11px] text-muted-foreground/70 mt-0.5 max-w-sm">
+            <Gem className="text-muted-foreground/40 mb-2 h-8 w-8" />
+            <p className="text-muted-foreground text-xs font-semibold">
+              No purchased upgrades in inventory
+            </p>
+            <p className="text-muted-foreground/70 mt-0.5 max-w-sm text-[11px]">
               Acquire card inventory expansions and passive yield multipliers in the Vault Store.
             </p>
             <Link
               href="/vault"
               data-cuelume-press="soft"
-              className="facet-interactive mt-3 flex items-center gap-1.5 rounded-xl border border-border/60 bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-secondary/80 active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-secondary text-foreground hover:bg-secondary/80 mt-3 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
             >
               <ShoppingCart className="h-3.5 w-3.5" />
               <span>Browse Vault Store</span>
@@ -247,7 +254,7 @@ export function CosmeticsUpgradesPanel() {
                 <div className="flex items-center gap-2.5">
                   <span
                     className={cn(
-                      "hidden sm:inline-block rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase",
+                      "hidden rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase sm:inline-block",
                       qualityMeta.class
                     )}
                   >
@@ -255,8 +262,8 @@ export function CosmeticsUpgradesPanel() {
                   </span>
 
                   <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-foreground">
-                      <Check className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="border-border/60 bg-muted/40 text-foreground flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold">
+                      <Check className="text-muted-foreground h-3.5 w-3.5" />
                       <span>Active {count > 1 ? `(×${count})` : ""}</span>
                     </span>
                   </div>

@@ -67,10 +67,12 @@ describe("enrichment-pipeline", () => {
   });
 });
 
-
 import { generateWorld } from "~/lib/worldgen/engine";
 import { normalizeAzgaarGraph } from "~/lib/maps/pipeline/azgaar-normalizer";
-import { evaluateWorldAccuracy, auditWorldGenerationBatch } from "~/lib/maps/pipeline/accuracy-normalizer";
+import {
+  evaluateWorldAccuracy,
+  auditWorldGenerationBatch,
+} from "~/lib/maps/pipeline/accuracy-normalizer";
 import { synthesizeHybridVectorWorld } from "~/lib/maps/pipeline/vector-synthesis";
 import { auditGeographicalAccuracy } from "~/lib/maps/pipeline/geographical-accuracy-analyzer";
 

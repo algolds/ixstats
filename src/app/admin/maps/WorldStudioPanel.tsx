@@ -64,8 +64,10 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
 
       {/* Summary stats */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Total Features</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Total Features
+          </p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -75,34 +77,40 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
           )}
         </div>
 
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Political Regions</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Political Regions
+          </p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="text-emerald-400 mt-1 font-mono text-xl font-bold tracking-tight">
+            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
               {stats?.politicalFeatures?.toLocaleString() ?? "—"}
             </p>
           )}
         </div>
 
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Linked Countries</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Linked Countries
+          </p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="text-amber-400 mt-1 font-mono text-xl font-bold tracking-tight">
+            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400">
               {stats ? `${stats.linkedFeatures} / ${stats.totalCountries}` : "—"}
             </p>
           )}
         </div>
 
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Linkage Rate</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Linkage Rate
+          </p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="text-purple-400 mt-1 font-mono text-xl font-bold tracking-tight">
+            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
               {stats ? `${stats.linkageRate}%` : "—"}
             </p>
           )}
@@ -115,7 +123,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-[0.98] transition-all ${
+            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98] ${
               activeTab === tab.id
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"

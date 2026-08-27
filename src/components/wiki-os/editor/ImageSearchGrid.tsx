@@ -64,19 +64,16 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
     { enabled: tab === "ixwiki" && debouncedQuery.length >= 2, staleTime: 60000 }
   );
 
-  const commonsQuery =
-    (api.thinkpages as any).searchWikiCommonsImages?.useQuery?.(
-      { query: debouncedQuery, per_page: 36 },
-      { enabled: tab === "commons" && debouncedQuery.length >= 2, staleTime: 60000 }
-    ) ?? { data: [], isLoading: false };
+  const commonsQuery = (api.thinkpages as any).searchWikiCommonsImages?.useQuery?.(
+    { query: debouncedQuery, per_page: 36 },
+    { enabled: tab === "commons" && debouncedQuery.length >= 2, staleTime: 60000 }
+  ) ?? { data: [], isLoading: false };
 
   const results: ImageResult[] =
     tab === "ixwiki"
       ? (ixwikiQuery.data ?? []).map((f: any) => ({
           title: f.title ?? f.name ?? "",
-          url:
-            f.url ??
-            getImageUrl(f.title ?? f.name ?? ""),
+          url: f.url ?? getImageUrl(f.title ?? f.name ?? ""),
           thumbUrl: f.thumbUrl ?? f.url,
           width: f.width,
           height: f.height,

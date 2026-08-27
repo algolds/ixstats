@@ -666,4 +666,3 @@ export class IxTime {
     return d !== null ? d.toISOString() : null;
   }
 }
-

@@ -10,7 +10,10 @@ import {
 import { IxTime } from "~/lib/ixtime";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
 import type { SystemStatus } from "~/types/ixstats";
-import { prepareBaseCountryData, getCountryComponentsStatsData } from "~/server/shared/country-helpers";
+import {
+  prepareBaseCountryData,
+  getCountryComponentsStatsData,
+} from "~/server/shared/country-helpers";
 
 export const adminSystemRouter = createTRPCRouter({
   // Internal calculation formulas management
@@ -355,7 +358,8 @@ export const adminSystemRouter = createTRPCRouter({
           name: error instanceof Error ? error.name : "Unknown",
         });
         throw new Error(
-          `Failed to retrieve calculation logs: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
+          `Failed to retrieve calculation logs: ${error instanceof Error ? error.message : "Unknown error"}`,
+          { cause: error }
         );
       }
     }),
@@ -415,7 +419,9 @@ export const adminSystemRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Failed to sync epoch:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to sync epoch time", { cause: error });
+        throw new Error(error instanceof Error ? error.message : "Failed to sync epoch time", {
+          cause: error,
+        });
       }
     }),
 

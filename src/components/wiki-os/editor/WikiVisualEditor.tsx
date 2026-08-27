@@ -51,7 +51,10 @@ export function WikiVisualEditor({
 }: WikiVisualEditorProps) {
   const editorRef = useRef<PlateEditorLike | null>(null);
   const htmlRef = useRef<string>(initialHtml || "");
-  const wtRef = useRef<WikitextSerializeResult>({ wikitext: initialWikitext || "", complete: true });
+  const wtRef = useRef<WikitextSerializeResult>({
+    wikitext: initialWikitext || "",
+    complete: true,
+  });
   const { repulsionProgress } = useNavigationScroll();
 
   const state = useWikiEditorState({ title, onSave });
@@ -218,8 +221,21 @@ export function WikiVisualEditor({
 
       const chipNode =
         type.toLowerCase() === "coords"
-          ? { type: "chip-coord", href, title: titleAttr, label: label || "Location", wikitext: `[[${href}${label ? "|" + label : ""}]]`, children: [{ text: "" }] }
-          : { type: "chip-mapembed", href, title: titleAttr, wikitext: `[[${href}]]`, children: [{ text: "" }] };
+          ? {
+              type: "chip-coord",
+              href,
+              title: titleAttr,
+              label: label || "Location",
+              wikitext: `[[${href}${label ? "|" + label : ""}]]`,
+              children: [{ text: "" }],
+            }
+          : {
+              type: "chip-mapembed",
+              href,
+              title: titleAttr,
+              wikitext: `[[${href}]]`,
+              children: [{ text: "" }],
+            };
       fmt.insertChip(chipNode);
     },
     [fmt]

@@ -172,17 +172,17 @@ export function ThinktankSettingsModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto rounded-2xl border-border/50 bg-card/95 backdrop-blur-2xl p-6 shadow-2xl dark:border-white/10 dark:bg-card/95">
+        <DialogContent className="border-border/50 bg-card/95 dark:bg-card/95 max-h-[90vh] max-w-xl overflow-y-auto rounded-2xl p-6 shadow-2xl backdrop-blur-2xl dark:border-white/10">
           <DialogHeader>
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <Settings className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-base font-bold text-foreground">
+                <DialogTitle className="text-foreground text-base font-bold">
                   Group Settings
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+                <DialogDescription className="text-muted-foreground text-xs">
                   Configure group identity, branding imagery, and member access.
                 </DialogDescription>
               </div>
@@ -191,32 +191,28 @@ export function ThinktankSettingsModal({
 
           <form onSubmit={handleSave} className="space-y-4 pt-2">
             {/* ── Visual Branding: Banner & Logo ── */}
-            <div className="space-y-3 rounded-2xl border border-border/40 bg-muted/20 p-3.5">
+            <div className="border-border/40 bg-muted/20 space-y-3 rounded-2xl border p-3.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-foreground">Branding & Artwork</span>
-                <span className="text-[10px] text-muted-foreground">Media Repository</span>
+                <span className="text-foreground text-xs font-bold">Branding & Artwork</span>
+                <span className="text-muted-foreground text-[10px]">Media Repository</span>
               </div>
 
               {/* Banner Preview */}
-              <div className="relative h-24 w-full overflow-hidden rounded-xl border border-border/50 bg-muted/50">
+              <div className="border-border/50 bg-muted/50 relative h-24 w-full overflow-hidden rounded-xl border">
                 {bannerUrl ? (
-                  <img
-                    src={bannerUrl}
-                    alt="Group banner"
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={bannerUrl} alt="Group banner" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent text-xs text-muted-foreground">
+                  <div className="text-muted-foreground flex h-full w-full items-center justify-center bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent text-xs">
                     No banner set
                   </div>
                 )}
-                <div className="absolute right-2 top-2 flex items-center gap-1.5">
+                <div className="absolute top-2 right-2 flex items-center gap-1.5">
                   <Button
                     type="button"
                     size="sm"
                     variant="secondary"
                     onClick={() => setMediaTarget("banner")}
-                    className="h-7 rounded-lg bg-background/80 px-2.5 text-[11px] font-semibold backdrop-blur-md shadow-xs"
+                    className="bg-background/80 h-7 rounded-lg px-2.5 text-[11px] font-semibold shadow-xs backdrop-blur-md"
                   >
                     <MediaImage className="mr-1 h-3 w-3" />
                     {bannerUrl ? "Change Banner" : "Choose Banner"}
@@ -227,7 +223,7 @@ export function ThinktankSettingsModal({
                       size="sm"
                       variant="ghost"
                       onClick={() => setBannerUrl("")}
-                      className="h-7 w-7 rounded-lg p-0 text-muted-foreground hover:text-foreground bg-background/80 backdrop-blur-md"
+                      className="text-muted-foreground hover:text-foreground bg-background/80 h-7 w-7 rounded-lg p-0 backdrop-blur-md"
                       title="Remove Banner"
                     >
                       <Xmark className="h-3.5 w-3.5" />
@@ -238,9 +234,9 @@ export function ThinktankSettingsModal({
 
               {/* Logo / Avatar Preview */}
               <div className="flex items-center gap-3 pt-1">
-                <Avatar className="h-12 w-12 rounded-xl border border-border/50 shadow-xs">
+                <Avatar className="border-border/50 h-12 w-12 rounded-xl border shadow-xs">
                   <AvatarImage src={avatarUrl || undefined} alt={name} />
-                  <AvatarFallback className="rounded-xl bg-emerald-500/10 text-emerald-600 font-bold text-sm dark:text-emerald-400">
+                  <AvatarFallback className="rounded-xl bg-emerald-500/10 text-sm font-bold text-emerald-600 dark:text-emerald-400">
                     {name.slice(0, 2).toUpperCase() || "TT"}
                   </AvatarFallback>
                 </Avatar>
@@ -263,13 +259,13 @@ export function ThinktankSettingsModal({
                         size="sm"
                         variant="ghost"
                         onClick={() => setAvatarUrl("")}
-                        className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground h-7 text-xs"
                       >
                         Clear
                       </Button>
                     )}
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-muted-foreground text-[10px]">
                     Upload a custom emblem or choose from Wiki Commons & Unsplash.
                   </p>
                 </div>
@@ -278,32 +274,32 @@ export function ThinktankSettingsModal({
 
             {/* Name */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Name</label>
+              <label className="text-foreground text-xs font-semibold">Name</label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="h-9 rounded-xl text-xs bg-background/50 border-border/40"
+                className="bg-background/50 border-border/40 h-9 rounded-xl text-xs"
                 required
               />
             </div>
 
             {/* Description */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Description</label>
+              <label className="text-foreground text-xs font-semibold">Description</label>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="min-h-[60px] rounded-xl text-xs bg-background/50 border-border/40"
+                className="bg-background/50 border-border/40 min-h-[60px] rounded-xl text-xs"
               />
             </div>
 
             {/* Category */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Category</label>
+              <label className="text-foreground text-xs font-semibold">Category</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full rounded-xl border border-border/40 bg-background/50 px-3 py-2 text-xs text-foreground focus:outline-none"
+                className="border-border/40 bg-background/50 text-foreground w-full rounded-xl border px-3 py-2 text-xs focus:outline-none"
               >
                 {categories.map((c) => (
                   <option key={c} value={c}>
@@ -315,22 +311,22 @@ export function ThinktankSettingsModal({
 
             {/* Rules & Guidelines */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Rules & Guidelines</label>
+              <label className="text-foreground text-xs font-semibold">Rules & Guidelines</label>
               <Textarea
                 placeholder="Optional guidelines for posting and discussions..."
                 value={rules}
                 onChange={(e) => setRules(e.target.value)}
-                className="min-h-[50px] rounded-xl text-xs bg-background/50 border-border/40 placeholder:text-muted-foreground/60"
+                className="bg-background/50 border-border/40 placeholder:text-muted-foreground/60 min-h-[50px] rounded-xl text-xs"
               />
             </div>
 
             {/* ── Invite Users Section ── */}
-            <div className="rounded-2xl border border-border/40 bg-card/60 p-3.5 space-y-2.5">
+            <div className="border-border/40 bg-card/60 space-y-2.5 rounded-2xl border p-3.5">
               <div className="flex items-center gap-1.5">
                 <Plus className="h-4 w-4 text-emerald-500" />
-                <span className="text-xs font-bold text-foreground">Invite Members</span>
+                <span className="text-foreground text-xs font-bold">Invite Members</span>
               </div>
-              <p className="text-[11px] text-muted-foreground leading-snug">
+              <p className="text-muted-foreground text-[11px] leading-snug">
                 Send an invitation to a player or collaborator by user ID or handle.
               </p>
               <div className="flex items-center gap-2">
@@ -338,7 +334,7 @@ export function ThinktankSettingsModal({
                   placeholder="Enter User ID (e.g., user_2abc...)"
                   value={inviteInput}
                   onChange={(e) => setInviteInput(e.target.value)}
-                  className="h-8.5 flex-1 rounded-xl text-xs bg-background/50 border-border/40 placeholder:text-muted-foreground/60"
+                  className="bg-background/50 border-border/40 placeholder:text-muted-foreground/60 h-8.5 flex-1 rounded-xl text-xs"
                 />
                 <Button
                   type="button"
@@ -354,13 +350,11 @@ export function ThinktankSettingsModal({
             </div>
 
             {/* Multi-Persona Posting Toggle (Replaced Sparkle Icon) */}
-            <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-3.5 space-y-2">
+            <div className="space-y-2 rounded-xl border border-purple-500/20 bg-purple-500/5 p-3.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Group className="h-4 w-4 text-purple-500" />
-                  <span className="text-xs font-bold text-foreground">
-                    Multi-Persona Posting
-                  </span>
+                  <span className="text-foreground text-xs font-bold">Multi-Persona Posting</span>
                 </div>
                 <Switch
                   checked={allowPersonaPosting}
@@ -370,13 +364,15 @@ export function ThinktankSettingsModal({
                   }}
                 />
               </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                When enabled, members can choose to publish notes under their country's Government, Media, or Citizen personas. When disabled, all members post under authentic national accounts.
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                When enabled, members can choose to publish notes under their country's Government,
+                Media, or Citizen personas. When disabled, all members post under authentic national
+                accounts.
               </p>
             </div>
 
             {/* Privacy Toggle */}
-            <div className="rounded-xl border border-border/40 bg-muted/20 p-3.5 flex items-center justify-between">
+            <div className="border-border/40 bg-muted/20 flex items-center justify-between rounded-xl border p-3.5">
               <div className="flex items-center gap-2">
                 {type === "public" ? (
                   <Globe className="h-4 w-4 text-emerald-500" />
@@ -384,10 +380,10 @@ export function ThinktankSettingsModal({
                   <Lock className="h-4 w-4 text-amber-500" />
                 )}
                 <div>
-                  <span className="text-xs font-bold text-foreground">
+                  <span className="text-foreground text-xs font-bold">
                     {type === "public" ? "Public Group" : "Private Group"}
                   </span>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-muted-foreground text-[11px]">
                     {type === "public"
                       ? "Anyone can discover and join this group."
                       : "Invite-only membership."}
@@ -404,7 +400,7 @@ export function ThinktankSettingsModal({
             </div>
 
             {/* Actions & Disband */}
-            <div className="flex items-center justify-between pt-3 border-t border-border/30">
+            <div className="border-border/30 flex items-center justify-between border-t pt-3">
               <Button
                 type="button"
                 variant="ghost"

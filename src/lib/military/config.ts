@@ -1,7 +1,15 @@
 // src/lib/military-config.ts
 // Static configuration for military branch types
 
-import { Shield, DeliveryTruck as Ship, Airplane as Plane, Flash as Zap, Archery as Target, AntennaSignal as Radio, Star } from "iconoir-react";
+import {
+  Shield,
+  DeliveryTruck as Ship,
+  Airplane as Plane,
+  Flash as Zap,
+  Archery as Target,
+  AntennaSignal as Radio,
+  Star,
+} from "iconoir-react";
 
 /**
  * Branch type configurations inspired by Caphiria structure.

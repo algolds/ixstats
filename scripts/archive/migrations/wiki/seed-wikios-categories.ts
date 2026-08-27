@@ -18,69 +18,180 @@ dotenv.config({ path: ".env" });
 const db = new PrismaClient();
 
 function toArticleSlug(str: string): string {
-  return str
-    .trim()
-    .toLowerCase()
-    .replace(/ /g, "_")
-    .replace(/_{2,}/g, "_") || "category";
+  return str.trim().toLowerCase().replace(/ /g, "_").replace(/_{2,}/g, "_") || "category";
 }
 
 // The 12 primary domain root categories in WikiOS
 const DOMAIN_CATEGORIES = [
-  { name: "Countries", description: "Nations, sovereign states, dependent territories, and geopolitical entities." },
-  { name: "Economy", description: "Economic systems, international trade, currencies, financial markets, and industry." },
-  { name: "Government", description: "Political systems, constitutional structures, governance, and public administration." },
-  { name: "Military", description: "Armed forces branches, military equipment, defense doctrines, and historic conflicts." },
-  { name: "People", description: "Demographics, ethnic groups, linguistics, notable figures, and social structures." },
-  { name: "Politics", description: "Elections, political movements, political parties, alliances, and diplomacy." },
-  { name: "History", description: "Historical events, timelines, ancient eras, revolutions, and world history." },
-  { name: "Geography", description: "Physical geography, continents, mountain ranges, bodies of water, and climates." },
-  { name: "Culture", description: "Art, architecture, music, folklore, cuisine, holidays, and cultural traditions." },
-  { name: "Technology", description: "Science, technological development, aerospace, transport, and research institutions." },
-  { name: "Companies", description: "Commercial enterprises, conglomerates, state-owned corporations, and market leaders." },
-  { name: "Nature", description: "Flora, fauna, nature reserves, ecosystems, and natural phenomena across the world." },
+  {
+    name: "Countries",
+    description: "Nations, sovereign states, dependent territories, and geopolitical entities.",
+  },
+  {
+    name: "Economy",
+    description:
+      "Economic systems, international trade, currencies, financial markets, and industry.",
+  },
+  {
+    name: "Government",
+    description:
+      "Political systems, constitutional structures, governance, and public administration.",
+  },
+  {
+    name: "Military",
+    description:
+      "Armed forces branches, military equipment, defense doctrines, and historic conflicts.",
+  },
+  {
+    name: "People",
+    description:
+      "Demographics, ethnic groups, linguistics, notable figures, and social structures.",
+  },
+  {
+    name: "Politics",
+    description: "Elections, political movements, political parties, alliances, and diplomacy.",
+  },
+  {
+    name: "History",
+    description: "Historical events, timelines, ancient eras, revolutions, and world history.",
+  },
+  {
+    name: "Geography",
+    description: "Physical geography, continents, mountain ranges, bodies of water, and climates.",
+  },
+  {
+    name: "Culture",
+    description: "Art, architecture, music, folklore, cuisine, holidays, and cultural traditions.",
+  },
+  {
+    name: "Technology",
+    description:
+      "Science, technological development, aerospace, transport, and research institutions.",
+  },
+  {
+    name: "Companies",
+    description:
+      "Commercial enterprises, conglomerates, state-owned corporations, and market leaders.",
+  },
+  {
+    name: "Nature",
+    description:
+      "Flora, fauna, nature reserves, ecosystems, and natural phenomena across the world.",
+  },
 ];
 
 const DOMAIN_SUB_PATTERNS: Record<string, string[]> = {
   People: [
-    "people", "politicians", "monarchs", "presidents", "prime_ministers",
-    "biography", "living_people", "nobility", "citizens", "rulers", "leaders",
-    "scientists", "writers", "artists", "ministers", "diplomats", "philosophers"
+    "people",
+    "politicians",
+    "monarchs",
+    "presidents",
+    "prime_ministers",
+    "biography",
+    "living_people",
+    "nobility",
+    "citizens",
+    "rulers",
+    "leaders",
+    "scientists",
+    "writers",
+    "artists",
+    "ministers",
+    "diplomats",
+    "philosophers",
   ],
   Economy: [
-    "economy", "companies", "currencies", "trade", "banks", "industry",
-    "agriculture", "transport", "infrastructure", "finance", "business"
+    "economy",
+    "companies",
+    "currencies",
+    "trade",
+    "banks",
+    "industry",
+    "agriculture",
+    "transport",
+    "infrastructure",
+    "finance",
+    "business",
   ],
   Government: [
-    "government", "politics", "ministries", "law", "elections", "parliament",
-    "judiciary", "constitution", "agencies", "foreign_relations"
+    "government",
+    "politics",
+    "ministries",
+    "law",
+    "elections",
+    "parliament",
+    "judiciary",
+    "constitution",
+    "agencies",
+    "foreign_relations",
   ],
   Military: [
-    "military", "armed_forces", "wars", "battles", "equipment", "navy",
-    "army", "air_force", "weapons", "fortifications"
+    "military",
+    "armed_forces",
+    "wars",
+    "battles",
+    "equipment",
+    "navy",
+    "army",
+    "air_force",
+    "weapons",
+    "fortifications",
   ],
   Geography: [
-    "geography", "cities", "rivers", "islands", "mountains", "regions",
-    "provinces", "settlements", "lakes", "oceans", "landmarks"
+    "geography",
+    "cities",
+    "rivers",
+    "islands",
+    "mountains",
+    "regions",
+    "provinces",
+    "settlements",
+    "lakes",
+    "oceans",
+    "landmarks",
   ],
   History: [
-    "history", "empires", "treaties", "ancient", "medieval", "dynasties",
-    "conflicts", "chronology"
+    "history",
+    "empires",
+    "treaties",
+    "ancient",
+    "medieval",
+    "dynasties",
+    "conflicts",
+    "chronology",
   ],
   Culture: [
-    "culture", "music", "religion", "language", "art", "cinema",
-    "literature", "festivals", "cuisine", "sports"
+    "culture",
+    "music",
+    "religion",
+    "language",
+    "art",
+    "cinema",
+    "literature",
+    "festivals",
+    "cuisine",
+    "sports",
   ],
   Technology: [
-    "technology", "science", "aerospace", "computing", "inventions",
-    "energy", "telecommunications"
+    "technology",
+    "science",
+    "aerospace",
+    "computing",
+    "inventions",
+    "energy",
+    "telecommunications",
   ],
-  Companies: [
-    "companies", "corporations", "enterprises", "brands", "manufacturers"
-  ],
+  Companies: ["companies", "corporations", "enterprises", "brands", "manufacturers"],
   Nature: [
-    "nature", "flora", "fauna", "animals", "plants", "ecosystems",
-    "wildlife", "parks", "species"
+    "nature",
+    "flora",
+    "fauna",
+    "animals",
+    "plants",
+    "ecosystems",
+    "wildlife",
+    "parks",
+    "species",
   ],
 };
 
@@ -133,11 +244,15 @@ async function seedCategories() {
     const categoryRegex = /\[\[Category:([^\]|]+)(?:\|[^\]]*)?\]\]/gi;
 
     const categoryNames = new Set<string>();
-    const memberships: Array<{ articleId: string; categorySlug: string; categoryName: string }> = [];
+    const memberships: Array<{ articleId: string; categorySlug: string; categoryName: string }> =
+      [];
 
     for (const art of articles) {
       if (art.namespace === 14 || art.title.startsWith("Category:")) {
-        const catName = art.title.replace(/^Category:/i, "").trim().replace(/_/g, " ");
+        const catName = art.title
+          .replace(/^Category:/i, "")
+          .trim()
+          .replace(/_/g, " ");
         if (catName) {
           categoryNames.add(catName);
         }
@@ -169,10 +284,14 @@ async function seedCategories() {
       }
     }
 
-    console.log(`   Found ${categoryNames.size} distinct categories across ${memberships.length} citations.`);
+    console.log(
+      `   Found ${categoryNames.size} distinct categories across ${memberships.length} citations.`
+    );
 
     // 4. Batch Upsert all discovered categories into PostgreSQL `wiki_categories`
-    console.log(`\n💾 4. Upserting ${categoryNames.size} categories into PostgreSQL \`wiki_categories\`...`);
+    console.log(
+      `\n💾 4. Upserting ${categoryNames.size} categories into PostgreSQL \`wiki_categories\`...`
+    );
     let catUpserted = 0;
 
     for (const name of categoryNames) {
@@ -206,12 +325,16 @@ async function seedCategories() {
 
       for (const [slug, id] of categoryMap.entries()) {
         if (slug === parentSlug) continue;
-        const matchesPattern = patterns.some((p) => slug.includes(p) || slug.startsWith(`${parentSlug}_`));
+        const matchesPattern = patterns.some(
+          (p) => slug.includes(p) || slug.startsWith(`${parentSlug}_`)
+        );
         if (matchesPattern) {
-          await db.wikiCategory.update({
-            where: { id },
-            data: { parentId },
-          }).catch(() => {});
+          await db.wikiCategory
+            .update({
+              where: { id },
+              data: { parentId },
+            })
+            .catch(() => {});
           hierarchyLinked++;
         }
       }
@@ -219,7 +342,9 @@ async function seedCategories() {
     console.log(`   ✅ Linked ${hierarchyLinked} category hierarchy DAG nodes.`);
 
     // 6. Bulk Insert Memberships into PostgreSQL `wiki_category_members`
-    console.log(`\n🔗 6. Writing ${memberships.length} article memberships into \`wiki_category_members\`...`);
+    console.log(
+      `\n🔗 6. Writing ${memberships.length} article memberships into \`wiki_category_members\`...`
+    );
     const uniqueMembers = new Map<string, { categoryId: string; articleId: string }>();
 
     for (const m of memberships) {
@@ -257,7 +382,6 @@ async function seedCategories() {
     console.log(`   - Total Categories in PostgreSQL:  ${categoryMap.size.toLocaleString()}`);
     console.log(`   - Total Memberships in PostgreSQL: ${memberData.length.toLocaleString()}`);
     console.log("==================================================================");
-
   } catch (err) {
     console.error("❌ Fatal error during category seeding:", err);
   } finally {

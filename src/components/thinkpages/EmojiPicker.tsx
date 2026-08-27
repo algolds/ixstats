@@ -1,7 +1,18 @@
 "use client";
 
 import React, { useState, useMemo, useRef } from "react";
-import { Emoji as Smile, Search, SystemRestart as Loader2, Emoji as Cat, Shop as Pizza, Trophy, Airplane as Plane, LightBulb as Lightbulb, Heart, WhiteFlag as Flag } from "iconoir-react";
+import {
+  Emoji as Smile,
+  Search,
+  SystemRestart as Loader2,
+  Emoji as Cat,
+  Shop as Pizza,
+  Trophy,
+  Airplane as Plane,
+  LightBulb as Lightbulb,
+  Heart,
+  WhiteFlag as Flag,
+} from "iconoir-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -473,7 +484,7 @@ export function EmojiPicker({
     if (!searchQuery) return discordEmojis;
     const query = searchQuery.toLowerCase();
     return discordEmojis.filter((emoji) => emoji.name.toLowerCase().includes(query));
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [discordEmojis, searchQuery]);
 
   const handleSelectUnicode = (emojiChar: string) => {
@@ -545,7 +556,7 @@ export function EmojiPicker({
             placeholder="Search emojis..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="border-input bg-secondary text-foreground h-8 pl-8 text-xs focus:bg-secondary/80"
+            className="border-input bg-secondary text-foreground focus:bg-secondary/80 h-8 pl-8 text-xs"
           />
         </div>
 
@@ -580,10 +591,7 @@ export function EmojiPicker({
         </div>
 
         {/* Picker Content Area */}
-        <div
-          ref={scrollRef}
-          className="thin-scrollbar max-h-60 overflow-y-auto p-2"
-        >
+        <div ref={scrollRef} className="thin-scrollbar max-h-60 overflow-y-auto p-2">
           {activeTab === "unicode" ? (
             filteredUnicodeCategories.length > 0 ? (
               <div className="space-y-3 pb-8">

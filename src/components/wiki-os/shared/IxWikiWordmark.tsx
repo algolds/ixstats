@@ -28,11 +28,13 @@ export function IxWikiWordmark({
   return (
     <span
       className={cn(
-        "font-['SangBleu_Empire',serif] font-bold inline-flex items-baseline select-none text-foreground subpixel-antialiased",
+        "text-foreground inline-flex items-baseline font-['SangBleu_Empire',serif] font-bold subpixel-antialiased select-none",
         sizeClasses[size],
         className
       )}
-      style={{ fontFamily: 'var(--font-sangbleu-empire), "SangBleu Empire", "SangBleu", Georgia, serif' }}
+      style={{
+        fontFamily: 'var(--font-sangbleu-empire), "SangBleu Empire", "SangBleu", Georgia, serif',
+      }}
       {...props}
     >
       {highlightIx ? (

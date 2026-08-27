@@ -13,12 +13,13 @@ import {
   protectedProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
-import { wikiCacheService, cleanWikitextForDisplay } from "~/lib/wiki-os/adapters/ixstates/cache-service";
+import {
+  wikiCacheService,
+  cleanWikitextForDisplay,
+} from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { extractDataFromWikiSections } from "~/lib/builder/wiki-data-extractor";
 import { getArticleWikitext, getCategoryMembers } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import {
-  type WikiSource,
-} from "~/lib/wiki-os/config";
+import { type WikiSource } from "~/lib/wiki-os/config";
 
 export const wikiCacheRouter = createTRPCRouter({
   /**
@@ -132,7 +133,7 @@ export const wikiCacheRouter = createTRPCRouter({
         );
         const rawMembers = Array.isArray(membersResult)
           ? membersResult
-          : (membersResult as any)?.members ?? [];
+          : ((membersResult as any)?.members ?? []);
         const categoryPages = rawMembers
           .map((m: { title: string }) => m.title)
           .filter((t: string) => Boolean(t) && !t.startsWith("Category:"));

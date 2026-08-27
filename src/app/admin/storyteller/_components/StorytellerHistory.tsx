@@ -71,42 +71,41 @@ export function StorytellerHistory() {
               // ignore parse errors
             }
 
-              return (
-                <div
-                  key={log.id}
-                  className="facet-hierarchy-child border-border/20 hover:bg-muted/15 rounded-lg border p-3 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={`text-xs ${colorClass}`}>
-                        {log.action.replace(/_/g, " ")}
-                      </Badge>
-                    </div>
-                    <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                      <Clock className="h-3 w-3" />
-                      {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
-                    </span>
+            return (
+              <div
+                key={log.id}
+                className="facet-hierarchy-child border-border/20 hover:bg-muted/15 rounded-lg border p-3 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className={`text-xs ${colorClass}`}>
+                      {log.action.replace(/_/g, " ")}
+                    </Badge>
                   </div>
-                  <div className="mt-1.5 flex items-center gap-2 text-xs">
-                    <User className="text-muted-foreground h-3 w-3" />
-                    <span className="text-muted-foreground">{log.adminName}</span>
-                  </div>
-                  {details && (
-                    <div className="text-muted-foreground mt-1 text-xs">
-                      {Object.entries(details)
-                        .filter(([k]) => k !== "eventId" && k !== "countryId")
-                        .map(([k, v]) => (
-                          <span key={k} className="mr-3">
-                            <span className="font-medium">{k}:</span>{" "}
-                            {typeof v === "number" ? v.toLocaleString() : String(v)}
-                          </span>
-                        ))}
-                    </div>
-                  )}
+                  <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                    <Clock className="h-3 w-3" />
+                    {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                  </span>
                 </div>
-              );
-            }
-          )}
+                <div className="mt-1.5 flex items-center gap-2 text-xs">
+                  <User className="text-muted-foreground h-3 w-3" />
+                  <span className="text-muted-foreground">{log.adminName}</span>
+                </div>
+                {details && (
+                  <div className="text-muted-foreground mt-1 text-xs">
+                    {Object.entries(details)
+                      .filter(([k]) => k !== "eventId" && k !== "countryId")
+                      .map(([k, v]) => (
+                        <span key={k} className="mr-3">
+                          <span className="font-medium">{k}:</span>{" "}
+                          {typeof v === "number" ? v.toLocaleString() : String(v)}
+                        </span>
+                      ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </ScrollArea>
     </div>

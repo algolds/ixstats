@@ -7,10 +7,7 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Xmark as X,
-  Compass,
-} from "iconoir-react";
+import { Xmark as X, Compass } from "iconoir-react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { LORE_DIMENSIONS } from "../tabs/MarginThreadsTab";
 
@@ -71,12 +68,12 @@ export function MarginCategoryHelpModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", stiffness: 450, damping: 32 }}
-            className="relative w-full max-w-lg rounded-3xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 shadow-2xl backdrop-blur-2xl text-[var(--wikios-text)] overflow-hidden flex flex-col max-h-[85vh]"
+            className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 text-[var(--wikios-text)] shadow-2xl backdrop-blur-2xl"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4.5 border-b border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/40">
+            <div className="flex items-center justify-between border-b border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/40 p-4.5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-yellow-400/60 bg-margin-accent text-stone-950 shadow-[0_0_14px_rgba(254,240,54,0.4)] font-bold">
+                <div className="bg-margin-accent flex h-10 w-10 items-center justify-center rounded-2xl border border-yellow-400/60 font-bold text-stone-950 shadow-[0_0_14px_rgba(254,240,54,0.4)]">
                   <Compass className="h-5 w-5" />
                 </div>
                 <div>
@@ -93,7 +90,7 @@ export function MarginCategoryHelpModal({
                   soundEffects.release();
                   onClose();
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-95 transition-all cursor-pointer shadow-xs"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] text-[var(--wikios-text-dim)] shadow-xs transition-all hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
                 title="Close"
               >
                 <X className="h-4 w-4" />
@@ -101,35 +98,38 @@ export function MarginCategoryHelpModal({
             </div>
 
             {/* Scrollable Category Cards */}
-            <div className="p-5 overflow-y-auto space-y-3 text-xs scrollbar-thin">
-              <p className="text-[11.5px] text-[var(--wikios-text-muted)] leading-relaxed pb-1">
-                Discussions in Margin are categorized into five core dimensions to keep worldbuilding structured and easy to search:
+            <div className="scrollbar-thin space-y-3 overflow-y-auto p-5 text-xs">
+              <p className="pb-1 text-[11.5px] leading-relaxed text-[var(--wikios-text-muted)]">
+                Discussions in Margin are categorized into five core dimensions to keep
+                worldbuilding structured and easy to search:
               </p>
 
               {LORE_DIMENSIONS.map((dim) => (
                 <div
                   key={dim.id}
-                  className="p-3.5 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 space-y-1.5 transition-colors hover:border-[var(--wikios-border)]/80"
+                  className="space-y-1.5 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 p-3.5 transition-colors hover:border-[var(--wikios-border)]/80"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-base">{dim.emoji}</span>
-                      <span className="font-bold text-xs text-[var(--wikios-text)]">
+                      <span className="text-xs font-bold text-[var(--wikios-text)]">
                         {dim.label}
                       </span>
                     </div>
                     <span
                       style={{
-                        backgroundColor: dim.color === "#fef036" ? "rgba(254, 240, 54, 0.25)" : `${dim.color}20`,
-                        borderColor: dim.color === "#fef036" ? "rgba(250, 204, 21, 0.6)" : `${dim.color}50`,
+                        backgroundColor:
+                          dim.color === "#fef036" ? "rgba(254, 240, 54, 0.25)" : `${dim.color}20`,
+                        borderColor:
+                          dim.color === "#fef036" ? "rgba(250, 204, 21, 0.6)" : `${dim.color}50`,
                         color: dim.color === "#fef036" ? "var(--wikios-text)" : dim.color,
                       }}
-                      className="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                      className="rounded-full border px-2 py-0.5 text-[10px] font-bold"
                     >
                       {dim.short}
                     </span>
                   </div>
-                  <p className="text-[11px] text-[var(--wikios-text-dim)] leading-relaxed">
+                  <p className="text-[11px] leading-relaxed text-[var(--wikios-text-dim)]">
                     {dim.desc}.
                   </p>
                 </div>
@@ -137,14 +137,14 @@ export function MarginCategoryHelpModal({
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/40 flex justify-end">
+            <div className="flex justify-end border-t border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/40 p-4">
               <button
                 type="button"
                 onClick={() => {
                   soundEffects.press();
                   onClose();
                 }}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-stone-950 bg-margin-accent hover:bg-margin-accent/90 active:scale-95 transition-all shadow-md cursor-pointer"
+                className="bg-margin-accent hover:bg-margin-accent/90 cursor-pointer rounded-xl px-5 py-2 text-xs font-bold text-stone-950 shadow-md transition-all active:scale-95"
               >
                 Got it
               </button>

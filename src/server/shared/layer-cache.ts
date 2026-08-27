@@ -37,7 +37,6 @@ export function clearLayerCache(layerType?: string): void {
   }
 }
 
-
 // ──────────────────────────────────────────────
 // Generic in-memory cache for static catalogs & reference definitions.
 // ──────────────────────────────────────────────
@@ -80,4 +79,3 @@ export function invalidateCatalogCache(keyOrPattern?: string): void {
     catalogCache.delete(keyOrPattern);
   }
 }
-

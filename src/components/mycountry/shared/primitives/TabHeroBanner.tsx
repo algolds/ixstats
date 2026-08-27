@@ -4,7 +4,6 @@ import React from "react";
 import type { ImageContext } from "~/lib/media";
 import { cn } from "~/lib/utils";
 
-
 /** Map accent color names to gradient classes */
 const ACCENT_GRADIENTS: Record<string, string> = {
   emerald: "from-emerald-600/12 via-emerald-600/5 to-transparent",

@@ -204,86 +204,86 @@ export function StashSection({
       <div className="border-border/40 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
         {/* Sub-tab Toggle buttons */}
         <div className="bg-secondary/15 border-border/20 flex gap-1 rounded-lg border p-1 select-none">
-            <button
-              onClick={() => setStashTab("saved")}
-              className={cn(
-                "rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer",
-                stashTab === "saved"
-                  ? "bg-onoma-primary/10 text-onoma-primary shadow-[inset_0_1px_0_rgba(0,145,255,0.15)] dark:text-onoma-primary-light font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Saved Items
-            </button>
-            <button
-              onClick={() => setStashTab("lexicon")}
-              className={cn(
-                "rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer",
-                stashTab === "lexicon"
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)] font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Lexicon Dictionary
-            </button>
-            <button
-              onClick={() => setStashTab("history")}
-              className={cn(
-                "rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer",
-                stashTab === "history"
-                  ? "bg-onoma-primary/10 text-onoma-primary shadow-[inset_0_1px_0_rgba(0,145,255,0.15)] dark:text-onoma-primary-light font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Generation History
-            </button>
-          </div>
-
-          {stashTab === "saved" && (
-            <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
-              {/* Upload .txt files (one dictionary per file) */}
-              <ImportStashPanel />
-
-              {/* Folder filter dropdown */}
-              <div className="relative w-full sm:w-44">
-                <Select value={selectedStashFilterId} onValueChange={setSelectedStashFilterId}>
-                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-xs transition-colors focus:border-onoma-primary/50 focus:ring-1 focus:ring-onoma-primary/50 focus:outline-none">
-                    <SelectValue placeholder="All Folders" />
-                  </SelectTrigger>
-                  <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
-                    <SelectItem
-                      value="all"
-                      className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
-                    >
-                      📁 All Folders
-                    </SelectItem>
-                    {stashesQuery.data?.map((s) => (
-                      <SelectItem
-                        key={s.id}
-                        value={s.id}
-                        className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
-                      >
-                        📁 {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Search Input */}
-              <div className="relative w-full sm:w-56">
-                <Search className="text-muted-foreground absolute top-2.5 left-3 h-4 w-4" />
-                <input
-                  type="text"
-                  placeholder="Search saved items..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="border-border/60 bg-background text-foreground placeholder-muted-foreground w-full rounded-lg border py-2 pr-4 pl-9 text-xs focus:border-onoma-primary/50 focus:ring-1 focus:ring-onoma-primary/50 focus:outline-none"
-                />
-              </div>
-            </div>
-          )}
+          <button
+            onClick={() => setStashTab("saved")}
+            className={cn(
+              "cursor-pointer rounded-md px-3 py-1 text-xs font-semibold transition-all",
+              stashTab === "saved"
+                ? "bg-onoma-primary/10 text-onoma-primary dark:text-onoma-primary-light font-bold shadow-[inset_0_1px_0_rgba(0,145,255,0.15)]"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Saved Items
+          </button>
+          <button
+            onClick={() => setStashTab("lexicon")}
+            className={cn(
+              "cursor-pointer rounded-md px-3 py-1 text-xs font-semibold transition-all",
+              stashTab === "lexicon"
+                ? "bg-emerald-500/10 font-bold text-emerald-600 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)] dark:text-emerald-400"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Lexicon Dictionary
+          </button>
+          <button
+            onClick={() => setStashTab("history")}
+            className={cn(
+              "cursor-pointer rounded-md px-3 py-1 text-xs font-semibold transition-all",
+              stashTab === "history"
+                ? "bg-onoma-primary/10 text-onoma-primary dark:text-onoma-primary-light font-bold shadow-[inset_0_1px_0_rgba(0,145,255,0.15)]"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Generation History
+          </button>
         </div>
+
+        {stashTab === "saved" && (
+          <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
+            {/* Upload .txt files (one dictionary per file) */}
+            <ImportStashPanel />
+
+            {/* Folder filter dropdown */}
+            <div className="relative w-full sm:w-44">
+              <Select value={selectedStashFilterId} onValueChange={setSelectedStashFilterId}>
+                <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground focus:border-onoma-primary/50 focus:ring-onoma-primary/50 flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-xs transition-colors focus:ring-1 focus:outline-none">
+                  <SelectValue placeholder="All Folders" />
+                </SelectTrigger>
+                <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
+                  <SelectItem
+                    value="all"
+                    className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
+                  >
+                    📁 All Folders
+                  </SelectItem>
+                  {stashesQuery.data?.map((s) => (
+                    <SelectItem
+                      key={s.id}
+                      value={s.id}
+                      className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
+                    >
+                      📁 {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative w-full sm:w-56">
+              <Search className="text-muted-foreground absolute top-2.5 left-3 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Search saved items..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="border-border/60 bg-background text-foreground placeholder-muted-foreground focus:border-onoma-primary/50 focus:ring-onoma-primary/50 w-full rounded-lg border py-2 pr-4 pl-9 text-xs focus:ring-1 focus:outline-none"
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       {stashTab === "history" ? (
         <HistorySection hideHeader={true} onLoadToStudio={onLoadToStudio} />

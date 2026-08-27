@@ -121,10 +121,13 @@ export function NationalIssuesPanel() {
 
   const evaluateIssues = api.nationalIssues.triggerEvaluation.useMutation();
 
-  const { data: issuesData, isLoading: isIssuesLoading, refetch: refetchIssues } =
-    api.nationalIssues.getActiveIssues.useQuery({
-      limit: 50,
-    });
+  const {
+    data: issuesData,
+    isLoading: isIssuesLoading,
+    refetch: refetchIssues,
+  } = api.nationalIssues.getActiveIssues.useQuery({
+    limit: 50,
+  });
 
   const handleGlobalRefresh = () => {
     void refetchTemplates();
@@ -150,48 +153,66 @@ export function NationalIssuesPanel() {
 
       {/* Global Stat Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Total Evaluations</p>
-          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">{stats?.totalEvaluations ?? "—"}</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Total Evaluations
+          </p>
+          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+            {stats?.totalEvaluations ?? "—"}
+          </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Generated (7d)</p>
-          <p className="text-cyan-400 mt-1 font-mono text-xl font-bold tracking-tight">{stats?.totalIssuesGenerated ?? "—"}</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Generated (7d)
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
+            {stats?.totalIssuesGenerated ?? "—"}
+          </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Avg Exec Time</p>
-          <p className="text-emerald-400 mt-1 font-mono text-xl font-bold tracking-tight">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Avg Exec Time
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
             {stats?.avgExecutionTime ? `${stats.avgExecutionTime}ms` : "—"}
           </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Top Domain</p>
-          <p className="text-purple-400 mt-1 font-mono text-xl font-bold tracking-tight">
-            {stats?.domainStats?.[0]?.domain ? String(stats.domainStats[0].domain).toUpperCase() : "—"}
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Top Domain
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
+            {stats?.domainStats?.[0]?.domain
+              ? String(stats.domainStats[0].domain).toUpperCase()
+              : "—"}
           </p>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(val: string) => setActiveTab(val as any)} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={(val: string) => setActiveTab(val as any)}
+        className="w-full"
+      >
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <TabsList className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md sm:w-auto">
             <TabsTrigger
               value="templates"
-              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               <Newspaper className="h-3.5 w-3.5" />
               Templates ({templatesData?.templates?.length ?? 0})
             </TabsTrigger>
             <TabsTrigger
               value="issues"
-              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               <Play className="h-3.5 w-3.5 text-cyan-400" />
               Active Instances ({issuesData?.issues?.length ?? 0})
             </TabsTrigger>
             <TabsTrigger
               value="engine"
-              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               <Sliders className="h-3.5 w-3.5 text-amber-400" />
               Engine Configuration
@@ -202,7 +223,7 @@ export function NationalIssuesPanel() {
             <Button
               size="sm"
               onClick={() => setEditorSheet({ isOpen: true, templateId: null })}
-              className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               New Template
@@ -211,44 +232,62 @@ export function NationalIssuesPanel() {
         </div>
 
         {/* Templates Tab */}
-        <TabsContent value="templates" className="mt-4 focus-visible:outline-none space-y-4">
+        <TabsContent value="templates" className="mt-4 space-y-4 focus-visible:outline-none">
           <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
-            <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <div className="relative max-w-sm min-w-[200px] flex-1">
               <Input
                 placeholder="Search templates..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-8 rounded-xl border-border/30 bg-background/50 pl-3 text-xs backdrop-blur-md focus:border-border/60"
+                className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-3 text-xs backdrop-blur-md"
               />
             </div>
             <Select value={domainFilter} onValueChange={setDomainFilter}>
-              <SelectTrigger className="h-8 w-44 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+              <SelectTrigger className="border-border/30 bg-background/50 h-8 w-44 rounded-xl text-xs backdrop-blur-md">
                 <SelectValue placeholder="All Domains" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="text-xs">All Domains</SelectItem>
-                <SelectItem value="economic" className="text-xs">Economic</SelectItem>
-                <SelectItem value="political" className="text-xs">Political</SelectItem>
-                <SelectItem value="social" className="text-xs">Social</SelectItem>
-                <SelectItem value="military" className="text-xs">Military</SelectItem>
-                <SelectItem value="diplomatic" className="text-xs">Diplomatic</SelectItem>
-                <SelectItem value="infrastructure" className="text-xs">Infrastructure</SelectItem>
-                <SelectItem value="environmental" className="text-xs">Environmental</SelectItem>
+                <SelectItem value="all" className="text-xs">
+                  All Domains
+                </SelectItem>
+                <SelectItem value="economic" className="text-xs">
+                  Economic
+                </SelectItem>
+                <SelectItem value="political" className="text-xs">
+                  Political
+                </SelectItem>
+                <SelectItem value="social" className="text-xs">
+                  Social
+                </SelectItem>
+                <SelectItem value="military" className="text-xs">
+                  Military
+                </SelectItem>
+                <SelectItem value="diplomatic" className="text-xs">
+                  Diplomatic
+                </SelectItem>
+                <SelectItem value="infrastructure" className="text-xs">
+                  Infrastructure
+                </SelectItem>
+                <SelectItem value="environmental" className="text-xs">
+                  Environmental
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {isTemplatesLoading ? (
-            <div className="p-8 text-center text-xs text-muted-foreground">Loading templates...</div>
+            <div className="text-muted-foreground p-8 text-center text-xs">
+              Loading templates...
+            </div>
           ) : templatesData?.templates?.length === 0 ? (
-            <div className="rounded-2xl border border-border/30 bg-card/25 p-12 text-center backdrop-blur-md">
-              <p className="text-xs text-muted-foreground">No issue templates matching criteria.</p>
+            <div className="border-border/30 bg-card/25 rounded-2xl border p-12 text-center backdrop-blur-md">
+              <p className="text-muted-foreground text-xs">No issue templates matching criteria.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-border/30 bg-card/25 backdrop-blur-md shadow-xs">
+            <div className="border-border/30 bg-card/25 overflow-x-auto rounded-2xl border shadow-xs backdrop-blur-md">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-border/30 bg-muted/20 text-muted-foreground font-semibold">
+                  <tr className="border-border/30 bg-muted/20 text-muted-foreground border-b font-semibold">
                     <th className="px-4 py-2.5 text-left font-medium">Issue Title & Description</th>
                     <th className="px-4 py-2.5 text-left font-medium">Domain</th>
                     <th className="px-4 py-2.5 text-left font-medium">Severity</th>
@@ -256,33 +295,39 @@ export function NationalIssuesPanel() {
                     <th className="px-4 py-2.5 text-right font-medium">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/15">
+                <tbody className="divide-border/15 divide-y">
                   {templatesData?.templates?.map((t: any) => (
                     <tr key={t.id} className="hover:bg-foreground/[0.02] transition-colors">
                       <td className="px-4 py-2.5">
-                        <div className="font-semibold text-foreground">{t.title}</div>
-                        <div className="text-muted-foreground text-[11px] truncate max-w-sm">{t.description}</div>
+                        <div className="text-foreground font-semibold">{t.title}</div>
+                        <div className="text-muted-foreground max-w-sm truncate text-[11px]">
+                          {t.description}
+                        </div>
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase ${DOMAIN_COLORS[t.domain] || ""}`}>
+                        <span
+                          className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase ${DOMAIN_COLORS[t.domain] || ""}`}
+                        >
                           {t.domain}
                         </span>
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase ${SEVERITY_COLORS[t.severity] || ""}`}>
+                        <span
+                          className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase ${SEVERITY_COLORS[t.severity] || ""}`}
+                        >
                           {t.severity}
                         </span>
                       </td>
                       <td className="px-4 py-2.5">
                         <button
                           onClick={() => toggleTemplate.mutate({ id: t.id, isActive: !t.isActive })}
-                          className="active:scale-[0.98] transition-transform"
+                          className="transition-transform active:scale-[0.98]"
                           title="Toggle Status"
                         >
                           {t.isActive ? (
                             <ToggleRight className="h-5 w-5 text-emerald-400" />
                           ) : (
-                            <ToggleLeft className="h-5 w-5 text-muted-foreground" />
+                            <ToggleLeft className="text-muted-foreground h-5 w-5" />
                           )}
                         </button>
                       </td>
@@ -321,33 +366,41 @@ export function NationalIssuesPanel() {
         {/* Active Issues Tab */}
         <TabsContent value="issues" className="mt-4 focus-visible:outline-none">
           {isIssuesLoading ? (
-            <div className="p-8 text-center text-xs text-muted-foreground">Loading active instances...</div>
+            <div className="text-muted-foreground p-8 text-center text-xs">
+              Loading active instances...
+            </div>
           ) : issuesData?.issues?.length === 0 ? (
-            <div className="rounded-2xl border border-border/30 bg-card/25 p-12 text-center backdrop-blur-md">
-              <p className="text-xs text-muted-foreground">No active national issue instances recorded.</p>
+            <div className="border-border/30 bg-card/25 rounded-2xl border p-12 text-center backdrop-blur-md">
+              <p className="text-muted-foreground text-xs">
+                No active national issue instances recorded.
+              </p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-border/30 bg-card/25 backdrop-blur-md shadow-xs">
+            <div className="border-border/30 bg-card/25 overflow-x-auto rounded-2xl border shadow-xs backdrop-blur-md">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-border/30 bg-muted/20 text-muted-foreground font-semibold">
+                  <tr className="border-border/30 bg-muted/20 text-muted-foreground border-b font-semibold">
                     <th className="px-4 py-2.5 text-left font-medium">Issue Title & Description</th>
                     <th className="px-4 py-2.5 text-left font-medium">Nation</th>
                     <th className="px-4 py-2.5 text-left font-medium">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/15">
+                <tbody className="divide-border/15 divide-y">
                   {issuesData?.issues?.map((issue: any) => (
                     <tr key={issue.id} className="hover:bg-foreground/[0.02] transition-colors">
                       <td className="px-4 py-2.5">
-                        <div className="font-semibold text-foreground">{issue.title}</div>
-                        <div className="text-muted-foreground text-[11px] truncate max-w-sm">{issue.description}</div>
+                        <div className="text-foreground font-semibold">{issue.title}</div>
+                        <div className="text-muted-foreground max-w-sm truncate text-[11px]">
+                          {issue.description}
+                        </div>
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-muted-foreground">
+                      <td className="text-muted-foreground px-4 py-2.5 font-mono">
                         {issue.country?.name || issue.countryId}
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_COLORS[issue.status] || ""}`}>
+                        <span
+                          className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_COLORS[issue.status] || ""}`}
+                        >
                           {issue.status}
                         </span>
                       </td>
@@ -362,8 +415,8 @@ export function NationalIssuesPanel() {
         {/* Engine Configuration Tab */}
         <TabsContent value="engine" className="mt-4 focus-visible:outline-none">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md space-y-4">
-              <h3 className="text-foreground flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+            <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 backdrop-blur-md">
+              <h3 className="text-foreground flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
                 <Sliders className="h-4 w-4 text-amber-500" />
                 Issue Generation Engine Limits
               </h3>
@@ -376,7 +429,7 @@ export function NationalIssuesPanel() {
                     max={10}
                     value={maxIssuesPerSession}
                     onChange={(e) => setMaxIssuesPerSession(parseInt(e.target.value) || 1)}
-                    className="h-8 rounded-xl border-border/30 bg-background/50 text-xs font-mono"
+                    className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
                   />
                 </div>
                 <div>
@@ -387,28 +440,28 @@ export function NationalIssuesPanel() {
                     max={20}
                     value={maxIssuesPerWeek}
                     onChange={(e) => setMaxIssuesPerWeek(parseInt(e.target.value) || 1)}
-                    className="h-8 rounded-xl border-border/30 bg-background/50 text-xs font-mono"
+                    className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
                   />
                 </div>
                 <Button
                   size="sm"
                   onClick={handleSaveEngineLimits}
                   disabled={updateEngineConfig.isPending}
-                  className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+                  className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
                 >
                   {updateEngineConfig.isPending ? "Saving..." : "Save Engine Config"}
                 </Button>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md space-y-4">
-              <h3 className="text-foreground flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+            <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 backdrop-blur-md">
+              <h3 className="text-foreground flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
                 <Play className="h-4 w-4 text-emerald-500" />
                 Live Criteria Evaluation Test
               </h3>
               <div className="space-y-3 text-xs">
                 <Select value={evalCountryId} onValueChange={setEvalCountryId}>
-                  <SelectTrigger className="h-8 rounded-xl border-border/30 bg-background/50 text-xs">
+                  <SelectTrigger className="border-border/30 bg-background/50 h-8 rounded-xl text-xs">
                     <SelectValue placeholder="Select Target Country..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -429,7 +482,7 @@ export function NationalIssuesPanel() {
                       domain: evalDomain !== "all" ? evalDomain : undefined,
                     })
                   }
-                  className="h-8 rounded-xl px-3.5 text-xs active:scale-[0.98] transition-transform"
+                  className="h-8 rounded-xl px-3.5 text-xs transition-transform active:scale-[0.98]"
                 >
                   {evaluateIssues.isPending ? "Evaluating..." : "Evaluate Criteria"}
                 </Button>

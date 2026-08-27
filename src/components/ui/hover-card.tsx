@@ -6,15 +6,11 @@ import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 
-function HoverCard({
-  ...props
-}: React.ComponentProps<typeof HoverCardPrimitive.Root>) {
+function HoverCard({ ...props }: React.ComponentProps<typeof HoverCardPrimitive.Root>) {
   return <HoverCardPrimitive.Root data-slot="hover-card" {...props} />;
 }
 
-function HoverCardTrigger({
-  ...props
-}: React.ComponentProps<typeof HoverCardPrimitive.Trigger>) {
+function HoverCardTrigger({ ...props }: React.ComponentProps<typeof HoverCardPrimitive.Trigger>) {
   return (
     <HoverCardPrimitive.Trigger
       data-cuelume-hover="tick"
@@ -24,12 +20,8 @@ function HoverCardTrigger({
   );
 }
 
-function HoverCardPortal({
-  ...props
-}: React.ComponentProps<typeof HoverCardPrimitive.Portal>) {
-  return (
-    <HoverCardPrimitive.Portal data-slot="hover-card-portal" {...props} />
-  );
+function HoverCardPortal({ ...props }: React.ComponentProps<typeof HoverCardPrimitive.Portal>) {
+  return <HoverCardPrimitive.Portal data-slot="hover-card-portal" {...props} />;
 }
 
 function HoverCardContent({
@@ -61,10 +53,4 @@ function HoverCardContent({
 
 const HoverCardArrow = HoverCardPrimitive.Arrow;
 
-export {
-  HoverCard,
-  HoverCardTrigger,
-  HoverCardContent,
-  HoverCardPortal,
-  HoverCardArrow,
-};
+export { HoverCard, HoverCardTrigger, HoverCardContent, HoverCardPortal, HoverCardArrow };

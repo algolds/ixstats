@@ -1,5 +1,21 @@
 import { ComponentType } from "@prisma/client";
-import { Settings, City as Building2, Group as Users, Shield, Crown, CheckSquare as Vote, Clock, StatUp as TrendingUp, Star, PharmacyCrossCircle as Cross, Suitcase as Briefcase, ScaleFrameEnlarge as Scale, WhiteFlag as Flag, Cpu, Eye } from "iconoir-react";
+import {
+  Settings,
+  City as Building2,
+  Group as Users,
+  Shield,
+  Crown,
+  CheckSquare as Vote,
+  Clock,
+  StatUp as TrendingUp,
+  Star,
+  PharmacyCrossCircle as Cross,
+  Suitcase as Briefcase,
+  ScaleFrameEnlarge as Scale,
+  WhiteFlag as Flag,
+  Cpu,
+  Eye,
+} from "iconoir-react";
 import type { AtomicGovernmentComponent } from "./types";
 
 export const ATOMIC_COMPONENTS_PART_1: Partial<Record<ComponentType, AtomicGovernmentComponent>> = {
@@ -469,5 +485,5 @@ export const ATOMIC_COMPONENTS_PART_1: Partial<Record<ComponentType, AtomicGover
       staffRequired: 20,
       technologyRequired: false,
     },
-  }
+  },
 };

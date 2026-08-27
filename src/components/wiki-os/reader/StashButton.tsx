@@ -204,7 +204,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                         title={s.name}
                         type="button"
                       >
-                        {active && <Check className="h-2.5 w-2.5 wikios-stash-check" />}
+                        {active && <Check className="wikios-stash-check h-2.5 w-2.5" />}
                       </button>
                       <span className="wikios-stash-circle-label">{s.name}</span>
                     </div>
@@ -319,7 +319,11 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
       {/* Inline feedback toast */}
       {feedback && (
         <div className={cn("wikios-stash-feedback", `wikios-stash-feedback-${feedback.type}`)}>
-          {feedback.type === "success" ? <Check className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+          {feedback.type === "success" ? (
+            <Check className="h-3 w-3" />
+          ) : (
+            <AlertCircle className="h-3 w-3" />
+          )}
           {feedback.text}
         </div>
       )}
@@ -355,7 +359,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                       title={s.name}
                       type="button"
                     >
-                      {active && <Check className="h-2.5 w-2.5 wikios-stash-check" />}
+                      {active && <Check className="wikios-stash-check h-2.5 w-2.5" />}
                     </button>
                     <span className="wikios-stash-circle-label">{s.name}</span>
                   </div>

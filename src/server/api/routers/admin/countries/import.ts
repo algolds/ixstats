@@ -12,7 +12,6 @@ import { generateSlug } from "~/lib/utils";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 
 export const adminCountriesImportRouter = createTRPCRouter({
-
   // Get ThinkPages statistics (real DB values)
 
   // Get system status
@@ -176,7 +175,9 @@ export const adminCountriesImportRouter = createTRPCRouter({
         return analysis;
       } catch (error) {
         console.error("Failed to analyze import:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to analyze import file", { cause: error });
+        throw new Error(error instanceof Error ? error.message : "Failed to analyze import file", {
+          cause: error,
+        });
       }
     }),
 

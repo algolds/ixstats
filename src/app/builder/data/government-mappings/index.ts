@@ -11,13 +11,14 @@ import { crisis_governance_mapping } from "./crisis-governance";
 
 export * from "./types";
 
-export const ATOMIC_TO_GOVERNMENT_MAPPING: Partial<Record<ComponentType, AtomicGovernmentMapping>> = {
-  ...power_distribution_mapping,
-  ...institutions_control_mapping,
-  ...economic_governance_mapping,
-  ...administrative_efficiency_mapping,
-  ...social_policy_mapping,
-  ...international_relations_mapping,
-  ...innovation_development_mapping,
-  ...crisis_governance_mapping,
-};
+export const ATOMIC_TO_GOVERNMENT_MAPPING: Partial<Record<ComponentType, AtomicGovernmentMapping>> =
+  {
+    ...power_distribution_mapping,
+    ...institutions_control_mapping,
+    ...economic_governance_mapping,
+    ...administrative_efficiency_mapping,
+    ...social_policy_mapping,
+    ...international_relations_mapping,
+    ...innovation_development_mapping,
+    ...crisis_governance_mapping,
+  };

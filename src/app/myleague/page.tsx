@@ -9,7 +9,18 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Input } from "~/components/ui/input";
-import { Plus, Trophy, Group as Users, Star, Search, ControlSlider as SlidersHorizontal, Calendar, Component as Layers, Link as Link2, Check } from "iconoir-react";
+import {
+  Plus,
+  Trophy,
+  Group as Users,
+  Star,
+  Search,
+  ControlSlider as SlidersHorizontal,
+  Calendar,
+  Component as Layers,
+  Link as Link2,
+  Check,
+} from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { LeagueCreator } from "~/components/sports/league/LeagueCreator";
 import { LeagueCover } from "~/components/sports/LeagueCover";

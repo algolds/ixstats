@@ -2,7 +2,14 @@
 "use client";
 
 import React from "react";
-import { Shield, Group as Users, Archery as Target, Activity, HelpCircle, InfoCircle as Info } from "iconoir-react";
+import {
+  Shield,
+  Group as Users,
+  Archery as Target,
+  Activity,
+  HelpCircle,
+  InfoCircle as Info,
+} from "iconoir-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";

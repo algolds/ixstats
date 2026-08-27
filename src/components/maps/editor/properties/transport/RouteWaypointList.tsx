@@ -1,7 +1,13 @@
 "use client";
 
 import React, { memo } from "react";
-import { Check, Undo as Undo2, Trash as Trash2, MapPin, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Check,
+  Undo as Undo2,
+  Trash as Trash2,
+  MapPin,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 
 interface RouteWaypointListProps {
@@ -34,7 +40,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+        <label className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
           Route Name & Properties
         </label>
         <input
@@ -42,16 +48,16 @@ export const RouteWaypointList = memo(function RouteWaypointList({
           placeholder="e.g. Trans-National Highway 1"
           value={routeName}
           onChange={(e) => setRouteName(e.target.value)}
-          className="w-full rounded-md border border-border/40 bg-background/50 px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+          className="border-border/40 bg-background/50 text-foreground placeholder:text-muted-foreground focus:border-primary w-full rounded-md border px-3 py-1.5 text-xs focus:outline-none"
         />
 
-        <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block pt-1">
+        <label className="text-muted-foreground block pt-1 text-[11px] font-semibold tracking-wider uppercase">
           Route Type
         </label>
         <select
           value={manualRouteType}
           onChange={(e) => setManualRouteType(e.target.value)}
-          className="w-full rounded-md border border-border/40 bg-background/50 px-2 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none"
+          className="border-border/40 bg-background/50 text-foreground focus:border-primary w-full rounded-md border px-2 py-1.5 text-xs focus:outline-none"
         >
           {ROUTE_TYPE_KEYS.map((key) => (
             <option key={key} value={key}>
@@ -63,7 +69,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+          <span className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
             Waypoints ({waypointCount})
           </span>
           <div className="flex items-center gap-1.5">
@@ -71,7 +77,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
               <button
                 type="button"
                 onClick={onUndoWaypoint}
-                className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+                className="text-muted-foreground hover:bg-muted flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px]"
                 title="Undo last waypoint"
               >
                 <Undo2 className="h-3 w-3" /> Undo
@@ -81,7 +87,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
               <button
                 type="button"
                 onClick={onClearWaypoints}
-                className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-destructive hover:bg-destructive/10"
+                className="text-destructive hover:bg-destructive/10 flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px]"
                 title="Clear all waypoints"
               >
                 <Trash2 className="h-3 w-3" /> Clear
@@ -91,21 +97,21 @@ export const RouteWaypointList = memo(function RouteWaypointList({
         </div>
 
         {waypointCount === 0 ? (
-          <div className="rounded-md border border-dashed border-border/60 p-4 text-center text-xs text-muted-foreground">
+          <div className="border-border/60 text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs">
             Click on the map or snap to settlements to place path nodes.
           </div>
         ) : (
-          <div className="max-h-48 overflow-y-auto space-y-1 rounded-md border border-border/30 p-1.5 bg-muted/10">
+          <div className="border-border/30 bg-muted/10 max-h-48 space-y-1 overflow-y-auto rounded-md border p-1.5">
             {routeWaypoints.map((pt, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between text-[11px] py-1 px-2 rounded bg-background/40"
+                className="bg-background/40 flex items-center justify-between rounded px-2 py-1 text-[11px]"
               >
                 <div className="flex items-center gap-1.5">
-                  <MapPin className="h-3 w-3 text-primary shrink-0" />
-                  <span className="font-mono text-muted-foreground">#{idx + 1}</span>
+                  <MapPin className="text-primary h-3 w-3 shrink-0" />
+                  <span className="text-muted-foreground font-mono">#{idx + 1}</span>
                 </div>
-                <span className="font-mono text-[10px] text-muted-foreground">
+                <span className="text-muted-foreground font-mono text-[10px]">
                   {pt[0].toFixed(4)}°, {pt[1].toFixed(4)}°
                 </span>
               </div>
@@ -115,7 +121,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
       </div>
 
       {manualError && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-[11px] text-destructive">
+        <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border p-2 text-[11px]">
           {manualError}
         </div>
       )}
@@ -125,7 +131,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
           type="button"
           disabled={waypointCount < 2 || isSavingManual}
           onClick={() => onFinishRoute(manualRouteType, routeName)}
-          className="w-full flex items-center justify-center gap-1.5 rounded-md bg-emerald-600 py-2 text-xs font-semibold text-white shadow hover:bg-emerald-500 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-emerald-600 py-2 text-xs font-semibold text-white shadow hover:bg-emerald-500 disabled:opacity-50"
         >
           {isSavingManual ? (
             <>

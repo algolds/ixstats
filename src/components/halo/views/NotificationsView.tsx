@@ -9,7 +9,16 @@ import { useNotify } from "~/hooks/useNotify";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useExecutiveNotifications } from "~/context/ExecutiveNotificationContext";
 import { useUser } from "~/context/auth-context";
-import { Bell, BellNotification as BellRing, Xmark as X, CheckCircle, NavArrowRight as ChevronRight, Expand as Maximize2, Compress as Minimize2, ChatBubble as MessageCircle } from "iconoir-react";
+import {
+  Bell,
+  BellNotification as BellRing,
+  Xmark as X,
+  CheckCircle,
+  NavArrowRight as ChevronRight,
+  Expand as Maximize2,
+  Compress as Minimize2,
+  ChatBubble as MessageCircle,
+} from "iconoir-react";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { NotificationsViewProps } from "../types";
 import { PreText } from "~/components/ui/pretext";
@@ -107,9 +116,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const enhancedUnreadCount = enhancedStats.unread || 0;
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const totalAlertsUnreadCount =
-    unreadNotifications +
-    (isExecutiveMode ? executiveUnreadCount : 0) +
-    enhancedUnreadCount;
+    unreadNotifications + (isExecutiveMode ? executiveUnreadCount : 0) + enhancedUnreadCount;
   const totalUnreadCount = totalAlertsUnreadCount + messageUnreadCount;
 
   // Default active tab to whichever has unread, defaulting to alerts
@@ -302,7 +309,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       </div>
 
       {/* Segmented Filter Pills (Notifications vs Messages) */}
-      <div className="mb-3 flex items-center gap-1 rounded-xl border border-black/[0.06] dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] p-1">
+      <div className="mb-3 flex items-center gap-1 rounded-xl border border-black/[0.06] bg-black/[0.03] p-1 dark:border-white/10 dark:bg-white/[0.04]">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isSelected = activeTab === tab.id;
@@ -313,7 +320,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               data-cuelume-hover="tick"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1.5 px-3 text-xs font-semibold transition-all select-none active:scale-[0.97]",
+                "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all select-none active:scale-[0.97]",
                 isSelected
                   ? "text-foreground shadow-2xs"
                   : "text-muted-foreground hover:text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
@@ -322,7 +329,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               {isSelected && (
                 <motion.div
                   layoutId="halo-notif-tab-indicator"
-                  className="absolute inset-0 rounded-lg border border-black/[0.08] dark:border-white/15 bg-white/90 dark:bg-white/[0.12] shadow-xs backdrop-blur-md"
+                  className="absolute inset-0 rounded-lg border border-black/[0.08] bg-white/90 shadow-xs backdrop-blur-md dark:border-white/15 dark:bg-white/[0.12]"
                   transition={{ type: "spring", stiffness: 420, damping: 38 }}
                 />
               )}
@@ -370,7 +377,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                 <p className="text-muted-foreground text-xs font-semibold">No recent messages</p>
                 <Link
                   href="/messages"
-                  className="text-primary hover:underline mt-2 inline-block text-[11px] font-semibold"
+                  className="text-primary mt-2 inline-block text-[11px] font-semibold hover:underline"
                 >
                   Start a diplomatic conversation →
                 </Link>
@@ -469,19 +476,19 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       </div>
 
       {/* Expand / Minimize DI Size Toggle */}
-      <div className="mt-3 flex justify-center border-t border-border/30 pt-2">
+      <div className="border-border/30 mt-3 flex justify-center border-t pt-2">
         <button
           onClick={() => {
             setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
           }}
-          className="text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded-full border border-border/40 shadow-xs transition-all hover:bg-accent/15 active:scale-[0.98]"
+          className="text-muted-foreground hover:text-foreground border-border/40 hover:bg-accent/15 flex h-7 w-7 items-center justify-center rounded-full border shadow-xs transition-all active:scale-[0.98]"
           title={isUltra ? "Standard View" : "Expanded View"}
           aria-label={isUltra ? "Standard View" : "Expanded View"}
         >
           {isUltra ? (
-            <Minimize2 className="h-3.5 w-3.5 text-foreground/70" />
+            <Minimize2 className="text-foreground/70 h-3.5 w-3.5" />
           ) : (
-            <Maximize2 className="h-3.5 w-3.5 text-foreground/70" />
+            <Maximize2 className="text-foreground/70 h-3.5 w-3.5" />
           )}
         </button>
       </div>

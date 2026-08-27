@@ -90,7 +90,7 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
     setShowSearch(false);
     setMatchCount(0);
     setCurrentMatchIndex(-1);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [entries]);
 
   // Find in page search highlighting effect

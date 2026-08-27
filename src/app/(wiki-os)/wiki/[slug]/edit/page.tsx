@@ -24,8 +24,7 @@ export default function WikiOSEditPage() {
   }, [slug]);
 
   const initialMode = (searchParams.get("mode") === "visual" ? "visual" : "source") as
-    | "source"
-    | "visual";
+    "source" | "visual";
 
   const handleClose = useCallback(() => {
     router.push(withBasePath(`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`));

@@ -16,7 +16,17 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
 import { Slider } from "~/components/ui/slider";
-import { Plus, Xmark as X, Group as Users, Settings as Cog, City as Building2, Flask as FlaskConical, MoreHoriz as MoreHorizontal, WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
+import {
+  Plus,
+  Xmark as X,
+  Group as Users,
+  Settings as Cog,
+  City as Building2,
+  Flask as FlaskConical,
+  MoreHoriz as MoreHorizontal,
+  WarningTriangle as AlertTriangle,
+  CheckCircle,
+} from "iconoir-react";
 import type { SubBudgetInput, BudgetType, BudgetPriority } from "~/types/government";
 
 interface SubBudgetManagerProps {

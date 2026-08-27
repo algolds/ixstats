@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { ArrowSeparate as ArrowLeftRight, Hammer as Gavel, Timer, Community as Handshake } from "iconoir-react";
+import {
+  ArrowSeparate as ArrowLeftRight,
+  Hammer as Gavel,
+  Timer,
+  Community as Handshake,
+} from "iconoir-react";
 import {
   ArticleLayout,
   Section,

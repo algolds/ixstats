@@ -3,7 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { FireFlame as Flame, StatUp as TrendingUp, StatDown as TrendingDown, Minus } from "iconoir-react";
+import {
+  FireFlame as Flame,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Minus,
+} from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import { withBasePath } from "~/lib/base-path";

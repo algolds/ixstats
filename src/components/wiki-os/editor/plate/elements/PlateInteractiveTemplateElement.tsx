@@ -20,7 +20,9 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
   const fallbackId = useId();
 
   const templateName = element?.templateName || element?.name || "Template";
-  const classification = element?.classification || (templateName.toLowerCase().startsWith("infobox") ? "infobox" : "standard");
+  const classification =
+    element?.classification ||
+    (templateName.toLowerCase().startsWith("infobox") ? "infobox" : "standard");
   const rawWikitext = element?.rawWikitext || element?.raw || serializeTemplateToWikitext(element);
   const params: Record<string, string> = element?.params || {};
 
@@ -36,7 +38,9 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
       positional: element?.positional,
     });
 
-    const path = (editor as unknown as { findPath: (n: unknown) => number[] | null }).findPath(element);
+    const path = (editor as unknown as { findPath: (n: unknown) => number[] | null }).findPath(
+      element
+    );
     if (path) {
       (editor as unknown as { setNodes: (props: unknown, opts: unknown) => void }).setNodes(
         {
@@ -54,7 +58,9 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
     const { ast } = parse(newWikitext);
     const parsedNode = ast.nodes[0] as any;
 
-    const path = (editor as unknown as { findPath: (n: unknown) => number[] | null }).findPath(element);
+    const path = (editor as unknown as { findPath: (n: unknown) => number[] | null }).findPath(
+      element
+    );
     if (path) {
       (editor as unknown as { setNodes: (props: unknown, opts: unknown) => void }).setNodes(
         {
@@ -71,7 +77,9 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
   // Delete this template block
   const handleDelete = () => {
     if (readOnly) return;
-    const path = (editor as unknown as { findPath: (n: unknown) => number[] | null }).findPath(element);
+    const path = (editor as unknown as { findPath: (n: unknown) => number[] | null }).findPath(
+      element
+    );
     if (path) {
       (editor as unknown as { removeNodes: (opts: unknown) => void }).removeNodes({ at: path });
     }
@@ -86,16 +94,16 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
       {children}
       <div
         contentEditable={false}
-        className="group relative max-w-full overflow-hidden rounded-2xl border border-border/60 bg-card/80 shadow-sm backdrop-blur-sm transition-all hover:border-border"
+        className="group border-border/60 bg-card/80 hover:border-border relative max-w-full overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm transition-all"
       >
         {/* Card Header & Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 bg-secondary/30 px-4 py-2.5">
+        <div className="border-border/40 bg-secondary/30 flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-wiki/15 text-[11px] font-bold text-wiki">
+            <span className="bg-wiki/15 text-wiki flex h-6 w-6 items-center justify-center rounded-lg text-[11px] font-bold">
               {classification === "infobox" ? "IB" : "T"}
             </span>
-            <span className="text-xs font-bold text-foreground break-words">{templateName}</span>
-            <span className="rounded-full bg-secondary/80 px-2 py-0.5 text-[9px] font-medium text-muted-foreground uppercase tracking-wider">
+            <span className="text-foreground text-xs font-bold break-words">{templateName}</span>
+            <span className="bg-secondary/80 text-muted-foreground rounded-full px-2 py-0.5 text-[9px] font-medium tracking-wider uppercase">
               {classification}
             </span>
             {element?.parseState === "incomplete" && (
@@ -108,12 +116,14 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
           {!readOnly && (
             <div className="flex items-center gap-1.5">
               {/* Tab Selector */}
-              <div className="flex rounded-lg bg-secondary/60 p-0.5">
+              <div className="bg-secondary/60 flex rounded-lg p-0.5">
                 <button
                   type="button"
                   onClick={() => setActiveTab("form")}
                   className={`rounded-md px-2 py-1 text-[10px] font-semibold transition-all ${
-                    activeTab === "form" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                    activeTab === "form"
+                      ? "bg-background text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Form
@@ -122,7 +132,9 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                   type="button"
                   onClick={() => setActiveTab("preview")}
                   className={`rounded-md px-2 py-1 text-[10px] font-semibold transition-all ${
-                    activeTab === "preview" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                    activeTab === "preview"
+                      ? "bg-background text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Preview
@@ -131,7 +143,9 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                   type="button"
                   onClick={() => setActiveTab("raw")}
                   className={`rounded-md px-2 py-1 text-[10px] font-semibold transition-all ${
-                    activeTab === "raw" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                    activeTab === "raw"
+                      ? "bg-background text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Wikitext
@@ -152,8 +166,10 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
 
         {/* Tab 1: Form Editing View */}
         {activeTab === "form" && (
-          <div className="p-4 space-y-3">
-            {loading && <div className="text-xs text-muted-foreground">Loading template schema...</div>}
+          <div className="space-y-3 p-4">
+            {loading && (
+              <div className="text-muted-foreground text-xs">Loading template schema...</div>
+            )}
 
             {/* Schema fields */}
             {hasSchema &&
@@ -163,12 +179,12 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 return (
                   <div key={key} className="space-y-1">
                     <div className="flex items-center justify-between text-[11px]">
-                      <label htmlFor={inputId} className="font-semibold text-foreground">
+                      <label htmlFor={inputId} className="text-foreground font-semibold">
                         {meta.label || key}
-                        {meta.required && <span className="ml-1 text-red-500 font-bold">*</span>}
+                        {meta.required && <span className="ml-1 font-bold text-red-500">*</span>}
                       </label>
                       {meta.description && (
-                        <span className="text-[10px] text-muted-foreground truncate max-w-[60%]">
+                        <span className="text-muted-foreground max-w-[60%] truncate text-[10px]">
                           {meta.description}
                         </span>
                       )}
@@ -181,7 +197,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                         value={val}
                         placeholder={meta.example || meta.default || `Enter ${key}...`}
                         onChange={(e) => handleParamChange(key, e.target.value)}
-                        className="w-full rounded-lg border border-border/50 bg-background/50 px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-wiki/60 focus:outline-none"
+                        className="border-border/50 bg-background/50 text-foreground placeholder:text-muted-foreground/50 focus:border-wiki/60 w-full rounded-lg border px-3 py-1.5 text-xs focus:outline-none"
                       />
                     ) : (
                       <input
@@ -191,7 +207,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                         value={val}
                         placeholder={meta.example || meta.default || `Enter ${key}...`}
                         onChange={(e) => handleParamChange(key, e.target.value)}
-                        className="w-full rounded-lg border border-border/50 bg-background/50 px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-wiki/60 focus:outline-none"
+                        className="border-border/50 bg-background/50 text-foreground placeholder:text-muted-foreground/50 focus:border-wiki/60 w-full rounded-lg border px-3 py-1.5 text-xs focus:outline-none"
                       />
                     )}
                   </div>
@@ -200,8 +216,8 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
 
             {/* Custom / Discovered fields */}
             {customParamKeys.length > 0 && (
-              <div className="pt-2 border-t border-border/30 space-y-2">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+              <div className="border-border/30 space-y-2 border-t pt-2">
+                <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                   Additional Parameters
                 </div>
                 {customParamKeys.map((key) => {
@@ -209,7 +225,10 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                   const inputId = `${fallbackId}-${key}`;
                   return (
                     <div key={key} className="space-y-1">
-                      <label htmlFor={inputId} className="text-[11px] font-semibold text-foreground">
+                      <label
+                        htmlFor={inputId}
+                        className="text-foreground text-[11px] font-semibold"
+                      >
                         {key}
                       </label>
                       <input
@@ -218,7 +237,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                         disabled={readOnly}
                         value={val}
                         onChange={(e) => handleParamChange(key, e.target.value)}
-                        className="w-full rounded-lg border border-border/50 bg-background/50 px-3 py-1.5 text-xs text-foreground focus:border-wiki/60 focus:outline-none"
+                        className="border-border/50 bg-background/50 text-foreground focus:border-wiki/60 w-full rounded-lg border px-3 py-1.5 text-xs focus:outline-none"
                       />
                     </div>
                   );
@@ -227,7 +246,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
             )}
 
             {!hasSchema && customParamKeys.length === 0 && (
-              <div className="rounded-xl border border-dashed border-border/60 p-4 text-center text-xs text-muted-foreground">
+              <div className="border-border/60 text-muted-foreground rounded-xl border border-dashed p-4 text-center text-xs">
                 No fields configured. Switch to the <strong>Wikitext</strong> tab to add parameters.
               </div>
             )}
@@ -237,16 +256,21 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
         {/* Tab 2: Visual Card Preview */}
         {activeTab === "preview" && (
           <div className="p-4">
-            <div className="rounded-xl border border-border/40 bg-secondary/10 p-3">
-              <div className="text-center font-bold text-xs text-foreground border-b border-border/30 pb-2 mb-2">
+            <div className="border-border/40 bg-secondary/10 rounded-xl border p-3">
+              <div className="text-foreground border-border/30 mb-2 border-b pb-2 text-center text-xs font-bold">
                 {params["name"] || params["title"] || templateName}
               </div>
               <div className="space-y-1.5 text-xs">
                 {Object.entries(params).map(([k, v]) => {
                   if (/^\d+$/.test(k) || !v) return null;
                   return (
-                    <div key={k} className="flex justify-between gap-2 border-b border-border/20 py-1 last:border-0">
-                      <span className="font-medium text-muted-foreground w-1/3 break-words">{k}</span>
+                    <div
+                      key={k}
+                      className="border-border/20 flex justify-between gap-2 border-b py-1 last:border-0"
+                    >
+                      <span className="text-muted-foreground w-1/3 font-medium break-words">
+                        {k}
+                      </span>
                       <span className="text-foreground w-2/3 text-right break-words">{v}</span>
                     </div>
                   );
@@ -264,7 +288,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
               disabled={readOnly}
               value={rawWikitext}
               onChange={(e) => handleRawChange(e.target.value)}
-              className="w-full rounded-xl border border-border/50 bg-background/80 p-3 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-wiki/60 focus:outline-none"
+              className="border-border/50 bg-background/80 text-foreground placeholder:text-muted-foreground/50 focus:border-wiki/60 w-full rounded-xl border p-3 font-mono text-xs focus:outline-none"
             />
           </div>
         )}

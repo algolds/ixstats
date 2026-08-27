@@ -31,10 +31,7 @@ export class ArticleRepository {
   /**
    * Find an authoritative article by slug (<2ms query)
    */
-  static async findBySlug(
-    slug: string,
-    source = "ixwiki"
-  ): Promise<WikiArticleEntity | null> {
+  static async findBySlug(slug: string, source = "ixwiki"): Promise<WikiArticleEntity | null> {
     const normalizedSlug = toArticleSlug(slug);
 
     try {
@@ -146,10 +143,12 @@ export class ArticleRepository {
         if (user) {
           resolvedDbUserId = user.id;
           if (!user.wikiUsername && authorName && authorName !== "Community Contributor") {
-            await tx.user.update({
-              where: { id: user.id },
-              data: { wikiUsername: authorName, lastWikiSync: new Date() },
-            }).catch(() => null);
+            await tx.user
+              .update({
+                where: { id: user.id },
+                data: { wikiUsername: authorName, lastWikiSync: new Date() },
+              })
+              .catch(() => null);
           }
         }
       }

@@ -7,7 +7,13 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { Search, Refresh as RefreshCw, OpenNewWindow as ExternalLink, Xmark as X, SoundHigh as Volume2 } from "iconoir-react";
+import {
+  Search,
+  Refresh as RefreshCw,
+  OpenNewWindow as ExternalLink,
+  Xmark as X,
+  SoundHigh as Volume2,
+} from "iconoir-react";
 import {
   RiBookMarkedLine,
   RiGitForkLine,
@@ -118,24 +124,23 @@ export function LanguagePacksSection({
   return (
     <div className="space-y-6">
       {/* Header & Vault Bridge Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/40 pb-4">
+      <div className="border-border/40 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h2 className="text-foreground text-xl font-bold tracking-tight">
-            Community Packs
-          </h2>
+          <h2 className="text-foreground text-xl font-bold tracking-tight">Community Packs</h2>
           <p className="text-muted-foreground mt-0.5 text-xs">
-            Discover, inspect, and fork community conlang models, phonological rule sets, and seed dictionaries.
+            Discover, inspect, and fork community conlang models, phonological rule sets, and seed
+            dictionaries.
           </p>
         </div>
 
         {/* IxVault Platform Marketplace Bridge Link */}
         <Link
           href="/vault/marketplace?tab=store"
-          className="group flex items-center gap-2 rounded-xl border border-border/50 bg-secondary/20 hover:bg-secondary/35 px-3.5 py-2 text-xs font-semibold backdrop-blur-md transition-all active:scale-95 shrink-0"
+          className="group border-border/50 bg-secondary/20 hover:bg-secondary/35 flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold backdrop-blur-md transition-all active:scale-95"
         >
           <RiStore2Line className="h-4 w-4 text-amber-500" />
           <span className="text-foreground">Browse on IxVault</span>
-          <ExternalLink className="h-3 w-3 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          <ExternalLink className="text-muted-foreground h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </Link>
       </div>
 
@@ -148,14 +153,14 @@ export function LanguagePacksSection({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search language packs by name, culture, or tags..."
-            className="bg-background/80 border-border/60 text-foreground placeholder:text-muted-foreground/60 w-full rounded-xl border py-2 pr-4 pl-9 text-xs font-medium focus:border-onoma-primary/60 focus:outline-none backdrop-blur-md"
+            className="bg-background/80 border-border/60 text-foreground placeholder:text-muted-foreground/60 focus:border-onoma-primary/60 w-full rounded-xl border py-2 pr-4 pl-9 text-xs font-medium backdrop-blur-md focus:outline-none"
           />
         </div>
 
         <select
           value={familyFilter}
           onChange={(e) => setFamilyFilter(e.target.value)}
-          className="bg-background/80 border-border/60 text-foreground rounded-xl border px-3 py-2 text-xs font-medium focus:border-onoma-primary/60 focus:outline-none backdrop-blur-md cursor-pointer"
+          className="bg-background/80 border-border/60 text-foreground focus:border-onoma-primary/60 cursor-pointer rounded-xl border px-3 py-2 text-xs font-medium backdrop-blur-md focus:outline-none"
         >
           {FAMILIES.map((fam) => (
             <option key={fam.value} value={fam.value}>
@@ -175,33 +180,39 @@ export function LanguagePacksSection({
       </div>
 
       {/* Main Grid: Card Gallery on Left + Detail Drawer on Right if Selected */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         {/* Gallery Column */}
         <div className={activePack ? "space-y-4 lg:col-span-7" : "space-y-4 lg:col-span-12"}>
           {isLoading ? (
             <div className="flex h-64 items-center justify-center">
-              <RefreshCw className="text-muted-foreground h-6 w-6 animate-spin text-onoma-primary" />
+              <RefreshCw className="text-muted-foreground text-onoma-primary h-6 w-6 animate-spin" />
             </div>
           ) : !marketplaceData?.packs || marketplaceData.packs.length === 0 ? (
-            <FacetMaterial material="satin" className="border-border/30 border p-12 text-center rounded-2xl">
-              <RiBookMarkedLine className="text-muted-foreground mx-auto mb-3 h-12 w-12 opacity-30 text-onoma-primary" />
+            <FacetMaterial
+              material="satin"
+              className="border-border/30 rounded-2xl border p-12 text-center"
+            >
+              <RiBookMarkedLine className="text-muted-foreground text-onoma-primary mx-auto mb-3 h-12 w-12 opacity-30" />
               <h4 className="text-foreground text-sm font-bold">No Language Packs Found</h4>
               <p className="text-muted-foreground mt-1 text-xs">
                 Try adjusting your search terms or language family filters.
               </p>
             </FacetMaterial>
           ) : (
-            <div className={cn(
-              "grid gap-4.5",
-              activePack
-                ? "grid-cols-1 sm:grid-cols-2"
-                : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-            )}>
+            <div
+              className={cn(
+                "grid gap-4.5",
+                activePack
+                  ? "grid-cols-1 sm:grid-cols-2"
+                  : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              )}
+            >
               {marketplaceData.packs.map((pack) => {
                 const reviews = pack.reviews || [];
                 const ratingCount = pack._count?.reviews ?? reviews.length;
                 const ratingAvg = reviews.length
-                  ? reviews.reduce((acc: number, r: { rating: number }) => acc + r.rating, 0) / reviews.length
+                  ? reviews.reduce((acc: number, r: { rating: number }) => acc + r.rating, 0) /
+                    reviews.length
                   : 0;
                 const forkCount = pack._count?.forks ?? 0;
 
@@ -234,25 +245,26 @@ export function LanguagePacksSection({
 
         {/* Detailed Inspection Drawer */}
         {activePack && (
-          <div className="space-y-4 lg:col-span-5 sticky top-20">
-            <FacetMaterial material="satin" className="border-border/40 space-y-4 rounded-2xl border p-5 shadow-xl backdrop-blur-xl">
+          <div className="sticky top-20 space-y-4 lg:col-span-5">
+            <FacetMaterial
+              material="satin"
+              className="border-border/40 space-y-4 rounded-2xl border p-5 shadow-xl backdrop-blur-xl"
+            >
               {/* Drawer Header */}
               <div className="border-border/30 flex items-start justify-between border-b pb-3">
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-foreground text-base font-extrabold">{activePack.name}</h3>
-                    <Badge variant="outline" className="text-[9px] font-mono uppercase">
+                    <Badge variant="outline" className="font-mono text-[9px] uppercase">
                       {activePack.culturalFamily || "General"}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground mt-0.5 text-xs">
-                    by @Community Creator
-                  </p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">by @Community Creator</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedPackId(null)}
-                  className="text-muted-foreground hover:text-foreground cursor-pointer rounded-lg p-1 hover:bg-secondary/40 transition-colors"
+                  className="text-muted-foreground hover:text-foreground hover:bg-secondary/40 cursor-pointer rounded-lg p-1 transition-colors"
                   title="Close Inspector"
                 >
                   <X className="h-4 w-4" />
@@ -267,7 +279,7 @@ export function LanguagePacksSection({
                   className={cn(
                     "cursor-pointer rounded-lg py-1.5 transition-all",
                     activeSubTab === "rules"
-                      ? "bg-background text-foreground shadow-xs font-bold border border-border/40"
+                      ? "bg-background text-foreground border-border/40 border font-bold shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -279,7 +291,7 @@ export function LanguagePacksSection({
                   className={cn(
                     "cursor-pointer rounded-lg py-1.5 transition-all",
                     activeSubTab === "lexicon"
-                      ? "bg-background text-foreground shadow-xs font-bold border border-border/40"
+                      ? "bg-background text-foreground border-border/40 border font-bold shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -291,7 +303,7 @@ export function LanguagePacksSection({
                   className={cn(
                     "cursor-pointer rounded-lg py-1.5 transition-all",
                     activeSubTab === "reviews"
-                      ? "bg-background text-foreground shadow-xs font-bold border border-border/40"
+                      ? "bg-background text-foreground border-border/40 border font-bold shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -307,13 +319,15 @@ export function LanguagePacksSection({
                   </p>
 
                   <div className="bg-background/60 border-border/40 space-y-2 rounded-xl border p-3 font-mono">
-                    <div className="text-[10px] font-bold text-foreground uppercase">
+                    <div className="text-foreground text-[10px] font-bold uppercase">
                       Phonological Constraints
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-[11px]">
                       <div>
                         <span className="text-muted-foreground">Family: </span>
-                        <span className="text-foreground capitalize">{activePack.culturalFamily}</span>
+                        <span className="text-foreground capitalize">
+                          {activePack.culturalFamily}
+                        </span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Forks: </span>
@@ -326,9 +340,9 @@ export function LanguagePacksSection({
                     type="button"
                     onClick={() => handleFork(activePack as LanguagePack)}
                     disabled={forkMutation.isPending}
-                    className="w-full bg-onoma-primary hover:bg-onoma-primary-light text-white font-bold h-9 rounded-xl shadow-md cursor-pointer active:scale-[0.97] transition-all"
+                    className="bg-onoma-primary hover:bg-onoma-primary-light h-9 w-full cursor-pointer rounded-xl font-bold text-white shadow-md transition-all active:scale-[0.97]"
                   >
-                    <RiGitForkLine className="h-4 w-4 mr-1.5" />
+                    <RiGitForkLine className="mr-1.5 h-4 w-4" />
                     <span>Fork Pack to My Studio</span>
                   </Button>
                 </div>
@@ -340,7 +354,7 @@ export function LanguagePacksSection({
                   <p className="text-muted-foreground">
                     Seed dictionary vocabulary provided with this language pack:
                   </p>
-                  <div className="bg-background/60 border-border/40 max-h-48 overflow-y-auto rounded-xl border p-3 font-mono text-[11px] leading-relaxed text-foreground">
+                  <div className="bg-background/60 border-border/40 text-foreground max-h-48 overflow-y-auto rounded-xl border p-3 font-mono text-[11px] leading-relaxed">
                     {(() => {
                       const packObj = activePack as { lexiconSeed?: unknown };
                       return Array.isArray(packObj.lexiconSeed) && packObj.lexiconSeed.length > 0
@@ -356,7 +370,9 @@ export function LanguagePacksSection({
                 <div className="space-y-3.5 text-xs">
                   {/* Rating input */}
                   <div className="bg-background/60 border-border/40 space-y-2.5 rounded-xl border p-3">
-                    <label className="font-bold text-foreground block">Leave a Community Rating</label>
+                    <label className="text-foreground block font-bold">
+                      Leave a Community Rating
+                    </label>
                     <div className="flex items-center gap-1.5">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
@@ -368,7 +384,7 @@ export function LanguagePacksSection({
                           <RiStarFill
                             className={cn(
                               "h-4 w-4",
-                              star <= reviewRating ? "text-amber-400 fill-amber-400" : "text-border"
+                              star <= reviewRating ? "fill-amber-400 text-amber-400" : "text-border"
                             )}
                           />
                         </button>
@@ -383,7 +399,7 @@ export function LanguagePacksSection({
                       onChange={(e) => setReviewComment(e.target.value)}
                       placeholder="Optional feedback about this language pack..."
                       rows={2}
-                      className="border-border/60 bg-secondary/15 text-foreground placeholder:text-muted-foreground/60 w-full resize-none rounded-lg border p-2 text-xs focus:border-onoma-primary/60 focus:outline-none"
+                      className="border-border/60 bg-secondary/15 text-foreground placeholder:text-muted-foreground/60 focus:border-onoma-primary/60 w-full resize-none rounded-lg border p-2 text-xs focus:outline-none"
                     />
 
                     <Button
@@ -391,7 +407,7 @@ export function LanguagePacksSection({
                       size="sm"
                       onClick={() => handleSubmitReview(activePack.id)}
                       disabled={rateMutation.isPending}
-                      className="w-full bg-secondary text-foreground hover:bg-secondary/80 border border-border/50 h-8 rounded-lg font-semibold"
+                      className="bg-secondary text-foreground hover:bg-secondary/80 border-border/50 h-8 w-full rounded-lg border font-semibold"
                     >
                       Submit Rating
                     </Button>

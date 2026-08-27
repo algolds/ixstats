@@ -6,7 +6,12 @@ import { Trophy, Sparks as Sparkles } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { getRarityColor, getRarityBg, getAchievementGameIconPath, getCategoryTheme } from "../constants";
+import {
+  getRarityColor,
+  getRarityBg,
+  getAchievementGameIconPath,
+  getCategoryTheme,
+} from "../constants";
 import { JewelAchievementIcon, AchievementCardBackdrop } from "../AchievementDecorations";
 
 interface ShowcaseTabProps {
@@ -25,23 +30,23 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
   return (
     <div className="space-y-3">
       {/* Shelf Title */}
-      <div className="flex items-center justify-between border-b border-border/50 pb-2">
+      <div className="border-border/50 flex items-center justify-between border-b pb-2">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)] dark:text-amber-400" />
-          <h3 className="text-xs font-extrabold tracking-wider text-foreground uppercase">
+          <h3 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
             Rare Achievements Showcase
           </h3>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] font-bold text-muted-foreground">
+          <span className="text-muted-foreground font-mono text-[10px] font-bold">
             {rarestShowcase?.length || 0} / {Math.min(rarestAll?.length || 0, 9)} Displayed
           </span>
 
           {(rarestAll?.length || 0) > 3 && (
             <button
               onClick={() => setShowAll(!showAll)}
-              className="rounded-full border border-border/60 bg-muted/50 px-3 py-1 font-mono text-[10px] font-bold text-foreground/80 backdrop-blur-md transition-all hover:bg-muted/80 hover:text-foreground active:scale-95"
+              className="border-border/60 bg-muted/50 text-foreground/80 hover:bg-muted/80 hover:text-foreground rounded-full border px-3 py-1 font-mono text-[10px] font-bold backdrop-blur-md transition-all active:scale-95"
             >
               {showAll ? "Show Top 3 Only" : "See All Top 9"}
             </button>
@@ -57,7 +62,8 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
             const CategoryIcon = categoryTheme.icon;
             const rawIconPath = getAchievementGameIconPath(achievement.key, achievement.category);
             const iconPath = createUrl(rawIconPath);
-            const isLegendaryOrEpic = achievement.rarity === "Legendary" || achievement.rarity === "Epic";
+            const isLegendaryOrEpic =
+              achievement.rarity === "Legendary" || achievement.rarity === "Epic";
 
             let count = 0;
             if (achievement.metadata) {
@@ -85,7 +91,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                 whileHover={{ y: -3, scale: 1.015 }}
                 whileTap={{ scale: 0.98 }}
                 className={cn(
-                  "group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/60 border-t-white/15 bg-card/75 p-4 shadow-xl backdrop-blur-2xl transition-all hover:shadow-2xl dark:border-border/40 dark:border-t-white/10 dark:bg-card/60",
+                  "group border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative flex flex-col justify-between overflow-hidden rounded-2xl border border-t-white/15 p-4 shadow-xl backdrop-blur-2xl transition-all hover:shadow-2xl dark:border-t-white/10",
                   categoryTheme.cardBorderHover
                 )}
               >
@@ -136,12 +142,12 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-xs font-extrabold tracking-tight text-foreground">
+                      <h3 className="text-foreground truncate text-xs font-extrabold tracking-tight">
                         {achievement.title}
                       </h3>
                       <span
                         className={cn(
-                          "inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.2 text-[8px] font-bold uppercase backdrop-blur-md",
+                          "py-0.2 inline-flex items-center gap-0.5 rounded-full border px-1.5 text-[8px] font-bold uppercase backdrop-blur-md",
                           categoryTheme.badge
                         )}
                       >
@@ -151,18 +157,18 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                     </div>
                   </div>
 
-                  <p className="line-clamp-2 text-[11px] leading-snug font-medium text-muted-foreground">
+                  <p className="text-muted-foreground line-clamp-2 text-[11px] leading-snug font-medium">
                     {achievement.description}
                   </p>
                 </div>
 
-                <div className="relative z-10 mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[10px]">
+                <div className="border-border/40 relative z-10 mt-3 flex items-center justify-between border-t pt-2 text-[10px]">
                   <div className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] font-bold text-emerald-600 backdrop-blur-md dark:text-emerald-400">
                     <span>{achievement.points}</span>
                     <span>pts</span>
                   </div>
                   {achievement.unlockedAt && (
-                    <span className="font-mono text-[9px] text-muted-foreground">
+                    <span className="text-muted-foreground font-mono text-[9px]">
                       {new Date(achievement.unlockedAt).toLocaleDateString()}
                     </span>
                   )}
@@ -172,14 +178,14 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
           })}
         </div>
       ) : (
-        <div className="relative overflow-hidden rounded-2xl border border-border/60 border-t-white/15 bg-card/75 p-8 text-center shadow-xl backdrop-blur-2xl dark:border-border/40 dark:bg-card/60">
+        <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-2xl border border-t-white/15 p-8 text-center shadow-xl backdrop-blur-2xl">
           <TextureOverlay texture="dots" opacity={0.03} />
           <div className="relative z-10 mx-auto max-w-sm space-y-2">
             <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 shadow-md backdrop-blur-md dark:text-amber-400">
               <Trophy className="h-5 w-5 text-amber-500 dark:text-amber-400" />
             </div>
-            <h3 className="text-xs font-bold text-foreground">Showcase Cabinet Empty</h3>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
+            <h3 className="text-foreground text-xs font-bold">Showcase Cabinet Empty</h3>
+            <p className="text-muted-foreground text-[11px] leading-relaxed">
               Unlock rarest achievement badges to populate your showcase shelf!
             </p>
           </div>
@@ -188,4 +194,3 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
     </div>
   );
 }
-

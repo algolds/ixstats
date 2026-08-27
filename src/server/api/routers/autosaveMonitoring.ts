@@ -107,7 +107,6 @@ export const autosaveMonitoringRouter = createTRPCRouter({
         },
       });
 
-
       // Calculate statistics
       const totalAutosaves = autosaves.length;
       const successCount = autosaves.filter((a) => a.success).length;
@@ -426,7 +425,6 @@ export const autosaveMonitoringRouter = createTRPCRouter({
         details: true,
       },
     });
-
 
     const autosavesLast5Min = recentAutosaves.length;
     const failuresLast5Min = recentAutosaves.filter((a) => !a.success).length;

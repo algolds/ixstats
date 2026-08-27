@@ -11,7 +11,15 @@
  */
 
 import { memo } from "react";
-import { Xmark as X, OpenBook as BookOpen, OpenNewWindow as ExternalLink, MapPin, NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft, Eye } from "iconoir-react";
+import {
+  Xmark as X,
+  OpenBook as BookOpen,
+  OpenNewWindow as ExternalLink,
+  MapPin,
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
+  Eye,
+} from "iconoir-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import remarkGfm from "remark-gfm";

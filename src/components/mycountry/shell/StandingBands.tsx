@@ -13,7 +13,10 @@ import {
 import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
 import { VitalityBreakdownModal } from "~/components/ui/modals/VitalityBreakdownModal";
-import { useCountryData, createVitalityRingsFromCountry } from "~/components/mycountry/shared/primitives";
+import {
+  useCountryData,
+  createVitalityRingsFromCountry,
+} from "~/components/mycountry/shared/primitives";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -271,7 +274,10 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                   <span className="text-muted-foreground/70 group-hover/ring:text-foreground block truncate text-[8px] font-bold tracking-wider uppercase transition-colors">
                     {ring.label}
                   </span>
-                  <span className="text-foreground text-xs font-bold tabular-nums" style={{ color: ring.color }}>
+                  <span
+                    className="text-foreground text-xs font-bold tabular-nums"
+                    style={{ color: ring.color }}
+                  >
                     {ring.value}
                     <span className="text-muted-foreground/60 text-[8px] font-normal">/100</span>
                   </span>

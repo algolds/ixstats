@@ -90,40 +90,41 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
         }
       }
 
-      const users = userIds.size > 0
-        ? await db.user.findMany({
-            where: {
-              OR: [
-                { id: { in: Array.from(userIds) } },
-                { clerkUserId: { in: Array.from(userIds) } },
-                { wikiUsername: { in: Array.from(userIds) } },
-                { discordUserId: { in: Array.from(userIds) } },
-              ],
-            },
-            select: {
-              id: true,
-              clerkUserId: true,
-              wikiUsername: true,
-              discordUserId: true,
-              discordUsername: true,
-              role: {
-                select: {
-                  name: true,
-                  displayName: true,
+      const users =
+        userIds.size > 0
+          ? await db.user.findMany({
+              where: {
+                OR: [
+                  { id: { in: Array.from(userIds) } },
+                  { clerkUserId: { in: Array.from(userIds) } },
+                  { wikiUsername: { in: Array.from(userIds) } },
+                  { discordUserId: { in: Array.from(userIds) } },
+                ],
+              },
+              select: {
+                id: true,
+                clerkUserId: true,
+                wikiUsername: true,
+                discordUserId: true,
+                discordUsername: true,
+                role: {
+                  select: {
+                    name: true,
+                    displayName: true,
+                  },
+                },
+                country: {
+                  select: {
+                    id: true,
+                    name: true,
+                    flag: true,
+                  },
                 },
               },
-              country: {
-                select: {
-                  id: true,
-                  name: true,
-                  flag: true,
-                },
-              },
-            },
-          })
-        : [];
+            })
+          : [];
 
-      const userMap = new Map<string, typeof users[0]>();
+      const userMap = new Map<string, (typeof users)[0]>();
       for (const u of users) {
         userMap.set(u.id, u);
         if (u.clerkUserId) userMap.set(u.clerkUserId, u);
@@ -145,7 +146,9 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
           resolver?.wikiUsername ||
           resolver?.discordUsername ||
           resolver?.country?.name ||
-          (t.resolvedBy && t.resolvedBy.startsWith("user_") ? t.resolvedBy.slice(0, 12) : t.resolvedBy) ||
+          (t.resolvedBy && t.resolvedBy.startsWith("user_")
+            ? t.resolvedBy.slice(0, 12)
+            : t.resolvedBy) ||
           "User";
 
         return {

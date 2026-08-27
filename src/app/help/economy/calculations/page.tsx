@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { Calculator, Calculator as Sigma, StatUp as TrendingUp, StatsReport as BarChart3, Dashboard as Gauge, ArrowUpRight } from "iconoir-react";
+import {
+  Calculator,
+  Calculator as Sigma,
+  StatUp as TrendingUp,
+  StatsReport as BarChart3,
+  Dashboard as Gauge,
+  ArrowUpRight,
+} from "iconoir-react";
 import {
   ArticleLayout,
   Section,

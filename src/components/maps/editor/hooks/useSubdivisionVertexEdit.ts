@@ -362,8 +362,7 @@ export function useSubdivisionVertexEdit({
           subdivisionFeatures.push({
             id: feat.id,
             geometry: (feat.id === selectedFeature.id ? geo : feat.geometry) as
-              | Polygon
-              | MultiPolygon,
+              Polygon | MultiPolygon,
           });
         }
       }

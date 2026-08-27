@@ -43,12 +43,8 @@ describe("Messaging API Parity & Contract Invariants (Plan 163)", () => {
     const legacyConvProcedures = Object.keys(
       thinkpagesMessagingConversationsRouter._def.procedures
     );
-    const legacyMsgProcedures = Object.keys(
-      thinkpagesMessagingMessagesRouter._def.procedures
-    );
-    const legacyPresenceProcedures = Object.keys(
-      thinkpagesMessagingPresenceRouter._def.procedures
-    );
+    const legacyMsgProcedures = Object.keys(thinkpagesMessagingMessagesRouter._def.procedures);
+    const legacyPresenceProcedures = Object.keys(thinkpagesMessagingPresenceRouter._def.procedures);
 
     const allLegacyProcedures = [
       ...legacyConvProcedures,

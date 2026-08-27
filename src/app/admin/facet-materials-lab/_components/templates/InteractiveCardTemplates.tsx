@@ -250,7 +250,10 @@ export function InteractiveCardTemplates({
       return (
         <div
           ref={previewRef}
-          className={cn(generatedClassNames, "flex aspect-[3/4] w-full flex-col justify-between p-5 text-left")}
+          className={cn(
+            generatedClassNames,
+            "flex aspect-[3/4] w-full flex-col justify-between p-5 text-left"
+          )}
           style={{ ...dynamicStyles, ...accentVars }}
         >
           <TextureOverlay
@@ -308,7 +311,9 @@ export function InteractiveCardTemplates({
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
           <div className="pointer-events-none relative z-10 flex items-center justify-between">
             <Star className="h-5 w-5" style={{ color: customAccent }} />
-            <span className="text-muted-foreground font-mono text-[8px] uppercase">Specular Glare</span>
+            <span className="text-muted-foreground font-mono text-[8px] uppercase">
+              Specular Glare
+            </span>
           </div>
           <div className="pointer-events-none relative z-10 space-y-1.5">
             <h4 className="text-base leading-tight font-bold">Refractive Edge</h4>
@@ -323,7 +328,10 @@ export function InteractiveCardTemplates({
       return (
         <div
           ref={previewRef}
-          className={cn(generatedClassNames, "relative flex w-full flex-col gap-4 overflow-hidden p-6 text-left")}
+          className={cn(
+            generatedClassNames,
+            "relative flex w-full flex-col gap-4 overflow-hidden p-6 text-left"
+          )}
           style={{ ...dynamicStyles, ...accentVars }}
         >
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
@@ -369,7 +377,10 @@ export function InteractiveCardTemplates({
       return (
         <div
           ref={previewRef}
-          className={cn(generatedClassNames, "relative flex w-full flex-col gap-4 overflow-hidden p-6 text-left")}
+          className={cn(
+            generatedClassNames,
+            "relative flex w-full flex-col gap-4 overflow-hidden p-6 text-left"
+          )}
           style={{ ...dynamicStyles, ...accentVars }}
         >
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />

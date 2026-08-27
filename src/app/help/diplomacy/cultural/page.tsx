@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { ViewGrid as Theater, UserLove as HeartHandshake, Airplane as Plane, Globe } from "iconoir-react";
+import {
+  ViewGrid as Theater,
+  UserLove as HeartHandshake,
+  Airplane as Plane,
+  Globe,
+} from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function CulturalExchangeArticle() {

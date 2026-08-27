@@ -8,7 +8,25 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, Xmark as X, Check, Shield, Crown, Page as Scroll, Coins, SunLight as Sun, Compass, Flask as FlaskConical, OpenBook as BookOpen, WhiteFlag as Flag, Hourglass, Group as UsersIcon, MagicWand as Wand2, Component as Layers, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Search,
+  Xmark as X,
+  Check,
+  Shield,
+  Crown,
+  Page as Scroll,
+  Coins,
+  SunLight as Sun,
+  Compass,
+  Flask as FlaskConical,
+  OpenBook as BookOpen,
+  WhiteFlag as Flag,
+  Hourglass,
+  Group as UsersIcon,
+  MagicWand as Wand2,
+  Component as Layers,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import {
   Dialog,
   DialogContent,
@@ -113,7 +131,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
     useEffect(() => {
       // oxlint-disable-next-line
       setPage(1);
-    // oxlint-disable-next-line
+      // oxlint-disable-next-line
     }, [searchQuery, activeTag, selectedAuthor]);
 
     const displayedIcons = useMemo(() => {

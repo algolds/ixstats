@@ -29,9 +29,7 @@ export function PolicyReconBanner({
           </div>
           <div className="text-muted-foreground text-xs">
             Efficiency:{" "}
-            <span className="font-semibold text-white">
-              {targetDepartment.efficiency}%
-            </span>
+            <span className="font-semibold text-white">{targetDepartment.efficiency}%</span>
           </div>
         </div>
       )}
@@ -39,8 +37,8 @@ export function PolicyReconBanner({
         <div className="flex gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
           <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
           <div>
-            <span className="font-semibold">Capacity Warning:</span> Preview estimates may
-            be inaccurate due to overloaded Civil Service capacity.
+            <span className="font-semibold">Capacity Warning:</span> Preview estimates may be
+            inaccurate due to overloaded Civil Service capacity.
           </div>
         </div>
       )}
@@ -48,8 +46,8 @@ export function PolicyReconBanner({
         <div className="flex gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
           <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
           <div>
-            <span className="font-semibold">Detail Tracking Obscured:</span> Government
-            efficiency is too low (&lt;45%). Estimates are highly speculative.
+            <span className="font-semibold">Detail Tracking Obscured:</span> Government efficiency
+            is too low (&lt;45%). Estimates are highly speculative.
           </div>
         </div>
       )}

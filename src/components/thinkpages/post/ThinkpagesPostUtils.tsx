@@ -1,5 +1,15 @@
 import React from "react";
-import { Emoji as Smile, Emoji as Angry, ThumbsUp, ThumbsDown, FireFlame as Flame, Heart, Crown, Journal as Newspaper, Group as Users } from "iconoir-react";
+import {
+  Emoji as Smile,
+  Emoji as Angry,
+  ThumbsUp,
+  ThumbsDown,
+  FireFlame as Flame,
+  Heart,
+  Crown,
+  Journal as Newspaper,
+  Group as Users,
+} from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { useRelativeTime } from "~/hooks/useRelativeTime";
 

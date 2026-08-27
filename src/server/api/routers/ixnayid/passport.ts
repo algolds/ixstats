@@ -146,9 +146,7 @@ export const ixnayidPassportRouter = createTRPCRouter({
 
       // 3. Fallback: if still no user/country found, check if identifier is a wiki or forum username
       let resolvedWikiName =
-        userRecord?.wikiUsername ||
-        countryRecord?.wikiPageTitle ||
-        (countryRecord?.name ?? null);
+        userRecord?.wikiUsername || countryRecord?.wikiPageTitle || (countryRecord?.name ?? null);
       let resolvedForumUserId = userRecord?.forumUserId ?? null;
       let resolvedForumUsername = userRecord?.forumUsername ?? null;
 
@@ -203,15 +201,14 @@ export const ixnayidPassportRouter = createTRPCRouter({
       }
 
       // 4. Parallel data fetches
-      const { getUserInfo, getUserContribs, getUserCreatedPages } = await import(
-        "~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers"
-      );
-      const { xfFetch, transformBBCode, cacheKey, cachedFetch } = await import(
-        "~/server/modules/forum"
-      );
+      const { getUserInfo, getUserContribs, getUserCreatedPages } =
+        await import("~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers");
+      const { xfFetch, transformBBCode, cacheKey, cachedFetch } =
+        await import("~/server/modules/forum");
 
       const fetchClerkUser = async () => {
-        const targetClerkId = userRecord?.clerkUserId || (cleanId.startsWith("user_") ? cleanId : null);
+        const targetClerkId =
+          userRecord?.clerkUserId || (cleanId.startsWith("user_") ? cleanId : null);
         if (!targetClerkId && !cleanId) return null;
         try {
           const { clerkClient } = await import("@clerk/nextjs/server");
@@ -219,7 +216,9 @@ export const ixnayidPassportRouter = createTRPCRouter({
           if (targetClerkId) {
             return await client.users.getUser(targetClerkId).catch(() => null);
           }
-          const list = await client.users.getUserList({ username: [cleanId, strippedId] }).catch(() => null);
+          const list = await client.users
+            .getUserList({ username: [cleanId, strippedId] })
+            .catch(() => null);
           return list?.data?.[0] ?? null;
         } catch {
           return null;
@@ -237,46 +236,97 @@ export const ixnayidPassportRouter = createTRPCRouter({
         clerkUserRes,
       ] = await Promise.allSettled([
         resolvedWikiName ? getUserInfo(resolvedWikiName).catch(() => null) : Promise.resolve(null),
-        resolvedWikiName ? getUserContribs(resolvedWikiName, 100).catch(() => []) : Promise.resolve([]),
-        resolvedWikiName ? getUserCreatedPages(resolvedWikiName, 100).catch(() => []) : Promise.resolve([]),
-        resolvedWikiName ? db.lorewardUserStats.findFirst({ where: { username: { equals: resolvedWikiName, mode: "insensitive" } } }).catch(() => null) : Promise.resolve(null),
-        resolvedWikiName ? db.lorewardEntry.findMany({ where: { OR: [{ winnerUser: { equals: resolvedWikiName, mode: "insensitive" } }, { runnerUpUser: { equals: resolvedWikiName, mode: "insensitive" } }], status: "approved" }, orderBy: { date: "desc" }, take: 30 }).catch(() => []) : Promise.resolve([]),
-        resolvedForumUserId ? cachedFetch(cacheKey("member", resolvedForumUserId), "member", () => xfFetch<{ user: any }>(`/users/${resolvedForumUserId}/`)).catch(() => null) : Promise.resolve(null),
-        userRecord?.clerkUserId ? db.thinkpagesAccount.findFirst({ where: { clerkUserId: userRecord.clerkUserId, isActive: true } }).catch(() => null) : Promise.resolve(null),
+        resolvedWikiName
+          ? getUserContribs(resolvedWikiName, 100).catch(() => [])
+          : Promise.resolve([]),
+        resolvedWikiName
+          ? getUserCreatedPages(resolvedWikiName, 100).catch(() => [])
+          : Promise.resolve([]),
+        resolvedWikiName
+          ? db.lorewardUserStats
+              .findFirst({ where: { username: { equals: resolvedWikiName, mode: "insensitive" } } })
+              .catch(() => null)
+          : Promise.resolve(null),
+        resolvedWikiName
+          ? db.lorewardEntry
+              .findMany({
+                where: {
+                  OR: [
+                    { winnerUser: { equals: resolvedWikiName, mode: "insensitive" } },
+                    { runnerUpUser: { equals: resolvedWikiName, mode: "insensitive" } },
+                  ],
+                  status: "approved",
+                },
+                orderBy: { date: "desc" },
+                take: 30,
+              })
+              .catch(() => [])
+          : Promise.resolve([]),
+        resolvedForumUserId
+          ? cachedFetch(cacheKey("member", resolvedForumUserId), "member", () =>
+              xfFetch<{ user: any }>(`/users/${resolvedForumUserId}/`)
+            ).catch(() => null)
+          : Promise.resolve(null),
+        userRecord?.clerkUserId
+          ? db.thinkpagesAccount
+              .findFirst({ where: { clerkUserId: userRecord.clerkUserId, isActive: true } })
+              .catch(() => null)
+          : Promise.resolve(null),
         fetchClerkUser(),
       ]);
 
       const wikiInfo = wikiInfoRes.status === "fulfilled" ? wikiInfoRes.value : null;
-      const wikiContribs = wikiContribsRes.status === "fulfilled" ? (Array.isArray(wikiContribsRes.value) ? wikiContribsRes.value : (wikiContribsRes.value as any)?.contribs ?? []) : [];
-      const mwCreatedPages = mwCreatedPagesRes.status === "fulfilled" ? mwCreatedPagesRes.value ?? [] : [];
+      const wikiContribs =
+        wikiContribsRes.status === "fulfilled"
+          ? Array.isArray(wikiContribsRes.value)
+            ? wikiContribsRes.value
+            : ((wikiContribsRes.value as any)?.contribs ?? [])
+          : [];
+      const mwCreatedPages =
+        mwCreatedPagesRes.status === "fulfilled" ? (mwCreatedPagesRes.value ?? []) : [];
       const loreStats = loreStatsRes.status === "fulfilled" ? loreStatsRes.value : null;
-      const loreAwards = loreAwardsRes.status === "fulfilled" ? loreAwardsRes.value ?? [] : [];
-      const forumData = forumMemberRes.status === "fulfilled" ? forumMemberRes.value?.user ?? null : null;
+      const loreAwards = loreAwardsRes.status === "fulfilled" ? (loreAwardsRes.value ?? []) : [];
+      const forumData =
+        forumMemberRes.status === "fulfilled" ? (forumMemberRes.value?.user ?? null) : null;
       const thinkpagesAccount = thinkpagesRes.status === "fulfilled" ? thinkpagesRes.value : null;
       const clerkUser = clerkUserRes.status === "fulfilled" ? clerkUserRes.value : null;
 
       let loreRank: number | null = null;
       if (loreStats && loreStats.totalScore > 0) {
-        try { loreRank = (await db.lorewardUserStats.count({ where: { totalScore: { gt: loreStats.totalScore } } })) + 1; } catch {}
+        try {
+          loreRank =
+            (await db.lorewardUserStats.count({
+              where: { totalScore: { gt: loreStats.totalScore } },
+            })) + 1;
+        } catch {}
       }
 
       if (userRecord && (forumData || wikiInfo)) {
         const syncUpdates: Record<string, any> = {};
-        if (forumData && (!userRecord.forumUserId || userRecord.forumUserId !== forumData.user_id)) {
+        if (
+          forumData &&
+          (!userRecord.forumUserId || userRecord.forumUserId !== forumData.user_id)
+        ) {
           syncUpdates.forumUserId = forumData.user_id;
           syncUpdates.forumUsername = forumData.username;
           syncUpdates.lastForumSync = new Date();
         }
-        if (wikiInfo && resolvedWikiName && (!userRecord.wikiUsername || userRecord.wikiUsername !== resolvedWikiName)) {
+        if (
+          wikiInfo &&
+          resolvedWikiName &&
+          (!userRecord.wikiUsername || userRecord.wikiUsername !== resolvedWikiName)
+        ) {
           syncUpdates.wikiUsername = resolvedWikiName;
           syncUpdates.wikiUserId = wikiInfo.user_id ?? null;
           syncUpdates.lastWikiSync = new Date();
         }
         if (Object.keys(syncUpdates).length > 0) {
-          db.user.update({
-            where: { id: userRecord.id },
-            data: syncUpdates,
-          }).catch(() => null);
+          db.user
+            .update({
+              where: { id: userRecord.id },
+              data: syncUpdates,
+            })
+            .catch(() => null);
         }
       }
 
@@ -286,12 +336,20 @@ export const ixnayidPassportRouter = createTRPCRouter({
           where: {
             OR: [
               { users: { some: { id: userRecord.id } } },
-              ...(userRecord.clerkUserId ? [{ users: { some: { clerkUserId: userRecord.clerkUserId } } }] : []),
+              ...(userRecord.clerkUserId
+                ? [{ users: { some: { clerkUserId: userRecord.clerkUserId } } }]
+                : []),
               ...(userRecord.countryId ? [{ id: userRecord.countryId }] : []),
               ...(countryRecord?.id ? [{ id: countryRecord.id }] : []),
-              ...(userRecord.forumUsername ? [{ leader: { equals: userRecord.forumUsername, mode: "insensitive" as const } }] : []),
-              ...(userRecord.wikiUsername ? [{ leader: { equals: userRecord.wikiUsername, mode: "insensitive" as const } }] : []),
-              ...(cleanId && cleanId !== "me" ? [{ leader: { equals: cleanId, mode: "insensitive" as const } }] : []),
+              ...(userRecord.forumUsername
+                ? [{ leader: { equals: userRecord.forumUsername, mode: "insensitive" as const } }]
+                : []),
+              ...(userRecord.wikiUsername
+                ? [{ leader: { equals: userRecord.wikiUsername, mode: "insensitive" as const } }]
+                : []),
+              ...(cleanId && cleanId !== "me"
+                ? [{ leader: { equals: cleanId, mode: "insensitive" as const } }]
+                : []),
             ],
           },
           include: {
@@ -328,14 +386,33 @@ export const ixnayidPassportRouter = createTRPCRouter({
           .findMany({
             where: {
               OR: [
-                ...(userRecord?.id ? [{ authorId: userRecord.id }, { lastEditorId: userRecord.id }] : []),
-                ...(resolvedWikiName ? [{ title: { contains: resolvedWikiName, mode: "insensitive" as const } }, { slug: { contains: resolvedWikiName.toLowerCase() } }] : []),
-                ...(cleanId && cleanId !== "me" ? [{ title: { contains: cleanId, mode: "insensitive" as const } }, { slug: { contains: cleanId.toLowerCase() } }] : []),
+                ...(userRecord?.id
+                  ? [{ authorId: userRecord.id }, { lastEditorId: userRecord.id }]
+                  : []),
+                ...(resolvedWikiName
+                  ? [
+                      { title: { contains: resolvedWikiName, mode: "insensitive" as const } },
+                      { slug: { contains: resolvedWikiName.toLowerCase() } },
+                    ]
+                  : []),
+                ...(cleanId && cleanId !== "me"
+                  ? [
+                      { title: { contains: cleanId, mode: "insensitive" as const } },
+                      { slug: { contains: cleanId.toLowerCase() } },
+                    ]
+                  : []),
               ],
             },
             take: 100,
             orderBy: { createdAt: "desc" },
-            select: { id: true, slug: true, title: true, summary: true, updatedAt: true, createdAt: true },
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+              summary: true,
+              updatedAt: true,
+              createdAt: true,
+            },
           })
           .catch(() => []),
         db.wikiRevision
@@ -343,8 +420,12 @@ export const ixnayidPassportRouter = createTRPCRouter({
             where: {
               OR: [
                 ...(userRecord?.id ? [{ authorId: userRecord.id }] : []),
-                ...(resolvedWikiName ? [{ author: { equals: resolvedWikiName, mode: "insensitive" as const } }] : []),
-                ...(cleanId && cleanId !== "me" ? [{ author: { equals: cleanId, mode: "insensitive" as const } }] : []),
+                ...(resolvedWikiName
+                  ? [{ author: { equals: resolvedWikiName, mode: "insensitive" as const } }]
+                  : []),
+                ...(cleanId && cleanId !== "me"
+                  ? [{ author: { equals: cleanId, mode: "insensitive" as const } }]
+                  : []),
               ],
             },
             take: 100,
@@ -384,19 +465,55 @@ export const ixnayidPassportRouter = createTRPCRouter({
           })
           .catch(() => []),
         userRecord?.id
-          ? db.languagePack.findMany({ where: { userId: userRecord.id }, take: 20, select: { id: true, name: true, description: true, culturalFamily: true, slug: true } }).catch(() => [])
+          ? db.languagePack
+              .findMany({
+                where: { userId: userRecord.id },
+                take: 20,
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  culturalFamily: true,
+                  slug: true,
+                },
+              })
+              .catch(() => [])
           : Promise.resolve([]),
         userNations.length > 0
-          ? db.sportTeam.findMany({ where: { nationId: { in: userNations.map(n => n.id) } }, take: 20, select: { id: true, name: true, shortName: true, city: true, logo: true } }).catch(() => [])
+          ? db.sportTeam
+              .findMany({
+                where: { nationId: { in: userNations.map((n) => n.id) } },
+                take: 20,
+                select: { id: true, name: true, shortName: true, city: true, logo: true },
+              })
+              .catch(() => [])
           : Promise.resolve([]),
         userNations.length > 0
-          ? db.intent.findMany({ where: { countryId: { in: userNations.map(n => n.id) } }, take: 20, orderBy: { createdAt: "desc" }, select: { id: true, goal: true, tier: true, category: true, status: true, summary: true, createdAt: true } }).catch(() => [])
+          ? db.intent
+              .findMany({
+                where: { countryId: { in: userNations.map((n) => n.id) } },
+                take: 20,
+                orderBy: { createdAt: "desc" },
+                select: {
+                  id: true,
+                  goal: true,
+                  tier: true,
+                  category: true,
+                  status: true,
+                  summary: true,
+                  createdAt: true,
+                },
+              })
+              .catch(() => [])
           : Promise.resolve([]),
       ]);
 
-      const rawAuthored = authoredArticlesRes.status === "fulfilled" ? authoredArticlesRes.value ?? [] : [];
-      const nativeRevisions = nativeRevisionsRes.status === "fulfilled" ? nativeRevisionsRes.value ?? [] : [];
-      const wikiComments = wikiCommentsRes.status === "fulfilled" ? wikiCommentsRes.value ?? [] : [];
+      const rawAuthored =
+        authoredArticlesRes.status === "fulfilled" ? (authoredArticlesRes.value ?? []) : [];
+      const nativeRevisions =
+        nativeRevisionsRes.status === "fulfilled" ? (nativeRevisionsRes.value ?? []) : [];
+      const wikiComments =
+        wikiCommentsRes.status === "fulfilled" ? (wikiCommentsRes.value ?? []) : [];
 
       const authoredArticles = buildAuthoredArticles(rawAuthored, mwCreatedPages);
       const wikiActivityFeed = buildWikiActivityFeed(
@@ -407,9 +524,9 @@ export const ixnayidPassportRouter = createTRPCRouter({
         resolvedWikiName
       );
 
-      const conlangs = conlangsRes.status === "fulfilled" ? conlangsRes.value ?? [] : [];
-      const sportTeams = sportTeamsRes.status === "fulfilled" ? sportTeamsRes.value ?? [] : [];
-      const directives = directivesRes.status === "fulfilled" ? directivesRes.value ?? [] : [];
+      const conlangs = conlangsRes.status === "fulfilled" ? (conlangsRes.value ?? []) : [];
+      const sportTeams = sportTeamsRes.status === "fulfilled" ? (sportTeamsRes.value ?? []) : [];
+      const directives = directivesRes.status === "fulfilled" ? (directivesRes.value ?? []) : [];
 
       const historyEvents: Array<any> = [];
       for (const item of wikiActivityFeed) {
@@ -418,7 +535,11 @@ export const ixnayidPassportRouter = createTRPCRouter({
           system: "wikios",
           type: item.type === "publish" ? "wikios.article_published" : "wikios.article_revised",
           title: `${item.type === "publish" ? "Published" : item.type === "laurel" ? "Earned Laurel on" : item.type === "discussion" ? "Participated in" : "Edited"} "${item.title}"`,
-          description: item.summary || (item.byteDiff ? `${item.byteDiff > 0 ? `+${item.byteDiff}` : item.byteDiff} bytes` : "WikiOS Contribution"),
+          description:
+            item.summary ||
+            (item.byteDiff
+              ? `${item.byteDiff > 0 ? `+${item.byteDiff}` : item.byteDiff} bytes`
+              : "WikiOS Contribution"),
           timestamp: item.timestamp,
           objectUrl: item.url,
         });
@@ -448,7 +569,9 @@ export const ixnayidPassportRouter = createTRPCRouter({
         });
       }
 
-      historyEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      historyEvents.sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
 
       const isOwner = Boolean(viewerClerkId && userRecord?.clerkUserId === viewerClerkId);
       const realmsList = userNations.map((c: any) => ({
@@ -458,7 +581,7 @@ export const ixnayidPassportRouter = createTRPCRouter({
         role: userRecord?.role?.displayName ?? "Leader",
         isFeatured: Boolean(
           (countryRecord && countryRecord.id === c.id) ||
-            (userRecord && userRecord.countryId === c.id)
+          (userRecord && userRecord.countryId === c.id)
         ),
         country: {
           id: c.id,
@@ -510,7 +633,8 @@ export const ixnayidPassportRouter = createTRPCRouter({
           name: c.name,
           slug: c.slug ?? c.name.toLowerCase().replace(/ /g, "_"),
           realmId: c.realmId ?? "default",
-          realmName: c.realm?.name ?? (c.realmId === "default" || !c.realmId ? "IxEarth" : "Custom Realm"),
+          realmName:
+            c.realm?.name ?? (c.realmId === "default" || !c.realmId ? "IxEarth" : "Custom Realm"),
           flagUrl: c.flag ?? null,
           coatOfArmsUrl: c.coatOfArms ?? null,
           currentPopulation: c.currentPopulation ?? 0,
@@ -521,7 +645,7 @@ export const ixnayidPassportRouter = createTRPCRouter({
           governmentType: c.governmentType ?? null,
           isFlagship: Boolean(
             (countryRecord && countryRecord.id === c.id) ||
-              (userRecord && userRecord.countryId === c.id)
+            (userRecord && userRecord.countryId === c.id)
           ),
         })),
         work: {
@@ -531,7 +655,11 @@ export const ixnayidPassportRouter = createTRPCRouter({
           directives,
           wikiActivityFeed,
           totalCreations:
-            authoredArticles.length + conlangs.length + sportTeams.length + directives.length + wikiActivityFeed.length,
+            authoredArticles.length +
+            conlangs.length +
+            sportTeams.length +
+            directives.length +
+            wikiActivityFeed.length,
         },
         history: historyEvents,
         account: {
@@ -548,7 +676,9 @@ export const ixnayidPassportRouter = createTRPCRouter({
               : null,
           clerkUsername: clerkUser?.username ?? null,
           clerkDisplayName: clerkUser
-            ? ([clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || clerkUser.username || null)
+            ? [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
+              clerkUser.username ||
+              null
             : null,
           clerkImageUrl: clerkUser?.imageUrl ?? null,
         },
@@ -556,7 +686,7 @@ export const ixnayidPassportRouter = createTRPCRouter({
           linked: Boolean(wikiInfo?.exists || resolvedWikiName),
           username: resolvedWikiName,
           registration: wikiInfo?.registration ?? wikiInfo?.user_registration ?? null,
-          editCount: wikiInfo?.editCount ?? wikiInfo?.user_editcount ?? (wikiContribs?.length ?? 0),
+          editCount: wikiInfo?.editCount ?? wikiInfo?.user_editcount ?? wikiContribs?.length ?? 0,
           groups: wikiInfo?.groups ?? [],
           lorewards: loreStats
             ? {
@@ -581,14 +711,23 @@ export const ixnayidPassportRouter = createTRPCRouter({
             comment: c.rev_comment ?? c.comment ?? null,
           })),
           awardHistory: loreAwards.map((e: any) => {
-            const isWinner = resolvedWikiName && e.winnerUser?.toLowerCase() === resolvedWikiName.toLowerCase();
+            const isWinner =
+              resolvedWikiName && e.winnerUser?.toLowerCase() === resolvedWikiName.toLowerCase();
             return {
               id: e.id,
               date: e.date,
               type: e.type,
               role: (isWinner ? "winner" : "runner-up") as "winner" | "runner-up",
-              page: (isWinner ? e.winnerPage : e.runnerUpPage) || e.winnerPage || e.runnerUpPage || null,
-              score: (isWinner ? e.winnerScore : e.runnerUpScore) || e.winnerScore || e.runnerUpScore || null,
+              page:
+                (isWinner ? e.winnerPage : e.runnerUpPage) ||
+                e.winnerPage ||
+                e.runnerUpPage ||
+                null,
+              score:
+                (isWinner ? e.winnerScore : e.runnerUpScore) ||
+                e.winnerScore ||
+                e.runnerUpScore ||
+                null,
             };
           }),
         },

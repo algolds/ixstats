@@ -61,7 +61,11 @@ function deltaClass(delta: number): string {
   return "";
 }
 
-function getSemanticAction(change: RawChange): { label: string; isPill: boolean; pillClass?: string } {
+function getSemanticAction(change: RawChange): {
+  label: string;
+  isPill: boolean;
+  pillClass?: string;
+} {
   const comment = change.comment?.trim() || "";
   const isSyncPlaceholder = /live sync/i.test(comment) || /mediawiki/i.test(comment);
 

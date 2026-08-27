@@ -37,7 +37,7 @@ export function MapSettingsTab() {
           <button
             key={tab.id}
             onClick={() => setSubTab(tab.id)}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-[0.98] transition-all ${
+            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98] ${
               subTab === tab.id
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
@@ -57,18 +57,18 @@ export function MapSettingsTab() {
 
 function MapStyleSettingsPanel() {
   return (
-    <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
+    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
       <div className="flex items-start gap-3">
         <div className="rounded-xl bg-blue-500/10 p-2.5 text-blue-400">
           <Palette className="h-5 w-5" />
         </div>
         <div className="flex-1 space-y-1">
-          <h3 className="text-xs font-bold text-foreground">Visual Style & Theme Editor</h3>
+          <h3 className="text-foreground text-xs font-bold">Visual Style & Theme Editor</h3>
           <p className="text-muted-foreground max-w-2xl text-[11px] leading-relaxed">
-            Atlas uses the MapLibre GL style specification to define visual layers, fonts,
-            colors, and layout configurations. The embedded Maputnik style editor allows you to
-            edit standard, dark, and paper styles visually and preview them with live PostGIS
-            geographic boundaries.
+            Atlas uses the MapLibre GL style specification to define visual layers, fonts, colors,
+            and layout configurations. The embedded Maputnik style editor allows you to edit
+            standard, dark, and paper styles visually and preview them with live PostGIS geographic
+            boundaries.
           </p>
         </div>
       </div>
@@ -82,7 +82,7 @@ function MapStyleSettingsPanel() {
         </div>
         <Link
           href="/admin/maps/style-editor"
-          className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-semibold text-primary-foreground active:scale-[0.98] transition-transform"
+          className="bg-primary text-primary-foreground inline-flex h-8 items-center gap-1.5 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
         >
           <span>Open Style Editor</span>
           <ExternalLink className="h-3.5 w-3.5" />

@@ -41,7 +41,14 @@ export function PassportChipIcon({ className, size = "md" }: PassportChipIconPro
           fill="url(#chip-metallic)"
         />
         {/* Center contact ring */}
-        <circle cx="18" cy="12" r="4.5" stroke="#78350F" strokeWidth="0.8" fill="url(#chip-center)" />
+        <circle
+          cx="18"
+          cy="12"
+          r="4.5"
+          stroke="#78350F"
+          strokeWidth="0.8"
+          fill="url(#chip-center)"
+        />
         {/* Trace lines */}
         <path
           d="M1 8 H13.5 M22.5 8 H35 M1 16 H13.5 M22.5 16 H35 M18 1 V7.5 M18 16.5 V23"
@@ -50,7 +57,14 @@ export function PassportChipIcon({ className, size = "md" }: PassportChipIconPro
           strokeLinecap="round"
         />
         <defs>
-          <linearGradient id="chip-metallic" x1="0" y1="0" x2="36" y2="24" gradientUnits="userSpaceOnUse">
+          <linearGradient
+            id="chip-metallic"
+            x1="0"
+            y1="0"
+            x2="36"
+            y2="24"
+            gradientUnits="userSpaceOnUse"
+          >
             <stop stopColor="#FDE68A" />
             <stop offset="0.5" stopColor="#F59E0B" />
             <stop offset="1" stopColor="#D97706" />

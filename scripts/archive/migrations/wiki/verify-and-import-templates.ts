@@ -10,8 +10,14 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { getIxWikiPool, closeWikiBridge } from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
-import { categorizeTemplate, fetchTemplateData } from "../../src/lib/wiki-os/templates/template-registry";
+import {
+  getIxWikiPool,
+  closeWikiBridge,
+} from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
+import {
+  categorizeTemplate,
+  fetchTemplateData,
+} from "../../src/lib/wiki-os/templates/template-registry";
 import { toArticleSlug } from "../../src/lib/wiki-os/core/domain-types";
 import { DEFAULT_USER_AGENT, DEFAULT_MEDIAWIKI_URL } from "../../src/lib/wiki-os/config";
 import type mysql from "mysql2/promise";
@@ -88,7 +94,9 @@ async function fetchTemplatesFromMariaDB(): Promise<TemplateItem[] | null> {
       };
     });
   } catch (err: any) {
-    console.warn(`   ⚠️ MariaDB direct connection unavailable (${err.code || err.message}). Switching to MediaWiki API...`);
+    console.warn(
+      `   ⚠️ MariaDB direct connection unavailable (${err.code || err.message}). Switching to MediaWiki API...`
+    );
     return null;
   }
 }
@@ -288,12 +296,19 @@ async function main() {
         }
       } catch (err: any) {
         failedCount++;
-        console.warn(`   ⚠️ Skipped corrupted template "${t.title}":`, err.message?.substring(0, 100));
+        console.warn(
+          `   ⚠️ Skipped corrupted template "${t.title}":`,
+          err.message?.substring(0, 100)
+        );
       }
     }
 
-    console.log(`\n   ✓ Total templates successfully ingested into wiki_articles: ${importedArticles}`);
-    console.log(`   ✓ Total templates successfully registered in wiki_templates: ${importedRegistry}`);
+    console.log(
+      `\n   ✓ Total templates successfully ingested into wiki_articles: ${importedArticles}`
+    );
+    console.log(
+      `   ✓ Total templates successfully registered in wiki_templates: ${importedRegistry}`
+    );
     if (failedCount > 0) {
       console.log(`   ⚠️ Corrupted/skipped templates: ${failedCount}`);
     }

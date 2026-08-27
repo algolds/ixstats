@@ -12,7 +12,10 @@ import { AuthProvider } from "~/context/auth-context";
 import { Navigation, NavigationTransitionHandler, RackFocusBlurWrapper } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/ui/webgl-error-handler";
-import { ChunkLoadErrorBoundary, ChunkLoadErrorHandler } from "~/components/ui/ChunkLoadErrorBoundary";
+import {
+  ChunkLoadErrorBoundary,
+  ChunkLoadErrorHandler,
+} from "~/components/ui/ChunkLoadErrorBoundary";
 import { ToastProvider } from "~/components/ui/toast";
 import { withBasePath } from "~/lib/base-path";
 import { headers } from "next/headers";

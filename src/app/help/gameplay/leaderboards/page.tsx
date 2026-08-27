@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { Medal, StatsReport as BarChart3, StatUp as TrendingUp, Group as Users } from "iconoir-react";
+import {
+  Medal,
+  StatsReport as BarChart3,
+  StatUp as TrendingUp,
+  Group as Users,
+} from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function LeaderboardsArticle() {

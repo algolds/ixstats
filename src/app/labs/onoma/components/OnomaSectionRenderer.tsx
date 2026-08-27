@@ -15,7 +15,7 @@ import CategoryDomainSection from "./sections/CategoryDomainSection";
 // Suspense loading fallback
 const SectionLoadingFallback = () => (
   <div className="flex h-64 w-full items-center justify-center">
-    <Loader2 className="h-6 w-6 animate-spin text-onoma-primary" />
+    <Loader2 className="text-onoma-primary h-6 w-6 animate-spin" />
   </div>
 );
 
@@ -88,9 +88,7 @@ export function OnomaSectionRenderer({
       return <CategoryDomainSection domain="culture" />;
     case "marketplace":
       return (
-        <LanguagePacksSection
-          onLoadToStudio={(title, words) => onLoadToStudio(words, title)}
-        />
+        <LanguagePacksSection onLoadToStudio={(title, words) => onLoadToStudio(words, title)} />
       );
     case "studio":
       return (

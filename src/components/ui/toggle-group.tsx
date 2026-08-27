@@ -58,10 +58,9 @@ function ToggleGroupItem({
     value: string;
   }) {
   const context = React.useContext(ToggleGroupContext);
-  const isSelected =
-    Array.isArray(context.value)
-      ? context.value.includes(itemValue)
-      : context.value === itemValue;
+  const isSelected = Array.isArray(context.value)
+    ? context.value.includes(itemValue)
+    : context.value === itemValue;
 
   return (
     <button

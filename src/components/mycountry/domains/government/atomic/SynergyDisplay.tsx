@@ -10,7 +10,11 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Flash as Zap, WarningTriangle as AlertTriangle, StatUp as TrendingUp } from "iconoir-react";
+import {
+  Flash as Zap,
+  WarningTriangle as AlertTriangle,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import type { AtomicGovernmentComponent } from "~/lib/government/atomic-data";
 import { ComponentType } from "~/lib/enums";
 

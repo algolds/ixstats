@@ -23,7 +23,7 @@ const sizeConfig = {
 
 /**
  * IxnayPassportSeal (/apple-design)
- * 
+ *
  * Official Ixnay sovereign passport seal medallion.
  * Built with Apple design restraint: precision frosted glass, micro-specular rim highlight,
  * and zero distortion filters.
@@ -38,9 +38,9 @@ export const IxnayPassportSeal = memo(function IxnayPassportSeal({
   return (
     <div
       className={cn(
-        "group relative flex shrink-0 items-center justify-center select-none overflow-hidden",
+        "group relative flex shrink-0 items-center justify-center overflow-hidden select-none",
         "border border-black/[0.08] dark:border-white/[0.12]",
-        "bg-black/[0.03] dark:bg-white/[0.06] backdrop-blur-md",
+        "bg-black/[0.03] backdrop-blur-md dark:bg-white/[0.06]",
         "shd-vault-recess",
         "transition-transform duration-150 ease-out active:scale-[0.96]",
         config.container,
@@ -52,7 +52,7 @@ export const IxnayPassportSeal = memo(function IxnayPassportSeal({
       <img
         src={logoUrl}
         alt="Ixnay"
-        className="h-full w-full object-contain select-none transition-transform duration-200 ease-out group-hover:scale-105 filter dark:brightness-110"
+        className="h-full w-full object-contain filter transition-transform duration-200 ease-out select-none group-hover:scale-105 dark:brightness-110"
       />
     </div>
   );

@@ -12,7 +12,14 @@ import { HealthRing } from "~/components/ui/health-ring";
 import { Badge } from "~/components/ui/badge";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
-import { Activity, Dollar as DollarSign, Group as Users, Globe, Building, CheckCircle as CheckCircle2 } from "iconoir-react";
+import {
+  Activity,
+  Dollar as DollarSign,
+  Group as Users,
+  Globe,
+  Building,
+  CheckCircle as CheckCircle2,
+} from "iconoir-react";
 import type { VitalityRing } from "~/components/mycountry/shared/primitives/tabs/VitalityRingsDisplay";
 
 interface VitalityBreakdownModalProps {

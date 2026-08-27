@@ -13,12 +13,19 @@ import { usePlateEditor, Plate, PlateContent, useValueVersion } from "platejs/re
 import { Transforms, type Descendant } from "slate";
 import { deserializeParsoidHtml, serializePlateToHtml, valueToPlainText } from "./wiki-html";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { wikitextToAst, astToPlateNodes, astToWikitext } from "~/lib/wiki-os/transformers/wiki-ast-converter";
+import {
+  wikitextToAst,
+  astToPlateNodes,
+  astToWikitext,
+} from "~/lib/wiki-os/transformers/wiki-ast-converter";
 import { createIxWikiPlugins, getIxWikiComponents } from "./plugins/createIxWikiPlugins";
 import { useSlashMenuState } from "./slash-menu/useSlashMenuState";
 import { WikiSlashMenu } from "./slash-menu/WikiSlashMenu";
 import type { SlashItem } from "./slash-menu/slash-items";
-import { PlateWikiCallbacksProvider, type PlateWikiCallbacks } from "./elements/PlateRawHtmlElement";
+import {
+  PlateWikiCallbacksProvider,
+  type PlateWikiCallbacks,
+} from "./elements/PlateRawHtmlElement";
 
 export interface PlateWikiEditorProps {
   initialHtml?: string;
@@ -34,9 +41,14 @@ export interface PlateWikiEditorProps {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function LeafRenderer(props: any) {
-  const { attributes, children, leaf } = props as { attributes: any; children: React.ReactNode; leaf: any };
+  const { attributes, children, leaf } = props as {
+    attributes: any;
+    children: React.ReactNode;
+    leaf: any;
+  };
   let node = <>{children}</>;
-  if (leaf.codeMark || leaf.code) node = <code className="rounded bg-secondary/60 px-1 font-mono text-[0.9em]">{node}</code>;
+  if (leaf.codeMark || leaf.code)
+    node = <code className="bg-secondary/60 rounded px-1 font-mono text-[0.9em]">{node}</code>;
   if (leaf.strike || leaf.strikethrough) node = <s>{node}</s>;
   if (leaf.underline) node = <u>{node}</u>;
   if (leaf.italic) node = <em>{node}</em>;
@@ -77,25 +89,42 @@ function ElementRenderer(props: any) {
       );
     case "blockquote":
       return (
-        <blockquote {...attributes} className="my-2 border-l-4 border-wiki/40 bg-wiki/5 px-3 py-1.5 text-muted-foreground italic">
+        <blockquote
+          {...attributes}
+          className="border-wiki/40 bg-wiki/5 text-muted-foreground my-2 border-l-4 px-3 py-1.5 italic"
+        >
           {children}
         </blockquote>
       );
     case "code-block":
       return (
-        <pre {...attributes} className="my-2 overflow-x-auto rounded-xl bg-black/40 p-3 font-mono text-xs text-emerald-200">
+        <pre
+          {...attributes}
+          className="my-2 overflow-x-auto rounded-xl bg-black/40 p-3 font-mono text-xs text-emerald-200"
+        >
           <code>{children}</code>
         </pre>
       );
     case "ul":
-      return <ul {...attributes} className="my-1.5 list-disc pl-6">{children}</ul>;
+      return (
+        <ul {...attributes} className="my-1.5 list-disc pl-6">
+          {children}
+        </ul>
+      );
     case "ol":
-      return <ol {...attributes} className="my-1.5 list-decimal pl-6">{children}</ol>;
+      return (
+        <ol {...attributes} className="my-1.5 list-decimal pl-6">
+          {children}
+        </ol>
+      );
     case "li":
       return <li {...attributes}>{children}</li>;
     case "table":
       return (
-        <table {...attributes} className="my-2 w-full border-collapse text-xs [&_td]:border [&_td]:border-border/40 [&_td]:px-2 [&_th]:border [&_th]:border-border/40 [&_th]:bg-secondary/50 [&_th]:px-2">
+        <table
+          {...attributes}
+          className="[&_td]:border-border/40 [&_th]:border-border/40 [&_th]:bg-secondary/50 my-2 w-full border-collapse text-xs [&_td]:border [&_td]:px-2 [&_th]:border [&_th]:px-2"
+        >
           <tbody>{children}</tbody>
         </table>
       );
@@ -107,7 +136,7 @@ function ElementRenderer(props: any) {
     case "hr":
       return (
         <div {...attributes} className="my-3">
-          <div contentEditable={false} className="border-t border-border" />
+          <div contentEditable={false} className="border-border border-t" />
           {children}
         </div>
       );
@@ -119,9 +148,17 @@ function ElementRenderer(props: any) {
         </a>
       );
     case "ref":
-      return <span {...attributes} className="align-super text-[10px] text-wiki">[{children}]</span>;
+      return (
+        <span {...attributes} className="text-wiki align-super text-[10px]">
+          [{children}]
+        </span>
+      );
     default:
-      return <p {...attributes} className="my-1 leading-relaxed">{children}</p>;
+      return (
+        <p {...attributes} className="my-1 leading-relaxed">
+          {children}
+        </p>
+      );
   }
 }
 
@@ -210,10 +247,12 @@ export function PlateWikiEditor({
           spellCheck
           renderElement={((props: any) => <ElementRenderer {...props} />) as never}
           renderLeaf={((props: any) => <LeafRenderer {...props} />) as never}
-          onKeyDown={((e: React.KeyboardEvent) => {
-            onKeyDownExtra?.(e);
-            slash.handleKeyDown(e);
-          }) as never}
+          onKeyDown={
+            ((e: React.KeyboardEvent) => {
+              onKeyDownExtra?.(e);
+              slash.handleKeyDown(e);
+            }) as never
+          }
         />
         <WikiSlashMenu
           open={slash.open}
@@ -250,7 +289,7 @@ function ValueReporter({
       serializePlateToHtml(editor.children as Descendant[]),
       valueToPlainText(editor.children as Descendant[])
     );
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [version, editor, readyRef]);
 
   return null;

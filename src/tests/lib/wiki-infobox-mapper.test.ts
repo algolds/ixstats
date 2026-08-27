@@ -1,4 +1,7 @@
-import { mapInfoboxToIxStats, deriveGovCategory } from "~/lib/wiki-os/adapters/ixstates/infobox-mapper";
+import {
+  mapInfoboxToIxStats,
+  deriveGovCategory,
+} from "~/lib/wiki-os/adapters/ixstates/infobox-mapper";
 
 // Guardrail: the wiki government_type string is canon. The importer must store it
 // VERBATIM — if anyone re-adds a transform that collapses it into buckets, these go

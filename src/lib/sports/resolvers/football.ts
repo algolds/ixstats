@@ -83,8 +83,7 @@ export function runFootballMatch(ctx: SportResolverContext): SportMatchOutcome {
         } else {
           const compProb = 0.58 + (offRatings.offense - defRatings.defense) / 500;
           if (compRoll < compProb) {
-            const gains =
-              Math.floor(rng() * 12) + (rng() < 0.15 ? Math.floor(rng() * 25) + 15 : 4);
+            const gains = Math.floor(rng() * 12) + (rng() < 0.15 ? Math.floor(rng() * 25) + 15 : 4);
             yardline += gains;
             if (gains > 25) {
               trace.push({

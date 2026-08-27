@@ -8,7 +8,13 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { FacetCard } from "~/components/ui/facet-container";
-import { NavArrowDown as ChevronDown, ArrowRight, OpenNewWindow as ExternalLink, MediaImage as ImageIcon, Expand as Maximize2 } from "iconoir-react";
+import {
+  NavArrowDown as ChevronDown,
+  ArrowRight,
+  OpenNewWindow as ExternalLink,
+  MediaImage as ImageIcon,
+  Expand as Maximize2,
+} from "iconoir-react";
 import { SECTION_ICONS } from "./constants";
 import { parseWikiContent, truncateContent } from "~/lib/builder";
 import type { WikiSection } from "~/lib/builder";

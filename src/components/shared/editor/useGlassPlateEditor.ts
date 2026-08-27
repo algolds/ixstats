@@ -351,11 +351,14 @@ export function useGlassPlateEditor({
       Transforms.select(editor as any, mentionRange);
 
       if (item.type === "wiki") {
-        Transforms.insertNodes(editor as any, {
-          type: "wikilink",
-          target: item.id,
-          children: [{ text: item.id }],
-        } as any);
+        Transforms.insertNodes(
+          editor as any,
+          {
+            type: "wikilink",
+            target: item.id,
+            children: [{ text: item.id }],
+          } as any
+        );
       } else {
         Transforms.insertText(editor as any, `${item.name} `);
       }
@@ -379,7 +382,9 @@ export function useGlassPlateEditor({
         }
         if (e.key === "ArrowUp") {
           e.preventDefault();
-          setMentionSelectedIndex((prev) => (prev - 1 + mentionResults.length) % mentionResults.length);
+          setMentionSelectedIndex(
+            (prev) => (prev - 1 + mentionResults.length) % mentionResults.length
+          );
           return;
         }
         if (e.key === "Enter" || e.key === "Tab") {
@@ -439,11 +444,14 @@ export function useGlassPlateEditor({
   const insertLink = useCallback(() => {
     if (!linkUrl.trim()) return;
     const textToInsert = linkText.trim() || linkUrl.trim();
-    Transforms.insertNodes(editor as any, {
-      type: "link",
-      url: linkUrl.trim(),
-      children: [{ text: textToInsert }],
-    } as any);
+    Transforms.insertNodes(
+      editor as any,
+      {
+        type: "link",
+        url: linkUrl.trim(),
+        children: [{ text: textToInsert }],
+      } as any
+    );
     setIsLinkOpen(false);
     setLinkUrl("");
     setLinkText("");
@@ -453,21 +461,27 @@ export function useGlassPlateEditor({
   const insertWikiLink = useCallback(() => {
     if (!wikiTarget.trim()) return;
     if (wikiInsertMode === "embed") {
-      Transforms.insertNodes(editor as any, {
-        type: "wikiembed",
-        title: wikiTarget.trim(),
-        summary: wikiIntroQuery.data?.intro || "",
-        imageUrl: selectedWikiImageUrl || "",
-        source: selectedWikiSource,
-        children: [{ text: "" }],
-      } as any);
+      Transforms.insertNodes(
+        editor as any,
+        {
+          type: "wikiembed",
+          title: wikiTarget.trim(),
+          summary: wikiIntroQuery.data?.intro || "",
+          imageUrl: selectedWikiImageUrl || "",
+          source: selectedWikiSource,
+          children: [{ text: "" }],
+        } as any
+      );
     } else {
       const textToInsert = wikiText.trim() || wikiTarget.trim();
-      Transforms.insertNodes(editor as any, {
-        type: "wikilink",
-        target: wikiTarget.trim(),
-        children: [{ text: textToInsert }],
-      } as any);
+      Transforms.insertNodes(
+        editor as any,
+        {
+          type: "wikilink",
+          target: wikiTarget.trim(),
+          children: [{ text: textToInsert }],
+        } as any
+      );
     }
     setIsWikiOpen(false);
     setWikiTarget("");
@@ -486,12 +500,15 @@ export function useGlassPlateEditor({
 
   const insertStashedImage = useCallback(
     (url: string, title: string) => {
-      Transforms.insertNodes(editor as any, {
-        type: "img",
-        src: url,
-        alt: title,
-        children: [{ text: "" }],
-      } as any);
+      Transforms.insertNodes(
+        editor as any,
+        {
+          type: "img",
+          src: url,
+          alt: title,
+          children: [{ text: "" }],
+        } as any
+      );
       setIsStashesOpen(false);
       ReactEditor.focus(editor as any);
     },

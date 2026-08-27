@@ -59,12 +59,13 @@ export function ThinktankChatTab({
   if (!isMember) {
     return (
       <div className="flex h-full min-h-[450px] flex-col items-center justify-center p-6 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-xs">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 shadow-xs dark:text-emerald-400">
           <ChatBubble className="h-7 w-7" />
         </div>
-        <h3 className="mt-4 text-base font-bold text-foreground">Group Chat</h3>
-        <p className="mt-1.5 max-w-md text-xs text-muted-foreground leading-relaxed">
-          Join <strong>{groupName}</strong> to participate in group discussions, real-time messaging, and shared notes.
+        <h3 className="text-foreground mt-4 text-base font-bold">Group Chat</h3>
+        <p className="text-muted-foreground mt-1.5 max-w-md text-xs leading-relaxed">
+          Join <strong>{groupName}</strong> to participate in group discussions, real-time
+          messaging, and shared notes.
         </p>
         {onJoin && (
           <Button
@@ -86,9 +87,9 @@ export function ThinktankChatTab({
     return (
       <div className="flex h-full min-h-[450px] flex-col items-center justify-center gap-3">
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-xs">
-          <span className="h-4 w-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
         </div>
-        <p className="text-xs font-semibold text-muted-foreground">Connecting to group chat...</p>
+        <p className="text-muted-foreground text-xs font-semibold">Connecting to group chat...</p>
       </div>
     );
   }
@@ -96,11 +97,11 @@ export function ThinktankChatTab({
   if (!conversation) {
     return (
       <div className="flex h-full min-h-[450px] flex-col items-center justify-center p-6 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border/50 bg-card/60 text-muted-foreground shadow-xs">
+        <div className="border-border/50 bg-card/60 text-muted-foreground flex h-12 w-12 items-center justify-center rounded-2xl border shadow-xs">
           <ChatBubble className="h-6 w-6" />
         </div>
-        <h3 className="mt-3.5 text-sm font-bold text-foreground">Connecting Chat Room</h3>
-        <p className="mt-1 max-w-sm text-xs text-muted-foreground leading-relaxed">
+        <h3 className="text-foreground mt-3.5 text-sm font-bold">Connecting Chat Room</h3>
+        <p className="text-muted-foreground mt-1 max-w-sm text-xs leading-relaxed">
           The chat room is preparing its live sync channel. Click below to establish the connection.
         </p>
         <Button

@@ -23,4 +23,3 @@ export type { BudgetAllocationListProps } from "./BudgetAllocationList";
 export type { NavigationButtonsProps } from "./NavigationButtons";
 export type { TemplateModalProps } from "./TemplateModal";
 export type { SuggestionItem, SuggestionsPanelProps } from "./SuggestionsPanel";
-

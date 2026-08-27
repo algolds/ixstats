@@ -332,7 +332,7 @@ export function useDossier({
       await refetch();
 
       console.log(`[useWikiIntelligence] Refresh complete for ${countryName}`);
-    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'error' is intentional in this scope
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'error' is intentional in this scope
     } catch (error) {
       console.error("[useWikiIntelligence] Refresh error:", error);
       throw error; // Re-throw so caller can handle it

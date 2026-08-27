@@ -29,7 +29,7 @@ export function JewelAchievementIcon({
           className="h-6 w-6 object-contain opacity-20 blur-[1.5px] filter"
           loading="lazy"
         />
-        <Lock className="absolute h-5 w-5 text-muted-foreground/80 drop-shadow-sm" />
+        <Lock className="text-muted-foreground/80 absolute h-5 w-5 drop-shadow-sm" />
       </div>
     );
   }

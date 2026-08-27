@@ -5,7 +5,14 @@ import { isEqual } from "~/lib/utils";
 import { motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
-import { Lock, LockSlash as UnlockIcon, Shield, WarningTriangle as AlertTriangle, InfoCircle as Info, CheckCircle } from "iconoir-react";
+import {
+  Lock,
+  LockSlash as UnlockIcon,
+  Shield,
+  WarningTriangle as AlertTriangle,
+  InfoCircle as Info,
+  CheckCircle,
+} from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -174,7 +181,7 @@ function AtomicBuilderPageInner({
         setCountryLoadError(null);
         const countryData = await parseEconomyData();
         setCountries(countryData);
-      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'error' is intentional in this scope
+        // oxlint-disable-next-line eslint/no-shadow -- shadowed 'error' is intentional in this scope
       } catch (error) {
         setCountryLoadError(error instanceof Error ? error.message : "Failed to load countries");
       } finally {
@@ -309,7 +316,7 @@ function AtomicBuilderPageInner({
         }
         // Clear the server draft so a completed build can't resurrect on /builder.
         clearBuilderDraftMutation.mutate();
-      } catch  {
+      } catch {
         // Failed to clear saved state
       }
 
@@ -367,7 +374,7 @@ function AtomicBuilderPageInner({
           localStorage.removeItem(`builder_state_${countryId}`);
           localStorage.removeItem(`builder_last_saved_${countryId}`);
         }
-      } catch  {
+      } catch {
         // Failed to clear saved state
       }
 
@@ -464,7 +471,7 @@ function AtomicBuilderPageInner({
         });
       }
       setIsConfirmModalOpen(false);
-    } catch  {
+    } catch {
       // Error handled by mutation's onError callback
       // Release lock on error
       submissionLockRef.current = false;
@@ -552,7 +559,7 @@ function AtomicBuilderPageInner({
         localStorage.removeItem("builder_state");
         localStorage.removeItem("builder_last_saved");
       }
-    } catch  {
+    } catch {
       // Failed to clear saved state
     }
 

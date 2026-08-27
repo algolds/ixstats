@@ -80,7 +80,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
       clearTimeout(revealTimer);
       clearTimeout(closeTimer);
     };
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [success, onComplete]);
 
   /**

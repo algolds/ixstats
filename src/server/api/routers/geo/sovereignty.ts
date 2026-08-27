@@ -10,11 +10,7 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  cachedPublicProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, cachedPublicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";

@@ -25,8 +25,7 @@ const itemVariants = cva(
 );
 
 export interface ItemProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof itemVariants> {}
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof itemVariants> {}
 
 export function Item({ className, variant, size, children, ...props }: ItemProps) {
   return (
@@ -44,7 +43,11 @@ export function ItemMedia({ className, children, ...props }: React.HTMLAttribute
   );
 }
 
-export function ItemContent({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export function ItemContent({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div className={cn("flex min-w-0 flex-1 flex-col gap-0.5", className)} {...props}>
       {children}
@@ -52,23 +55,35 @@ export function ItemContent({ className, children, ...props }: React.HTMLAttribu
   );
 }
 
-export function ItemTitle({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+export function ItemTitle({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h5 className={cn("truncate text-xs font-medium text-foreground", className)} {...props}>
+    <h5 className={cn("text-foreground truncate text-xs font-medium", className)} {...props}>
       {children}
     </h5>
   );
 }
 
-export function ItemDescription({ className, children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+export function ItemDescription({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn("truncate text-[11px] text-muted-foreground", className)} {...props}>
+    <p className={cn("text-muted-foreground truncate text-[11px]", className)} {...props}>
       {children}
     </p>
   );
 }
 
-export function ItemActions({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export function ItemActions({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div className={cn("flex shrink-0 items-center gap-1.5", className)} {...props}>
       {children}

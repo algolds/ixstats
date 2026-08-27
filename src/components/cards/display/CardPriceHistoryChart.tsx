@@ -88,8 +88,18 @@ export const CardPriceHistoryChart: React.FC<CardPriceHistoryChartProps> = ({ ca
             dataKey="value"
             stroke="var(--color-warning)"
             strokeWidth={2}
-            dot={{ r: 3, stroke: "var(--color-warning)", strokeWidth: 1, fill: "var(--color-bg-primary)" }}
-            activeDot={{ r: 5, stroke: "var(--color-warning-light)", strokeWidth: 2, fill: "var(--color-warning)" }}
+            dot={{
+              r: 3,
+              stroke: "var(--color-warning)",
+              strokeWidth: 1,
+              fill: "var(--color-bg-primary)",
+            }}
+            activeDot={{
+              r: 5,
+              stroke: "var(--color-warning-light)",
+              strokeWidth: 2,
+              fill: "var(--color-warning)",
+            }}
           />
         </LineChart>
       </ResponsiveContainer>

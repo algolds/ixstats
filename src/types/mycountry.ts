@@ -5,7 +5,6 @@
  * These types ensure type safety across the entire MyCountry system.
  */
 
-
 import type { IntelligenceItem } from "./intelligence-unified";
 
 // Re-export from ixstats for consistency
@@ -445,4 +444,3 @@ export interface ComparisonCountry {
   continent?: string | null;
   color: string;
 }
-

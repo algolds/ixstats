@@ -31,8 +31,13 @@ const TTL_MS = 60 * 60 * 24 * 1000; // 24h
 /** Stable cache key: canonical name + sorted params (order-insensitive). */
 export function previewCacheKey(templateName: string, params: Record<string, string>): string {
   const canonical = JSON.stringify([
-    templateName.replace(/^Template:/i, "").trim().toLowerCase(),
-    Object.keys(params).sort().map((k) => [k, params[k]]),
+    templateName
+      .replace(/^Template:/i, "")
+      .trim()
+      .toLowerCase(),
+    Object.keys(params)
+      .sort()
+      .map((k) => [k, params[k]]),
   ]);
   let h = 0;
   for (let i = 0; i < canonical.length; i++) {

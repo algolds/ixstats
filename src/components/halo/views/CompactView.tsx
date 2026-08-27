@@ -47,13 +47,8 @@ function CompactViewComponent({
   const pluginViewKey = activePlugin?.expandedViews
     ? Object.keys(activePlugin.expandedViews)[0]
     : null;
-  const {
-    activeSectionId,
-    tocEntries,
-    narratorState,
-    narratorActions,
-    themeColors,
-  } = useWikiContext();
+  const { activeSectionId, tocEntries, narratorState, narratorActions, themeColors } =
+    useWikiContext();
 
   const isNarratorActive = !!(
     narratorState &&
@@ -288,15 +283,13 @@ function CompactViewComponent({
                               }
                             }
                           }}
-                          className="flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-all duration-300 hover:bg-white/10 max-w-[160px] sm:max-w-[200px] min-w-0 overflow-hidden"
+                          className="flex max-w-[160px] min-w-0 cursor-pointer items-center gap-1.5 overflow-hidden rounded px-1.5 py-0.5 transition-all duration-300 hover:bg-white/10 sm:max-w-[200px]"
                           title={`Open ${activePlugin.id} mode`}
                         >
                           {pluginCenter}
                         </div>
                       ) : (
-                        <div
-                          className="flex items-center gap-1.5 px-1.5 transition-all duration-300 max-w-[160px] sm:max-w-[200px] min-w-0 overflow-hidden"
-                        >
+                        <div className="flex max-w-[160px] min-w-0 items-center gap-1.5 overflow-hidden px-1.5 transition-all duration-300 sm:max-w-[200px]">
                           {pluginCenter}
                         </div>
                       )
@@ -325,7 +318,7 @@ function CompactViewComponent({
             )}
 
             {/* ── Right-Side Action Icons Group with Optional Narrator Progress Underneath ── */}
-            <div className="flex flex-col items-center justify-center relative shrink-0">
+            <div className="relative flex shrink-0 flex-col items-center justify-center">
               <div className="flex items-center gap-0.5">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -443,7 +436,9 @@ function CompactViewComponent({
                           {action.badge != null && action.badge > 0 && (
                             <span
                               className={`absolute flex items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold text-white ${
-                                isSticky ? "-top-0.5 -right-0.5 h-2.5 w-2.5" : "-top-1 -right-1 h-3 w-3"
+                                isSticky
+                                  ? "-top-0.5 -right-0.5 h-2.5 w-2.5"
+                                  : "-top-1 -right-1 h-3 w-3"
                               }`}
                             >
                               {action.badge > 9 ? "9+" : action.badge}
@@ -468,7 +463,7 @@ function CompactViewComponent({
               {/* Sleek Hairline Narrator Progress Track Underneath the Icons Group */}
               {isNarratorActive && narratorActions && (
                 <div
-                  className="group/narrator-progress relative w-full h-[2.5px] rounded-full bg-foreground/15 dark:bg-white/15 overflow-hidden cursor-pointer mt-0.5 flex items-center transition-all hover:h-[3.5px]"
+                  className="group/narrator-progress bg-foreground/15 relative mt-0.5 flex h-[2.5px] w-full cursor-pointer items-center overflow-hidden rounded-full transition-all hover:h-[3.5px] dark:bg-white/15"
                   onClick={(e) => {
                     e.stopPropagation();
                     const rect = e.currentTarget.getBoundingClientRect();

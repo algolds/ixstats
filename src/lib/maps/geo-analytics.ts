@@ -861,4 +861,3 @@ export function formatDistanceMetrics(distanceKm: number): {
     nm: (distanceKm * 0.539957).toFixed(1),
   };
 }
-

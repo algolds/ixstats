@@ -46,9 +46,9 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Interactive Markov Path Visualizer Panel */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div className="space-y-1">
-            <h3 className="text-sm font-bold tracking-tight text-onoma-primary">
+            <h3 className="text-onoma-primary text-sm font-bold tracking-tight">
               Interactive Path Workshop
             </h3>
             <p className="text-muted-foreground text-xs leading-normal">
@@ -79,7 +79,7 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
           />
         ) : (
           <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground flex h-full min-h-[300px] flex-col items-center justify-center border border-dashed p-8 text-center text-sm">
-            <Info className="mb-3 h-8 w-8 text-onoma-primary/40" />
+            <Info className="text-onoma-primary/40 mb-3 h-8 w-8" />
             <p className="font-semibold">Interactive visualizer is inactive</p>
             <p className="text-muted-foreground mt-1 text-xs">
               Select a corpus or provide training seeds to build the Markov transition trie.

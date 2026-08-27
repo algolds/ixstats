@@ -1,7 +1,12 @@
 "use client";
 
 import React from "react";
-import { StatUp as TrendingUp, FireFlame as Flame, Gift, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  FireFlame as Flame,
+  Gift,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";

@@ -33,10 +33,7 @@ import {
   f2ToX,
   calculateAcousticCenter,
 } from "~/lib/onoma/vowel-formants";
-import {
-  translateToIPA,
-  resolveNamePhonetics,
-} from "~/lib/onoma/phonology";
+import { translateToIPA, resolveNamePhonetics } from "~/lib/onoma/phonology";
 import {
   TEMPLATE_PHONETIC_PROFILES,
   getTemplateLinguisticProfile,
@@ -227,7 +224,12 @@ describe("Onoma Initiatives 125-132 Verification Suite", () => {
     });
 
     test("evaluates environmental context rules (V_V, _[ei], _#, #_)", () => {
-      const intervocalicRule: SoundShiftRule = { id: "1", source: "t", target: "d", context: "V_V" };
+      const intervocalicRule: SoundShiftRule = {
+        id: "1",
+        source: "t",
+        target: "d",
+        context: "V_V",
+      };
       expect(applySingleRule("vita", intervocalicRule)).toBe("vida");
       expect(applySingleRule("tra", intervocalicRule)).toBe("tra");
 

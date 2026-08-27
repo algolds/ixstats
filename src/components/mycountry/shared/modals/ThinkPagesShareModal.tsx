@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Send, Page as FileText, CheckCircle as CheckCircle2, Globe, ShieldCheck } from "iconoir-react";
+import {
+  Send,
+  Page as FileText,
+  CheckCircle as CheckCircle2,
+  Globe,
+  ShieldCheck,
+} from "iconoir-react";
 import {
   Dialog,
   DialogContent,

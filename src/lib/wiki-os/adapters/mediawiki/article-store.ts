@@ -8,12 +8,7 @@
 import { db } from "~/server/db";
 import { ArticleRepository } from "../../core/article-repository";
 import { toArticleSlug, type WikiRevisionSummary } from "../../core/domain-types";
-import {
-  getArticleWikitext,
-  getPageHistory,
-  getRevisionWikitext,
-  type WikiSource,
-} from "./bridge";
+import { getArticleWikitext, getPageHistory, getRevisionWikitext, type WikiSource } from "./bridge";
 import { fetchMediaWikiPageAuthorsAndRevisions } from "./bridge/http-reader";
 import type { ArticleAuthorInfo } from "~/lib/wiki-os/types/canonical";
 
@@ -162,7 +157,7 @@ export async function getPageHistoryShadow(
 
   // 2. Fall back to MediaWiki
   const mwHistory = await getPageHistory(title, limit, offset);
-  const revList = Array.isArray(mwHistory) ? mwHistory : (mwHistory as any)?.revisions ?? [];
+  const revList = Array.isArray(mwHistory) ? mwHistory : ((mwHistory as any)?.revisions ?? []);
   return {
     revisions: revList.map((r: any) => ({
       revid: r.rev_id || r.revid || 0,
@@ -198,7 +193,9 @@ export async function getArticleAuthors(
       let latestEditor: { username: string; timestamp?: string; avatar?: string | null } | null =
         typeof mwData.lastEditor === "object" && mwData.lastEditor ? mwData.lastEditor : null;
       let latestEditedAt: string | null =
-        (typeof mwData.lastEditor === "object" && mwData.lastEditor ? mwData.lastEditor.timestamp : null) ?? null;
+        (typeof mwData.lastEditor === "object" && mwData.lastEditor
+          ? mwData.lastEditor.timestamp
+          : null) ?? null;
 
       try {
         const slug = toArticleSlug(cleanTitle);
@@ -219,8 +216,15 @@ export async function getArticleAuthors(
           },
         });
 
-        if (latestPgRev && (!latestEditedAt || new Date(latestPgRev.createdAt) > new Date(latestEditedAt))) {
-          const fallbackName = latestEditor ? (typeof latestEditor === "string" ? latestEditor : latestEditor.username) : "MediaWiki Contributor";
+        if (
+          latestPgRev &&
+          (!latestEditedAt || new Date(latestPgRev.createdAt) > new Date(latestEditedAt))
+        ) {
+          const fallbackName = latestEditor
+            ? typeof latestEditor === "string"
+              ? latestEditor
+              : latestEditor.username
+            : "MediaWiki Contributor";
           latestEditor = {
             username: latestPgRev.author || fallbackName,
             timestamp: new Date(latestPgRev.createdAt).toISOString(),
@@ -355,10 +359,22 @@ export async function getArticleAuthors(
           },
           lastEditedAt: lastEditorTimestamp,
           topContributors: article.author?.wikiUsername
-            ? [{ username: article.author.wikiUsername, editCount: 1, lastContributedAt: lastEditorTimestamp }]
+            ? [
+                {
+                  username: article.author.wikiUsername,
+                  editCount: 1,
+                  lastContributedAt: lastEditorTimestamp,
+                },
+              ]
             : [],
           contributors: article.author?.wikiUsername
-            ? [{ username: article.author.wikiUsername, editCount: 1, lastContributedAt: lastEditorTimestamp }]
+            ? [
+                {
+                  username: article.author.wikiUsername,
+                  editCount: 1,
+                  lastContributedAt: lastEditorTimestamp,
+                },
+              ]
             : [],
           totalContributors: article.author?.wikiUsername ? 1 : 0,
         };
@@ -438,6 +454,9 @@ export function invalidateArticleShadow(_title: string, _source: WikiSource = "i
   // No-op
 }
 
-export function batchInvalidateArticleShadow(_titles: string[], _source: WikiSource = "ixwiki"): void {
+export function batchInvalidateArticleShadow(
+  _titles: string[],
+  _source: WikiSource = "ixwiki"
+): void {
   // No-op
 }

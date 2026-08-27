@@ -273,9 +273,7 @@ function CostsTab({
         </label>
         <Slider
           value={[formData.requiredCapacity]}
-          onValueChange={([value]) =>
-            setFormData((prev) => ({ ...prev, requiredCapacity: value }))
-          }
+          onValueChange={([value]) => setFormData((prev) => ({ ...prev, requiredCapacity: value }))}
           min={0}
           max={100}
         />

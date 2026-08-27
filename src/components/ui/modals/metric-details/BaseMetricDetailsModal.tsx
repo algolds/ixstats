@@ -17,7 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Refresh as RefreshCw, StatsReport as BarChart3, StatUp as TrendingUp, Globe, InfoCircle as Info } from "iconoir-react";
+import {
+  Refresh as RefreshCw,
+  StatsReport as BarChart3,
+  StatUp as TrendingUp,
+  Globe,
+  InfoCircle as Info,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { type TimeRange, type ChartType, TIME_RANGE_OPTIONS, CHART_TYPE_OPTIONS } from "./types";
 import { type MetricThemeVariant, getThemeClasses } from "./MetricModalLayout";
@@ -142,20 +148,29 @@ export function BaseMetricDetailsModal({
     try {
       const raw = localStorage.getItem(persistKey);
       if (raw) {
-        const parsed = JSON.parse(raw) as { activeTab?: string; timeRange?: TimeRange; chartType?: ChartType };
+        const parsed = JSON.parse(raw) as {
+          activeTab?: string;
+          timeRange?: TimeRange;
+          chartType?: ChartType;
+        };
         // oxlint-disable-next-line
-        if (parsed.activeTab && tabs.some((t) => t.id === parsed.activeTab)) setActiveTab(parsed.activeTab);
+        if (parsed.activeTab && tabs.some((t) => t.id === parsed.activeTab))
+          setActiveTab(parsed.activeTab);
         if (parsed.timeRange) setTimeRange(parsed.timeRange);
         if (parsed.chartType) setChartType(parsed.chartType);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [persistKey, tabs]);
 
   useEffect(() => {
     if (!persistKey || typeof window === "undefined") return;
     try {
       localStorage.setItem(persistKey, JSON.stringify({ activeTab, timeRange, chartType }));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [persistKey, activeTab, timeRange, chartType]);
 
   // Keep valid tab if tabs change (e.g. Details removed)

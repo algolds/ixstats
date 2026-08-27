@@ -10,10 +10,7 @@ import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
-import {
-  Folder as FolderHeart,
-  FloppyDisk as Save,
-} from "iconoir-react";
+import { Folder as FolderHeart, FloppyDisk as Save } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 
@@ -22,8 +19,11 @@ export function StashSettingsContent() {
   const notify = useNotify();
 
   const { data: stats, isLoading: statsLoading } = api.admin.getStashStats.useQuery();
-  const { data: configData, isLoading: configLoading, refetch: refetchConfig } =
-    api.admin.getStashConfig.useQuery();
+  const {
+    data: configData,
+    isLoading: configLoading,
+    refetch: refetchConfig,
+  } = api.admin.getStashConfig.useQuery();
 
   const [settings, setSettings] = useState({
     maxStashCount: 100,
@@ -67,10 +67,12 @@ export function StashSettingsContent() {
 
       {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Total Stashed Articles</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Total Stashed Articles
+          </p>
           {statsLoading ? (
-            <Skeleton className="h-7 w-20 mt-1" />
+            <Skeleton className="mt-1 h-7 w-20" />
           ) : (
             <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
               {stats?.totalStashes.toLocaleString() ?? 0}
@@ -78,23 +80,27 @@ export function StashSettingsContent() {
           )}
         </div>
 
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Text Highlight Marks</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Text Highlight Marks
+          </p>
           {statsLoading ? (
-            <Skeleton className="h-7 w-20 mt-1" />
+            <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="text-purple-400 mt-1 font-mono text-xl font-bold tracking-tight">
+            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
               {stats?.totalHighlights.toLocaleString() ?? 0}
             </p>
           )}
         </div>
 
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Cache Quota per User</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Cache Quota per User
+          </p>
           {statsLoading ? (
-            <Skeleton className="h-7 w-20 mt-1" />
+            <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="text-emerald-400 mt-1 font-mono text-xl font-bold tracking-tight">
+            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
               {stats?.avgCacheSizeKb ?? 143} KB
             </p>
           )}
@@ -102,11 +108,11 @@ export function StashSettingsContent() {
       </div>
 
       {/* Settings Form */}
-      <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-5">
-        <div className="flex items-center justify-between border-b border-border/20 pb-4">
+      <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+        <div className="border-border/20 flex items-center justify-between border-b pb-4">
           <div>
-            <h3 className="text-xs font-bold text-foreground">Stash Configuration Parameters</h3>
-            <p className="text-muted-foreground text-[11px] mt-0.5">
+            <h3 className="text-foreground text-xs font-bold">Stash Configuration Parameters</h3>
+            <p className="text-muted-foreground mt-0.5 text-[11px]">
               Client storage policies and offline synchronization settings
             </p>
           </div>
@@ -114,7 +120,7 @@ export function StashSettingsContent() {
             size="sm"
             onClick={handleSave}
             disabled={saveMutation.isPending || configLoading}
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Save className="mr-1.5 h-3.5 w-3.5" />
             {saveMutation.isPending ? "Saving..." : "Save Settings"}
@@ -123,9 +129,11 @@ export function StashSettingsContent() {
 
         <div className="space-y-3">
           {/* Max Items */}
-          <div className="flex flex-col justify-between gap-3 rounded-xl border border-border/20 bg-background/30 p-3.5 sm:flex-row sm:items-center">
+          <div className="border-border/20 bg-background/30 flex flex-col justify-between gap-3 rounded-xl border p-3.5 sm:flex-row sm:items-center">
             <div>
-              <Label className="text-foreground text-xs font-bold">Max Stash Limit per Account</Label>
+              <Label className="text-foreground text-xs font-bold">
+                Max Stash Limit per Account
+              </Label>
               <p className="text-muted-foreground text-[11px]">
                 Cap the maximum number of stashed wiki pages per user
               </p>
@@ -134,14 +142,14 @@ export function StashSettingsContent() {
               type="number"
               value={settings.maxStashCount}
               onChange={(e) => handleToggle("maxStashCount", parseInt(e.target.value) || 10)}
-              className="h-8 w-28 rounded-xl border-border/30 bg-background/50 text-xs font-mono font-bold"
+              className="border-border/30 bg-background/50 h-8 w-28 rounded-xl font-mono text-xs font-bold"
               min={10}
               max={500}
             />
           </div>
 
           {/* Offline Sync */}
-          <div className="flex items-center justify-between rounded-xl border border-border/20 bg-background/30 p-3.5">
+          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
             <div>
               <Label className="text-foreground text-xs font-bold">Offline Storage Syncing</Label>
               <p className="text-muted-foreground text-[11px]">
@@ -156,9 +164,11 @@ export function StashSettingsContent() {
           </div>
 
           {/* Auto Category */}
-          <div className="flex items-center justify-between rounded-xl border border-border/20 bg-background/30 p-3.5">
+          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
             <div>
-              <Label className="text-foreground text-xs font-bold">Automatic Image Categorization</Label>
+              <Label className="text-foreground text-xs font-bold">
+                Automatic Image Categorization
+              </Label>
               <p className="text-muted-foreground text-[11px]">
                 Group stashed images by orientation and type filters automatically
               </p>
@@ -171,7 +181,7 @@ export function StashSettingsContent() {
           </div>
 
           {/* Highlight Tracker */}
-          <div className="flex items-center justify-between rounded-xl border border-border/20 bg-background/30 p-3.5">
+          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
             <div>
               <Label className="text-foreground text-xs font-bold">Text Highlight Tracking</Label>
               <p className="text-muted-foreground text-[11px]">

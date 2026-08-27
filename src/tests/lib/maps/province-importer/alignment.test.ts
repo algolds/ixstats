@@ -1,4 +1,7 @@
-import { findNearestBorderRing, snapGeometryToBorder } from "~/lib/maps/province-importer/alignment";
+import {
+  findNearestBorderRing,
+  snapGeometryToBorder,
+} from "~/lib/maps/province-importer/alignment";
 import { findClosestPointOnBoundary } from "~/lib/maps/province-importer/topology";
 import type { Polygon, MultiPolygon } from "geojson";
 

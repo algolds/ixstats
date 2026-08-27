@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { NumberedListLeft as ListTree, Puzzle, OpenBook as BookOpen, Coins, Search } from "iconoir-react";
+import {
+  NumberedListLeft as ListTree,
+  Puzzle,
+  OpenBook as BookOpen,
+  Coins,
+  Search,
+} from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function AtomicComponentCatalogArticle() {

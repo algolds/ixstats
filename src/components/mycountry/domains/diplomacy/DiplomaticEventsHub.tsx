@@ -33,7 +33,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Page as FileText, Clock, WarningCircle as AlertCircle, CheckCircle, XmarkCircle as XCircle, ChatBubble as MessageSquare, StatUp as TrendingUp, StatDown as TrendingDown, ClockRotateRight as History, Filter, Eye, Sparks as Sparkles } from "iconoir-react";
+import {
+  Page as FileText,
+  Clock,
+  WarningCircle as AlertCircle,
+  CheckCircle,
+  XmarkCircle as XCircle,
+  ChatBubble as MessageSquare,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  ClockRotateRight as History,
+  Filter,
+  Eye,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 
@@ -273,7 +286,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
     if (!scenarioHistory) return [];
     if (historyFilter === "all") return scenarioHistory;
     return scenarioHistory.filter((s: any) => s.type === historyFilter);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [scenarioHistory, historyFilter]);
 
   // Handle event response

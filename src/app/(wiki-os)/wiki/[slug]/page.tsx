@@ -96,9 +96,7 @@ export default function WikiOSArticlePage() {
       );
     } else if (title.startsWith("User:") || title.startsWith("User_talk:")) {
       const userName = title.replace(/^User(_talk)?:/i, "").trim();
-      router.replace(
-        withBasePath(`/wiki/user/${encodeURIComponent(userName.replace(/ /g, "_"))}`)
-      );
+      router.replace(withBasePath(`/wiki/user/${encodeURIComponent(userName.replace(/ /g, "_"))}`));
     } else if (/^Special:/i.test(title)) {
       const spec = title.replace(/^Special:/i, "").trim();
       const specLower = spec.toLowerCase();
@@ -260,8 +258,10 @@ export default function WikiOSArticlePage() {
                     ? {
                         creator:
                           typeof (data.authorInfo as any).creator === "object"
-                            ? (data.authorInfo as any).creator?.username ?? null
-                            : (data.authorInfo as any).creator ?? (data.authorInfo as any).author ?? null,
+                            ? ((data.authorInfo as any).creator?.username ?? null)
+                            : ((data.authorInfo as any).creator ??
+                              (data.authorInfo as any).author ??
+                              null),
                         creatorAvatar:
                           (data.authorInfo as any).creator?.avatar ??
                           (data.authorInfo as any).creatorAvatar ??
@@ -273,8 +273,8 @@ export default function WikiOSArticlePage() {
                           null,
                         lastEditor:
                           typeof (data.authorInfo as any).lastEditor === "object"
-                            ? (data.authorInfo as any).lastEditor?.username ?? null
-                            : (data.authorInfo as any).lastEditor ?? null,
+                            ? ((data.authorInfo as any).lastEditor?.username ?? null)
+                            : ((data.authorInfo as any).lastEditor ?? null),
                         lastEditorAvatar:
                           (data.authorInfo as any).lastEditor?.avatar ??
                           (data.authorInfo as any).lastEditorAvatar ??
@@ -290,7 +290,8 @@ export default function WikiOSArticlePage() {
                           [],
                         totalContributors:
                           (data.authorInfo as any).totalContributors ??
-                          ((data.authorInfo as any).topContributors?.length ?? 0),
+                          (data.authorInfo as any).topContributors?.length ??
+                          0,
                       }
                     : null
                 }

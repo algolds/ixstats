@@ -3,7 +3,13 @@
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { motion } from "motion/react";
-import { Activity, StatUp as TrendingUp, Flash as Zap, Refresh as RefreshCw, Filter } from "iconoir-react";
+import {
+  Activity,
+  StatUp as TrendingUp,
+  Flash as Zap,
+  Refresh as RefreshCw,
+  Filter,
+} from "iconoir-react";
 import { ActivityFeedItem } from "./ActivityFeedItem";
 import { ActivityFilters } from "./ActivityFilters";
 import { TrendingTopics } from "./TrendingTopics";

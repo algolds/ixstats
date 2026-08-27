@@ -1,6 +1,15 @@
 "use client";
 
-import { Dashboard as LayoutDashboard, Trophy, Calendar, Tournament as Swords, MapPin, Group as Users, Shield, Medal } from "iconoir-react";
+import {
+  Dashboard as LayoutDashboard,
+  Trophy,
+  Calendar,
+  Tournament as Swords,
+  MapPin,
+  Group as Users,
+  Shield,
+  Medal,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { getSportEmoji } from "~/lib/sports/presets";
 import { Progress } from "~/components/ui/progress";

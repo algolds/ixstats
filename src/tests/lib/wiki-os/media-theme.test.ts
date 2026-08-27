@@ -14,9 +14,9 @@ describe("WikiOS Media Theme System", () => {
     it("detects SVG images from file extensions and URLs", () => {
       expect(detectMediaType("https://ixwiki.com/images/a/ab/National_Emblem.svg")).toBe("svg");
       expect(detectMediaType("/images/thumb/1/12/Flag.svg/300px-Flag.svg.png")).toBe("svg");
-      expect(
-        detectMediaType("/api/mediawiki/ixwiki/wiki/Special:FilePath/Coat_of_arms.svg")
-      ).toBe("svg");
+      expect(detectMediaType("/api/mediawiki/ixwiki/wiki/Special:FilePath/Coat_of_arms.svg")).toBe(
+        "svg"
+      );
     });
 
     it("detects math formulas from LaTeX/MathML markers", () => {
@@ -118,7 +118,8 @@ describe("resolveHighResWikiImage", () => {
   it("de-thumbnails standard MediaWiki raster images", () => {
     const mockImg = {
       getAttribute: (attr: string) => {
-        if (attr === "src") return "https://ixwiki.com/images/thumb/8/8a/Steve_Jobs.jpg/300px-Steve_Jobs.jpg";
+        if (attr === "src")
+          return "https://ixwiki.com/images/thumb/8/8a/Steve_Jobs.jpg/300px-Steve_Jobs.jpg";
         if (attr === "alt") return "Steve Jobs portrait";
         return null;
       },
@@ -128,14 +129,17 @@ describe("resolveHighResWikiImage", () => {
     const result = resolveHighResWikiImage(mockImg);
     expect(result.highResSrc).toBe("https://ixwiki.com/images/8/8a/Steve_Jobs.jpg");
     expect(result.filename).toBe("Steve Jobs.jpg");
-    expect(result.thumbSrc).toBe("https://ixwiki.com/images/thumb/8/8a/Steve_Jobs.jpg/300px-Steve_Jobs.jpg");
+    expect(result.thumbSrc).toBe(
+      "https://ixwiki.com/images/thumb/8/8a/Steve_Jobs.jpg/300px-Steve_Jobs.jpg"
+    );
     expect(result.isSvg).toBe(false);
   });
 
   it("recovers original vector SVG from rasterized .svg.png thumbnail", () => {
     const mockImg = {
       getAttribute: (attr: string) => {
-        if (attr === "src") return "https://ixwiki.com/images/thumb/4/41/Apple_Logo.svg/200px-Apple_Logo.svg.png";
+        if (attr === "src")
+          return "https://ixwiki.com/images/thumb/4/41/Apple_Logo.svg/200px-Apple_Logo.svg.png";
         if (attr === "alt") return "Apple Logo";
         return null;
       },
@@ -167,5 +171,3 @@ describe("resolveHighResWikiImage", () => {
     expect(result.isSvg).toBe(true);
   });
 });
-
-

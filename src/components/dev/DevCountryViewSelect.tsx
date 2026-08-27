@@ -39,7 +39,9 @@ export function DevCountryViewSelect() {
 
   const countries = useMemo<{ id: string; name: string }[]>(() => {
     if (!countriesData) return [];
-    const list = Array.isArray(countriesData) ? countriesData : (countriesData as any).items ?? [];
+    const list = Array.isArray(countriesData)
+      ? countriesData
+      : ((countriesData as any).items ?? []);
     return list.map((c: any) => ({
       id: c.id,
       name: c.name,

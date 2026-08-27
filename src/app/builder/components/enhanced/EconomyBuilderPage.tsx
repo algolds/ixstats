@@ -6,7 +6,16 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 
 // oxlint-disable-next-line eslint/no-unused-vars
-import { Industry as Factory, Group as Users, WarningTriangle as AlertTriangle, Flash as Zap, Globe, SystemRestart as Loader2, HelpCircle, Page as Receipt } from "iconoir-react";
+import {
+  Industry as Factory,
+  Group as Users,
+  WarningTriangle as AlertTriangle,
+  Flash as Zap,
+  Globe,
+  SystemRestart as Loader2,
+  HelpCircle,
+  Page as Receipt,
+} from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { isEqual } from "~/lib/utils";
 

@@ -36,9 +36,12 @@ export function AtomicBlock({
       className={`wikios-ve-atomic ${kind === "infobox" ? "wikios-ve-infobox" : "wikios-ve-template"} group relative my-2 rounded-xl`}
       contentEditable={false}
     >
-      <div className="pointer-events-none wikios-ve-atomic-body [&_figure]:pointer-events-auto [&_img]:pointer-events-auto" dangerouslySetInnerHTML={{ __html: html }} />
+      <div
+        className="wikios-ve-atomic-body pointer-events-none [&_figure]:pointer-events-auto [&_img]:pointer-events-auto"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
       {editableName && (
-        <span className="absolute -top-2 left-3 rounded-full bg-wiki/15 px-2 py-0.5 text-[10px] font-bold text-wiki border border-wiki/20">
+        <span className="bg-wiki/15 text-wiki border-wiki/20 absolute -top-2 left-3 rounded-full border px-2 py-0.5 text-[10px] font-bold">
           {editableName}
         </span>
       )}
@@ -47,7 +50,13 @@ export function AtomicBlock({
 }
 
 /** Escape-hatch / infobox block — original HTML re-emitted byte-for-byte on save. */
-export function PlateRawHtmlElement({ attributes, children }: { attributes: Record<string, unknown>; children: React.ReactNode }) {
+export function PlateRawHtmlElement({
+  attributes,
+  children,
+}: {
+  attributes: Record<string, unknown>;
+  children: React.ReactNode;
+}) {
   const el = useElement() as unknown as RawHtmlEl | undefined;
   const path = usePath();
   const readOnly = useReadOnly();
@@ -63,7 +72,7 @@ export function PlateRawHtmlElement({ attributes, children }: { attributes: Reco
             type="button"
             contentEditable={false}
             onClick={() => path && cb.openTemplateEditor(el.id!)}
-            className="rounded-lg bg-secondary/70 px-2 py-0.5 text-[10px] font-semibold text-foreground active:scale-[0.98]"
+            className="bg-secondary/70 text-foreground rounded-lg px-2 py-0.5 text-[10px] font-semibold active:scale-[0.98]"
           >
             Edit
           </button>

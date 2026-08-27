@@ -15,7 +15,7 @@ interface AuthenticationGuardProps {
 // Check if Clerk is configured
 const isClerkConfigured = Boolean(
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_") ||
-    process.env.NODE_ENV === "test"
+  process.env.NODE_ENV === "test"
 );
 
 export function AuthenticationGuard({ children, redirectPath }: AuthenticationGuardProps) {

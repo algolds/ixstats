@@ -84,7 +84,7 @@ export default function MapPipelineLabPage() {
       // oxlint-disable-next-line
       runPipeline();
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, []);
 
   const handleToggleLayer = (layerId: string) => {

@@ -43,11 +43,7 @@ export function WikiEditorSavePanel({
         }}
       />
       <label className="wikios-ve-save-minor">
-        <input
-          type="checkbox"
-          checked={minor}
-          onChange={(e) => setMinor(e.target.checked)}
-        />
+        <input type="checkbox" checked={minor} onChange={(e) => setMinor(e.target.checked)} />
         Minor
       </label>
       <button

@@ -14,10 +14,7 @@ import {
 } from "~/components/ui/select";
 import { JsonViewer } from "~/components/ui/json-viewer";
 import { Plus, EditPencil as Pencil, Trash as Trash2, Check } from "iconoir-react";
-import {
-  type ChoiceFormData,
-  RISK_LEVELS,
-} from "~/lib/admin/diplomatic-scenario-transforms";
+import { type ChoiceFormData, RISK_LEVELS } from "~/lib/admin/diplomatic-scenario-transforms";
 
 interface DiplomaticChoiceEditorProps {
   responseOptions: ChoiceFormData[];
@@ -175,9 +172,7 @@ export function DiplomaticChoiceEditor({
               <label className="text-foreground mb-2 block text-sm font-medium">Label *</label>
               <Input
                 value={choiceFormData.label}
-                onChange={(e) =>
-                  setChoiceFormData((prev) => ({ ...prev, label: e.target.value }))
-                }
+                onChange={(e) => setChoiceFormData((prev) => ({ ...prev, label: e.target.value }))}
                 placeholder="e.g., Diplomatic Negotiation"
               />
             </div>

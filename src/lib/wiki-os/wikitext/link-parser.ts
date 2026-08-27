@@ -81,15 +81,21 @@ export function parseInlineLinksAndFormatting(text: string): WikiInlineNode[] {
     }
 
     // 2. Engine Data Chips: [[CountryData:slug|metric]]
-    if (text.startsWith("[[CountryData:", i) || text.startsWith("[[BusinessData:", i) || text.startsWith("[[DefenseData:", i)) {
+    if (
+      text.startsWith("[[CountryData:", i) ||
+      text.startsWith("[[BusinessData:", i) ||
+      text.startsWith("[[DefenseData:", i)
+    ) {
       const closeIdx = text.indexOf("]]", i);
       if (closeIdx !== -1) {
         const raw = text.slice(i, closeIdx + 2);
         const inner = raw.slice(2, -2);
         const colonIdx = inner.indexOf(":");
         const pipeIdx = inner.indexOf("|");
-        const connector = inner.slice(0, colonIdx) as "CountryData" | "BusinessData" | "DefenseData";
-        const slug = pipeIdx !== -1 ? inner.slice(colonIdx + 1, pipeIdx) : inner.slice(colonIdx + 1);
+        const connector = inner.slice(0, colonIdx) as
+          "CountryData" | "BusinessData" | "DefenseData";
+        const slug =
+          pipeIdx !== -1 ? inner.slice(colonIdx + 1, pipeIdx) : inner.slice(colonIdx + 1);
         const metric = pipeIdx !== -1 ? inner.slice(pipeIdx + 1) : "name";
 
         nodes.push({
@@ -113,7 +119,8 @@ export function parseInlineLinksAndFormatting(text: string): WikiInlineNode[] {
         const inner = raw.slice(2, -2);
         const colonIdx = inner.indexOf(":");
         const pipeIdx = inner.indexOf("|");
-        const coords = pipeIdx !== -1 ? inner.slice(colonIdx + 1, pipeIdx) : inner.slice(colonIdx + 1);
+        const coords =
+          pipeIdx !== -1 ? inner.slice(colonIdx + 1, pipeIdx) : inner.slice(colonIdx + 1);
         const label = pipeIdx !== -1 ? inner.slice(pipeIdx + 1) : undefined;
         const [latStr, lngStr] = coords.split(",");
         const lat = latStr ? parseFloat(latStr) : undefined;
@@ -190,7 +197,10 @@ export function parseInlineLinksAndFormatting(text: string): WikiInlineNode[] {
         });
         i = closeTagIdx + 6;
         continue;
-      } else if (selfCloseIdx !== -1 && selfCloseIdx < (closeTagIdx === -1 ? Infinity : closeTagIdx)) {
+      } else if (
+        selfCloseIdx !== -1 &&
+        selfCloseIdx < (closeTagIdx === -1 ? Infinity : closeTagIdx)
+      ) {
         const rawRef = text.slice(i, selfCloseIdx + 2);
         const nameMatch = /name=["']([^"']+)["']/i.exec(rawRef);
 

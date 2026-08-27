@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  standardMutationCountryOwnerProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
@@ -34,7 +31,6 @@ export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
         take: 200,
         select: { id: true, name: true, geometry: true },
       });
-
 
       if (subdivisions.length === 0) {
         return { updated: 0, total: 0, verticesBefore: 0, verticesAfter: 0, reduction: 0 };

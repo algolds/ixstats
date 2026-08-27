@@ -137,60 +137,92 @@ export default function DedicatedLogsPage() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Fetched Logs</p>
-          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">{entries.length}</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Fetched Logs
+          </p>
+          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+            {entries.length}
+          </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Errors / Warnings</p>
-          <p className={`mt-1 font-mono text-xl font-bold tracking-tight ${errorCount > 0 ? "text-red-400" : "text-emerald-400"}`}>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Errors / Warnings
+          </p>
+          <p
+            className={`mt-1 font-mono text-xl font-bold tracking-tight ${errorCount > 0 ? "text-red-400" : "text-emerald-400"}`}
+          >
             {errorCount}
           </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Auto-Refresh</p>
-          <p className="text-cyan-400 mt-1 font-mono text-xl font-bold tracking-tight">{autoRefresh ? "8s Live" : "Paused"}</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Auto-Refresh
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
+            {autoRefresh ? "8s Live" : "Paused"}
+          </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Level Scope</p>
-          <p className="text-purple-400 mt-1 font-mono text-xl font-bold tracking-tight">{selectedLevel}</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Level Scope
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
+            {selectedLevel}
+          </p>
         </div>
       </div>
 
       {/* Single-line Filter Rail */}
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[180px] max-w-xs">
+          <div className="relative max-w-xs min-w-[180px] flex-1">
             <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search log messages..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-8 rounded-xl border-border/30 bg-background/50 pl-8 text-xs backdrop-blur-md focus:border-border/60"
+              className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
             />
           </div>
 
           <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-            <SelectTrigger className="h-8 w-32 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-32 rounded-xl text-xs backdrop-blur-md">
               <SelectValue placeholder="All Levels" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL" className="text-xs">All Levels</SelectItem>
-              <SelectItem value="DEBUG" className="text-xs">DEBUG</SelectItem>
-              <SelectItem value="INFO" className="text-xs">INFO</SelectItem>
-              <SelectItem value="WARN" className="text-xs">WARN</SelectItem>
-              <SelectItem value="ERROR" className="text-xs">ERROR</SelectItem>
-              <SelectItem value="CRITICAL" className="text-xs">CRITICAL</SelectItem>
-              <SelectItem value="FATAL" className="text-xs">FATAL</SelectItem>
+              <SelectItem value="ALL" className="text-xs">
+                All Levels
+              </SelectItem>
+              <SelectItem value="DEBUG" className="text-xs">
+                DEBUG
+              </SelectItem>
+              <SelectItem value="INFO" className="text-xs">
+                INFO
+              </SelectItem>
+              <SelectItem value="WARN" className="text-xs">
+                WARN
+              </SelectItem>
+              <SelectItem value="ERROR" className="text-xs">
+                ERROR
+              </SelectItem>
+              <SelectItem value="CRITICAL" className="text-xs">
+                CRITICAL
+              </SelectItem>
+              <SelectItem value="FATAL" className="text-xs">
+                FATAL
+              </SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="h-8 w-36 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-36 rounded-xl text-xs backdrop-blur-md">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL" className="text-xs">All Categories</SelectItem>
+              <SelectItem value="ALL" className="text-xs">
+                All Categories
+              </SelectItem>
               {LOG_CATEGORIES.map((cat) => (
                 <SelectItem key={cat} value={cat} className="text-xs">
                   {cat}
@@ -200,11 +232,13 @@ export default function DedicatedLogsPage() {
           </Select>
 
           <Select value={selectedUser} onValueChange={setSelectedUser}>
-            <SelectTrigger className="h-8 w-36 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-36 rounded-xl text-xs backdrop-blur-md">
               <SelectValue placeholder="All Users" />
             </SelectTrigger>
             <SelectContent className="max-h-56">
-              <SelectItem value="ALL" className="text-xs">All Users</SelectItem>
+              <SelectItem value="ALL" className="text-xs">
+                All Users
+              </SelectItem>
               {usersData?.map((u) => (
                 <SelectItem key={u.id} value={u.id} className="text-xs">
                   {u.clerkUserId}
@@ -213,7 +247,7 @@ export default function DedicatedLogsPage() {
             </SelectContent>
           </Select>
 
-          <label className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground cursor-pointer select-none">
+          <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 px-2 text-xs select-none">
             <Switch
               id="nextjs-errors"
               checked={nextJsErrors}
@@ -223,7 +257,7 @@ export default function DedicatedLogsPage() {
             <span>Errors only</span>
           </label>
 
-          <label className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground cursor-pointer select-none">
+          <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 px-2 text-xs select-none">
             <Switch
               id="auto-refresh"
               checked={autoRefresh}
@@ -240,7 +274,7 @@ export default function DedicatedLogsPage() {
             size="sm"
             onClick={() => void refetch()}
             disabled={isLoading || isFetching}
-            className="h-8 rounded-xl px-3 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="h-8 rounded-xl px-3 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
             Reload
@@ -250,7 +284,7 @@ export default function DedicatedLogsPage() {
             size="sm"
             onClick={handleClearLogs}
             disabled={clearLogsMutation.isPending}
-            className="h-8 rounded-xl px-3 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="h-8 rounded-xl px-3 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Trash2 className="mr-1.5 h-3.5 w-3.5" />
             Purge Logs
@@ -259,11 +293,11 @@ export default function DedicatedLogsPage() {
       </div>
 
       {/* Main Terminal Output */}
-      <div className="overflow-hidden rounded-2xl border border-border/30 bg-card/25 p-3 backdrop-blur-md shadow-xs">
+      <div className="border-border/30 bg-card/25 overflow-hidden rounded-2xl border p-3 shadow-xs backdrop-blur-md">
         {isLoading ? (
           <div className="flex h-96 items-center justify-center">
             <div className="space-y-2 text-center">
-              <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="text-primary mx-auto h-8 w-8 animate-spin" />
               <p className="text-muted-foreground text-xs">
                 Querying database systemLog entries...
               </p>
@@ -274,7 +308,7 @@ export default function DedicatedLogsPage() {
             entries={entries}
             title={`System Event Stream (${entries.length} fetched)`}
             maxHeight={600}
-            className="border-border/20 text-foreground bg-black/10 dark:bg-black/40 rounded-xl"
+            className="border-border/20 text-foreground rounded-xl bg-black/10 dark:bg-black/40"
           />
         )}
       </div>

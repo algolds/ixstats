@@ -10,10 +10,7 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 // oxlint-disable-next-line typescript/no-unused-vars

@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { HelpCircle, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Xmark as X } from "iconoir-react";
+import {
+  HelpCircle,
+  NavArrowLeft as ChevronLeft,
+  NavArrowRight as ChevronRight,
+  Xmark as X,
+} from "iconoir-react";
 import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";

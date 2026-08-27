@@ -9,7 +9,11 @@ import {
   allowsCustomUpload,
   type CardImageType,
 } from "~/lib/cards/image-presets";
-import { EditPencil as Edit2, MediaImage as ImageIcon, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  EditPencil as Edit2,
+  MediaImage as ImageIcon,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";

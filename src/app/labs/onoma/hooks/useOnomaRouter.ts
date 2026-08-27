@@ -16,7 +16,11 @@ import { useNameBank } from "~/hooks/useNameBank";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { getGoogleFontLink } from "~/lib/onoma/branding-utils";
-import { SECTION_TITLES, studioSubTabLabel, exploreSubTabLabel } from "../components/nav/onoma-tabs";
+import {
+  SECTION_TITLES,
+  studioSubTabLabel,
+  exploreSubTabLabel,
+} from "../components/nav/onoma-tabs";
 import { useOnomaPronunciation } from "./useOnomaPronunciation";
 
 export function useOnomaRouter() {
@@ -59,7 +63,10 @@ export function useOnomaRouter() {
   // Track the last standard CREATE tab visited (default to overview)
   const [lastActiveTab, setLastActiveTab] = useState<OnomaSection>(() => {
     const initial = getSectionFromPathname(pathname);
-    return initial === "bank" || initial === "studio" || initial === "explore" || initial === "settings"
+    return initial === "bank" ||
+      initial === "studio" ||
+      initial === "explore" ||
+      initial === "settings"
       ? "overview"
       : initial;
   });
@@ -253,11 +260,14 @@ export function useOnomaRouter() {
     }
   }, [activeSection, activeSubTab, activeExploreSubTab]);
 
-  const handleLoadToStudio = useCallback((words: string[], title: string) => {
-    setStudioInitialWords(words);
-    setStudioInitialTitle(title);
-    handleNavigateStudio("workshop");
-  }, [handleNavigateStudio]);
+  const handleLoadToStudio = useCallback(
+    (words: string[], title: string) => {
+      setStudioInitialWords(words);
+      setStudioInitialTitle(title);
+      handleNavigateStudio("workshop");
+    },
+    [handleNavigateStudio]
+  );
 
   const handleClearStudioInitial = useCallback(() => {
     setStudioInitialWords(undefined);

@@ -9,10 +9,7 @@ interface UseMapEditorSyncProps {
   skipLinkageGate?: boolean;
 }
 
-export function useMapEditorSync({
-  countryId,
-  skipLinkageGate = false,
-}: UseMapEditorSyncProps) {
+export function useMapEditorSync({ countryId, skipLinkageGate = false }: UseMapEditorSyncProps) {
   const utils = api.useUtils();
   const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -21,19 +18,13 @@ export function useMapEditorSync({
     data: countryGeo,
     isLoading: geometryLoading,
     refetch: refetchCountryGeo,
-  } = api.geoCore.getCountryGeometry.useQuery(
-    { countryId: countryId! },
-    { enabled: !!countryId }
-  );
+  } = api.geoCore.getCountryGeometry.useQuery({ countryId: countryId! }, { enabled: !!countryId });
 
   const {
     data: features,
     isLoading: featuresLoading,
     refetch: refetchGeoFeatures,
-  } = api.geoCore.getCountryFeatures.useQuery(
-    { countryId: countryId! },
-    { enabled: !!countryId }
-  );
+  } = api.geoCore.getCountryFeatures.useQuery({ countryId: countryId! }, { enabled: !!countryId });
 
   const {
     data: linkage,
@@ -48,10 +39,7 @@ export function useMapEditorSync({
     data: routes,
     isLoading: routesLoading,
     refetch: refetchRoutes,
-  } = api.transport.getCountryRoutes.useQuery(
-    { countryId: countryId! },
-    { enabled: !!countryId }
-  );
+  } = api.transport.getCountryRoutes.useQuery({ countryId: countryId! }, { enabled: !!countryId });
 
   // Invalidation & Refetch
   const invalidateAllMapData = useCallback(() => {

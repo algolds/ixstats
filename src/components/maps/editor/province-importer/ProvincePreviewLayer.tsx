@@ -370,7 +370,7 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
     if (map.getLayer(FILL_LAYER_ID)) map.setLayoutProperty(FILL_LAYER_ID, "visibility", vis);
     if (map.getLayer(LINE_LAYER_ID)) map.setLayoutProperty(LINE_LAYER_ID, "visibility", vis);
     if (map.getLayer(LABEL_LAYER_ID)) map.setLayoutProperty(LABEL_LAYER_ID, "visibility", vis);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [map, fc, provinces, visible]);
 
   // ── Aligned cities reference layers ──

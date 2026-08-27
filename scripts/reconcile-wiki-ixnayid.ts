@@ -1,12 +1,13 @@
 import { MEDIAWIKI_MAPPING } from "../src/lib/wiki-os/adapters/ixstates/wiki-mappings";
 
-
 async function main() {
   const isApply = process.argv.includes("--apply");
   const isSimulate = process.argv.includes("--simulate") || !isApply;
 
   console.log("==================================================================");
-  console.log(`🧭 MEDIAWIKI ↔ IXNAYID RECONCILIATION ENGINE [Mode: ${isApply ? "🚀 APPLY" : "🔍 DRY RUN / SIMULATION"}]`);
+  console.log(
+    `🧭 MEDIAWIKI ↔ IXNAYID RECONCILIATION ENGINE [Mode: ${isApply ? "🚀 APPLY" : "🔍 DRY RUN / SIMULATION"}]`
+  );
   console.log("==================================================================");
 
   let users: any[] = [];
@@ -53,14 +54,22 @@ async function main() {
       const cName = (u.country.name || "").toLowerCase();
       const cSlug = (u.country.slug || "").toLowerCase();
       const target = mapping.primaryCountry.toLowerCase();
-      return cName === target || cSlug === target || cName.includes(target) || target.includes(cName);
+      return (
+        cName === target || cSlug === target || cName.includes(target) || target.includes(cName)
+      );
     });
 
     if (mapping.isAltFor) {
       results.push({
         wikiAccount: wikiName,
         targetCountry: mapping.primaryCountry,
-        matchedUser: matchedUser ? { id: matchedUser.id, clerkUserId: matchedUser.clerkUserId, countryName: matchedUser.country?.name } : undefined,
+        matchedUser: matchedUser
+          ? {
+              id: matchedUser.id,
+              clerkUserId: matchedUser.clerkUserId,
+              countryName: matchedUser.country?.name,
+            }
+          : undefined,
         status: "ALT_MERGED",
         notes: `Alt account merged into ${mapping.isAltFor} (${mapping.primaryCountry})`,
       });
@@ -81,7 +90,11 @@ async function main() {
       results.push({
         wikiAccount: wikiName,
         targetCountry: mapping.primaryCountry,
-        matchedUser: { id: matchedUser.id, clerkUserId: matchedUser.clerkUserId, countryName: matchedUser.country?.name },
+        matchedUser: {
+          id: matchedUser.id,
+          clerkUserId: matchedUser.clerkUserId,
+          countryName: matchedUser.country?.name,
+        },
         status: "ALREADY_LINKED",
         notes: "Identity link already verified",
       });
@@ -91,7 +104,11 @@ async function main() {
     results.push({
       wikiAccount: wikiName,
       targetCountry: mapping.primaryCountry,
-      matchedUser: { id: matchedUser.id, clerkUserId: matchedUser.clerkUserId, countryName: matchedUser.country?.name },
+      matchedUser: {
+        id: matchedUser.id,
+        clerkUserId: matchedUser.clerkUserId,
+        countryName: matchedUser.country?.name,
+      },
       status: "MATCHED",
       notes: `Ready to link User ${matchedUser.clerkUserId} -> MediaWiki ${wikiName}`,
     });
@@ -110,7 +127,6 @@ async function main() {
       }
     }
   }
-
 
   // Summary statistics
   const matched = results.filter((r) => r.status === "MATCHED");

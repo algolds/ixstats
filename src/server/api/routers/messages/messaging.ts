@@ -63,9 +63,21 @@ export const messagesMessagingRouter = createTRPCRouter({
                 ixTimeTimestamp: m.replyTo.ixTimeTimestamp,
               }
             : null,
-          reactions: m.reactions ? (typeof m.reactions === "string" ? JSON.parse(m.reactions) : m.reactions) : {},
-          mentions: m.mentions ? (typeof m.mentions === "string" ? JSON.parse(m.mentions) : m.mentions) : [],
-          attachments: m.attachments ? (typeof m.attachments === "string" ? JSON.parse(m.attachments) : m.attachments) : [],
+          reactions: m.reactions
+            ? typeof m.reactions === "string"
+              ? JSON.parse(m.reactions)
+              : m.reactions
+            : {},
+          mentions: m.mentions
+            ? typeof m.mentions === "string"
+              ? JSON.parse(m.mentions)
+              : m.mentions
+            : [],
+          attachments: m.attachments
+            ? typeof m.attachments === "string"
+              ? JSON.parse(m.attachments)
+              : m.attachments
+            : [],
           isSystem: Boolean(m.isSystem),
           ixTimeTimestamp: m.ixTimeTimestamp,
           createdAt: m.ixTimeTimestamp,
@@ -186,7 +198,10 @@ export const messagesMessagingRouter = createTRPCRouter({
           throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
         }
         if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own messages" });
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You can only edit your own messages",
+          });
         }
         throw err;
       }
@@ -216,7 +231,10 @@ export const messagesMessagingRouter = createTRPCRouter({
           throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
         }
         if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You can only delete your own messages" });
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You can only delete your own messages",
+          });
         }
         throw err;
       }
@@ -269,7 +287,10 @@ export const messagesMessagingRouter = createTRPCRouter({
           throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
         }
         if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You are not a participant in this conversation" });
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You are not a participant in this conversation",
+          });
         }
         throw err;
       }
@@ -305,7 +326,10 @@ export const messagesMessagingRouter = createTRPCRouter({
           throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
         }
         if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You are not a participant in this conversation" });
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You are not a participant in this conversation",
+          });
         }
         throw err;
       }
@@ -353,9 +377,13 @@ export const messagesMessagingRouter = createTRPCRouter({
         targetUserId: z.string().min(1),
         content: z.string().min(1),
         subject: z.string().optional(),
-        source: z.enum(["thinkshare", "thinktank", "diplomatic", "wiki", "forum", "system"]).default("system"),
+        source: z
+          .enum(["thinkshare", "thinktank", "diplomatic", "wiki", "forum", "system"])
+          .default("system"),
         conversationType: z.enum(["personal", "diplomatic", "official"]).default("official"),
-        classification: z.enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"]).optional(),
+        classification: z
+          .enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"])
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

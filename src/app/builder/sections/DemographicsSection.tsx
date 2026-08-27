@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Group as Users, Heart, City as Building2, GraduationCap, HomeSimple as Home, MapPin } from "iconoir-react";
+import {
+  Group as Users,
+  Heart,
+  City as Building2,
+  GraduationCap,
+  HomeSimple as Home,
+  MapPin,
+} from "iconoir-react";
 import { EnhancedNumberInput, MetricCard, SliderWithDirectInput } from "../primitives/enhanced";
 import type { DemographicData } from "../lib/economy-data-service";
 import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";

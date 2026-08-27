@@ -548,7 +548,10 @@ export class ProductionStartup {
         this.queryAnalysisInterval = setInterval(() => {
           DatabaseOptimizer.analyzeSlowQueries();
         }, 300000); // Every 5 minutes
-        if (this.queryAnalysisInterval && typeof (this.queryAnalysisInterval as any).unref === "function") {
+        if (
+          this.queryAnalysisInterval &&
+          typeof (this.queryAnalysisInterval as any).unref === "function"
+        ) {
           (this.queryAnalysisInterval as any).unref();
         }
       }

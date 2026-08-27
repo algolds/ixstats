@@ -13,12 +13,7 @@
  * 8. 7-Layer GeoJSON Export
  */
 
-import type {
-  WorldGenParams,
-  GeneratedWorld,
-  WorldStats,
-  ProgressCallback,
-} from "./types";
+import type { WorldGenParams, GeneratedWorld, WorldStats, ProgressCallback } from "./types";
 import { DEFAULT_PARAMS } from "./config";
 import { createMesh } from "./mesh";
 import { generateTectonicPlates } from "./tectonics";

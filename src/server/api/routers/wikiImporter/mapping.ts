@@ -7,8 +7,14 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { parseInfoboxTemplate, mapInfoboxToIxStats } from "~/lib/wiki-os/adapters/ixstates/infobox-mapper";
-import { getArticleWikitext, type WikiSource as BridgeWikiSource } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import {
+  parseInfoboxTemplate,
+  mapInfoboxToIxStats,
+} from "~/lib/wiki-os/adapters/ixstates/infobox-mapper";
+import {
+  getArticleWikitext,
+  type WikiSource as BridgeWikiSource,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
 /**
  * Wiki source configuration (name mapping only — fetching delegated to WikiBridge)
@@ -154,7 +160,8 @@ export const wikiImporterMappingRouter = createTRPCRouter({
         };
       } catch (e) {
         throw new Error(
-          `Failed to parse wikitext: ${e instanceof Error ? e.message : "Unknown error"}`, { cause: e }
+          `Failed to parse wikitext: ${e instanceof Error ? e.message : "Unknown error"}`,
+          { cause: e }
         );
       }
     }),
@@ -247,7 +254,8 @@ export const wikiImporterMappingRouter = createTRPCRouter({
             err
           );
           throw new Error(
-            `Failed to update country: ${err instanceof Error ? err.message : "Unknown error"}`, { cause: err }
+            `Failed to update country: ${err instanceof Error ? err.message : "Unknown error"}`,
+            { cause: err }
           );
         }
       } else if (input.createNew) {
@@ -590,11 +598,13 @@ export const wikiImporterMappingRouter = createTRPCRouter({
           console.error(`[wikiImporter] importCountry create failed for user ${userId}:`, err);
           if (err instanceof Error && err.message.includes("Unique constraint")) {
             throw new Error(
-              `A country with slug "${slug}" already exists. Use the update flow instead.`, { cause: err }
+              `A country with slug "${slug}" already exists. Use the update flow instead.`,
+              { cause: err }
             );
           }
           throw new Error(
-            `Failed to import country: ${err instanceof Error ? err.message : "Unknown error"}`, { cause: err }
+            `Failed to import country: ${err instanceof Error ? err.message : "Unknown error"}`,
+            { cause: err }
           );
         }
       }

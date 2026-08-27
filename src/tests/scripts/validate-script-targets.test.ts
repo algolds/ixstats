@@ -11,7 +11,9 @@ import * as os from "os";
 
 describe("validate-script-targets", () => {
   test("checkBannedPackageManagers detects npm, npx, yarn, pnpm", () => {
-    expect(checkBannedPackageManagers("npx @typescript/analyze-trace traces", "test")).toHaveLength(1);
+    expect(checkBannedPackageManagers("npx @typescript/analyze-trace traces", "test")).toHaveLength(
+      1
+    );
     expect(checkBannedPackageManagers("npm run build", "test")).toHaveLength(1);
     expect(checkBannedPackageManagers("yarn install", "test")).toHaveLength(1);
     expect(checkBannedPackageManagers("pnpm test", "test")).toHaveLength(1);
@@ -22,7 +24,12 @@ describe("validate-script-targets", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "validate-targets-"));
     try {
       // Missing script target
-      const issues1 = checkCommandTargets("./scripts/does-not-exist.sh", "test", "test-script", tmpDir);
+      const issues1 = checkCommandTargets(
+        "./scripts/does-not-exist.sh",
+        "test",
+        "test-script",
+        tmpDir
+      );
       expect(issues1).toHaveLength(1);
       expect(issues1[0]?.type).toBe("missing_target");
 
@@ -33,13 +40,23 @@ describe("validate-script-targets", () => {
       expect(issues2).toHaveLength(0);
 
       // Missing tsconfig
-      const issues3 = checkCommandTargets("tsc -p tsconfig.missing.json", "test", "test-script", tmpDir);
+      const issues3 = checkCommandTargets(
+        "tsc -p tsconfig.missing.json",
+        "test",
+        "test-script",
+        tmpDir
+      );
       expect(issues3).toHaveLength(1);
       expect(issues3[0]?.type).toBe("missing_config");
 
       // Existing tsconfig
       fs.writeFileSync(path.join(tmpDir, "tsconfig.test.json"), "{}");
-      const issues4 = checkCommandTargets("tsc -p tsconfig.test.json", "test", "test-script", tmpDir);
+      const issues4 = checkCommandTargets(
+        "tsc -p tsconfig.test.json",
+        "test",
+        "test-script",
+        tmpDir
+      );
       expect(issues4).toHaveLength(0);
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });

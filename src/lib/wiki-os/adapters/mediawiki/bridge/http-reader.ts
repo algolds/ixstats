@@ -40,7 +40,10 @@ export function markExternalHostOffline(hostname: string) {
  * Fetch from an external wiki API with circuit breaker resilience for 403/offline errors.
  * Returns null on persistent failures instead of throwing or polling repeatedly.
  */
-export async function fetchExternalWiki(url: string, timeoutMs: number = 12000): Promise<Response | null> {
+export async function fetchExternalWiki(
+  url: string,
+  timeoutMs: number = 12000
+): Promise<Response | null> {
   const hostname = new URL(url).hostname;
   if (isExternalHostOffline(hostname)) {
     return null;
@@ -180,7 +183,9 @@ export async function httpGetCategoryMembers(
   limit: number = 50,
   type?: "page" | "subcat" | "file",
   wiki: WikiSource = "ixwiki"
-): Promise<{ members: Array<{ pageid: number; title: string; type: "page" | "subcat" | "file" }> }> {
+): Promise<{
+  members: Array<{ pageid: number; title: string; type: "page" | "subcat" | "file" }>;
+}> {
   const cleanCat = category.replace(/^Category:/i, "");
   const base =
     wiki === "iiwiki"
@@ -380,7 +385,10 @@ export async function althistoryGetWikitext(title: string): Promise<WikiArticle 
   }
 }
 
-export async function althistorySearch(query: string, limit: number = 10): Promise<WikiSearchResult[]> {
+export async function althistorySearch(
+  query: string,
+  limit: number = 10
+): Promise<WikiSearchResult[]> {
   try {
     const data = await althistoryApiCall({
       action: "opensearch",
@@ -530,9 +538,7 @@ export async function fetchMediaWikiImageBatch(
   const chunkSize = 25;
   for (let i = 0; i < fileTitles.length; i += chunkSize) {
     const chunk = fileTitles.slice(i, i + chunkSize);
-    const titlesParam = chunk
-      .map((t) => (t.startsWith("File:") ? t : `File:${t}`))
-      .join("|");
+    const titlesParam = chunk.map((t) => (t.startsWith("File:") ? t : `File:${t}`)).join("|");
     const thumbParam = options?.thumbWidth ? `&iiurlwidth=${options.thumbWidth}` : "";
     const url = `${endpoint}?action=query&format=json&formatversion=2&origin=*&titles=${encodeURIComponent(titlesParam)}&prop=imageinfo&iiprop=url${thumbParam}`;
 

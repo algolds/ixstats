@@ -1,7 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { StatsReport as BarChart3, OpenBook as BookOpen, Compass, Crown, Globe, ChatBubble as MessageSquare, Trophy } from "iconoir-react";
+import {
+  StatsReport as BarChart3,
+  OpenBook as BookOpen,
+  Compass,
+  Crown,
+  Globe,
+  ChatBubble as MessageSquare,
+  Trophy,
+} from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { GiCardRandom } from "react-icons/gi";
 import { GiSoapExperiment } from "react-icons/gi";

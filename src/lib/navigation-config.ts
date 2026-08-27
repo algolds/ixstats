@@ -2,8 +2,26 @@
  * Navigation configuration: types, color theming, contextual (mobile) menus, and
  * the path -> context-key resolver. Extracted from navigation.tsx (audit C3).
  */
-import { Activity, StatsReport as BarChart3, Brain, KeyCommand as Command, Compass, Crown, Database, Globe, Component as Layers, ChatBubble as MessageSquare, RssFeed as Rss, Send, Settings, ControlSlider as SlidersHorizontal, Trophy, Group as Users, CheckSquare as Vote, Flash as Zap } from "iconoir-react";
-
+import {
+  Activity,
+  StatsReport as BarChart3,
+  Brain,
+  KeyCommand as Command,
+  Compass,
+  Crown,
+  Database,
+  Globe,
+  Component as Layers,
+  ChatBubble as MessageSquare,
+  RssFeed as Rss,
+  Send,
+  Settings,
+  ControlSlider as SlidersHorizontal,
+  Trophy,
+  Group as Users,
+  CheckSquare as Vote,
+  Flash as Zap,
+} from "iconoir-react";
 
 export interface NavigationItem {
   name: string;

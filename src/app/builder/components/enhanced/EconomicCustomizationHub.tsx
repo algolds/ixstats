@@ -2,7 +2,20 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Settings, ArrowLeft, ArrowRight, CheckCircle, StatsReport as BarChart3, Group as Users, Coins, City as Building2, Heart, Crown, StatUp as TrendingUp, WhiteFlag as Flag } from "iconoir-react";
+import {
+  Settings,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle,
+  StatsReport as BarChart3,
+  Group as Users,
+  Coins,
+  City as Building2,
+  Heart,
+  Crown,
+  StatUp as TrendingUp,
+  WhiteFlag as Flag,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";

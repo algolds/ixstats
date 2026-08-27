@@ -15,7 +15,10 @@ import {
   getBacklinks,
   getNamespacedWikitext,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
+import {
+  transformArticleHtml,
+  stripConflictingStyles,
+} from "~/lib/wiki-os/transformers/html-transformer";
 
 import { db } from "~/server/db";
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
@@ -49,10 +52,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
       const userPromise = !internalUser?.id
         ? db.user.findFirst({
             where: {
-              OR: [
-                { wikiUsername: wikiName },
-                { clerkUserId: ctx.auth?.userId ?? undefined },
-              ],
+              OR: [{ wikiUsername: wikiName }, { clerkUserId: ctx.auth?.userId ?? undefined }],
             },
             select: {
               id: true,
@@ -202,17 +202,19 @@ export const wikiosUserTalkRouter = createTRPCRouter({
 
       // 2. PostgreSQL native revisions fallback (case-insensitive)
       const cleanUser = input.user.trim();
-      const nativeRevisions = await ctx.db.wikiRevision.findMany({
-        where: {
-          author: { equals: cleanUser, mode: "insensitive" },
-          article: { namespace: ns },
-        },
-        include: {
-          article: { select: { title: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        take: input.limit + 1,
-      }).catch(() => []);
+      const nativeRevisions = await ctx.db.wikiRevision
+        .findMany({
+          where: {
+            author: { equals: cleanUser, mode: "insensitive" },
+            article: { namespace: ns },
+          },
+          include: {
+            article: { select: { title: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: input.limit + 1,
+        })
+        .catch(() => []);
 
       const hasMore = nativeRevisions.length > input.limit;
       const sliced = hasMore ? nativeRevisions.slice(0, input.limit) : nativeRevisions;
@@ -443,4 +445,3 @@ export const wikiosUserTalkRouter = createTRPCRouter({
   // Watchlist endpoints (backed by the LoreStash "Watchlist" stash)
   // ---------------------------------------------------------------------------
 });
-

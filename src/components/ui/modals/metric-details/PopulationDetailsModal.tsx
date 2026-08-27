@@ -37,10 +37,7 @@ import { formatPopulation } from "~/lib/utils";
 import { IxTime } from "~/lib/ixtime";
 import { getIxCutoff } from "~/lib/ixtime/range";
 import { cn } from "~/lib/utils";
-import {
-  BaseMetricDetailsModal,
-  type MetricModalTab,
-} from "./BaseMetricDetailsModal";
+import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
 import type { TimeRange, ChartType } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "~/components/ui/hover-card";
@@ -487,13 +484,38 @@ export function PopulationDetailsModal({
                       </button>
                     </HoverCardTrigger>
                     <HoverCardContent side="top" align="end" className="w-72 p-3">
-                      <h4 className="mb-2 text-xs font-semibold tracking-wider uppercase">Population Tier System</h4>
+                      <h4 className="mb-2 text-xs font-semibold tracking-wider uppercase">
+                        Population Tier System
+                      </h4>
                       <div className="space-y-1.5">
                         {populationTierInfo.allTiers.map((tier: any, idx: number) => (
-                          <div key={tier.name} className={cn("flex items-center justify-between rounded-md border px-2 py-1 text-xs", idx === populationTierInfo.currentIndex ? "border-cyan-500/40 bg-cyan-500/10" : "border-white/5 bg-black/5")}>
-                            <span className={cn("text-[11px] font-semibold", idx === populationTierInfo.currentIndex ? "text-cyan-400" : "text-white")}>{tier.name}</span>
-                            <span className="text-muted-foreground text-[10px]">{tier.description}</span>
-                            {idx === populationTierInfo.currentIndex && <Badge className="ml-1 border-none bg-cyan-500/20 px-1 py-0 text-[8px] text-cyan-400">Current</Badge>}
+                          <div
+                            key={tier.name}
+                            className={cn(
+                              "flex items-center justify-between rounded-md border px-2 py-1 text-xs",
+                              idx === populationTierInfo.currentIndex
+                                ? "border-cyan-500/40 bg-cyan-500/10"
+                                : "border-white/5 bg-black/5"
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "text-[11px] font-semibold",
+                                idx === populationTierInfo.currentIndex
+                                  ? "text-cyan-400"
+                                  : "text-white"
+                              )}
+                            >
+                              {tier.name}
+                            </span>
+                            <span className="text-muted-foreground text-[10px]">
+                              {tier.description}
+                            </span>
+                            {idx === populationTierInfo.currentIndex && (
+                              <Badge className="ml-1 border-none bg-cyan-500/20 px-1 py-0 text-[8px] text-cyan-400">
+                                Current
+                              </Badge>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -553,13 +575,18 @@ export function PopulationDetailsModal({
                 <Activity className="h-5 w-5 text-cyan-500" />
                 Population Growth Trends
                 {economicData && (
-                  <Badge variant="outline" className="ml-2 border-cyan-500/20 bg-cyan-500/5 text-xs text-cyan-400">
-                    Live: {(economicData.populationGrowthRate * 100).toFixed(3)}% · Trailing: {performanceMetrics?.growth.toFixed(3)}%
+                  <Badge
+                    variant="outline"
+                    className="ml-2 border-cyan-500/20 bg-cyan-500/5 text-xs text-cyan-400"
+                  >
+                    Live: {(economicData.populationGrowthRate * 100).toFixed(3)}% · Trailing:{" "}
+                    {performanceMetrics?.growth.toFixed(3)}%
                   </Badge>
                 )}
               </CardTitle>
               <CardDescription>
-                Population development over time with {chartData.length} data points · Live rate from sim · Trailing from last interval delta
+                Population development over time with {chartData.length} data points · Live rate
+                from sim · Trailing from last interval delta
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">

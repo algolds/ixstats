@@ -122,26 +122,26 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
   }, [countryId, selectedTypes, clearExisting, generateRoutes]);
 
   return (
-    <div className="flex flex-col h-full bg-background text-foreground">
+    <div className="bg-background text-foreground flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/40 px-3 py-2.5">
-        <div className="flex items-center gap-1.5 font-semibold text-xs">
-          <RouteIcon className="h-4 w-4 text-primary" />
+      <div className="border-border/40 flex items-center justify-between border-b px-3 py-2.5">
+        <div className="flex items-center gap-1.5 text-xs font-semibold">
+          <RouteIcon className="text-primary h-4 w-4" />
           <span>Transport Network</span>
         </div>
         <button
           onClick={onCancel}
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1"
         >
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border/40 bg-muted/20 p-1">
+      <div className="border-border/40 bg-muted/20 flex border-b p-1">
         <button
           onClick={() => setTab("routes")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-medium transition ${
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded py-1.5 text-xs font-medium transition ${
             tab === "routes"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -152,7 +152,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
         </button>
         <button
           onClick={() => setTab("draw")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-medium transition ${
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded py-1.5 text-xs font-medium transition ${
             tab === "draw"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -163,7 +163,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
         </button>
         <button
           onClick={() => setTab("generate")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-medium transition ${
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded py-1.5 text-xs font-medium transition ${
             tab === "generate"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"

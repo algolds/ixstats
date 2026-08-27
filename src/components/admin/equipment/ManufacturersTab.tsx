@@ -21,7 +21,17 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
-import { Plus, EditPencil as Pencil, Search, Filter, Globe, SwitchOff as ToggleLeft, SwitchOn as ToggleRight, ArrowSeparateVertical as ArrowUpDown, Package } from "iconoir-react";
+import {
+  Plus,
+  EditPencil as Pencil,
+  Search,
+  Filter,
+  Globe,
+  SwitchOff as ToggleLeft,
+  SwitchOn as ToggleRight,
+  ArrowSeparateVertical as ArrowUpDown,
+  Package,
+} from "iconoir-react";
 import {
   parseSpecialties,
   type Manufacturer,

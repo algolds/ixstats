@@ -39,13 +39,7 @@ const audioPlayerVariants = cva(
 export type AudioPlayerProps = React.ComponentProps<"div"> &
   VariantProps<typeof audioPlayerVariants> & { tracks?: Track[] };
 
-export function AudioPlayer({
-  children,
-  className,
-  size,
-  variant,
-  ...props
-}: AudioPlayerProps) {
+export function AudioPlayer({ children, className, size, variant, ...props }: AudioPlayerProps) {
   return (
     <div
       className={cn(audioPlayerVariants({ size, variant }), className)}
@@ -64,11 +58,7 @@ export interface AudioPlayerButtonProps extends React.ComponentProps<typeof Butt
   tooltipLabel?: string;
 }
 
-export function AudioPlayerButton({
-  tooltipLabel,
-  className,
-  ...props
-}: AudioPlayerButtonProps) {
+export function AudioPlayerButton({ tooltipLabel, className, ...props }: AudioPlayerButtonProps) {
   const button = (
     <Button
       aria-label={props["aria-label"] ?? tooltipLabel}
@@ -123,13 +113,10 @@ export const AudioPlayerControlBar = ({
 
 export type AudioPlayerControlGroupProps = React.ComponentProps<"div">;
 
-export const AudioPlayerControlGroup = ({
-  className,
-  ...props
-}: AudioPlayerControlGroupProps) => (
+export const AudioPlayerControlGroup = ({ className, ...props }: AudioPlayerControlGroupProps) => (
   <div
     className={cn(
-      "no-scrollbar scroll-fade-x -m-1 flex w-full snap-x snap-mandatory items-center gap-3 overflow-x-auto p-1 in-data-[size=sm]:gap-2 *:snap-start",
+      "no-scrollbar scroll-fade-x -m-1 flex w-full snap-x snap-mandatory items-center gap-3 overflow-x-auto p-1 *:snap-start in-data-[size=sm]:gap-2",
       className
     )}
     data-slot="audio-control-group"

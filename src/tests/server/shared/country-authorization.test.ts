@@ -67,7 +67,9 @@ describe("Plan 149: Canonical Country-Write Authorization Matrix", () => {
           },
         };
 
-        await expect(assertCountryWriteAccess(ctx as any, targetCountryId)).resolves.toBeUndefined();
+        await expect(
+          assertCountryWriteAccess(ctx as any, targetCountryId)
+        ).resolves.toBeUndefined();
         expect(mockUserFindUnique).not.toHaveBeenCalled();
       }
     });

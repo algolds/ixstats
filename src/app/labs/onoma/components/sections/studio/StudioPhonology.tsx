@@ -6,7 +6,16 @@
 // (localStorage) via ~/lib/onoma/ipa-overrides.
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash as Trash2, SoundHigh as Volume2, FloppyDisk as Save, Undo as RotateCcw, SoundHigh as AudioLines, Xmark as X, GitCompare } from "iconoir-react";
+import {
+  Plus,
+  Trash as Trash2,
+  SoundHigh as Volume2,
+  FloppyDisk as Save,
+  Undo as RotateCcw,
+  SoundHigh as AudioLines,
+  Xmark as X,
+  GitCompare,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { translateToIPA, getCultureRules, segmentGraphemes } from "~/lib/onoma/phonology";
@@ -98,7 +107,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
   useEffect(() => {
     setActiveSegmentIndex(null);
     setSelectedSound(null);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [previewText, culture]);
 
   const updateRow = (i: number, idx: 0 | 1, value: string) => {
@@ -176,23 +185,22 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
 
   return (
     <div className="space-y-6">
-      <div className="border-border/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
+      <div className="border-border/40 flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
         <div className="space-y-1">
-          <h2 className="text-foreground text-xl font-bold tracking-tight">
-            Acoustics & IPA
-          </h2>
+          <h2 className="text-foreground text-xl font-bold tracking-tight">Acoustics & IPA</h2>
           <p className="text-muted-foreground mt-0.5 text-xs">
-            Configure grapheme-to-phoneme mapping rules, inspect acoustic formant spectra, and compare cross-language phonology.
+            Configure grapheme-to-phoneme mapping rules, inspect acoustic formant spectra, and
+            compare cross-language phonology.
           </p>
         </div>
 
         {/* Apple-style Segmented Control */}
-        <div className="flex items-center gap-1 rounded-full border border-border/40 bg-secondary/15 p-1 backdrop-blur-md self-start sm:self-auto">
+        <div className="border-border/40 bg-secondary/15 flex items-center gap-1 self-start rounded-full border p-1 backdrop-blur-md sm:self-auto">
           <button
             type="button"
             onClick={() => setActiveMode("matrix")}
             className={cn(
-              "flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer select-none",
+              "flex cursor-pointer items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-200 select-none",
               activeMode === "matrix"
                 ? "bg-background text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
@@ -205,7 +213,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
             type="button"
             onClick={() => setActiveMode("comparison")}
             className={cn(
-              "flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer select-none",
+              "flex cursor-pointer items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-200 select-none",
               activeMode === "comparison"
                 ? "bg-background text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
@@ -221,352 +229,355 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
         <ComparatorSection hideHeader studioWords={studioWords} />
       ) : (
         <>
-
-      {/* Live preview */}
-      <div className="border-border/40 bg-secondary/5 space-y-2 rounded-xl border p-4">
-        <label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-          Live preview
-        </label>
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            value={previewText}
-            onChange={(e) => setPreviewText(e.target.value)}
-            placeholder="Type a word…"
-            className="border-border/60 bg-background text-foreground w-44 rounded-lg border px-3 py-1.5 text-sm focus:outline-none"
-          />
-          <Select value={culture} onValueChange={setCulture}>
-            <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex items-center justify-between rounded-lg border px-3 py-1.5 text-sm transition-colors focus:outline-none">
-              <SelectValue placeholder="Select culture" />
-            </SelectTrigger>
-            <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
-              <div className="text-muted-foreground px-2 py-1 text-[10px] font-bold uppercase tracking-wider">
-                Natural Languages (13)
-              </div>
-              {CULTURES.map((c) => (
-                <SelectItem
-                  key={c}
-                  value={c}
-                  className="focus:text-foreground text-xs capitalize focus:bg-onoma-primary/10"
-                >
-                  {c}
-                </SelectItem>
-              ))}
-              <div className="text-muted-foreground mt-1 border-t border-border/40 px-2 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider">
-                Fantasy & Lineage Templates (18)
-              </div>
-              {getAllTemplateLinguisticProfiles().map((t) => (
-                <SelectItem
-                  key={t.id}
-                  value={t.id}
-                  className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
-                >
-                  {t.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="text-muted-foreground flex flex-wrap items-center gap-2 font-mono text-sm">
-            <span>{previewIpa}</span>
-            {speechConfig?.kokoro?.enabled &&
-              (() => {
-                const result = ipaToKokoroPhonemes(previewIpa);
-                return (
-                  <span className="text-muted-foreground/80 flex items-center gap-1.5 text-xs">
-                    <span>→ {result.phonemes || "(empty)"}</span>
-                    {result.dropped.length > 0 && (
-                      <span className="text-[10px] font-semibold text-amber-500">
-                        ⚠ dropped: {result.dropped.join(", ")}
-                      </span>
-                    )}
-                  </span>
-                );
-              })()}
-          </div>
-          <button
-            onClick={() => play(previewText, previewIpa)}
-            title="Play preview"
-            className="ml-auto flex cursor-pointer items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
-            style={{ backgroundColor: ACCENT }}
-          >
-            <Volume2 className="h-3.5 w-3.5" /> Play
-          </button>
-        </div>
-
-        {/* Interactive Grapheme Mapper Timeline */}
-        {previewText.trim().length > 0 && (
-          <div className="border-border/30 animate-in fade-in mt-3 space-y-2.5 border-t pt-3.5 duration-200">
-            <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-              Interactive Grapheme Mapper (click segment to customize sound)
-            </h4>
+          {/* Live preview */}
+          <div className="border-border/40 bg-secondary/5 space-y-2 rounded-xl border p-4">
+            <label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              Live preview
+            </label>
             <div className="flex flex-wrap items-center gap-2">
-              {segments.map((seg, idx) => {
-                const isOverridden = rows.some(([g]) => g === seg.grapheme);
-                const isActive = activeSegmentIndex === idx;
-
-                return (
-                  <div key={idx} className="relative">
-                    <button
-                      onClick={() => {
-                        if (isActive) {
-                          setActiveSegmentIndex(null);
-                          setSelectedSound(null);
-                        } else {
-                          setActiveSegmentIndex(idx);
-                          setSelectedSound(seg.ipa || null);
-                        }
-                      }}
-                      className={cn(
-                        "flex h-14 min-w-10 cursor-pointer flex-col items-center justify-center rounded-xl border px-3 py-1.5 text-center transition-all duration-200 active:scale-95",
-                        isOverridden
-                          ? "text-foreground border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20"
-                          : "border-border/50 bg-background text-foreground hover:bg-secondary/40",
-                        isActive && "border-transparent ring-2 ring-purple-500"
-                      )}
+              <input
+                value={previewText}
+                onChange={(e) => setPreviewText(e.target.value)}
+                placeholder="Type a word…"
+                className="border-border/60 bg-background text-foreground w-44 rounded-lg border px-3 py-1.5 text-sm focus:outline-none"
+              />
+              <Select value={culture} onValueChange={setCulture}>
+                <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex items-center justify-between rounded-lg border px-3 py-1.5 text-sm transition-colors focus:outline-none">
+                  <SelectValue placeholder="Select culture" />
+                </SelectTrigger>
+                <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
+                  <div className="text-muted-foreground px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
+                    Natural Languages (13)
+                  </div>
+                  {CULTURES.map((c) => (
+                    <SelectItem
+                      key={c}
+                      value={c}
+                      className="focus:text-foreground focus:bg-onoma-primary/10 text-xs capitalize"
                     >
-                      <span className="font-mono text-sm font-bold capitalize">{seg.grapheme}</span>
-                      <span className="text-muted-foreground mt-0.5 font-mono text-[10px]">
-                        /{seg.ipa || "∅"}/
-                      </span>
-                    </button>
-
-                    {isActive && (
-                      <div className="bg-popover/95 animate-in fade-in slide-in-from-top-2 border-border/60 absolute left-0 z-30 mt-2.5 w-72 rounded-2xl border p-3.5 shadow-2xl shadow-black/40 backdrop-blur-xl duration-200">
-                        <div className="border-border/40 mb-2.5 flex items-center justify-between border-b pb-2">
-                          <span className="text-foreground text-[10px] font-bold uppercase">
-                            Map segment:{" "}
-                            <span className="font-mono font-bold text-purple-500">
-                              "{seg.grapheme}"
-                            </span>
+                      {c}
+                    </SelectItem>
+                  ))}
+                  <div className="text-muted-foreground border-border/40 mt-1 border-t px-2 pt-2 pb-1 text-[10px] font-bold tracking-wider uppercase">
+                    Fantasy & Lineage Templates (18)
+                  </div>
+                  {getAllTemplateLinguisticProfiles().map((t) => (
+                    <SelectItem
+                      key={t.id}
+                      value={t.id}
+                      className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
+                    >
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="text-muted-foreground flex flex-wrap items-center gap-2 font-mono text-sm">
+                <span>{previewIpa}</span>
+                {speechConfig?.kokoro?.enabled &&
+                  (() => {
+                    const result = ipaToKokoroPhonemes(previewIpa);
+                    return (
+                      <span className="text-muted-foreground/80 flex items-center gap-1.5 text-xs">
+                        <span>→ {result.phonemes || "(empty)"}</span>
+                        {result.dropped.length > 0 && (
+                          <span className="text-[10px] font-semibold text-amber-500">
+                            ⚠ dropped: {result.dropped.join(", ")}
                           </span>
-                          <button
-                            onClick={() => setActiveSegmentIndex(null)}
-                            className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-0.5"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
+                        )}
+                      </span>
+                    );
+                  })()}
+              </div>
+              <button
+                onClick={() => play(previewText, previewIpa)}
+                title="Play preview"
+                className="ml-auto flex cursor-pointer items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: ACCENT }}
+              >
+                <Volume2 className="h-3.5 w-3.5" /> Play
+              </button>
+            </div>
 
-                        {/* Popover Tabs */}
-                        <div className="bg-secondary/15 mb-3 flex gap-1 rounded-lg p-0.5">
-                          {(["vowels", "consonants", "diphthongs"] as const).map((tab) => (
-                            <button
-                              key={tab}
-                              onClick={() => setSoundboardTab(tab)}
-                              className={cn(
-                                "flex-1 cursor-pointer rounded-md py-1 text-[9px] font-bold capitalize uppercase transition-all",
-                                soundboardTab === tab
-                                  ? "bg-purple-500 text-white"
-                                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/10"
-                              )}
-                            >
-                              {tab === "diphthongs" ? "Diphthongs/Length" : tab}
-                            </button>
-                          ))}
-                        </div>
+            {/* Interactive Grapheme Mapper Timeline */}
+            {previewText.trim().length > 0 && (
+              <div className="border-border/30 animate-in fade-in mt-3 space-y-2.5 border-t pt-3.5 duration-200">
+                <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                  Interactive Grapheme Mapper (click segment to customize sound)
+                </h4>
+                <div className="flex flex-wrap items-center gap-2">
+                  {segments.map((seg, idx) => {
+                    const isOverridden = rows.some(([g]) => g === seg.grapheme);
+                    const isActive = activeSegmentIndex === idx;
 
-                        {/* Tab Content (IPA Grid) */}
-                        <div className="grid max-h-36 grid-cols-5 gap-1.5 overflow-y-auto pr-0.5">
-                          {(soundboardTab === "vowels"
-                            ? IPA_VOWELS
-                            : soundboardTab === "consonants"
-                              ? IPA_CONSONANTS
-                              : IPA_DIPHTHONGS
-                          ).map((sym) => {
-                            const isSelected = selectedSound === sym;
-                            const isKokoro = KOKORO_VALID_TOKENS.has(sym);
-                            return (
+                    return (
+                      <div key={idx} className="relative">
+                        <button
+                          onClick={() => {
+                            if (isActive) {
+                              setActiveSegmentIndex(null);
+                              setSelectedSound(null);
+                            } else {
+                              setActiveSegmentIndex(idx);
+                              setSelectedSound(seg.ipa || null);
+                            }
+                          }}
+                          className={cn(
+                            "flex h-14 min-w-10 cursor-pointer flex-col items-center justify-center rounded-xl border px-3 py-1.5 text-center transition-all duration-200 active:scale-95",
+                            isOverridden
+                              ? "text-foreground border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20"
+                              : "border-border/50 bg-background text-foreground hover:bg-secondary/40",
+                            isActive && "border-transparent ring-2 ring-purple-500"
+                          )}
+                        >
+                          <span className="font-mono text-sm font-bold capitalize">
+                            {seg.grapheme}
+                          </span>
+                          <span className="text-muted-foreground mt-0.5 font-mono text-[10px]">
+                            /{seg.ipa || "∅"}/
+                          </span>
+                        </button>
+
+                        {isActive && (
+                          <div className="bg-popover/95 animate-in fade-in slide-in-from-top-2 border-border/60 absolute left-0 z-30 mt-2.5 w-72 rounded-2xl border p-3.5 shadow-2xl shadow-black/40 backdrop-blur-xl duration-200">
+                            <div className="border-border/40 mb-2.5 flex items-center justify-between border-b pb-2">
+                              <span className="text-foreground text-[10px] font-bold uppercase">
+                                Map segment:{" "}
+                                <span className="font-mono font-bold text-purple-500">
+                                  "{seg.grapheme}"
+                                </span>
+                              </span>
                               <button
-                                key={sym}
-                                onClick={async () => {
-                                  setSelectedSound(sym);
-                                  await playPhoneme(sym);
-                                }}
-                                title={
-                                  isKokoro
-                                    ? `${sym} (Kokoro high-fidelity native)`
-                                    : `${sym} (fallback/synthesized)`
-                                }
-                                className={cn(
-                                  "relative flex h-8 cursor-pointer items-center justify-center rounded-lg border font-mono text-xs font-bold transition-all hover:scale-105 active:scale-95",
-                                  isSelected
-                                    ? "text-foreground border-purple-500 bg-purple-500/20 ring-1 ring-purple-500"
-                                    : isKokoro
-                                      ? "border-onoma-primary/30 bg-onoma-primary/5 text-onoma-primary hover:bg-onoma-primary/15"
-                                      : "border-border/60 bg-background hover:bg-secondary/30 text-foreground"
-                                )}
+                                onClick={() => setActiveSegmentIndex(null)}
+                                className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-0.5"
                               >
-                                {sym}
-                                {isKokoro && (
-                                  <span className="absolute top-1 right-1 h-1 w-1 rounded-full bg-onoma-primary" />
-                                )}
+                                <X className="h-3.5 w-3.5" />
                               </button>
-                            );
-                          })}
-                        </div>
+                            </div>
 
-                        {/* Popover Footer (Preview & Confirm) */}
-                        {selectedSound && (
-                          <div className="animate-in fade-in border-border/40 mt-3.5 flex items-center justify-between gap-2 border-t pt-2.5 duration-200">
-                            <button
-                              onClick={() => playPhoneme(selectedSound)}
-                              title="Listen to selected sound again"
-                              className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1 text-[10px] font-bold"
-                            >
-                              <Volume2 className="h-3.5 w-3.5" /> Hear again
-                            </button>
-                            <button
-                              onClick={() => mapGrapheme(seg.grapheme, selectedSound)}
-                              className="cursor-pointer rounded-lg bg-purple-500 px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90"
-                            >
-                              Confirm Map
-                            </button>
+                            {/* Popover Tabs */}
+                            <div className="bg-secondary/15 mb-3 flex gap-1 rounded-lg p-0.5">
+                              {(["vowels", "consonants", "diphthongs"] as const).map((tab) => (
+                                <button
+                                  key={tab}
+                                  onClick={() => setSoundboardTab(tab)}
+                                  className={cn(
+                                    "flex-1 cursor-pointer rounded-md py-1 text-[9px] font-bold capitalize uppercase transition-all",
+                                    soundboardTab === tab
+                                      ? "bg-purple-500 text-white"
+                                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/10"
+                                  )}
+                                >
+                                  {tab === "diphthongs" ? "Diphthongs/Length" : tab}
+                                </button>
+                              ))}
+                            </div>
+
+                            {/* Tab Content (IPA Grid) */}
+                            <div className="grid max-h-36 grid-cols-5 gap-1.5 overflow-y-auto pr-0.5">
+                              {(soundboardTab === "vowels"
+                                ? IPA_VOWELS
+                                : soundboardTab === "consonants"
+                                  ? IPA_CONSONANTS
+                                  : IPA_DIPHTHONGS
+                              ).map((sym) => {
+                                const isSelected = selectedSound === sym;
+                                const isKokoro = KOKORO_VALID_TOKENS.has(sym);
+                                return (
+                                  <button
+                                    key={sym}
+                                    onClick={async () => {
+                                      setSelectedSound(sym);
+                                      await playPhoneme(sym);
+                                    }}
+                                    title={
+                                      isKokoro
+                                        ? `${sym} (Kokoro high-fidelity native)`
+                                        : `${sym} (fallback/synthesized)`
+                                    }
+                                    className={cn(
+                                      "relative flex h-8 cursor-pointer items-center justify-center rounded-lg border font-mono text-xs font-bold transition-all hover:scale-105 active:scale-95",
+                                      isSelected
+                                        ? "text-foreground border-purple-500 bg-purple-500/20 ring-1 ring-purple-500"
+                                        : isKokoro
+                                          ? "border-onoma-primary/30 bg-onoma-primary/5 text-onoma-primary hover:bg-onoma-primary/15"
+                                          : "border-border/60 bg-background hover:bg-secondary/30 text-foreground"
+                                    )}
+                                  >
+                                    {sym}
+                                    {isKokoro && (
+                                      <span className="bg-onoma-primary absolute top-1 right-1 h-1 w-1 rounded-full" />
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Popover Footer (Preview & Confirm) */}
+                            {selectedSound && (
+                              <div className="animate-in fade-in border-border/40 mt-3.5 flex items-center justify-between gap-2 border-t pt-2.5 duration-200">
+                                <button
+                                  onClick={() => playPhoneme(selectedSound)}
+                                  title="Listen to selected sound again"
+                                  className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1 text-[10px] font-bold"
+                                >
+                                  <Volume2 className="h-3.5 w-3.5" /> Hear again
+                                </button>
+                                <button
+                                  onClick={() => mapGrapheme(seg.grapheme, selectedSound)}
+                                  className="cursor-pointer rounded-lg bg-purple-500 px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90"
+                                >
+                                  Confirm Map
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Acoustic Formant & Spectrogram Visualizer */}
+          <AcousticFormantVisualizer
+            currentIpa={previewIpa}
+            currentName={previewText}
+            accentColor={ACCENT}
+          />
+
+          {/* Rule editor */}
+          <div className="border-border/40 space-y-3 rounded-xl border p-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                {culture} grapheme → IPA overrides
+              </h4>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={resetRules}
+                  className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex items-center gap-1 rounded border px-2 py-1 text-[10px] font-bold transition-colors"
+                >
+                  <RotateCcw className="h-3 w-3" /> Reset
+                </button>
+                <button
+                  onClick={saveRules}
+                  className="flex items-center gap-1 rounded px-2.5 py-1 text-[10px] font-bold text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: ACCENT }}
+                >
+                  <Save className="h-3 w-3" /> Save rules
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
 
-      {/* Acoustic Formant & Spectrogram Visualizer */}
-      <AcousticFormantVisualizer
-        currentIpa={previewIpa}
-        currentName={previewText}
-        accentColor={ACCENT}
-      />
-
-      {/* Rule editor */}
-      <div className="border-border/40 space-y-3 rounded-xl border p-4">
-        <div className="flex items-center justify-between">
-          <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
-            {culture} grapheme → IPA overrides
-          </h4>
-          <div className="flex gap-1.5">
-            <button
-              onClick={resetRules}
-              className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex items-center gap-1 rounded border px-2 py-1 text-[10px] font-bold transition-colors"
-            >
-              <RotateCcw className="h-3 w-3" /> Reset
-            </button>
-            <button
-              onClick={saveRules}
-              className="flex items-center gap-1 rounded px-2.5 py-1 text-[10px] font-bold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: ACCENT }}
-            >
-              <Save className="h-3 w-3" /> Save rules
-            </button>
-          </div>
-        </div>
-
-        <p className="text-muted-foreground text-[10px]">
-          Overrides take priority over the built-in rules. Multi-letter graphemes (e.g.{" "}
-          <span className="font-mono">sch</span>) are matched before single letters.
-        </p>
-
-        <div className="space-y-1.5">
-          {rows.length === 0 && (
-            <p className="text-muted-foreground py-2 text-center text-xs italic">
-              No overrides — built-in {culture} rules apply. Add one below.
+            <p className="text-muted-foreground text-[10px]">
+              Overrides take priority over the built-in rules. Multi-letter graphemes (e.g.{" "}
+              <span className="font-mono">sch</span>) are matched before single letters.
             </p>
-          )}
-          {rows.map(([g, ipa], i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input
-                value={g}
-                onChange={(e) => updateRow(i, 0, e.target.value)}
-                placeholder="grapheme"
-                className="border-border/60 bg-background text-foreground w-28 rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
-              />
-              <span className="text-muted-foreground text-xs">→</span>
-              <input
-                value={ipa}
-                onChange={(e) => updateRow(i, 1, e.target.value)}
-                placeholder="IPA"
-                className="border-border/60 bg-background text-foreground w-28 rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
-              />
-              <button
-                onClick={() => removeRow(i)}
-                title="Remove rule"
-                className="text-muted-foreground cursor-pointer rounded p-1 hover:text-rose-500"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
-          <button
-            onClick={addRow}
-            className="text-muted-foreground hover:text-foreground flex items-center gap-1 pt-1 text-[11px] font-bold"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add rule
-          </button>
-        </div>
 
-        {/* Built-in reference */}
-        <details className="border-border/30 border-t pt-2">
-          <summary className="text-muted-foreground cursor-pointer text-[10px] font-bold tracking-wider uppercase">
-            Built-in {culture} rules (reference)
-          </summary>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {baseRules.map(([g, ipa], i) => (
-              <span
-                key={i}
-                className="border-border/40 bg-secondary/10 text-muted-foreground rounded border px-1.5 py-0.5 font-mono text-[10px]"
-              >
-                {g} → {ipa || "∅"}
-              </span>
-            ))}
-          </div>
-        </details>
-      </div>
-
-      {/* Per-name overrides */}
-      <div className="border-border/40 space-y-2 rounded-xl border p-4">
-        <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
-          Per-name overrides
-        </h4>
-        {overrideNames.length === 0 ? (
-          <p className="text-muted-foreground text-xs italic">
-            None yet. Use the pencil on any generated name to set a custom IPA or voice.
-          </p>
-        ) : (
-          <div className="divide-border/20 divide-y">
-            {overrideNames.map((name) => {
-              const ov = nameOverrides[name];
-              return (
-                <div key={name} className="flex items-center gap-2 py-1.5 text-xs">
-                  <span className="text-foreground font-semibold">{name}</span>
-                  {ov.ipa && <span className="text-muted-foreground font-mono">{ov.ipa}</span>}
-                  {ov.voice && (
-                    <span className="text-muted-foreground bg-secondary/20 rounded px-1.5 py-0.5 font-mono text-[10px]">
-                      {ov.voice}
-                    </span>
-                  )}
+            <div className="space-y-1.5">
+              {rows.length === 0 && (
+                <p className="text-muted-foreground py-2 text-center text-xs italic">
+                  No overrides — built-in {culture} rules apply. Add one below.
+                </p>
+              )}
+              {rows.map(([g, ipa], i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    value={g}
+                    onChange={(e) => updateRow(i, 0, e.target.value)}
+                    placeholder="grapheme"
+                    className="border-border/60 bg-background text-foreground w-28 rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
+                  />
+                  <span className="text-muted-foreground text-xs">→</span>
+                  <input
+                    value={ipa}
+                    onChange={(e) => updateRow(i, 1, e.target.value)}
+                    placeholder="IPA"
+                    className="border-border/60 bg-background text-foreground w-28 rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
+                  />
                   <button
-                    onClick={() => play(name, ov.ipa ?? translateToIPA(name, culture), ov.voice)}
-                    title="Play"
-                    className="text-muted-foreground ml-auto cursor-pointer rounded p-1 hover:text-[color:var(--accent)]"
-                    style={{ ["--accent" as string]: ACCENT }}
-                  >
-                    <Volume2 className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setNameOverride(name, { ipa: undefined, voice: undefined })}
-                    title="Clear override"
+                    onClick={() => removeRow(i)}
+                    title="Remove rule"
                     className="text-muted-foreground cursor-pointer rounded p-1 hover:text-rose-500"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              );
-            })}
+              ))}
+              <button
+                onClick={addRow}
+                className="text-muted-foreground hover:text-foreground flex items-center gap-1 pt-1 text-[11px] font-bold"
+              >
+                <Plus className="h-3.5 w-3.5" /> Add rule
+              </button>
+            </div>
+
+            {/* Built-in reference */}
+            <details className="border-border/30 border-t pt-2">
+              <summary className="text-muted-foreground cursor-pointer text-[10px] font-bold tracking-wider uppercase">
+                Built-in {culture} rules (reference)
+              </summary>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {baseRules.map(([g, ipa], i) => (
+                  <span
+                    key={i}
+                    className="border-border/40 bg-secondary/10 text-muted-foreground rounded border px-1.5 py-0.5 font-mono text-[10px]"
+                  >
+                    {g} → {ipa || "∅"}
+                  </span>
+                ))}
+              </div>
+            </details>
           </div>
-        )}
-      </div>
-      </>
+
+          {/* Per-name overrides */}
+          <div className="border-border/40 space-y-2 rounded-xl border p-4">
+            <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+              Per-name overrides
+            </h4>
+            {overrideNames.length === 0 ? (
+              <p className="text-muted-foreground text-xs italic">
+                None yet. Use the pencil on any generated name to set a custom IPA or voice.
+              </p>
+            ) : (
+              <div className="divide-border/20 divide-y">
+                {overrideNames.map((name) => {
+                  const ov = nameOverrides[name];
+                  return (
+                    <div key={name} className="flex items-center gap-2 py-1.5 text-xs">
+                      <span className="text-foreground font-semibold">{name}</span>
+                      {ov.ipa && <span className="text-muted-foreground font-mono">{ov.ipa}</span>}
+                      {ov.voice && (
+                        <span className="text-muted-foreground bg-secondary/20 rounded px-1.5 py-0.5 font-mono text-[10px]">
+                          {ov.voice}
+                        </span>
+                      )}
+                      <button
+                        onClick={() =>
+                          play(name, ov.ipa ?? translateToIPA(name, culture), ov.voice)
+                        }
+                        title="Play"
+                        className="text-muted-foreground ml-auto cursor-pointer rounded p-1 hover:text-[color:var(--accent)]"
+                        style={{ ["--accent" as string]: ACCENT }}
+                      >
+                        <Volume2 className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setNameOverride(name, { ipa: undefined, voice: undefined })}
+                        title="Clear override"
+                        className="text-muted-foreground cursor-pointer rounded p-1 hover:text-rose-500"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

@@ -1,7 +1,12 @@
 "use client";
 
 import React from "react";
-import { OpenNewWindow as ExternalLink, ShieldCheck, ArrowLeft, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  OpenNewWindow as ExternalLink,
+  ShieldCheck,
+  ArrowLeft,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { FacetCard } from "~/components/ui/facet-container";

@@ -5,7 +5,15 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Check, Copy, Bookmark, SystemRestart as Loader2, Plus, ViewGrid as LayoutGrid, Table } from "iconoir-react";
+import {
+  Check,
+  Copy,
+  Bookmark,
+  SystemRestart as Loader2,
+  Plus,
+  ViewGrid as LayoutGrid,
+  Table,
+} from "iconoir-react";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NameResultCard } from "./NameResultCard";
@@ -96,7 +104,7 @@ export function SynthesisResultsGrid({
   // Clear selections when new names are generated
   useEffect(() => {
     setSelectedNames(new Set());
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [generatedNames]);
 
   // Transform names array to full BatchNameResult objects
@@ -120,7 +128,9 @@ export function SynthesisResultsGrid({
     let list = [...tableData];
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter((r) => r.name.toLowerCase().includes(q) || r.ipa.toLowerCase().includes(q));
+      list = list.filter(
+        (r) => r.name.toLowerCase().includes(q) || r.ipa.toLowerCase().includes(q)
+      );
     }
     if (perplexityFilter > 0) {
       list = list.filter((r) => r.perplexity <= perplexityFilter);
@@ -129,9 +139,7 @@ export function SynthesisResultsGrid({
       const valA = a[sorting.column];
       const valB = b[sorting.column];
       if (typeof valA === "string" && typeof valB === "string") {
-        return sorting.direction === "asc"
-          ? valA.localeCompare(valB)
-          : valB.localeCompare(valA);
+        return sorting.direction === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
       }
       return sorting.direction === "asc"
         ? (valA as number) - (valB as number)
@@ -202,20 +210,20 @@ export function SynthesisResultsGrid({
   };
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="w-full space-y-4">
       {generatedNames.length > 0 ? (
         <div className="space-y-3.5">
           {/* Horizontal Line & Unified Toolbar (View Switcher + Batch Actions) */}
           <div className="border-border/40 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
             {/* Left: [ Grid ⊞ | Table ☰ ] Segmented View Toggle */}
-            <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-secondary/20 p-0.5 select-none">
+            <div className="border-border/60 bg-secondary/20 flex items-center gap-1 rounded-lg border p-0.5 select-none">
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
                 className={cn(
-                  "flex cursor-pointer items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all active:scale-95",
+                  "flex cursor-pointer items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
                   viewMode === "grid"
-                    ? "bg-background text-foreground shadow-2xs font-bold"
+                    ? "bg-background text-foreground font-bold shadow-2xs"
                     : "text-muted-foreground hover:text-foreground"
                 )}
                 title="Card Grid View"
@@ -227,9 +235,9 @@ export function SynthesisResultsGrid({
                 type="button"
                 onClick={() => setViewMode("table")}
                 className={cn(
-                  "flex cursor-pointer items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all active:scale-95",
+                  "flex cursor-pointer items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
                   viewMode === "table"
-                    ? "bg-background text-foreground shadow-2xs font-bold"
+                    ? "bg-background text-foreground font-bold shadow-2xs"
                     : "text-muted-foreground hover:text-foreground"
                 )}
                 title="Data Table View"
@@ -249,7 +257,7 @@ export function SynthesisResultsGrid({
                 {copiedBatch ? (
                   <Check className="h-3.5 w-3.5 text-emerald-500" />
                 ) : (
-                  <Copy className="h-3.5 w-3.5 text-onoma-primary" />
+                  <Copy className="text-onoma-primary h-3.5 w-3.5" />
                 )}
                 <span>{copiedBatch ? "Copied" : "Copy All"}</span>
               </button>
@@ -269,7 +277,7 @@ export function SynthesisResultsGrid({
           {showSaveDictForm && (
             <form
               onSubmit={handleSaveBatchAsDictionary}
-              className="animate-in slide-in-from-top-2 flex items-center gap-2 rounded-xl border border-onoma-primary/30 bg-onoma-primary/5 p-3 duration-200"
+              className="animate-in slide-in-from-top-2 border-onoma-primary/30 bg-onoma-primary/5 flex items-center gap-2 rounded-xl border p-3 duration-200"
             >
               <input
                 type="text"
@@ -277,12 +285,12 @@ export function SynthesisResultsGrid({
                 required
                 value={dictionaryTitle}
                 onChange={(e) => setDictionaryTitle(e.target.value)}
-                className="border-border/60 bg-background text-foreground flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium focus:border-onoma-primary/60 focus:outline-none"
+                className="border-border/60 bg-background text-foreground focus:border-onoma-primary/60 flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={isSavingDict}
-                className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-onoma-primary px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-onoma-primary-light active:scale-95 disabled:opacity-50"
+                className="bg-onoma-primary hover:bg-onoma-primary-light flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-colors active:scale-95 disabled:opacity-50"
               >
                 {isSavingDict ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -320,7 +328,7 @@ export function SynthesisResultsGrid({
             /* Results Grid with Apple spring entrance and generous card proportions */
             <div
               className={cn(
-                "grid grid-cols-1 gap-3.5 sm:grid-cols-2 2xl:grid-cols-3 transition-opacity duration-200",
+                "grid grid-cols-1 gap-3.5 transition-opacity duration-200 sm:grid-cols-2 2xl:grid-cols-3",
                 isGenerating && "opacity-50"
               )}
             >
@@ -341,11 +349,7 @@ export function SynthesisResultsGrid({
                 return (
                   <motion.div
                     key={`${name}-${index}`}
-                    initial={
-                      shouldReduceMotion
-                        ? { opacity: 0 }
-                        : { opacity: 0, y: 6 }
-                    }
+                    initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
                       duration: 0.25,
@@ -369,17 +373,15 @@ export function SynthesisResultsGrid({
           )}
         </div>
       ) : (
-        <FacetCard className="border-border/40 bg-secondary/5 flex min-h-[260px] flex-col items-center justify-center p-8 text-center rounded-2xl">
-          <div className="border-border/40 bg-secondary/20 mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border text-onoma-primary">
+        <FacetCard className="border-border/40 bg-secondary/5 flex min-h-[260px] flex-col items-center justify-center rounded-2xl p-8 text-center">
+          <div className="border-border/40 bg-secondary/20 text-onoma-primary mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border">
             <OnomaGlyph name="emerge-synthesis" size="sm" className="text-onoma-primary" />
           </div>
-          <h4 className="text-foreground text-sm font-bold tracking-tight">
-            Ready to Generate
-          </h4>
+          <h4 className="text-foreground text-sm font-bold tracking-tight">Ready to Generate</h4>
           <p className="text-muted-foreground mt-1 max-w-sm text-xs leading-relaxed">
             Select a preset and culture above, then click{" "}
-            <span className="font-semibold text-onoma-primary">Generate Names</span>{" "}
-            to produce vocabulary for this category.
+            <span className="text-onoma-primary font-semibold">Generate Names</span> to produce
+            vocabulary for this category.
           </p>
         </FacetCard>
       )}

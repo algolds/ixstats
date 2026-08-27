@@ -141,7 +141,9 @@ export function applyHighlight(
     mark.style.color = "inherit";
     mark.style.backgroundColor = "transparent";
     mark.textContent = matchText;
-    mark.title = annotation.comment ? `"${annotation.comment}"` : "Highlight · Click to view in Margin";
+    mark.title = annotation.comment
+      ? `"${annotation.comment}"`
+      : "Highlight · Click to view in Margin";
 
     if (onClick) {
       mark.addEventListener("click", (e) => {

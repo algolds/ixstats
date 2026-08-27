@@ -33,15 +33,19 @@ async function fetchWithRetry(url: string, retries = 6, baseDelay = 1500): Promi
       const res = await fetch(url, {
         headers: {
           "User-Agent": DEFAULT_USER_AGENT,
-          "Accept": "application/json",
+          Accept: "application/json",
         },
         signal: AbortSignal.timeout(25000),
       });
 
       if (res.status === 429 || (res.status >= 500 && res.status <= 599)) {
         const retryAfter = res.headers.get("retry-after");
-        const waitTime = retryAfter ? parseInt(retryAfter, 10) * 1000 : baseDelay * Math.pow(1.5, attempt);
-        console.warn(`   ⏳ Rate limited (${res.status}). Waiting ${(waitTime / 1000).toFixed(1)}s (Attempt ${attempt}/${retries})...`);
+        const waitTime = retryAfter
+          ? parseInt(retryAfter, 10) * 1000
+          : baseDelay * Math.pow(1.5, attempt);
+        console.warn(
+          `   ⏳ Rate limited (${res.status}). Waiting ${(waitTime / 1000).toFixed(1)}s (Attempt ${attempt}/${retries})...`
+        );
         await new Promise((resolve) => setTimeout(resolve, waitTime));
         continue;
       }
@@ -54,7 +58,9 @@ async function fetchWithRetry(url: string, retries = 6, baseDelay = 1500): Promi
     } catch (err: any) {
       if (attempt === retries) throw err;
       const wait = baseDelay * attempt;
-      console.warn(`   ⚠️ Fetch attempt ${attempt} failed: ${err.message}. Retrying in ${(wait / 1000).toFixed(1)}s...`);
+      console.warn(
+        `   ⚠️ Fetch attempt ${attempt} failed: ${err.message}. Retrying in ${(wait / 1000).toFixed(1)}s...`
+      );
       await new Promise((resolve) => setTimeout(resolve, wait));
     }
   }
@@ -147,7 +153,11 @@ async function syncUserContributions(user: MWUser) {
       });
 
       if (!existing) {
-        const rawTitle = sanitize(String(c.title || "").replace(/_/g, " ").trim());
+        const rawTitle = sanitize(
+          String(c.title || "")
+            .replace(/_/g, " ")
+            .trim()
+        );
         const article = await prisma.wikiArticle.findFirst({
           where: { source: "ixwiki", title: rawTitle },
           select: { id: true },
@@ -271,7 +281,9 @@ async function main() {
     const synced = await syncUserContributions(u);
     totalRevsSynced += synced;
     if (synced > 0 || userIdx % 25 === 0 || userIdx === activeUsers.length) {
-      console.log(`   [${userIdx}/${activeUsers.length}] Synced ${synced} new edits for "${u.name}" (Total edits on wiki: ${u.editcount})`);
+      console.log(
+        `   [${userIdx}/${activeUsers.length}] Synced ${synced} new edits for "${u.name}" (Total edits on wiki: ${u.editcount})`
+      );
     }
   }
 
@@ -279,7 +291,9 @@ async function main() {
   await rebuildLorewardStats();
 
   const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`\n🎉 User Synchronization Complete in ${totalTime}s! Total New Revisions Synced: ${totalRevsSynced}`);
+  console.log(
+    `\n🎉 User Synchronization Complete in ${totalTime}s! Total New Revisions Synced: ${totalRevsSynced}`
+  );
   await prisma.$disconnect();
   process.exit(0);
 }

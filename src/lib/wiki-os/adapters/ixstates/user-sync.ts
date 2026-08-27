@@ -53,7 +53,14 @@ export function getWikiAltsForUser(primaryUsername: string): string[] {
  */
 export async function lookupWikiUser(
   username: string
-): Promise<{ userId: number; username: string; editCount: number; groups: string[]; primaryUsername: string; isAlt: boolean } | null> {
+): Promise<{
+  userId: number;
+  username: string;
+  editCount: number;
+  groups: string[];
+  primaryUsername: string;
+  isAlt: boolean;
+} | null> {
   try {
     const primaryName = resolvePrimaryWikiUsername(username);
     const info = await getUserInfo(primaryName);
@@ -121,4 +128,3 @@ export async function linkWikiAccount(
 
   return { success: true, wikiUsername: wikiUser.username, wikiUserId: wikiUser.userId };
 }
-

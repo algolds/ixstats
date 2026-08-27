@@ -32,7 +32,10 @@ export function sortResidueBaseline(baseline: ResidueBaseline): ResidueBaseline 
   return sorted;
 }
 
-export function findDeadDeclarationsInSourceFile(sourceFile: SourceFile, fileRel: string): ResidueItem[] {
+export function findDeadDeclarationsInSourceFile(
+  sourceFile: SourceFile,
+  fileRel: string
+): ResidueItem[] {
   const dead: ResidueItem[] = [];
 
   // 1. Functions

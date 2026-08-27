@@ -98,7 +98,9 @@ function PopoverDescription({ className, ...props }: React.ComponentProps<"p">) 
 }
 
 function PopoverClose({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Close>) {
-  return <PopoverPrimitive.Close data-cuelume-press="droplet" data-slot="popover-close" {...props} />;
+  return (
+    <PopoverPrimitive.Close data-cuelume-press="droplet" data-slot="popover-close" {...props} />
+  );
 }
 
 const PopoverCLose = PopoverClose;

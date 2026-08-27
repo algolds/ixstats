@@ -3,7 +3,12 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
-import { NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, Flash as Zap, Settings } from "iconoir-react";
+import {
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+  Flash as Zap,
+  Settings,
+} from "iconoir-react";
 import { GlassToggle } from "./GlassInputs";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 

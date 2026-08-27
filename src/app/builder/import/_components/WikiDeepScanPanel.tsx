@@ -2,7 +2,14 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Search, CheckCircle as CheckCircle2, NavArrowRight as ChevronRight, Page as FileText, Database, Settings as Settings2 } from "iconoir-react";
+import {
+  Search,
+  CheckCircle as CheckCircle2,
+  NavArrowRight as ChevronRight,
+  Page as FileText,
+  Database,
+  Settings as Settings2,
+} from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";

@@ -7,7 +7,10 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { getArticleWikitext, type WikiSource as BridgeWikiSource } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import {
+  getArticleWikitext,
+  type WikiSource as BridgeWikiSource,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
 /**
  * Wiki source configuration (name mapping only — fetching delegated to WikiBridge)
@@ -144,7 +147,8 @@ export const wikiImporterDiscoveryRouter = createTRPCRouter({
         return result;
       } catch (error) {
         throw new Error(
-          `Failed to fetch wiki page: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
+          `Failed to fetch wiki page: ${error instanceof Error ? error.message : "Unknown error"}`,
+          { cause: error }
         );
       }
     }),

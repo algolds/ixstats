@@ -2,10 +2,7 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import {
-  KeyCommand as Command,
-  ArrowUpRight,
-} from "iconoir-react";
+import { KeyCommand as Command, ArrowUpRight } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { useAbility } from "~/components/providers/AbilityProvider";
@@ -87,7 +84,6 @@ function DomainSurfaceComponent({
 
   return (
     <div className="space-y-5">
-
       {/* Domain Hero — themed header card */}
       <FacetCard
         depth={1}

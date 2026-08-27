@@ -42,7 +42,7 @@ export function useResponsiveNav(normalizedPathname: string) {
   useEffect(() => {
     if (!isMobile) return;
     setMobileMenuOpen(false);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [normalizedPathname, isMobile]);
 
   // Lock body scroll while the mobile menu is open.

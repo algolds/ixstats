@@ -66,11 +66,7 @@ export class BlurHashService {
   /**
    * Generates an inline SVG data URI from an asset's dimensions and blurhash/placeholder color.
    */
-  static createPlaceholderSvg(
-    width = 800,
-    height = 600,
-    accentColor = "#1e293b"
-  ): string {
+  static createPlaceholderSvg(width = 800, height = 600, accentColor = "#1e293b"): string {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">
       <rect width="${width}" height="${height}" fill="${accentColor}" />
       <filter id="b" color-interpolation-filters="sRGB">

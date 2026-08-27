@@ -16,17 +16,13 @@ import {
 } from "~/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import type { BaseEditor } from "slate";
-import {
-  SLASH_ITEMS,
-  filterSlashItems,
-  type SlashItem,
-} from "./slash-items";
+import { SLASH_ITEMS, filterSlashItems, type SlashItem } from "./slash-items";
 
 export interface WikiSlashMenuProps {
   open: boolean;
   query: string;
   anchorRect: { top: number; left: number } | null;
-  editor: BaseEditor & Record<string, any> | null;
+  editor: (BaseEditor & Record<string, any>) | null;
   onSelect: (item: SlashItem) => void;
   onClose: () => void;
 }
@@ -69,7 +65,7 @@ export function WikiSlashMenu({
             ? { position: "fixed", top: anchorRect.top, left: anchorRect.left, transform: "none" }
             : undefined
         }
-        className="z-[10001] w-72 rounded-2xl border border-border/50 bg-card/95 p-1.5 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-100"
+        className="border-border/50 bg-card/95 animate-in fade-in zoom-in-95 z-[10001] w-72 rounded-2xl border p-1.5 shadow-2xl backdrop-blur-2xl duration-100"
       >
         <Command loop shouldFilter={false} value={query}>
           <CommandInput
@@ -80,27 +76,29 @@ export function WikiSlashMenu({
             className="hidden"
           />
           <CommandList>
-          <CommandEmpty>
-            <div className="px-2 py-3 text-xs text-muted-foreground">No matches</div>
-          </CommandEmpty>
-          {grouped.map(([category, catItems]) => (
-            <CommandGroup key={category} heading={category} className="text-xs">
-              {catItems.map((item) => (
-                <CommandItem
-                  key={item.id}
-                  value={`${item.label} ${item.keywords.join(" ")}`}
-                  onSelect={() => {
-                    if (editor) item.execute(editor);
-                    onSelect(item);
-                  }}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 active:scale-[0.98]"
-                >
-                  <span className="w-5 text-center font-mono text-[11px] text-muted-foreground">{item.icon}</span>
-                  <span className="truncate">{item.label}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          ))}
+            <CommandEmpty>
+              <div className="text-muted-foreground px-2 py-3 text-xs">No matches</div>
+            </CommandEmpty>
+            {grouped.map(([category, catItems]) => (
+              <CommandGroup key={category} heading={category} className="text-xs">
+                {catItems.map((item) => (
+                  <CommandItem
+                    key={item.id}
+                    value={`${item.label} ${item.keywords.join(" ")}`}
+                    onSelect={() => {
+                      if (editor) item.execute(editor);
+                      onSelect(item);
+                    }}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 active:scale-[0.98]"
+                  >
+                    <span className="text-muted-foreground w-5 text-center font-mono text-[11px]">
+                      {item.icon}
+                    </span>
+                    <span className="truncate">{item.label}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
           </CommandList>
         </Command>
       </PopoverContent>

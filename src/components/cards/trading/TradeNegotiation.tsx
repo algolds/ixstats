@@ -8,7 +8,15 @@
 
 import React, { useMemo } from "react";
 import Image from "next/image";
-import { CheckCircle, XmarkCircle as XCircle, ChatBubble as MessageSquare, Clock, Coins, ArrowSeparate as ArrowRightLeft, WarningCircle as AlertCircle } from "iconoir-react";
+import {
+  CheckCircle,
+  XmarkCircle as XCircle,
+  ChatBubble as MessageSquare,
+  Clock,
+  Coins,
+  ArrowSeparate as ArrowRightLeft,
+  WarningCircle as AlertCircle,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";

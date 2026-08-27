@@ -11,7 +11,14 @@ import { WorldTimeline } from "./_components/WorldTimeline";
 import { ActiveInterventions } from "./_components/ActiveInterventions";
 import { StorytellerHistory } from "./_components/StorytellerHistory";
 import { SandboxMode } from "./_components/SandboxMode";
-import { Gamepad as Gamepad2, MagicWand as Wand2, Clock, Flash as Zap, ClockRotateRight as History, Flask as FlaskConical } from "iconoir-react";
+import {
+  Gamepad as Gamepad2,
+  MagicWand as Wand2,
+  Clock,
+  Flash as Zap,
+  ClockRotateRight as History,
+  Flask as FlaskConical,
+} from "iconoir-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
@@ -37,7 +44,11 @@ export function StorytellerPanel() {
         description="World events, narrative tools, interventions, and simulation"
       />
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as StorytellerTab)} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as StorytellerTab)}
+        className="w-full"
+      >
         <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
           {TABS.map((tab) => {
             const Icon = tab.icon;
@@ -45,7 +56,7 @@ export function StorytellerPanel() {
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+                className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-transform active:scale-[0.98]"
               >
                 <Icon className="h-3.5 w-3.5" />
                 {tab.label}

@@ -35,19 +35,22 @@ const OVERVIEW_STEPS = [
     icon: FolderOpen,
     color: "text-rose-400",
     title: "Color-coded collections",
-    description: "Group research into named folders like Fleet Doctrine or Treaties with 8 preset color tags.",
+    description:
+      "Group research into named folders like Fleet Doctrine or Treaties with 8 preset color tags.",
   },
   {
     icon: Plus,
     color: "text-amber-400",
     title: "Quick creation popover",
-    description: "Open the creation popover from the header or sidebar to add a collection without leaving the page.",
+    description:
+      "Open the creation popover from the header or sidebar to add a collection without leaving the page.",
   },
   {
     icon: Download,
     color: "text-emerald-400",
     title: "Markdown and JSON export",
-    description: "Download any collection as a formatted markdown document or structured JSON data file.",
+    description:
+      "Download any collection as a formatted markdown document or structured JSON data file.",
   },
   {
     icon: ShareIos,
@@ -62,13 +65,15 @@ const ARTICLE_STEPS = [
     icon: WikiOSLogomark,
     color: "text-blue-400",
     title: "Article bookmarks",
-    description: "Save wiki pages with automatic lead thumbnail images, word counts, and edit dates.",
+    description:
+      "Save wiki pages with automatic lead thumbnail images, word counts, and edit dates.",
   },
   {
     icon: Highlighter,
     color: "text-yellow-400",
     title: "Quotes and highlights",
-    description: "Highlights created in WikiOS Margin sync to your Quotes tab with lore notes and direct links.",
+    description:
+      "Highlights created in WikiOS Margin sync to your Quotes tab with lore notes and direct links.",
   },
   {
     icon: StickyNote,
@@ -80,7 +85,8 @@ const ARTICLE_STEPS = [
     icon: Clock,
     color: "text-teal-400",
     title: "Fast reader jumping",
-    description: "Click any saved quote or page to open the article at that exact section in WikiOS.",
+    description:
+      "Click any saved quote or page to open the article at that exact section in WikiOS.",
   },
 ];
 
@@ -89,7 +95,8 @@ const MEDIA_STEPS = [
     icon: Globe,
     color: "text-blue-400",
     title: "Commons and uploads",
-    description: "Save Wikimedia Commons graphics or local image uploads directly to your collection.",
+    description:
+      "Save Wikimedia Commons graphics or local image uploads directly to your collection.",
   },
   {
     icon: Sparkles,
@@ -116,7 +123,8 @@ const FORUM_STEPS = [
     icon: MessageSquare,
     color: "text-orange-400",
     title: "Thread bookmarks",
-    description: "Save regional forum threads, debates, and policy proposals in your research lists.",
+    description:
+      "Save regional forum threads, debates, and policy proposals in your research lists.",
   },
   {
     icon: StickyNote,
@@ -134,7 +142,8 @@ const FORUM_STEPS = [
     icon: Bookmark,
     color: "text-rose-400",
     title: "Unified lore vault",
-    description: "Keep articles, clipped quotes, media, and forum threads together under one topic.",
+    description:
+      "Keep articles, clipped quotes, media, and forum threads together under one topic.",
   },
 ];
 
@@ -221,26 +230,26 @@ export function StashWelcomeModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 16 }}
             transition={{ type: "spring", stiffness: 450, damping: 30 }}
-            className="fixed top-1/2 left-1/2 z-100 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 px-4 focus:outline-none select-none"
+            className="fixed top-1/2 left-1/2 z-100 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 px-4 select-none focus:outline-none"
           >
-            <div className="relative overflow-hidden rounded-3xl border border-black/10 dark:border-white/15 bg-white dark:bg-zinc-900 shadow-2xl text-stone-900 dark:text-stone-100">
+            <div className="relative overflow-hidden rounded-3xl border border-black/10 bg-white text-stone-900 shadow-2xl dark:border-white/15 dark:bg-zinc-900 dark:text-stone-100">
               {/* Close button */}
               <button
                 onClick={handleClose}
-                className="absolute top-3.5 right-3.5 z-10 h-7 w-7 flex items-center justify-center rounded-full bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-stone-400 hover:text-stone-950 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-zinc-700 active:scale-90 transition-all cursor-pointer"
+                className="absolute top-3.5 right-3.5 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-stone-100 text-stone-500 transition-all hover:bg-stone-200 hover:text-stone-950 active:scale-90 dark:bg-zinc-800 dark:text-stone-400 dark:hover:bg-zinc-700 dark:hover:text-white"
                 title="Close guide"
               >
                 <X className="h-4 w-4" />
               </button>
 
               {/* Header */}
-              <div className="px-6 pt-6 pb-3 border-b border-black/8 dark:border-white/10">
+              <div className="border-b border-black/8 px-6 pt-6 pb-3 dark:border-white/10">
                 <div className="flex items-center gap-3 text-left">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/15 text-rose-500 shrink-0 shadow-2xs">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/15 text-rose-500 shadow-2xs">
                     <Bookmark className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-stone-950 dark:text-white tracking-tight">
+                    <h2 className="text-base font-bold tracking-tight text-stone-950 dark:text-white">
                       Stash Guide
                     </h2>
                     <p className="text-xs text-stone-500 dark:text-stone-400">
@@ -251,7 +260,7 @@ export function StashWelcomeModal({
               </div>
 
               {/* Tab Selector */}
-              <div className="flex border-b border-black/8 dark:border-white/10 px-6 bg-stone-50/50 dark:bg-zinc-900/50">
+              <div className="flex border-b border-black/8 bg-stone-50/50 px-6 dark:border-white/10 dark:bg-zinc-900/50">
                 {TABS.map((tab, i) => (
                   <button
                     key={tab.label}
@@ -263,7 +272,7 @@ export function StashWelcomeModal({
                       "relative cursor-pointer border-b-2 px-3 py-2.5 text-xs font-semibold transition-all",
                       activeTab === i
                         ? "border-rose-500 font-bold text-rose-600 dark:text-rose-400"
-                        : "text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white border-transparent"
+                        : "border-transparent text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
                     )}
                   >
                     {tab.label}
@@ -280,24 +289,24 @@ export function StashWelcomeModal({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: 0.15 }}
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left"
+                    className="grid grid-cols-1 gap-2.5 text-left sm:grid-cols-2"
                   >
                     {currentSteps.map((step) => {
                       const Icon = step.icon;
                       return (
                         <div
                           key={step.title}
-                          className="rounded-2xl border border-black/8 dark:border-white/10 bg-stone-50 dark:bg-zinc-900/80 p-3.5 space-y-1.5 shadow-2xs hover:border-black/15 dark:hover:border-white/20 transition-colors"
+                          className="space-y-1.5 rounded-2xl border border-black/8 bg-stone-50 p-3.5 shadow-2xs transition-colors hover:border-black/15 dark:border-white/10 dark:bg-zinc-900/80 dark:hover:border-white/20"
                         >
                           <div className="flex items-center gap-2">
-                            <div className="h-6 w-6 rounded-lg bg-stone-100 dark:bg-zinc-800 border border-black/5 dark:border-white/8 flex items-center justify-center shrink-0">
+                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-black/5 bg-stone-100 dark:border-white/8 dark:bg-zinc-800">
                               <Icon className={cn("h-3.5 w-3.5", step.color)} />
                             </div>
-                            <h4 className="text-xs font-bold text-stone-900 dark:text-white tracking-tight">
+                            <h4 className="text-xs font-bold tracking-tight text-stone-900 dark:text-white">
                               {step.title}
                             </h4>
                           </div>
-                          <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
+                          <p className="text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">
                             {step.description}
                           </p>
                         </div>
@@ -308,7 +317,7 @@ export function StashWelcomeModal({
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-between border-t border-black/8 dark:border-white/10 px-6 py-3.5 bg-stone-50/50 dark:bg-zinc-900/50">
+              <div className="flex items-center justify-between border-t border-black/8 bg-stone-50/50 px-6 py-3.5 dark:border-white/10 dark:bg-zinc-900/50">
                 <button
                   type="button"
                   onClick={handleClose}

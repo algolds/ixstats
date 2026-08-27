@@ -71,5 +71,10 @@ export interface WikiProviderAdapter {
   fetchRecentChanges(limit?: number): Promise<WikiRecentChange[]>;
   fetchBacklinks(titleOrSlug: string, limit?: number): Promise<WikiBacklink[]>;
   saveArticle(input: SaveArticleInput, author: WikiAuthorInfo): Promise<SaveArticleResult>;
-  revertRevision(titleOrSlug: string, revId: string, summary: string, author: WikiAuthorInfo): Promise<boolean>;
+  revertRevision(
+    titleOrSlug: string,
+    revId: string,
+    summary: string,
+    author: WikiAuthorInfo
+  ): Promise<boolean>;
 }

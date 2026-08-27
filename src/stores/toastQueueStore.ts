@@ -45,10 +45,7 @@ interface ToastQueueActions {
 
 export type ToastQueueStore = ToastQueueState & ToastQueueActions;
 
-export type ToastCustomRenderer = (
-  toast: ToastQueueItem,
-  onDismiss: () => void
-) => unknown;
+export type ToastCustomRenderer = (toast: ToastQueueItem, onDismiss: () => void) => unknown;
 
 let toastRenderer: ToastCustomRenderer | null = null;
 

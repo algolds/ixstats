@@ -1,10 +1,7 @@
 // src/lib/onoma/phonology.ts
 // Onoma Lab — Phonology & Grapheme-to-IPA Translation Engine
 
-import {
-  TEMPLATE_PHONETIC_PROFILES,
-  getTemplateLinguisticProfile,
-} from "./template-phonetics";
+import { TEMPLATE_PHONETIC_PROFILES, getTemplateLinguisticProfile } from "./template-phonetics";
 import { getNameOverride } from "./ipa-overrides";
 import type { IPAString, ResolvedNamePhonetics } from "./types";
 
@@ -373,7 +370,9 @@ export function resolveNamePhonetics(
   }
 
   // Tier 4: IRL culture family rules
-  const primaryCulture = options.culture ? options.culture.split("+")[0].toLowerCase().trim() : "any";
+  const primaryCulture = options.culture
+    ? options.culture.split("+")[0].toLowerCase().trim()
+    : "any";
   if (CULTURE_RULES[primaryCulture]) {
     const ipa = translateToIPA(name, primaryCulture, options.customRules);
     return {
@@ -398,20 +397,34 @@ export function resolveNamePhonetics(
  */
 export function getCultureDefaultVoiceTag(culture: string): string {
   switch (culture) {
-    case "latin": return "it-IT";
-    case "germanic": return "de-DE";
-    case "celtic": return "ga-IE";
-    case "slavic": return "pl-PL";
-    case "arabic": return "ar-SA";
-    case "persian": return "fa-IR";
-    case "turkic": return "tr-TR";
-    case "indic": return "hi-IN";
-    case "east-asian": return "ja-JP";
-    case "austronesian": return "id-ID";
-    case "african": return "sw-KE";
-    case "uralic": return "fi-FI";
-    case "constructed": return "is-IS";
-    default: return "en-US";
+    case "latin":
+      return "it-IT";
+    case "germanic":
+      return "de-DE";
+    case "celtic":
+      return "ga-IE";
+    case "slavic":
+      return "pl-PL";
+    case "arabic":
+      return "ar-SA";
+    case "persian":
+      return "fa-IR";
+    case "turkic":
+      return "tr-TR";
+    case "indic":
+      return "hi-IN";
+    case "east-asian":
+      return "ja-JP";
+    case "austronesian":
+      return "id-ID";
+    case "african":
+      return "sw-KE";
+    case "uralic":
+      return "fi-FI";
+    case "constructed":
+      return "is-IS";
+    default:
+      return "en-US";
   }
 }
 
@@ -420,20 +433,34 @@ export function getCultureDefaultVoiceTag(culture: string): string {
  */
 export function getCultureDefaultKokoroVoice(culture: string): string {
   switch (culture) {
-    case "latin": return "bf_emma";
-    case "germanic": return "bm_george";
-    case "celtic": return "bf_isabella";
-    case "slavic": return "bm_george";
-    case "arabic": return "af_nicole";
-    case "persian": return "af_nicole";
-    case "turkic": return "am_fenrir";
-    case "indic": return "af_nicole";
-    case "east-asian": return "af_nicole";
-    case "austronesian": return "bf_emma";
-    case "african": return "am_fenrir";
-    case "uralic": return "bm_george";
-    case "constructed": return "bm_fable";
-    default: return "bf_emma";
+    case "latin":
+      return "bf_emma";
+    case "germanic":
+      return "bm_george";
+    case "celtic":
+      return "bf_isabella";
+    case "slavic":
+      return "bm_george";
+    case "arabic":
+      return "af_nicole";
+    case "persian":
+      return "af_nicole";
+    case "turkic":
+      return "am_fenrir";
+    case "indic":
+      return "af_nicole";
+    case "east-asian":
+      return "af_nicole";
+    case "austronesian":
+      return "bf_emma";
+    case "african":
+      return "am_fenrir";
+    case "uralic":
+      return "bm_george";
+    case "constructed":
+      return "bm_fable";
+    default:
+      return "bf_emma";
   }
 }
 

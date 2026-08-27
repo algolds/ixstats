@@ -3,13 +3,7 @@ import type { SportResolverContext, SportMatchOutcome } from "./types";
 import { extractBaseballRoster, getPlayerOverall } from "./helpers";
 
 export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
-  const {
-    rng,
-    homeOffense,
-    awayOffense,
-    homeRoster,
-    awayRoster,
-  } = ctx;
+  const { rng, homeOffense, awayOffense, homeRoster, awayRoster } = ctx;
 
   const trace: EventTraceStep[] = [];
   let homeScore = 0;
@@ -42,11 +36,7 @@ export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
       let outs = 0;
       let bases = [false, false, false];
 
-      if (
-        homePitcherType === "SP" &&
-        inning >= 6 &&
-        (homePitcherFatigue >= 75 || awayScore >= 4)
-      ) {
+      if (homePitcherType === "SP" && inning >= 6 && (homePitcherFatigue >= 75 || awayScore >= 4)) {
         homeActivePitcher = homeLine.rp;
         homePitcherType = "RP";
         homePitcherFatigue = 0;
@@ -216,11 +206,7 @@ export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
       let outs = 0;
       let bases = [false, false, false];
 
-      if (
-        awayPitcherType === "SP" &&
-        inning >= 6 &&
-        (awayPitcherFatigue >= 75 || homeScore >= 4)
-      ) {
+      if (awayPitcherType === "SP" && inning >= 6 && (awayPitcherFatigue >= 75 || homeScore >= 4)) {
         awayActivePitcher = awayLine.rp;
         awayPitcherType = "RP";
         awayPitcherFatigue = 0;

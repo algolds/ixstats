@@ -12,11 +12,7 @@ import {
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { SettingsHeader } from "../SettingsHeader";
-import {
-  SettingsGroup,
-  SettingsSwitchRow,
-  SettingsSelectRow,
-} from "../primitives";
+import { SettingsGroup, SettingsSwitchRow, SettingsSelectRow } from "../primitives";
 
 interface NotificationSettingsPanelProps {
   userId: string;
@@ -196,9 +192,21 @@ export function NotificationSettingsPanel({ userId }: NotificationSettingsPanelP
           onValueChange={handleLevelChange}
           disabled={updatePrefsMutation.isPending}
           options={[
-            { value: "low", label: "Low (All Alerts)", description: "Receive all dispatches regardless of urgency" },
-            { value: "medium", label: "Medium (Recommended)", description: "Filter out routine background updates" },
-            { value: "high", label: "High Priority", description: "Only breaking crises and direct actions" },
+            {
+              value: "low",
+              label: "Low (All Alerts)",
+              description: "Receive all dispatches regardless of urgency",
+            },
+            {
+              value: "medium",
+              label: "Medium (Recommended)",
+              description: "Filter out routine background updates",
+            },
+            {
+              value: "high",
+              label: "High Priority",
+              description: "Only breaking crises and direct actions",
+            },
             { value: "all", label: "All Priorities", description: "Unfiltered event firehose" },
           ]}
         />

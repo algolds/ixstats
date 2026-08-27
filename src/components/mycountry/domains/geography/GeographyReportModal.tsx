@@ -9,7 +9,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { Compass, CloudSunny as CloudSun, StatUp as TrendingUp, SeaWaves as Waves, Globe as Globe2, Trophy } from "iconoir-react";
+import {
+  Compass,
+  CloudSunny as CloudSun,
+  StatUp as TrendingUp,
+  SeaWaves as Waves,
+  Globe as Globe2,
+  Trophy,
+} from "iconoir-react";
 import type { RouterOutputs } from "~/trpc/react";
 
 // Derived from the tRPC output so the type can't drift from the actual data shape.

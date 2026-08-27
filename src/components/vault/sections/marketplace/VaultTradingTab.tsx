@@ -3,7 +3,14 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "~/lib/utils";
-import { ArrowSeparate as ArrowRightLeft, Plus, ClockRotateRight as History, StatUp as TrendingUp, MailIn as Inbox, Send } from "iconoir-react";
+import {
+  ArrowSeparate as ArrowRightLeft,
+  Plus,
+  ClockRotateRight as History,
+  StatUp as TrendingUp,
+  MailIn as Inbox,
+  Send,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card } from "~/components/ui/card";

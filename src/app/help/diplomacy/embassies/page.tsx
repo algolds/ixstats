@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { City as Building2, MapPin, Group as Users, StatUp as TrendingUp, Shield, Community as Handshake } from "iconoir-react";
+import {
+  City as Building2,
+  MapPin,
+  Group as Users,
+  StatUp as TrendingUp,
+  Shield,
+  Community as Handshake,
+} from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function EmbassiesArticle() {

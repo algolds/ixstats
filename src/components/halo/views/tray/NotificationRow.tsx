@@ -99,7 +99,7 @@ export function NotificationRow({
             "relative flex w-full flex-col overflow-hidden rounded-xl border transition-all duration-200",
             !isRead
               ? "border-amber-500/30 bg-amber-500/[0.06] shadow-xs hover:border-amber-500/50"
-              : "border-black/[0.06] dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] hover:border-black/10 dark:hover:border-white/20 hover:bg-black/[0.04] dark:hover:bg-white/[0.07] opacity-90 hover:opacity-100"
+              : "border-black/[0.06] bg-black/[0.02] opacity-90 hover:border-black/10 hover:bg-black/[0.04] hover:opacity-100 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20 dark:hover:bg-white/[0.07]"
           )}
         >
           {/* Left Accent Border Strip */}
@@ -112,7 +112,7 @@ export function NotificationRow({
           />
 
           {/* Header Content */}
-          <div className="flex cursor-grab items-center gap-3 p-3 text-left hover:bg-accent/5 active:cursor-grabbing">
+          <div className="hover:bg-accent/5 flex cursor-grab items-center gap-3 p-3 text-left active:cursor-grabbing">
             <div
               className={cn(
                 "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/5 shadow-2xs",
@@ -124,7 +124,9 @@ export function NotificationRow({
 
             <div className="min-w-0 flex-1 pl-0.5">
               <div className="flex items-center gap-2">
-                <span className="text-foreground block truncate text-xs font-semibold">{n.title}</span>
+                <span className="text-foreground block truncate text-xs font-semibold">
+                  {n.title}
+                </span>
                 {!isRead && (
                   <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-amber-500 shadow-xs shadow-amber-500/50" />
                 )}
@@ -151,7 +153,7 @@ export function NotificationRow({
 
       {/* Expanded detail panel */}
       <SwipeableRow.Expanded>
-        <div className="space-y-3 rounded-b-xl border-t border-border/30 bg-accent/5 px-3.5 pt-3 pb-3.5 pl-[18px]">
+        <div className="border-border/30 bg-accent/5 space-y-3 rounded-b-xl border-t px-3.5 pt-3 pb-3.5 pl-[18px]">
           <p className="text-foreground/95 text-[11.5px] leading-relaxed font-medium whitespace-pre-wrap select-text selection:bg-amber-500/30">
             {n.description || n.message}
           </p>
@@ -163,7 +165,7 @@ export function NotificationRow({
                   e.stopPropagation();
                   handleClick(n);
                 }}
-                className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary px-3 py-1.5 text-[10px] font-bold text-primary-foreground shadow-xs transition-all hover:bg-primary/90 active:scale-[0.98]"
+                className="border-primary/30 bg-primary text-primary-foreground hover:bg-primary/90 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-[10px] font-bold shadow-xs transition-all active:scale-[0.98]"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
                 <span>Open</span>
@@ -174,7 +176,7 @@ export function NotificationRow({
                 e.stopPropagation();
                 handleDismiss(n);
               }}
-              className="text-muted-foreground hover:text-foreground flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border/50 bg-accent/10 px-3 py-1.5 text-[10px] font-bold transition-all hover:bg-accent/20 active:scale-[0.98]"
+              className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-[10px] font-bold transition-all active:scale-[0.98]"
             >
               <X className="text-muted-foreground/60 h-3.5 w-3.5" />
               <span>Dismiss</span>

@@ -33,7 +33,8 @@ export function TemplateView({ onClose }: DIViewProps) {
       </div>
 
       <p className="text-muted-foreground text-xs leading-relaxed">
-        This is a starter template for building custom Halo plugins and modal views. Customize this view with domain-specific cards, controls, and workflows.
+        This is a starter template for building custom Halo plugins and modal views. Customize this
+        view with domain-specific cards, controls, and workflows.
       </p>
     </motion.div>
   );

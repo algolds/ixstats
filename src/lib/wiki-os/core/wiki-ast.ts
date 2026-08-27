@@ -99,11 +99,7 @@ export type WikiInlineNode =
 // ─── Template Models ───────────────────────────────────────────────────────
 
 export type TemplateClassification =
-  | "standard"
-  | "infobox"
-  | "chip-engine"
-  | "chip-coord"
-  | "custom";
+  "standard" | "infobox" | "chip-engine" | "chip-coord" | "custom";
 
 export interface WikiParameter {
   key: string;

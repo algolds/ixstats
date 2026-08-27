@@ -12,7 +12,10 @@
 import { PrismaClient } from "@prisma/client";
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
-import { cleanExcerpt, extractLeadImageFromWikitext } from "../src/lib/wiki-os/transformers/excerpt";
+import {
+  cleanExcerpt,
+  extractLeadImageFromWikitext,
+} from "../src/lib/wiki-os/transformers/excerpt";
 
 dotenv.config({ path: ".env.local.dev" });
 dotenv.config({ path: ".env.local" });
@@ -38,11 +41,9 @@ function sanitize(str: string | null | undefined): string {
 }
 
 function toSlug(title: string): string {
-  return sanitize(title)
-    .trim()
-    .toLowerCase()
-    .replace(/ /g, "_")
-    .replace(/_{2,}/g, "_") || "article";
+  return (
+    sanitize(title).trim().toLowerCase().replace(/ /g, "_").replace(/_{2,}/g, "_") || "article"
+  );
 }
 
 const NAMESPACE_PREFIXES: Record<number, string> = {
@@ -72,7 +73,9 @@ async function main() {
   console.log("==================================================================");
   console.log("🚀 WikiOS Full MariaDB -> PostgreSQL Direct Ingestion Engine");
   console.log(`   Host: ${IXWIKI_DB_HOST}:${IXWIKI_DB_PORT} | DB: ${IXWIKI_DB_NAME}`);
-  console.log(`   Scope: ${limit === Infinity ? "FULL SYNC (All Articles & Revisions)" : `Limit: ${limit}`}`);
+  console.log(
+    `   Scope: ${limit === Infinity ? "FULL SYNC (All Articles & Revisions)" : `Limit: ${limit}`}`
+  );
   console.log("==================================================================");
 
   let connection: mysql.Connection | null = null;

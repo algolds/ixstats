@@ -1,13 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import React, {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-} from "react";
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
 import { Button } from "~/components/ui/button";
 
 export interface ConfettiOptions {

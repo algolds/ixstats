@@ -135,9 +135,7 @@ export function buildSharedVertexIndex(
 
               const candCoords = featureCoords.get(cand.featureId);
               if (!candCoords) continue;
-              const candCoord = candCoords.get(
-                `${cand.ringIndex}-${cand.vertexIndex}`
-              );
+              const candCoord = candCoords.get(`${cand.ringIndex}-${cand.vertexIndex}`);
               if (!candCoord) continue;
 
               const dLng = coord[0] - candCoord[0];
@@ -159,9 +157,7 @@ export function buildSharedVertexIndex(
           let avgLng = 0;
           let avgLat = 0;
           for (const ref of matchedRefs) {
-            const c = featureCoords
-              .get(ref.featureId)!
-              .get(`${ref.ringIndex}-${ref.vertexIndex}`)!;
+            const c = featureCoords.get(ref.featureId)!.get(`${ref.ringIndex}-${ref.vertexIndex}`)!;
             avgLng += c[0];
             avgLat += c[1];
           }
@@ -214,4 +210,3 @@ export function moveSharedVertex<T extends Polygon | MultiPolygon>(
 
   return updated;
 }
-

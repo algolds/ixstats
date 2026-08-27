@@ -21,10 +21,7 @@ import { TRPCError } from "@trpc/server";
 import { EconomicComponentType } from "@prisma/client";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
-import {
-  type ParsedEconomicComponent,
-  transformDatabaseComponent,
-} from "./serializer";
+import { type ParsedEconomicComponent, transformDatabaseComponent } from "./serializer";
 
 // ============================================================================
 // Input Validation Schemas

@@ -1,7 +1,12 @@
 "use client";
 
 import React from "react";
-import { Industry as Factory, Reports as PieChart, Group as Users, StatUp as TrendingUp } from "iconoir-react";
+import {
+  Industry as Factory,
+  Reports as PieChart,
+  Group as Users,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { MetricCard } from "../../../../primitives/enhanced";
 import type { SectorConfiguration } from "~/types/economy-builder";
 import { calculateSectorTotals } from "../utils/sectorCalculations";

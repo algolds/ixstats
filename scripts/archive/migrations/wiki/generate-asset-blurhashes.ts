@@ -44,7 +44,9 @@ async function main() {
   console.log("==================================================================");
   console.log("🖼️  WikiOS Progressive BlurHash & LQIP Generation Engine");
   console.log(`   Mode: ${dryRun ? "DRY-RUN (Preview Only)" : "LIVE DATABASE UPDATE"}`);
-  console.log(`   Scope: ${limit ? `Limit ${limit}` : "All unhashed assets"} | Batch Size: ${batchSize}`);
+  console.log(
+    `   Scope: ${limit ? `Limit ${limit}` : "All unhashed assets"} | Batch Size: ${batchSize}`
+  );
   console.log("==================================================================");
 
   const startTime = Date.now();
@@ -95,7 +97,9 @@ async function main() {
     }
 
     cursor = assets[assets.length - 1]!.id;
-    process.stdout.write(`\r⏳ Processed ${processed.toLocaleString()}/${Math.min(unhashedCount, limit || unhashedCount).toLocaleString()} assets...`);
+    process.stdout.write(
+      `\r⏳ Processed ${processed.toLocaleString()}/${Math.min(unhashedCount, limit || unhashedCount).toLocaleString()} assets...`
+    );
   }
 
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);

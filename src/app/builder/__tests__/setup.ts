@@ -121,7 +121,6 @@ Object.defineProperty(window, "localStorage", {
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-  
   disconnect() {}
   observe() {}
   takeRecords() {
@@ -132,7 +131,6 @@ global.IntersectionObserver = class IntersectionObserver {
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
-  
   disconnect() {}
   observe() {}
   unobserve() {}

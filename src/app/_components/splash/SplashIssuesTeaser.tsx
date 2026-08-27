@@ -3,7 +3,21 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
-import { Bell, City as Building2, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Clock, Globe, Leaf, Pause, Play, ScaleFrameEnlarge as Scale, Shield, StatUp as TrendingUp, Group as Users } from "iconoir-react";
+import {
+  Bell,
+  City as Building2,
+  NavArrowLeft as ChevronLeft,
+  NavArrowRight as ChevronRight,
+  Clock,
+  Globe,
+  Leaf,
+  Pause,
+  Play,
+  ScaleFrameEnlarge as Scale,
+  Shield,
+  StatUp as TrendingUp,
+  Group as Users,
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { splashGold } from "~/lib/splash/mycountry-gold";
 import { api } from "~/trpc/react";
@@ -53,7 +67,7 @@ export function SplashIssuesTeaser() {
 
   useEffect(() => {
     setIndex(0);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [issues.length]);
 
   const go = useCallback(

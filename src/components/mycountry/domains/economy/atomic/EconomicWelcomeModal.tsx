@@ -9,7 +9,23 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
-import { Xmark as X, Component as Blocks, Industry as Factory, Flash as Zap, WarningTriangle as AlertTriangle, NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft, Settings, ViewGrid as LayoutGrid, InfoCircle as Info, Dollar as DollarSign, StatUp as TrendingUp, Coins, ScaleFrameEnlarge as Scale, Group as Users } from "iconoir-react";
+import {
+  Xmark as X,
+  Component as Blocks,
+  Industry as Factory,
+  Flash as Zap,
+  WarningTriangle as AlertTriangle,
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
+  Settings,
+  ViewGrid as LayoutGrid,
+  InfoCircle as Info,
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
+  Coins,
+  ScaleFrameEnlarge as Scale,
+  Group as Users,
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { ATOMIC_ECONOMY_WELCOME_VERSION } from "~/lib/buildVersion";

@@ -14,7 +14,10 @@
 
 import { readFileSync, existsSync } from "fs";
 import { PrismaClient } from "@prisma/client";
-import { getIxWikiPool, closeWikiBridge } from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
+import {
+  getIxWikiPool,
+  closeWikiBridge,
+} from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
 import { LinkGraphService } from "../../src/lib/wiki-os/core/link-graph-service";
 import { toArticleSlug } from "../../src/lib/wiki-os/core/domain-types";
 import { DEFAULT_USER_AGENT, DEFAULT_MEDIAWIKI_URL } from "../../src/lib/wiki-os/config";
@@ -139,7 +142,9 @@ async function streamIngestFromHttpApi(
 ): Promise<number> {
   const apiUrl = `${baseUrl.replace(/\/$/, "")}/api.php`;
   console.log(`🌐 Connecting to MediaWiki Action API at ${apiUrl}...`);
-  console.log(`📥 Mode: ${limit === Infinity ? "FULL SYNC (All Articles)" : `Targeting ${limit} articles`}`);
+  console.log(
+    `📥 Mode: ${limit === Infinity ? "FULL SYNC (All Articles)" : `Targeting ${limit} articles`}`
+  );
 
   let gapcontinue: string | undefined = undefined;
   let totalProcessed = 0;
@@ -165,7 +170,7 @@ async function streamIngestFromHttpApi(
     const res = await fetch(url.toString(), {
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
-        "Accept": "application/json",
+        Accept: "application/json",
       },
     });
 
@@ -198,7 +203,9 @@ async function streamIngestFromHttpApi(
         if (isDryRun) {
           if (totalProcessed < 5) {
             const links = LinkGraphService.extractLinks(wikitext);
-            console.log(`   [Dry-Run Preview] Title: "${title}" | Slug: "${slug}" | Length: ${wikitext.length} chars | Links: ${links.length}`);
+            console.log(
+              `   [Dry-Run Preview] Title: "${title}" | Slug: "${slug}" | Length: ${wikitext.length} chars | Links: ${links.length}`
+            );
           }
         } else {
           try {
@@ -230,7 +237,12 @@ async function streamIngestFromHttpApi(
             });
 
             if (wikitext) {
-              void LinkGraphService.syncArticleLinks(article.id, wikitext, undefined, realmArg).catch(() => {});
+              void LinkGraphService.syncArticleLinks(
+                article.id,
+                wikitext,
+                undefined,
+                realmArg
+              ).catch(() => {});
             }
           } catch (err: any) {
             console.warn(`   ⚠️ Could not sync article "${title}":`, err.message?.substring(0, 80));
@@ -243,7 +255,9 @@ async function streamIngestFromHttpApi(
     }
 
     const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`   [Batch ${batchIndex}] Synced ${batchPages.length} articles (Total: ${totalProcessed} | ${durationSec}s | Latest: "${latestTitle}")`);
+    console.log(
+      `   [Batch ${batchIndex}] Synced ${batchPages.length} articles (Total: ${totalProcessed} | ${durationSec}s | Latest: "${latestTitle}")`
+    );
     batchIndex++;
 
     gapcontinue = data?.continue?.gapcontinue;
@@ -254,7 +268,9 @@ async function streamIngestFromHttpApi(
   }
 
   const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`\n🎉 Ingestion finished in ${totalTime}s! Total articles processed: ${totalProcessed}`);
+  console.log(
+    `\n🎉 Ingestion finished in ${totalTime}s! Total articles processed: ${totalProcessed}`
+  );
   return totalProcessed;
 }
 
@@ -262,18 +278,25 @@ async function main() {
   const args = process.argv.slice(2);
   const isDryRun = args.includes("--dry-run");
   const fromDb = args.includes("--from-db");
-  const fromApi = args.includes("--from-api") || args.includes("--from-http") || (!fromDb && !args.some((a) => a.startsWith("--sql=")));
+  const fromApi =
+    args.includes("--from-api") ||
+    args.includes("--from-http") ||
+    (!fromDb && !args.some((a) => a.startsWith("--sql=")));
   const sqlArg = args.find((a) => a.startsWith("--sql="))?.split("=")[1];
   const realmArg = args.find((a) => a.startsWith("--realm="))?.split("=")[1] || "ixwiki";
   const limitArg = args.find((a) => a.startsWith("--limit="))?.split("=")[1];
   const isAll = args.includes("--all") || (!limitArg && !args.includes("--dry-run"));
-  const limit = limitArg ? parseInt(limitArg, 10) : (isAll ? Infinity : 50);
+  const limit = limitArg ? parseInt(limitArg, 10) : isAll ? Infinity : 50;
 
   console.log("==================================================================");
   console.log(`🚀 WikiOS Universal MediaWiki Migration Engine (Realm: ${realmArg})`);
   console.log(`   Mode: ${isDryRun ? "DRY-RUN (Validation & Audit)" : "LIVE INGESTION"}`);
-  console.log(`   Scope: ${limit === Infinity ? "FULL SYNC (Unlimited / All Articles)" : `Limit: ${limit} articles`}`);
-  console.log(`   Source: ${fromApi ? "MediaWiki Action API" : fromDb ? "Live MariaDB Pool" : sqlArg || "Standard Pipeline"}`);
+  console.log(
+    `   Scope: ${limit === Infinity ? "FULL SYNC (Unlimited / All Articles)" : `Limit: ${limit} articles`}`
+  );
+  console.log(
+    `   Source: ${fromApi ? "MediaWiki Action API" : fromDb ? "Live MariaDB Pool" : sqlArg || "Standard Pipeline"}`
+  );
   console.log("==================================================================");
 
   if (fromApi) {
@@ -320,7 +343,12 @@ async function main() {
             });
 
             if (wikitext) {
-              void LinkGraphService.syncArticleLinks(article.id, wikitext, undefined, realmArg).catch(() => {});
+              void LinkGraphService.syncArticleLinks(
+                article.id,
+                wikitext,
+                undefined,
+                realmArg
+              ).catch(() => {});
             }
           } catch (itemErr: any) {
             console.warn(`   ⚠️ Could not sync "${title}":`, itemErr.message?.substring(0, 80));

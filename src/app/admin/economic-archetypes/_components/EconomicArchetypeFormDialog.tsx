@@ -93,11 +93,7 @@ export function EconomicArchetypeFormDialog({
             {TABS.map((tab) => {
               const Icon = tab.icon;
               return (
-                <TabsTrigger
-                  key={tab.id}
-                  value={tab.id}
-                  className="text-xs active:scale-[0.98]"
-                >
+                <TabsTrigger key={tab.id} value={tab.id} className="text-xs active:scale-[0.98]">
                   <Icon className="mr-1.5 inline h-4 w-4" />
                   {tab.label}
                 </TabsTrigger>

@@ -264,8 +264,6 @@ export default function WritingSection({ studioWords = [] }: WritingSectionProps
 
   return (
     <div className="space-y-6">
-     
-
       {/* Main Studio Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Script Directory & Typology Settings (4 cols) */}

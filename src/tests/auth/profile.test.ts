@@ -139,18 +139,10 @@ describe("Decoupled IxnayID Passport & Sovereign Factbook Architecture (Plan 188
   it("normalizes tab query parameters for lore, work, and wiki seamlessly", () => {
     const rawTabs = ["work", "wiki", "lore", "realms", "history", null, undefined];
     const normalized = rawTabs.map((t) =>
-      t === "work" || t === "wiki" || t === "lore" ? "lore" : (t || "realms")
+      t === "work" || t === "wiki" || t === "lore" ? "lore" : t || "realms"
     );
 
-    expect(normalized).toEqual([
-      "lore",
-      "lore",
-      "lore",
-      "realms",
-      "history",
-      "realms",
-      "realms",
-    ]);
+    expect(normalized).toEqual(["lore", "lore", "lore", "realms", "history", "realms", "realms"]);
   });
 
   it("de-duplicates authored articles across MediaWiki and PostgreSQL sources", () => {

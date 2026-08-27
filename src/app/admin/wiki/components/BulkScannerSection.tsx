@@ -8,7 +8,13 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { Refresh as RefreshCw, Search, Link as Link2, SystemRestart as Loader2, WarningTriangle as AlertTriangle } from "iconoir-react";
+import {
+  Refresh as RefreshCw,
+  Search,
+  Link as Link2,
+  SystemRestart as Loader2,
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { ScanResult } from "./types";
 
@@ -116,7 +122,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
       utils.countries.getAll.invalidate();
       setScanResults([]);
       setScanComplete(false);
-    } catch  {
+    } catch {
       notify.error("Error", "Failed to apply bulk links");
     } finally {
       setIsLinking(false);
@@ -126,11 +132,11 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
   const selectedCount = scanResults.filter((r) => r.selected).length;
 
   return (
-    <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
-      <div className="flex flex-col gap-3 border-b border-border/20 pb-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+      <div className="border-border/20 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <RefreshCw className="h-4 w-4 text-amber-400" />
-          <h3 className="text-xs font-bold text-foreground">Bulk Wiki Entity Scanner</h3>
+          <h3 className="text-foreground text-xs font-bold">Bulk Wiki Entity Scanner</h3>
         </div>
         <Badge variant="outline" className="w-fit text-[10px]">
           {unlinkedCountries.length} unlinked countries
@@ -147,7 +153,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
           <Button
             onClick={handleScan}
             disabled={isScanning || unlinkedCountries.length === 0}
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             {isScanning ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -162,7 +168,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
               variant="outline"
               onClick={handleLinkSelected}
               disabled={selectedCount === 0 || isLinking}
-              className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               {isLinking ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -205,9 +211,9 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
         )}
 
         {scanResults.length > 0 && (
-          <div className="overflow-x-auto rounded-2xl border border-border/30 bg-card/25 backdrop-blur-md shadow-xs max-h-[24rem] overflow-y-auto">
+          <div className="border-border/30 bg-card/25 max-h-[24rem] overflow-x-auto overflow-y-auto rounded-2xl border shadow-xs backdrop-blur-md">
             <table className="w-full text-xs">
-              <thead className="bg-muted/20 sticky top-0 backdrop-blur-md border-b border-border/30 text-muted-foreground font-semibold">
+              <thead className="bg-muted/20 border-border/30 text-muted-foreground sticky top-0 border-b font-semibold backdrop-blur-md">
                 <tr>
                   <th className="w-10 px-3 py-2.5 text-center" />
                   <th className="px-3 py-2.5 text-left font-medium">Country</th>
@@ -216,7 +222,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
                   <th className="px-3 py-2.5 text-right font-medium">Confidence</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/15">
+              <tbody className="divide-border/15 divide-y">
                 {scanResults.map((result) => (
                   <tr
                     key={result.countryId}
@@ -230,7 +236,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
                         type="checkbox"
                         checked={result.selected}
                         onChange={() => toggleResult(result.countryId)}
-                        className="rounded border-border"
+                        className="border-border rounded"
                       />
                     </td>
                     <td className="text-foreground px-3 py-2.5 font-semibold">

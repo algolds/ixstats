@@ -4,7 +4,14 @@ import React, { useState, useMemo } from "react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { Group as Users, StatUp as TrendingUp, StatDown as TrendingDown, Dollar as DollarSign, Shield, Suitcase as Briefcase } from "iconoir-react";
+import {
+  Group as Users,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Dollar as DollarSign,
+  Shield,
+  Suitcase as Briefcase,
+} from "iconoir-react";
 import { MetricCard } from "../../../primitives/enhanced";
 import type { EconomyBuilderState, LaborConfiguration } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";

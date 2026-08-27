@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  cachedStaticProcedure,
-  rateLimitedPublicProcedure,
-} from "~/server/api/trpc";
+import { cachedStaticProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import {
   getArticleIntro,
   getPageSections,
@@ -13,7 +10,10 @@ import {
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { searchWiki as searchWikiService } from "~/lib/wiki-os/core/native-search-service";
 import { parseInfobox as parseInfoboxParser } from "~/lib/wiki-os/transformers/infobox-parser";
-import { parseInfoboxWithTemplates, resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
+import {
+  parseInfoboxWithTemplates,
+  resolveImageUrl,
+} from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { getEligibleCountries } from "~/lib/wiki-os/adapters/ixstates/eligible-country-service";
 

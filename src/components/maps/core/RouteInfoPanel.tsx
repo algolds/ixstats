@@ -8,7 +8,24 @@
  */
 
 import { useState } from "react";
-import { Xmark as X, Train, Car, DeliveryTruck as Ship, Airplane as Plane, Droplet as Droplets, MapPin, Dashboard as Gauge, ModernTv as Mountain, Calendar, SystemRestart as Loader2, Trash as Trash2, EditPencil as Pencil, Check, Coins, Navigator as Route } from "iconoir-react";
+import {
+  Xmark as X,
+  Train,
+  Car,
+  DeliveryTruck as Ship,
+  Airplane as Plane,
+  Droplet as Droplets,
+  MapPin,
+  Dashboard as Gauge,
+  ModernTv as Mountain,
+  Calendar,
+  SystemRestart as Loader2,
+  Trash as Trash2,
+  EditPencil as Pencil,
+  Check,
+  Coins,
+  Navigator as Route,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 
 interface RouteInfoPanelProps {

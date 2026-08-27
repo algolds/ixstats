@@ -13,51 +13,156 @@ import type { Descendant } from "slate";
 
 // ─── Node model ─────────────────────────────────────────────────────────────
 
-export type WikiText = { text: string; bold?: boolean; italic?: boolean; underline?: boolean; strike?: boolean; sup?: boolean; sub?: boolean; codeMark?: boolean };
+export type WikiText = {
+  text: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  strike?: boolean;
+  sup?: boolean;
+  sub?: boolean;
+  codeMark?: boolean;
+};
 
 export interface BaseEl {
   id?: string;
   children: Descendant[];
 }
-export interface PEl extends BaseEl { type: "p" }
-export interface HeadingEl extends BaseEl { type: "h2" | "h3" | "h4"; }
-export interface QuoteEl extends BaseEl { type: "blockquote" }
-export interface ListEl extends BaseEl { type: "ul" | "ol" }
-export interface ListItemEl extends BaseEl { type: "li" }
-export interface CodeBlockEl extends BaseEl { type: "code-block" }
-export interface TableEl extends BaseEl { type: "table" }
-export interface RowEl extends BaseEl { type: "tr" }
-export interface CellEl extends BaseEl { type: "td" | "th" }
-export interface HrEl extends BaseEl { type: "hr" }
-export interface LinkEl extends BaseEl { type: "link"; url: string; internal?: boolean }
-export interface TemplateEl extends BaseEl { type: "template"; name: string; params: Record<string, string>; dataMw: string; html: string; /** Canonical MediaWiki invocation — emitted verbatim by serializePlateToWikitext. */ wikitext?: string }
-export interface ChipEngineEl extends BaseEl { type: "chip-engine"; name: string; params: Record<string, string>; dataMw: string; label: string }
-export interface ChipCoordEl extends BaseEl { type: "chip-coord"; href: string; title: string; label: string }
-export interface ChipMapEmbedEl extends BaseEl { type: "chip-mapembed"; href: string; title: string }
-export interface MediaEl extends BaseEl { type: "media"; html: string; filename?: string }
-export interface RawHtmlEl extends BaseEl { type: "raw-html"; html: string; kind?: "infobox" | "generic"; name?: string; params?: Record<string, string>; dataMw?: string; /** Canonical MediaWiki invocation — emitted verbatim by serializePlateToWikitext. */ wikitext?: string }
-export interface RefEl extends BaseEl { type: "ref"; label: string }
-export interface InfoboxBoxEl extends BaseEl { type: "infobox-box"; title?: string; fields: Array<{ label: string; value: string }>; html: string; edited?: boolean; /** Canonical MediaWiki invocation — emitted verbatim by serializePlateToWikitext. */ wikitext?: string }
+export interface PEl extends BaseEl {
+  type: "p";
+}
+export interface HeadingEl extends BaseEl {
+  type: "h2" | "h3" | "h4";
+}
+export interface QuoteEl extends BaseEl {
+  type: "blockquote";
+}
+export interface ListEl extends BaseEl {
+  type: "ul" | "ol";
+}
+export interface ListItemEl extends BaseEl {
+  type: "li";
+}
+export interface CodeBlockEl extends BaseEl {
+  type: "code-block";
+}
+export interface TableEl extends BaseEl {
+  type: "table";
+}
+export interface RowEl extends BaseEl {
+  type: "tr";
+}
+export interface CellEl extends BaseEl {
+  type: "td" | "th";
+}
+export interface HrEl extends BaseEl {
+  type: "hr";
+}
+export interface LinkEl extends BaseEl {
+  type: "link";
+  url: string;
+  internal?: boolean;
+}
+export interface TemplateEl extends BaseEl {
+  type: "template";
+  name: string;
+  params: Record<string, string>;
+  dataMw: string;
+  html: string;
+  /** Canonical MediaWiki invocation — emitted verbatim by serializePlateToWikitext. */ wikitext?: string;
+}
+export interface ChipEngineEl extends BaseEl {
+  type: "chip-engine";
+  name: string;
+  params: Record<string, string>;
+  dataMw: string;
+  label: string;
+}
+export interface ChipCoordEl extends BaseEl {
+  type: "chip-coord";
+  href: string;
+  title: string;
+  label: string;
+}
+export interface ChipMapEmbedEl extends BaseEl {
+  type: "chip-mapembed";
+  href: string;
+  title: string;
+}
+export interface MediaEl extends BaseEl {
+  type: "media";
+  html: string;
+  filename?: string;
+}
+export interface RawHtmlEl extends BaseEl {
+  type: "raw-html";
+  html: string;
+  kind?: "infobox" | "generic";
+  name?: string;
+  params?: Record<string, string>;
+  dataMw?: string;
+  /** Canonical MediaWiki invocation — emitted verbatim by serializePlateToWikitext. */ wikitext?: string;
+}
+export interface RefEl extends BaseEl {
+  type: "ref";
+  label: string;
+}
+export interface InfoboxBoxEl extends BaseEl {
+  type: "infobox-box";
+  title?: string;
+  fields: Array<{ label: string; value: string }>;
+  html: string;
+  edited?: boolean;
+  /** Canonical MediaWiki invocation — emitted verbatim by serializePlateToWikitext. */ wikitext?: string;
+}
 
 export type WikiElement =
-  | PEl | HeadingEl | QuoteEl | ListEl | ListItemEl | CodeBlockEl
-  | TableEl | RowEl | CellEl | HrEl | LinkEl
-  | TemplateEl | ChipEngineEl | ChipCoordEl | ChipMapEmbedEl
-  | MediaEl | RawHtmlEl | RefEl | InfoboxBoxEl;
+  | PEl
+  | HeadingEl
+  | QuoteEl
+  | ListEl
+  | ListItemEl
+  | CodeBlockEl
+  | TableEl
+  | RowEl
+  | CellEl
+  | HrEl
+  | LinkEl
+  | TemplateEl
+  | ChipEngineEl
+  | ChipCoordEl
+  | ChipMapEmbedEl
+  | MediaEl
+  | RawHtmlEl
+  | RefEl
+  | InfoboxBoxEl;
 
 let idCounter = 0;
 const nextId = () => `wn${Date.now().toString(36)}${(idCounter++).toString(36)}`;
 
-const VOID_TYPES = new Set(["hr", "template", "chip-engine", "chip-coord", "chip-mapembed", "media", "raw-html", "ref", "infobox-box"]);
+const VOID_TYPES = new Set([
+  "hr",
+  "template",
+  "chip-engine",
+  "chip-coord",
+  "chip-mapembed",
+  "media",
+  "raw-html",
+  "ref",
+  "infobox-box",
+]);
 
 // Table classes that indicate metadata/navigation furniture → atomic, not editable grids
-const FURNITURE_RE = /navbox|metadata|vertical-navbox|mbox|sidebar|sistersitebox|toc|navigation|catlinks|mw-jump/i;
+const FURNITURE_RE =
+  /navbox|metadata|vertical-navbox|mbox|sidebar|sistersitebox|toc|navigation|catlinks|mw-jump/i;
 
-function parseInfoboxFields(el: Element): { title?: string; fields: Array<{ label: string; value: string }> } {
+function parseInfoboxFields(el: Element): {
+  title?: string;
+  fields: Array<{ label: string; value: string }>;
+} {
   const fields: Array<{ label: string; value: string }> = [];
   let title: string | undefined;
-  const titleEl =
-    el.querySelector(".infobox-title, caption, .infobox-above") ?? null;
+  const titleEl = el.querySelector(".infobox-title, caption, .infobox-above") ?? null;
   if (titleEl?.textContent?.replace(/\s+/g, " ").trim()) {
     title = titleEl.textContent.replace(/\s+/g, " ").trim();
   }
@@ -82,7 +187,9 @@ export function isVoidType(type: string): boolean {
 
 // ─── HTML → Slate ───────────────────────────────────────────────────────────
 
-function parseTemplateData(el: Element): { name: string; params: Record<string, string>; dataMw: string } | null {
+function parseTemplateData(
+  el: Element
+): { name: string; params: Record<string, string>; dataMw: string } | null {
   const raw = el.getAttribute("data-mw");
   if (!raw) return null;
   try {
@@ -102,11 +209,17 @@ function parseTemplateData(el: Element): { name: string; params: Record<string, 
   }
 }
 
-function chipInfoFromAnchor(a: HTMLAnchorElement): { kind: "coord" | "mapembed"; href: string; title: string; label: string } | null {
+function chipInfoFromAnchor(
+  a: HTMLAnchorElement
+): { kind: "coord" | "mapembed"; href: string; title: string; label: string } | null {
   const href = a.getAttribute("href") || "";
   const title = a.getAttribute("title") || "";
   let decodedHref = href;
-  try { decodedHref = decodeURIComponent(href); } catch { /* keep */ }
+  try {
+    decodedHref = decodeURIComponent(href);
+  } catch {
+    /* keep */
+  }
   if (/Coords:/i.test(decodedHref) || /Coords:/i.test(title)) {
     return { kind: "coord", href, title, label: a.textContent?.trim() || "Location" };
   }
@@ -139,8 +252,19 @@ function convertInlineNodes(nodes: NodeList, marks: Partial<WikiText>, out: Desc
     const el = n as Element;
     const tag = el.tagName.toLowerCase();
 
-    if (el.classList.contains("mw-editsection") || tag === "style" || tag === "input" || tag === "button" || tag === "form" || tag === "select") return;
-    if (tag === "br") { out.push({ text: "\n", ...marks }); return; }
+    if (
+      el.classList.contains("mw-editsection") ||
+      tag === "style" ||
+      tag === "input" ||
+      tag === "button" ||
+      tag === "form" ||
+      tag === "select"
+    )
+      return;
+    if (tag === "br") {
+      out.push({ text: "\n", ...marks });
+      return;
+    }
 
     if (tag === "a") {
       // oxlint-disable-next-line eslint/no-unused-vars
@@ -154,29 +278,54 @@ function convertInlineNodes(nodes: NodeList, marks: Partial<WikiText>, out: Desc
       const info = parseTemplateData(el);
       const wt = info?.name ?? "";
       const chipClass = el.className || "";
-      if (wt.startsWith("MyCountry:") || wt.startsWith("CountryData:") || wt.startsWith("BusinessData:") || chipClass.includes("wikios-ve-custom-chip")) {
+      if (
+        wt.startsWith("MyCountry:") ||
+        wt.startsWith("CountryData:") ||
+        wt.startsWith("BusinessData:") ||
+        chipClass.includes("wikios-ve-custom-chip")
+      ) {
         out.push({
-          type: "chip-engine", name: wt || el.getAttribute("data-wt") || "CountryData",
-          params: info?.params ?? {}, dataMw: info?.dataMw ?? "{}",
+          type: "chip-engine",
+          name: wt || el.getAttribute("data-wt") || "CountryData",
+          params: info?.params ?? {},
+          dataMw: info?.dataMw ?? "{}",
           label: el.textContent?.trim() || wt.split(":").pop() || "Chip",
-          children: [{ text: "" }], id: nextId(),
+          children: [{ text: "" }],
+          id: nextId(),
         } as unknown as Descendant);
         return;
       }
       const anchor = el.querySelector("a");
       const chip = anchor ? chipInfoFromAnchor(anchor) : null;
       if (chip?.kind === "coord") {
-        out.push({ type: "chip-coord", href: chip.href, title: chip.title, label: chip.label, children: [{ text: "" }], id: nextId() } as unknown as Descendant);
+        out.push({
+          type: "chip-coord",
+          href: chip.href,
+          title: chip.title,
+          label: chip.label,
+          children: [{ text: "" }],
+          id: nextId(),
+        } as unknown as Descendant);
         return;
       }
       if (chip?.kind === "mapembed") {
-        out.push({ type: "chip-mapembed", href: chip.href, title: chip.title, children: [{ text: "" }], id: nextId() } as unknown as Descendant);
+        out.push({
+          type: "chip-mapembed",
+          href: chip.href,
+          title: chip.title,
+          children: [{ text: "" }],
+          id: nextId(),
+        } as unknown as Descendant);
         return;
       }
       out.push({
-        type: "template", name: info?.name ?? "Template", params: info?.params ?? {},
-        dataMw: info?.dataMw ?? "{}", html: el.outerHTML,
-        children: [{ text: "" }], id: nextId(),
+        type: "template",
+        name: info?.name ?? "Template",
+        params: info?.params ?? {},
+        dataMw: info?.dataMw ?? "{}",
+        html: el.outerHTML,
+        children: [{ text: "" }],
+        id: nextId(),
       } as unknown as Descendant);
       return;
     }
@@ -184,11 +333,24 @@ function convertInlineNodes(nodes: NodeList, marks: Partial<WikiText>, out: Desc
     if (tag === "a") {
       const chip = chipInfoFromAnchor(el as HTMLAnchorElement);
       if (chip?.kind === "coord") {
-        out.push({ type: "chip-coord", href: chip.href, title: chip.title, label: chip.label, children: [{ text: "" }], id: nextId() } as unknown as Descendant);
+        out.push({
+          type: "chip-coord",
+          href: chip.href,
+          title: chip.title,
+          label: chip.label,
+          children: [{ text: "" }],
+          id: nextId(),
+        } as unknown as Descendant);
         return;
       }
       if (chip?.kind === "mapembed") {
-        out.push({ type: "chip-mapembed", href: chip.href, title: chip.title, children: [{ text: "" }], id: nextId() } as unknown as Descendant);
+        out.push({
+          type: "chip-mapembed",
+          href: chip.href,
+          title: chip.title,
+          children: [{ text: "" }],
+          id: nextId(),
+        } as unknown as Descendant);
         return;
       }
       let href = el.getAttribute("href") || "";
@@ -197,26 +359,62 @@ function convertInlineNodes(nodes: NodeList, marks: Partial<WikiText>, out: Desc
       const children: Descendant[] = [];
       convertInlineNodes(el.childNodes, marks, children);
       const linkChildren = children.filter((c) => typeof (c as WikiText).text === "string");
-      out.push({ type: "link", url: href, internal, children: linkChildren.length ? linkChildren : [{ text: el.textContent ?? "" , ...marks }] } as unknown as Descendant);
+      out.push({
+        type: "link",
+        url: href,
+        internal,
+        children: linkChildren.length ? linkChildren : [{ text: el.textContent ?? "", ...marks }],
+      } as unknown as Descendant);
       return;
     }
 
     if (tag === "sup" && el.querySelector("ref")) {
-      out.push({ type: "ref", label: el.querySelector("ref")?.textContent?.trim() || "Citation needed", children: [{ text: "" }], id: nextId() } as unknown as Descendant);
+      out.push({
+        type: "ref",
+        label: el.querySelector("ref")?.textContent?.trim() || "Citation needed",
+        children: [{ text: "" }],
+        id: nextId(),
+      } as unknown as Descendant);
       return;
     }
 
     const nextMarks = { ...marks };
     let recurse = true;
     switch (tag) {
-      case "b": case "strong": nextMarks.bold = true; break;
-      case "i": case "em": nextMarks.italic = true; break;
-      case "u": nextMarks.underline = true; break;
-      case "s": case "strike": case "del": nextMarks.strike = true; break;
-      case "sup": nextMarks.sup = true; break;
-      case "sub": nextMarks.sub = true; break;
-      case "code": nextMarks.codeMark = true; break;
-      default: recurse = tag === "span" || tag === "small" || tag === "abbr" || tag === "cite" || tag === "time" || tag === "figure-inline" || tag === "ref";
+      case "b":
+      case "strong":
+        nextMarks.bold = true;
+        break;
+      case "i":
+      case "em":
+        nextMarks.italic = true;
+        break;
+      case "u":
+        nextMarks.underline = true;
+        break;
+      case "s":
+      case "strike":
+      case "del":
+        nextMarks.strike = true;
+        break;
+      case "sup":
+        nextMarks.sup = true;
+        break;
+      case "sub":
+        nextMarks.sub = true;
+        break;
+      case "code":
+        nextMarks.codeMark = true;
+        break;
+      default:
+        recurse =
+          tag === "span" ||
+          tag === "small" ||
+          tag === "abbr" ||
+          tag === "cite" ||
+          tag === "time" ||
+          tag === "figure-inline" ||
+          tag === "ref";
     }
     if (recurse) {
       convertInlineNodes(el.childNodes, nextMarks, out);
@@ -227,7 +425,9 @@ function convertInlineNodes(nodes: NodeList, marks: Partial<WikiText>, out: Desc
 }
 
 function isMeaningfulInline(children: Descendant[]): boolean {
-  const text = children.map((c) => (typeof (c as WikiText).text === "string" ? (c as WikiText).text : "")).join("");
+  const text = children
+    .map((c) => (typeof (c as WikiText).text === "string" ? (c as WikiText).text : ""))
+    .join("");
   return text.trim().length > 0;
 }
 
@@ -239,7 +439,10 @@ function convertBlockChildren(el: Element): Descendant[] {
 }
 
 /** Collect an [about] sibling group into one raw-html block (infobox tables etc.). */
-function collectAboutGroup(el: Element): { html: string; info: { name: string; params: Record<string, string>; dataMw: string } | null } {
+function collectAboutGroup(el: Element): {
+  html: string;
+  info: { name: string; params: Record<string, string>; dataMw: string } | null;
+} {
   const about = el.getAttribute("about")!;
   const parts: string[] = [el.outerHTML];
   let cursor = el.nextElementSibling;
@@ -278,35 +481,60 @@ export function deserializeParsoidHtml(html: string): Descendant[] {
     }
     const isInfobox = kind === "infobox" || /infobox/i.test(node.className);
     blocks.push({
-      type: "raw-html", html: htmlPart, kind: isInfobox ? "infobox" : "generic",
-      name: info?.name, params: info?.params, dataMw: info?.dataMw,
-      children: [{ text: "" }], id: nextId(),
+      type: "raw-html",
+      html: htmlPart,
+      kind: isInfobox ? "infobox" : "generic",
+      name: info?.name,
+      params: info?.params,
+      dataMw: info?.dataMw,
+      children: [{ text: "" }],
+      id: nextId(),
     } as unknown as Descendant);
   };
 
   const walkBlocks = (parent: Element) => {
     // oxlint-disable-next-line eslint/no-unused-vars
-    parent.childNodes.forEach((n) => { /* placeholder to satisfy lint on forEach reuse */ });
+    parent.childNodes.forEach((n) => {
+      /* placeholder to satisfy lint on forEach reuse */
+    });
     for (let i = 0; i < parent.childNodes.length; i++) {
       const n = parent.childNodes[i];
       if (n.nodeType === Node.TEXT_NODE) {
         const t = (n.textContent ?? "").replace(/\s+/g, " ");
         if (t.trim().length > 0) {
-          blocks.push({ type: "p", children: [{ text: t.trim() }], id: nextId() } as unknown as Descendant);
+          blocks.push({
+            type: "p",
+            children: [{ text: t.trim() }],
+            id: nextId(),
+          } as unknown as Descendant);
         }
         continue;
       }
       if (n.nodeType !== Node.ELEMENT_NODE) continue;
       const el = n as Element;
       const tag = el.tagName.toLowerCase();
-      if (tag === "style" || tag === "link" || tag === "head" || tag === "meta" || tag === "input" || tag === "form" || tag === "button" || tag === "select") continue;
+      if (
+        tag === "style" ||
+        tag === "link" ||
+        tag === "head" ||
+        tag === "meta" ||
+        tag === "input" ||
+        tag === "form" ||
+        tag === "button" ||
+        tag === "select"
+      )
+        continue;
       // Citizen/skin heading wrappers: <div class="mw-heading"><h3>…<span class="mw-editsection">…
       if (el.classList.contains("mw-heading")) {
         el.querySelectorAll(".mw-editsection").forEach((x) => x.remove());
         const h = el.querySelector("h2, h3, h4, h5, h6, h1");
         if (h) {
           const level = Math.min(Math.max(parseInt(h.tagName[1], 10), 2), 4);
-          blocks.push({ type: `h${level}` as "h2", children: convertBlockChildren(h), id: nextId() } as unknown as Descendant);
+          blocks.push({
+            type: `h${level}` as "h2",
+            children: convertBlockChildren(h),
+            id: nextId(),
+          } as unknown as Descendant);
           continue;
         }
       }
@@ -316,13 +544,28 @@ export function deserializeParsoidHtml(html: string): Descendant[] {
         continue;
       }
       if (el.getAttribute("typeof")?.includes("mw:File") || tag === "figure") {
-        blocks.push({ type: "media", html: el.outerHTML, filename: el.querySelector("img")?.getAttribute("alt") ?? undefined, children: [{ text: "" }], id: nextId() } as unknown as Descendant);
+        blocks.push({
+          type: "media",
+          html: el.outerHTML,
+          filename: el.querySelector("img")?.getAttribute("alt") ?? undefined,
+          children: [{ text: "" }],
+          id: nextId(),
+        } as unknown as Descendant);
         continue;
       }
       switch (tag) {
-        case "h1": case "h2": case "h3": case "h4": case "h5": case "h6": {
+        case "h1":
+        case "h2":
+        case "h3":
+        case "h4":
+        case "h5":
+        case "h6": {
           const level = Math.min(Math.max(parseInt(tag[1], 10), 2), 4);
-          blocks.push({ type: `h${level}` as "h2", children: convertBlockChildren(el), id: nextId() } as unknown as Descendant);
+          blocks.push({
+            type: `h${level}` as "h2",
+            children: convertBlockChildren(el),
+            id: nextId(),
+          } as unknown as Descendant);
           break;
         }
         case "p": {
@@ -333,18 +576,34 @@ export function deserializeParsoidHtml(html: string): Descendant[] {
           break;
         }
         case "blockquote": {
-          blocks.push({ type: "blockquote", children: convertBlockChildren(el), id: nextId() } as unknown as Descendant);
+          blocks.push({
+            type: "blockquote",
+            children: convertBlockChildren(el),
+            id: nextId(),
+          } as unknown as Descendant);
           break;
         }
-        case "pre": case "code": {
-          if (tag === "code" && el.closest("pre")) { break; }
-          blocks.push({ type: "code-block", children: [{ text: el.textContent ?? "" }], id: nextId() } as unknown as Descendant);
+        case "pre":
+        case "code": {
+          if (tag === "code" && el.closest("pre")) {
+            break;
+          }
+          blocks.push({
+            type: "code-block",
+            children: [{ text: el.textContent ?? "" }],
+            id: nextId(),
+          } as unknown as Descendant);
           break;
         }
-        case "ul": case "ol": {
+        case "ul":
+        case "ol": {
           const items: Descendant[] = [];
           el.querySelectorAll(":scope > li").forEach((li) => {
-            items.push({ type: "li", children: convertBlockChildren(li), id: nextId() } as unknown as Descendant);
+            items.push({
+              type: "li",
+              children: convertBlockChildren(li),
+              id: nextId(),
+            } as unknown as Descendant);
           });
           if (items.length > 0) {
             blocks.push({ type: tag, children: items, id: nextId() } as unknown as Descendant);
@@ -357,8 +616,11 @@ export function deserializeParsoidHtml(html: string): Descendant[] {
             const parsed = parseInfoboxFields(el);
             if (parsed.fields.length > 0) {
               blocks.push({
-                type: "infobox-box", id: nextId(), html: el.outerHTML,
-                title: parsed.title, fields: parsed.fields,
+                type: "infobox-box",
+                id: nextId(),
+                html: el.outerHTML,
+                title: parsed.title,
+                fields: parsed.fields,
                 children: [{ text: "" }],
               } as unknown as Descendant);
             } else {
@@ -376,9 +638,14 @@ export function deserializeParsoidHtml(html: string): Descendant[] {
           el.querySelectorAll("tr").forEach((tr) => {
             const cells: Descendant[] = [];
             tr.querySelectorAll("th,td").forEach((cell) => {
-              cells.push({ type: cell.tagName.toLowerCase(), children: convertBlockChildren(cell), id: nextId() } as unknown as Descendant);
+              cells.push({
+                type: cell.tagName.toLowerCase(),
+                children: convertBlockChildren(cell),
+                id: nextId(),
+              } as unknown as Descendant);
             });
-            if (cells.length > 0) rows.push({ type: "tr", children: cells, id: nextId() } as unknown as Descendant);
+            if (cells.length > 0)
+              rows.push({ type: "tr", children: cells, id: nextId() } as unknown as Descendant);
           });
           if (rows.length > 0 && !el.querySelector("[typeof*=Transclusion], figure")) {
             blocks.push({ type: "table", children: rows, id: nextId() } as unknown as Descendant);
@@ -388,12 +655,19 @@ export function deserializeParsoidHtml(html: string): Descendant[] {
           break;
         }
         case "hr": {
-          blocks.push({ type: "hr", children: [{ text: "" }], id: nextId() } as unknown as Descendant);
+          blocks.push({
+            type: "hr",
+            children: [{ text: "" }],
+            id: nextId(),
+          } as unknown as Descendant);
           break;
         }
         default: {
           // container-ish elements: recurse; everything else preserved raw
-          if (/^(div|section|main|article|center|figcaption|span)$/i.test(tag) && !el.querySelector("table, figure, p, h1, h2, h3, h4, h5, h6, ul, ol")) {
+          if (
+            /^(div|section|main|article|center|figcaption|span)$/i.test(tag) &&
+            !el.querySelector("table, figure, p, h1, h2, h3, h4, h5, h6, ul, ol")
+          ) {
             const kids = convertBlockChildren(el);
             if (isMeaningfulInline(kids)) {
               blocks.push({ type: "p", children: kids, id: nextId() } as unknown as Descendant);
@@ -411,7 +685,8 @@ export function deserializeParsoidHtml(html: string): Descendant[] {
   };
 
   walkBlocks(body);
-  if (blocks.length === 0) blocks.push({ type: "p", children: [{ text: "" }], id: nextId() } as unknown as Descendant);
+  if (blocks.length === 0)
+    blocks.push({ type: "p", children: [{ text: "" }], id: nextId() } as unknown as Descendant);
   return blocks;
 }
 
@@ -489,14 +764,19 @@ function serializeBlock(el: WikiElement): string {
       const inner = serializeInline(el.children);
       return inner.trim().length > 0 ? `<p>${inner}</p>` : "";
     }
-    case "h2": case "h3": case "h4":
+    case "h2":
+    case "h3":
+    case "h4":
       return `<${el.type}>${serializeInline(el.children)}</${el.type}>`;
     case "blockquote":
       return `<blockquote>${serializeInline(el.children)}</blockquote>`;
     case "code-block":
       return `<pre><code>${esc(el.children.map((c) => (c as WikiText).text ?? "").join(""))}</code></pre>`;
-    case "ul": case "ol": {
-      const items = el.children.map((li) => `<li>${serializeInline((li as ListItemEl).children)}</li>`).join("");
+    case "ul":
+    case "ol": {
+      const items = el.children
+        .map((li) => `<li>${serializeInline((li as ListItemEl).children)}</li>`)
+        .join("");
       return `<${el.type}>${items}</${el.type}>`;
     }
     case "table": {
@@ -516,9 +796,14 @@ function serializeBlock(el: WikiElement): string {
       const ib = el as InfoboxBoxEl;
       if (!ib.edited) return ib.html;
       const rows = ib.fields
-        .map((f) => `<tr>${f.label ? `<th class="infobox-label">${esc(f.label)}</th>` : ""}<td class="infobox-data">${esc(f.value)}</td></tr>`)
+        .map(
+          (f) =>
+            `<tr>${f.label ? `<th class="infobox-label">${esc(f.label)}</th>` : ""}<td class="infobox-data">${esc(f.value)}</td></tr>`
+        )
         .join("");
-      const title = ib.title ? `<tr><th colspan="2" class="infobox-title">${esc(ib.title)}</th></tr>` : "";
+      const title = ib.title
+        ? `<tr><th colspan="2" class="infobox-title">${esc(ib.title)}</th></tr>`
+        : "";
       return `<table class="infobox wikios-ve-infobox"><tbody>${title}${rows}</tbody></table>`;
     }
     case "template":
@@ -543,7 +828,10 @@ export function valueToPlainText(nodes: Descendant[]): string {
   const out: string[] = [];
   const visit = (n: Descendant) => {
     const el = n as WikiElement & WikiText;
-    if (typeof el.text === "string") { out.push(el.text); return; }
+    if (typeof el.text === "string") {
+      out.push(el.text);
+      return;
+    }
     if (Array.isArray(el.children)) el.children.forEach(visit);
   };
   nodes.forEach(visit);

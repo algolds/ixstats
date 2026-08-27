@@ -31,7 +31,7 @@ export function useNationalIssuesToast(countryId: string | undefined) {
       if (stored) {
         lastCountRef.current = JSON.parse(stored);
       }
-    } catch  {
+    } catch {
       // Ignore sessionStorage/JSON parse errors
     }
   }, []);
@@ -50,7 +50,7 @@ export function useNationalIssuesToast(countryId: string | undefined) {
       lastCountRef.current = { total: 0, urgent: 0 };
       try {
         sessionStorage.removeItem(STORAGE_KEY);
-      } catch  {
+      } catch {
         // Ignore
       }
       return;
@@ -92,7 +92,7 @@ export function useNationalIssuesToast(countryId: string | undefined) {
 
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ total, urgent }));
-    } catch  {
+    } catch {
       // Ignore
     }
   }, [total, urgent, countryId, isLoading, enqueue, dismiss]);

@@ -19,7 +19,7 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+      <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:grid-cols-3">
         {domains.map((domain, index) => {
           const Icon = domain.icon;
           return (
@@ -32,21 +32,21 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
               <Link
                 href={withBasePath(`/wiki/categories/${encodeURIComponent(domain.name)}`)}
                 className={cn(
-                  "group relative overflow-hidden flex flex-col justify-between p-4 sm:p-5 rounded-2xl min-h-[160px]",
+                  "group relative flex min-h-[160px] flex-col justify-between overflow-hidden rounded-2xl p-4 sm:p-5",
                   "border border-white/20 dark:border-white/10",
-                  "bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md",
+                  "bg-white/60 backdrop-blur-md dark:bg-zinc-900/60",
                   "shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_4px_16px_rgba(0,0,0,0.3)]",
-                  "hover:border-foreground/30 hover:bg-white/90 dark:hover:bg-zinc-900/90 hover:shadow-lg",
+                  "hover:border-foreground/30 hover:bg-white/90 hover:shadow-lg dark:hover:bg-zinc-900/90",
                   "transition-all duration-200 active:scale-[0.98]"
                 )}
               >
                 <TextureOverlay texture="halftone" opacity={0.03} />
 
                 {/* Header with Icon + Arrow */}
-                <div className="flex items-start justify-between w-full">
+                <div className="flex w-full items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div
-                      className="flex h-10 w-10 items-center justify-center rounded-xl border border-foreground/10 shrink-0"
+                      className="border-foreground/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
                       style={{
                         backgroundColor: `${domain.color}15`,
                         color: domain.color,
@@ -55,27 +55,27 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
                       <Icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
                     </div>
                     <div>
-                      <h2 className="text-base font-bold text-foreground group-hover:text-blue-500 transition-colors">
+                      <h2 className="text-foreground text-base font-bold transition-colors group-hover:text-blue-500">
                         {domain.name}
                       </h2>
-                      <div className="text-[10px] font-medium text-muted-foreground">
+                      <div className="text-muted-foreground text-[10px] font-medium">
                         {domain.metric}
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-1.5 rounded-full bg-muted/60 text-muted-foreground group-hover:text-foreground group-hover:bg-blue-500/10 transition-colors">
-                    <ArrowRight className="h-3.5 w-3.5 -rotate-45 group-hover:rotate-0 transition-transform duration-200" />
+                  <div className="bg-muted/60 text-muted-foreground group-hover:text-foreground rounded-full p-1.5 transition-colors group-hover:bg-blue-500/10">
+                    <ArrowRight className="h-3.5 w-3.5 -rotate-45 transition-transform duration-200 group-hover:rotate-0" />
                   </div>
                 </div>
 
                 {/* Description */}
-                <p className="text-xs text-muted-foreground leading-relaxed mt-3 line-clamp-2">
+                <p className="text-muted-foreground mt-3 line-clamp-2 text-xs leading-relaxed">
                   {domain.description}
                 </p>
 
                 {/* Footer Badge */}
-                <div className="mt-4 flex items-center justify-between pt-2.5 border-t border-border/40 text-[11px] font-semibold text-blue-500">
+                <div className="border-border/40 mt-4 flex items-center justify-between border-t pt-2.5 text-[11px] font-semibold text-blue-500">
                   <span>Open {domain.name} Portal</span>
                   <span className="text-muted-foreground group-hover:text-foreground transition-colors">
                     Category:{domain.name} →
@@ -88,7 +88,7 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
       </div>
 
       {domains.length === 0 && (
-        <div className="text-center py-12 text-sm text-muted-foreground">
+        <div className="text-muted-foreground py-12 text-center text-sm">
           No domain portals matching &quot;{searchQuery}&quot;.
         </div>
       )}

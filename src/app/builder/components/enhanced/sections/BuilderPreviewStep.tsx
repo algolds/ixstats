@@ -6,7 +6,29 @@ import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/Glas
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
-import { WhiteFlag as Flag, Globe, Group as Users, Dollar as DollarSign, City as Building2, StatUp as TrendingUp, StatsReport as BarChart3, ScaleFrameEnlarge as Scale, Suitcase as Briefcase, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, ArrowSeparateVertical as ChevronsDownUp, ArrowSeparateVertical as ChevronsUpDown, Eye, Crown, Bank as Landmark, Archery as Target, Calendar, Phone, Translate as Languages, Industry as Factory } from "iconoir-react";
+import {
+  WhiteFlag as Flag,
+  Globe,
+  Group as Users,
+  Dollar as DollarSign,
+  City as Building2,
+  StatUp as TrendingUp,
+  StatsReport as BarChart3,
+  ScaleFrameEnlarge as Scale,
+  Suitcase as Briefcase,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+  ArrowSeparateVertical as ChevronsDownUp,
+  ArrowSeparateVertical as ChevronsUpDown,
+  Eye,
+  Crown,
+  Bank as Landmark,
+  Archery as Target,
+  Calendar,
+  Phone,
+  Translate as Languages,
+  Industry as Factory,
+} from "iconoir-react";
 import { useBuilderContext } from "../context/BuilderStateContext";
 import { formatCurrency } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";

@@ -1,7 +1,12 @@
 "use client";
 
 import React from "react";
-import { ChatBubble as MessageCircle, NavArrowRight as ChevronRight, Globe, Xmark as X } from "iconoir-react";
+import {
+  ChatBubble as MessageCircle,
+  NavArrowRight as ChevronRight,
+  Globe,
+  Xmark as X,
+} from "iconoir-react";
 import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
@@ -55,10 +60,7 @@ export function MessageTrayItem({
 
   const latestMessage = conversation.messages?.[0];
   const displayTitle =
-    conversation.title ||
-    otherParticipant?.name ||
-    otherParticipant?.countryName ||
-    "Dispatch";
+    conversation.title || otherParticipant?.name || otherParticipant?.countryName || "Dispatch";
 
   const excerpt = latestMessage?.content || "No messages yet";
   // oxlint-disable-next-line
@@ -112,7 +114,7 @@ export function MessageTrayItem({
             "group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border p-3 shadow-xs transition-all duration-200 active:scale-[0.985]",
             isUnread
               ? "border-amber-500/30 bg-amber-500/[0.06] shadow-xs hover:border-amber-500/50"
-              : "border-black/[0.06] dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] hover:border-black/10 dark:hover:border-white/20 hover:bg-black/[0.04] dark:hover:bg-white/[0.07]"
+              : "border-black/[0.06] bg-black/[0.02] hover:border-black/10 hover:bg-black/[0.04] dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20 dark:hover:bg-white/[0.07]"
           )}
         >
           <div className="flex items-start gap-3">
@@ -135,13 +137,17 @@ export function MessageTrayItem({
                 />
               ) : (
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-500 shadow-xs">
-                  {isDiplomatic ? <Globe className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
+                  {isDiplomatic ? (
+                    <Globe className="h-4 w-4" />
+                  ) : (
+                    <MessageCircle className="h-4 w-4" />
+                  )}
                 </div>
               )}
 
               {/* Status Dot */}
               {isUnread && (
-                <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-background" />
+                <span className="ring-background absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2" />
               )}
             </div>
 
@@ -153,7 +159,7 @@ export function MessageTrayItem({
                     {displayTitle}
                   </span>
                   {isDiplomatic && (
-                    <span className="shrink-0 rounded border border-amber-500/30 bg-amber-500/10 px-1 py-0.2 text-[8px] font-bold text-amber-600 dark:text-amber-400 uppercase">
+                    <span className="py-0.2 shrink-0 rounded border border-amber-500/30 bg-amber-500/10 px-1 text-[8px] font-bold text-amber-600 uppercase dark:text-amber-400">
                       Dispatch
                     </span>
                   )}

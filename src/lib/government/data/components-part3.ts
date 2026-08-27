@@ -1,5 +1,22 @@
 import { ComponentType } from "@prisma/client";
-import { City as Building2, Shield, StatUp as TrendingUp, ScaleFrameEnlarge as Scale, Heart, Globe, WarningTriangle as AlertTriangle, Community as Handshake, Microscope, LightBulb as Lightbulb, ArrowSeparate as ArrowRightLeft, Copyright, Flash as Zap, Wifi, ChatBubble as MessageSquare, Refresh as RefreshCw } from "iconoir-react";
+import {
+  City as Building2,
+  Shield,
+  StatUp as TrendingUp,
+  ScaleFrameEnlarge as Scale,
+  Heart,
+  Globe,
+  WarningTriangle as AlertTriangle,
+  Community as Handshake,
+  Microscope,
+  LightBulb as Lightbulb,
+  ArrowSeparate as ArrowRightLeft,
+  Copyright,
+  Flash as Zap,
+  Wifi,
+  ChatBubble as MessageSquare,
+  Refresh as RefreshCw,
+} from "iconoir-react";
 import type { AtomicGovernmentComponent } from "./types";
 
 export const ATOMIC_COMPONENTS_PART_3: Partial<Record<ComponentType, AtomicGovernmentComponent>> = {
@@ -488,5 +505,5 @@ export const ATOMIC_COMPONENTS_PART_3: Partial<Record<ComponentType, AtomicGover
       staffRequired: 20,
       technologyRequired: true,
     },
-  }
+  },
 };

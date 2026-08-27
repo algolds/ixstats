@@ -1,7 +1,8 @@
 import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import type { AtomicGovernmentMapping } from "./types";
 
-export const economic_governance_mapping: Partial<Record<ComponentType, AtomicGovernmentMapping>> = {
+export const economic_governance_mapping: Partial<Record<ComponentType, AtomicGovernmentMapping>> =
+  {
     // Economic Governance Components
     [ComponentType.FREE_MARKET_SYSTEM]: {
       component: ComponentType.FREE_MARKET_SYSTEM,
@@ -253,5 +254,5 @@ export const economic_governance_mapping: Partial<Record<ComponentType, AtomicGo
           enabled: true,
         },
       ],
-    }
-};
+    },
+  };

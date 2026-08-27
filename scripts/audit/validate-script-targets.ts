@@ -76,7 +76,8 @@ export function checkCommandTargets(
   const issues: ValidationIssue[] = [];
 
   // Match direct file paths like ./scripts/foo.sh or scripts/foo.ts
-  const scriptRegex = /(?:^|\s)(?:\.\/|\.\.\/)?(scripts\/[^\s;&|]+|start-[^\s;&|]+|prisma\/[^\s;&|]+)/g;
+  const scriptRegex =
+    /(?:^|\s)(?:\.\/|\.\.\/)?(scripts\/[^\s;&|]+|start-[^\s;&|]+|prisma\/[^\s;&|]+)/g;
   let match: RegExpExecArray | null;
 
   while ((match = scriptRegex.exec(command)) !== null) {
@@ -164,7 +165,9 @@ export function validateWorkflowFiles(
     return issues;
   }
 
-  const files = fs.readdirSync(workflowsDir).filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"));
+  const files = fs
+    .readdirSync(workflowsDir)
+    .filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"));
 
   for (const file of files) {
     const filePath = path.join(workflowsDir, file);
@@ -185,7 +188,11 @@ export function validateWorkflowFiles(
         if (bunRunMatch && bunRunMatch[1]) {
           const scriptName = bunRunMatch[1];
           // Exclude built-in flags or file targets
-          if (!scriptName.startsWith("-") && !scriptName.includes("/") && !scriptName.includes(".")) {
+          if (
+            !scriptName.startsWith("-") &&
+            !scriptName.includes("/") &&
+            !scriptName.includes(".")
+          ) {
             if (!validScriptNames.has(scriptName)) {
               issues.push({
                 source,
@@ -241,7 +248,9 @@ export function runCLI(): void {
   const result = validateScriptTargets(DEFAULT_ROOT);
 
   if (result.valid) {
-    console.log("✓ Script target validation passed: 0 missing targets, 0 banned managers, 0 dead workflow references.");
+    console.log(
+      "✓ Script target validation passed: 0 missing targets, 0 banned managers, 0 dead workflow references."
+    );
     process.exit(0);
   }
 

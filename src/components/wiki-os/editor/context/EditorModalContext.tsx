@@ -6,12 +6,7 @@
 "use client";
 
 import React, { createContext, useContext } from "react";
-import type {
-  StashEntity,
-  StashItemEntity,
-  WikimediaImageMeta,
-  SaveActionType,
-} from "../types";
+import type { StashEntity, StashItemEntity, WikimediaImageMeta, SaveActionType } from "../types";
 
 // ─── Modal & Panel State ────────────────────────────────────────────────────
 
@@ -74,19 +69,13 @@ export function EditorModalProvider({
   value: EditorModalState;
   children: React.ReactNode;
 }) {
-  return (
-    <EditorModalCtx.Provider value={value}>
-      {children}
-    </EditorModalCtx.Provider>
-  );
+  return <EditorModalCtx.Provider value={value}>{children}</EditorModalCtx.Provider>;
 }
 
 export function useEditorModalContext(): EditorModalState {
   const ctx = useContext(EditorModalCtx);
   if (!ctx) {
-    throw new Error(
-      "useEditorModalContext must be used within <EditorModalProvider>"
-    );
+    throw new Error("useEditorModalContext must be used within <EditorModalProvider>");
   }
   return ctx;
 }

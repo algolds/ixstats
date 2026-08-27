@@ -40,7 +40,9 @@ function isTrustedDomain(url: string): boolean {
     if (!["http:", "https:"].includes(urlObj.protocol)) {
       return false;
     }
-    return TRUSTED_DOMAINS.some((domain) => urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain));
+    return TRUSTED_DOMAINS.some(
+      (domain) => urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain)
+    );
   } catch {
     return false;
   }
@@ -244,7 +246,7 @@ export async function GET() {
       maxFileSize: MAX_FILE_SIZE,
       allowedTypes: ALLOWED_TYPES,
     });
-  } catch  {
+  } catch {
     return NextResponse.json(
       {
         authenticated: false,

@@ -24,54 +24,62 @@ export async function resolvePassportVault(userId?: string | null) {
 
   try {
     const [myVault, liveCount, liveValueAgg, ownerships] = await Promise.all([
-      (db as any).myVault.findUnique({
-        where: { userId },
-        select: { credits: true, vaultLevel: true, vaultXp: true },
-      }).catch(() => null),
-      (db as any).cardOwnership.count({
-        where: { ownerId: userId, cards: { isRetired: false } },
-      }).catch(() => null),
-      (db as any).cardOwnership.findMany({
-        where: { ownerId: userId, cards: { isRetired: false } },
-        select: { quantity: true, cards: { select: { marketValue: true } } },
-      } as any).catch(() => []),
-      (db as any).cardOwnership.findMany({
-        where: { ownerId: userId },
-        take: 6,
-        orderBy: [{ createdAt: "desc" }],
-        include: {
-          cards: {
-            select: {
-              id: true,
-              title: true,
-              name: true,
-              description: true,
-              slug: true,
-              category: true,
-              subcategory: true,
-              rarity: true,
-              cardType: true,
-              season: true,
-              level: true,
-              marketValue: true,
-              totalSupply: true,
-              artworkUrl: true,
-              artwork: true,
-              wikiSource: true,
-              wikiArticleTitle: true,
-              wikiPageId: true,
-              wikiExcerpt: true,
-              wikiImageUrl: true,
-              stats: true,
-              metadata: true,
-              attributes: true,
-              nsCardId: true,
-              nsSeason: true,
-              nsData: true,
+      (db as any).myVault
+        .findUnique({
+          where: { userId },
+          select: { credits: true, vaultLevel: true, vaultXp: true },
+        })
+        .catch(() => null),
+      (db as any).cardOwnership
+        .count({
+          where: { ownerId: userId, cards: { isRetired: false } },
+        })
+        .catch(() => null),
+      (db as any).cardOwnership
+        .findMany({
+          where: { ownerId: userId, cards: { isRetired: false } },
+          select: { quantity: true, cards: { select: { marketValue: true } } },
+        } as any)
+        .catch(() => []),
+      (db as any).cardOwnership
+        .findMany({
+          where: { ownerId: userId },
+          take: 6,
+          orderBy: [{ createdAt: "desc" }],
+          include: {
+            cards: {
+              select: {
+                id: true,
+                title: true,
+                name: true,
+                description: true,
+                slug: true,
+                category: true,
+                subcategory: true,
+                rarity: true,
+                cardType: true,
+                season: true,
+                level: true,
+                marketValue: true,
+                totalSupply: true,
+                artworkUrl: true,
+                artwork: true,
+                wikiSource: true,
+                wikiArticleTitle: true,
+                wikiPageId: true,
+                wikiExcerpt: true,
+                wikiImageUrl: true,
+                stats: true,
+                metadata: true,
+                attributes: true,
+                nsCardId: true,
+                nsSeason: true,
+                nsData: true,
+              },
             },
           },
-        },
-      }).catch(() => []),
+        })
+        .catch(() => []),
     ]);
 
     if (myVault) {

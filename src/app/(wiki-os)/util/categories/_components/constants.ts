@@ -36,28 +36,32 @@ export const DOMAIN_CATEGORIES: DomainCategory[] = [
     color: "#22c55e",
     icon: IconoirGraphUp,
     metric: "GDP, Trade & Industries",
-    description: "Economic systems, international trade, currencies, financial markets, and industry.",
+    description:
+      "Economic systems, international trade, currencies, financial markets, and industry.",
   },
   {
     name: "Government",
     color: "#6366f1",
     icon: IconoirBank,
     metric: "Political Systems & Law",
-    description: "Political systems, constitutional structures, governance, and public administration.",
+    description:
+      "Political systems, constitutional structures, governance, and public administration.",
   },
   {
     name: "Military",
     color: "#ef4444",
     icon: IconoirShield,
     metric: "Defense & Armed Forces",
-    description: "Armed forces branches, military equipment, defense doctrines, and historic conflicts.",
+    description:
+      "Armed forces branches, military equipment, defense doctrines, and historic conflicts.",
   },
   {
     name: "People",
     color: "#ec4899",
     icon: IconoirGroup,
     metric: "Demographics & Society",
-    description: "Demographics, ethnic groups, linguistics, notable figures, and social structures.",
+    description:
+      "Demographics, ethnic groups, linguistics, notable figures, and social structures.",
   },
   {
     name: "Politics",
@@ -92,28 +96,32 @@ export const DOMAIN_CATEGORIES: DomainCategory[] = [
     color: "#06b6d4",
     icon: IconoirCpu,
     metric: "Science & Innovation",
-    description: "Science, technological development, aerospace, transport, and research institutions.",
+    description:
+      "Science, technological development, aerospace, transport, and research institutions.",
   },
   {
     name: "Companies",
     color: "#f97316",
     icon: IconoirBuilding,
     metric: "Corporations & Commerce",
-    description: "Commercial enterprises, conglomerates, state-owned corporations, and market leaders.",
+    description:
+      "Commercial enterprises, conglomerates, state-owned corporations, and market leaders.",
   },
   {
     name: "Nature",
     color: "#10b981",
     icon: IconoirLeaf,
     metric: "Flora, Fauna & Ecology",
-    description: "Flora, fauna, nature reserves, ecosystems, and natural phenomena across the world.",
+    description:
+      "Flora, fauna, nature reserves, ecosystems, and natural phenomena across the world.",
   },
   {
     name: "Miscellaneous",
     color: "#64748b",
     icon: Layers,
     metric: "Indexes, Documents & General",
-    description: "General topics, uncategorized articles, cross-disciplinary subjects, and reference indexes.",
+    description:
+      "General topics, uncategorized articles, cross-disciplinary subjects, and reference indexes.",
   },
 ];
 

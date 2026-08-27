@@ -22,7 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Shield, Dollar as DollarSign, Bank as Landmark, MapPin, Group as Users } from "iconoir-react";
+import {
+  Shield,
+  Dollar as DollarSign,
+  Bank as Landmark,
+  MapPin,
+  Group as Users,
+} from "iconoir-react";
 import { ColorPickerInput } from "~/components/ui/color-picker";
 
 interface AllianceCreatorSheetProps {

@@ -77,7 +77,7 @@ export function MapLoadingScreen({ isReady }: MapLoadingScreenProps) {
             filter: "blur(12px)",
             transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
           }}
-          className="fixed inset-0 z-50 flex select-none items-center justify-center bg-background/85 backdrop-blur-2xl transition-colors dark:bg-map-ocean/90"
+          className="bg-background/85 dark:bg-map-ocean/90 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-2xl transition-colors select-none"
         >
           {/* Ambient spatial gradient lighting */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(59,130,246,0.12)_0%,_transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,_rgba(56,189,248,0.1)_0%,_transparent_70%)]" />
@@ -144,7 +144,7 @@ export function MapLoadingScreen({ isReady }: MapLoadingScreenProps) {
               {SUBSYSTEMS.map((sys, i) => (
                 <div
                   key={sys.label}
-                  className="border-border/50 bg-card/50 shadow-xs flex items-center gap-2.5 rounded-xl border p-2.5 backdrop-blur-md transition-all dark:border-white/10 dark:bg-white/[0.03]"
+                  className="border-border/50 bg-card/50 flex items-center gap-2.5 rounded-xl border p-2.5 shadow-xs backdrop-blur-md transition-all dark:border-white/10 dark:bg-white/[0.03]"
                 >
                   <div
                     className={cn(

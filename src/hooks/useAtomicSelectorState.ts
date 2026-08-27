@@ -115,10 +115,7 @@ export function useAtomicSelectorState<T extends string>({
 
   const selectedIds = useMemo(() => new Set<string>(activeSelection), [activeSelection]);
 
-  const isSelected = useCallback(
-    (id: T | string) => selectedIds.has(id as string),
-    [selectedIds]
-  );
+  const isSelected = useCallback((id: T | string) => selectedIds.has(id as string), [selectedIds]);
 
   const canSelectMore = useMemo(
     () => !isReadOnly && activeSelection.length < maxComponents,

@@ -12,7 +12,20 @@ import { Label } from "~/components/ui/label";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import type { ToastType, ToastPriority } from "~/stores/toastQueueStore";
 import type { NotificationCategory } from "~/types/unified-notifications";
-import { Shield, Dollar as DollarSign, Globe, Trophy, Flash as Zap, Sparks as Sparkles, WarningTriangle as AlertTriangle, ShieldAlert, Trophy as Award, Play, Bell, Flask as FlaskConical } from "iconoir-react";
+import {
+  Shield,
+  Dollar as DollarSign,
+  Globe,
+  Trophy,
+  Flash as Zap,
+  Sparks as Sparkles,
+  WarningTriangle as AlertTriangle,
+  ShieldAlert,
+  Trophy as Award,
+  Play,
+  Bell,
+  Flask as FlaskConical,
+} from "iconoir-react";
 
 const CATEGORIES: { label: string; value: NotificationCategory }[] = [
   { label: "System", value: "system" },

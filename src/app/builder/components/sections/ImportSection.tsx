@@ -4,7 +4,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { DynamicIslandSearch, type SearchResult } from "../../import/_components/DynamicIslandSearch";
+import {
+  DynamicIslandSearch,
+  type SearchResult,
+} from "../../import/_components/DynamicIslandSearch";
 import { ImportSidebar } from "../../import/_components/ImportSidebar";
 import { BackButton } from "../../import/_components/BackButton";
 import { InteractiveInfoboxPreview } from "../../import/_components/InteractiveInfoboxPreview";

@@ -3,7 +3,13 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "motion/react";
 
-import { Group as Users, RssFeed as Rss, OpenBook as BookOpen, Settings, Globe } from "iconoir-react";
+import {
+  Group as Users,
+  RssFeed as Rss,
+  OpenBook as BookOpen,
+  Settings,
+  Globe,
+} from "iconoir-react";
 import {
   CutoutCard,
   CutoutCardContent,
@@ -186,7 +192,7 @@ export function UnifiedDashboardSection({
       variants={staggerContainer}
       initial="hidden"
       animate="show"
-      className="space-y-5 md:space-y-7 pb-16 sm:pb-20 md:pb-24"
+      className="space-y-5 pb-16 sm:pb-20 md:space-y-7 md:pb-24"
     >
       {/* Feed + Sidebar Grid Layout */}
       <motion.div variants={staggerItem}>

@@ -1,4 +1,3 @@
-
 export interface DecretalSliderOption {
   label: string;
   value: number; // multiplier or baseline factor

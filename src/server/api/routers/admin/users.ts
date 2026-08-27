@@ -393,16 +393,24 @@ export const adminUsersRouter = createTRPCRouter({
       }
 
       // 2. Fetch guild members or discover via recent channel interactions
-      const rawMembers: Array<{ id: string; username: string; nick?: string; globalName?: string }> = [];
+      const rawMembers: Array<{
+        id: string;
+        username: string;
+        nick?: string;
+        globalName?: string;
+      }> = [];
 
       try {
-        const membersRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`, {
-          headers: {
-            Authorization: `Bot ${botToken}`,
-            "Content-Type": "application/json",
-          },
-          signal: AbortSignal.timeout(8000),
-        });
+        const membersRes = await fetch(
+          `https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`,
+          {
+            headers: {
+              Authorization: `Bot ${botToken}`,
+              "Content-Type": "application/json",
+            },
+            signal: AbortSignal.timeout(8000),
+          }
+        );
 
         if (membersRes.ok) {
           const guildMembers = (await membersRes.json()) as any[];
@@ -425,10 +433,13 @@ export const adminUsersRouter = createTRPCRouter({
       // Fallback / Supplementary: Discover active members from recent channel messages
       if (rawMembers.length === 0) {
         try {
-          const msgRes = await fetch(`https://discord.com/api/v10/channels/${defaultChannelId}/messages?limit=100`, {
-            headers: { Authorization: `Bot ${botToken}` },
-            signal: AbortSignal.timeout(8000),
-          });
+          const msgRes = await fetch(
+            `https://discord.com/api/v10/channels/${defaultChannelId}/messages?limit=100`,
+            {
+              headers: { Authorization: `Bot ${botToken}` },
+              signal: AbortSignal.timeout(8000),
+            }
+          );
           if (msgRes.ok) {
             const msgs = (await msgRes.json()) as any[];
             const seen = new Set<string>();
@@ -482,7 +493,6 @@ export const adminUsersRouter = createTRPCRouter({
           globalName,
         });
 
-
         // Skip if already linked
         const existingLink = users.find((u) => u.discordUserId === discordUserId);
         if (existingLink) continue;
@@ -496,7 +506,11 @@ export const adminUsersRouter = createTRPCRouter({
           const userLower = discordUsername.toLowerCase();
 
           // High confidence: country name in brackets [Urcea] or starts with country name
-          if (nickLower.includes(`[${cName}]`) || nickLower.startsWith(`${cName} |`) || nickLower.startsWith(`${cName} -`)) {
+          if (
+            nickLower.includes(`[${cName}]`) ||
+            nickLower.startsWith(`${cName} |`) ||
+            nickLower.startsWith(`${cName} -`)
+          ) {
             suggestions.push({
               discordUserId,
               discordUsername,

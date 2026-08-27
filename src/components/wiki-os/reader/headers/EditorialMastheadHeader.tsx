@@ -31,45 +31,51 @@ export function EditorialMastheadHeader({
   setShowPopover,
 }: EditorialMastheadProps) {
   const creator = authorInfo?.creator;
-  const creatorName = typeof creator === "object" ? (creator as any)?.username : (creator || (authorInfo as any)?.author || null);
+  const creatorName =
+    typeof creator === "object"
+      ? (creator as any)?.username
+      : creator || (authorInfo as any)?.author || null;
   const creatorAvatar = authorInfo?.creatorAvatar || null;
   const lastEditor = authorInfo?.lastEditor;
-  const lastEditorName = typeof lastEditor === "object" ? (lastEditor as any)?.username : (lastEditor || null);
+  const lastEditorName =
+    typeof lastEditor === "object" ? (lastEditor as any)?.username : lastEditor || null;
   const lastEditorAvatar = authorInfo?.lastEditorAvatar || null;
 
   return (
-    <header className="wikios-editorial-masthead relative mb-8 border-b border-border/40 pb-6 pt-2 select-none">
+    <header className="wikios-editorial-masthead border-border/40 relative mb-8 border-b pt-2 pb-6 select-none">
       {/* Subtle Ambient Radial Aura */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-12 left-0 h-44 w-96 rounded-full opacity-20 blur-3xl -z-10"
+        className="pointer-events-none absolute -top-12 left-0 -z-10 h-44 w-96 rounded-full opacity-20 blur-3xl"
         style={{
           background: `radial-gradient(circle, ${themeColors?.primary ?? "#3b82f6"} 0%, transparent 70%)`,
         }}
       />
 
       {/* Top Bar: Breadcrumb */}
-      <div className="mb-3.5 flex items-center gap-1 text-muted-foreground text-[10.5px] font-semibold tracking-wider uppercase">
+      <div className="text-muted-foreground mb-3.5 flex items-center gap-1 text-[10.5px] font-semibold tracking-wider uppercase">
         <CategoryBreadcrumb title={title} />
       </div>
 
       {/* Main Title Display */}
       <div className="mb-4 flex flex-wrap items-baseline gap-3">
-        <h1 className="font-['Host_Grotesk'] text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[42px] leading-[1.15]">
+        <h1 className="text-foreground font-['Host_Grotesk'] text-3xl leading-[1.15] font-bold tracking-tight sm:text-4xl lg:text-[42px]">
           {title.replace(/_/g, " ")}
         </h1>
       </div>
 
       {/* Metadata & Awards Ledger */}
-      <div className="flex flex-wrap items-center justify-between gap-y-3 gap-x-4 pt-1">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pt-1">
         <div className="text-muted-foreground flex flex-wrap items-center gap-x-3.5 gap-y-2 text-[12px]">
           {/* Author Attribution */}
           {creatorName && (
             <div className="flex items-center gap-1.5 font-medium">
-              <span className="text-[11px] text-muted-foreground/75 font-normal">Author:</span>
+              <span className="text-muted-foreground/75 text-[11px] font-normal">Author:</span>
               <Link
-                href={withBasePath(`/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`)}
-                className="group/author inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground font-semibold hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 transition-all text-[11.5px]"
+                href={withBasePath(
+                  `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
+                )}
+                className="group/author text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-[11.5px] font-semibold transition-all hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 dark:border-white/10 dark:bg-white/5"
               >
                 {creatorAvatar ? (
                   <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
@@ -81,10 +87,10 @@ export function EditorialMastheadHeader({
                         (e.currentTarget as HTMLElement).style.display = "none";
                       }}
                     />
-                    <User className="h-2.5 w-2.5 text-purple-400 absolute inset-0 m-auto -z-10" />
+                    <User className="absolute inset-0 -z-10 m-auto h-2.5 w-2.5 text-purple-400" />
                   </span>
                 ) : (
-                  <User className="h-3 w-3 text-purple-400 shrink-0" />
+                  <User className="h-3 w-3 shrink-0 text-purple-400" />
                 )}
                 <span>{creatorName}</span>
               </Link>
@@ -97,10 +103,14 @@ export function EditorialMastheadHeader({
             lastEditorName.toLowerCase() !== creatorName.toLowerCase() && (
               <div className="flex items-center gap-1.5 font-medium">
                 <span className="text-muted-foreground/30 select-none">•</span>
-                <span className="text-[11px] text-muted-foreground/75 font-normal">Updated by:</span>
+                <span className="text-muted-foreground/75 text-[11px] font-normal">
+                  Updated by:
+                </span>
                 <Link
-                  href={withBasePath(`/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`)}
-                  className="group/editor inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground font-semibold hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 transition-all text-[11.5px]"
+                  href={withBasePath(
+                    `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
+                  )}
+                  className="group/editor text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-[11.5px] font-semibold transition-all hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 dark:border-white/10 dark:bg-white/5"
                 >
                   {lastEditorAvatar ? (
                     <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
@@ -112,10 +122,10 @@ export function EditorialMastheadHeader({
                           (e.currentTarget as HTMLElement).style.display = "none";
                         }}
                       />
-                      <PenTool className="h-2.5 w-2.5 text-purple-400 absolute inset-0 m-auto -z-10" />
+                      <PenTool className="absolute inset-0 -z-10 m-auto h-2.5 w-2.5 text-purple-400" />
                     </span>
                   ) : (
-                    <PenTool className="h-3 w-3 text-purple-400 shrink-0" />
+                    <PenTool className="h-3 w-3 shrink-0 text-purple-400" />
                   )}
                   <span>{lastEditorName}</span>
                 </Link>
@@ -124,12 +134,12 @@ export function EditorialMastheadHeader({
 
           {/* Updated Timestamp */}
           {lastModified && (
-            <div className="flex items-center gap-1.5 text-muted-foreground/80 text-[11px]">
+            <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[11px]">
               {(creatorName || lastEditorName) && (
                 <span className="text-muted-foreground/30 select-none">•</span>
               )}
               <span className="flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-muted-foreground/60" />
+                <Calendar className="text-muted-foreground/60 h-3.5 w-3.5" />
                 {new Date(lastModified).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -156,10 +166,7 @@ export function EditorialMastheadHeader({
                 {showCelebration && primaryAward.category === "LOREWARD" && (
                   <div className="pointer-events-none absolute inset-0 overflow-visible">
                     {[...Array(8)].map((_, i) => (
-                      <span
-                        key={i}
-                        className={`loreward-particle loreward-particle-${i + 1}`}
-                      />
+                      <span key={i} className={`loreward-particle loreward-particle-${i + 1}`} />
                     ))}
                   </div>
                 )}
@@ -186,10 +193,15 @@ export function EditorialMastheadHeader({
               </div>
               <div className="space-y-2">
                 {awardsData.awards.map((award) => (
-                  <div key={award.id} className="space-y-0.5 border-b border-black/5 dark:border-white/5 pb-2 last:border-0 last:pb-0">
-                    <div className="font-semibold text-foreground">{award.name}</div>
+                  <div
+                    key={award.id}
+                    className="space-y-0.5 border-b border-black/5 pb-2 last:border-0 last:pb-0 dark:border-white/5"
+                  >
+                    <div className="text-foreground font-semibold">{award.name}</div>
                     {award.description && (
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">{award.description}</p>
+                      <p className="text-muted-foreground text-[11px] leading-relaxed">
+                        {award.description}
+                      </p>
                     )}
                   </div>
                 ))}

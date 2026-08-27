@@ -3,7 +3,19 @@
 import React from "react";
 import { motion } from "motion/react";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { MoreHoriz as MoreHorizontal, Pin, Bookmark, OpenBook as BookOpen, WhiteFlag as Flag, EditPencil as Edit, Trash as Trash2, Journal as Newspaper, Group as Users, Refresh as Repeat2, ChatBubble as MessageCircle } from "iconoir-react";
+import {
+  MoreHoriz as MoreHorizontal,
+  Pin,
+  Bookmark,
+  OpenBook as BookOpen,
+  WhiteFlag as Flag,
+  EditPencil as Edit,
+  Trash as Trash2,
+  Journal as Newspaper,
+  Group as Users,
+  Refresh as Repeat2,
+  ChatBubble as MessageCircle,
+} from "iconoir-react";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -182,7 +194,7 @@ export function StandardPostView({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border/50 bg-card/75 backdrop-blur-xl shadow-xs transition-all duration-200 hover:border-border/80 hover:bg-card/95 hover:shadow-md",
+        "group border-border/50 bg-card/75 hover:border-border/80 hover:bg-card/95 relative overflow-hidden rounded-2xl border shadow-xs backdrop-blur-xl transition-all duration-200 hover:shadow-md",
         compact ? "p-3" : "p-4",
         post.pinned &&
           "border-amber-500/40 bg-amber-500/5 shadow-amber-500/5 dark:border-amber-500/30 dark:bg-amber-500/5"

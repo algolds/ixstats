@@ -62,7 +62,9 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
         findFirst: jest.fn().mockResolvedValue(null),
         findMany: jest.fn().mockResolvedValue([]),
         create: jest.fn().mockImplementation(async ({ data }) => ({ id: "new_gov_id", ...data })),
-        update: jest.fn().mockImplementation(async ({ where, data }) => ({ id: where.id, ...data })),
+        update: jest
+          .fn()
+          .mockImplementation(async ({ where, data }) => ({ id: where.id, ...data })),
       },
       componentSynergy: {
         findFirst: jest.fn().mockResolvedValue(null),
@@ -75,7 +77,9 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
         findFirst: jest.fn().mockResolvedValue(null),
         findMany: jest.fn().mockResolvedValue([]),
         create: jest.fn().mockImplementation(async ({ data }) => ({ id: "new_econ_id", ...data })),
-        update: jest.fn().mockImplementation(async ({ where, data }) => ({ id: where.id, ...data })),
+        update: jest
+          .fn()
+          .mockImplementation(async ({ where, data }) => ({ id: where.id, ...data })),
       },
       componentChangeLog: {
         create: jest.fn().mockResolvedValue({ id: "log_1" }),
@@ -87,14 +91,18 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
         findFirst: jest.fn().mockResolvedValue(null),
         findMany: jest.fn().mockResolvedValue([]),
         create: jest.fn().mockImplementation(async ({ data }) => ({ id: "new_tax_id", ...data })),
-        update: jest.fn().mockImplementation(async ({ where, data }) => ({ id: where.id, ...data })),
+        update: jest
+          .fn()
+          .mockImplementation(async ({ where, data }) => ({ id: where.id, ...data })),
       },
       fiscalPolicy: {
         findUnique: jest.fn().mockImplementation(async ({ where }) => {
           return fiscalPolicies.find((p) => p.id === where.id) ?? null;
         }),
         create: jest.fn().mockImplementation(async ({ data }) => ({ id: "new_pol_id", ...data })),
-        update: jest.fn().mockImplementation(async ({ where, data }) => ({ id: where.id, ...data })),
+        update: jest
+          .fn()
+          .mockImplementation(async ({ where, data }) => ({ id: where.id, ...data })),
       },
     };
 
@@ -255,7 +263,16 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
       await expect(
         caller.bulkUpdate({
           countryId: foreignCountryId,
-          components: [{ componentType: "FREE_MARKET_SYSTEM" as any, effectivenessScore: 50, isActive: true, implementationCost: 0, maintenanceCost: 0, requiredCapacity: 50 }],
+          components: [
+            {
+              componentType: "FREE_MARKET_SYSTEM" as any,
+              effectivenessScore: 50,
+              isActive: true,
+              implementationCost: 0,
+              maintenanceCost: 0,
+              requiredCapacity: 50,
+            },
+          ],
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
@@ -305,7 +322,16 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
       await expect(
         caller.bulkUpdate({
           countryId: foreignCountryId,
-          components: [{ componentType: "PROGRESSIVE_TAX" as any, effectivenessScore: 50, isActive: true, implementationCost: 0, maintenanceCost: 0, requiredCapacity: 50 }],
+          components: [
+            {
+              componentType: "PROGRESSIVE_TAX" as any,
+              effectivenessScore: 50,
+              isActive: true,
+              implementationCost: 0,
+              maintenanceCost: 0,
+              requiredCapacity: 50,
+            },
+          ],
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });

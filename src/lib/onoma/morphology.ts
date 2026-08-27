@@ -76,8 +76,6 @@ export function detectGender(word: string, culture: string | null): GrammaticalG
   return "masculine"; // ends in consonant
 }
 
-
-
 /**
  * Generates Singular & Plural declined forms for all 5 cases.
  */

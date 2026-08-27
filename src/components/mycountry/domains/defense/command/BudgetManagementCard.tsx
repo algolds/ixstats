@@ -2,7 +2,18 @@
 "use client";
 
 import React from "react";
-import { Dollar as DollarSign, Group as Users, Wrench, Package, Microscope, Building, EditPencil as Edit, FloppyDisk as Save, HelpCircle, InfoCircle as Info } from "iconoir-react";
+import {
+  Dollar as DollarSign,
+  Group as Users,
+  Wrench,
+  Package,
+  Microscope,
+  Building,
+  EditPencil as Edit,
+  FloppyDisk as Save,
+  HelpCircle,
+  InfoCircle as Info,
+} from "iconoir-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

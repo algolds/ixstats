@@ -51,7 +51,8 @@ export default function WikiTemplatesPage() {
     }
   }, [presetMatch]);
 
-  const rawParams = (templateData?.templateData as any)?.params || (templateData as any)?.params || {};
+  const rawParams =
+    (templateData?.templateData as any)?.params || (templateData as any)?.params || {};
   const paramEntries = Object.entries(rawParams);
 
   // Active Variant Label
@@ -98,36 +99,42 @@ export default function WikiTemplatesPage() {
 
   return (
     <WikiOSLayout title="Template Registry & Infobox Suite">
-      <div className="w-full max-w-7xl mx-auto space-y-6 pb-16">
+      <div className="mx-auto w-full max-w-7xl space-y-6 pb-16">
         {/* Header Banner */}
-        <div className="rounded-3xl border border-border/60 bg-card/60 p-6 backdrop-blur-xl shadow-xs">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="border-border/60 bg-card/60 rounded-3xl border p-6 shadow-xs backdrop-blur-xl">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div className="flex items-center gap-3.5">
-              <div className="p-3 rounded-2xl bg-wiki/15 text-wiki border border-wiki/20 shadow-inner">
+              <div className="bg-wiki/15 text-wiki border-wiki/20 rounded-2xl border p-3 shadow-inner">
                 <ViewGrid className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">Template Registry & Infobox Suite</h1>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Unified polymorphic realm factbooks, dynamic variant schemas, and live simulation data connectors
+                <h1 className="text-foreground text-xl font-bold">
+                  Template Registry & Infobox Suite
+                </h1>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  Unified polymorphic realm factbooks, dynamic variant schemas, and live simulation
+                  data connectors
                 </p>
               </div>
             </div>
 
-            <Badge variant="outline" className="flex items-center gap-1.5 bg-wiki/10 text-wiki border-wiki/30 text-xs px-3 py-1.5 w-fit">
+            <Badge
+              variant="outline"
+              className="bg-wiki/10 text-wiki border-wiki/30 flex w-fit items-center gap-1.5 px-3 py-1.5 text-xs"
+            >
               <Spark className="h-3.5 w-3.5" /> Polymorphic Engine & Visual Factbook
             </Badge>
           </div>
 
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mt-5">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <div className="mt-5 flex flex-col items-stretch justify-between gap-3 lg:flex-row lg:items-center">
+            <div className="relative max-w-md flex-1">
+              <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search templates (e.g. Country, Ship, Person, Citation)..."
-                className="w-full rounded-xl border border-border/60 bg-background/80 py-2 pl-10 pr-4 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-wiki focus:outline-none shadow-inner"
+                className="border-border/60 bg-background/80 text-foreground placeholder:text-muted-foreground/60 focus:border-wiki w-full rounded-xl border py-2 pr-4 pl-10 text-xs shadow-inner focus:outline-none"
               />
             </div>
 
@@ -140,9 +147,9 @@ export default function WikiTemplatesPage() {
                   data-cuelume-press="soft"
                   data-cuelume-hover="tick"
                   onClick={() => setActiveCategory(c.id)}
-                  className={`rounded-xl px-3 py-1 text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer ${
+                  className={`cursor-pointer rounded-xl px-3 py-1 text-xs font-semibold transition-all active:scale-[0.98] ${
                     activeCategory === c.id
-                      ? "bg-wiki/20 text-wiki font-bold shadow-xs border border-wiki/30"
+                      ? "bg-wiki/20 text-wiki border-wiki/30 border font-bold shadow-xs"
                       : "bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent"
                   }`}
                 >
@@ -154,15 +161,17 @@ export default function WikiTemplatesPage() {
         </div>
 
         {/* Master Catalog & Inspector Workspace */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
           {/* Left Column: Template Catalog (4 cols) */}
-          <div className="lg:col-span-4 rounded-3xl border border-border/60 bg-card/40 p-4 backdrop-blur-xl h-[720px] overflow-y-auto space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-2 py-1">
+          <div className="border-border/60 bg-card/40 h-[720px] space-y-2 overflow-y-auto rounded-3xl border p-4 backdrop-blur-xl lg:col-span-4">
+            <div className="text-muted-foreground flex items-center justify-between px-2 py-1 text-[11px] font-bold tracking-wider uppercase">
               <span>Curated Templates ({searchResults?.templates?.length ?? 0})</span>
             </div>
 
             {isLoading ? (
-              <div className="py-12 text-center text-xs text-muted-foreground">Loading template registry...</div>
+              <div className="text-muted-foreground py-12 text-center text-xs">
+                Loading template registry...
+              </div>
             ) : searchResults?.templates && searchResults.templates.length > 0 ? (
               searchResults.templates.map((tmpl) => (
                 <button
@@ -171,65 +180,69 @@ export default function WikiTemplatesPage() {
                   data-cuelume-press="soft"
                   data-cuelume-hover="tick"
                   onClick={() => setSelectedTemplateName(tmpl.name)}
-                  className={`w-full text-left px-3.5 py-3 rounded-2xl text-xs transition-all flex flex-col gap-1 cursor-pointer active:scale-[0.98] ${
+                  className={`flex w-full cursor-pointer flex-col gap-1 rounded-2xl px-3.5 py-3 text-left text-xs transition-all active:scale-[0.98] ${
                     selectedTemplateName.toLowerCase() === tmpl.name.toLowerCase()
-                      ? "bg-wiki/15 border border-wiki/30 text-foreground font-semibold shadow-sm"
+                      ? "bg-wiki/15 border-wiki/30 text-foreground border font-semibold shadow-sm"
                       : "hover:bg-muted/50 text-muted-foreground hover:text-foreground border border-transparent"
                   }`}
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-bold text-foreground truncate">{tmpl.name}</span>
+                  <div className="flex w-full items-center justify-between">
+                    <span className="text-foreground truncate font-bold">{tmpl.name}</span>
                     {tmpl.isCanonical && (
-                      <span className="rounded-md bg-wiki/20 px-1.5 py-0.5 text-[9px] font-bold text-wiki uppercase tracking-wider">
+                      <span className="bg-wiki/20 text-wiki rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">
                         Master
                       </span>
                     )}
                   </div>
                   {tmpl.description && (
-                    <span className="text-[11px] text-muted-foreground line-clamp-1">
+                    <span className="text-muted-foreground line-clamp-1 text-[11px]">
                       {tmpl.description}
                     </span>
                   )}
                 </button>
               ))
             ) : (
-              <div className="py-12 text-center text-xs text-muted-foreground">No templates match query.</div>
+              <div className="text-muted-foreground py-12 text-center text-xs">
+                No templates match query.
+              </div>
             )}
           </div>
 
           {/* Right Column: Template Inspector & Visual Preview (8 cols) */}
-          <div className="lg:col-span-8 rounded-3xl border border-border/60 bg-card/40 p-6 backdrop-blur-xl min-h-[720px] flex flex-col justify-between space-y-6">
+          <div className="border-border/60 bg-card/40 flex min-h-[720px] flex-col justify-between space-y-6 rounded-3xl border p-6 backdrop-blur-xl lg:col-span-8">
             <div className="space-y-5">
               {/* Title & View Switcher Bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
+              <div className="border-border/40 flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-foreground">{selectedTemplateName}</h2>
-                    <span className="rounded-full bg-wiki/15 px-2.5 py-0.5 text-[10px] font-semibold text-wiki uppercase">
+                    <h2 className="text-foreground text-xl font-bold">{selectedTemplateName}</h2>
+                    <span className="bg-wiki/15 text-wiki rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase">
                       {templateData?.category || "Template"}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-muted-foreground mt-0.5 text-xs">
                     {templateData?.description || "Canonical WikiOS Schema & Component"}
                   </p>
                 </div>
 
                 {/* View Mode Segmented Bar */}
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center rounded-xl border border-border/60 bg-secondary/50 p-1 shadow-inner">
+                  <div className="border-border/60 bg-secondary/50 flex items-center rounded-xl border p-1 shadow-inner">
                     <button
                       type="button"
                       data-cuelume-press="tap"
                       onClick={() => setViewMode("visual")}
-                      className={`relative z-10 flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer ${
-                        viewMode === "visual" ? "text-black font-bold shadow-xs" : "text-muted-foreground hover:text-foreground"
+                      className={`relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all active:scale-[0.98] ${
+                        viewMode === "visual"
+                          ? "font-bold text-black shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {viewMode === "visual" && (
                         <motion.div
                           layoutId="activeInspectorView"
                           transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
-                          className="absolute inset-0 -z-10 rounded-lg bg-wiki shadow-xs"
+                          className="bg-wiki absolute inset-0 -z-10 rounded-lg shadow-xs"
                         />
                       )}
                       <Eye className="h-3.5 w-3.5" />
@@ -240,15 +253,17 @@ export default function WikiTemplatesPage() {
                       type="button"
                       data-cuelume-press="tap"
                       onClick={() => setViewMode("schema")}
-                      className={`relative z-10 flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer ${
-                        viewMode === "schema" ? "text-black font-bold shadow-xs" : "text-muted-foreground hover:text-foreground"
+                      className={`relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all active:scale-[0.98] ${
+                        viewMode === "schema"
+                          ? "font-bold text-black shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {viewMode === "schema" && (
                         <motion.div
                           layoutId="activeInspectorView"
                           transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
-                          className="absolute inset-0 -z-10 rounded-lg bg-wiki shadow-xs"
+                          className="bg-wiki absolute inset-0 -z-10 rounded-lg shadow-xs"
                         />
                       )}
                       <List className="h-3.5 w-3.5" />
@@ -259,15 +274,17 @@ export default function WikiTemplatesPage() {
                       type="button"
                       data-cuelume-press="tap"
                       onClick={() => setViewMode("wikitext")}
-                      className={`relative z-10 flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer ${
-                        viewMode === "wikitext" ? "text-black font-bold shadow-xs" : "text-muted-foreground hover:text-foreground"
+                      className={`relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all active:scale-[0.98] ${
+                        viewMode === "wikitext"
+                          ? "font-bold text-black shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {viewMode === "wikitext" && (
                         <motion.div
                           layoutId="activeInspectorView"
                           transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
-                          className="absolute inset-0 -z-10 rounded-lg bg-wiki shadow-xs"
+                          className="bg-wiki absolute inset-0 -z-10 rounded-lg shadow-xs"
                         />
                       )}
                       <Code className="h-3.5 w-3.5" />
@@ -279,9 +296,13 @@ export default function WikiTemplatesPage() {
                     type="button"
                     data-cuelume-press="tap"
                     onClick={handleCopy}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-border/60 bg-secondary/80 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+                    className="border-border/60 bg-secondary/80 text-foreground hover:bg-secondary inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold shadow-xs transition-all active:scale-[0.98]"
                   >
-                    {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5 text-wiki" />}
+                    {copied ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="text-wiki h-3.5 w-3.5" />
+                    )}
                     <span className="hidden sm:inline">{copied ? "Copied" : "Copy Code"}</span>
                   </button>
                 </div>
@@ -289,12 +310,12 @@ export default function WikiTemplatesPage() {
 
               {/* Dynamic Variant Switcher Pill Bar */}
               {presetMatch?.variants && presetMatch.variants.length > 0 && (
-                <div className="space-y-2 rounded-2xl border border-border/40 bg-secondary/25 p-3.5">
+                <div className="border-border/40 bg-secondary/25 space-y-2 rounded-2xl border p-3.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">
+                    <span className="text-foreground text-[11px] font-bold tracking-wider uppercase">
                       Polymorphic Variant / Subtype
                     </span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-muted-foreground text-[10px]">
                       Swaps live field sets & visual rendering
                     </span>
                   </div>
@@ -305,9 +326,9 @@ export default function WikiTemplatesPage() {
                         type="button"
                         data-cuelume-press="soft"
                         onClick={() => setSelectedVariantId(v.id)}
-                        className={`rounded-xl px-3 py-1 text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer ${
+                        className={`cursor-pointer rounded-xl px-3 py-1 text-xs font-semibold transition-all active:scale-[0.98] ${
                           selectedVariantId === v.id
-                            ? "bg-wiki text-black shadow-md font-bold"
+                            ? "bg-wiki font-bold text-black shadow-md"
                             : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
                         }`}
                       >
@@ -320,8 +341,8 @@ export default function WikiTemplatesPage() {
 
               {/* ── View Mode: 1. Visual Infobox Preview ── */}
               {viewMode === "visual" && (
-                <div className="flex flex-col xl:flex-row items-start justify-center gap-6 py-2">
-                  <div className="mx-auto xl:mx-0 shrink-0">
+                <div className="flex flex-col items-start justify-center gap-6 py-2 xl:flex-row">
+                  <div className="mx-auto shrink-0 xl:mx-0">
                     <VisualInfoboxPreviewCard
                       templateName={selectedTemplateName}
                       variantId={selectedVariantId}
@@ -331,26 +352,34 @@ export default function WikiTemplatesPage() {
                     />
                   </div>
 
-                  <div className="flex-1 space-y-4 w-full">
+                  <div className="w-full flex-1 space-y-4">
                     {/* Live Schema Metadata Card */}
-                    <div className="rounded-2xl border border-border/40 bg-secondary/15 p-4 space-y-3">
+                    <div className="border-border/40 bg-secondary/15 space-y-3 rounded-2xl border p-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-foreground">
+                        <span className="text-foreground text-xs font-bold">
                           Factbook Specification
                         </span>
-                        <Badge variant="outline" className="text-[10px] font-mono border-border/60">
+                        <Badge variant="outline" className="border-border/60 font-mono text-[10px]">
                           {previewParams.length} parameters
                         </Badge>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="p-2.5 rounded-xl bg-background/60 border border-border/30">
-                          <div className="text-[10px] uppercase font-semibold text-muted-foreground">Template Class</div>
-                          <div className="font-medium text-foreground mt-0.5">{templateData?.category || presetMatch?.category || "Factbook"}</div>
+                        <div className="bg-background/60 border-border/30 rounded-xl border p-2.5">
+                          <div className="text-muted-foreground text-[10px] font-semibold uppercase">
+                            Template Class
+                          </div>
+                          <div className="text-foreground mt-0.5 font-medium">
+                            {templateData?.category || presetMatch?.category || "Factbook"}
+                          </div>
                         </div>
-                        <div className="p-2.5 rounded-xl bg-background/60 border border-border/30">
-                          <div className="text-[10px] uppercase font-semibold text-muted-foreground">Active Subtype</div>
-                          <div className="font-medium text-foreground mt-0.5">{activeVariant?.label || "Standard"}</div>
+                        <div className="bg-background/60 border-border/30 rounded-xl border p-2.5">
+                          <div className="text-muted-foreground text-[10px] font-semibold uppercase">
+                            Active Subtype
+                          </div>
+                          <div className="text-foreground mt-0.5 font-medium">
+                            {activeVariant?.label || "Standard"}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -358,19 +387,19 @@ export default function WikiTemplatesPage() {
                     {/* Instant Wikitext Snippet */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <span className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">
                           Wikitext Invocation
                         </span>
                         <button
                           type="button"
                           data-cuelume-press="tap"
                           onClick={handleCopy}
-                          className="text-[11px] text-wiki hover:underline active:scale-[0.98] transition-transform cursor-pointer"
+                          className="text-wiki cursor-pointer text-[11px] transition-transform hover:underline active:scale-[0.98]"
                         >
                           {copied ? "Copied wikitext" : "Copy wikitext"}
                         </button>
                       </div>
-                      <pre className="max-h-72 overflow-y-auto rounded-2xl border border-border/40 bg-background/90 p-3.5 font-mono text-[11px] text-foreground/90 leading-relaxed shadow-inner">
+                      <pre className="border-border/40 bg-background/90 text-foreground/90 max-h-72 overflow-y-auto rounded-2xl border p-3.5 font-mono text-[11px] leading-relaxed shadow-inner">
                         {sampleWikitext}
                       </pre>
                     </div>
@@ -381,23 +410,23 @@ export default function WikiTemplatesPage() {
               {/* ── View Mode: 2. Schema Parameters Matrix ── */}
               {viewMode === "schema" && (
                 <div className="space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                     Parameters ({paramEntries.length || previewParams.length})
                   </h3>
 
                   {previewParams.length === 0 ? (
-                    <div className="py-12 text-center text-xs text-muted-foreground">
+                    <div className="text-muted-foreground py-12 text-center text-xs">
                       Standard template without explicit parameters.
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[460px] overflow-y-auto pr-1">
+                    <div className="grid max-h-[460px] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
                       {previewParams.map((p) => (
                         <div
                           key={p.name}
-                          className="p-3 rounded-2xl border border-border/40 bg-card/60 space-y-1 shadow-xs"
+                          className="border-border/40 bg-card/60 space-y-1 rounded-2xl border p-3 shadow-xs"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-mono font-bold text-foreground">
+                            <span className="text-foreground font-mono text-xs font-bold">
                               {p.name}
                             </span>
                             {p.type && (
@@ -406,7 +435,7 @@ export default function WikiTemplatesPage() {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-[11px] text-muted-foreground line-clamp-2">
+                          <p className="text-muted-foreground line-clamp-2 text-[11px]">
                             {p.label || p.example || "Parameter field"}
                           </p>
                         </div>
@@ -420,10 +449,14 @@ export default function WikiTemplatesPage() {
               {viewMode === "wikitext" && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-muted-foreground">Complete Wikitext Starter Code</span>
-                    <span className="text-[10px] text-muted-foreground">Ready to paste into source editor</span>
+                    <span className="text-muted-foreground text-xs font-bold">
+                      Complete Wikitext Starter Code
+                    </span>
+                    <span className="text-muted-foreground text-[10px]">
+                      Ready to paste into source editor
+                    </span>
                   </div>
-                  <pre className="max-h-[460px] overflow-y-auto rounded-2xl border border-border/40 bg-background/90 p-4 font-mono text-xs text-foreground/90 leading-relaxed shadow-inner">
+                  <pre className="border-border/40 bg-background/90 text-foreground/90 max-h-[460px] overflow-y-auto rounded-2xl border p-4 font-mono text-xs leading-relaxed shadow-inner">
                     {sampleWikitext}
                   </pre>
                 </div>

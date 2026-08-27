@@ -39,12 +39,12 @@ export default function DiffPage() {
 
   return (
     <WikiOSLayout title="Revision Diff">
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6">
         {/* Back Link */}
         <div>
           <Link
             href={withBasePath("/util")}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-wiki transition-colors"
+            className="text-muted-foreground hover:text-wiki inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Utilities
@@ -52,8 +52,8 @@ export default function DiffPage() {
         </div>
 
         {isLoading && (
-          <div className="flex h-64 items-center justify-center rounded-2xl border border-border/40 bg-card/50">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-wiki border-t-transparent" />
+          <div className="border-border/40 bg-card/50 flex h-64 items-center justify-center rounded-2xl border">
+            <div className="border-wiki h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         )}
 
@@ -66,25 +66,27 @@ export default function DiffPage() {
         {data && (
           <div className="space-y-4">
             {/* Diff Meta Card */}
-            <div className="rounded-2xl border border-border/40 bg-card/75 p-6 backdrop-blur-xl space-y-4">
+            <div className="border-border/40 bg-card/75 space-y-4 rounded-2xl border p-6 backdrop-blur-xl">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <span className="text-xs font-semibold text-wiki uppercase tracking-wider">
+                  <span className="text-wiki text-xs font-semibold tracking-wider uppercase">
                     Comparing Revisions
                   </span>
-                  <h2 className="mt-1 text-lg font-bold text-foreground">
+                  <h2 className="text-foreground mt-1 text-lg font-bold">
                     r{data.from.revid} &rarr; r{data.to.revid}
                   </h2>
                 </div>
 
                 {/* Layout Switcher */}
                 <div className="flex items-center gap-2">
-                  <div className="flex rounded-xl border border-border/40 bg-secondary/50 p-0.5">
+                  <div className="border-border/40 bg-secondary/50 flex rounded-xl border p-0.5">
                     <button
                       type="button"
                       onClick={() => setLayout("unified")}
                       className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-                        layout === "unified" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        layout === "unified"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       <AlignLeft className="h-3.5 w-3.5" />
@@ -94,7 +96,9 @@ export default function DiffPage() {
                       type="button"
                       onClick={() => setLayout("split")}
                       className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-                        layout === "split" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        layout === "split"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       <Columns2 className="h-3.5 w-3.5" />
@@ -107,7 +111,7 @@ export default function DiffPage() {
                     <button
                       type="button"
                       onClick={() => setUndoConfirm(true)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 active:scale-[0.98] transition-all"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
                     >
                       <Undo className="h-3.5 w-3.5" />
                       Revert to r{data.from.revid}
@@ -133,7 +137,7 @@ export default function DiffPage() {
                       <button
                         type="button"
                         onClick={() => setUndoConfirm(false)}
-                        className="rounded-xl border border-border/50 bg-secondary px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/80"
+                        className="border-border/50 bg-secondary text-foreground hover:bg-secondary/80 rounded-xl border px-3 py-1.5 text-xs font-medium"
                       >
                         Cancel
                       </button>
@@ -152,7 +156,7 @@ export default function DiffPage() {
             </div>
 
             {/* DiffViewer Component */}
-            <div className="rounded-2xl border border-border/40 bg-card/60 p-4 overflow-hidden">
+            <div className="border-border/40 bg-card/60 overflow-hidden rounded-2xl border p-4">
               <DiffViewer
                 oldCode={data.oldWikitext ?? ""}
                 newCode={data.newWikitext ?? ""}
@@ -166,8 +170,9 @@ export default function DiffPage() {
         )}
 
         {!isLoading && !data && torev === 0 && (
-          <div className="rounded-2xl border border-dashed border-border/50 bg-card/30 p-12 text-center text-xs text-muted-foreground">
-            No revisions selected for comparison. Specify <code>?to=REV</code> or <code>?from=REV&to=REV</code> in the URL.
+          <div className="border-border/50 bg-card/30 text-muted-foreground rounded-2xl border border-dashed p-12 text-center text-xs">
+            No revisions selected for comparison. Specify <code>?to=REV</code> or{" "}
+            <code>?from=REV&to=REV</code> in the URL.
           </div>
         )}
       </div>

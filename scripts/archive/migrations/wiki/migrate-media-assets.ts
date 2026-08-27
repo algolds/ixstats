@@ -10,7 +10,10 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { getIxWikiPool, closeWikiBridge } from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
+import {
+  getIxWikiPool,
+  closeWikiBridge,
+} from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
 import { MediaAssetService } from "../../src/lib/wiki-os/core/media-asset-service";
 import { DEFAULT_USER_AGENT, DEFAULT_MEDIAWIKI_URL } from "../../src/lib/wiki-os/config";
 import type mysql from "mysql2/promise";
@@ -63,7 +66,9 @@ async function streamMediaFromHttpApi(
 ): Promise<number> {
   const apiUrl = `${baseUrl.replace(/\/$/, "")}/api.php`;
   console.log(`🌐 Connecting to MediaWiki Action API at ${apiUrl}...`);
-  console.log(`📥 Mode: ${limit === Infinity ? "FULL SYNC (All Media Assets)" : `Targeting ${limit} assets`}`);
+  console.log(
+    `📥 Mode: ${limit === Infinity ? "FULL SYNC (All Media Assets)" : `Targeting ${limit} assets`}`
+  );
 
   let gaicontinue: string | undefined = undefined;
   let totalProcessed = 0;
@@ -86,7 +91,7 @@ async function streamMediaFromHttpApi(
     const res = await fetch(url.toString(), {
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
-        "Accept": "application/json",
+        Accept: "application/json",
       },
     });
 
@@ -117,7 +122,9 @@ async function streamMediaFromHttpApi(
 
         if (isDryRun) {
           if (totalProcessed < 5) {
-            console.log(`   [Dry-Run Preview] File: "${cleanName}" | Dimensions: ${info.width}x${info.height} | Mime: ${info.mime} | Size: ${info.size}B`);
+            console.log(
+              `   [Dry-Run Preview] File: "${cleanName}" | Dimensions: ${info.width}x${info.height} | Mime: ${info.mime} | Size: ${info.size}B`
+            );
           }
         } else {
           try {
@@ -143,7 +150,9 @@ async function streamMediaFromHttpApi(
     }
 
     const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`   [Batch ${batchIndex}] Ingested ${batchPages.length} media files (Total: ${totalProcessed} | ${durationSec}s | Latest: "${latestName}")`);
+    console.log(
+      `   [Batch ${batchIndex}] Ingested ${batchPages.length} media files (Total: ${totalProcessed} | ${durationSec}s | Latest: "${latestName}")`
+    );
     batchIndex++;
 
     gaicontinue = data?.continue?.gaicontinue;
@@ -154,7 +163,9 @@ async function streamMediaFromHttpApi(
   }
 
   const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`\n🎉 Media asset ingestion completed in ${totalTime}s! Total assets: ${totalProcessed}`);
+  console.log(
+    `\n🎉 Media asset ingestion completed in ${totalTime}s! Total assets: ${totalProcessed}`
+  );
   return totalProcessed;
 }
 
@@ -164,12 +175,14 @@ async function main() {
   const fromDb = args.includes("--from-db");
   const limitArg = args.find((a) => a.startsWith("--limit="))?.split("=")[1];
   const isAll = args.includes("--all") || (!limitArg && !args.includes("--dry-run"));
-  const limit = limitArg ? parseInt(limitArg, 10) : (isAll ? Infinity : 50);
+  const limit = limitArg ? parseInt(limitArg, 10) : isAll ? Infinity : 50;
 
   console.log("==================================================================");
   console.log(`🖼️  WikiOS Media & Asset Ingestion Engine`);
   console.log(`   Mode: ${isDryRun ? "DRY-RUN (Validation & Preview)" : "LIVE INGESTION"}`);
-  console.log(`   Scope: ${limit === Infinity ? "FULL SYNC (All Media Assets)" : `Limit: ${limit} files`}`);
+  console.log(
+    `   Scope: ${limit === Infinity ? "FULL SYNC (All Media Assets)" : `Limit: ${limit} files`}`
+  );
   console.log("==================================================================");
 
   if (fromDb) {
@@ -196,7 +209,9 @@ async function main() {
       }
       console.log(`\n🎉 Ingestion successfully completed! (${count} media records synced)`);
     } catch (err) {
-      console.warn("⚠️  Could not connect to live MariaDB. Falling back to MediaWiki Action API...");
+      console.warn(
+        "⚠️  Could not connect to live MariaDB. Falling back to MediaWiki Action API..."
+      );
       await streamMediaFromHttpApi(limit, isDryRun);
     }
   } else {

@@ -1,7 +1,15 @@
 "use client";
 
 import React from "react";
-import { StatUp as TrendingUp, Globe, StatsReport as BarChart3, SystemRestart as Loader2, Group as Users, Suitcase as Briefcase, Activity } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  Globe,
+  StatsReport as BarChart3,
+  SystemRestart as Loader2,
+  Group as Users,
+  Suitcase as Briefcase,
+  Activity,
+} from "iconoir-react";
 import { Card } from "~/components/ui/card";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";
@@ -215,7 +223,9 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
         <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
           <span>Global Network</span>
-          <span className="text-foreground font-semibold">Top {activeRelations.length} Relations</span>
+          <span className="text-foreground font-semibold">
+            Top {activeRelations.length} Relations
+          </span>
         </div>
       </Card>
     );
@@ -260,7 +270,9 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           <span
             className={cn(
               "font-bold tracking-wider uppercase",
-              netTrade >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+              netTrade >= 0
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-rose-600 dark:text-rose-400"
             )}
           >
             {netTrade >= 0 ? "Surplus" : "Deficit"}: {formatMoney(Math.abs(netTrade))}
@@ -412,7 +424,9 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           <span
             className={cn(
               "font-bold",
-              activeEcon.totalDebtGDPRatio > 80 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
+              activeEcon.totalDebtGDPRatio > 80
+                ? "text-rose-600 dark:text-rose-400"
+                : "text-emerald-600 dark:text-emerald-400"
             )}
           >
             Debt/GDP: {activeEcon.totalDebtGDPRatio || 55}%

@@ -101,9 +101,15 @@ async function runCorpusRoundtripBenchmark() {
 
   console.log("------------------------------------------------------------------");
   console.log(`Total Articles Tested: ${articles.length}`);
-  console.log(`Exact Matches:         ${exactCount} (${((exactCount / articles.length) * 100).toFixed(1)}%)`);
-  console.log(`Structurally Equiv:    ${structEquivalentCount} (${((structEquivalentCount / articles.length) * 100).toFixed(1)}%)`);
-  console.log(`Semantic Diffs:        ${semanticDiffCount} (${((semanticDiffCount / articles.length) * 100).toFixed(1)}%)`);
+  console.log(
+    `Exact Matches:         ${exactCount} (${((exactCount / articles.length) * 100).toFixed(1)}%)`
+  );
+  console.log(
+    `Structurally Equiv:    ${structEquivalentCount} (${((structEquivalentCount / articles.length) * 100).toFixed(1)}%)`
+  );
+  console.log(
+    `Semantic Diffs:        ${semanticDiffCount} (${((semanticDiffCount / articles.length) * 100).toFixed(1)}%)`
+  );
   console.log(`Overall Pass Rate:     ${passRate.toFixed(2)}% (Target: >= 95%)`);
   console.log("------------------------------------------------------------------");
 
@@ -146,7 +152,9 @@ function printPercentiles(label: string, times: number[]) {
   const p90 = times[Math.floor(times.length * 0.9)] ?? 0;
   const p95 = times[Math.floor(times.length * 0.95)] ?? 0;
   const p99 = times[Math.floor(times.length * 0.99)] ?? 0;
-  console.log(`  ${label.padEnd(20)} P50: ${p50.toFixed(2)}ms | P90: ${p90.toFixed(2)}ms | P95: ${p95.toFixed(2)}ms | P99: ${p99.toFixed(2)}ms`);
+  console.log(
+    `  ${label.padEnd(20)} P50: ${p50.toFixed(2)}ms | P90: ${p90.toFixed(2)}ms | P95: ${p95.toFixed(2)}ms | P99: ${p99.toFixed(2)}ms`
+  );
 }
 
 void runCorpusRoundtripBenchmark();

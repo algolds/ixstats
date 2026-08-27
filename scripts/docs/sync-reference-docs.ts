@@ -176,7 +176,10 @@ export function extractApiInventory(rootDir = DEFAULT_ROOT): ApiInventoryResult 
     if (def && absTarget) importMap.set(def.getText(), absTarget);
   }
 
-  const routerMap = new Map<string, { sourceFiles: Set<string>; procedures: Map<string, ProcedureInfo> }>();
+  const routerMap = new Map<
+    string,
+    { sourceFiles: Set<string>; procedures: Map<string, ProcedureInfo> }
+  >();
   const duplicates: string[] = [];
   const unresolved: string[] = [];
 
@@ -300,20 +303,28 @@ export function extractApiInventory(rootDir = DEFAULT_ROOT): ApiInventoryResult 
           if (prop.isKind(SyntaxKind.PropertyAssignment)) {
             const routerKey = prop.getName();
             const propInit = prop.getInitializer();
-            const routerInfo: { sourceFiles: Set<string>; procedures: Map<string, ProcedureInfo> } = {
-              sourceFiles: new Set<string>(),
-              procedures: new Map<string, ProcedureInfo>(),
-            };
+            const routerInfo: { sourceFiles: Set<string>; procedures: Map<string, ProcedureInfo> } =
+              {
+                sourceFiles: new Set<string>(),
+                procedures: new Map<string, ProcedureInfo>(),
+              };
 
             // Inspect safeRouter("name", () => routerExpression)
             if (propInit && propInit.isKind(SyntaxKind.CallExpression)) {
               const safeArgs = propInit.getArguments();
               if (safeArgs.length >= 2) {
                 const fnArg = safeArgs[1];
-                if (fnArg && (fnArg.isKind(SyntaxKind.ArrowFunction) || fnArg.isKind(SyntaxKind.FunctionExpression))) {
+                if (
+                  fnArg &&
+                  (fnArg.isKind(SyntaxKind.ArrowFunction) ||
+                    fnArg.isKind(SyntaxKind.FunctionExpression))
+                ) {
                   const body = fnArg.getBody();
                   if (body) {
-                    const bodyText = body.getText().replace(/^{?\s*return\s+|\s*}?$/g, "").trim();
+                    const bodyText = body
+                      .getText()
+                      .replace(/^{?\s*return\s+|\s*}?$/g, "")
+                      .trim();
 
                     // Check if body is mergeRouters(a, b)
                     const mergeMatch = bodyText.match(/^mergeRouters\((.+)\)$/);
@@ -327,7 +338,8 @@ export function extractApiInventory(rootDir = DEFAULT_ROOT): ApiInventoryResult 
                         routerInfo.sourceFiles.add(
                           path.relative(rootDir, targetFile).replace(/\\/g, "/")
                         );
-                        const sf = proj.getSourceFile(targetFile) ?? proj.addSourceFileAtPath(targetFile);
+                        const sf =
+                          proj.getSourceFile(targetFile) ?? proj.addSourceFileAtPath(targetFile);
                         const fileProcs = resolveSymbolProcedures(sym, sf);
                         if (fileProcs.length === 0) {
                           // Fallback to resolving entire file
@@ -489,7 +501,10 @@ export function generateApiInventoryTableMarkdown(api = extractApiInventory()): 
 /**
  * 4. Link, Anchor & Repository Path Validator
  */
-export function validateDocLinks(rootDir = DEFAULT_ROOT, docFiles = IN_SCOPE_DOCS): LinkValidationIssue[] {
+export function validateDocLinks(
+  rootDir = DEFAULT_ROOT,
+  docFiles = IN_SCOPE_DOCS
+): LinkValidationIssue[] {
   const issues: LinkValidationIssue[] = [];
 
   for (const relFile of docFiles) {
@@ -556,7 +571,11 @@ export function validateDocLinks(rootDir = DEFAULT_ROOT, docFiles = IN_SCOPE_DOC
         }
 
         // Skip web URLs
-        if (target.startsWith("http://") || target.startsWith("https://") || target.startsWith("mailto:")) {
+        if (
+          target.startsWith("http://") ||
+          target.startsWith("https://") ||
+          target.startsWith("mailto:")
+        ) {
           continue;
         }
 
@@ -591,11 +610,14 @@ export function validateDocLinks(rootDir = DEFAULT_ROOT, docFiles = IN_SCOPE_DOC
 /**
  * 5. Document Synchronization and Verification Engine
  */
-export function syncDocumentContent(content: string, options: {
-  versionMatrix?: string;
-  frameworkMatrix?: string;
-  apiInventory?: string;
-}): { newContent: string; changed: boolean } {
+export function syncDocumentContent(
+  content: string,
+  options: {
+    versionMatrix?: string;
+    frameworkMatrix?: string;
+    apiInventory?: string;
+  }
+): { newContent: string; changed: boolean } {
   let updated = content;
 
   if (options.versionMatrix && updated.includes("<!-- BEGIN_DOCS:VERSION_MATRIX -->")) {
@@ -669,12 +691,16 @@ export function runCLI(): void {
   if (result.issues.length > 0) {
     console.error(`✗ Found ${result.issues.length} documentation link/path issue(s):`);
     for (const issue of result.issues) {
-      console.error(`  • ${issue.file}:${issue.line} [${issue.linkText}](${issue.target}) -> ${issue.reason}`);
+      console.error(
+        `  • ${issue.file}:${issue.line} [${issue.linkText}](${issue.target}) -> ${issue.reason}`
+      );
     }
   }
 
   if (isCheck && result.staleFiles.length > 0) {
-    console.error(`✗ Stale generated reference blocks found in ${result.staleFiles.length} file(s):`);
+    console.error(
+      `✗ Stale generated reference blocks found in ${result.staleFiles.length} file(s):`
+    );
     for (const f of result.staleFiles) {
       console.error(`  • ${f} (run 'bun run docs:sync' to regenerate)`);
     }
@@ -684,7 +710,9 @@ export function runCLI(): void {
     if (isCheck) {
       console.log("✓ All canonical reference documents and links are up to date.");
     } else {
-      console.log(`✓ Reference documentation synchronized successfully across ${IN_SCOPE_DOCS.length} files.`);
+      console.log(
+        `✓ Reference documentation synchronized successfully across ${IN_SCOPE_DOCS.length} files.`
+      );
     }
     process.exit(0);
   } else {

@@ -9,7 +9,15 @@
 import type { SectorConfiguration } from "~/types/economy-builder";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
-import { Industry as Factory, Leaf, Group as Users, Flash as Zap, Dollar as DollarSign, City as Building2, Hammer as Pickaxe } from "iconoir-react";
+import {
+  Industry as Factory,
+  Leaf,
+  Group as Users,
+  Flash as Zap,
+  Dollar as DollarSign,
+  City as Building2,
+  Hammer as Pickaxe,
+} from "iconoir-react";
 
 /**
  * Template defining default properties for an economic sector

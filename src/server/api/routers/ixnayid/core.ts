@@ -63,8 +63,7 @@ export const ixnayidCoreRouter = createTRPCRouter({
     return {
       passportHandle,
       countrySlug:
-        country?.slug ??
-        (country?.name ? country.name.toLowerCase().replace(/ /g, "_") : null),
+        country?.slug ?? (country?.name ? country.name.toLowerCase().replace(/ /g, "_") : null),
       forum: {
         linked: !!user?.forumUserId || !!user?.forumUsername,
         username: user?.forumUsername ?? null,

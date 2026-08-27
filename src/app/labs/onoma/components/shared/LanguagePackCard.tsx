@@ -5,12 +5,7 @@
 
 import React, { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import {
-  RiBookMarkedLine,
-  RiGitForkLine,
-  RiStarFill,
-  RiTranslate2,
-} from "react-icons/ri";
+import { RiBookMarkedLine, RiGitForkLine, RiStarFill, RiTranslate2 } from "react-icons/ri";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -40,10 +35,7 @@ interface LanguagePackCardProps {
   isForking?: boolean;
 }
 
-const FAMILY_THEMES: Record<
-  string,
-  { border: string; glow: string; bg: string; text: string }
-> = {
+const FAMILY_THEMES: Record<string, { border: string; glow: string; bg: string; text: string }> = {
   latin: {
     border: "border-amber-500/40",
     glow: "rgba(245, 158, 11, 0.25)",
@@ -142,7 +134,7 @@ export function LanguagePackCard({
   const theme = FAMILY_THEMES[familyKey] || FAMILY_THEMES.default;
 
   return (
-    <div className="group relative flex flex-col items-center select-none w-full">
+    <div className="group relative flex w-full flex-col items-center select-none">
       <motion.div
         ref={cardRef}
         onMouseMove={handleMouseMove}
@@ -150,10 +142,11 @@ export function LanguagePackCard({
         onMouseLeave={handleMouseLeave}
         onClick={() => onSelect?.(pack)}
         className={cn(
-          "relative flex h-full min-h-[300px] w-full flex-col justify-between rounded-2xl border p-4.5 shadow-lg backdrop-blur-xl transition-all cursor-pointer overflow-hidden",
+          "relative flex h-full min-h-[300px] w-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-4.5 shadow-lg backdrop-blur-xl transition-all",
           "bg-background/80 hover:shadow-2xl",
           theme.border,
-          isSelected && "ring-2 ring-offset-2 ring-offset-background ring-amber-500/60 shadow-[0_0_24px_var(--glow)]"
+          isSelected &&
+            "ring-offset-background shadow-[0_0_24px_var(--glow)] ring-2 ring-amber-500/60 ring-offset-2"
         )}
         style={{
           transformStyle: "preserve-3d",
@@ -178,7 +171,7 @@ export function LanguagePackCard({
           <Badge
             variant="outline"
             className={cn(
-              "px-2 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider border",
+              "border px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider uppercase",
               theme.text,
               theme.border,
               "bg-secondary/40 backdrop-blur-md"
@@ -187,11 +180,11 @@ export function LanguagePackCard({
             {pack.culturalFamily}
           </Badge>
 
-          <div className="flex items-center gap-1 text-[11px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
-            <RiStarFill className="h-3 w-3 text-amber-400 fill-amber-400" />
+          <div className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-500">
+            <RiStarFill className="h-3 w-3 fill-amber-400 text-amber-400" />
             <span>{pack.ratingAvg > 0 ? pack.ratingAvg.toFixed(1) : "New"}</span>
             {pack.ratingCount > 0 && (
-              <span className="text-muted-foreground font-normal text-[9px]">
+              <span className="text-muted-foreground text-[9px] font-normal">
                 ({pack.ratingCount})
               </span>
             )}
@@ -209,27 +202,28 @@ export function LanguagePackCard({
             <RiBookMarkedLine className={cn("h-7 w-7", theme.text)} />
           </div>
 
-          <h3 className="text-foreground text-sm font-bold tracking-tight line-clamp-1">
+          <h3 className="text-foreground line-clamp-1 text-sm font-bold tracking-tight">
             {pack.name}
           </h3>
 
           {pack.authorName && (
-            <span className="text-[10px] text-muted-foreground font-mono mt-0.5">
+            <span className="text-muted-foreground mt-0.5 font-mono text-[10px]">
               by @{pack.authorName}
             </span>
           )}
 
-          <p className="text-muted-foreground mt-2 line-clamp-2 text-xs leading-relaxed max-w-[260px]">
-            {pack.description || "Comprehensive phonological rules, syllabic weights, and lexicon seeds."}
+          <p className="text-muted-foreground mt-2 line-clamp-2 max-w-[260px] text-xs leading-relaxed">
+            {pack.description ||
+              "Comprehensive phonological rules, syllabic weights, and lexicon seeds."}
           </p>
 
           {/* Tags */}
           {pack.tags && pack.tags.length > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-1 mt-3">
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-1">
               {pack.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
-                  className="bg-secondary/40 text-muted-foreground border border-border/40 rounded px-1.5 py-0.2 font-mono text-[9px]"
+                  className="bg-secondary/40 text-muted-foreground border-border/40 py-0.2 rounded border px-1.5 font-mono text-[9px]"
                 >
                   #{tag}
                 </span>
@@ -239,7 +233,7 @@ export function LanguagePackCard({
         </div>
 
         {/* Card Footer: Action Buttons */}
-        <div className="border-border/40 flex w-full items-center gap-2 border-t pt-3 mt-1">
+        <div className="border-border/40 mt-1 flex w-full items-center gap-2 border-t pt-3">
           <Button
             type="button"
             variant="outline"
@@ -248,9 +242,9 @@ export function LanguagePackCard({
               e.stopPropagation();
               onSelect?.(pack);
             }}
-            className="border-border/60 bg-background/80 hover:bg-background text-foreground h-8 flex-1 text-xs font-semibold rounded-xl"
+            className="border-border/60 bg-background/80 hover:bg-background text-foreground h-8 flex-1 rounded-xl text-xs font-semibold"
           >
-            <RiTranslate2 className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+            <RiTranslate2 className="text-muted-foreground mr-1 h-3.5 w-3.5" />
             <span>Inspect</span>
           </Button>
 
@@ -262,16 +256,16 @@ export function LanguagePackCard({
               e.stopPropagation();
               onFork?.(pack);
             }}
-            className="bg-onoma-primary hover:bg-onoma-primary-light text-white h-8 flex-1 text-xs font-bold rounded-xl shadow-sm active:scale-95 transition-all"
+            className="bg-onoma-primary hover:bg-onoma-primary-light h-8 flex-1 rounded-xl text-xs font-bold text-white shadow-sm transition-all active:scale-95"
           >
-            <RiGitForkLine className="h-3.5 w-3.5 mr-1" />
+            <RiGitForkLine className="mr-1 h-3.5 w-3.5" />
             <span>Fork Pack</span>
           </Button>
         </div>
       </motion.div>
 
       {/* Grounding soft shadow */}
-      <div className="mt-2 h-1.5 w-40 rounded-full bg-black/20 blur-[5px] dark:bg-black/50 pointer-events-none" />
+      <div className="pointer-events-none mt-2 h-1.5 w-40 rounded-full bg-black/20 blur-[5px] dark:bg-black/50" />
     </div>
   );
 }

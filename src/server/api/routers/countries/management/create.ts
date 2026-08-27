@@ -25,7 +25,6 @@ import {
   syncEconomyBuilderState,
 } from "~/server/shared/country-mutation-helpers";
 
-
 export const managementCreateProcedures = {
   // Create a new country from builder
   createCountry: protectedProcedure
@@ -295,11 +294,8 @@ export const managementCreateProcedures = {
               minimumWage: laborEmployment.minimumWage || 15,
               averageAnnualIncome: laborEmployment.averageAnnualIncome || gdpPerCapita * 0.8,
               taxRevenueGDPPercent:
-                fiscalSystem.taxRevenueGDPPercent ||
-                (taxSystemData as any)?.totalTaxRate ||
-                25,
-              governmentRevenueTotal:
-                fiscalSystem.governmentRevenueTotal || nominalGDP * 0.25,
+                fiscalSystem.taxRevenueGDPPercent || (taxSystemData as any)?.totalTaxRate || 25,
+              governmentRevenueTotal: fiscalSystem.governmentRevenueTotal || nominalGDP * 0.25,
               taxRevenuePerCapita:
                 fiscalSystem.taxRevenuePerCapita || (nominalGDP * 0.25) / population,
               governmentBudgetGDPPercent: fiscalSystem.governmentBudgetGDPPercent || 25,
@@ -333,7 +329,13 @@ export const managementCreateProcedures = {
 
           await syncNationalIdentity(tx, country.id, input.name, nationalIdentity);
           await syncDemographics(tx, country.id, demographics);
-          await syncIncomeAndSpending(tx, country.id, incomeWealth, governmentSpending, fiscalSystem);
+          await syncIncomeAndSpending(
+            tx,
+            country.id,
+            incomeWealth,
+            governmentSpending,
+            fiscalSystem
+          );
           await syncTaxSystem(tx, country.id, taxSystemData);
           await syncGovernmentStructure(tx, country.id, input.name, governmentStructure);
           await syncGovernmentComponents(tx, country.id, governmentComponentsList);
@@ -376,7 +378,8 @@ export const managementCreateProcedures = {
       } catch (error) {
         console.error("[createCountry] Transaction failed:", error);
         throw new Error(
-          `Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
+          `Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`,
+          { cause: error }
         );
       }
     }),

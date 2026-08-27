@@ -18,11 +18,7 @@ export interface WikiPlaceholderMetadata {
 }
 
 export type PlaceholderStatus =
-  | "resolved"
-  | "not-found"
-  | "missing-context"
-  | "unknown-field"
-  | "malformed";
+  "resolved" | "not-found" | "missing-context" | "unknown-field" | "malformed";
 
 export interface CanonicalPlaceholderResult {
   key: string;
@@ -97,10 +93,7 @@ export async function resolveWikiPlaceholderValues(
 
   const hasRankNeed = placeholders.some(
     (p) =>
-      p.includes("gdp") ||
-      p.includes("GDP") ||
-      p.includes("population") ||
-      p.includes("Population")
+      p.includes("gdp") || p.includes("GDP") || p.includes("population") || p.includes("Population")
   );
 
   if (hasRankNeed) {
@@ -126,7 +119,12 @@ export async function resolveWikiPlaceholderValues(
         continue;
       }
       if (!userCountry) {
-        results.push({ key: p, value: "No Country Loaded", rawVal: null, status: "missing-context" });
+        results.push({
+          key: p,
+          value: "No Country Loaded",
+          rawVal: null,
+          status: "missing-context",
+        });
         continue;
       }
       results.push(resolveCountryField(p, userCountry, field));
@@ -153,14 +151,16 @@ export async function resolveWikiPlaceholderValues(
         continue;
       }
 
-      const poi = pois.find((poiItem: any) => poiItem.name.toLowerCase() === companyName.toLowerCase());
+      const poi = pois.find(
+        (poiItem: any) => poiItem.name.toLowerCase() === companyName.toLowerCase()
+      );
       if (!poi) {
         results.push({ key: p, value: "Unknown Company", rawVal: null, status: "not-found" });
         continue;
       }
 
-      const parentCountry =
-        countries.find((c: any) => c.id === poi.countryId) || poi.country || {
+      const parentCountry = countries.find((c: any) => c.id === poi.countryId) ||
+        poi.country || {
           name: "Unknown",
           economicTier: "B",
           lastCalculated: new Date(),
@@ -410,7 +410,10 @@ export async function resolveWikiPlaceholdersInternal(
   }
 
   const results = await resolveWikiPlaceholderValues(placeholders, ctx.db, userCountryId);
-  const out: Record<string, { value: string; rawVal: unknown; metadata?: WikiPlaceholderMetadata }> = {};
+  const out: Record<
+    string,
+    { value: string; rawVal: unknown; metadata?: WikiPlaceholderMetadata }
+  > = {};
   for (const item of results) {
     out[item.key] = {
       value: item.value,

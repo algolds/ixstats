@@ -583,7 +583,15 @@ export function useWorldMapInteractions({
 
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [map, isLoaded, handleMouseMove, handleClick, isPointOnGlobeOrMap, isMeasuring, tooltipPopupRef]);
+  }, [
+    map,
+    isLoaded,
+    handleMouseMove,
+    handleClick,
+    isPointOnGlobeOrMap,
+    isMeasuring,
+    tooltipPopupRef,
+  ]);
 
   // Bind move/zoom end labels distance fade
   useEffect(() => {

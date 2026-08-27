@@ -5,7 +5,12 @@ import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/Glas
 import { Progress } from "~/components/ui/progress";
 import { GlassBarChart, GlassPieChart } from "~/components/ui/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
-import { Reports as PieChart, StatsReport as BarChart3, Shield, Dashboard as Gauge } from "iconoir-react";
+import {
+  Reports as PieChart,
+  StatsReport as BarChart3,
+  Shield,
+  Dashboard as Gauge,
+} from "iconoir-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";

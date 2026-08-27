@@ -3,7 +3,16 @@
 import React, { useState } from "react";
 import { useIxMedia } from "./MediaContext";
 import { FacetModal } from "~/components/ui/facet-container";
-import { Xmark as X, Play, Pause, FastArrowRight as SkipForward, FastArrowLeft as SkipBack, SoundHigh as Volume2, Playlist as ListMusic, Dashboard as Gauge } from "iconoir-react";
+import {
+  Xmark as X,
+  Play,
+  Pause,
+  FastArrowRight as SkipForward,
+  FastArrowLeft as SkipBack,
+  SoundHigh as Volume2,
+  Playlist as ListMusic,
+  Dashboard as Gauge,
+} from "iconoir-react";
 import { WaveformVisualizer } from "./WaveformVisualizer";
 import { QueuePanel } from "./QueuePanel";
 import { ChapterNavigator } from "./ChapterNavigator";

@@ -155,17 +155,17 @@ export function CalculationEditor() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
       {/* Sidebar List */}
-      <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs space-y-3 lg:col-span-1">
+      <div className="border-border/30 bg-card/25 space-y-3 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md lg:col-span-1">
         <div className="relative">
           <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             placeholder="Search formulas..."
             value={sidebarSearch}
             onChange={(e) => setSidebarSearch(e.target.value)}
-            className="h-8 rounded-xl border-border/30 bg-background/50 pl-8 text-xs"
+            className="border-border/30 bg-background/50 h-8 rounded-xl pl-8 text-xs"
           />
         </div>
-        <div className="space-y-1 max-h-[calc(100vh-280px)] overflow-y-auto pr-0.5">
+        <div className="max-h-[calc(100vh-280px)] space-y-1 overflow-y-auto pr-0.5">
           {filteredModules.map((module) => {
             const cat = CALCULATION_CATEGORIES[module.category] || CALCULATION_CATEGORIES.economic;
             const Icon = cat.icon;
@@ -180,8 +180,8 @@ export function CalculationEditor() {
                 }}
                 className={`flex w-full items-start gap-2.5 rounded-xl p-2.5 text-left transition-all active:scale-[0.98] ${
                   isSelected
-                    ? "border-primary/40 bg-primary/10 border text-foreground font-semibold"
-                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground border border-transparent"
+                    ? "border-primary/40 bg-primary/10 text-foreground border font-semibold"
+                    : "text-muted-foreground hover:text-foreground border border-transparent hover:bg-white/5"
                 }`}
               >
                 <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${cat.color}`} />
@@ -201,20 +201,16 @@ export function CalculationEditor() {
       <div className="space-y-6 lg:col-span-3">
         {selectedModule ? (
           <>
-            <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
-              <div className="flex flex-col gap-3 border-b border-border/20 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+              <div className="border-border/20 flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-foreground">
-                      {selectedModule.name}
-                    </h3>
+                    <h3 className="text-foreground text-sm font-bold">{selectedModule.name}</h3>
                     <Badge variant="outline" className="text-[10px] capitalize">
                       {selectedModule.category}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground text-xs mt-1">
-                    {selectedModule.description}
-                  </p>
+                  <p className="text-muted-foreground mt-1 text-xs">{selectedModule.description}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {isEditing ? (
@@ -253,7 +249,7 @@ export function CalculationEditor() {
 
               {/* Code / Formula Display */}
               <div className="space-y-2">
-                <label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">
+                <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                   Mathematical Formula (JavaScript Expression)
                 </label>
                 {isEditing ? (
@@ -265,10 +261,10 @@ export function CalculationEditor() {
                       )
                     }
                     rows={4}
-                    className="font-mono text-xs leading-relaxed rounded-xl border-border/30 bg-background/50"
+                    className="border-border/30 bg-background/50 rounded-xl font-mono text-xs leading-relaxed"
                   />
                 ) : (
-                  <div className="rounded-xl border border-border/20 bg-background/30 p-3.5 font-mono text-xs text-cyan-400">
+                  <div className="border-border/20 bg-background/30 rounded-xl border p-3.5 font-mono text-xs text-cyan-400">
                     <code>{selectedModule.formula}</code>
                   </div>
                 )}
@@ -286,9 +282,11 @@ export function CalculationEditor() {
             />
           </>
         ) : (
-          <div className="rounded-2xl border border-border/30 bg-card/25 p-12 text-center backdrop-blur-md">
-            <Calculator className="text-muted-foreground mx-auto h-8 w-8 mb-2" />
-            <p className="text-muted-foreground text-xs">Select a formula module to inspect and simulate.</p>
+          <div className="border-border/30 bg-card/25 rounded-2xl border p-12 text-center backdrop-blur-md">
+            <Calculator className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+            <p className="text-muted-foreground text-xs">
+              Select a formula module to inspect and simulate.
+            </p>
           </div>
         )}
       </div>

@@ -90,7 +90,11 @@ export function serializeTemplateToWikitext(template: {
 }
 
 export function serializeInlineNodeToWikitext(node: WikiInlineNode): string {
-  if ("text" in node && typeof (node as { text?: unknown }).text === "string" && !("type" in node)) {
+  if (
+    "text" in node &&
+    typeof (node as { text?: unknown }).text === "string" &&
+    !("type" in node)
+  ) {
     const textNode = node as import("./types").WikiTextNode;
     let t = textNode.text;
     if (textNode.bold && textNode.italic) {
@@ -135,9 +139,7 @@ export function serializeInlineNodeToWikitext(node: WikiInlineNode): string {
       const n = typed as import("./types").CoordChipInline;
       if (n.wikitext) return n.wikitext;
       if (n.lat !== undefined && n.lng !== undefined) {
-        return n.label
-          ? `[[Coords:${n.lat},${n.lng}|${n.label}]]`
-          : `[[Coords:${n.lat},${n.lng}]]`;
+        return n.label ? `[[Coords:${n.lat},${n.lng}|${n.label}]]` : `[[Coords:${n.lat},${n.lng}]]`;
       }
       return "";
     }
@@ -151,7 +153,12 @@ export function serializeInlineNodeToWikitext(node: WikiInlineNode): string {
     case "citation-ref": {
       const n = typed as import("./types").CitationInline;
       if (n.rawWikitext) return n.rawWikitext;
-      if (n.name && (!n.children || n.children.length === 0 || !(n.children[0] as { text?: string } | undefined)?.text)) {
+      if (
+        n.name &&
+        (!n.children ||
+          n.children.length === 0 ||
+          !(n.children[0] as { text?: string } | undefined)?.text)
+      ) {
         return `<ref name="${n.name}" />`;
       }
       const refInner = n.children?.map(serializeInlineNodeToWikitext).join("") ?? "";
@@ -213,7 +220,11 @@ export function serializeBlockNodeToWikitext(node: WikiBlockNode): string {
         for (const cell of row.children || []) {
           const prefix = cell.isHeader ? `! ` : `| `;
           const cellText = cell.children
-            .map((c: WikiBlockNode | WikiInlineNode) => ("text" in c ? serializeInlineNodeToWikitext(c as WikiInlineNode) : serializeBlockNodeToWikitext(c as WikiBlockNode)))
+            .map((c: WikiBlockNode | WikiInlineNode) =>
+              "text" in c
+                ? serializeInlineNodeToWikitext(c as WikiInlineNode)
+                : serializeBlockNodeToWikitext(c as WikiBlockNode)
+            )
             .join("");
           out += `${prefix}${cellText}\n`;
         }
@@ -231,7 +242,11 @@ export function serializeBlockNodeToWikitext(node: WikiBlockNode): string {
         lb.children
           ?.map((item: ListBlock["children"][number]) => {
             const text = item.children
-              .map((c: WikiBlockNode | WikiInlineNode) => ("text" in c ? serializeInlineNodeToWikitext(c as WikiInlineNode) : serializeBlockNodeToWikitext(c as WikiBlockNode)))
+              .map((c: WikiBlockNode | WikiInlineNode) =>
+                "text" in c
+                  ? serializeInlineNodeToWikitext(c as WikiInlineNode)
+                  : serializeBlockNodeToWikitext(c as WikiBlockNode)
+              )
               .join("");
             return `${prefix}${text}`;
           })
@@ -242,9 +257,14 @@ export function serializeBlockNodeToWikitext(node: WikiBlockNode): string {
     case "quote":
     case "blockquote": {
       const qb = node as QuoteBlock;
-      const inner = qb.children
-        ?.map((c: WikiBlockNode | WikiInlineNode) => ("text" in c ? serializeInlineNodeToWikitext(c as WikiInlineNode) : serializeBlockNodeToWikitext(c as WikiBlockNode)))
-        .join("\n") ?? "";
+      const inner =
+        qb.children
+          ?.map((c: WikiBlockNode | WikiInlineNode) =>
+            "text" in c
+              ? serializeInlineNodeToWikitext(c as WikiInlineNode)
+              : serializeBlockNodeToWikitext(c as WikiBlockNode)
+          )
+          .join("\n") ?? "";
       if (qb.author) {
         return `{{Quote|${inner}|${qb.author}${qb.source ? `|${qb.source}` : ""}}}`;
       }

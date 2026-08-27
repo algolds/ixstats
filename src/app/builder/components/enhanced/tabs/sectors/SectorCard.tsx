@@ -3,7 +3,18 @@
 import React from "react";
 import { motion } from "motion/react";
 import { Badge } from "~/components/ui/badge";
-import { WarningCircle as AlertCircle, ArrowUpRight, Dollar as DollarSign, Group as Users, StatUp as TrendingUp, Globe, Flash as Zap, Leaf, Archery as TargetIcon, Minus } from "iconoir-react";
+import {
+  WarningCircle as AlertCircle,
+  ArrowUpRight,
+  Dollar as DollarSign,
+  Group as Users,
+  StatUp as TrendingUp,
+  Globe,
+  Flash as Zap,
+  Leaf,
+  Archery as TargetIcon,
+  Minus,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { SectorConfiguration } from "~/types/economy-builder";
 import type { SectorTemplate, SectorConstraint } from "../utils/sectorCalculations";

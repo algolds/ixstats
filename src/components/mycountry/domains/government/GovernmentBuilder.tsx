@@ -9,12 +9,20 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "~/components/ui/button";
-import { City as Building2, Group as Users, Dollar as DollarSign, Page as Receipt } from "iconoir-react";
+import {
+  City as Building2,
+  Group as Users,
+  Dollar as DollarSign,
+  Page as Receipt,
+} from "iconoir-react";
 import {
   ConflictWarningDialog,
   SyncStatusIndicator,
 } from "~/components/mycountry/domains/government/builder/ConflictWarningDialog";
-import { SuggestionsPanel, type SuggestionItem } from "~/components/mycountry/domains/government/builder/SuggestionsPanel";
+import {
+  SuggestionsPanel,
+  type SuggestionItem,
+} from "~/components/mycountry/domains/government/builder/SuggestionsPanel";
 import { computeGovernmentSuggestions } from "~/components/mycountry/domains/government/builder/suggestions/utils";
 import { useIntelligenceWebSocket } from "~/hooks/useIntelligenceWebSocket";
 import { useGovernmentBuilder } from "~/hooks/useGovernmentBuilder";
@@ -153,7 +161,7 @@ export function GovernmentBuilder({
     if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== "true") return;
     // oxlint-disable-next-line
     setSuggestions(computeGovernmentSuggestions(builderState as any));
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [builderState, intel.latestUpdate]);
 
   const handleApplySuggestion = (s: SuggestionItem) => {

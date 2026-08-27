@@ -2,7 +2,11 @@
 
 import React from "react";
 import Link from "next/link";
-import { OpenBook as BookOpen, MediaImage as ImageIcon, OpenNewWindow as ExternalLink } from "iconoir-react";
+import {
+  OpenBook as BookOpen,
+  MediaImage as ImageIcon,
+  OpenNewWindow as ExternalLink,
+} from "iconoir-react";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";

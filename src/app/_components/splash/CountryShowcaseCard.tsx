@@ -2,7 +2,14 @@
 
 import React from "react";
 import Link from "next/link";
-import { StatUp as TrendingUp, Group as Users, StatsReport as BarChart3, Crown, Activity, Sparks as Sparkles } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  Group as Users,
+  StatsReport as BarChart3,
+  Crown,
+  Activity,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { OpenNewWindow as ExternalLink } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";

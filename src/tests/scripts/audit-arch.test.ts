@@ -72,11 +72,7 @@ describe("Plan 154: Architecture Size Ratchet & Active-Source Discovery", () => 
         "src/app/c.tsx": 900,
       };
       const sorted = sortBaseline(input);
-      expect(Object.keys(sorted)).toEqual([
-        "src/app/c.tsx",
-        "src/app/a.tsx",
-        "src/app/b.tsx",
-      ]);
+      expect(Object.keys(sorted)).toEqual(["src/app/c.tsx", "src/app/a.tsx", "src/app/b.tsx"]);
     });
   });
 
@@ -125,9 +121,7 @@ describe("Plan 154: Architecture Size Ratchet & Active-Source Discovery", () => 
       const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
       updateBaseline(tempDir, baselinePath);
 
-      const updated = JSON.parse(
-        fs.readFileSync(path.join(tempDir, baselinePath), "utf8")
-      );
+      const updated = JSON.parse(fs.readFileSync(path.join(tempDir, baselinePath), "utf8"));
       expect(updated["src/server/api/routers/fileA.ts"]).toBe(740);
       expect(updated["src/server/api/routers/fileB.ts"]).toBeUndefined();
       logSpy.mockRestore();
@@ -146,9 +140,7 @@ describe("Plan 154: Architecture Size Ratchet & Active-Source Discovery", () => 
       const baselinePath = "baseline.json";
       bootstrapBaseline(tempDir, baselinePath);
 
-      const bootstrapped = JSON.parse(
-        fs.readFileSync(path.join(tempDir, baselinePath), "utf8")
-      );
+      const bootstrapped = JSON.parse(fs.readFileSync(path.join(tempDir, baselinePath), "utf8"));
       expect(bootstrapped["src/app/AppMonolith.tsx"]).toBe(750);
       expect(bootstrapped["src/hooks/useGodHook.ts"]).toBe(550);
       logSpy.mockRestore();

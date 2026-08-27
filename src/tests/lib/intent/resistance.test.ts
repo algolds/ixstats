@@ -14,12 +14,16 @@ import {
 import { NationalIssuesEngine, nationalIssuesConfig } from "~/lib/national-issues";
 
 let mockSpawnMode = "deterministic";
-const forceGenerateMock = jest.spyOn(NationalIssuesEngine, "forceGenerate").mockResolvedValue("issue-1" as any);
-const configMock = jest.spyOn(nationalIssuesConfig, "getNationalIssuesConfig").mockImplementation(() => ({
-  maxIssuesPerSession: 3,
-  maxIssuesPerWeek: 5,
-  spawnMode: mockSpawnMode as any,
-}));
+const forceGenerateMock = jest
+  .spyOn(NationalIssuesEngine, "forceGenerate")
+  .mockResolvedValue("issue-1" as any);
+const configMock = jest
+  .spyOn(nationalIssuesConfig, "getNationalIssuesConfig")
+  .mockImplementation(() => ({
+    maxIssuesPerSession: 3,
+    maxIssuesPerWeek: 5,
+    spawnMode: mockSpawnMode as any,
+  }));
 
 function makeTemplate(overrides: Record<string, unknown> = {}) {
   return {

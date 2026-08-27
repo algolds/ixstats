@@ -31,10 +31,7 @@ describe("Atomic Component Selectors (Characterization & Integration - Plan 166)
     test("renders tax selector with title and search bar", () => {
       const onComponentChange = jest.fn();
       render(
-        <AtomicTaxComponentSelector
-          selectedComponents={[]}
-          onComponentChange={onComponentChange}
-        />
+        <AtomicTaxComponentSelector selectedComponents={[]} onComponentChange={onComponentChange} />
       );
 
       expect(screen.getByText("Atomic Tax Components")).toBeDefined();

@@ -159,7 +159,7 @@ export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwi
           )}
         </div>
         {leadImage && (
-          <div className="relative h-14 w-18 shrink-0 overflow-hidden rounded-lg border border-border/40 bg-black/5 dark:border-white/10">
+          <div className="border-border/40 relative h-14 w-18 shrink-0 overflow-hidden rounded-lg border bg-black/5 dark:border-white/10">
             <img src={leadImage} alt={title} className="h-full w-full object-cover" />
           </div>
         )}
@@ -307,15 +307,12 @@ export function TrendingSectionWidget() {
           <span>Trending Topics</span>
         </div>
         <CutoutCorner className="text-card absolute -bottom-px left-0" size={20} />
-        <CutoutCorner
-          className="text-card absolute right-0 -bottom-px -scale-x-100"
-          size={20}
-        />
+        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={20} />
       </div>
 
       <CutoutCardContent className="space-y-3 px-4 pt-0 pb-4">
         {/* Category Segment Control Bar */}
-        <div className="grid grid-cols-3 gap-1 rounded-xl border border-border/40 bg-accent/10 p-1 backdrop-blur-md">
+        <div className="border-border/40 bg-accent/10 grid grid-cols-3 gap-1 rounded-xl border p-1 backdrop-blur-md">
           {(["all", "forum", "wiki"] as const).map((tab) => (
             <button
               key={tab}
@@ -323,8 +320,8 @@ export function TrendingSectionWidget() {
               className={cn(
                 "cursor-pointer rounded-lg py-1 text-center text-[10px] font-medium capitalize transition-all duration-150 active:scale-[0.97]",
                 activeFilter === tab
-                  ? "border border-border/60 bg-card font-semibold text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground font-medium hover:bg-accent/15"
+                  ? "border-border/60 bg-card text-foreground border font-semibold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/15 font-medium"
               )}
             >
               {tab}
@@ -335,9 +332,9 @@ export function TrendingSectionWidget() {
         <div className="space-y-2 pt-1">
           {isLoading && (
             <div className="space-y-2 py-4">
-              <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
-              <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
-              <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
+              <div className="bg-muted/40 h-10 animate-pulse rounded-xl" />
+              <div className="bg-muted/40 h-10 animate-pulse rounded-xl" />
+              <div className="bg-muted/40 h-10 animate-pulse rounded-xl" />
             </div>
           )}
 
@@ -349,8 +346,7 @@ export function TrendingSectionWidget() {
 
           {!isLoading &&
             trendingItems.map((item: any) => {
-              const src =
-                (item.source && TRENDING_SOURCE[item.source as string]) ?? DEFAULT_SOURCE;
+              const src = (item.source && TRENDING_SOURCE[item.source as string]) ?? DEFAULT_SOURCE;
               const SrcIcon = src.icon;
               const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
               const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
@@ -397,7 +393,7 @@ export function TrendingSectionWidget() {
                 <W
                   key={item.id}
                   {...(linkProps as any)}
-                  className="group/item flex cursor-pointer items-start gap-2.5 rounded-xl border border-border/40 bg-card/40 p-2.5 shadow-2xs transition-all duration-200 hover:border-amber-500/40 hover:bg-card/80 active:scale-[0.98]"
+                  className="group/item border-border/40 bg-card/40 hover:bg-card/80 flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 shadow-2xs transition-all duration-200 hover:border-amber-500/40 active:scale-[0.98]"
                 >
                   <div
                     className={cn(

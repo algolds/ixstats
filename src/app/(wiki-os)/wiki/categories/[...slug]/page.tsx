@@ -71,7 +71,8 @@ const DOMAIN_MAP: Record<string, { color: string; metric: string; description: s
   Miscellaneous: {
     color: "#64748b",
     metric: "articles",
-    description: "General topics, uncategorized articles, cross-disciplinary subjects, and reference indexes",
+    description:
+      "General topics, uncategorized articles, cross-disciplinary subjects, and reference indexes",
   },
 };
 
@@ -81,7 +82,7 @@ export default function CategoryPage({
   params?: Promise<{ slug?: string[] }> | { slug?: string[] };
 }) {
   const routerParams = useParams<{ slug?: string[] }>();
-  
+
   // Resolve slug from page props or useParams
   const resolvedSlug = useMemo(() => {
     if (routerParams?.slug) {
@@ -95,7 +96,9 @@ export default function CategoryPage({
   }, [routerParams, pageParams]);
 
   const category = useMemo(() => {
-    return decodeURIComponent(resolvedSlug || "").replace(/_/g, " ").trim();
+    return decodeURIComponent(resolvedSlug || "")
+      .replace(/_/g, " ")
+      .trim();
   }, [resolvedSlug]);
 
   // Fetch subcategories
@@ -138,30 +141,28 @@ export default function CategoryPage({
     }));
   }, [pageData]);
 
-  const domainKey = Object.keys(DOMAIN_MAP).find(
-    (k) => k.toLowerCase() === category.toLowerCase()
-  );
+  const domainKey = Object.keys(DOMAIN_MAP).find((k) => k.toLowerCase() === category.toLowerCase());
   const domainMeta = domainKey ? DOMAIN_MAP[domainKey] : null;
   const canonicalDomainName = domainKey ?? category;
 
   return (
     <WikiOSLayout hideTitleHeading>
       {isLoading ? (
-        <div className="w-full space-y-6 max-w-6xl mx-auto animate-pulse select-none">
-          <div className="h-40 rounded-3xl bg-muted/40 border border-border/40" />
+        <div className="mx-auto w-full max-w-6xl animate-pulse space-y-6 select-none">
+          <div className="bg-muted/40 border-border/40 h-40 rounded-3xl border" />
           <div className="space-y-3">
-            <div className="h-5 w-32 bg-muted/50 rounded-lg" />
+            <div className="bg-muted/50 h-5 w-32 rounded-lg" />
             <div className="flex flex-wrap gap-2">
               {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="h-8 w-28 bg-muted/40 rounded-xl" />
+                <div key={i} className="bg-muted/40 h-8 w-28 rounded-xl" />
               ))}
             </div>
           </div>
           <div className="space-y-3 pt-4">
-            <div className="h-5 w-40 bg-muted/50 rounded-lg" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="bg-muted/50 h-5 w-40 rounded-lg" />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-16 bg-muted/40 rounded-2xl" />
+                <div key={i} className="bg-muted/40 h-16 rounded-2xl" />
               ))}
             </div>
           </div>

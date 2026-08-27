@@ -15,7 +15,23 @@
  */
 
 import { lazy } from "react";
-import { City as Building2, MapPin, Map as LandPlot, OpenBook as BookOpen, Label as Tag, StatUp as TrendingUp, Group as Users, Network, WarningTriangle as AlertTriangle, DeliveryTruck as Truck, Activity, Dashboard as Gauge, Heart, ScaleFrameEnlarge as Scale, FireFlame as Flame } from "iconoir-react";
+import {
+  City as Building2,
+  MapPin,
+  Map as LandPlot,
+  OpenBook as BookOpen,
+  Label as Tag,
+  StatUp as TrendingUp,
+  Group as Users,
+  Network,
+  WarningTriangle as AlertTriangle,
+  DeliveryTruck as Truck,
+  Activity,
+  Dashboard as Gauge,
+  Heart,
+  ScaleFrameEnlarge as Scale,
+  FireFlame as Flame,
+} from "iconoir-react";
 import type { FeatureCollection } from "geojson";
 import type {
   OverlayLegend,

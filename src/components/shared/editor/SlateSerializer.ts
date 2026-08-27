@@ -89,7 +89,10 @@ export function serializeNodeToBbcode(node: any): string {
 }
 
 export function slateNodesToBbcode(nodes: any[]): string {
-  return nodes.map((n: any) => serializeNodeToBbcode(n)).join("").trim();
+  return nodes
+    .map((n: any) => serializeNodeToBbcode(n))
+    .join("")
+    .trim();
 }
 
 export function parsoidHtmlToSlate(htmlContent: string): any[] {

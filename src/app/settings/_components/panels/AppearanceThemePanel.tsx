@@ -11,11 +11,7 @@ import {
   Compress as Minimize2,
 } from "iconoir-react";
 import { SettingsHeader } from "../SettingsHeader";
-import {
-  SettingsGroup,
-  SettingsRow,
-  SettingsSwitchRow,
-} from "../primitives";
+import { SettingsGroup, SettingsRow, SettingsSwitchRow } from "../primitives";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 
@@ -56,7 +52,7 @@ export function AppearanceThemePanel() {
           icon={Palette}
           glyphClass="bg-indigo-500/15 text-indigo-500"
         >
-          <div className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/40 p-1">
+          <div className="border-border/60 bg-muted/40 flex items-center gap-1.5 rounded-xl border p-1">
             <button
               type="button"
               onClick={() => {

@@ -12,8 +12,27 @@
  * - Template presets for common economic configurations
  */
 
-import { City as Building2, Industry as Factory, Group as Users, Archery as Target, Dollar as DollarSign, Globe, Flash as Zap, Leaf, Brain, Wrench, Suitcase as Briefcase, GraduationCap, Heart, LightBulb as Lightbulb, Lock, LockSlash as Unlock, ArrowSeparateVertical as ArrowUpDown, StatsReport as BarChart3, Shield } from "iconoir-react";
-
+import {
+  City as Building2,
+  Industry as Factory,
+  Group as Users,
+  Archery as Target,
+  Dollar as DollarSign,
+  Globe,
+  Flash as Zap,
+  Leaf,
+  Brain,
+  Wrench,
+  Suitcase as Briefcase,
+  GraduationCap,
+  Heart,
+  LightBulb as Lightbulb,
+  Lock,
+  LockSlash as Unlock,
+  ArrowSeparateVertical as ArrowUpDown,
+  StatsReport as BarChart3,
+  Shield,
+} from "iconoir-react";
 
 /**
  * Format component type to display name

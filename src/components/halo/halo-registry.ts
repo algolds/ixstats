@@ -47,14 +47,7 @@ import {
 } from "react-icons/gi";
 
 export type CommandCategory =
-  | "Statecraft"
-  | "Vault"
-  | "Geography"
-  | "Knowledge"
-  | "Community"
-  | "Sports"
-  | "Labs"
-  | "System";
+  "Statecraft" | "Vault" | "Geography" | "Knowledge" | "Community" | "Sports" | "Labs" | "System";
 
 export type SystemActionId =
   | "toggle-theme"

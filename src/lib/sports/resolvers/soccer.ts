@@ -1,10 +1,6 @@
 import type { EventTraceStep } from "../types";
 import type { SportResolverContext, SportMatchOutcome, RosterPlayer } from "./types";
-import {
-  getPlayerOverall,
-  getRosterPlayerByRoleWeight,
-  getCardPlayerWeight,
-} from "./helpers";
+import { getPlayerOverall, getRosterPlayerByRoleWeight, getCardPlayerWeight } from "./helpers";
 import { clamp } from "~/lib/utils";
 
 export function runSoccerMatch(ctx: SportResolverContext): SportMatchOutcome {

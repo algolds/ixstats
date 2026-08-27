@@ -21,7 +21,10 @@ function insertNode(node: Record<string, unknown>) {
   return (editor: BaseEditor & Record<string, any>) => {
     Transforms.insertNodes(editor, node as unknown as Descendant);
     // ensure a trailing paragraph so typing continues normally
-    Transforms.insertNodes(editor, { type: "p", children: [{ text: "" }] } as unknown as Descendant);
+    Transforms.insertNodes(editor, {
+      type: "p",
+      children: [{ text: "" }],
+    } as unknown as Descendant);
   };
 }
 
@@ -89,8 +92,20 @@ export const SLASH_ITEMS: SlashItem[] = [
     execute: insertNode({
       type: "table",
       children: [
-        { type: "tr", children: [{ type: "th", children: [{ text: "Header 1" }] }, { type: "th", children: [{ text: "Header 2" }] }] },
-        { type: "tr", children: [{ type: "td", children: [{ text: "Cell 1" }] }, { type: "td", children: [{ text: "Cell 2" }] }] },
+        {
+          type: "tr",
+          children: [
+            { type: "th", children: [{ text: "Header 1" }] },
+            { type: "th", children: [{ text: "Header 2" }] },
+          ],
+        },
+        {
+          type: "tr",
+          children: [
+            { type: "td", children: [{ text: "Cell 1" }] },
+            { type: "td", children: [{ text: "Cell 2" }] },
+          ],
+        },
       ],
     }),
   },
@@ -120,7 +135,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     category:
       preset.category === "engine"
         ? "Live Simulation Connectors"
-        : CATEGORY_OF_NAME[preset.name] ?? "Factbooks & Infoboxes",
+        : (CATEGORY_OF_NAME[preset.name] ?? "Factbooks & Infoboxes"),
     execute: insertNode(templatePresetToNode(preset)),
   })),
 
@@ -144,8 +159,6 @@ export function filterSlashItems(items: SlashItem[], query: string): SlashItem[]
   if (!query) return items;
   const q = query.toLowerCase();
   return items.filter(
-    (item) =>
-      item.label.toLowerCase().includes(q) ||
-      item.keywords.some((k) => k.includes(q))
+    (item) => item.label.toLowerCase().includes(q) || item.keywords.some((k) => k.includes(q))
   );
 }

@@ -4,7 +4,19 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
-import { Plus, EditPencil as Edit, Trash as Trash2, Airplane as Plane, DeliveryTruck as Ship, DeliveryTruck as Truck, AntennaSignal as Radio, Archery as Target, CheckCircle as CheckCircle2, Search, MediaImage as Image } from "iconoir-react";
+import {
+  Plus,
+  EditPencil as Edit,
+  Trash as Trash2,
+  Airplane as Plane,
+  DeliveryTruck as Ship,
+  DeliveryTruck as Truck,
+  AntennaSignal as Radio,
+  Archery as Target,
+  CheckCircle as CheckCircle2,
+  Search,
+  MediaImage as Image,
+} from "iconoir-react";
 import {
   Dialog,
   DialogContent,
@@ -441,7 +453,7 @@ function AssetDialog({
         imageUrl: asset.imageUrl || "",
       });
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [asset, open]);
 
   const handleSubmit = () => {

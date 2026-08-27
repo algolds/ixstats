@@ -78,7 +78,7 @@ export function useAdminHandlers(params: UseAdminHandlersParams = {}) {
     } finally {
       setActionState((prev) => ({ ...prev, savePending: false }));
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [config, saveConfigMutation, refetchConfig, setActionState]);
 
   const handleForceCalculation = useCallback(async () => {
@@ -91,7 +91,7 @@ export function useAdminHandlers(params: UseAdminHandlersParams = {}) {
     } finally {
       setActionState((prev) => ({ ...prev, calculationPending: false }));
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [forceCalculationMutation, refetchStatus, setActionState]);
 
   const handleSetCustomTime = useCallback(async () => {
@@ -145,8 +145,15 @@ export function useAdminHandlers(params: UseAdminHandlersParams = {}) {
     } finally {
       setActionState((prev) => ({ ...prev, resetPending: false }));
     }
-  // oxlint-disable-next-line
-  }, [setCustomTimeMutation, syncBotMutation, refetchStatus, refetchBotStatus, setConfig, setActionState]);
+    // oxlint-disable-next-line
+  }, [
+    setCustomTimeMutation,
+    syncBotMutation,
+    refetchStatus,
+    refetchBotStatus,
+    setConfig,
+    setActionState,
+  ]);
 
   const handleTimeMultiplierChange = useCallback(
     async (value: number) => {
@@ -174,7 +181,14 @@ export function useAdminHandlers(params: UseAdminHandlersParams = {}) {
       }
     },
     // oxlint-disable-next-line
-    [setCustomTimeMutation, syncBotMutation, refetchStatus, refetchBotStatus, setConfig, setActionState]
+    [
+      setCustomTimeMutation,
+      syncBotMutation,
+      refetchStatus,
+      refetchBotStatus,
+      setConfig,
+      setActionState,
+    ]
   );
 
   const handleSyncEpoch = useCallback(
@@ -208,7 +222,7 @@ export function useAdminHandlers(params: UseAdminHandlersParams = {}) {
     } finally {
       setActionState((prev) => ({ ...prev, syncPending: false }));
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [syncBotMutation, refetchBotStatus, refetchStatus, setActionState]);
 
   const handleSyncFromBot = useCallback(async () => {
@@ -223,7 +237,7 @@ export function useAdminHandlers(params: UseAdminHandlersParams = {}) {
     } finally {
       setActionState((prev) => ({ ...prev, autoSyncPending: false }));
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [syncBotMutation, refetchStatus, refetchBotStatus, setActionState]);
 
   const handlePauseBot = useCallback(async () => {
@@ -236,7 +250,7 @@ export function useAdminHandlers(params: UseAdminHandlersParams = {}) {
     } finally {
       setActionState((prev) => ({ ...prev, pausePending: false }));
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [pauseBotMutation, refetchBotStatus, setActionState]);
 
   const handleResumeBot = useCallback(async () => {
@@ -249,7 +263,7 @@ export function useAdminHandlers(params: UseAdminHandlersParams = {}) {
     } finally {
       setActionState((prev) => ({ ...prev, resumePending: false }));
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [resumeBotMutation, refetchBotStatus, setActionState]);
 
   const handleClearOverrides = useCallback(async () => {
@@ -262,7 +276,7 @@ export function useAdminHandlers(params: UseAdminHandlersParams = {}) {
     } finally {
       setActionState((prev) => ({ ...prev, clearPending: false }));
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [clearBotOverridesMutation, refetchBotStatus, setActionState]);
 
   const handleFileSelect = useCallback(
@@ -367,7 +381,7 @@ export function useAdminHandlers(params: UseAdminHandlersParams = {}) {
 
   const handleRefreshStatus = useCallback(async () => {
     await Promise.all([refetchStatus(), refetchBotStatus(), refetchConfig()]);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [refetchStatus, refetchBotStatus, refetchConfig]);
 
   return {

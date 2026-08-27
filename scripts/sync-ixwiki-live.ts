@@ -11,7 +11,10 @@
 
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
-import { cleanExcerpt, extractLeadImageFromWikitext } from "../src/lib/wiki-os/transformers/excerpt";
+import {
+  cleanExcerpt,
+  extractLeadImageFromWikitext,
+} from "../src/lib/wiki-os/transformers/excerpt";
 
 dotenv.config({ path: ".env.local.dev" });
 dotenv.config({ path: ".env.local" });
@@ -35,11 +38,9 @@ function sanitize(str: string | null | undefined): string {
 }
 
 function toSlug(title: string): string {
-  return sanitize(title)
-    .trim()
-    .toLowerCase()
-    .replace(/ /g, "_")
-    .replace(/_{2,}/g, "_") || "article";
+  return (
+    sanitize(title).trim().toLowerCase().replace(/ /g, "_").replace(/_{2,}/g, "_") || "article"
+  );
 }
 
 const NAMESPACES_TO_SYNC = [
@@ -56,15 +57,19 @@ async function fetchWithRetry(url: string, retries = 6, baseDelay = 1500): Promi
       const res = await fetch(url, {
         headers: {
           "User-Agent": DEFAULT_USER_AGENT,
-          "Accept": "application/json",
+          Accept: "application/json",
         },
         signal: AbortSignal.timeout(25000),
       });
 
       if (res.status === 429 || (res.status >= 500 && res.status <= 599)) {
         const retryAfter = res.headers.get("retry-after");
-        const waitTime = retryAfter ? parseInt(retryAfter, 10) * 1000 : baseDelay * Math.pow(1.6, attempt);
-        console.warn(`   ⏳ Rate limited (${res.status}). Waiting ${(waitTime / 1000).toFixed(1)}s (Attempt ${attempt}/${retries})...`);
+        const waitTime = retryAfter
+          ? parseInt(retryAfter, 10) * 1000
+          : baseDelay * Math.pow(1.6, attempt);
+        console.warn(
+          `   ⏳ Rate limited (${res.status}). Waiting ${(waitTime / 1000).toFixed(1)}s (Attempt ${attempt}/${retries})...`
+        );
         await new Promise((resolve) => setTimeout(resolve, waitTime));
         continue;
       }
@@ -77,7 +82,9 @@ async function fetchWithRetry(url: string, retries = 6, baseDelay = 1500): Promi
     } catch (err: any) {
       if (attempt === retries) throw err;
       const wait = baseDelay * attempt;
-      console.warn(`   ⚠️ Fetch attempt ${attempt} failed: ${err.message}. Retrying in ${(wait / 1000).toFixed(1)}s...`);
+      console.warn(
+        `   ⚠️ Fetch attempt ${attempt} failed: ${err.message}. Retrying in ${(wait / 1000).toFixed(1)}s...`
+      );
       await new Promise((resolve) => setTimeout(resolve, wait));
     }
   }
@@ -209,7 +216,9 @@ async function syncNamespace(ns: number, prefix: string, name: string, maxPerNs 
       }
 
       const dur = ((Date.now() - startTime) / 1000).toFixed(1);
-      console.log(`   [Batch ${batchIndex}] Synced ${batchPages.length} pages (Total: ${processed} in ${dur}s)`);
+      console.log(
+        `   [Batch ${batchIndex}] Synced ${batchPages.length} pages (Total: ${processed} in ${dur}s)`
+      );
       batchIndex++;
 
       // Polite delay between batches
@@ -259,7 +268,11 @@ async function syncRecentChangesAndUserContributions() {
         });
 
         if (!existing) {
-          const rawTitle = sanitize(String(rc.title || "").replace(/_/g, " ").trim());
+          const rawTitle = sanitize(
+            String(rc.title || "")
+              .replace(/_/g, " ")
+              .trim()
+          );
           const article = await prisma.wikiArticle.findFirst({
             where: { source: "ixwiki", title: rawTitle },
             select: { id: true },
@@ -320,7 +333,11 @@ async function syncRecentChangesAndUserContributions() {
           });
 
           if (!existing) {
-            const rawTitle = sanitize(String(c.title || "").replace(/_/g, " ").trim());
+            const rawTitle = sanitize(
+              String(c.title || "")
+                .replace(/_/g, " ")
+                .trim()
+            );
             const article = await prisma.wikiArticle.findFirst({
               where: { source: "ixwiki", title: rawTitle },
               select: { id: true },
@@ -395,7 +412,9 @@ async function main() {
   console.log(`🚀 WikiOS Live Action API Ingestion Engine (Resilient Streaming)`);
   console.log(`   Source: ${API_URL}`);
   console.log(`   Target: PostgreSQL (${process.env.DATABASE_URL?.split("@")[1] || "Local"})`);
-  console.log(`   Scope: ${limit === Infinity ? "FULL SYNC (All Namespaces & Articles)" : `Limit: ${limit} per namespace`}`);
+  console.log(
+    `   Scope: ${limit === Infinity ? "FULL SYNC (All Namespaces & Articles)" : `Limit: ${limit} per namespace`}`
+  );
   console.log("==================================================================");
 
   const startTotal = Date.now();

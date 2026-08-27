@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { User, Crown, HomeSimple as Home, NavArrowDown as ChevronDown, LogOut, WarningCircle as AlertCircle, Settings, Link as Link2 } from "iconoir-react";
+import {
+  User,
+  Crown,
+  HomeSimple as Home,
+  NavArrowDown as ChevronDown,
+  LogOut,
+  WarningCircle as AlertCircle,
+  Settings,
+  Link as Link2,
+} from "iconoir-react";
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createAbsoluteUrl } from "~/lib/utils";

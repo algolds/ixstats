@@ -195,7 +195,7 @@ function MessagesRouterInner() {
     () =>
       isCustomSpecialId
         ? null
-        : activeFolderConversations.find((c: any) => c.id === selectedConversationId) ?? null,
+        : (activeFolderConversations.find((c: any) => c.id === selectedConversationId) ?? null),
     [activeFolderConversations, selectedConversationId, isCustomSpecialId]
   );
 
@@ -622,10 +622,10 @@ function MessagesRouterInner() {
         chatPanel={
           isLoadingSingleConversation && selectedConversationId ? (
             <div className="flex h-full flex-col items-center justify-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-sm animate-pulse">
-                <span className="h-4 w-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+              <div className="flex h-10 w-10 animate-pulse items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-sm">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
               </div>
-              <p className="text-xs font-semibold text-muted-foreground">Connecting to thread...</p>
+              <p className="text-muted-foreground text-xs font-semibold">Connecting to thread...</p>
             </div>
           ) : selectedConversation ? (
             <MessagesChatPanel

@@ -2,7 +2,15 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { CheckCircle, InfoCircle as Info, ArrowLeft, Download, Package, Coins, ArrowRight } from "iconoir-react";
+import {
+  CheckCircle,
+  InfoCircle as Info,
+  ArrowLeft,
+  Download,
+  Package,
+  Coins,
+  ArrowRight,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";

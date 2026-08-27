@@ -128,9 +128,7 @@ export interface MediaWikiPageItem {
   links?: Array<{ ns?: number; title: string }>;
 }
 
-export interface MediaWikiQueryResponse<
-  TPages = Record<string, MediaWikiPageItem>,
-> {
+export interface MediaWikiQueryResponse<TPages = Record<string, MediaWikiPageItem>> {
   batchcomplete?: boolean | string;
   continue?: Record<string, string>;
   error?: {

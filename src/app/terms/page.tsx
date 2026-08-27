@@ -154,11 +154,11 @@ export default function TermsOfServicePage() {
                   &ldquo;Ixnay&rdquo; refers to the broader collaborative digital worldbuilding
                   community and creative project administered by Alpaia Holdings. The Services
                   encompass the entire ecosystem, including <strong>IxStates</strong>,{" "}
-                  <strong>Realms</strong>, <strong>MyCountry</strong>, <strong>IxWiki / WikiOS</strong>
-                  , <strong>ThinkPages</strong>, <strong>ThinkShare</strong>, <strong>IxVault</strong>
-                  , <strong>IxWorld</strong> and related GIS mapping systems, <strong>Onoma</strong>,{" "}
-                  <strong>Vexel</strong>, <strong>Statecraft</strong>, <strong>UPG</strong>, and
-                  affiliated creative tools.
+                  <strong>Realms</strong>, <strong>MyCountry</strong>,{" "}
+                  <strong>IxWiki / WikiOS</strong>, <strong>ThinkPages</strong>,{" "}
+                  <strong>ThinkShare</strong>, <strong>IxVault</strong>, <strong>IxWorld</strong>{" "}
+                  and related GIS mapping systems, <strong>Onoma</strong>, <strong>Vexel</strong>,{" "}
+                  <strong>Statecraft</strong>, <strong>UPG</strong>, and affiliated creative tools.
                 </p>
               </div>
 
@@ -169,10 +169,10 @@ export default function TermsOfServicePage() {
                 <p>
                   The Services are intended strictly for individuals{" "}
                   <strong>sixteen (16) years of age or older</strong>. By accessing or using the
-                  Services, you represent and warrant that: (a) you are at least 16 years of age; and
-                  (b) you possess the legal capacity to enter into these Terms under applicable law.
-                  We reserve the right to immediately restrict or terminate accounts operated by
-                  individuals who do not satisfy this requirement.
+                  Services, you represent and warrant that: (a) you are at least 16 years of age;
+                  and (b) you possess the legal capacity to enter into these Terms under applicable
+                  law. We reserve the right to immediately restrict or terminate accounts operated
+                  by individuals who do not satisfy this requirement.
                 </p>
                 <p className="mt-2">
                   The Services are not directed to children under 13. We do not knowingly collect
@@ -207,11 +207,11 @@ export default function TermsOfServicePage() {
                 </h3>
                 <p>
                   IxStates permits a user to operate multiple in-game fictional personas, cabinet
-                  members, and diplomatic identities within established storytelling features.
-                  These fictional identities do not constitute separate legal persons or distinct
-                  user accounts. You may not operate multiple accounts to evade moderation
-                  sanctions, artificially manipulate card markets, falsify election engines, exploit
-                  economic calculation bugs, or gain unfair technical advantages.
+                  members, and diplomatic identities within established storytelling features. These
+                  fictional identities do not constitute separate legal persons or distinct user
+                  accounts. You may not operate multiple accounts to evade moderation sanctions,
+                  artificially manipulate card markets, falsify election engines, exploit economic
+                  calculation bugs, or gain unfair technical advantages.
                 </p>
               </div>
             </div>
@@ -256,7 +256,8 @@ export default function TermsOfServicePage() {
                 </h3>
                 <p>
                   You retain all copyright and intellectual property rights that you independently
-                  own in original content you submit to the Services (&ldquo;<strong>User Content</strong>
+                  own in original content you submit to the Services (&ldquo;
+                  <strong>User Content</strong>
                   &rdquo;), including custom prose, fictional histories, character narratives,
                   original illustrations, custom vector flags, anthems, and independent
                   worldbuilding documents. Nothing in these Terms transfers ownership of your
@@ -269,14 +270,15 @@ export default function TermsOfServicePage() {
                   2.2 Platform Operational License
                 </h3>
                 <p>
-                  When you submit User Content, you grant Alpaia Holdings a non-exclusive, worldwide,
-                  royalty-free license to host, store, reproduce, process, transmit, format, adapt,
-                  and display that content strictly to the extent reasonably necessary to: (a) operate
-                  and deliver the Services; (b) display your content to other users according to your
-                  visibility settings; (c) perform backups, moderation, and database migrations; and
-                  (d) preserve the functionality and continuity of collaborative projects. This
-                  license endures as long as reasonably required for these purposes and subsequent
-                  legitimate archival, security, or legal compliance needs.
+                  When you submit User Content, you grant Alpaia Holdings a non-exclusive,
+                  worldwide, royalty-free license to host, store, reproduce, process, transmit,
+                  format, adapt, and display that content strictly to the extent reasonably
+                  necessary to: (a) operate and deliver the Services; (b) display your content to
+                  other users according to your visibility settings; (c) perform backups,
+                  moderation, and database migrations; and (d) preserve the functionality and
+                  continuity of collaborative projects. This license endures as long as reasonably
+                  required for these purposes and subsequent legitimate archival, security, or legal
+                  compliance needs.
                 </p>
               </div>
 
@@ -318,8 +320,8 @@ export default function TermsOfServicePage() {
                 <p>
                   Content within IxWiki, WikiOS, or community knowledge repositories that is{" "}
                   <strong>expressly designated</strong> under Creative Commons
-                  Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) is governed by the terms of
-                  that license. The mere existence of a public page does not automatically place
+                  Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) is governed by the terms
+                  of that license. The mere existence of a public page does not automatically place
                   every element under CC BY-SA 4.0 unless expressly designated.
                 </p>
               </div>
@@ -380,7 +382,9 @@ export default function TermsOfServicePage() {
                   <em>NationStates API Terms of Use</em>, including:
                 </p>
                 <ul className="text-muted-foreground mt-2 list-disc space-y-1.5 pl-5">
-                  <li>Enforcing mandatory client rate-limiting (minimum 800ms between requests);</li>
+                  <li>
+                    Enforcing mandatory client rate-limiting (minimum 800ms between requests);
+                  </li>
                   <li>
                     Transmitting standardized descriptive User-Agent headers (
                     <code>IxStats-Builder</code>);
@@ -398,10 +402,10 @@ export default function TermsOfServicePage() {
                   3.3 External Accounts &amp; Services
                 </h3>
                 <p>
-                  Connecting third-party accounts (such as Discord OAuth or XenForo forum credentials)
-                  is subject to those third parties&rsquo; independent terms and privacy policies.
-                  Alpaia Holdings does not control and assumes no liability for the availability,
-                  uptime, or data handling practices of third-party platforms.
+                  Connecting third-party accounts (such as Discord OAuth or XenForo forum
+                  credentials) is subject to those third parties&rsquo; independent terms and
+                  privacy policies. Alpaia Holdings does not control and assumes no liability for
+                  the availability, uptime, or data handling practices of third-party platforms.
                 </p>
               </div>
             </div>
@@ -433,7 +437,8 @@ export default function TermsOfServicePage() {
                 <strong className="text-foreground font-semibold">Plain English Summary:</strong>{" "}
                 You are encouraged to roleplay fictional geopolitics, adversarial alliances, and
                 dystopian stories in character. You may NEVER engage in real-world hate speech,
-                harassment, doxxing, automated attacks, or AI training data scraping out of character.
+                harassment, doxxing, automated attacks, or AI training data scraping out of
+                character.
               </div>
             </div>
 
@@ -471,9 +476,9 @@ export default function TermsOfServicePage() {
                     real-world identifying information without express consent.
                   </li>
                   <li>
-                    <strong>Unlawful &amp; Exploitative Material:</strong> Child sexual abuse material
-                    (CSAM), non-consensual sexual imagery, self-harm encouragement, or terrorism
-                    facilitation.
+                    <strong>Unlawful &amp; Exploitative Material:</strong> Child sexual abuse
+                    material (CSAM), non-consensual sexual imagery, self-harm encouragement, or
+                    terrorism facilitation.
                   </li>
                   <li>
                     <strong>Real-World Impersonation:</strong> Impersonating living private
@@ -546,8 +551,8 @@ export default function TermsOfServicePage() {
                   5.1 Non-Monetary Virtual Assets
                 </h3>
                 <p>
-                  All in-game currencies, IxVault credits, cards, market shares, deck valuations, and
-                  virtual commodities are purely fictional simulation assets. They possess{" "}
+                  All in-game currencies, IxVault credits, cards, market shares, deck valuations,
+                  and virtual commodities are purely fictional simulation assets. They possess{" "}
                   <strong>zero real-world monetary value</strong> and cannot be redeemed for fiat
                   currency, goods, or real-world services. They do not constitute securities,
                   deposits, financial instruments, or property claims against Alpaia Holdings. We
@@ -561,12 +566,12 @@ export default function TermsOfServicePage() {
                   5.2 Proprietary Platform Intellectual Property &amp; Trademarks
                 </h3>
                 <p>
-                  Except for User Content, the underlying software, source code, database architectures,
-                  interface designs, logos, and proprietary simulation algorithms are owned by or
-                  licensed to Alpaia Holdings. &ldquo;IxStates,&rdquo; &ldquo;Ixnay,&rdquo;{" "}
-                  &ldquo;IxWiki,&rdquo; &ldquo;WikiOS,&rdquo; &ldquo;Onoma,&rdquo; &ldquo;Vexel,&rdquo;
-                  and associated logos are trademarks of Alpaia Holdings. You may not use them
-                  without prior written authorization.
+                  Except for User Content, the underlying software, source code, database
+                  architectures, interface designs, logos, and proprietary simulation algorithms are
+                  owned by or licensed to Alpaia Holdings. &ldquo;IxStates,&rdquo;
+                  &ldquo;Ixnay,&rdquo; &ldquo;IxWiki,&rdquo; &ldquo;WikiOS,&rdquo;
+                  &ldquo;Onoma,&rdquo; &ldquo;Vexel,&rdquo; and associated logos are trademarks of
+                  Alpaia Holdings. You may not use them without prior written authorization.
                 </p>
               </div>
 
@@ -588,10 +593,10 @@ export default function TermsOfServicePage() {
                 </h3>
                 <p>
                   By submitting User Content, you represent and warrant that: (a) you hold all
-                  necessary rights and licenses to submit such material; (b) your submission does not
-                  infringe or misappropriate any third party&rsquo;s copyright, trademark, privacy, or
-                  intellectual property rights; and (c) your content complies with all applicable laws
-                  and these Terms.
+                  necessary rights and licenses to submit such material; (b) your submission does
+                  not infringe or misappropriate any third party&rsquo;s copyright, trademark,
+                  privacy, or intellectual property rights; and (c) your content complies with all
+                  applicable laws and these Terms.
                 </p>
               </div>
             </div>
@@ -664,7 +669,9 @@ export default function TermsOfServicePage() {
                   <li>
                     Identification of the allegedly infringing material and specific URL location;
                   </li>
-                  <li>Your contact information (full name, address, telephone number, and email);</li>
+                  <li>
+                    Your contact information (full name, address, telephone number, and email);
+                  </li>
                   <li>
                     A statement of good-faith belief that use of the material is unauthorized; and
                   </li>
@@ -687,17 +694,17 @@ export default function TermsOfServicePage() {
                   6.3 Warranty Disclaimer &amp; Liability Cap
                 </h3>
                 <p className="text-muted-foreground/90 bg-muted/30 border-border/60 rounded-lg border p-3.5 font-mono text-xs uppercase">
-                  TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SERVICES ARE PROVIDED &ldquo;AS
-                  IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT WARRANTIES OF ANY KIND. ALPAIA
-                  HOLDINGS AND ITS GENERAL PARTNERS, ADMINISTRATORS, CONTRACTORS, AND SERVICE
+                  TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SERVICES ARE PROVIDED
+                  &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT WARRANTIES OF ANY KIND.
+                  ALPAIA HOLDINGS AND ITS GENERAL PARTNERS, ADMINISTRATORS, CONTRACTORS, AND SERVICE
                   PROVIDERS SHALL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR
                   PUNITIVE DAMAGES.
                 </p>
                 <p className="text-muted-foreground/90 bg-muted/30 border-border/60 mt-2 rounded-lg border p-3.5 font-mono text-xs uppercase">
-                  IN NO EVENT SHALL THE TOTAL AGGREGATE LIABILITY OF ALPAIA HOLDINGS ARISING OUT OF OR
-                  RELATING TO THE SERVICES EXCEED THE GREATER OF ONE HUNDRED U.S. DOLLARS ($100.00 USD)
-                  OR THE TOTAL AMOUNT PAID BY YOU TO ALPAIA HOLDINGS IN THE TWELVE (12) MONTHS
-                  PRECEDING THE CLAIM.
+                  IN NO EVENT SHALL THE TOTAL AGGREGATE LIABILITY OF ALPAIA HOLDINGS ARISING OUT OF
+                  OR RELATING TO THE SERVICES EXCEED THE GREATER OF ONE HUNDRED U.S. DOLLARS
+                  ($100.00 USD) OR THE TOTAL AMOUNT PAID BY YOU TO ALPAIA HOLDINGS IN THE TWELVE
+                  (12) MONTHS PRECEDING THE CLAIM.
                 </p>
               </div>
 
@@ -708,10 +715,10 @@ export default function TermsOfServicePage() {
                 <p>
                   To the maximum extent permitted by law, you agree to defend, indemnify, and hold
                   harmless Alpaia Holdings, its general partners, officers, administrators, and
-                  contractors from and against third-party claims, liabilities, damages, and expenses
-                  (including reasonable legal fees) arising from: (a) your material violation of these
-                  Terms; (b) your User Content; or (c) your willful misconduct or unlawful use of the
-                  Services.
+                  contractors from and against third-party claims, liabilities, damages, and
+                  expenses (including reasonable legal fees) arising from: (a) your material
+                  violation of these Terms; (b) your User Content; or (c) your willful misconduct or
+                  unlawful use of the Services.
                 </p>
               </div>
 
@@ -733,10 +740,10 @@ export default function TermsOfServicePage() {
                   submits to the personal jurisdiction and venue of such courts.
                 </p>
                 <p className="mt-2">
-                  <strong>Class Action &amp; Jury Waiver:</strong> TO THE FULLEST EXTENT PERMITTED BY
-                  LAW, ALL CLAIMS MUST BE BROUGHT IN AN INDIVIDUAL CAPACITY AND NOT AS A CLASS MEMBER
-                  OR PLAINTIFF IN ANY PURPORTED CLASS OR REPRESENTATIVE PROCEEDING. EACH PARTY WAIVES
-                  ANY RIGHT TO A JURY TRIAL.
+                  <strong>Class Action &amp; Jury Waiver:</strong> TO THE FULLEST EXTENT PERMITTED
+                  BY LAW, ALL CLAIMS MUST BE BROUGHT IN AN INDIVIDUAL CAPACITY AND NOT AS A CLASS
+                  MEMBER OR PLAINTIFF IN ANY PURPORTED CLASS OR REPRESENTATIVE PROCEEDING. EACH
+                  PARTY WAIVES ANY RIGHT TO A JURY TRIAL.
                 </p>
               </div>
 
@@ -752,8 +759,8 @@ export default function TermsOfServicePage() {
                   >
                     admin@ixwiki.com
                   </a>{" "}
-                  with a concise written explanation of the dispute and your requested resolution. Both
-                  parties agree to negotiate in good faith for at least thirty (30) days before
+                  with a concise written explanation of the dispute and your requested resolution.
+                  Both parties agree to negotiate in good faith for at least thirty (30) days before
                   initiating court proceedings.
                 </p>
               </div>
@@ -777,4 +784,3 @@ export default function TermsOfServicePage() {
     </LegalDocumentLayout>
   );
 }
-

@@ -21,7 +21,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { motion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
-import { ArrowLeft, ArrowUp, ArrowDown, Minus, Trophy, Calendar, Clock, CheckCircle as CheckCircle2, StatsReport as BarChart3, Group as Users } from "iconoir-react";
+import {
+  ArrowLeft,
+  ArrowUp,
+  ArrowDown,
+  Minus,
+  Trophy,
+  Calendar,
+  Clock,
+  CheckCircle as CheckCircle2,
+  StatsReport as BarChart3,
+  Group as Users,
+} from "iconoir-react";
 
 const SPORT_EMOJIS: Record<string, string> = {
   soccer: "\u26BD",
@@ -433,34 +444,33 @@ export default function MyClubSeasonDetailPage() {
                     {(season.standings as Record<string, any>[]).map((s, i: number) => (
                       <TableRow
                         key={(s.team as Record<string, string>).id}
-                          className={cn(
-                            (s.team as Record<string, string>).id === teamId && "bg-muted/50"
-                          )}
-                        >
-                          <TableCell className="font-medium">{i + 1}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm">
-                                {(s.team as Record<string, string>).name}
-                              </span>
-                              {(s.team as Record<string, string>).id === teamId && (
-                                <Badge variant="default" className="text-[10px]">
-                                  YOU
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center">{s.wins as number}</TableCell>
-                          <TableCell className="text-center">{s.losses as number}</TableCell>
-                          <TableCell className="text-center">{s.draws as number}</TableCell>
-                          <TableCell className="text-center font-bold">
-                            {s.points as number}
-                          </TableCell>
-                          <TableCell className="text-center">{s.pointsFor as number}</TableCell>
-                          <TableCell className="text-center">{s.pointsAgainst as number}</TableCell>
-                        </TableRow>
-                      )
-                    )}
+                        className={cn(
+                          (s.team as Record<string, string>).id === teamId && "bg-muted/50"
+                        )}
+                      >
+                        <TableCell className="font-medium">{i + 1}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">
+                              {(s.team as Record<string, string>).name}
+                            </span>
+                            {(s.team as Record<string, string>).id === teamId && (
+                              <Badge variant="default" className="text-[10px]">
+                                YOU
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">{s.wins as number}</TableCell>
+                        <TableCell className="text-center">{s.losses as number}</TableCell>
+                        <TableCell className="text-center">{s.draws as number}</TableCell>
+                        <TableCell className="text-center font-bold">
+                          {s.points as number}
+                        </TableCell>
+                        <TableCell className="text-center">{s.pointsFor as number}</TableCell>
+                        <TableCell className="text-center">{s.pointsAgainst as number}</TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </CardContent>

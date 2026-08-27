@@ -14,10 +14,7 @@ import { TRPCError } from "@trpc/server";
 import { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS, COMPONENT_CATEGORIES } from "~/lib/government/atomic-data";
 
-import {
-  type ParsedComponent,
-  transformDatabaseComponent,
-} from "./serializer";
+import { type ParsedComponent, transformDatabaseComponent } from "./serializer";
 
 // ============================================================================
 // Input Validation Schemas
@@ -55,7 +52,6 @@ const createSynergySchema = z.object({
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
 
 /**
  * Ensure database is seeded with government component reference data

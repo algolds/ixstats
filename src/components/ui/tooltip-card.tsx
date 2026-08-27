@@ -27,7 +27,7 @@ export const Tooltip = ({
     if (isVisible && contentRef.current) {
       setHeight(contentRef.current.scrollHeight);
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [isVisible, content]);
 
   const calculatePosition = (clientX: number, clientY: number) => {

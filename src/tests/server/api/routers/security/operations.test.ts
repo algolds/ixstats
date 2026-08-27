@@ -12,8 +12,12 @@ jest.mock("~/server/db", () => ({
   isDatabaseReadOnly: false,
 }));
 
-const mockGenerateNews = jest.spyOn(newsGenerator, "generateDiplomaticNews").mockResolvedValue("post_1" as any);
-const mockNotifCreate = jest.spyOn(notificationAPI, "create").mockResolvedValue({ success: true } as any);
+const mockGenerateNews = jest
+  .spyOn(newsGenerator, "generateDiplomaticNews")
+  .mockResolvedValue("post_1" as any);
+const mockNotifCreate = jest
+  .spyOn(notificationAPI, "create")
+  .mockResolvedValue({ success: true } as any);
 
 type MockFn = any;
 

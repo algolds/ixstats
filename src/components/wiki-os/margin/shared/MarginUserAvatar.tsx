@@ -41,7 +41,7 @@ export const MarginUserAvatar = memo(function MarginUserAvatar({
 }: MarginUserAvatarProps) {
   const [imgError, setImgError] = useState(false);
   const initials = getInitials(author.username);
-  const avatarUrl = !imgError ? (author.avatar || liveAvatar) : null;
+  const avatarUrl = !imgError ? author.avatar || liveAvatar : null;
   const flagUrl = author.country?.flag;
 
   const sizeClasses = {
@@ -51,12 +51,14 @@ export const MarginUserAvatar = memo(function MarginUserAvatar({
   }[size];
 
   return (
-    <div className={cn("relative shrink-0 flex items-center justify-center select-none", className)}>
+    <div
+      className={cn("relative flex shrink-0 items-center justify-center select-none", className)}
+    >
       <div
         className={cn(
-          "rounded-full overflow-hidden flex items-center justify-center font-bold transition-transform duration-100 border shadow-xs",
+          "flex items-center justify-center overflow-hidden rounded-full border font-bold shadow-xs transition-transform duration-100",
           sizeClasses,
-          "border-yellow-400/60 bg-margin-accent text-stone-950 font-black"
+          "bg-margin-accent border-yellow-400/60 font-black text-stone-950"
         )}
       >
         {avatarUrl ? (
@@ -64,7 +66,7 @@ export const MarginUserAvatar = memo(function MarginUserAvatar({
             src={avatarUrl}
             alt={author.username}
             onError={() => setImgError(true)}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
           />
         ) : (
           <span>{initials}</span>
@@ -74,10 +76,10 @@ export const MarginUserAvatar = memo(function MarginUserAvatar({
       {/* Country Flag Micro Badge */}
       {flagUrl && (
         <span
-          className="absolute -bottom-0.5 -right-0.5 w-3 h-2.5 rounded-xs overflow-hidden border border-[var(--wikios-border)] shadow-xs bg-[var(--wikios-bg)] flex items-center justify-center"
+          className="absolute -right-0.5 -bottom-0.5 flex h-2.5 w-3 items-center justify-center overflow-hidden rounded-xs border border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-xs"
           title={author.country?.name}
         >
-          <img src={flagUrl} alt="" className="w-full h-full object-cover" />
+          <img src={flagUrl} alt="" className="h-full w-full object-cover" />
         </span>
       )}
     </div>

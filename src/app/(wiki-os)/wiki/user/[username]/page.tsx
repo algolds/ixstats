@@ -92,7 +92,7 @@ export default function UserProfilePage() {
                 <div className="wikios-profile-meta">
                   {info.registration && (
                     <span>
-                      <Calendar className="h-3 w-3 inline mr-1" /> Joined{" "}
+                      <Calendar className="mr-1 inline h-3 w-3" /> Joined{" "}
                       {new Date(info.registration).toLocaleDateString("en-US", {
                         month: "long",
                         year: "numeric",
@@ -100,18 +100,19 @@ export default function UserProfilePage() {
                     </span>
                   )}
                   <span>
-                    <FileText className="h-3 w-3 inline mr-1" /> {info.editCount.toLocaleString()} edits
+                    <FileText className="mr-1 inline h-3 w-3" /> {info.editCount.toLocaleString()}{" "}
+                    edits
                   </span>
                   {rank && (
                     <span>
-                      <Trophy className="h-3 w-3 inline mr-1" /> Rank #{rank}
+                      <Trophy className="mr-1 inline h-3 w-3" /> Rank #{rank}
                     </span>
                   )}
                 </div>
                 <div className="wikios-profile-groups">
                   {info.groups.map((g) => (
                     <span key={g} className="wikios-profile-group-badge">
-                      <Shield className="h-2.5 w-2.5 inline mr-1" /> {g}
+                      <Shield className="mr-1 inline h-2.5 w-2.5" /> {g}
                     </span>
                   ))}
                 </div>
@@ -269,7 +270,8 @@ export default function UserProfilePage() {
                         </Link>
                         <div className="wikios-profile-edit-meta">
                           <span>
-                            <Clock className="h-2.5 w-2.5 inline mr-1" /> {formatMWTimeAgo(edit.timestamp)}
+                            <Clock className="mr-1 inline h-2.5 w-2.5" />{" "}
+                            {formatMWTimeAgo(edit.timestamp)}
                           </span>
                           <span
                             className={cn(
@@ -282,9 +284,9 @@ export default function UserProfilePage() {
                             )}
                           >
                             {edit.size > 0 ? (
-                              <ArrowUpRight className="h-2.5 w-2.5 inline" />
+                              <ArrowUpRight className="inline h-2.5 w-2.5" />
                             ) : edit.size < 0 ? (
-                              <ArrowDownRight className="h-2.5 w-2.5 inline" />
+                              <ArrowDownRight className="inline h-2.5 w-2.5" />
                             ) : null}
                             {edit.size > 0 ? "+" : ""}
                             {edit.size.toLocaleString()}

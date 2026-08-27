@@ -71,9 +71,7 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
         unauth.conversations.getConversationsByFolder({ folder: "inbox" })
       ).rejects.toThrow(TRPCError);
 
-      await expect(
-        unauth.conversations.getFolderCounts({})
-      ).rejects.toThrow(TRPCError);
+      await expect(unauth.conversations.getFolderCounts({})).rejects.toThrow(TRPCError);
 
       await expect(
         unauth.messaging.getConversationMessages({
@@ -161,9 +159,9 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
         id: "conv-1",
         source: "thinkshare",
       });
-      mockDb.thinkshareMessage.create = jest.fn().mockImplementation(({ data }) =>
-        Promise.resolve({ id: "msg-123", ...data })
-      );
+      mockDb.thinkshareMessage.create = jest
+        .fn()
+        .mockImplementation(({ data }) => Promise.resolve({ id: "msg-123", ...data }));
       mockDb.thinkshareConversation.update = jest.fn().mockResolvedValue({});
       mockDb.conversationParticipant.findMany = jest.fn().mockResolvedValue([]);
 
@@ -254,9 +252,9 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
 
       const caller = createCaller(callerUser, mockDb);
 
-      await expect(
-        caller.messaging.deleteMessage({ messageId: "msg-2" })
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(caller.messaging.deleteMessage({ messageId: "msg-2" })).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
 
       const res = await caller.messaging.deleteMessage({ messageId: "msg-2" });
       expect(res).toEqual({ success: true });

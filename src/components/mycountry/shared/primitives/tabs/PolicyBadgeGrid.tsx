@@ -7,7 +7,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 
-import { Check, Xmark as X, WarningCircle as AlertCircle, Shield, Heart, GraduationCap, Leaf, Train, HomeSimple as Home, Flash as Zap, Building, Coins, Group as Users, Globe } from "iconoir-react";
+import {
+  Check,
+  Xmark as X,
+  WarningCircle as AlertCircle,
+  Shield,
+  Heart,
+  GraduationCap,
+  Leaf,
+  Train,
+  HomeSimple as Home,
+  Flash as Zap,
+  Building,
+  Coins,
+  Group as Users,
+  Globe,
+} from "iconoir-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 
 export interface PolicyBadge {

@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Suitcase as Briefcase, SystemRestart as Loader2, Plus, Group as Users, Xmark as X } from "iconoir-react";
+import {
+  Suitcase as Briefcase,
+  SystemRestart as Loader2,
+  Plus,
+  Group as Users,
+  Xmark as X,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";

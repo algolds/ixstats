@@ -3,11 +3,7 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   getPreset,
@@ -400,7 +396,7 @@ export const leaguesCrudRouter = createTRPCRouter({
             sportPreset: l.sportPreset,
           })),
         };
-      } catch  {
+      } catch {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Search failed" });
       }
     }),

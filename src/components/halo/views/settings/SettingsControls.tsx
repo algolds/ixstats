@@ -35,7 +35,10 @@ export function useLocalToggle(key: string, defaultValue: boolean): [boolean, ()
   return [value, toggle];
 }
 
-export function useLocalPref(key: string, defaultValue: boolean): [boolean, (checked: boolean) => void] {
+export function useLocalPref(
+  key: string,
+  defaultValue: boolean
+): [boolean, (checked: boolean) => void] {
   const [val, setVal] = useState(defaultValue);
 
   useEffect(() => {
@@ -100,7 +103,7 @@ export function AnimatedVolumeIcon({
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={cn("text-emerald-600 dark:text-emerald-400 overflow-visible", className)}
+      className={cn("overflow-visible text-emerald-600 dark:text-emerald-400", className)}
     >
       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
       <motion.path

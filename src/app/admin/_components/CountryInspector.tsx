@@ -3,12 +3,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
-import {
-  useNodesState,
-  useEdgesState,
-  type Node,
-  type Edge,
-} from "@xyflow/react";
+import { useNodesState, useEdgesState, type Node, type Edge } from "@xyflow/react";
 
 const CountryFormulaFlow = dynamic(() => import("./CountryFormulaFlow"), {
   ssr: false,
@@ -19,8 +14,23 @@ const CountryFormulaFlow = dynamic(() => import("./CountryFormulaFlow"), {
   ),
 });
 
-
-import { Search, Globe, Calculator, StatUp as TrendingUp, Calendar, Settings, Flash as Zap, Plus, Trash as Trash2, InfoCircle as Info, SystemRestart as Loader2, Dollar as DollarSign, Group as Users, Expand as Maximize2, Compress as Minimize2 } from "iconoir-react";
+import {
+  Search,
+  Globe,
+  Calculator,
+  StatUp as TrendingUp,
+  Calendar,
+  Settings,
+  Flash as Zap,
+  Plus,
+  Trash as Trash2,
+  InfoCircle as Info,
+  SystemRestart as Loader2,
+  Dollar as DollarSign,
+  Group as Users,
+  Expand as Maximize2,
+  Compress as Minimize2,
+} from "iconoir-react";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -79,9 +89,6 @@ const TIER_MAX_GROWTH: Record<EconomicTier, number> = {
   [EconomicTier.VERY_STRONG]: 0.015,
   [EconomicTier.EXTRAVAGANT]: 0.005,
 };
-
-
-
 
 export function CountryInspector() {
   const { sidebarHidden, setSidebarHidden } = useAdminNavigation();
@@ -152,7 +159,7 @@ export function CountryInspector() {
     setLocalMultiplier(1.0);
     setMockEffects([]);
     setDisabledEffects({});
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [selectedCountryId]);
 
   // Format helper functions
@@ -1783,7 +1790,6 @@ export function CountryInspector() {
               onEdgesChange={onEdgesChange}
               onNodeClick={handleNodeClick}
             />
-
 
             {/* Selected Node Details Card */}
             <div className="border-border/40 bg-card/40 rounded-xl border p-5 shadow-sm backdrop-blur-sm">

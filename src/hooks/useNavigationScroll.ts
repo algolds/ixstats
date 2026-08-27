@@ -35,7 +35,7 @@ export interface NavigationScrollState {
 
 export function useNavigationScroll(options?: NavigationScrollOptions): NavigationScrollState {
   const isLocked = options?.isLocked ?? false;
-  const isHiddenMode = (options?.mode === "hidden") || (options?.autoHideDefault ?? false);
+  const isHiddenMode = options?.mode === "hidden" || (options?.autoHideDefault ?? false);
   const autoHideDelay = options?.autoHideDelay ?? 300;
 
   const [scrollY, setScrollY] = useState(0);
@@ -58,14 +58,17 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
     }
   }, []);
 
-  const startAutoHideTimer = useCallback((delay = autoHideDelay) => {
-    clearAutoHideTimer();
-    autoHideTimerRef.current = setTimeout(() => {
-      if (!isNavHoveredRef.current && !isLockedRef.current) {
-        setIsMouseNearTop(false);
-      }
-    }, delay);
-  }, [autoHideDelay, clearAutoHideTimer]);
+  const startAutoHideTimer = useCallback(
+    (delay = autoHideDelay) => {
+      clearAutoHideTimer();
+      autoHideTimerRef.current = setTimeout(() => {
+        if (!isNavHoveredRef.current && !isLockedRef.current) {
+          setIsMouseNearTop(false);
+        }
+      }, delay);
+    },
+    [autoHideDelay, clearAutoHideTimer]
+  );
 
   const onNavMouseEnter = useCallback(() => {
     isNavHoveredRef.current = true;

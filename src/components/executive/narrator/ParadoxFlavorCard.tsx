@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Sparks as Sparkles, Page as ScrollText, EyeClosed as EyeOff, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Sparks as Sparkles,
+  Page as ScrollText,
+  EyeClosed as EyeOff,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 
 interface ParadoxFlavorCardProps {
@@ -30,7 +35,7 @@ export function ParadoxFlavorCard({
         // oxlint-disable-next-line
         setIsEnabled(stored === "true");
       }
-    } catch  {
+    } catch {
       // Ignore localStorage errors
     }
     setMounted(true);
@@ -41,7 +46,7 @@ export function ParadoxFlavorCard({
     setIsEnabled(nextVal);
     try {
       localStorage.setItem("narrator:flavor:enabled", String(nextVal));
-    } catch  {
+    } catch {
       // Ignore
     }
   };

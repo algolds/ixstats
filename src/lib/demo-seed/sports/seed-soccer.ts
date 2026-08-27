@@ -20,10 +20,7 @@ import {
 
 type Prisma = PrismaClient;
 
-const {
-  caphirianTeams: CAPHIRIAN_TEAMS,
-  yonderreTeams: YONDERRE_TEAMS,
-} = sportsData;
+const { caphirianTeams: CAPHIRIAN_TEAMS, yonderreTeams: YONDERRE_TEAMS } = sportsData;
 
 export async function seedCaphirianSoccerLeague(
   prisma: Prisma,

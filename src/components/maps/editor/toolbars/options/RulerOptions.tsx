@@ -3,12 +3,7 @@
 import React, { memo } from "react";
 import { Ruler, Trash as Trash2 } from "iconoir-react";
 import { formatDistanceMetrics } from "~/lib/maps/geo-analytics";
-import {
-  ToolLabel,
-  btnClass,
-  dividerClass,
-  labelClass,
-} from "./CoordinateSnappingControls";
+import { ToolLabel, btnClass, dividerClass, labelClass } from "./CoordinateSnappingControls";
 
 interface RulerOptionsProps {
   rulerPoints?: [number, number][];
@@ -32,15 +27,11 @@ export const RulerOptions = memo(function RulerOptions({
       </span>
       {pointsCount >= 2 && (
         <>
-          <span className="font-mono text-[11px] font-semibold text-cyan-500">
-            {metrics.km} km
-          </span>
+          <span className="font-mono text-[11px] font-semibold text-cyan-500">{metrics.km} km</span>
           <span className="text-muted-foreground text-[10px]">
             ({metrics.mi} mi / {metrics.nm} nm)
           </span>
-          <span className="text-muted-foreground text-[10px]">
-            • {pointsCount} points
-          </span>
+          <span className="text-muted-foreground text-[10px]">• {pointsCount} points</span>
         </>
       )}
       {pointsCount > 0 && onClearRuler && (

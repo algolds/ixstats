@@ -194,7 +194,10 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
 
   it("9. Returns 'Unknown Field' for unsupported fields", async () => {
     const db = createMockDb();
-    const results = await resolveWikiPlaceholderValues(["CountryData:Sanctuary:nonExistentField"], db);
+    const results = await resolveWikiPlaceholderValues(
+      ["CountryData:Sanctuary:nonExistentField"],
+      db
+    );
 
     expect(results[0].value).toBe("Unknown Field");
     expect(results[0].status).toBe("unknown-field");

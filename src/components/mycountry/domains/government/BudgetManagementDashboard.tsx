@@ -22,7 +22,12 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { Dollar as DollarSign, StatUp as TrendingUp, StatsReport as BarChart3, Archery as Target } from "iconoir-react";
+import {
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
+  StatsReport as BarChart3,
+  Archery as Target,
+} from "iconoir-react";
 import { IxTime } from "~/lib/ixtime";
 import type {
   GovernmentStructure,
@@ -113,7 +118,7 @@ export function BudgetManagementDashboard({
       departmentCount: departments.length,
       topSpendingDepartments,
     };
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [budgetAllocations, departments, governmentStructure?.totalBudget, selectedYear]);
 
   // Calculate revenue summary
@@ -158,7 +163,7 @@ export function BudgetManagementDashboard({
       revenueBreakdown,
       topRevenueSources,
     };
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [revenueSources]);
 
   const formatCurrency = (amount: number) => {

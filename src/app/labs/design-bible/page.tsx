@@ -1,7 +1,30 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { OpenBook as BookOpen, Component as Layers, Calendar, Page as FileText, GitBranch, ControlSlider as Sliders, Cpu, Sparks as Sparkles, Search, Compass, Code as FileCode, User, ClockRotateRight as History, WarningTriangle as AlertOctagon, Globe, Activity, Terminal, Expand as Maximize2, Compress as Minimize2, Network, Archery as Radar, StatUp as TrendingUp } from "iconoir-react";
+import {
+  OpenBook as BookOpen,
+  Component as Layers,
+  Calendar,
+  Page as FileText,
+  GitBranch,
+  ControlSlider as Sliders,
+  Cpu,
+  Sparks as Sparkles,
+  Search,
+  Compass,
+  Code as FileCode,
+  User,
+  ClockRotateRight as History,
+  WarningTriangle as AlertOctagon,
+  Globe,
+  Activity,
+  Terminal,
+  Expand as Maximize2,
+  Compress as Minimize2,
+  Network,
+  Archery as Radar,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { FacetContainer, FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";

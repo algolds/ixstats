@@ -38,7 +38,7 @@ export function FeedExternalLink({ url }: { url: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border border-border/50 bg-accent/10 px-2 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-accent/20 active:scale-[0.95]"
+      className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 active:scale-[0.95]"
     >
       <ExternalLink className="h-3 w-3" />
       <span>Open</span>

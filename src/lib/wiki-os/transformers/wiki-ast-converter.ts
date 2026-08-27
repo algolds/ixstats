@@ -8,7 +8,10 @@
  */
 
 import { parse } from "../wikitext/parser";
-import { astToWikitext as coreAstToWikitext, serializeBlockNodeToWikitext } from "../wikitext/serializer";
+import {
+  astToWikitext as coreAstToWikitext,
+  serializeBlockNodeToWikitext,
+} from "../wikitext/serializer";
 import type {
   WikiDocument,
   WikiBlockNode,
@@ -191,7 +194,9 @@ export function astToPlateNodes(doc: WikiDocument): any[] {
           type: lb.ordered ? "ol" : "ul",
           children: lb.children?.map((li) => ({
             type: "li",
-            children: [{ type: "lic", children: astInlinesToPlateLeaves(li.children as WikiInlineNode[]) }],
+            children: [
+              { type: "lic", children: astInlinesToPlateLeaves(li.children as WikiInlineNode[]) },
+            ],
           })) || [{ type: "li", children: [{ type: "lic", children: [{ text: "" }] }] }],
         });
         break;
@@ -425,7 +430,10 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
           break;
         case "external-link": {
           const firstChild = inline.children?.[0];
-          const textVal = firstChild && "text" in firstChild && typeof firstChild.text === "string" ? firstChild.text : inline.url;
+          const textVal =
+            firstChild && "text" in firstChild && typeof firstChild.text === "string"
+              ? firstChild.text
+              : inline.url;
           leaves.push({
             type: "a",
             url: inline.url,
@@ -455,7 +463,10 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
           break;
         case "citation-ref": {
           const firstChild = inline.children?.[0];
-          const textVal = firstChild && "text" in firstChild && typeof firstChild.text === "string" ? firstChild.text : "";
+          const textVal =
+            firstChild && "text" in firstChild && typeof firstChild.text === "string"
+              ? firstChild.text
+              : "";
           leaves.push({
             type: "citation-ref",
             name: inline.name,
@@ -552,7 +563,9 @@ export function astToHtml(doc: WikiDocument): string {
       case "h2":
       case "h3":
       case "h4":
-        parts.push(`<h${node.level || 2}>${serializeBlockNodeToWikitext(node)}</h${node.level || 2}>`);
+        parts.push(
+          `<h${node.level || 2}>${serializeBlockNodeToWikitext(node)}</h${node.level || 2}>`
+        );
         break;
       case "paragraph":
       case "p":
@@ -560,7 +573,9 @@ export function astToHtml(doc: WikiDocument): string {
         break;
       case "infobox":
       case "template":
-        parts.push(`<div class="wikios-template-preview"><em>${serializeBlockNodeToWikitext(node)}</em></div>`);
+        parts.push(
+          `<div class="wikios-template-preview"><em>${serializeBlockNodeToWikitext(node)}</em></div>`
+        );
         break;
       case "divider":
         parts.push("<hr>");

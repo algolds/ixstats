@@ -118,7 +118,10 @@ async function runSync() {
         }
       } catch (err: any) {
         errors++;
-        console.error(`   ❌ Failed to sync row ${row.page_id} ("${row.page_title}"):`, err.message?.substring(0, 100));
+        console.error(
+          `   ❌ Failed to sync row ${row.page_id} ("${row.page_title}"):`,
+          err.message?.substring(0, 100)
+        );
       }
     }
 

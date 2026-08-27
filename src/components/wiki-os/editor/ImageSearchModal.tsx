@@ -242,7 +242,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                   <img src={uploadPreview} alt="Preview" className="wikios-img-modal-preview-img" />
                 ) : (
                   <>
-                    <Upload className="h-8 w-8 wikios-img-modal-upload-icon" />
+                    <Upload className="wikios-img-modal-upload-icon h-8 w-8" />
                     <p className="wikios-img-modal-upload-text">
                       Click to select a file or drag and drop
                     </p>

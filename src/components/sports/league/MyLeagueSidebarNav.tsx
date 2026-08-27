@@ -1,6 +1,12 @@
 "use client";
 
-import { Dashboard as LayoutDashboard, Group as Users, Shield, ArrowSeparate as ArrowLeftRight, Bank as Landmark } from "iconoir-react";
+import {
+  Dashboard as LayoutDashboard,
+  Group as Users,
+  Shield,
+  ArrowSeparate as ArrowLeftRight,
+  Bank as Landmark,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export type MyLeagueSection = "overview" | "roster" | "tactics" | "transfers" | "management";

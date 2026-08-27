@@ -195,7 +195,11 @@ export class MessagingConversationOperations {
         userId: input.scope === "user" && input.userId ? input.userId : null,
         countryId: input.scope === "country" && input.countryId ? input.countryId : null,
         actionable: input.actionable ?? false,
-        metadata: input.metadata ? (typeof input.metadata === "string" ? input.metadata : JSON.stringify(input.metadata)) : null,
+        metadata: input.metadata
+          ? typeof input.metadata === "string"
+            ? input.metadata
+            : JSON.stringify(input.metadata)
+          : null,
       },
     });
 

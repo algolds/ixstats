@@ -101,8 +101,8 @@ export function ActiveCountryUnifiedWidget({
           (activeCountry as { calculatedStats?: { currentGdpPerCapita?: number } }).calculatedStats
             ?.currentGdpPerCapita != null
         ? Number(
-            (activeCountry as { calculatedStats?: { currentGdpPerCapita?: number } }).calculatedStats
-              ?.currentGdpPerCapita
+            (activeCountry as { calculatedStats?: { currentGdpPerCapita?: number } })
+              .calculatedStats?.currentGdpPerCapita
           )
         : null;
 

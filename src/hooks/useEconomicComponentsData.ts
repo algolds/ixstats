@@ -16,7 +16,38 @@
  */
 
 import { useMemo } from "react";
-import { Dollar as DollarSign, StatsReport as BarChart3, City as Building2, Archery as Target, Heart, Brain, LightBulb as Lightbulb, Wrench, Leaf, Industry as Factory, Group as Users, Flash as Zap, LockSlash as Unlock, Shield, Suitcase as Briefcase, GraduationCap, Globe, Lock, ArrowSeparateVertical as ArrowUpDown, Suitcase as BriefcaseBusiness, Reports as PieChart, Activity, HelpCircle, StatUp as TrendingUp, Crown, Network, Bank as Landmark, ScaleFrameEnlarge as Scale, OpenBook as BookOpen, Cpu } from "iconoir-react";
+import {
+  Dollar as DollarSign,
+  StatsReport as BarChart3,
+  City as Building2,
+  Archery as Target,
+  Heart,
+  Brain,
+  LightBulb as Lightbulb,
+  Wrench,
+  Leaf,
+  Industry as Factory,
+  Group as Users,
+  Flash as Zap,
+  LockSlash as Unlock,
+  Shield,
+  Suitcase as Briefcase,
+  GraduationCap,
+  Globe,
+  Lock,
+  ArrowSeparateVertical as ArrowUpDown,
+  Suitcase as BriefcaseBusiness,
+  Reports as PieChart,
+  Activity,
+  HelpCircle,
+  StatUp as TrendingUp,
+  Crown,
+  Network,
+  Bank as Landmark,
+  ScaleFrameEnlarge as Scale,
+  OpenBook as BookOpen,
+  Cpu,
+} from "iconoir-react";
 
 import { api } from "~/trpc/react";
 import {
@@ -61,7 +92,9 @@ const ICON_REGISTRY: Record<string, React.ComponentType<{ className?: string }>>
 };
 const DEFAULT_COMPONENT_ICON = BriefcaseBusiness;
 
-function resolveComponentIcon(iconName?: string | null): React.ComponentType<{ className?: string }> {
+function resolveComponentIcon(
+  iconName?: string | null
+): React.ComponentType<{ className?: string }> {
   if (!iconName) return DEFAULT_COMPONENT_ICON;
 
   const candidates = [iconName, iconName.charAt(0).toUpperCase() + iconName.slice(1)];

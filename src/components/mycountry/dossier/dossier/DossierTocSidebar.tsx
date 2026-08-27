@@ -3,7 +3,18 @@
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
-import { Search, OpenBook as BookOpen, Component as Layers, NavArrowRight as ChevronRight, NavArrowDown as ChevronDown, Page as FileText, Folder, Folder as FolderOpen, Globe, OpenNewWindow as ExternalLink } from "iconoir-react";
+import {
+  Search,
+  OpenBook as BookOpen,
+  Component as Layers,
+  NavArrowRight as ChevronRight,
+  NavArrowDown as ChevronDown,
+  Page as FileText,
+  Folder,
+  Folder as FolderOpen,
+  Globe,
+  OpenNewWindow as ExternalLink,
+} from "iconoir-react";
 import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";

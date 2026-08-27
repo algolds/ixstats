@@ -1,22 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  User,
-  FloppyDisk as Save,
-  Xmark as X,
-  Clock,
-  Globe,
-  Compass,
-} from "iconoir-react";
+import { User, FloppyDisk as Save, Xmark as X, Clock, Globe, Compass } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { SettingsHeader } from "../SettingsHeader";
-import {
-  SettingsGroup,
-  SettingsRow,
-  SettingsSelectRow,
-} from "../primitives";
+import { SettingsGroup, SettingsRow, SettingsSelectRow } from "../primitives";
 
 interface SocialPersonaPanelProps {
   userId: string;
@@ -106,7 +95,7 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
                     type="button"
                     onClick={handleCancel}
                     data-cuelume-press="soft"
-                    className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/60 bg-card px-3.5 py-1.5 text-xs font-bold text-foreground hover:bg-muted active:scale-[0.98]"
+                    className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold active:scale-[0.98]"
                   >
                     <X className="h-3.5 w-3.5" />
                     <span>Cancel</span>
@@ -117,7 +106,7 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
                   type="button"
                   onClick={() => setIsEditing(true)}
                   data-cuelume-press="soft"
-                  className="facet-interactive rounded-xl border border-border/60 bg-card px-3.5 py-1.5 text-xs font-bold text-foreground hover:bg-muted active:scale-[0.98]"
+                  className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted rounded-xl border px-3.5 py-1.5 text-xs font-bold active:scale-[0.98]"
                 >
                   Configure
                 </button>
@@ -147,7 +136,7 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
               @{primaryAccount.username}
             </span>
           ) : (
-            <span className="text-xs font-medium text-muted-foreground">
+            <span className="text-muted-foreground text-xs font-medium">
               Visit Thinkpages to initialize
             </span>
           )}
@@ -172,9 +161,17 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
               setIsEditing(true);
             }}
             options={[
-              { value: "active", label: "High Output", description: "Frequent updates throughout the simulation day" },
+              {
+                value: "active",
+                label: "High Output",
+                description: "Frequent updates throughout the simulation day",
+              },
               { value: "moderate", label: "Balanced", description: "Standard periodic commentary" },
-              { value: "low", label: "Subtle", description: "Infrequent milestone announcements only" },
+              {
+                value: "low",
+                label: "Subtle",
+                description: "Infrequent milestone announcements only",
+              },
             ]}
           />
 
@@ -190,9 +187,17 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
               setIsEditing(true);
             }}
             options={[
-              { value: "left", label: "Progressive", description: "Focus on social equity and public investment" },
+              {
+                value: "left",
+                label: "Progressive",
+                description: "Focus on social equity and public investment",
+              },
               { value: "center", label: "Neutral", description: "Balanced pragmatic evaluation" },
-              { value: "right", label: "Traditional", description: "Focus on sovereignty and traditional values" },
+              {
+                value: "right",
+                label: "Traditional",
+                description: "Focus on sovereignty and traditional values",
+              },
             ]}
           />
 
@@ -209,8 +214,16 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
             }}
             options={[
               { value: "serious", label: "Analytic", description: "Formal diplomatic statements" },
-              { value: "casual", label: "Conversational", description: "Approachable civilian tone" },
-              { value: "satirical", label: "Provocative", description: "Witty and opinionated commentary" },
+              {
+                value: "casual",
+                label: "Conversational",
+                description: "Approachable civilian tone",
+              },
+              {
+                value: "satirical",
+                label: "Provocative",
+                description: "Witty and opinionated commentary",
+              },
             ]}
           />
         </SettingsGroup>

@@ -671,4 +671,3 @@ export const GOVERNMENT_TEMPLATES: Record<
     ],
   },
 };
-

@@ -105,7 +105,7 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-1.5 text-sm focus:border-onoma-primary/50 focus:outline-none"
+            className="border-border/60 bg-background text-foreground focus:border-onoma-primary/50 w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none"
           />
         </div>
 
@@ -121,7 +121,7 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
                   <SelectItem
                     key={r.value}
                     value={r.value}
-                    className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                    className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
                   >
                     {r.label}
                   </SelectItem>
@@ -140,7 +140,7 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
                   <SelectItem
                     key={g.value}
                     value={g.value}
-                    className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                    className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
                   >
                     {g.label}
                   </SelectItem>
@@ -165,7 +165,7 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
               <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
                 <SelectItem
                   value="any"
-                  className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                  className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
                 >
                   Any
                 </SelectItem>
@@ -173,7 +173,7 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
                   <SelectItem
                     key={c}
                     value={c}
-                    className="focus:text-foreground text-xs capitalize focus:bg-onoma-primary/10"
+                    className="focus:text-foreground focus:bg-onoma-primary/10 text-xs capitalize"
                   >
                     {c}
                   </SelectItem>
@@ -233,7 +233,7 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
           <button
             onClick={handleSave}
             disabled={saving || !title.trim()}
-            className="flex items-center gap-1 rounded-lg bg-onoma-primary px-3.5 py-1.5 text-xs font-bold text-white hover:bg-onoma-primary-light disabled:opacity-50"
+            className="bg-onoma-primary hover:bg-onoma-primary-light flex items-center gap-1 rounded-lg px-3.5 py-1.5 text-xs font-bold text-white disabled:opacity-50"
           >
             {saving ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />

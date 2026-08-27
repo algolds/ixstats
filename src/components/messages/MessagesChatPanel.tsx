@@ -12,7 +12,15 @@ import type { ThinkShareConversation, ThinkShareClientState } from "~/types/thin
 import type { MessageFolder } from "~/types/messages";
 import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { Crown, Shield, StatUp as TrendingUp, AntennaSignal as Radio, Xmark as X, OpenNewWindow as ExternalLink, BellNotification as BellRing } from "iconoir-react";
+import {
+  Crown,
+  Shield,
+  StatUp as TrendingUp,
+  AntennaSignal as Radio,
+  Xmark as X,
+  OpenNewWindow as ExternalLink,
+  BellNotification as BellRing,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { MessagesViewDetailsModal } from "./MessagesViewDetailsModal";
@@ -61,25 +69,21 @@ function getSystemAlertStyle(content: string, type?: string) {
   };
 }
 
-function SystemBroadcastCard({
-  item,
-  onDismiss,
-}: {
-  item: any;
-  onDismiss?: () => void;
-}) {
+function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () => void }) {
   const content = item.description || item.message || item.content || "";
   const title = item.title || item.subject || "System Notification";
-  const { icon: Icon, iconColor, badgeClass, label } = getSystemAlertStyle(
-    title + " " + content,
-    item.type || item.category
-  );
+  const {
+    icon: Icon,
+    iconColor,
+    badgeClass,
+    label,
+  } = getSystemAlertStyle(title + " " + content, item.type || item.category);
 
   return (
-    <div className="relative mx-4 my-2.5 flex gap-3.5 rounded-2xl border border-border/50 bg-card/60 p-4 shadow-2xs backdrop-blur-md transition-all duration-150 hover:border-border/80 hover:bg-card/90">
+    <div className="border-border/50 bg-card/60 hover:border-border/80 hover:bg-card/90 relative mx-4 my-2.5 flex gap-3.5 rounded-2xl border p-4 shadow-2xs backdrop-blur-md transition-all duration-150">
       <div
         className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-xl ring-1 shadow-2xs",
+          "flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-xl shadow-2xs ring-1",
           iconColor
         )}
       >
@@ -97,7 +101,7 @@ function SystemBroadcastCard({
               {label}
             </span>
             {item.priority && (
-              <span className="text-[10px] font-medium text-muted-foreground/70">
+              <span className="text-muted-foreground/70 text-[10px] font-medium">
                 • {item.priority}
               </span>
             )}
@@ -107,10 +111,10 @@ function SystemBroadcastCard({
           </span>
         </div>
 
-        <h4 className="mb-1 text-[13px] font-semibold tracking-tight text-foreground">{title}</h4>
+        <h4 className="text-foreground mb-1 text-[13px] font-semibold tracking-tight">{title}</h4>
 
         <div
-          className="text-muted-foreground text-[12px] leading-relaxed [&>a]:text-primary [&>a]:underline [&>a]:hover:text-primary/80 [&>p]:mb-0"
+          className="text-muted-foreground [&>a]:text-primary [&>a]:hover:text-primary/80 text-[12px] leading-relaxed [&>a]:underline [&>p]:mb-0"
           dangerouslySetInnerHTML={{ __html: sanitizeUserContent(content) }}
         />
 
@@ -118,7 +122,7 @@ function SystemBroadcastCard({
           <div className="mt-2.5 flex items-center gap-2">
             <Link
               href={item.href}
-              className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-2xs transition-all hover:bg-primary/90 active:scale-95"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold shadow-2xs transition-all active:scale-95"
             >
               <span>Open Details</span>
               <ExternalLink className="h-3 w-3" />
@@ -264,7 +268,12 @@ export function MessagesChatPanel({
   });
 
   useEffect(() => {
-    if (!isSystemThread && conversation.id && currentUserId && (conversation as any).unreadCount > 0) {
+    if (
+      !isSystemThread &&
+      conversation.id &&
+      currentUserId &&
+      (conversation as any).unreadCount > 0
+    ) {
       markAsRead.mutate({
         conversationId: conversation.id,
         userId: currentUserId,
@@ -325,7 +334,9 @@ export function MessagesChatPanel({
       if (context?.previousMessages) {
         utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
       }
-      notify.error(error.message?.includes("content") ? "Invalid content" : "Failed to send message");
+      notify.error(
+        error.message?.includes("content") ? "Invalid content" : "Failed to send message"
+      );
     },
     onSettled: (_data, error) => {
       if (error) {

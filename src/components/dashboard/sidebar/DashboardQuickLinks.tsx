@@ -92,7 +92,6 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
             Quick Links
           </span>
         </div>
-     
       </div>
       <CutoutCardContent className="space-y-2.5 p-3 pt-2.5">
         {/* Links */}
@@ -127,7 +126,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 </div>
 
                 {link.label === "ThinkTanks" && thinktankUnreadCount > 0 && (
-                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500/20 px-1.5 text-[9px] font-bold tracking-tight text-emerald-400 ring-1 ring-emerald-500/30 backdrop-blur-xs shadow-2xs transition-transform group-hover:scale-105">
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500/20 px-1.5 text-[9px] font-bold tracking-tight text-emerald-400 shadow-2xs ring-1 ring-emerald-500/30 backdrop-blur-xs transition-transform group-hover:scale-105">
                     {thinktankUnreadCount > 99 ? "99+" : thinktankUnreadCount}
                   </span>
                 )}
@@ -182,7 +181,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
               </Link>
             </div>
             <p className="text-muted-foreground/50 text-[8.5px] tracking-tight">
-              &copy; {new Date().getFullYear()} IxStates 
+              &copy; {new Date().getFullYear()} IxStates
             </p>
           </div>
         </div>

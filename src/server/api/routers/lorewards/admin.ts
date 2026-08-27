@@ -219,7 +219,9 @@ export const lorewardsAdminRouter = createTRPCRouter({
         }
         return await res.json();
       } catch (err: any) {
-        throw new Error(`Failed to sync blacklist with Discord bot: ${err.message}`, { cause: err });
+        throw new Error(`Failed to sync blacklist with Discord bot: ${err.message}`, {
+          cause: err,
+        });
       }
     }),
 

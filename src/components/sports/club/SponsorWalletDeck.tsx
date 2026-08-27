@@ -7,7 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { Bank as Landmark, ArrowUpRight, Trophy, Sparks as Sparkles, HelpCircle } from "iconoir-react";
+import {
+  Bank as Landmark,
+  ArrowUpRight,
+  Trophy,
+  Sparks as Sparkles,
+  HelpCircle,
+} from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 

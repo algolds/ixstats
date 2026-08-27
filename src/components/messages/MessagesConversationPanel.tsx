@@ -113,7 +113,7 @@ export function MessagesConversationPanel({
       {/* Search Header */}
       <div
         className={cn(
-          "relative z-10 flex shrink-0 flex-col gap-2.5 border-b border-border/40 p-3 pb-2.5",
+          "border-border/40 relative z-10 flex shrink-0 flex-col gap-2.5 border-b p-3 pb-2.5",
           currentBg
         )}
       >
@@ -124,13 +124,13 @@ export function MessagesConversationPanel({
               placeholder="Search messages..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="h-9 rounded-xl border-border/50 bg-background/70 pl-9 pr-3 text-xs shadow-2xs backdrop-blur-xs"
+              className="border-border/50 bg-background/70 h-9 rounded-xl pr-3 pl-9 text-xs shadow-2xs backdrop-blur-xs"
             />
           </div>
           {activeFolder === "conversations" && (
             <Button
               size="sm"
-              className="h-9 shrink-0 cursor-pointer gap-1.5 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-xs transition-all duration-150 hover:bg-primary/90 active:scale-[0.96]"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 shrink-0 cursor-pointer gap-1.5 rounded-xl px-3 text-xs font-semibold shadow-xs transition-all duration-150 active:scale-[0.96]"
               onClick={onNewConversation}
               title="Start a new conversation"
             >
@@ -142,7 +142,7 @@ export function MessagesConversationPanel({
 
         {/* Channel filter chips (Conversations folder only) */}
         {activeFolder === "conversations" && (
-          <div className="flex items-center gap-1 overflow-x-auto pt-0.5 scrollbar-none">
+          <div className="flex scrollbar-none items-center gap-1 overflow-x-auto pt-0.5">
             {CHANNEL_FILTERS.map((filter) => {
               const isActive = activeFilter === filter.id;
               return (
@@ -159,7 +159,7 @@ export function MessagesConversationPanel({
                   {isActive && (
                     <motion.div
                       layoutId="messages-channel-chip"
-                      className="absolute inset-0 rounded-lg border border-border/60 bg-card shadow-xs"
+                      className="border-border/60 bg-card absolute inset-0 rounded-lg border shadow-xs"
                       transition={{ type: "spring", stiffness: 450, damping: 30 }}
                     />
                   )}
@@ -177,104 +177,106 @@ export function MessagesConversationPanel({
         style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}
       >
         {/* Pinned System Messages Card (Conversations folder only) */}
-        {activeFolder === "conversations" && (activeFilter === "all" || activeFilter === "direct") && (
-          <button
-            onClick={() => onSelectConversation(SYSTEM_CONVERSATION_ID)}
-            className={cn(
-              "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-150 active:scale-[0.985] select-none",
-              isSystemSelected
-                ? "bg-accent/80 text-accent-foreground shadow-2xs ring-1 ring-border/50"
-                : "hover:bg-accent/20 text-foreground/90 hover:text-foreground"
-            )}
-          >
-            {/* System Avatar */}
-            <div className="relative shrink-0">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20 shadow-2xs">
-                <Crown className="h-4 w-4" />
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <span
-                    className={cn(
-                      "truncate text-[13px] tracking-[-0.01em]",
-                      isSystemSelected
-                        ? "text-foreground font-semibold"
-                        : "text-foreground/90 font-medium"
-                    )}
-                  >
-                    System Messages
-                  </span>
-                  <Crown className="h-3 w-3 shrink-0 text-amber-500/80" />
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <Pin className="h-3 w-3 text-muted-foreground/50" />
+        {activeFolder === "conversations" &&
+          (activeFilter === "all" || activeFilter === "direct") && (
+            <button
+              onClick={() => onSelectConversation(SYSTEM_CONVERSATION_ID)}
+              className={cn(
+                "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-150 select-none active:scale-[0.985]",
+                isSystemSelected
+                  ? "bg-accent/80 text-accent-foreground ring-border/50 shadow-2xs ring-1"
+                  : "hover:bg-accent/20 text-foreground/90 hover:text-foreground"
+              )}
+            >
+              {/* System Avatar */}
+              <div className="relative shrink-0">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 shadow-2xs ring-1 ring-amber-500/20">
+                  <Crown className="h-4 w-4" />
                 </div>
               </div>
 
-              <div className="mt-0.5 flex items-center justify-between gap-2">
-                <p className="line-clamp-1 text-[12px] leading-normal text-muted-foreground font-normal">
-                  {latestSystemNotice
-                    ? `${latestSystemNotice.title}: ${latestSystemNotice.description || latestSystemNotice.message || ""}`
-                    : "Official platform bulletins and simulation digests"}
-                </p>
+              {/* Content */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "truncate text-[13px] tracking-[-0.01em]",
+                        isSystemSelected
+                          ? "text-foreground font-semibold"
+                          : "text-foreground/90 font-medium"
+                      )}
+                    >
+                      System Messages
+                    </span>
+                    <Crown className="h-3 w-3 shrink-0 text-amber-500/80" />
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Pin className="text-muted-foreground/50 h-3 w-3" />
+                  </div>
+                </div>
+
+                <div className="mt-0.5 flex items-center justify-between gap-2">
+                  <p className="text-muted-foreground line-clamp-1 text-[12px] leading-normal font-normal">
+                    {latestSystemNotice
+                      ? `${latestSystemNotice.title}: ${latestSystemNotice.description || latestSystemNotice.message || ""}`
+                      : "Official platform bulletins and simulation digests"}
+                  </p>
+                </div>
               </div>
-            </div>
-          </button>
-        )}
+            </button>
+          )}
 
         {/* Pinned LoreBot Card (Conversations folder only) */}
-        {activeFolder === "conversations" && (activeFilter === "all" || activeFilter === "community" || activeFilter === "direct") && (
-          <button
-            onClick={() => onSelectConversation(LOREBOT_CONVERSATION_ID)}
-            className={cn(
-              "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-150 active:scale-[0.985] select-none",
-              isLoreBotSelected
-                ? "bg-accent/80 text-accent-foreground shadow-2xs ring-1 ring-border/50"
-                : "hover:bg-accent/20 text-foreground/90 hover:text-foreground"
-            )}
-          >
-            {/* LoreBot Avatar */}
-            <div className="relative shrink-0">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-500/10 text-teal-400 ring-1 ring-teal-500/20 shadow-2xs">
-                <BookOpen className="h-4 w-4" />
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <span
-                    className={cn(
-                      "truncate text-[13px] tracking-[-0.01em]",
-                      isLoreBotSelected
-                        ? "text-foreground font-semibold"
-                        : "text-foreground/90 font-medium"
-                    )}
-                  >
-                    LoreBot
-                  </span>
-                  <Crown className="h-3 w-3 shrink-0 text-amber-500/80" />
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <Pin className="h-3 w-3 text-muted-foreground/50" />
+        {activeFolder === "conversations" &&
+          (activeFilter === "all" || activeFilter === "community" || activeFilter === "direct") && (
+            <button
+              onClick={() => onSelectConversation(LOREBOT_CONVERSATION_ID)}
+              className={cn(
+                "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-150 select-none active:scale-[0.985]",
+                isLoreBotSelected
+                  ? "bg-accent/80 text-accent-foreground ring-border/50 shadow-2xs ring-1"
+                  : "hover:bg-accent/20 text-foreground/90 hover:text-foreground"
+              )}
+            >
+              {/* LoreBot Avatar */}
+              <div className="relative shrink-0">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-500/10 text-teal-400 shadow-2xs ring-1 ring-teal-500/20">
+                  <BookOpen className="h-4 w-4" />
                 </div>
               </div>
 
-              <div className="mt-0.5 flex items-center justify-between gap-2">
-                <p className="line-clamp-1 text-[12px] leading-normal text-muted-foreground font-normal">
-                  {latestWikiChange
-                    ? `Latest edit on ${latestWikiChange.title}: ${latestWikiChange.comment || `${latestWikiChange.user} updated article`}`
-                    : "WikiOS updates, watchlist activity & lore dispatches"}
-                </p>
+              {/* Content */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "truncate text-[13px] tracking-[-0.01em]",
+                        isLoreBotSelected
+                          ? "text-foreground font-semibold"
+                          : "text-foreground/90 font-medium"
+                      )}
+                    >
+                      LoreBot
+                    </span>
+                    <Crown className="h-3 w-3 shrink-0 text-amber-500/80" />
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Pin className="text-muted-foreground/50 h-3 w-3" />
+                  </div>
+                </div>
+
+                <div className="mt-0.5 flex items-center justify-between gap-2">
+                  <p className="text-muted-foreground line-clamp-1 text-[12px] leading-normal font-normal">
+                    {latestWikiChange
+                      ? `Latest edit on ${latestWikiChange.title}: ${latestWikiChange.comment || `${latestWikiChange.user} updated article`}`
+                      : "WikiOS updates, watchlist activity & lore dispatches"}
+                  </p>
+                </div>
               </div>
-            </div>
-          </button>
-        )}
+            </button>
+          )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -309,4 +311,3 @@ export function MessagesConversationPanel({
     </div>
   );
 }
-

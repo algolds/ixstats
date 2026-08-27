@@ -8,7 +8,10 @@ import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { parseEntityAttributesFromWiki, type EntityKind } from "~/lib/wiki-os/adapters/ixstates/entity-parser";
+import {
+  parseEntityAttributesFromWiki,
+  type EntityKind,
+} from "~/lib/wiki-os/adapters/ixstates/entity-parser";
 import { checkGeoCompliance } from "~/lib/country-geo";
 import { getTerrainAtPoint } from "~/lib/country-geo";
 import {

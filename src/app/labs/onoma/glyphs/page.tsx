@@ -14,20 +14,19 @@ import {
   // oxlint-disable-next-line eslint/no-unused-vars
   Settings,
 } from "iconoir-react";
+import { RiEqualizerLine, RiStackLine, RiGridLine } from "react-icons/ri";
 import {
-  RiEqualizerLine,
-  RiStackLine,
-  RiGridLine,
-} from "react-icons/ri";
-import { OnomaGlyph, type OnomaGlyphSize, type OnomaGlyphState } from "../components/glyphs/OnomaGlyph";
-import {
-  type OnomaGlyphName,
-} from "../components/glyphs/onoma-glyphs-catalog";
+  OnomaGlyph,
+  type OnomaGlyphSize,
+  type OnomaGlyphState,
+} from "../components/glyphs/OnomaGlyph";
+import { type OnomaGlyphName } from "../components/glyphs/onoma-glyphs-catalog";
 import { cn } from "~/lib/utils";
 
 interface GlyphMeta {
   name: OnomaGlyphName;
-  domain: "SOUND" | "STRUCTURE" | "TRANSFORMATION" | "MEMORY" | "COMPOSITION" | "EMERGENCE" | "SYSTEM";
+  domain:
+    "SOUND" | "STRUCTURE" | "TRANSFORMATION" | "MEMORY" | "COMPOSITION" | "EMERGENCE" | "SYSTEM";
   title: string;
   description: string;
   linguisticNotation: string;
@@ -100,7 +99,8 @@ const GLYPH_METADATA: GlyphMeta[] = [
     name: "transform-shift",
     domain: "TRANSFORMATION",
     title: "Sound Shift Mutation",
-    description: "Diachronic phonetic shift across historical eras (e.g. Grimm's Law, Great Vowel Shift).",
+    description:
+      "Diachronic phonetic shift across historical eras (e.g. Grimm's Law, Great Vowel Shift).",
     linguisticNotation: "p > f / V_V",
     domainColor: "#a855f7",
   },
@@ -108,7 +108,8 @@ const GLYPH_METADATA: GlyphMeta[] = [
     name: "transform-arrow",
     domain: "TRANSFORMATION",
     title: "Geometric Transformation Arrow",
-    description: "Pure directional generative arrow for rules, shifts, and morphological production.",
+    description:
+      "Pure directional generative arrow for rules, shifts, and morphological production.",
     linguisticNotation: "A → B",
     domainColor: "#a855f7",
   },
@@ -116,7 +117,8 @@ const GLYPH_METADATA: GlyphMeta[] = [
     name: "transform-correspond",
     domain: "TRANSFORMATION",
     title: "Cognate Correspondence",
-    description: "Bidirectional cognate mapping between sister languages of a shared proto-ancestor.",
+    description:
+      "Bidirectional cognate mapping between sister languages of a shared proto-ancestor.",
     linguisticNotation: "L₁ ↔ L₂",
     domainColor: "#a855f7",
   },
@@ -242,7 +244,16 @@ const GLYPH_METADATA: GlyphMeta[] = [
   },
 ];
 
-const DOMAINS = ["ALL", "SOUND", "STRUCTURE", "TRANSFORMATION", "MEMORY", "COMPOSITION", "EMERGENCE", "SYSTEM"] as const;
+const DOMAINS = [
+  "ALL",
+  "SOUND",
+  "STRUCTURE",
+  "TRANSFORMATION",
+  "MEMORY",
+  "COMPOSITION",
+  "EMERGENCE",
+  "SYSTEM",
+] as const;
 
 const PALETTES = [
   { label: "Default (Foreground)", value: undefined },
@@ -285,12 +296,12 @@ export default function OnomaGlyphsDevPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 sm:p-8 antialiased">
+    <div className="bg-background text-foreground min-h-screen p-4 antialiased sm:p-8">
       <div className="mx-auto max-w-7xl space-y-8">
         {/* Navigation & Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-6">
+        <div className="border-border/50 flex flex-col justify-between gap-4 border-b pb-6 md:flex-row md:items-center">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 font-mono text-xs">
               <Link
                 href="/labs/onoma"
                 className="hover:text-foreground flex items-center gap-1 transition-colors"
@@ -303,15 +314,19 @@ export default function OnomaGlyphsDevPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-onoma-primary/10 text-onoma-primary border border-onoma-primary/20">
+              <div className="bg-onoma-primary/10 text-onoma-primary border-onoma-primary/20 rounded-xl border p-2">
                 <OnomaGlyph name="emerge-engine" size="lg" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight font-mono">
-                  Onoma Glyph Catalog <span className="text-xs font-mono text-muted-foreground px-2 py-0.5 rounded-full bg-secondary/50 border border-border/60">v0.1</span>
+                <h1 className="font-mono text-2xl font-bold tracking-tight">
+                  Onoma Glyph Catalog{" "}
+                  <span className="text-muted-foreground bg-secondary/50 border-border/60 rounded-full border px-2 py-0.5 font-mono text-xs">
+                    v0.1
+                  </span>
                 </h1>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Mathematical vector grammar for notation over illustration (SF Symbols × IPA × Scientific Diagrams).
+                <p className="text-muted-foreground text-xs sm:text-sm">
+                  Mathematical vector grammar for notation over illustration (SF Symbols × IPA ×
+                  Scientific Diagrams).
                 </p>
               </div>
             </div>
@@ -320,7 +335,7 @@ export default function OnomaGlyphsDevPage() {
           <div className="flex items-center gap-2 self-start md:self-auto">
             <Link
               href="/labs/onoma"
-              className="inline-flex items-center gap-2 rounded-xl border border-border/50 bg-secondary/30 px-3.5 py-2 text-xs font-semibold hover:bg-secondary/50 transition-all active:scale-95"
+              className="border-border/50 bg-secondary/30 hover:bg-secondary/50 inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all active:scale-95"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>Back to Onoma Workspace</span>
@@ -329,42 +344,42 @@ export default function OnomaGlyphsDevPage() {
         </div>
 
         {/* Interactive Controls Bench */}
-        <div className="rounded-2xl border border-border/50 bg-secondary/20 p-4 sm:p-6 backdrop-blur-xl space-y-4 shadow-xs">
-          <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-3">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider font-mono text-muted-foreground">
-              <RiEqualizerLine className="h-4 w-4 text-onoma-primary" />
+        <div className="border-border/50 bg-secondary/20 space-y-4 rounded-2xl border p-4 shadow-xs backdrop-blur-xl sm:p-6">
+          <div className="border-border/40 flex items-center justify-between gap-2 border-b pb-3">
+            <div className="text-muted-foreground flex items-center gap-2 font-mono text-xs font-bold tracking-wider uppercase">
+              <RiEqualizerLine className="text-onoma-primary h-4 w-4" />
               <span>Live Testing Controls</span>
             </div>
-            <span className="text-xs font-mono text-muted-foreground">
+            <span className="text-muted-foreground font-mono text-xs">
               Showing {filteredGlyphs.length} of {GLYPH_METADATA.length} Glyphs
             </span>
           </div>
 
           {/* Search & Domain Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             {/* Search Input */}
             <div className="relative md:col-span-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search glyph name, IPA notation, or concept..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-border/60 bg-background/80 pl-9 pr-3 py-2 text-xs font-mono focus:border-onoma-primary focus:outline-none transition-all placeholder:text-muted-foreground/60"
+                className="border-border/60 bg-background/80 focus:border-onoma-primary placeholder:text-muted-foreground/60 w-full rounded-xl border py-2 pr-3 pl-9 font-mono text-xs transition-all focus:outline-none"
               />
             </div>
 
             {/* Domain Pills */}
-            <div className="md:col-span-2 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <div className="flex scrollbar-none items-center gap-1.5 overflow-x-auto pb-1 md:col-span-2">
               {DOMAINS.map((domain) => (
                 <button
                   key={domain}
                   onClick={() => setSelectedDomain(domain)}
                   className={cn(
-                    "cursor-pointer rounded-lg px-2.5 py-1.5 text-[11px] font-mono font-semibold transition-all shrink-0 select-none",
+                    "shrink-0 cursor-pointer rounded-lg px-2.5 py-1.5 font-mono text-[11px] font-semibold transition-all select-none",
                     selectedDomain === domain
                       ? "bg-foreground text-background shadow-xs"
-                      : "bg-background/60 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-background"
+                      : "bg-background/60 border-border/40 text-muted-foreground hover:text-foreground hover:bg-background border"
                   )}
                 >
                   {domain}
@@ -374,19 +389,19 @@ export default function OnomaGlyphsDevPage() {
           </div>
 
           {/* Sizing, States, Stroke & Palette Control Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-border/30">
+          <div className="border-border/30 grid grid-cols-1 gap-3 border-t pt-2 sm:grid-cols-2 lg:grid-cols-4">
             {/* Sizing Switcher */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-mono uppercase text-muted-foreground font-semibold">
+              <label className="text-muted-foreground font-mono text-[11px] font-semibold uppercase">
                 Scale: <span className="text-foreground">{selectedSize}</span>
               </label>
-              <div className="flex items-center gap-1 bg-background/60 p-1 rounded-xl border border-border/40">
+              <div className="bg-background/60 border-border/40 flex items-center gap-1 rounded-xl border p-1">
                 {(["xs", "sm", "md", "lg", "xl", "display"] as OnomaGlyphSize[]).map((sz) => (
                   <button
                     key={sz}
                     onClick={() => setSelectedSize(sz)}
                     className={cn(
-                      "flex-1 py-1 text-[10px] font-mono font-bold rounded-lg cursor-pointer transition-all",
+                      "flex-1 cursor-pointer rounded-lg py-1 font-mono text-[10px] font-bold transition-all",
                       selectedSize === sz
                         ? "bg-onoma-primary text-white shadow-xs"
                         : "text-muted-foreground hover:text-foreground"
@@ -400,16 +415,16 @@ export default function OnomaGlyphsDevPage() {
 
             {/* State Switcher */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-mono uppercase text-muted-foreground font-semibold">
+              <label className="text-muted-foreground font-mono text-[11px] font-semibold uppercase">
                 State: <span className="text-foreground">{selectedState}</span>
               </label>
-              <div className="flex items-center gap-1 bg-background/60 p-1 rounded-xl border border-border/40">
+              <div className="bg-background/60 border-border/40 flex items-center gap-1 rounded-xl border p-1">
                 {(["idle", "active", "generating", "disabled"] as OnomaGlyphState[]).map((st) => (
                   <button
                     key={st}
                     onClick={() => setSelectedState(st)}
                     className={cn(
-                      "flex-1 py-1 text-[10px] font-mono font-bold rounded-lg cursor-pointer transition-all",
+                      "flex-1 cursor-pointer rounded-lg py-1 font-mono text-[10px] font-bold transition-all",
                       selectedState === st
                         ? "bg-foreground text-background shadow-xs"
                         : "text-muted-foreground hover:text-foreground"
@@ -423,7 +438,7 @@ export default function OnomaGlyphsDevPage() {
 
             {/* Stroke Weight */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-mono uppercase text-muted-foreground font-semibold flex items-center justify-between">
+              <label className="text-muted-foreground flex items-center justify-between font-mono text-[11px] font-semibold uppercase">
                 <span>Stroke:</span>
                 <span className="text-foreground font-mono">{selectedStroke.toFixed(2)}px</span>
               </label>
@@ -435,25 +450,27 @@ export default function OnomaGlyphsDevPage() {
                   step="0.25"
                   value={selectedStroke}
                   onChange={(e) => setSelectedStroke(parseFloat(e.target.value))}
-                  className="w-full cursor-pointer accent-onoma-primary"
+                  className="accent-onoma-primary w-full cursor-pointer"
                 />
               </div>
             </div>
 
             {/* Accent Color Palette */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-mono uppercase text-muted-foreground font-semibold">
+              <label className="text-muted-foreground font-mono text-[11px] font-semibold uppercase">
                 Accent Color
               </label>
-              <div className="flex items-center gap-1.5 bg-background/60 p-1.5 rounded-xl border border-border/40">
+              <div className="bg-background/60 border-border/40 flex items-center gap-1.5 rounded-xl border p-1.5">
                 {PALETTES.map((p, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedColor(p.value)}
                     title={p.label}
                     className={cn(
-                      "h-6 w-6 rounded-lg cursor-pointer border transition-transform duration-150 active:scale-90",
-                      selectedColor === p.value ? "ring-2 ring-foreground scale-110" : "opacity-75 hover:opacity-100",
+                      "h-6 w-6 cursor-pointer rounded-lg border transition-transform duration-150 active:scale-90",
+                      selectedColor === p.value
+                        ? "ring-foreground scale-110 ring-2"
+                        : "opacity-75 hover:opacity-100",
                       p.value ? "" : "bg-foreground"
                     )}
                     style={p.value ? { backgroundColor: p.value } : undefined}
@@ -465,7 +482,7 @@ export default function OnomaGlyphsDevPage() {
         </div>
 
         {/* Glyph Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filteredGlyphs.map((glyph) => {
             const jsxCode = `<OnomaGlyph name="${glyph.name}" size="${selectedSize}" />`;
             const isCopied = copiedName === glyph.name;
@@ -473,12 +490,12 @@ export default function OnomaGlyphsDevPage() {
             return (
               <div
                 key={glyph.name}
-                className="group relative flex flex-col justify-between rounded-2xl border border-border/50 bg-secondary/15 p-4.5 hover:border-border/80 hover:bg-secondary/25 transition-all duration-200 shadow-xs"
+                className="group border-border/50 bg-secondary/15 hover:border-border/80 hover:bg-secondary/25 relative flex flex-col justify-between rounded-2xl border p-4.5 shadow-xs transition-all duration-200"
               >
                 {/* Top Badge Row */}
                 <div className="flex items-center justify-between gap-2">
                   <span
-                    className="text-[9px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded-md border"
+                    className="rounded-md border px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider uppercase"
                     style={{
                       color: glyph.domainColor,
                       borderColor: `${glyph.domainColor}40`,
@@ -487,13 +504,13 @@ export default function OnomaGlyphsDevPage() {
                   >
                     {glyph.domain}
                   </span>
-                  <span className="font-mono text-[10px] text-muted-foreground/70 bg-background/50 px-1.5 py-0.5 rounded border border-border/30">
+                  <span className="text-muted-foreground/70 bg-background/50 border-border/30 rounded border px-1.5 py-0.5 font-mono text-[10px]">
                     {glyph.linguisticNotation}
                   </span>
                 </div>
 
                 {/* Hero Glyph Canvas Preview */}
-                <div className="my-6 flex h-24 items-center justify-center rounded-xl bg-background/40 border border-border/30 transition-transform group-hover:scale-[1.02]">
+                <div className="bg-background/40 border-border/30 my-6 flex h-24 items-center justify-center rounded-xl border transition-transform group-hover:scale-[1.02]">
                   <OnomaGlyph
                     name={glyph.name}
                     size={selectedSize}
@@ -506,32 +523,30 @@ export default function OnomaGlyphsDevPage() {
                 {/* Info & Code Copy */}
                 <div className="space-y-2">
                   <div>
-                    <h3 className="font-bold text-xs sm:text-sm text-foreground tracking-tight">
+                    <h3 className="text-foreground text-xs font-bold tracking-tight sm:text-sm">
                       {glyph.title}
                     </h3>
-                    <p className="font-mono text-[11px] text-muted-foreground/90">
-                      {glyph.name}
-                    </p>
+                    <p className="text-muted-foreground/90 font-mono text-[11px]">{glyph.name}</p>
                   </div>
 
-                  <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                  <p className="text-muted-foreground line-clamp-2 text-[11px] leading-relaxed">
                     {glyph.description}
                   </p>
 
                   <button
                     onClick={() => copyCode(glyph.name, jsxCode)}
                     className={cn(
-                      "w-full flex items-center justify-between rounded-xl px-2.5 py-1.5 text-[10px] font-mono border transition-all cursor-pointer select-none active:scale-[0.97]",
+                      "flex w-full cursor-pointer items-center justify-between rounded-xl border px-2.5 py-1.5 font-mono text-[10px] transition-all select-none active:scale-[0.97]",
                       isCopied
-                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500 font-bold"
+                        ? "border-emerald-500/30 bg-emerald-500/10 font-bold text-emerald-500"
                         : "bg-background/60 border-border/40 text-muted-foreground hover:text-foreground hover:bg-background"
                     )}
                   >
                     <span className="truncate">{isCopied ? "Copied to Clipboard!" : jsxCode}</span>
                     {isCopied ? (
-                      <Check className="h-3 w-3 shrink-0 text-emerald-500 ml-1" />
+                      <Check className="ml-1 h-3 w-3 shrink-0 text-emerald-500" />
                     ) : (
-                      <Copy className="h-3 w-3 shrink-0 opacity-60 ml-1 group-hover:opacity-100" />
+                      <Copy className="ml-1 h-3 w-3 shrink-0 opacity-60 group-hover:opacity-100" />
                     )}
                   </button>
                 </div>
@@ -541,45 +556,77 @@ export default function OnomaGlyphsDevPage() {
         </div>
 
         {/* Special Variants Playground (Composed & Framed) */}
-        <div className="rounded-2xl border border-border/50 bg-secondary/20 p-6 space-y-6">
-          <div className="border-b border-border/40 pb-3">
-            <h2 className="text-lg font-bold font-mono tracking-tight flex items-center gap-2">
-              <RiStackLine className="h-4 w-4 text-onoma-primary" />
+        <div className="border-border/50 bg-secondary/20 space-y-6 rounded-2xl border p-6">
+          <div className="border-border/40 border-b pb-3">
+            <h2 className="flex items-center gap-2 font-mono text-lg font-bold tracking-tight">
+              <RiStackLine className="text-onoma-primary h-4 w-4" />
               <span>Special Linguistic Notation Variants</span>
             </h2>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Composed transformations (sound shifts) and framed brand/entity objects.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Framed Linguistic Objects ⟨LABEL⟩ */}
-            <div className="space-y-3 p-4 rounded-xl bg-background/50 border border-border/40">
-              <h3 className="font-bold text-xs uppercase tracking-wider font-mono text-muted-foreground">
+            <div className="bg-background/50 border-border/40 space-y-3 rounded-xl border p-4">
+              <h3 className="text-muted-foreground font-mono text-xs font-bold tracking-wider uppercase">
                 1. Framed Linguistic Objects (⟨LABEL⟩)
               </h3>
               <div className="flex flex-wrap items-center gap-3">
-                <OnomaGlyph variant="framed" label="ONOMA" size="lg" state="active" accentColor="#0091ff" />
-                <OnomaGlyph variant="framed" label="KOKORO" size="md" state="active" accentColor="#ec4899" />
-                <OnomaGlyph variant="framed" label="HIGH_VALYRIAN" size="md" state="active" accentColor="#a855f7" />
+                <OnomaGlyph
+                  variant="framed"
+                  label="ONOMA"
+                  size="lg"
+                  state="active"
+                  accentColor="#0091ff"
+                />
+                <OnomaGlyph
+                  variant="framed"
+                  label="KOKORO"
+                  size="md"
+                  state="active"
+                  accentColor="#ec4899"
+                />
+                <OnomaGlyph
+                  variant="framed"
+                  label="HIGH_VALYRIAN"
+                  size="md"
+                  state="active"
+                  accentColor="#a855f7"
+                />
                 <OnomaGlyph variant="framed" label="SINDARIN" size="md" state="idle" />
               </div>
-              <p className="text-[11px] text-muted-foreground font-mono">
+              <p className="text-muted-foreground font-mono text-[11px]">
                 Usage: {'<OnomaGlyph variant="framed" label="ONOMA" size="lg" />'}
               </p>
             </div>
 
             {/* Composed Sound Shift Expressions from → to */}
-            <div className="space-y-3 p-4 rounded-xl bg-background/50 border border-border/40">
-              <h3 className="font-bold text-xs uppercase tracking-wider font-mono text-muted-foreground">
+            <div className="bg-background/50 border-border/40 space-y-3 rounded-xl border p-4">
+              <h3 className="text-muted-foreground font-mono text-xs font-bold tracking-wider uppercase">
                 2. Sound Shift Expressions (From → To)
               </h3>
               <div className="flex flex-wrap items-center gap-4">
-                <OnomaGlyph variant="composed" from="[p]" to="[f]" size="md" state="active" accentColor="#10b981" />
-                <OnomaGlyph variant="composed" from="[k]" to="[tʃ]" size="md" state="active" accentColor="#a855f7" />
+                <OnomaGlyph
+                  variant="composed"
+                  from="[p]"
+                  to="[f]"
+                  size="md"
+                  state="active"
+                  accentColor="#10b981"
+                />
+                <OnomaGlyph
+                  variant="composed"
+                  from="[k]"
+                  to="[tʃ]"
+                  size="md"
+                  state="active"
+                  accentColor="#a855f7"
+                />
                 <OnomaGlyph variant="composed" from="[a:]" to="[eɪ]" size="md" state="idle" />
               </div>
-              <p className="text-[11px] text-muted-foreground font-mono">
+              <p className="text-muted-foreground font-mono text-[11px]">
                 Usage: {'<OnomaGlyph variant="composed" from="[p]" to="[f]" />'}
               </p>
             </div>
@@ -587,45 +634,44 @@ export default function OnomaGlyphsDevPage() {
         </div>
 
         {/* Optical Scale Matrix */}
-        <div className="rounded-2xl border border-border/50 bg-secondary/20 p-6 space-y-4">
-          <div className="border-b border-border/40 pb-3">
-            <h2 className="text-lg font-bold font-mono tracking-tight flex items-center gap-2">
-              <RiGridLine className="h-4 w-4 text-onoma-primary" />
+        <div className="border-border/50 bg-secondary/20 space-y-4 rounded-2xl border p-6">
+          <div className="border-border/40 border-b pb-3">
+            <h2 className="flex items-center gap-2 font-mono text-lg font-bold tracking-tight">
+              <RiGridLine className="text-onoma-primary h-4 w-4" />
               <span>Optical Scale Verification Matrix</span>
             </h2>
-            <p className="text-xs text-muted-foreground">
-              Verify stroke hierarchy and optical balance at Micro (16px), Standard (24px), and Display (48px).
+            <p className="text-muted-foreground text-xs">
+              Verify stroke hierarchy and optical balance at Micro (16px), Standard (24px), and
+              Display (48px).
             </p>
           </div>
 
           <div className="overflow-x-auto pb-2">
-            <table className="w-full text-left text-xs font-mono">
+            <table className="w-full text-left font-mono text-xs">
               <thead>
-                <tr className="border-b border-border/40 text-muted-foreground">
+                <tr className="border-border/40 text-muted-foreground border-b">
                   <th className="py-2.5 pr-4">Glyph Name</th>
-                  <th className="py-2.5 px-4 text-center">Micro (16px)</th>
-                  <th className="py-2.5 px-4 text-center">Standard (24px)</th>
-                  <th className="py-2.5 px-4 text-center">Display (48px)</th>
+                  <th className="px-4 py-2.5 text-center">Micro (16px)</th>
+                  <th className="px-4 py-2.5 text-center">Standard (24px)</th>
+                  <th className="px-4 py-2.5 text-center">Display (48px)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/20">
+              <tbody className="divide-border/20 divide-y">
                 {GLYPH_METADATA.map((glyph) => (
                   <tr key={glyph.name} className="hover:bg-secondary/30 transition-colors">
-                    <td className="py-3 pr-4 font-bold text-foreground">
-                      {glyph.name}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="inline-flex items-center justify-center p-1 rounded bg-background/50 border border-border/30">
+                    <td className="text-foreground py-3 pr-4 font-bold">{glyph.name}</td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="bg-background/50 border-border/30 inline-flex items-center justify-center rounded border p-1">
                         <OnomaGlyph name={glyph.name} size="sm" />
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="inline-flex items-center justify-center p-1.5 rounded bg-background/50 border border-border/30">
+                    <td className="px-4 py-3 text-center">
+                      <div className="bg-background/50 border-border/30 inline-flex items-center justify-center rounded border p-1.5">
                         <OnomaGlyph name={glyph.name} size="lg" />
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="inline-flex items-center justify-center p-2 rounded bg-background/50 border border-border/30">
+                    <td className="px-4 py-3 text-center">
+                      <div className="bg-background/50 border-border/30 inline-flex items-center justify-center rounded border p-2">
                         <OnomaGlyph name={glyph.name} size="display" />
                       </div>
                     </td>

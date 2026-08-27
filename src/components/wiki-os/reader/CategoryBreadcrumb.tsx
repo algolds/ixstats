@@ -52,7 +52,7 @@ export function CategoryBreadcrumb({ title }: CategoryBreadcrumbProps) {
     <nav className="wikios-breadcrumb" aria-label="Categories">
       {relevant.map((catTitle, i) => (
         <span key={catTitle} className="wikios-breadcrumb-item">
-          {i > 0 && <ChevronRight className="h-3 w-3 wikios-breadcrumb-sep" />}
+          {i > 0 && <ChevronRight className="wikios-breadcrumb-sep h-3 w-3" />}
           <Link
             href={withBasePath(
               `/wiki/categories/${encodeURIComponent(catTitle.replace(/ /g, "_"))}`

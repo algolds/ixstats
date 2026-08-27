@@ -146,11 +146,11 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
         onClick={onClose}
       >
         <div
-          className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card/95 text-foreground shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-card/95"
+          className="border-border bg-card/95 text-foreground dark:bg-card/95 relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl dark:border-white/15"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4 dark:border-white/10 dark:bg-white/5">
+          <div className="border-border bg-muted/30 flex items-center justify-between border-b px-6 py-4 dark:border-white/10 dark:bg-white/5">
             <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
               <Building className="h-5 w-5 text-cyan-400" />
               Insert Business Data
@@ -165,7 +165,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
           </div>
 
           {/* Tab Selection */}
-          <div className="flex border-b border-border bg-muted/20 p-1 dark:border-white/10 dark:bg-white/5">
+          <div className="border-border bg-muted/20 flex border-b p-1 dark:border-white/10 dark:bg-white/5">
             <button
               onClick={() => setActiveTab("search")}
               className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
@@ -207,7 +207,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                 </div>
 
                 {/* List */}
-                <div className="scrollbar-thin border-border divide-border bg-muted/20 max-h-36 divide-y overflow-y-auto rounded-lg border">
+                <div className="border-border divide-border bg-muted/20 max-h-36 scrollbar-thin divide-y overflow-y-auto rounded-lg border">
                   {searchLoading && (
                     <div className="text-muted-foreground flex items-center gap-2 p-3 text-xs">
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
@@ -246,7 +246,9 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                     <span className="block text-xs font-semibold text-cyan-400/80">
                       Ready to Link
                     </span>
-                    <span className="text-foreground text-sm font-bold">{selectedBusiness.name}</span>
+                    <span className="text-foreground text-sm font-bold">
+                      {selectedBusiness.name}
+                    </span>
                   </div>
                   {createSuccess && (
                     <span className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
@@ -301,7 +303,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
             /* Create and Link business POI */
             <form
               onSubmit={handleCreateBusiness}
-              className="scrollbar-thin max-h-[60vh] space-y-4 overflow-y-auto p-6"
+              className="max-h-[60vh] scrollbar-thin space-y-4 overflow-y-auto p-6"
             >
               {!viewerCountryId ? (
                 <div className="space-y-2 rounded-xl border border-red-500/25 bg-red-500/10 p-4 text-center">

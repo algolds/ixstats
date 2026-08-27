@@ -3,11 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
-import {
-  OpenBook as BookOpen,
-  Page as FileText,
-  Settings,
-} from "iconoir-react";
+import { OpenBook as BookOpen, Page as FileText, Settings } from "iconoir-react";
 import { soundEffects } from "~/lib/sound/cuelume";
 
 interface WikiHeaderProps {
@@ -35,11 +31,7 @@ export const WikiHeader: React.FC<WikiHeaderProps> = ({
       {/* Country Flag Subtle Background Overlay */}
       {flagImageUrl && (
         <div className="pointer-events-none absolute inset-0 opacity-[0.04]">
-          <img
-            src={flagImageUrl}
-            alt=""
-            className="h-full w-full object-cover"
-          />
+          <img src={flagImageUrl} alt="" className="h-full w-full object-cover" />
         </div>
       )}
 
@@ -99,7 +91,7 @@ export const WikiHeader: React.FC<WikiHeaderProps> = ({
             href="/settings?tab=wikios"
             data-cuelume-press="soft"
             title="WikiOS Settings & Lore Scanner"
-            className="facet-interactive flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-muted-foreground transition-all hover:bg-white/[0.06] hover:text-foreground active:scale-[0.97]"
+            className="facet-interactive text-muted-foreground hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] transition-all hover:bg-white/[0.06] active:scale-[0.97]"
           >
             <Settings className="h-4 w-4" />
           </Link>

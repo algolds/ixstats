@@ -3,7 +3,12 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { isEqual } from "~/lib/utils";
 import { Badge as UIBadge } from "~/components/ui/badge";
-import { Calculator, WarningTriangle as AlertTriangle, Settings, StatsReport as BarChart3 } from "iconoir-react";
+import {
+  Calculator,
+  WarningTriangle as AlertTriangle,
+  Settings,
+  StatsReport as BarChart3,
+} from "iconoir-react";
 import { Card } from "~/components/ui/card";
 import { useTaxBuilderAutoSync } from "~/hooks/useBuilderAutoSync";
 import {
@@ -24,7 +29,10 @@ import { PreviewTab } from "./tabs/PreviewTab";
 import { TaxCalculator } from "./atoms/TaxCalculator";
 
 // Existing components
-import { SuggestionsPanel, type SuggestionItem } from "~/components/mycountry/domains/government/builder/SuggestionsPanel";
+import {
+  SuggestionsPanel,
+  type SuggestionItem,
+} from "~/components/mycountry/domains/government/builder/SuggestionsPanel";
 import { useIntelligenceWebSocket } from "~/hooks/useIntelligenceWebSocket";
 
 // Templates and types
@@ -514,9 +522,7 @@ export function TaxBuilder({
           )}
         </div>
       ) : (
-        <Card
-          className="border-white/10 bg-white/[0.01] shadow-2xl backdrop-blur-xl dark:bg-black/20"
-        >
+        <Card className="border-white/10 bg-white/[0.01] shadow-2xl backdrop-blur-xl dark:bg-black/20">
           <div className="space-y-6 p-6">
             {activeTab === "settings" && (
               <SettingsTab

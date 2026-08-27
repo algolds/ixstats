@@ -7,13 +7,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
-import {
-  Copy,
-  Check,
-  ArrowUpRight,
-  ChatBubble as MessageSquare,
-  Clock,
-} from "iconoir-react";
+import { Copy, Check, ArrowUpRight, ChatBubble as MessageSquare, Clock } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
@@ -50,11 +44,11 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
         return (
           <div
             key={q.id}
-            className="group relative rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 hover:bg-[var(--wikios-surface)]/90 hover:border-[var(--wikios-border)]/80 shadow-xs hover:shadow-md transition-all duration-200 backdrop-blur-xl p-4 overflow-hidden flex flex-col gap-2.5"
+            className="group relative flex flex-col gap-2.5 overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-4 shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-[var(--wikios-border)]/80 hover:bg-[var(--wikios-surface)]/90 hover:shadow-md"
           >
             {/* Left Highlighter Ink Bar */}
             <div
-              className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl shadow-xs"
+              className="absolute top-0 bottom-0 left-0 w-1.5 rounded-l-2xl shadow-xs"
               style={{
                 backgroundColor: swatchColor,
                 boxShadow: `0 0 10px ${swatchColor}60`,
@@ -66,17 +60,17 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
               <Link
                 href={withBasePath(`/wiki/${q.pageSlug}`)}
                 onClick={() => soundEffects.press()}
-                className="flex items-center gap-1.5 text-xs font-bold text-[var(--wikios-text)] hover:text-[var(--wikios-accent)] transition-colors truncate max-w-sm"
+                className="flex max-w-sm items-center gap-1.5 truncate text-xs font-bold text-[var(--wikios-text)] transition-colors hover:text-[var(--wikios-accent)]"
               >
-                <WikiOSLogomark className="h-3.5 w-3.5 text-[var(--wikios-accent)] shrink-0" />
+                <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-[var(--wikios-accent)]" />
                 <span className="truncate">{cleanArticleTitle}</span>
               </Link>
 
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex shrink-0 items-center gap-1">
                 <button
                   type="button"
                   onClick={(e) => handleCopyQuote(e, q.id, q.selectedText)}
-                  className="h-7 px-2 flex items-center gap-1 rounded-xl bg-white/5 border border-[var(--wikios-border)] text-[11px] font-semibold text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] hover:bg-white/10 active:scale-95 transition-all cursor-pointer shadow-2xs"
+                  className="flex h-7 cursor-pointer items-center gap-1 rounded-xl border border-[var(--wikios-border)] bg-white/5 px-2 text-[11px] font-semibold text-[var(--wikios-text-dim)] shadow-2xs transition-all hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
                   title="Copy quote"
                 >
                   {copiedId === q.id ? (
@@ -95,7 +89,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
                 <Link
                   href={withBasePath(`/wiki/${q.pageSlug}`)}
                   onClick={() => soundEffects.press()}
-                  className="h-7 w-7 flex items-center justify-center rounded-xl bg-white/5 border border-[var(--wikios-border)] text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] hover:bg-white/10 active:scale-95 transition-all shadow-2xs"
+                  className="flex h-7 w-7 items-center justify-center rounded-xl border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-2xs transition-all hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
                   title="Open article"
                 >
                   <ArrowUpRight className="h-3.5 w-3.5" />
@@ -104,25 +98,25 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
             </div>
 
             {/* Excerpt Quote Text */}
-            <div className="pl-2 pt-0.5">
-              <blockquote className="text-[12.5px] italic text-[var(--wikios-text)] leading-relaxed font-serif pl-3 border-l-2 border-[var(--wikios-border)] py-0.5">
+            <div className="pt-0.5 pl-2">
+              <blockquote className="border-l-2 border-[var(--wikios-border)] py-0.5 pl-3 font-serif text-[12.5px] leading-relaxed text-[var(--wikios-text)] italic">
                 &ldquo;{q.selectedText}&rdquo;
               </blockquote>
             </div>
 
             {/* Lore Significance Note if present */}
             {q.comment && q.comment !== "Saved quote" && (
-              <div className="ml-2 p-2.5 rounded-xl bg-[var(--wikios-surface)]/70 border border-[var(--wikios-border)] text-[11px] text-[var(--wikios-text-muted)] space-y-0.5 shadow-2xs">
+              <div className="ml-2 space-y-0.5 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/70 p-2.5 text-[11px] text-[var(--wikios-text-muted)] shadow-2xs">
                 <div className="flex items-center gap-1 text-[10px] font-bold text-[var(--wikios-text)]">
-                  <MessageSquare className="w-3 h-3 text-purple-400" />
+                  <MessageSquare className="h-3 w-3 text-purple-400" />
                   <span>Lore Note</span>
                 </div>
-                <p className="italic leading-relaxed">{q.comment}</p>
+                <p className="leading-relaxed italic">{q.comment}</p>
               </div>
             )}
 
             {/* Timestamp */}
-            <div className="flex items-center gap-1 text-[10px] text-[var(--wikios-text-dim)] pl-2 pt-0.5">
+            <div className="flex items-center gap-1 pt-0.5 pl-2 text-[10px] text-[var(--wikios-text-dim)]">
               <Clock className="h-2.5 w-2.5" />
               <span>
                 Saved on{" "}

@@ -21,7 +21,10 @@ function formatDeckValue(n: number): string {
   return n.toLocaleString();
 }
 
-export const PassportVaultTab = React.memo(function PassportVaultTab({ vault, cleanUsername }: PassportVaultTabProps) {
+export const PassportVaultTab = React.memo(function PassportVaultTab({
+  vault,
+  cleanUsername,
+}: PassportVaultTabProps) {
   const totalCards = vault?.totalCards ?? 0;
   const deckValue = vault?.deckValue ?? 0;
   const level = vault?.collectorLevel ?? 1;
@@ -39,18 +42,18 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({ vault, cl
 
   if (!vault || totalCards === 0) {
     return (
-      <div className="rounded-3xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-10 text-center space-y-3">
-        <div className="mx-auto h-12 w-12 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
+      <div className="space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-10 text-center dark:border-white/10 dark:bg-white/[0.02]">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-500">
           <Crown className="h-6 w-6" />
         </div>
-        <h3 className="text-base font-bold text-foreground">No Vault Collection</h3>
-        <p className="text-xs text-muted-foreground max-w-md mx-auto">
+        <h3 className="text-foreground text-base font-bold">No Vault Collection</h3>
+        <p className="text-muted-foreground mx-auto max-w-md text-xs">
           @{cleanUsername} hasn&apos;t started collecting IxCards yet.
         </p>
         <Link
           href="/vault"
           data-cuelume-press="soft"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 text-white px-4 py-2 text-xs font-semibold shadow-sm hover:bg-purple-700 active:scale-[0.97] transition-all"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-purple-700 active:scale-[0.97]"
         >
           <span>Explore Vault</span>
           <ArrowRight className="h-3.5 w-3.5" />
@@ -69,31 +72,38 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({ vault, cl
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+        <h2 className="text-muted-foreground flex items-center gap-1.5 font-mono text-xs font-bold tracking-wider uppercase">
           <Crown className="h-3.5 w-3.5 text-purple-500" />
           <span>VAULT COLLECTION</span>
         </h2>
         <Link
           href="/vault"
           data-cuelume-press="soft"
-          className="font-mono text-[11px] text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-0.5"
+          className="flex items-center gap-0.5 font-mono text-[11px] text-purple-600 hover:underline dark:text-purple-400"
         >
           <span>Open Vault</span>
           <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-        <FacetCard depth={1} className="rounded-2xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] p-3.5 space-y-2">
+      <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+        <FacetCard
+          depth={1}
+          className="space-y-2 rounded-2xl border border-black/8 bg-black/[0.02] p-3.5 dark:border-white/10 dark:bg-white/[0.02]"
+        >
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Collector Level</span>
-            <Trophy className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-muted-foreground font-mono text-[9px] font-bold tracking-wider uppercase">
+              Collector Level
+            </span>
+            <Trophy className="text-muted-foreground h-3.5 w-3.5" />
           </div>
-          <p className="text-lg font-bold tracking-tight text-foreground leading-none">Lv. {level}</p>
+          <p className="text-foreground text-lg leading-none font-bold tracking-tight">
+            Lv. {level}
+          </p>
           <div className="space-y-1">
-            <div className="h-1 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+            <div className="h-1 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
               <motion.div
-                className="h-full bg-foreground rounded-full"
+                className="bg-foreground h-full rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${xpPct}%` }}
                 transition={
@@ -104,23 +114,34 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({ vault, cl
                 style={{ willChange: "width" }}
               />
             </div>
-            <p className="font-mono text-[9px] text-muted-foreground">{xp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP</p>
+            <p className="text-muted-foreground font-mono text-[9px]">
+              {xp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP
+            </p>
           </div>
         </FacetCard>
 
-        <FacetCard depth={1} className="rounded-2xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] p-3.5 space-y-2">
+        <FacetCard
+          depth={1}
+          className="space-y-2 rounded-2xl border border-black/8 bg-black/[0.02] p-3.5 dark:border-white/10 dark:bg-white/[0.02]"
+        >
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Deck Value</span>
+            <span className="text-muted-foreground font-mono text-[9px] font-bold tracking-wider uppercase">
+              Deck Value
+            </span>
             <Coins className="h-3.5 w-3.5 text-amber-500" />
           </div>
-          <p className="text-lg font-bold tracking-tight text-emerald-600 dark:text-emerald-400 leading-none">{formatDeckValue(deckValue)}</p>
+          <p className="text-lg leading-none font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+            {formatDeckValue(deckValue)}
+          </p>
         </FacetCard>
       </div>
 
       {topCards.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Featured Deck · Top {topCards.length}</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <h3 className="text-muted-foreground font-mono text-[10px] font-bold tracking-wider uppercase">
+            Featured Deck · Top {topCards.length}
+          </h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {topCards.map((card) => (
               <CardDisplay
                 key={`${card.id}-${(card as any).ownershipId ?? ""}`}
@@ -138,9 +159,11 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({ vault, cl
         </div>
       )}
 
-
-
-      <CardDetailsModal card={selectedCard} open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <CardDetailsModal
+        card={selectedCard}
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 });

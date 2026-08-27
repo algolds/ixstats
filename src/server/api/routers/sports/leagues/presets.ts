@@ -2,10 +2,7 @@
  * Sports Leagues — Presets Router
  */
 
-import {
-  createTRPCRouter,
-  publicProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { getAllPresets } from "~/lib/sports";
 

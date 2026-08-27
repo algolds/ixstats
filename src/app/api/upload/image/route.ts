@@ -216,7 +216,7 @@ export async function GET() {
       maxFileSize: MAX_FILE_SIZE,
       allowedTypes: ALLOWED_TYPES,
     });
-  } catch  {
+  } catch {
     return NextResponse.json(
       {
         authenticated: false,

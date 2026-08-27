@@ -21,7 +21,6 @@ import { intelAlertsThresholdsRouter } from "./thresholds";
 import { intelAlertsCrisesRouter } from "./crises";
 import { intelAlertsSecurityRouter } from "./security";
 
-
 export const intelAlertsRouter = mergeRouters(
   intelAlertsActionsRouter,
   intelAlertsThresholdsRouter,

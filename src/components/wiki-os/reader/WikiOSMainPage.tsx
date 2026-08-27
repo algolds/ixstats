@@ -1,5 +1,5 @@
 // src/components/wiki-os/reader/WikiOSMainPage.tsx
-// Custom WikiOS main page 
+// Custom WikiOS main page
 
 "use client";
 
@@ -14,7 +14,10 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { WikiHeroMaster, type WikiHeroVariant } from "./hero";
 import { EditorialMainPageContent, SculptedMainPageContent } from "./main";
-import { extractLeadImageFromHtml, normalizeWikiImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import {
+  extractLeadImageFromHtml,
+  normalizeWikiImageUrl,
+} from "~/lib/wiki-os/transformers/image-url";
 
 const STORAGE_KEY = "wikios:heroVariant";
 
@@ -90,7 +93,7 @@ function BlurbPromptModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="flex max-h-[80vh] max-w-lg flex-col gap-0 overflow-hidden p-0 rounded-3xl border border-white/20 dark:border-white/10 bg-white/80 dark:bg-zinc-950/90 backdrop-blur-2xl shadow-2xl">
+      <DialogContent className="flex max-h-[80vh] max-w-lg flex-col gap-0 overflow-hidden rounded-3xl border border-white/20 bg-white/80 p-0 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/90">
         {/* Header */}
         <DialogHeader className="border-b border-white/10 px-5 py-4">
           <div className="flex items-start justify-between gap-3">
@@ -122,14 +125,16 @@ function BlurbPromptModal({
             <div
               key={r.id}
               className={`rounded-2xl border p-3.5 ${
-                r.featured ? "border-amber-500/30 bg-amber-500/5" : "border-white/10 bg-foreground/[0.02]"
+                r.featured
+                  ? "border-amber-500/30 bg-amber-500/5"
+                  : "bg-foreground/[0.02] border-white/10"
               }`}
             >
               <div className="mb-1.5 flex items-center gap-2">
                 {r.country?.flag && (
                   <img src={r.country.flag} alt="" className="h-3.5 w-5 rounded-sm object-cover" />
                 )}
-                <span className="text-xs font-medium text-foreground">
+                <span className="text-foreground text-xs font-medium">
                   {r.country?.name ?? "Unknown"}
                 </span>
                 {r.featured && (
@@ -141,7 +146,7 @@ function BlurbPromptModal({
                   </Badge>
                 )}
               </div>
-              <p className="line-clamp-4 text-sm whitespace-pre-wrap text-muted-foreground">
+              <p className="text-muted-foreground line-clamp-4 text-sm whitespace-pre-wrap">
                 {r.content}
               </p>
             </div>
@@ -267,11 +272,17 @@ export function WikiOSMainPage() {
 
     // Extract title & slug from link or heading
     const titleMatch =
-      featuredArticleHtml.match(/<h3[^>]*>[\s\S]*?<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<\/h3>/i) ||
-      featuredArticleHtml.match(/<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>/i) ||
+      featuredArticleHtml.match(
+        /<h3[^>]*>[\s\S]*?<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<\/h3>/i
+      ) ||
+      featuredArticleHtml.match(
+        /<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>/i
+      ) ||
       featuredArticleHtml.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i);
 
-    const slug = titleMatch ? decodeURIComponent(titleMatch[1] || "").replace(/ /g, "_") : "Featured_Article";
+    const slug = titleMatch
+      ? decodeURIComponent(titleMatch[1] || "").replace(/ /g, "_")
+      : "Featured_Article";
     const title = titleMatch
       ? (titleMatch[2] || titleMatch[1])?.replace(/<[^>]+>/g, "").trim()
       : "Featured Article";
@@ -292,7 +303,10 @@ export function WikiOSMainPage() {
     );
     const summary =
       validParagraphs.length > 0
-        ? validParagraphs[0].replace(/<[^>]+>/g, "").replace(/^Featured article\s*/i, "").trim()
+        ? validParagraphs[0]
+            .replace(/<[^>]+>/g, "")
+            .replace(/^Featured article\s*/i, "")
+            .trim()
         : "";
 
     return {
@@ -331,10 +345,16 @@ export function WikiOSMainPage() {
         ? {
             creator: creatorName || null,
             creatorAvatar: null,
-            createdAt: typeof featuredAuthorInfo.creator === "object" ? featuredAuthorInfo.creator?.timestamp || null : null,
+            createdAt:
+              typeof featuredAuthorInfo.creator === "object"
+                ? featuredAuthorInfo.creator?.timestamp || null
+                : null,
             lastEditor: lastEditorName || null,
             lastEditorAvatar: null,
-            lastEditedAt: typeof featuredAuthorInfo.lastEditor === "object" ? featuredAuthorInfo.lastEditor?.timestamp || null : null,
+            lastEditedAt:
+              typeof featuredAuthorInfo.lastEditor === "object"
+                ? featuredAuthorInfo.lastEditor?.timestamp || null
+                : null,
           }
         : null,
     };
@@ -435,7 +455,7 @@ export function WikiOSMainPage() {
 
   return (
     <div className="wikios-main w-full pt-1 pb-3">
-      <div className="w-full max-w-6xl mx-auto space-y-4 sm:space-y-5">
+      <div className="mx-auto w-full max-w-6xl space-y-4 sm:space-y-5">
         {/* ── 1. Master Hero & Direction Switcher ── */}
         <header className="wikios-main-hero relative w-full">
           <div className="wikios-main-hero-inner w-full">
@@ -447,7 +467,9 @@ export function WikiOSMainPage() {
               featuredArticleHtml={featuredArticleHtml}
               featuredArticleData={featuredArticleData}
               latestChange={latestChange}
-              totalNations={countries?.length ? (countries.length > 50 ? countries.length : 82) : 82}
+              totalNations={
+                countries?.length ? (countries.length > 50 ? countries.length : 82) : 82
+              }
               onOpenBlurbs={() => setBlurbModalOpen(true)}
             />
           </div>
@@ -547,7 +569,10 @@ function extractFeaturedArticle(html: string): string | null {
 
   let depth = 0;
   let pos = startIdx;
-  const isSection = html.slice(startIdx, startIdx + 10).toLowerCase().startsWith("<section");
+  const isSection = html
+    .slice(startIdx, startIdx + 10)
+    .toLowerCase()
+    .startsWith("<section");
   const openTag = isSection ? "<section" : "<div";
   const closeTag = isSection ? "</section>" : "</div>";
 

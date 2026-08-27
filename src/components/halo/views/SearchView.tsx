@@ -16,7 +16,8 @@ const FILTERS: { value: SearchFilter; label: string }[] = [
 const CATEGORY_COLORS: Record<string, string> = {
   Statecraft: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
   Vault: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20",
-  Geography: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+  Geography:
+    "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
   Knowledge: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
   Community: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
   Sports: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
@@ -74,7 +75,7 @@ function SearchViewComponent({
                 }
               }
             }}
-            className="bg-black/[0.04] dark:bg-white/[0.06] text-foreground placeholder:text-muted-foreground/50 focus:bg-black/[0.06] dark:focus:bg-white/[0.09] w-full rounded-xl border border-black/[0.06] dark:border-white/10 py-2 pr-14 pl-9 text-sm transition-all focus:border-blue-500/40 dark:focus:border-blue-400/40 focus:outline-none shadow-2xs"
+            className="text-foreground placeholder:text-muted-foreground/50 w-full rounded-xl border border-black/[0.06] bg-black/[0.04] py-2 pr-14 pl-9 text-sm shadow-2xs transition-all focus:border-blue-500/40 focus:bg-black/[0.06] focus:outline-none dark:border-white/10 dark:bg-white/[0.06] dark:focus:border-blue-400/40 dark:focus:bg-white/[0.09]"
             data-command-palette-search="true"
           />
           {searchQuery && (
@@ -100,7 +101,7 @@ function SearchViewComponent({
             className={`rounded-full px-3 py-1 text-xs font-semibold transition-all active:scale-95 ${
               searchFilter === f.value
                 ? "bg-foreground text-background shadow-2xs"
-                : "bg-black/[0.03] dark:bg-white/[0.04] text-muted-foreground hover:bg-black/[0.06] dark:hover:bg-white/[0.08] hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
             }`}
           >
             {f.label}
@@ -109,18 +110,14 @@ function SearchViewComponent({
       </div>
 
       {/* Results list */}
-      <div
-        className="max-h-[380px] space-y-1 overflow-y-auto"
-        style={{ scrollbarWidth: "thin" }}
-      >
+      <div className="max-h-[380px] space-y-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
         {searchResults.length > 0 ? (
           searchResults.map((result) => {
             const Icon = result.icon;
             const cat =
               (result.metadata?.category as string) ||
               (result.type === "country" ? "Country" : "Command");
-            const badgeStyle =
-              CATEGORY_COLORS[cat] || "bg-muted text-muted-foreground";
+            const badgeStyle = CATEGORY_COLORS[cat] || "bg-muted text-muted-foreground";
 
             return (
               <button
@@ -130,7 +127,7 @@ function SearchViewComponent({
                   result.action();
                   closeDropdown();
                 }}
-                className="hover:bg-black/[0.04] dark:hover:bg-white/[0.06] group flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-all active:scale-[0.985] select-none"
+                className="group flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-all select-none hover:bg-black/[0.04] active:scale-[0.985] dark:hover:bg-white/[0.06]"
               >
                 {/* Icon or Flag */}
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/5 dark:bg-white/5">
@@ -151,7 +148,7 @@ function SearchViewComponent({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <PreText
-                      className="text-foreground group-hover:text-blue-500 dark:group-hover:text-blue-400 block truncate text-sm font-medium transition-colors"
+                      className="text-foreground block truncate text-sm font-medium transition-colors group-hover:text-blue-500 dark:group-hover:text-blue-400"
                       whiteSpace="nowrap"
                     >
                       {result.title}
@@ -188,7 +185,7 @@ function SearchViewComponent({
               {searchFilter !== "all" && (
                 <button
                   onClick={() => setSearchFilter?.("all")}
-                  className="text-primary hover:underline ml-1 font-medium"
+                  className="text-primary ml-1 font-medium hover:underline"
                 >
                   <PreText className="inline" whiteSpace="nowrap">
                     Search all

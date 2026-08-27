@@ -86,29 +86,33 @@ export function ThinktankHeader({
 
   const isMember = Boolean(group.isMember);
 
-  const tabs: Array<{ id: ThinktankTab; label: string; icon: React.ComponentType<{ className?: string }> }> = [
+  const tabs: Array<{
+    id: ThinktankTab;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }> = [
     { id: "feed", label: "Feed", icon: RssFeed },
     { id: "roster", label: "Members", icon: Group },
   ];
 
   return (
-    <div className="relative z-20 flex shrink-0 flex-col overflow-hidden border-b border-border/30 bg-card/75 backdrop-blur-2xl dark:border-white/10 dark:bg-card/40">
+    <div className="border-border/30 bg-card/75 dark:bg-card/40 relative z-20 flex shrink-0 flex-col overflow-hidden border-b backdrop-blur-2xl dark:border-white/10">
       {/* ── Optional Group Banner Backdrop ── */}
       {group.settings?.bannerUrl && (
-        <div className="absolute inset-0 z-0 overflow-hidden opacity-30 dark:opacity-25 pointer-events-none">
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-30 dark:opacity-25">
           <img
             src={group.settings.bannerUrl}
             alt=""
-            className="h-full w-full object-cover filter blur-[2px]"
+            className="h-full w-full object-cover blur-[2px] filter"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-card/30 via-card/70 to-card" />
+          <div className="from-card/30 via-card/70 to-card absolute inset-0 bg-gradient-to-b" />
         </div>
       )}
 
       {/* ── Top Bar: Identity & Actions ── */}
       <div className="relative z-10 flex items-center justify-between gap-3 px-4 py-3 md:px-5">
         {/* Left: Back / Sidebar toggle & Group Avatar + Title */}
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex min-w-0 items-center gap-2.5">
           {onBack && (
             <Button
               variant="ghost"
@@ -117,7 +121,7 @@ export function ThinktankHeader({
                 soundEffects.press();
                 onBack();
               }}
-              className="h-8 w-8 shrink-0 rounded-xl p-0 text-muted-foreground hover:text-foreground active:scale-90 md:hidden"
+              className="text-muted-foreground hover:text-foreground h-8 w-8 shrink-0 rounded-xl p-0 active:scale-90 md:hidden"
               title="Back to Directory"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -132,7 +136,7 @@ export function ThinktankHeader({
                 soundEffects.press();
                 onToggleSidebar();
               }}
-              className="hidden h-8 w-8 shrink-0 rounded-xl p-0 text-muted-foreground hover:text-foreground active:scale-90 lg:flex"
+              className="text-muted-foreground hover:text-foreground hidden h-8 w-8 shrink-0 rounded-xl p-0 active:scale-90 lg:flex"
               title={isSidebarCollapsed ? "Show Directory Sidebar" : "Collapse Sidebar for Focus"}
             >
               {isSidebarCollapsed ? (
@@ -143,7 +147,7 @@ export function ThinktankHeader({
             </Button>
           )}
 
-          <Avatar className="h-9 w-9 shrink-0 rounded-xl border border-border/50 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 shadow-xs">
+          <Avatar className="border-border/50 h-9 w-9 shrink-0 rounded-xl border bg-gradient-to-br from-emerald-500/20 to-teal-500/20 shadow-xs">
             <AvatarImage src={group.avatar || undefined} alt={group.name} />
             <AvatarFallback className="rounded-xl bg-transparent text-xs font-bold text-emerald-600 dark:text-emerald-400">
               {group.name.slice(0, 2).toUpperCase()}
@@ -152,7 +156,7 @@ export function ThinktankHeader({
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="truncate text-sm font-bold text-foreground tracking-tight md:text-base">
+              <h1 className="text-foreground truncate text-sm font-bold tracking-tight md:text-base">
                 {group.name}
               </h1>
               {group.type === "private" ? (
@@ -166,14 +170,14 @@ export function ThinktankHeader({
               )}
             </div>
 
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <span className="font-medium text-foreground/80">{group.category || "General"}</span>
+            <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+              <span className="text-foreground/80 font-medium">{group.category || "General"}</span>
               <span>·</span>
               <span>{group.memberCount ?? 1} members</span>
               {allowPersona && (
                 <>
                   <span>·</span>
-                  <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400 font-medium">
+                  <span className="flex items-center gap-1 font-medium text-purple-600 dark:text-purple-400">
                     <Group className="h-3 w-3" /> Multi-Persona
                   </span>
                 </>
@@ -183,16 +187,20 @@ export function ThinktankHeader({
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           {/* Share button */}
           <Button
             variant="ghost"
             size="sm"
             onClick={handleCopyLink}
-            className="h-8 rounded-xl px-2.5 text-xs text-muted-foreground hover:text-foreground active:scale-95"
+            className="text-muted-foreground hover:text-foreground h-8 rounded-xl px-2.5 text-xs active:scale-95"
             title="Share group link"
           >
-            {copied ? <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-500" /> : <ShareAndroid className="mr-1.5 h-3.5 w-3.5" />}
+            {copied ? (
+              <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-500" />
+            ) : (
+              <ShareAndroid className="mr-1.5 h-3.5 w-3.5" />
+            )}
             <span className="hidden sm:inline">{copied ? "Copied" : "Share"}</span>
           </Button>
 
@@ -205,7 +213,7 @@ export function ThinktankHeader({
                 soundEffects.press();
                 onOpenSettings();
               }}
-              className="h-8 w-8 rounded-xl p-0 text-muted-foreground hover:text-foreground active:scale-95"
+              className="text-muted-foreground hover:text-foreground h-8 w-8 rounded-xl p-0 active:scale-95"
               title="Group Settings"
             >
               <Settings className="h-4 w-4" />
@@ -240,7 +248,7 @@ export function ThinktankHeader({
 
       {/* ── Bottom Bar: Fluid Segmented Tab Strip (Members Only) ── */}
       {isMember && (
-        <div className="relative z-10 flex items-center gap-1 border-t border-border/20 px-4 py-1.5 md:px-5">
+        <div className="border-border/20 relative z-10 flex items-center gap-1 border-t px-4 py-1.5 md:px-5">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             const Icon = tab.icon;

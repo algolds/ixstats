@@ -15,10 +15,7 @@ import {
   type RemoveReactionInput,
   type MessagingDependencies,
 } from "./contracts";
-import {
-  MessagingForbiddenError,
-  MessagingNotFoundError,
-} from "./errors";
+import { MessagingForbiddenError, MessagingNotFoundError } from "./errors";
 
 export class MessagingMessageOperations {
   private db: any;
@@ -108,15 +105,17 @@ export class MessagingMessageOperations {
     const notifFn = this.notifications?.create ?? this.notifications?.createNotification;
     if (notifFn) {
       for (const p of otherParticipants) {
-        notifFn.call(this.notifications, {
-          userId: p.userId,
-          type: "info",
-          category: "social",
-          priority: "low",
-          title: "New Message",
-          message: input.content.slice(0, 100),
-          href: `/messages?id=${input.conversationId}`,
-        }).catch(() => {});
+        notifFn
+          .call(this.notifications, {
+            userId: p.userId,
+            type: "info",
+            category: "social",
+            priority: "low",
+            title: "New Message",
+            message: input.content.slice(0, 100),
+            href: `/messages?id=${input.conversationId}`,
+          })
+          .catch(() => {});
       }
     }
 
@@ -145,20 +144,24 @@ export class MessagingMessageOperations {
     };
 
     if (effectiveConv?.source === "forum" && this.forumBridge?.postOutbound) {
-      this.forumBridge.postOutbound({
-        conversationId: input.conversationId,
-        senderId: actorId,
-        content: input.content,
-      }).catch(() => {});
+      this.forumBridge
+        .postOutbound({
+          conversationId: input.conversationId,
+          senderId: actorId,
+          content: input.content,
+        })
+        .catch(() => {});
     }
 
     if (effectiveConv?.source === "wiki" && this.wikiBridge?.sendOutbound) {
-      this.wikiBridge.sendOutbound(
-        effectiveConv.sourceId || input.conversationId,
-        input.content,
-        actorId,
-        this.db
-      ).catch(() => {});
+      this.wikiBridge
+        .sendOutbound(
+          effectiveConv.sourceId || input.conversationId,
+          input.content,
+          actorId,
+          this.db
+        )
+        .catch(() => {});
     }
 
     // Auto-prune default user messages beyond 1000 cap
@@ -377,7 +380,10 @@ export class MessagingMessageOperations {
 
       return 0;
     } catch (err) {
-      console.error(`[MessagingMessageOperations] Auto-prune error for conversation ${conversationId}:`, err);
+      console.error(
+        `[MessagingMessageOperations] Auto-prune error for conversation ${conversationId}:`,
+        err
+      );
       return 0;
     }
   }

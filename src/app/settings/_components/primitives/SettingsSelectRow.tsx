@@ -42,23 +42,14 @@ export function SettingsSelectRow({
   triggerClassName = "w-[180px]",
 }: SettingsSelectRowProps) {
   return (
-    <SettingsRow
-      label={label}
-      description={description}
-      icon={icon}
-      glyphClass={glyphClass}
-    >
+    <SettingsRow label={label} description={description} icon={icon} glyphClass={glyphClass}>
       <Select value={value} onValueChange={onValueChange} disabled={disabled}>
         <SelectTrigger className={triggerClassName}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent className="facet-modal">
           {options.map((option) => (
-            <SelectItem
-              key={option.value}
-              value={option.value}
-              description={option.description}
-            >
+            <SelectItem key={option.value} value={option.value} description={option.description}>
               {option.label}
             </SelectItem>
           ))}

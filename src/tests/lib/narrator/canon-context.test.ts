@@ -1,4 +1,8 @@
-import { formatCanonContext, canonContextHash, type CanonContext } from "~/lib/narrator/canon-context";
+import {
+  formatCanonContext,
+  canonContextHash,
+  type CanonContext,
+} from "~/lib/narrator/canon-context";
 
 const base: CanonContext = {
   nation: { name: "Almadaria", leader: "Emperor Castos", governmentType: "Absolute Monarchy" },

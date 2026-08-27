@@ -3,7 +3,14 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Globe, Lock, Heart, ShareAndroid as Share2, EditPencil as Edit2, Trash as Trash2 } from "iconoir-react";
+import {
+  Globe,
+  Lock,
+  Heart,
+  ShareAndroid as Share2,
+  EditPencil as Edit2,
+  Trash as Trash2,
+} from "iconoir-react";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 export interface CollectionStats {

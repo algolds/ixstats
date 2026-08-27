@@ -99,7 +99,6 @@ const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
   althistory: { label: "althistory.fandom.com", url: "https://althistory.fandom.com/wiki/" },
 };
 
- 
 const EMPTY_STATS_DATA: Record<string, DynamicStatData> = {};
 
 type PortalTarget =
@@ -199,9 +198,7 @@ export function ArticleRenderer({
       const target = e.target as HTMLElement | null;
       if (
         target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable)
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
       ) {
         return;
       }
@@ -416,7 +413,7 @@ export function ArticleRenderer({
     });
 
     setPortalTargets(targets);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [processedHtml, processedInfoboxHtml]);
 
   const { data: countryData } = api.countries.getByIdBasic.useQuery(
@@ -527,7 +524,7 @@ export function ArticleRenderer({
 
     container.addEventListener("click", handleClick, true);
     return () => container.removeEventListener("click", handleClick, true);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [contentHtml]);
 
   const lightboxPortal = useImageLightbox(contentRef);
@@ -575,7 +572,7 @@ export function ArticleRenderer({
     <div
       ref={titleRef}
       className={cn(
-        "wikios-article wikios-reader-container relative flex items-start justify-center gap-8 2xl:gap-10 transition-[margin-right,padding-right] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        "wikios-article wikios-reader-container relative flex items-start justify-center gap-8 transition-[margin-right,padding-right] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)] 2xl:gap-10",
         marginOpen && (marginExpanded ? "lg:mr-[400px]" : "lg:mr-80")
       )}
       style={containerStyle}
@@ -609,14 +606,14 @@ export function ArticleRenderer({
           const creatorName =
             typeof creator === "object"
               ? (creator as any)?.username
-              : (creator || (authorInfo as any)?.author || null);
+              : creator || (authorInfo as any)?.author || null;
 
           if (!creatorName && !lastModified) return null;
 
           return (
-            <div className="xl:hidden flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground mt-2.5 mb-3 px-1">
+            <div className="text-muted-foreground mt-2.5 mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 px-1 text-xs xl:hidden">
               {creatorName && (
-                <span className="font-medium text-foreground/90">
+                <span className="text-foreground/90 font-medium">
                   By <span className="font-semibold">{creatorName}</span>
                 </span>
               )}
@@ -714,7 +711,10 @@ export function ArticleRenderer({
 
       {/* Right static panel — Vector 2022 / Notion pattern: companion pinned, only TOC scrolls */}
       {!marginOpen && !companionCollapsed && (
-        <aside className="hidden xl:flex shrink-0 sticky top-20 self-start flex-col gap-3 w-[240px] 2xl:w-[280px] max-h-[calc(100vh-6rem)] border-l border-white/5 pl-3 pr-1 animate-in fade-in duration-200" aria-label="Article companion and table of contents">
+        <aside
+          className="animate-in fade-in sticky top-20 hidden max-h-[calc(100vh-6rem)] w-[240px] shrink-0 flex-col gap-3 self-start border-l border-white/5 pr-1 pl-3 duration-200 xl:flex 2xl:w-[280px]"
+          aria-label="Article companion and table of contents"
+        >
           <button
             type="button"
             onPointerDown={(e) => {
@@ -731,7 +731,7 @@ export function ArticleRenderer({
               soundEffects.press();
               setCompanionCollapsed(true);
             }}
-            className="hidden xl:flex items-center justify-center gap-1 self-end -mb-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/10 hover:border-white/15 transition-all duration-150 active:scale-[0.96] cursor-pointer select-none"
+            className="text-muted-foreground hover:text-foreground -mb-1 hidden cursor-pointer items-center justify-center gap-1 self-end rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium transition-all duration-150 select-none hover:border-white/15 hover:bg-white/10 active:scale-[0.96] xl:flex"
             title="Hide companion"
             aria-label="Hide companion"
           >
@@ -759,7 +759,7 @@ export function ArticleRenderer({
             isCollapsed={false}
           />
           {toc.length > 0 && (
-            <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin pr-1 -mr-1 [mask-image:linear-gradient(to_bottom,transparent,black_8px,black_calc(100%-8px),transparent)]">
+            <div className="-mr-1 min-h-0 flex-1 scrollbar-thin overflow-y-auto [mask-image:linear-gradient(to_bottom,transparent,black_8px,black_calc(100%-8px),transparent)] pr-1">
               <StickyToc entries={toc} contentRef={contentRef} isCollapsed={false} />
             </div>
           )}
@@ -773,7 +773,7 @@ export function ArticleRenderer({
             soundEffects.press();
             setCompanionCollapsed(false);
           }}
-          className="hidden xl:flex w-8 shrink-0 sticky top-20 self-start h-[calc(100vh-6rem)] items-start justify-center border-l border-white/5 pt-8 text-muted-foreground/40 hover:text-foreground hover:bg-white/[0.04] hover:border-white/10 transition-colors duration-150 cursor-pointer select-none"
+          className="text-muted-foreground/40 hover:text-foreground sticky top-20 hidden h-[calc(100vh-6rem)] w-8 shrink-0 cursor-pointer items-start justify-center self-start border-l border-white/5 pt-8 transition-colors duration-150 select-none hover:border-white/10 hover:bg-white/[0.04] xl:flex"
           title="Show companion"
           aria-label="Show companion"
         >

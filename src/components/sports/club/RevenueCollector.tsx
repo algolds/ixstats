@@ -1,6 +1,12 @@
 "use client";
 
-import { SystemRestart as Loader2, Coins, Label as Ticket, Dollar as BadgeDollarSign, StatUp as TrendingUp } from "iconoir-react";
+import {
+  SystemRestart as Loader2,
+  Coins,
+  Label as Ticket,
+  Dollar as BadgeDollarSign,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -69,7 +75,10 @@ export function RevenueCollector({
           </div>
           <div className="border-border flex items-center justify-between border-t pt-2 text-sm font-bold">
             <span className="text-foreground flex items-center gap-1.5">
-              <TrendingUp className="h-3.5 w-3.5" style={{ color: teamColor || "var(--color-success)" }} />
+              <TrendingUp
+                className="h-3.5 w-3.5"
+                style={{ color: teamColor || "var(--color-success)" }}
+              />
               Collect Match Revenue
             </span>
             <span className="tabular-nums" style={{ color: teamColor || "var(--color-success)" }}>

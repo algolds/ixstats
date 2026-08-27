@@ -82,85 +82,85 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
             <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
               <SelectItem
                 value="none"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 None
               </SelectItem>
               <SelectItem
                 value="King"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 King
               </SelectItem>
               <SelectItem
                 value="Queen"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Queen
               </SelectItem>
               <SelectItem
                 value="Prince"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Prince
               </SelectItem>
               <SelectItem
                 value="Princess"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Princess
               </SelectItem>
               <SelectItem
                 value="Lord"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Lord
               </SelectItem>
               <SelectItem
                 value="Lady"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Lady
               </SelectItem>
               <SelectItem
                 value="Sir"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Sir
               </SelectItem>
               <SelectItem
                 value="General"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 General
               </SelectItem>
               <SelectItem
                 value="President"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 President
               </SelectItem>
               <SelectItem
                 value="Governor"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Governor
               </SelectItem>
               <SelectItem
                 value="Minister"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Minister
               </SelectItem>
               <SelectItem
                 value="Dr."
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Dr.
               </SelectItem>
               <SelectItem
                 value="custom"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Custom Prefix...
               </SelectItem>
@@ -182,7 +182,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
       {/* Category-aware Suffix Select (Organization, Country, Province categories only) */}
       {(category === "organization" || category === "country" || category === "province") && (
         <div className="border-border/40 space-y-1.5 border-b pb-3">
-          <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+          <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
             Name Suffix
           </label>
           <Select
@@ -195,67 +195,67 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
             <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
               <SelectItem
                 value="none"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 None
               </SelectItem>
               <SelectItem
                 value="Association"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Association
               </SelectItem>
               <SelectItem
                 value="Committee"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Committee
               </SelectItem>
               <SelectItem
                 value="Society"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Society
               </SelectItem>
               <SelectItem
                 value="Alliance"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Alliance
               </SelectItem>
               <SelectItem
                 value="Union"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Union
               </SelectItem>
               <SelectItem
                 value="Club"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Club
               </SelectItem>
               <SelectItem
                 value="Company"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Company
               </SelectItem>
               <SelectItem
                 value="Party"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Party
               </SelectItem>
               <SelectItem
                 value="Organization"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Organization
               </SelectItem>
               <SelectItem
                 value="custom"
-                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
               >
                 Custom Suffix...
               </SelectItem>
@@ -268,7 +268,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
               placeholder="e.g. Guild"
               value={gen.customSuffix}
               onChange={(e) => gen.setCustomSuffix(e.target.value)}
-              className="border-border/60 bg-background text-foreground animate-in slide-in-from-top-1 mt-1 w-full rounded-lg border px-2.5 py-1 text-xs duration-150 focus:outline-none font-mono"
+              className="border-border/60 bg-background text-foreground animate-in slide-in-from-top-1 mt-1 w-full rounded-lg border px-2.5 py-1 font-mono text-xs duration-150 focus:outline-none"
             />
           )}
         </div>
@@ -276,7 +276,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+          <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
             Min Length
           </label>
           <input
@@ -290,11 +290,11 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
                 minLength: parseInt(e.target.value) || 0,
               })
             }
-            className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+            className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+          <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
             Max Length
           </label>
           <input
@@ -308,7 +308,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
                 maxLength: parseInt(e.target.value) || 0,
               })
             }
-            className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+            className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
           />
         </div>
       </div>
@@ -316,27 +316,27 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
       {/* Substring constraint filters */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
-            Starts With <span className="font-mono text-[10px] text-muted-foreground/75">(#_)</span>
+          <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
+            Starts With <span className="text-muted-foreground/75 font-mono text-[10px]">(#_)</span>
           </label>
           <input
             type="text"
             placeholder="e.g. Ae"
             value={gen.options.startsWith || ""}
             onChange={(e) => gen.setOptions({ ...gen.options, startsWith: e.target.value })}
-            className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+            className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
-            Ends With <span className="font-mono text-[10px] text-muted-foreground/75">(_#)</span>
+          <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
+            Ends With <span className="text-muted-foreground/75 font-mono text-[10px]">(_#)</span>
           </label>
           <input
             type="text"
             placeholder="e.g. th"
             value={gen.options.endsWith || ""}
             onChange={(e) => gen.setOptions({ ...gen.options, endsWith: e.target.value })}
-            className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+            className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
           />
         </div>
       </div>
@@ -351,14 +351,14 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
       {/* Advanced conlang & phonotactics */}
       <div className="border-border/20 space-y-3.5 border-t pt-3.5">
-        <h5 className="text-zinc-700 dark:text-zinc-300 text-[11px] font-semibold tracking-tight uppercase">
+        <h5 className="text-[11px] font-semibold tracking-tight text-zinc-700 uppercase dark:text-zinc-300">
           Advanced Conlang & Phonotactics
         </h5>
 
         {/* Syllable Counts */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+            <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
               Min Syllables
             </label>
             <input
@@ -372,11 +372,11 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
                   minSyllables: parseInt(e.target.value) || 0,
                 })
               }
-              className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+            <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
               Max Syllables
             </label>
             <input
@@ -395,14 +395,14 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
                   maxSyllables: e.target.value === "" ? -1 : parseInt(e.target.value) || -1,
                 })
               }
-              className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
             />
           </div>
         </div>
 
         {/* CV Template Input */}
         <div className="space-y-1">
-          <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+          <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
             Strict CV Template
           </label>
           <input
@@ -423,7 +423,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
         <div className="grid gap-3 sm:grid-cols-2">
           {/* Must End With Vowel */}
           <div className="flex items-center justify-between">
-            <span className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight">
+            <span className="text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
               Must End With Vowel
             </span>
             <AppleSwitch
@@ -441,7 +441,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
           {/* Must End With Consonant */}
           <div className="flex items-center justify-between">
-            <span className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight">
+            <span className="text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
               Must End With Consonant
             </span>
             <AppleSwitch
@@ -459,7 +459,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
           {/* No Initial Clusters */}
           <div className="flex items-center justify-between">
-            <span className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight">
+            <span className="text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
               No Initial Clusters (e.g. "str-")
             </span>
             <AppleSwitch
@@ -476,7 +476,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
           {/* No Final Clusters */}
           <div className="flex items-center justify-between">
-            <span className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight">
+            <span className="text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
               No Final Clusters (e.g. "-rts")
             </span>
             <AppleSwitch

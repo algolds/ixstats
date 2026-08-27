@@ -81,7 +81,8 @@ export function NPCPersonalityFormDialog({
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit NPC Personality" : "Create NPC Personality"}</DialogTitle>
           <DialogDescription>
-            Configure the baseline archetype and psychological traits driving AI diplomatic responses.
+            Configure the baseline archetype and psychological traits driving AI diplomatic
+            responses.
           </DialogDescription>
         </DialogHeader>
 
@@ -98,7 +99,9 @@ export function NPCPersonalityFormDialog({
             </div>
 
             <div>
-              <label className="text-foreground mb-1.5 block text-xs font-medium">Archetype *</label>
+              <label className="text-foreground mb-1.5 block text-xs font-medium">
+                Archetype *
+              </label>
               <Select
                 value={formData.archetype}
                 onValueChange={(val) => setFormData((prev) => ({ ...prev, archetype: val }))}
@@ -119,10 +122,14 @@ export function NPCPersonalityFormDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-foreground mb-1.5 block text-xs font-medium">Historical Basis</label>
+              <label className="text-foreground mb-1.5 block text-xs font-medium">
+                Historical Basis
+              </label>
               <Input
                 value={formData.historicalBasis || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, historicalBasis: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, historicalBasis: e.target.value }))
+                }
                 placeholder="e.g., Caphirian Realpolitik"
                 className="text-xs"
               />
@@ -143,7 +150,9 @@ export function NPCPersonalityFormDialog({
           </div>
 
           <div>
-            <label className="text-foreground mb-1.5 block text-xs font-medium">Historical Context</label>
+            <label className="text-foreground mb-1.5 block text-xs font-medium">
+              Historical Context
+            </label>
             <Textarea
               value={formData.historicalContext || ""}
               onChange={(e) =>
@@ -157,8 +166,10 @@ export function NPCPersonalityFormDialog({
 
           {/* Trait Sliders */}
           <div className="border-border/40 space-y-3 border-t pt-4">
-            <h4 className="text-foreground font-semibold text-xs">Psychological & Strategic Traits</h4>
-            
+            <h4 className="text-foreground text-xs font-semibold">
+              Psychological & Strategic Traits
+            </h4>
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {[
                 { key: "assertiveness", label: "Assertiveness" },
@@ -172,7 +183,10 @@ export function NPCPersonalityFormDialog({
               ].map(({ key, label }) => {
                 const val = formData.traits[key as keyof PersonalityFormData["traits"]];
                 return (
-                  <div key={key} className="bg-card/40 border-border/40 space-y-1 rounded-xl border p-2.5">
+                  <div
+                    key={key}
+                    className="bg-card/40 border-border/40 space-y-1 rounded-xl border p-2.5"
+                  >
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-foreground font-medium">{label}</span>
                       <span className="text-muted-foreground font-mono">{val}%</span>

@@ -2,7 +2,17 @@
 
 import React from "react";
 import Link from "next/link";
-import { Group as Users, Dollar as DollarSign, StatUp as TrendingUp, MapPin, Crown, Tournament as Swords, Shield, EditPencil as Pencil, OpenNewWindow as ExternalLink } from "iconoir-react";
+import {
+  Group as Users,
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
+  MapPin,
+  Crown,
+  Tournament as Swords,
+  Shield,
+  EditPencil as Pencil,
+  OpenNewWindow as ExternalLink,
+} from "iconoir-react";
 import { StatCard } from "~/components/maps/core/components/StatCard";
 import { SOVEREIGNTY_TYPE_MAP } from "~/lib/maps/map-config";
 import { sanitizeWikiContent } from "~/lib/utils";

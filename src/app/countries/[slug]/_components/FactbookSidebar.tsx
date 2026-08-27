@@ -9,7 +9,19 @@ import { Badge } from "~/components/ui/badge";
 import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
 import type { RingConfig } from "~/components/mycountry/shared/primitives/VitalityRings";
-import { Building, Group as Users, Globe, StatUp as TrendingUp, Activity, Trophy, ChatBubble as MessageSquare, ArrowRight, Clock, Dollar as DollarSign, Shield } from "iconoir-react";
+import {
+  Building,
+  Group as Users,
+  Globe,
+  StatUp as TrendingUp,
+  Activity,
+  Trophy,
+  ChatBubble as MessageSquare,
+  ArrowRight,
+  Clock,
+  Dollar as DollarSign,
+  Shield,
+} from "iconoir-react";
 import { formatDistanceToNow } from "date-fns";
 import { api } from "~/trpc/react";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";

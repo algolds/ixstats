@@ -78,11 +78,11 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
         onClick={onClose}
       >
         <div
-          className="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card/95 text-foreground shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-card/95"
+          className="border-border bg-card/95 text-foreground dark:bg-card/95 relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl dark:border-white/15"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4 dark:border-white/10 dark:bg-white/5">
+          <div className="border-border bg-muted/30 flex items-center justify-between border-b px-6 py-4 dark:border-white/10 dark:bg-white/5">
             <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
               <Flag className="h-5 w-5 text-blue-400" />
               Insert Infobox Country
@@ -136,7 +136,9 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
                 />
               </div>
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-semibold">Motto</label>
+                <label className="text-muted-foreground mb-1 block text-xs font-semibold">
+                  Motto
+                </label>
                 <input
                   type="text"
                   value={formData.motto}

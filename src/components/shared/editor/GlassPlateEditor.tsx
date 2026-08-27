@@ -3,11 +3,7 @@
 
 "use client";
 
-import React, {
-  useCallback,
-  useImperativeHandle,
-  forwardRef,
-} from "react";
+import React, { useCallback, useImperativeHandle, forwardRef } from "react";
 import { Plate, PlateContent } from "platejs/react";
 import { Transforms, Node as SlateNode } from "slate";
 import { ReactEditor } from "slate-react";
@@ -194,11 +190,14 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
 
     const handleInsertLink = useCallback(
       (url: string) => {
-        Transforms.insertNodes(editor as any, {
-          type: "link",
-          url,
-          children: [{ text: url }],
-        } as any);
+        Transforms.insertNodes(
+          editor as any,
+          {
+            type: "link",
+            url,
+            children: [{ text: url }],
+          } as any
+        );
       },
       [editor]
     );
@@ -253,7 +252,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
               className={cn(
                 "flex flex-wrap items-center justify-between gap-2",
                 variant === "seamless"
-                  ? "border-t border-white/5 bg-transparent pt-2 px-0"
+                  ? "border-t border-white/5 bg-transparent px-0 pt-2"
                   : "border-t border-black/5 bg-black/[0.01] px-3 py-2 dark:border-white/5 dark:bg-white/[0.01]"
               )}
             >

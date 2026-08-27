@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { WarningTriangle as AlertTriangle, Prohibition as Ban, Community as HandshakeIcon, Shield, Navigator as ShipWheel, ArrowUpRight, ArrowDownRight, Xmark as X } from "iconoir-react";
+import {
+  WarningTriangle as AlertTriangle,
+  Prohibition as Ban,
+  Community as HandshakeIcon,
+  Shield,
+  Navigator as ShipWheel,
+  ArrowUpRight,
+  ArrowDownRight,
+  Xmark as X,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";

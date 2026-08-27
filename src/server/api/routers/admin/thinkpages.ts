@@ -72,9 +72,18 @@ export const adminThinkpagesRouter = createTRPCRouter({
       return {
         maxAccountsPerUser: parseInt(m.thinkpages_maxAccountsPerUser || "25") || 25,
         maxCharLength: parseInt(m.thinkpages_maxCharLength || "2000") || 2000,
-        autoNewsElections: m.thinkpages_autoNewsElections !== undefined ? m.thinkpages_autoNewsElections === "true" : true,
-        autoNewsPolicies: m.thinkpages_autoNewsPolicies !== undefined ? m.thinkpages_autoNewsPolicies === "true" : true,
-        commentAttachments: m.thinkpages_commentAttachments !== undefined ? m.thinkpages_commentAttachments === "true" : true,
+        autoNewsElections:
+          m.thinkpages_autoNewsElections !== undefined
+            ? m.thinkpages_autoNewsElections === "true"
+            : true,
+        autoNewsPolicies:
+          m.thinkpages_autoNewsPolicies !== undefined
+            ? m.thinkpages_autoNewsPolicies === "true"
+            : true,
+        commentAttachments:
+          m.thinkpages_commentAttachments !== undefined
+            ? m.thinkpages_commentAttachments === "true"
+            : true,
         feedLimit: parseInt(m.thinkpages_feedLimit || "100") || 100,
       };
     } catch (error) {

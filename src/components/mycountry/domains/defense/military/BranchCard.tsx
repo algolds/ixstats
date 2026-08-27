@@ -3,7 +3,16 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, EditPencil as Edit, Trash as Trash2, Group as Users, Archery as Target, Dollar as DollarSign, Shield } from "iconoir-react";
+import {
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  EditPencil as Edit,
+  Trash as Trash2,
+  Group as Users,
+  Archery as Target,
+  Dollar as DollarSign,
+  Shield,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";

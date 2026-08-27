@@ -36,33 +36,39 @@ export function WikiHeroMaster(props: WikiHeroProps) {
   const activeVariant = props.variant ?? internalVariant;
   const activeRefraction = props.refractionMode ?? internalRefraction;
 
-  const handleSelectVariant = useCallback((newVariant: WikiHeroVariant) => {
-    if (props.onSelectVariant) {
-      // oxlint-disable-next-line
-      props.onSelectVariant(newVariant);
-    } else {
-      setInternalVariant(newVariant);
-    }
-    try {
-      localStorage.setItem(STORAGE_KEY, newVariant);
-    } catch {
-      // ignore
-    }
-  }, [props.onSelectVariant]);
+  const handleSelectVariant = useCallback(
+    (newVariant: WikiHeroVariant) => {
+      if (props.onSelectVariant) {
+        // oxlint-disable-next-line
+        props.onSelectVariant(newVariant);
+      } else {
+        setInternalVariant(newVariant);
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY, newVariant);
+      } catch {
+        // ignore
+      }
+    },
+    [props.onSelectVariant]
+  );
 
-  const handleSelectRefraction = useCallback((newMode: RefractionMode) => {
-    if (props.onSelectRefractionMode) {
-      // oxlint-disable-next-line
-      props.onSelectRefractionMode(newMode);
-    } else {
-      setInternalRefraction(newMode);
-    }
-    try {
-      localStorage.setItem(REFRACTION_STORAGE_KEY, newMode);
-    } catch {
-      // ignore
-    }
-  }, [props.onSelectRefractionMode]);
+  const handleSelectRefraction = useCallback(
+    (newMode: RefractionMode) => {
+      if (props.onSelectRefractionMode) {
+        // oxlint-disable-next-line
+        props.onSelectRefractionMode(newMode);
+      } else {
+        setInternalRefraction(newMode);
+      }
+      try {
+        localStorage.setItem(REFRACTION_STORAGE_KEY, newMode);
+      } catch {
+        // ignore
+      }
+    },
+    [props.onSelectRefractionMode]
+  );
 
   const heroProps: WikiHeroProps = {
     ...props,
@@ -83,7 +89,7 @@ export function WikiHeroMaster(props: WikiHeroProps) {
   };
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className="flex w-full flex-col items-center">
       {/* ── Active Hero Render with Apple-Grade Spring Morph/Crossfade ── */}
       <div className="w-full">
         <AnimatePresence mode="wait">

@@ -53,8 +53,4 @@ export * from "./ns-image-proxy";
 export * from "./display-utils";
 
 // Pure calculation exports from valuation
-export {
-  computeCardValue,
-  getValuationConfig,
-  type CardValuationConfig,
-} from "./valuation";
+export { computeCardValue, getValuationConfig, type CardValuationConfig } from "./valuation";

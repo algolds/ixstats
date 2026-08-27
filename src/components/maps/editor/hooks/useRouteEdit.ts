@@ -106,7 +106,7 @@ export function useRouteEdit({
 
   useEffect(() => {
     updateRouteEditVis();
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [editingRouteVertices, updateRouteEditVis]);
 
   useEffect(() => {

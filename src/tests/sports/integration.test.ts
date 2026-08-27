@@ -13,8 +13,12 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
     jest.spyOn(console, "log").mockImplementation(() => {});
     jest.spyOn(exchangeService, "spend").mockResolvedValue({ success: true, newBalance: 1000 });
     jest.spyOn(exchangeService, "earn").mockResolvedValue({ success: true, newBalance: 1000 });
-    jest.spyOn(exchangeService, "getOrCreateWallet").mockResolvedValue({ id: "wallet_1", sovereigns: 1000 } as any);
-    jest.spyOn(exchangeService, "getBalance").mockResolvedValue({ sovereigns: 1000, lifetimeEarned: 1000, lifetimeSpent: 0 } as any);
+    jest
+      .spyOn(exchangeService, "getOrCreateWallet")
+      .mockResolvedValue({ id: "wallet_1", sovereigns: 1000 } as any);
+    jest
+      .spyOn(exchangeService, "getBalance")
+      .mockResolvedValue({ sovereigns: 1000, lifetimeEarned: 1000, lifetimeSpent: 0 } as any);
 
     mockPrisma = {
       $transaction: jest.fn<any>((cb: any) => cb(mockPrisma)),

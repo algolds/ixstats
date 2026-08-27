@@ -16,18 +16,20 @@ import type { MorphologyDetails } from "~/lib/onoma/morphology";
 
 interface LinguisticProfileProps {
   name: string;
-  morphology: MorphologyDetails | {
-    gender: string;
-    declensionTable: Record<
-      string,
-      {
-        singular: string;
-        plural: string;
-        descriptionSingular: string;
-        descriptionPlural: string;
-      }
-    >;
-  };
+  morphology:
+    | MorphologyDetails
+    | {
+        gender: string;
+        declensionTable: Record<
+          string,
+          {
+            singular: string;
+            plural: string;
+            descriptionSingular: string;
+            descriptionPlural: string;
+          }
+        >;
+      };
   savedAt?: Date | string | null;
   originLabel?: string | null;
   localSaved: boolean;
@@ -112,11 +114,10 @@ export function LinguisticProfile({
       {/* Header with Segmented Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-xs font-bold text-onoma-primary">
-            ⟨{name}⟩
-          </span>
+          <span className="text-onoma-primary font-mono text-xs font-bold">⟨{name}⟩</span>
           <span className="text-muted-foreground text-[11px]">
-            Gender: <span className="font-semibold uppercase text-foreground">{morphology.gender}</span>
+            Gender:{" "}
+            <span className="text-foreground font-semibold uppercase">{morphology.gender}</span>
           </span>
         </div>
 
@@ -153,7 +154,7 @@ export function LinguisticProfile({
       {(originLabel || savedAt) && (
         <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-[10px]">
           {originLabel && (
-            <span className="rounded bg-onoma-primary/10 px-1.5 py-0.5 font-bold text-onoma-primary capitalize">
+            <span className="bg-onoma-primary/10 text-onoma-primary rounded px-1.5 py-0.5 font-bold capitalize">
               {originLabel}
             </span>
           )}
@@ -183,19 +184,22 @@ export function LinguisticProfile({
 
           <div className="divide-border/15 divide-y">
             {Object.entries(morphology.declensionTable).map(([caseName, declCase]) => (
-              <div key={caseName} className="grid grid-cols-12 items-center px-3 py-1.5 text-xs hover:bg-secondary/10 transition-colors">
+              <div
+                key={caseName}
+                className="hover:bg-secondary/10 grid grid-cols-12 items-center px-3 py-1.5 text-xs transition-colors"
+              >
                 <div className="col-span-4 flex flex-col pr-1">
-                  <span className="text-foreground font-semibold text-[11px] capitalize">
+                  <span className="text-foreground text-[11px] font-semibold capitalize">
                     {caseName}
                   </span>
                   <span className="text-muted-foreground text-[9px] leading-tight">
                     {declCase.descriptionSingular.split(" (")[0]}
                   </span>
                 </div>
-                <span className="col-span-4 font-mono text-xs font-semibold text-onoma-primary break-all">
+                <span className="text-onoma-primary col-span-4 font-mono text-xs font-semibold break-all">
                   {declCase.singular}
                 </span>
-                <span className="col-span-4 font-mono text-xs font-semibold text-onoma-primary break-all">
+                <span className="text-onoma-primary col-span-4 font-mono text-xs font-semibold break-all">
                   {declCase.plural}
                 </span>
               </div>
@@ -214,7 +218,7 @@ export function LinguisticProfile({
             {!isEditingDef && definition && (
               <button
                 onClick={() => setIsEditingDef(true)}
-                className="cursor-pointer text-[10px] font-semibold text-onoma-primary hover:underline"
+                className="text-onoma-primary cursor-pointer text-[10px] font-semibold hover:underline"
               >
                 Edit Definition
               </button>
@@ -223,7 +227,8 @@ export function LinguisticProfile({
 
           {!localSaved ? (
             <p className="text-muted-foreground text-[11px] leading-relaxed italic">
-              Save this candidate to your Local Stash to customize its etymological root and meaning.
+              Save this candidate to your Local Stash to customize its etymological root and
+              meaning.
             </p>
           ) : isEditingDef || !definition ? (
             <form onSubmit={handleSaveDefinition} className="space-y-2.5 text-xs">
@@ -241,7 +246,7 @@ export function LinguisticProfile({
                         <SelectItem
                           key={pos}
                           value={pos}
-                          className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer"
+                          className="focus:text-foreground focus:bg-onoma-primary/10 cursor-pointer text-xs"
                         >
                           {pos}
                         </SelectItem>
@@ -258,7 +263,7 @@ export function LinguisticProfile({
                     placeholder="e.g. *ver- (water)"
                     value={editRoot}
                     onChange={(e) => setEditRoot(e.target.value)}
-                    className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-onoma-primary/60 focus:outline-none"
+                    className="border-border/60 bg-background text-foreground focus:border-onoma-primary/60 w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
                   />
                 </div>
               </div>
@@ -271,7 +276,7 @@ export function LinguisticProfile({
                   placeholder="Define semantic meaning..."
                   value={editMeaning}
                   onChange={(e) => setEditMeaning(e.target.value)}
-                  className="border-border/60 bg-background text-foreground h-14 w-full rounded-lg border px-2.5 py-1.5 text-xs focus:border-onoma-primary/60 focus:outline-none"
+                  className="border-border/60 bg-background text-foreground focus:border-onoma-primary/60 h-14 w-full rounded-lg border px-2.5 py-1.5 text-xs focus:outline-none"
                 />
               </div>
               <div className="space-y-1">
@@ -283,7 +288,7 @@ export function LinguisticProfile({
                   placeholder="e.g. Derived from archaic High Caphirian"
                   value={editOrigin}
                   onChange={(e) => setEditOrigin(e.target.value)}
-                  className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:border-onoma-primary/60 focus:outline-none"
+                  className="border-border/60 bg-background text-foreground focus:border-onoma-primary/60 w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-1">
@@ -298,7 +303,7 @@ export function LinguisticProfile({
                 )}
                 <button
                   type="submit"
-                  className="rounded-lg bg-onoma-primary px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-onoma-primary-light"
+                  className="bg-onoma-primary hover:bg-onoma-primary-light rounded-lg px-3 py-1 text-xs font-bold text-white transition-colors"
                 >
                   Save Definition
                 </button>
@@ -307,16 +312,16 @@ export function LinguisticProfile({
           ) : (
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between">
-                <span className="rounded-md bg-onoma-primary/15 font-mono px-2 py-0.5 text-[10px] font-bold text-onoma-primary uppercase">
+                <span className="bg-onoma-primary/15 text-onoma-primary rounded-md px-2 py-0.5 font-mono text-[10px] font-bold uppercase">
                   {definition.partOfSpeech}
                 </span>
                 {definition.root && (
                   <span className="text-muted-foreground font-mono text-[10px]">
-                    Root: <span className="font-semibold text-foreground">{definition.root}</span>
+                    Root: <span className="text-foreground font-semibold">{definition.root}</span>
                   </span>
                 )}
               </div>
-              <p className="text-foreground bg-secondary/15 border-border/20 rounded-lg border p-2.5 text-xs italic leading-relaxed">
+              <p className="text-foreground bg-secondary/15 border-border/20 rounded-lg border p-2.5 text-xs leading-relaxed italic">
                 "{definition.meaning}"
               </p>
               {definition.origin && (

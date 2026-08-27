@@ -4,7 +4,14 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { StatsReport as BarChart3, Compass, Crown, Globe, ChatBubble as MessageSquare, MoreHoriz as MoreHorizontal } from "iconoir-react";
+import {
+  StatsReport as BarChart3,
+  Compass,
+  Crown,
+  Globe,
+  ChatBubble as MessageSquare,
+  MoreHoriz as MoreHorizontal,
+} from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { stripBasePath } from "~/lib/base-path";
 import { PreText } from "~/components/ui/pretext";

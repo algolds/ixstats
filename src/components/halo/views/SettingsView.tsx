@@ -10,7 +10,25 @@ import { withBasePath } from "~/lib/base-path";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { cn } from "~/lib/utils";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { Settings, Xmark as X, HalfMoon as Moon, SunLight as Sun, User, ViewGrid as Layout, Refresh as RefreshCw, LogOut, NavArrowRight as ChevronRight, OpenBook as BookOpen, ChatBubble as MessageSquare, List, OpenNewWindow as ExternalLink, Search, SoundOff as VolumeX, HalfMoon as SunMoon, Square } from "iconoir-react";
+import {
+  Settings,
+  Xmark as X,
+  HalfMoon as Moon,
+  SunLight as Sun,
+  User,
+  ViewGrid as Layout,
+  Refresh as RefreshCw,
+  LogOut,
+  NavArrowRight as ChevronRight,
+  OpenBook as BookOpen,
+  ChatBubble as MessageSquare,
+  List,
+  OpenNewWindow as ExternalLink,
+  Search,
+  SoundOff as VolumeX,
+  HalfMoon as SunMoon,
+  Square,
+} from "iconoir-react";
 import type { SettingsViewProps } from "../types";
 import { useActiveDIPlugin } from "../plugin-context";
 import { useIsAdmin } from "~/hooks/usePermissions";
@@ -134,12 +152,12 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
         )}
       >
         {/* ── Primary Left Column (Always persistent in the same place) ── */}
-        <div className="space-y-1 min-w-0">
+        <div className="min-w-0 space-y-1">
           {/* Appearance */}
           <SectionLabel>Appearance</SectionLabel>
 
           {/* Theme */}
-          <div className="hover:bg-black/[0.04] dark:hover:bg-white/[0.06] flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-150 select-none">
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-150 select-none hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
             <div className="bg-primary/15 shrink-0 rounded-md p-1.5">
               {effectiveTheme === "dark" ? (
                 <Moon className="text-primary h-3.5 w-3.5" />
@@ -176,12 +194,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
           {/* Sound */}
           <SettingsRow
-            icon={
-              <AnimatedVolumeIcon
-                enabled={soundEnabled}
-                isHovered={soundIconHovered}
-              />
-            }
+            icon={<AnimatedVolumeIcon enabled={soundEnabled} isHovered={soundIconHovered} />}
             iconBg={soundEnabled ? "bg-emerald-500/15" : "bg-muted/15"}
             label="Sound"
             description={soundEnabled ? "Enabled" : "Muted"}
@@ -204,9 +217,9 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
             <SettingsRow
               icon={
                 mediaThemeMode === "plinth" ? (
-                  <Square className="text-emerald-500 h-3.5 w-3.5" />
+                  <Square className="h-3.5 w-3.5 text-emerald-500" />
                 ) : (
-                  <SunMoon className="text-sky-500 h-3.5 w-3.5" />
+                  <SunMoon className="h-3.5 w-3.5 text-sky-500" />
                 )
               }
               iconBg={mediaThemeMode === "plinth" ? "bg-emerald-500/15" : "bg-sky-500/15"}
@@ -229,20 +242,20 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               type="button"
               onClick={() => handleToggleMorePrefs(!morePrefsExpanded)}
               className={cn(
-                "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 cursor-pointer group active:scale-[0.985] select-none",
+                "group flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 select-none active:scale-[0.985]",
                 morePrefsExpanded
-                  ? "bg-blue-500/10 border border-blue-500/25 text-blue-400 shadow-xs"
-                  : "hover:bg-black/[0.04] dark:hover:bg-white/[0.06] border border-transparent"
+                  ? "border border-blue-500/25 bg-blue-500/10 text-blue-400 shadow-xs"
+                  : "border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
               )}
             >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 <div
                   className={cn(
                     "shrink-0 rounded-md p-1.5",
                     morePrefsExpanded ? "bg-blue-500/20" : "bg-blue-500/15"
                   )}
                 >
-                  <BookOpen className="text-blue-500 h-3.5 w-3.5" />
+                  <BookOpen className="h-3.5 w-3.5 text-blue-500" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <PreText
@@ -276,13 +289,16 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               <SectionLabel>Account</SectionLabel>
               <button
                 onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
-                className="hover:bg-black/[0.04] dark:hover:bg-white/[0.06] flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 cursor-pointer active:scale-[0.985] select-none"
+                className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 select-none hover:bg-black/[0.04] active:scale-[0.985] dark:hover:bg-white/[0.06]"
               >
                 <div className="shrink-0 rounded-md bg-blue-500/15 p-1.5">
                   <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <PreText className="text-foreground block text-sm font-medium" whiteSpace="nowrap">
+                  <PreText
+                    className="text-foreground block text-sm font-medium"
+                    whiteSpace="nowrap"
+                  >
                     Account Settings
                   </PreText>
                   <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
@@ -296,13 +312,13 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               <InlineRealmSwitcher onClose={onClose} />
 
               {/* Footer Actions: Admin (left) + Sign Out (right) */}
-              <div className="border-border/40 dark:border-white/10 mt-1 border-t pt-2 flex items-center justify-between">
+              <div className="border-border/40 mt-1 flex items-center justify-between border-t pt-2 dark:border-white/10">
                 {isAdmin ? (
                   <Button
                     asChild
                     size="sm"
                     variant="ghost"
-                    className="text-muted-foreground hover:text-red-500 hover:bg-red-500/10 h-7 text-xs px-2.5"
+                    className="text-muted-foreground h-7 px-2.5 text-xs hover:bg-red-500/10 hover:text-red-500"
                   >
                     <button
                       type="button"
@@ -310,7 +326,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                         onClose();
                         window.location.href = createAbsoluteUrl("/admin");
                       }}
-                      className="flex items-center gap-1.5 cursor-pointer"
+                      className="flex cursor-pointer items-center gap-1.5"
                     >
                       <Settings className="h-3 w-3 text-red-500" />
                       <span>Admin</span>
@@ -324,10 +340,10 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                   asChild
                   size="sm"
                   variant="ghost"
-                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-7 text-xs px-2.5"
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-7 px-2.5 text-xs"
                 >
                   <SignOutButton>
-                    <div className="flex items-center gap-1.5 cursor-pointer">
+                    <div className="flex cursor-pointer items-center gap-1.5">
                       <LogOut className="h-3 w-3" />
                       <PreText className="text-xs" whiteSpace="nowrap">
                         Sign Out
@@ -355,7 +371,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
         {/* ── Additive 2nd Column (Smoothly reveals alongside on More Preferences) ── */}
         {morePrefsExpanded && (
-          <div className="space-y-1 border-t sm:border-t-0 sm:border-l border-white/10 sm:pl-4 pt-2 sm:pt-0 animate-in fade-in slide-in-from-right-4 duration-200 min-w-0">
+          <div className="animate-in fade-in slide-in-from-right-4 min-w-0 space-y-1 border-t border-white/10 pt-2 duration-200 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
             <SectionLabel>Reader Preferences</SectionLabel>
 
             {/* Citations */}
@@ -430,17 +446,17 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                   onClose();
                   router.push(withBasePath("/settings#wiki-settings"));
                 }}
-                className="hover:bg-accent/10 flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors cursor-pointer group border border-white/5 bg-white/[0.02]"
+                className="hover:bg-accent/10 group flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5 text-left transition-colors"
               >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="bg-indigo-500/15 shrink-0 rounded-md p-1.5">
-                    <BookOpen className="text-indigo-400 h-3.5 w-3.5" />
+                <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                  <div className="shrink-0 rounded-md bg-indigo-500/15 p-1.5">
+                    <BookOpen className="h-3.5 w-3.5 text-indigo-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="text-xs font-semibold text-foreground block truncate">
+                    <span className="text-foreground block truncate text-xs font-semibold">
                       Wiki System Settings
                     </span>
-                    <span className="text-[10px] text-muted-foreground block truncate">
+                    <span className="text-muted-foreground block truncate text-[10px]">
                       Autonomous lore scanner &amp; sources
                     </span>
                   </div>
@@ -526,7 +542,7 @@ function SettingsRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="hover:bg-black/[0.04] dark:hover:bg-white/[0.06] flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-150 select-none">
+    <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-150 select-none hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
       {onIconClick ? (
         <button
           type="button"
@@ -538,7 +554,7 @@ function SettingsRow({
           onMouseLeave={() => onIconHover?.(false)}
           title={iconTitle}
           className={cn(
-            "shrink-0 rounded-md p-1.5 transition-colors cursor-pointer active:scale-95",
+            "shrink-0 cursor-pointer rounded-md p-1.5 transition-colors active:scale-95",
             iconBg
           )}
         >

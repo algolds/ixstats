@@ -10,9 +10,17 @@ describe("Plan 159: Diplomacy NPC Responses Query Batching", () => {
       { country1: "p-country-1", country2: "host-country", relationship: "alliance", strength: 90 },
       { country1: "p-country-2", country2: "host-country", relationship: "friendly", strength: 75 },
     ]);
-    const embassyFindManyMock = jest.fn().mockResolvedValue([
-      { guestCountryId: "p-country-1", hostCountryId: "other", specialization: "cultural", level: 3, influence: 80 },
-    ]);
+    const embassyFindManyMock = jest
+      .fn()
+      .mockResolvedValue([
+        {
+          guestCountryId: "p-country-1",
+          hostCountryId: "other",
+          specialization: "cultural",
+          level: 3,
+          influence: 80,
+        },
+      ]);
 
     const mockDb = {
       culturalExchange: {

@@ -3,11 +3,7 @@ import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { Polygon, MultiPolygon, Position, FeatureCollection, Geometry } from "geojson";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
-import {
-  LAYER_CONFIGS,
-  MAP_SYMBOL_FONTS,
-  MAP_LAYER_TYPES,
-} from "~/lib/maps/map-config";
+import { LAYER_CONFIGS, MAP_SYMBOL_FONTS, MAP_LAYER_TYPES } from "~/lib/maps/map-config";
 import { getGeoJSONSource, EMPTY_FC, haversineDistance } from "../utils/map-helpers";
 import { geoJSONPatcher } from "../utils/geoJsonPatcher";
 import type { MapTheme } from "~/lib/map-styles/registry";
@@ -256,7 +252,7 @@ export function useMapLayers({
         }
       }
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [map, isLoaded, worldMapLayers, theme]);
 
   // 2. Render country boundary
@@ -337,7 +333,7 @@ export function useMapLayers({
         });
       }
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [map, isLoaded, countryGeometry, countryColor, theme]);
 
   // 3. Coordinate grid overlay
@@ -432,7 +428,7 @@ export function useMapLayers({
         },
       });
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [map, isLoaded, showGrid, gridZoomBucket, countryBbox, theme]);
 
   // 4. Render existing features (subdivisions, cities, POIs, story pins, map labels)
@@ -701,7 +697,7 @@ export function useMapLayers({
         filter: ["==", ["get", "id"], ""],
       });
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [map, isLoaded, features, layerVisibility, layerOpacity, theme]);
 
   // 5. Render pending coordinates marker
@@ -738,7 +734,7 @@ export function useMapLayers({
         },
       });
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [map, isLoaded, pendingCoordinates, theme]);
 
   // 6. Render in-progress route waypoints
@@ -848,7 +844,7 @@ export function useMapLayers({
         },
       });
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [map, isLoaded, routeWaypoints, theme]);
 
   // 7. Initialize empty sources/layers for drawing, vertex editing, and route editing
@@ -1030,7 +1026,7 @@ export function useMapLayers({
         },
       });
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [map, isLoaded, theme]);
 
   // 8. Subdivisions fill — kept queryable (paint mode was removed in Plan 024).
@@ -1046,7 +1042,7 @@ export function useMapLayers({
       "fill-opacity",
       0.05 * (layerOpacity?.regions ?? 0.6)
     );
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [map, isLoaded, theme, layerOpacity]);
 
   // 9. Gap overlay (negative space highlights)

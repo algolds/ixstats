@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { Suitcase as Briefcase, PasteClipboard as ClipboardSignature, GraphUp as ChartLine, Archery as Target } from "iconoir-react";
+import {
+  Suitcase as Briefcase,
+  PasteClipboard as ClipboardSignature,
+  GraphUp as ChartLine,
+  Archery as Target,
+} from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function ExecutiveOperationsArticle() {

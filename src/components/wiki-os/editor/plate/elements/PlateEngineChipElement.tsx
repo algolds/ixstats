@@ -12,7 +12,13 @@ const chipTone: Record<string, string> = {
 };
 
 /** Live simulation metric badge (CountryData / BusinessData / MyCountry). */
-export function PlateEngineChipElement({ attributes, children }: { attributes: Record<string, unknown>; children: React.ReactNode }) {
+export function PlateEngineChipElement({
+  attributes,
+  children,
+}: {
+  attributes: Record<string, unknown>;
+  children: React.ReactNode;
+}) {
   const el = useElement() as unknown as ChipEngineEl | undefined;
   const path = usePath();
   const readOnly = useReadOnly();
@@ -26,8 +32,8 @@ export function PlateEngineChipElement({ attributes, children }: { attributes: R
         contentEditable={false}
         className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold ${chipTone[family] ?? "border-border bg-secondary text-foreground"}`}
       >
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-70" />
-        ⚡ {el.label}
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-70" />⚡{" "}
+        {el.label}
         {!readOnly && path && (
           <button
             type="button"

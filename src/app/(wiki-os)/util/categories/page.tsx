@@ -3,7 +3,13 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Search, Folder, Packages as Layers, Xmark as X, Globe as IconoirGlobe } from "iconoir-react";
+import {
+  Search,
+  Folder,
+  Packages as Layers,
+  Xmark as X,
+  Globe as IconoirGlobe,
+} from "iconoir-react";
 import { motion, useReducedMotion } from "motion/react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -27,17 +33,16 @@ export default function CategoriesIndexPage() {
     return "";
   }, [searchQuery, activeLetter]);
 
-  const { data: categoryResults, isLoading: isLoadingCats } =
-    api.wikios.searchCategories.useQuery(
-      {
-        query: effectiveQuery,
-        limit: 60,
-        wiki: "ixwiki",
-      },
-      {
-        staleTime: 60_000,
-      }
-    );
+  const { data: categoryResults, isLoading: isLoadingCats } = api.wikios.searchCategories.useQuery(
+    {
+      query: effectiveQuery,
+      limit: 60,
+      wiki: "ixwiki",
+    },
+    {
+      staleTime: 60_000,
+    }
+  );
 
   const { data: countriesData } = api.countries.getSelectList.useQuery(
     { limit: 500 },
@@ -82,45 +87,47 @@ export default function CategoriesIndexPage() {
 
   return (
     <WikiOSLayout hideTitleHeading>
-      <div className="w-full space-y-8 select-none pb-16 max-w-6xl mx-auto">
+      <div className="mx-auto w-full max-w-6xl space-y-8 pb-16 select-none">
         {/* Hero Masthead & Search */}
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="relative overflow-hidden rounded-3xl p-6 sm:p-8 border border-white/20 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_6px_24px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.4)]"
+          className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/70 p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_6px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-zinc-900/70 dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.4)]"
         >
           <TextureOverlay texture="paperGrain" opacity={0.06} />
 
-          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+          <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+            <div className="max-w-xl space-y-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
                 <Folder className="h-3.5 w-3.5" />
                 <span>Knowledge Taxonomy</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-brand">
+              <h1 className="text-foreground font-brand text-2xl font-bold tracking-tight sm:text-3xl">
                 Category Directory
               </h1>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 Explore IxWiki articles through structured worldbuilding domains, sovereign nation
                 portals, and encyclopedic topic classifications.
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-              <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/50 dark:bg-zinc-800/50 border border-border/60 backdrop-blur-sm">
+            <div className="flex shrink-0 flex-wrap items-center gap-2.5">
+              <div className="border-border/60 flex items-center gap-2 rounded-2xl border bg-white/50 px-3.5 py-2 backdrop-blur-sm dark:bg-zinc-800/50">
                 <Layers className="h-4 w-4 text-blue-500" />
                 <div className="text-left">
-                  <div className="text-xs font-bold text-foreground">12 Domains</div>
-                  <div className="text-[10px] text-muted-foreground">Primary Portals</div>
+                  <div className="text-foreground text-xs font-bold">12 Domains</div>
+                  <div className="text-muted-foreground text-[10px]">Primary Portals</div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/50 dark:bg-zinc-800/50 border border-border/60 backdrop-blur-sm">
+              <div className="border-border/60 flex items-center gap-2 rounded-2xl border bg-white/50 px-3.5 py-2 backdrop-blur-sm dark:bg-zinc-800/50">
                 <IconoirGlobe className="h-4 w-4 text-emerald-500" />
                 <div className="text-left">
-                  <div className="text-xs font-bold text-foreground">{countries.length} Nations</div>
-                  <div className="text-[10px] text-muted-foreground">Geopolitical Portals</div>
+                  <div className="text-foreground text-xs font-bold">
+                    {countries.length} Nations
+                  </div>
+                  <div className="text-muted-foreground text-[10px]">Geopolitical Portals</div>
                 </div>
               </div>
             </div>
@@ -128,7 +135,7 @@ export default function CategoriesIndexPage() {
 
           <div className="relative z-10 mt-6">
             <div className="relative flex items-center">
-              <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Search className="text-muted-foreground pointer-events-none absolute left-3.5 h-4 w-4" />
               <input
                 type="text"
                 value={searchQuery}
@@ -139,12 +146,12 @@ export default function CategoriesIndexPage() {
                   }
                 }}
                 placeholder="Search all categories, worldbuilding topics, or sovereign nations..."
-                className="w-full pl-10 pr-10 py-3 rounded-2xl text-sm bg-white/80 dark:bg-zinc-950/80 border border-border/80 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-inner transition-all placeholder:text-muted-foreground/60 text-foreground"
+                className="border-border/80 placeholder:text-muted-foreground/60 text-foreground w-full rounded-2xl border bg-white/80 py-3 pr-10 pl-10 text-sm shadow-inner transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:bg-zinc-950/80"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3.5 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  className="text-muted-foreground hover:text-foreground hover:bg-muted absolute right-3.5 rounded-full p-1 transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -154,14 +161,14 @@ export default function CategoriesIndexPage() {
         </motion.div>
 
         {/* Navigation Tabs */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/60 pb-3">
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted/60 border border-border/50">
+        <div className="border-border/60 flex flex-col items-start justify-between gap-4 border-b pb-3 sm:flex-row sm:items-center">
+          <div className="bg-muted/60 border-border/50 flex items-center gap-1.5 rounded-xl border p-1">
             <button
               onClick={() => setActiveTab("domains")}
               className={cn(
-                "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                "cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
                 activeTab === "domains"
-                  ? "bg-white dark:bg-zinc-800 text-foreground shadow-sm"
+                  ? "text-foreground bg-white shadow-sm dark:bg-zinc-800"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -170,9 +177,9 @@ export default function CategoriesIndexPage() {
             <button
               onClick={() => setActiveTab("all-categories")}
               className={cn(
-                "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                "cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
                 activeTab === "all-categories"
-                  ? "bg-white dark:bg-zinc-800 text-foreground shadow-sm"
+                  ? "text-foreground bg-white shadow-sm dark:bg-zinc-800"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -181,9 +188,9 @@ export default function CategoriesIndexPage() {
             <button
               onClick={() => setActiveTab("nations")}
               className={cn(
-                "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                "cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
                 activeTab === "nations"
-                  ? "bg-white dark:bg-zinc-800 text-foreground shadow-sm"
+                  ? "text-foreground bg-white shadow-sm dark:bg-zinc-800"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -191,9 +198,10 @@ export default function CategoriesIndexPage() {
             </button>
           </div>
 
-          <div className="text-xs text-muted-foreground font-medium">
+          <div className="text-muted-foreground text-xs font-medium">
             {activeTab === "domains" && `${filteredDomains.length} domains available`}
-            {activeTab === "all-categories" && `${cleanedLiveCategories.length} live categories listed`}
+            {activeTab === "all-categories" &&
+              `${cleanedLiveCategories.length} live categories listed`}
             {activeTab === "nations" && `${filteredCountries.length} nation portals`}
           </div>
         </div>

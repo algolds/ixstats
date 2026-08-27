@@ -321,7 +321,7 @@ export function CommonsCategoryBrowser({
       setExpandedGroups({ [groups[0]!.label]: true });
     }
     setExpanded({});
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [wiki, groups]);
 
   // Auto-expand parent category and group if browsingCategory is selected

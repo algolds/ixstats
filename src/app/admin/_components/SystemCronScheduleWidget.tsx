@@ -5,7 +5,15 @@
 import React, { useState } from "react";
 import { CronSchedule } from "~/components/ui/cron-schedule";
 import { cn } from "~/lib/utils";
-import { Hammer as Gavel, Coins, GraphUp as LineChart, Sparks as Sparkles, Refresh as RefreshCw, Trophy as Award, Clock } from "iconoir-react";
+import {
+  Hammer as Gavel,
+  Coins,
+  GraphUp as LineChart,
+  Sparks as Sparkles,
+  Refresh as RefreshCw,
+  Trophy as Award,
+  Clock,
+} from "iconoir-react";
 
 const CRON_JOBS = [
   {

@@ -24,8 +24,6 @@ export const SidebarContext = createContext<SidebarContextProps>({
 
 export const useSidebar = () => useContext(SidebarContext);
 
-
-
 interface DashboardSidebarLayoutProps {
   children: ReactNode;
   heroSection?: ReactNode;
@@ -232,16 +230,13 @@ export function DashboardSidebarLayout({
               <div
                 aria-hidden="true"
                 className={cn(
-                  "relative z-10 hidden shrink-0 pointer-events-none transition-[width] duration-300 ease-out lg:block",
+                  "pointer-events-none relative z-10 hidden shrink-0 transition-[width] duration-300 ease-out lg:block",
                   isCollapsedNow && !isHoverActive
                     ? "-right-6 w-14 opacity-0 xl:-right-12"
                     : cn("-right-6 opacity-0 xl:-right-12", resolvedExpandedWidthClass)
                 )}
                 style={{
-                  width:
-                    isCollapsedNow && !isHoverActive
-                      ? "3.5rem"
-                      : resolvedExpandedWidthStyle,
+                  width: isCollapsedNow && !isHoverActive ? "3.5rem" : resolvedExpandedWidthStyle,
                 }}
               />
             )}

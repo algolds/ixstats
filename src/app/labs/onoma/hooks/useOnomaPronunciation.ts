@@ -65,7 +65,10 @@ export function useOnomaPronunciation({
         });
         return;
       } catch (err) {
-        console.error("Kokoro TTS failed for hero pronunciation, falling back to browser speech:", err);
+        console.error(
+          "Kokoro TTS failed for hero pronunciation, falling back to browser speech:",
+          err
+        );
       }
     }
 

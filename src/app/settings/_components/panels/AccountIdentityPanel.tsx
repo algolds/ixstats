@@ -79,7 +79,9 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
   // Wiki link state
   const [showWikiInput, setShowWikiInput] = useState(false);
   const [wikiInput, setWikiInput] = useState("");
-  const [wikiLookup, setWikiLookup] = useState<{ username: string; editCount: number } | null>(null);
+  const [wikiLookup, setWikiLookup] = useState<{ username: string; editCount: number } | null>(
+    null
+  );
 
   // Mutations
   const linkForum = api.ixnayid.linkForum.useMutation({
@@ -208,10 +210,10 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
       />
 
       {/* Identity Card */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-indigo-500/[0.08] via-card/70 to-purple-500/[0.08] p-5 backdrop-blur-xl shadow-xs">
+      <div className="border-border/50 via-card/70 relative overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-500/[0.08] to-purple-500/[0.08] p-5 shadow-xs backdrop-blur-xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-border/60 bg-muted shadow-xs">
+            <div className="border-border/60 bg-muted relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border shadow-xs">
               {user?.imageUrl ? (
                 <img
                   src={user.imageUrl}
@@ -219,16 +221,16 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                <div className="text-muted-foreground flex h-full w-full items-center justify-center">
                   <User className="h-6 w-6" />
                 </div>
               )}
-              <div className="absolute right-1 bottom-1 h-3 w-3 rounded-full border-2 border-background bg-emerald-500 shadow-xs" />
+              <div className="border-background absolute right-1 bottom-1 h-3 w-3 rounded-full border-2 bg-emerald-500 shadow-xs" />
             </div>
 
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-base font-bold text-foreground tracking-tight">
+                <span className="text-foreground text-base font-bold tracking-tight">
                   @{passportHandle}
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-md border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
@@ -240,13 +242,13 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
                 {userProfile?.country ? (
                   <Link
                     href={countryFactbookUrl || "/mycountry"}
-                    className="flex items-center gap-1.5 font-medium text-foreground hover:underline"
+                    className="text-foreground flex items-center gap-1.5 font-medium hover:underline"
                   >
-                    <div className="h-3.5 w-5 overflow-hidden rounded-[2px] border border-border/40">
+                    <div className="border-border/40 h-3.5 w-5 overflow-hidden rounded-[2px] border">
                       <UnifiedCountryFlag
                         countryName={userProfile.country.name}
                         flagUrl={userProfile.country.flagUrl}
@@ -256,24 +258,28 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                     <span>{userProfile.country.name}</span>
                   </Link>
                 ) : (
-                  <Link href="/setup" className="font-semibold text-amber-600 hover:underline dark:text-amber-400">
+                  <Link
+                    href="/setup"
+                    className="font-semibold text-amber-600 hover:underline dark:text-amber-400"
+                  >
                     + Link Country
                   </Link>
                 )}
-                {userProfile?.membershipTier && (() => {
-                  const tierInfo = formatMembershipTier(userProfile.membershipTier);
-                  return (
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-semibold tracking-tight",
-                        tierInfo.badgeClass
-                      )}
-                    >
-                      {tierInfo.isPremium && <Crown className="h-2.5 w-2.5 shrink-0" />}
-                      {tierInfo.label}
-                    </span>
-                  );
-                })()}
+                {userProfile?.membershipTier &&
+                  (() => {
+                    const tierInfo = formatMembershipTier(userProfile.membershipTier);
+                    return (
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-semibold tracking-tight",
+                          tierInfo.badgeClass
+                        )}
+                      >
+                        {tierInfo.isPremium && <Crown className="h-2.5 w-2.5 shrink-0" />}
+                        {tierInfo.label}
+                      </span>
+                    );
+                  })()}
               </div>
             </div>
           </div>
@@ -283,7 +289,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
               type="button"
               onClick={handleCopyPassport}
               data-cuelume-press="soft"
-              className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-card/60 text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold active:scale-[0.98]"
             >
               {copiedHandle ? (
                 <>
@@ -292,12 +298,12 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                 </>
               ) : (
                 <>
-                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Copy className="text-muted-foreground h-3.5 w-3.5" />
                   <span>Copy Link</span>
                 </>
               )}
             </button>
-            <div className="rounded-xl border border-border/50 bg-card/60 p-0.5">
+            <div className="border-border/50 bg-card/60 rounded-xl border p-0.5">
               <UserButton
                 appearance={{
                   elements: {
@@ -319,16 +325,16 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             type="button"
             onClick={() => setShowSensitive((prev) => !prev)}
             data-cuelume-press="soft"
-            className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/40 bg-card/60 px-2.5 py-1 text-xs font-bold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
+            className="facet-interactive border-border/40 bg-card/60 text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-all active:scale-[0.98]"
           >
             {showSensitive ? (
               <>
-                <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                <EyeOff className="text-muted-foreground h-3.5 w-3.5" />
                 <span>Hide</span>
               </>
             ) : (
               <>
-                <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                <Eye className="text-muted-foreground h-3.5 w-3.5" />
                 <span>Show</span>
               </>
             )}
@@ -336,14 +342,10 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
         }
         footer="Click your avatar to change your password, turn on two-step verification, or manage active sessions."
       >
-        <SettingsRow
-          label="Username"
-          icon={Key}
-          glyphClass="bg-purple-500/15 text-purple-500"
-        >
+        <SettingsRow label="Username" icon={Key} glyphClass="bg-purple-500/15 text-purple-500">
           <span
             className={cn(
-              "text-xs font-semibold text-foreground transition-[filter,opacity] duration-200",
+              "text-foreground text-xs font-semibold transition-[filter,opacity] duration-200",
               showSensitive ? "opacity-100 blur-none" : "opacity-60 blur-[4px] select-none"
             )}
           >
@@ -351,18 +353,15 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           </span>
         </SettingsRow>
 
-        <SettingsRow
-          label="Primary Email"
-          icon={Mail}
-          glyphClass="bg-amber-500/15 text-amber-500"
-        >
+        <SettingsRow label="Primary Email" icon={Mail} glyphClass="bg-amber-500/15 text-amber-500">
           <span
             className={cn(
-              "text-xs font-semibold text-foreground transition-[filter,opacity] duration-200",
+              "text-foreground text-xs font-semibold transition-[filter,opacity] duration-200",
               showSensitive ? "opacity-100 blur-none" : "opacity-60 blur-[4px] select-none"
             )}
           >
-            {user?.emailAddresses?.[0]?.emailAddress || (showSensitive ? "—" : "••••••••••••••••••••")}
+            {user?.emailAddresses?.[0]?.emailAddress ||
+              (showSensitive ? "—" : "••••••••••••••••••••")}
           </span>
         </SettingsRow>
 
@@ -381,7 +380,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             type="button"
             onClick={() => setShowLinkedAccounts((prev) => !prev)}
             data-cuelume-press="soft"
-            className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted active:scale-[0.98]"
+            className="facet-interactive border-border/60 bg-card/60 text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold active:scale-[0.98]"
           >
             <span>{showLinkedAccounts ? "Hide" : "Manage"}</span>
             <NavArrowDown
@@ -395,7 +394,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
 
         {/* Expanded Linked Accounts Subsection */}
         {showLinkedAccounts && (
-          <div className="divide-y divide-border/20 bg-muted/15 border-t border-border/20">
+          <div className="divide-border/20 bg-muted/15 border-border/20 divide-y border-t">
             {/* Forum */}
             <SettingsRow
               label="Community Forum"
@@ -416,7 +415,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                     type="button"
                     onClick={() => unlinkForum.mutate()}
                     disabled={unlinkForum.isPending}
-                    className="facet-interactive rounded-xl border border-border/60 px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-500/10 active:scale-[0.98] dark:text-rose-400"
+                    className="facet-interactive border-border/60 rounded-xl border px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-500/10 active:scale-[0.98] dark:text-rose-400"
                   >
                     {unlinkForum.isPending ? "Unlinking..." : "Unlink"}
                   </button>
@@ -426,7 +425,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   type="button"
                   onClick={() => setShowForumInput((prev) => !prev)}
                   data-cuelume-press="soft"
-                  className="facet-interactive rounded-xl border border-border/60 bg-card px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted active:scale-[0.98]"
+                  className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted rounded-xl border px-3 py-1.5 text-xs font-bold active:scale-[0.98]"
                 >
                   {showForumInput ? "Cancel" : "Connect"}
                 </button>
@@ -434,7 +433,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             </SettingsRow>
 
             {showForumInput && !status?.forum.linked && (
-              <div className="p-4 bg-muted/20 space-y-3">
+              <div className="bg-muted/20 space-y-3 p-4">
                 <div className="flex gap-2">
                   <Input
                     type="text"
@@ -451,7 +450,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                     type="button"
                     onClick={handleForumLookup}
                     disabled={!forumInput.trim() || forumLookupQuery.isFetching}
-                    className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted active:scale-[0.98] disabled:opacity-50"
+                    className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold active:scale-[0.98] disabled:opacity-50"
                   >
                     {forumLookupQuery.isFetching ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -500,7 +499,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                     type="button"
                     onClick={() => unlinkWiki.mutate()}
                     disabled={unlinkWiki.isPending}
-                    className="facet-interactive rounded-xl border border-border/60 px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-500/10 active:scale-[0.98] dark:text-rose-400"
+                    className="facet-interactive border-border/60 rounded-xl border px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-500/10 active:scale-[0.98] dark:text-rose-400"
                   >
                     {unlinkWiki.isPending ? "Unlinking..." : "Unlink"}
                   </button>
@@ -510,7 +509,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   type="button"
                   onClick={() => setShowWikiInput((prev) => !prev)}
                   data-cuelume-press="soft"
-                  className="facet-interactive rounded-xl border border-border/60 bg-card px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted active:scale-[0.98]"
+                  className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted rounded-xl border px-3 py-1.5 text-xs font-bold active:scale-[0.98]"
                 >
                   {showWikiInput ? "Cancel" : "Connect"}
                 </button>
@@ -518,7 +517,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             </SettingsRow>
 
             {showWikiInput && !status?.wiki.linked && (
-              <div className="p-4 bg-muted/20 space-y-3">
+              <div className="bg-muted/20 space-y-3 p-4">
                 <div className="flex gap-2">
                   <Input
                     type="text"
@@ -535,7 +534,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                     type="button"
                     onClick={handleWikiLookup}
                     disabled={!wikiInput.trim() || wikiLookupQuery.isFetching}
-                    className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted active:scale-[0.98] disabled:opacity-50"
+                    className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold active:scale-[0.98] disabled:opacity-50"
                   >
                     {wikiLookupQuery.isFetching ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -549,7 +548,8 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                 {wikiLookup && (
                   <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5">
                     <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                      Account found: <strong>{wikiLookup.username}</strong> ({wikiLookup.editCount.toLocaleString()} edits)
+                      Account found: <strong>{wikiLookup.username}</strong> (
+                      {wikiLookup.editCount.toLocaleString()} edits)
                     </span>
                     <button
                       type="button"
@@ -584,13 +584,13 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                     type="button"
                     onClick={() => unlinkDiscord.mutate()}
                     disabled={unlinkDiscord.isPending}
-                    className="facet-interactive rounded-xl border border-border/60 px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-500/10 active:scale-[0.98] dark:text-rose-400"
+                    className="facet-interactive border-border/60 rounded-xl border px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-500/10 active:scale-[0.98] dark:text-rose-400"
                   >
                     {unlinkDiscord.isPending ? "Unlinking..." : "Unlink"}
                   </button>
                 </div>
               ) : (
-                <span className="text-xs font-medium text-muted-foreground">
+                <span className="text-muted-foreground text-xs font-medium">
                   Sign in with Discord on Clerk
                 </span>
               )}
@@ -607,27 +607,28 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           <Link
             href="/realms/new"
             data-cuelume-press="soft"
-            className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/40 bg-card/60 px-2.5 py-1 text-xs font-bold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
+            className="facet-interactive border-border/40 bg-card/60 text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-all active:scale-[0.98]"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Found Realm</span>
           </Link>
         }
       >
-        <div className="divide-y divide-border/40">
+        <div className="divide-border/40 divide-y">
           {memberships.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-accent/40 text-muted-foreground mb-3">
+              <div className="border-border bg-accent/40 text-muted-foreground mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border">
                 <Globe className="h-6 w-6" />
               </div>
-              <h4 className="text-sm font-bold text-foreground">No Realms Joined</h4>
-              <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-                You haven&apos;t joined any realms yet. Found a world or accept an invitation to join one.
+              <h4 className="text-foreground text-sm font-bold">No Realms Joined</h4>
+              <p className="text-muted-foreground mt-1 max-w-xs text-xs">
+                You haven&apos;t joined any realms yet. Found a world or accept an invitation to
+                join one.
               </p>
               <Link
                 href="/realms/new"
                 data-cuelume-press="soft"
-                className="facet-interactive mt-4 flex items-center gap-1.5 rounded-xl bg-foreground px-4 py-2 text-xs font-bold text-background transition-all hover:opacity-90 active:scale-[0.98]"
+                className="facet-interactive bg-foreground text-background mt-4 flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all hover:opacity-90 active:scale-[0.98]"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span>Found a Realm</span>
@@ -656,8 +657,8 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                     isSelected ? "bg-accent/20" : "hover:bg-muted/10"
                   )}
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-muted shadow-xs">
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <div className="border-border/60 bg-muted relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border shadow-xs">
                       {orgLogo ? (
                         <img
                           src={orgLogo}
@@ -665,18 +666,18 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-accent text-foreground">
+                        <div className="bg-accent text-foreground flex h-full w-full items-center justify-center">
                           <Globe className="h-5 w-5" />
                         </div>
                       )}
                       {isSelected && (
-                        <div className="absolute right-1 bottom-1 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500 shadow-xs" />
+                        <div className="border-background absolute right-1 bottom-1 h-2.5 w-2.5 rounded-full border-2 bg-emerald-500 shadow-xs" />
                       )}
                     </div>
 
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-bold text-foreground truncate">
+                        <span className="text-foreground truncate text-sm font-bold">
                           {membership.organization.name}
                         </span>
                         {isSelected && (
@@ -685,13 +686,15 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                             Active Realm
                           </span>
                         )}
-                        <span className="inline-flex items-center rounded-md border border-border/60 bg-card/60 px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">
+                        <span className="border-border/60 bg-card/60 text-muted-foreground inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold">
                           {formattedRole}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-muted-foreground truncate text-xs">
                         {membersCount !== undefined && (
-                          <span>{membersCount} {membersCount === 1 ? "member" : "members"}</span>
+                          <span>
+                            {membersCount} {membersCount === 1 ? "member" : "members"}
+                          </span>
                         )}
                         {membersCount !== undefined && joinDate && <span> · </span>}
                         {joinDate && <span>Joined {joinDate}</span>}
@@ -708,14 +711,16 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                           try {
                             soundEffects.press();
                             await setActive({ organization: membership.organization.id });
-                            notify.success(`Switched active realm to ${membership.organization.name}`);
+                            notify.success(
+                              `Switched active realm to ${membership.organization.name}`
+                            );
                             soundEffects.ready();
                           } catch {
                             soundEffects.error();
                           }
                         }}
                         data-cuelume-press="soft"
-                        className="facet-interactive rounded-xl border border-border/60 bg-card/60 px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted active:scale-[0.98]"
+                        className="facet-interactive border-border/60 bg-card/60 text-foreground hover:bg-muted rounded-xl border px-3 py-1.5 text-xs font-bold active:scale-[0.98]"
                       >
                         Set Active
                       </button>
@@ -723,10 +728,10 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                     <Link
                       href={`/r/${membership.organization.slug || membership.organization.id}`}
                       data-cuelume-press="soft"
-                      className="facet-interactive flex items-center gap-1 rounded-xl border border-border/60 bg-card/60 px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted active:scale-[0.98]"
+                      className="facet-interactive border-border/60 bg-card/60 text-foreground hover:bg-muted flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-bold active:scale-[0.98]"
                     >
                       <span>Go to Realm</span>
-                      <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                      <ExternalLink className="text-muted-foreground h-3 w-3" />
                     </Link>
                     {isAdmin && (
                       <Link

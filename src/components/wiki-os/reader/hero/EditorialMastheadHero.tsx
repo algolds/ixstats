@@ -33,10 +33,7 @@ import { IxWikiWordmark } from "~/components/wiki-os/shared/IxWikiWordmark";
 import { IxTime } from "~/lib/ixtime/core";
 import { getPrimeMeridianWeather, type WeatherIconType } from "~/lib/ixtime/weather";
 import { HeroSpotlightSearch } from "./HeroSpotlightSearch";
-import {
-  FeaturedArticleRefractionCard,
-  FeaturedThumbnailFrame,
-} from "./FeaturedImageRefraction";
+import { FeaturedArticleRefractionCard, FeaturedThumbnailFrame } from "./FeaturedImageRefraction";
 import type { WikiHeroProps } from "./types";
 
 function WeatherIcon({ icon, className }: { icon: WeatherIconType; className?: string }) {
@@ -141,8 +138,12 @@ export function EditorialMastheadHero({
   const minutes = String(clockTime.getUTCMinutes()).padStart(2, "0");
   // oxlint-disable-next-line eslint/no-unused-vars
   const hoursMinutes = `${hours}:${minutes}`;
-  const weekdayShort = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][clockTime.getUTCDay()] || "SAT";
-  const monthShort = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][clockTime.getUTCMonth()] || "AUG";
+  const weekdayShort =
+    ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][clockTime.getUTCDay()] || "SAT";
+  const monthShort =
+    ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][
+      clockTime.getUTCMonth()
+    ] || "AUG";
   const dayNum = clockTime.getUTCDate();
   const yearNum = clockTime.getUTCFullYear();
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -158,7 +159,6 @@ export function EditorialMastheadHero({
     [articleCountStr]
   );
 
-
   // oxlint-disable-next-line eslint/no-unused-vars
   const handleSearchClick = () => {
     if (onOpenSearch) {
@@ -171,52 +171,52 @@ export function EditorialMastheadHero({
   };
 
   return (
-    <section
-      aria-label="WikiOS Editorial Masthead"
-      className="w-full select-none"
-    >
-     
-
+    <section aria-label="WikiOS Editorial Masthead" className="w-full select-none">
       {/* ── 2. Balanced Editorial Header (Left Logo Lockup & Right Spotlight Search) ── */}
-      <div className="w-full py-1 sm:py-2 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-8">
+      <div className="flex w-full flex-col justify-between gap-4 py-1 sm:py-2 md:flex-row md:items-center md:gap-8">
         {/* Left Section: Free-standing Laurel Emblem + Wordmark + Tagline Lockup */}
         <Link
           href={withBasePath("/wiki/Main_Page")}
-          className="group/brand inline-flex items-center gap-4.5 sm:gap-6 text-left shrink-0 select-none cursor-pointer"
+          className="group/brand inline-flex shrink-0 cursor-pointer items-center gap-4.5 text-left select-none sm:gap-6"
         >
           <motion.div
             whileHover={reduceMotion ? {} : { scale: 1.04, y: -2 }}
             whileTap={reduceMotion ? {} : { scale: 0.96 }}
             transition={{ type: "spring", stiffness: 360, damping: 24 }}
-            className="relative shrink-0 flex items-center justify-center"
+            className="relative flex shrink-0 items-center justify-center"
             aria-label="IxWiki Home"
           >
             {/* The Canonical Laurel Sphere Logo - Monumental NYT/WaPo Scale */}
             <IxWikiLogo
               size={104}
-              className="relative z-10 h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 text-wiki dark:text-blue-400 drop-shadow-[0_4px_20px_rgba(29,78,137,0.22)] dark:drop-shadow-[0_4px_24px_rgba(96,165,250,0.4)] transition-transform duration-300 ease-out group-hover/brand:scale-[1.03]"
+              className="text-wiki relative z-10 h-20 w-20 drop-shadow-[0_4px_20px_rgba(29,78,137,0.22)] transition-transform duration-300 ease-out group-hover/brand:scale-[1.03] sm:h-24 sm:w-24 lg:h-28 lg:w-28 dark:text-blue-400 dark:drop-shadow-[0_4px_24px_rgba(96,165,250,0.4)]"
             />
           </motion.div>
-          <div className="flex flex-col justify-center my-auto">
-            <IxWikiWordmark size="2xl" className="leading-none transition-colors group-hover/brand:text-foreground/90" />
+          <div className="my-auto flex flex-col justify-center">
+            <IxWikiWordmark
+              size="2xl"
+              className="group-hover/brand:text-foreground/90 leading-none transition-colors"
+            />
             <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-              <span className="tracking-[0.18em] uppercase text-[10.5px] sm:text-[11.5px] font-bold text-muted-foreground/80 block leading-none">
+              <span className="text-muted-foreground/80 block text-[10.5px] leading-none font-bold tracking-[0.18em] uppercase sm:text-[11.5px]">
                 Worldbuilding Encyclopedia
               </span>
-              <span className="hidden sm:inline text-muted-foreground/40 select-none">•</span>
+              <span className="text-muted-foreground/40 hidden select-none sm:inline">•</span>
               {/* Live Editorial Dateline & Weather Telemetry */}
-              <div className="flex items-center gap-1.5 text-[11px] sm:text-[11.5px] text-muted-foreground">
-                <span suppressHydrationWarning className="font-medium text-muted-foreground/85">
+              <div className="text-muted-foreground flex items-center gap-1.5 text-[11px] sm:text-[11.5px]">
+                <span suppressHydrationWarning className="text-muted-foreground/85 font-medium">
                   {weekdayShort}, {monthShort} {dayNum}, {yearNum}
                 </span>
                 <span className="text-muted-foreground/40 select-none">·</span>
                 <span
-                  className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium cursor-help"
+                  className="inline-flex cursor-help items-center gap-1 font-medium text-amber-600 dark:text-amber-400"
                   title={`Prime Meridian: ${weather.condition} (${weather.summary})`}
                 >
-                  <WeatherIcon icon={weather.icon} className="h-3 w-3 text-amber-500 shrink-0" />
+                  <WeatherIcon icon={weather.icon} className="h-3 w-3 shrink-0 text-amber-500" />
                   <span>{weather.tempC}°C</span>
-                  <span className="hidden lg:inline text-muted-foreground/60 font-normal">· {weather.condition}</span>
+                  <span className="text-muted-foreground/60 hidden font-normal lg:inline">
+                    · {weather.condition}
+                  </span>
                 </span>
               </div>
             </div>
@@ -228,7 +228,7 @@ export function EditorialMastheadHero({
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full md:w-80 lg:w-96 shrink-0 relative z-30"
+          className="relative z-30 w-full shrink-0 md:w-80 lg:w-96"
         >
           <HeroSpotlightSearch placeholderHints={searchPlaceholders} />
         </motion.div>
@@ -239,7 +239,7 @@ export function EditorialMastheadHero({
         initial={reduceMotion ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full pt-1 pb-2 flex flex-wrap items-center justify-start gap-2 sm:gap-2.5"
+        className="flex w-full flex-wrap items-center justify-start gap-2 pt-1 pb-2 sm:gap-2.5"
       >
         {/* Action 1: Award-Winning Lore */}
         <Link
@@ -247,12 +247,12 @@ export function EditorialMastheadHero({
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium cursor-pointer",
+            "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
             "border border-black/[0.08] dark:border-white/[0.1]",
-            "bg-white/65 dark:bg-zinc-900/65 backdrop-blur-md",
+            "bg-white/65 backdrop-blur-md dark:bg-zinc-900/65",
             "shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_2px_6px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.2)]",
             "hover:border-amber-500/40 hover:bg-amber-500/[0.06] dark:hover:bg-amber-500/[0.1]",
-            "text-muted-foreground hover:text-foreground transition-colors duration-150 active:scale-95 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            "text-muted-foreground hover:text-foreground group transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none active:scale-95"
           )}
         >
           <IconoirTrophy className="h-3.5 w-3.5 text-amber-500 transition-transform group-hover:scale-110" />
@@ -265,12 +265,12 @@ export function EditorialMastheadHero({
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium cursor-pointer",
+            "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
             "border border-black/[0.08] dark:border-white/[0.1]",
-            "bg-white/65 dark:bg-zinc-900/65 backdrop-blur-md",
+            "bg-white/65 backdrop-blur-md dark:bg-zinc-900/65",
             "shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_2px_6px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.2)]",
             "hover:border-sky-500/40 hover:bg-sky-500/[0.06] dark:hover:bg-sky-500/[0.1]",
-            "text-muted-foreground hover:text-foreground transition-colors duration-150 active:scale-95 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+            "text-muted-foreground hover:text-foreground group transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none active:scale-95"
           )}
         >
           <IconoirOpenBook className="h-3.5 w-3.5 text-sky-500 transition-transform group-hover:scale-110" />
@@ -283,12 +283,12 @@ export function EditorialMastheadHero({
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium cursor-pointer",
+            "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
             "border border-black/[0.08] dark:border-white/[0.1]",
-            "bg-white/65 dark:bg-zinc-900/65 backdrop-blur-md",
+            "bg-white/65 backdrop-blur-md dark:bg-zinc-900/65",
             "shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_2px_6px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.2)]",
             "hover:border-emerald-500/40 hover:bg-emerald-500/[0.06] dark:hover:bg-emerald-500/[0.1]",
-            "text-muted-foreground hover:text-foreground transition-colors duration-150 active:scale-95 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+            "text-muted-foreground hover:text-foreground group transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none active:scale-95"
           )}
         >
           <IconoirFolder className="h-3.5 w-3.5 text-emerald-500 transition-transform group-hover:scale-110" />
@@ -301,40 +301,42 @@ export function EditorialMastheadHero({
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.14 }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 mt-3 w-full"
+        className="mt-3 grid w-full grid-cols-1 gap-2.5 sm:gap-3 md:grid-cols-2"
       >
         {/* Tile: Timeline (Milestones & Canon Historical Events) */}
         <div
           className={cn(
-            "relative overflow-hidden flex flex-col justify-between p-3 sm:p-3.5 rounded-2xl min-h-[82px] sm:min-h-[86px]",
+            "relative flex min-h-[82px] flex-col justify-between overflow-hidden rounded-2xl p-3 sm:min-h-[86px] sm:p-3.5",
             "border border-black/[0.08] dark:border-white/[0.1]",
-            "bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl",
+            "bg-white/70 backdrop-blur-xl dark:bg-zinc-900/70",
             "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_2px_10px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_14px_rgba(0,0,0,0.2)]",
-            "hover:border-black/20 dark:hover:border-white/20 hover:bg-white/85 dark:hover:bg-zinc-900/85 hover:shadow-md",
-            "transition-all duration-200 group text-left"
+            "hover:border-black/20 hover:bg-white/85 hover:shadow-md dark:hover:border-white/20 dark:hover:bg-zinc-900/85",
+            "group text-left transition-all duration-200"
           )}
         >
           <TextureOverlay texture="paperGrain" opacity={0.06} />
-          <div className="flex items-center justify-between w-full mb-1">
-            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="mb-1 flex w-full items-center justify-between">
+            <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-amber-500 uppercase">
               <History className="h-3.5 w-3.5" /> Timeline
             </span>
             {/* Apple-grade stepper pill */}
-            <div className="flex items-center gap-0.5 px-1 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.04] dark:border-white/[0.06]">
+            <div className="flex items-center gap-0.5 rounded-md border border-black/[0.04] bg-black/[0.04] px-1 py-0.5 dark:border-white/[0.06] dark:bg-white/[0.05]">
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setChronicleIndex((prev) => (prev === 0 ? CANON_CHRONICLE_EVENTS.length - 1 : prev - 1));
+                  setChronicleIndex((prev) =>
+                    prev === 0 ? CANON_CHRONICLE_EVENTS.length - 1 : prev - 1
+                  );
                 }}
                 data-cuelume-press="tick"
                 data-cuelume-hover="tick"
-                className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground transition-all active:scale-90 cursor-pointer"
+                className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-0.5 transition-all hover:bg-black/10 active:scale-90 dark:hover:bg-white/10"
                 aria-label="Previous historical event"
               >
                 <ChevronLeft className="h-3 w-3" />
               </button>
-              <span className="text-[10px] font-medium px-1 text-muted-foreground/80 select-none tabular-nums">
+              <span className="text-muted-foreground/80 px-1 text-[10px] font-medium tabular-nums select-none">
                 {chronicleIndex + 1}/{CANON_CHRONICLE_EVENTS.length}
               </span>
               <button
@@ -345,7 +347,7 @@ export function EditorialMastheadHero({
                 }}
                 data-cuelume-press="tick"
                 data-cuelume-hover="tick"
-                className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground transition-all active:scale-90 cursor-pointer"
+                className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-0.5 transition-all hover:bg-black/10 active:scale-90 dark:hover:bg-white/10"
                 aria-label="Next historical event"
               >
                 <ChevronRight className="h-3 w-3" />
@@ -354,7 +356,7 @@ export function EditorialMastheadHero({
           </div>
 
           {/* Animated Historical Chronicle Item */}
-          <div className="relative overflow-hidden flex items-center">
+          <div className="relative flex items-center overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={chronicleIndex}
@@ -368,17 +370,17 @@ export function EditorialMastheadHero({
                   href={withBasePath(`/wiki/${CANON_CHRONICLE_EVENTS[chronicleIndex].slug}`)}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="block group/event active:scale-[0.98] transition-transform"
+                  className="group/event block transition-transform active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0 tabular-nums">
+                    <span className="py-0.2 shrink-0 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 text-[9.5px] font-bold text-amber-600 tabular-nums dark:text-amber-400">
                       {CANON_CHRONICLE_EVENTS[chronicleIndex].year}
                     </span>
-                    <span className="text-xs sm:text-[13px] font-semibold text-foreground truncate group-hover/event:text-amber-500 transition-colors leading-tight">
+                    <span className="text-foreground truncate text-xs leading-tight font-semibold transition-colors group-hover/event:text-amber-500 sm:text-[13px]">
                       {CANON_CHRONICLE_EVENTS[chronicleIndex].title}
                     </span>
                   </div>
-                  <span className="text-[11px] font-medium text-muted-foreground line-clamp-1 block mt-0.5 leading-snug">
+                  <span className="text-muted-foreground mt-0.5 line-clamp-1 block text-[11px] leading-snug font-medium">
                     {CANON_CHRONICLE_EVENTS[chronicleIndex].description}
                   </span>
                 </Link>
@@ -395,28 +397,31 @@ export function EditorialMastheadHero({
             data-cuelume-press="droplet"
             data-cuelume-hover="tick"
             className={cn(
-              "relative overflow-hidden flex flex-col justify-between p-3 sm:p-3.5 rounded-2xl min-h-[82px] sm:min-h-[86px]",
+              "relative flex min-h-[82px] flex-col justify-between overflow-hidden rounded-2xl p-3 sm:min-h-[86px] sm:p-3.5",
               "border border-black/[0.08] dark:border-white/[0.1]",
-              "bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl",
+              "bg-white/70 backdrop-blur-xl dark:bg-zinc-900/70",
               "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_2px_10px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_14px_rgba(0,0,0,0.2)]",
-              "hover:border-black/20 dark:hover:border-white/20 hover:bg-white/85 dark:hover:bg-zinc-900/85 hover:shadow-md",
-              "transition-colors duration-200 group text-left active:scale-[0.98] cursor-pointer"
+              "hover:border-black/20 hover:bg-white/85 hover:shadow-md dark:hover:border-white/20 dark:hover:bg-zinc-900/85",
+              "group cursor-pointer text-left transition-colors duration-200 active:scale-[0.98]"
             )}
           >
             <TextureOverlay texture="paperGrain" opacity={0.06} />
-            <div className="flex items-center justify-between w-full mb-1">
-              <span className="text-[10px] font-bold text-purple-500 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+            <div className="mb-1 flex w-full items-center justify-between">
+              <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-purple-500 uppercase dark:text-purple-400">
                 <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
               </span>
               <div className="flex items-center gap-1">
-                {activePrompt._count?.responses !== undefined && activePrompt._count.responses > 0 ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 dark:bg-purple-500/15 border border-purple-500/20 px-2 py-0.5 text-[9.5px] font-semibold text-purple-600 dark:text-purple-300 transition-all duration-200 group-hover:bg-purple-500/20 group-hover:border-purple-500/30">
+                {activePrompt._count?.responses !== undefined &&
+                activePrompt._count.responses > 0 ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-purple-600 transition-all duration-200 group-hover:border-purple-500/30 group-hover:bg-purple-500/20 dark:bg-purple-500/15 dark:text-purple-300">
                     <span className="tabular-nums">{activePrompt._count.responses}</span>
-                    <span className="opacity-75">{activePrompt._count.responses === 1 ? "response" : "responses"}</span>
+                    <span className="opacity-75">
+                      {activePrompt._count.responses === 1 ? "response" : "responses"}
+                    </span>
                     <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 dark:bg-purple-500/15 border border-purple-500/20 px-2 py-0.5 text-[9.5px] font-semibold text-purple-600 dark:text-purple-300 transition-all duration-200 group-hover:bg-purple-500/20 group-hover:border-purple-500/30">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-purple-600 transition-all duration-200 group-hover:border-purple-500/30 group-hover:bg-purple-500/20 dark:bg-purple-500/15 dark:text-purple-300">
                     <span>Respond now</span>
                     <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
                   </span>
@@ -424,10 +429,10 @@ export function EditorialMastheadHero({
               </div>
             </div>
             <div>
-              <span className="text-xs sm:text-[13px] font-semibold text-foreground truncate block group-hover:text-foreground transition-colors leading-tight">
+              <span className="text-foreground group-hover:text-foreground block truncate text-xs leading-tight font-semibold transition-colors sm:text-[13px]">
                 {activePrompt.title}
               </span>
-              <span className="text-[11px] font-medium text-muted-foreground truncate block mt-0.5">
+              <span className="text-muted-foreground mt-0.5 block truncate text-[11px] font-medium">
                 {activePrompt.question}
               </span>
             </div>
@@ -439,29 +444,29 @@ export function EditorialMastheadHero({
             data-cuelume-press="droplet"
             data-cuelume-hover="tick"
             className={cn(
-              "relative overflow-hidden flex flex-col justify-between p-3 sm:p-3.5 rounded-2xl min-h-[82px] sm:min-h-[86px]",
+              "relative flex min-h-[82px] flex-col justify-between overflow-hidden rounded-2xl p-3 sm:min-h-[86px] sm:p-3.5",
               "border border-black/[0.08] dark:border-white/[0.1]",
-              "bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl",
+              "bg-white/70 backdrop-blur-xl dark:bg-zinc-900/70",
               "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_2px_10px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_14px_rgba(0,0,0,0.2)]",
-              "hover:border-black/20 dark:hover:border-white/20 hover:bg-white/85 dark:hover:bg-zinc-900/85 hover:shadow-md",
-              "transition-colors duration-200 group text-left active:scale-[0.98] cursor-pointer"
+              "hover:border-black/20 hover:bg-white/85 hover:shadow-md dark:hover:border-white/20 dark:hover:bg-zinc-900/85",
+              "group cursor-pointer text-left transition-colors duration-200 active:scale-[0.98]"
             )}
           >
             <TextureOverlay texture="paperGrain" opacity={0.06} />
-            <div className="flex items-center justify-between w-full mb-1">
-              <span className="text-[10px] font-bold text-purple-500 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+            <div className="mb-1 flex w-full items-center justify-between">
+              <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-purple-500 uppercase dark:text-purple-400">
                 <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 dark:bg-purple-500/15 border border-purple-500/20 px-2 py-0.5 text-[9.5px] font-semibold text-purple-600 dark:text-purple-300 transition-all duration-200 group-hover:bg-purple-500/20 group-hover:border-purple-500/30">
+              <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-purple-600 transition-all duration-200 group-hover:border-purple-500/30 group-hover:bg-purple-500/20 dark:bg-purple-500/15 dark:text-purple-300">
                 <span>View prompts</span>
                 <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
               </span>
             </div>
             <div>
-              <span className="text-xs sm:text-[13px] font-semibold text-foreground truncate block group-hover:text-foreground transition-colors leading-tight">
+              <span className="text-foreground group-hover:text-foreground block truncate text-xs leading-tight font-semibold transition-colors sm:text-[13px]">
                 Worldbuilding Prompts
               </span>
-              <span className="text-[11px] font-medium text-muted-foreground truncate block mt-0.5">
+              <span className="text-muted-foreground mt-0.5 block truncate text-[11px] font-medium">
                 Share your nation's perspective
               </span>
             </div>
@@ -475,38 +480,42 @@ export function EditorialMastheadHero({
           initial={reduceMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.18 }}
-          className="w-full mt-4 sm:mt-5 text-left"
+          className="mt-4 w-full text-left sm:mt-5"
         >
           <FeaturedArticleRefractionCard
             imgSrc={featuredArticleData?.imgSrc ?? null}
             mode={refractionMode}
           >
             {/* Seamless Top Bar (No dividing line, airy editorial flow) */}
-            <div className="relative z-10 mb-3.5 sm:mb-4 flex items-center justify-between gap-2">
+            <div className="relative z-10 mb-3.5 flex items-center justify-between gap-2 sm:mb-4">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold tracking-tight">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold tracking-tight text-amber-600 dark:text-amber-400">
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
                   <span>Featured Article</span>
                 </div>
                 {/* Live Author / Editorial Byline */}
                 {(() => {
                   const creator = featuredArticleData?.authorInfo?.creator;
-                  const creatorName = typeof creator === "object" ? (creator as any)?.username : creator;
+                  const creatorName =
+                    typeof creator === "object" ? (creator as any)?.username : creator;
                   if (!creatorName) return null;
                   return (
-                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                    <div className="text-muted-foreground hidden items-center gap-1.5 text-xs font-medium sm:flex">
                       <span className="text-muted-foreground/40 select-none">·</span>
                       <span className="flex items-center gap-1">
                         {featuredArticleData?.authorInfo?.creatorAvatar ? (
                           <img
                             src={featuredArticleData.authorInfo.creatorAvatar}
                             alt={creatorName}
-                            className="w-3.5 h-3.5 rounded-full object-cover border border-black/10 dark:border-white/20"
+                            className="h-3.5 w-3.5 rounded-full border border-black/10 object-cover dark:border-white/20"
                           />
                         ) : (
-                          <User className="h-3 w-3 text-muted-foreground/70" />
+                          <User className="text-muted-foreground/70 h-3 w-3" />
                         )}
-                        <span>By <strong className="text-foreground font-semibold">{creatorName}</strong></span>
+                        <span>
+                          By{" "}
+                          <strong className="text-foreground font-semibold">{creatorName}</strong>
+                        </span>
                       </span>
                     </div>
                   );
@@ -514,12 +523,12 @@ export function EditorialMastheadHero({
               </div>
 
               {/* Archive & Suggest Links */}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-2 text-xs">
                 <Link
                   href={withBasePath("/wiki/IxWiki:Featured_articles")}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="hover:text-foreground transition-colors flex items-center gap-1 text-[11px] font-medium"
+                  className="hover:text-foreground flex items-center gap-1 text-[11px] font-medium transition-colors"
                 >
                   <History className="h-3 w-3" />
                   <span>Archive</span>
@@ -529,7 +538,7 @@ export function EditorialMastheadHero({
                   href={withBasePath("/wiki/IxWiki:Featured_article_candidates")}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="hover:text-amber-500 dark:hover:text-amber-400 transition-colors flex items-center gap-1 text-[11px] font-medium"
+                  className="flex items-center gap-1 text-[11px] font-medium transition-colors hover:text-amber-500 dark:hover:text-amber-400"
                 >
                   <Lightbulb className="h-3 w-3" />
                   <span>Suggest</span>
@@ -539,7 +548,7 @@ export function EditorialMastheadHero({
 
             {/* Featured Article Card Body */}
             {featuredArticleData ? (
-              <div className="relative z-10 flex flex-col sm:flex-row items-start gap-4 sm:gap-5 lg:gap-6">
+              <div className="relative z-10 flex flex-col items-start gap-4 sm:flex-row sm:gap-5 lg:gap-6">
                 {featuredArticleData.imgSrc && (
                   <FeaturedThumbnailFrame
                     imgSrc={featuredArticleData.imgSrc}
@@ -547,28 +556,28 @@ export function EditorialMastheadHero({
                     slug={featuredArticleData.slug}
                   />
                 )}
-                <div className="flex-1 flex flex-col justify-between self-stretch min-w-0 py-0.5">
+                <div className="flex min-w-0 flex-1 flex-col justify-between self-stretch py-0.5">
                   <div>
                     <Link
                       href={withBasePath(`/wiki/${featuredArticleData.slug}`)}
                       data-cuelume-press="page"
                       data-cuelume-hover="tick"
-                      className="group/title block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
+                      className="group/title block rounded focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
                     >
-                      <h3 className="text-lg sm:text-xl lg:text-[22px] font-bold text-foreground tracking-tight leading-snug group-hover/title:text-amber-500 dark:group-hover/title:text-amber-400 transition-colors">
+                      <h3 className="text-foreground text-lg leading-snug font-bold tracking-tight transition-colors group-hover/title:text-amber-500 sm:text-xl lg:text-[22px] dark:group-hover/title:text-amber-400">
                         {featuredArticleData.title}
                       </h3>
                     </Link>
-                    <p className="text-xs sm:text-[13.5px] leading-relaxed text-muted-foreground line-clamp-3 mt-2 font-normal">
+                    <p className="text-muted-foreground mt-2 line-clamp-3 text-xs leading-relaxed font-normal sm:text-[13.5px]">
                       {featuredArticleData.summary}
                     </p>
                   </div>
-                  <div className="mt-3 sm:mt-4 flex items-center gap-3">
+                  <div className="mt-3 flex items-center gap-3 sm:mt-4">
                     <Link
                       href={withBasePath(`/wiki/${featuredArticleData.slug}`)}
                       data-cuelume-press="droplet"
                       data-cuelume-hover="tick"
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground hover:text-amber-500 dark:hover:text-amber-400 transition-colors group/cta"
+                      className="text-foreground group/cta inline-flex items-center gap-1.5 text-xs font-semibold transition-colors hover:text-amber-500 dark:hover:text-amber-400"
                     >
                       <span>Read full article</span>
                       <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/cta:translate-x-1" />
@@ -578,7 +587,7 @@ export function EditorialMastheadHero({
               </div>
             ) : (
               <div
-                className="relative z-10 wikios-main-featured-content wikios-article-content text-left leading-relaxed text-sm"
+                className="wikios-main-featured-content wikios-article-content relative z-10 text-left text-sm leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: featuredArticleHtml ?? "" }}
               />
             )}

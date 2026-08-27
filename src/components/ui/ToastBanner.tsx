@@ -26,7 +26,11 @@ import {
   Flash as Zap,
   Tournament as Swords,
 } from "iconoir-react";
-import { registerToastRenderer, type ToastQueueItem, type ToastType } from "~/stores/toastQueueStore";
+import {
+  registerToastRenderer,
+  type ToastQueueItem,
+  type ToastType,
+} from "~/stores/toastQueueStore";
 import type { NotificationCategory } from "~/types/unified-notifications";
 
 interface ToastBannerProps {
@@ -209,8 +213,6 @@ export const ToastBanner = React.memo(function ToastBanner({ toast, onDismiss }:
   );
 });
 
-registerToastRenderer((toast, onDismiss) => (
-  <ToastBanner toast={toast} onDismiss={onDismiss} />
-));
+registerToastRenderer((toast, onDismiss) => <ToastBanner toast={toast} onDismiss={onDismiss} />);
 
 export default ToastBanner;

@@ -5,7 +5,15 @@ import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Activity, StatUp as TrendingUp, Star, Group as Users, Dollar as DollarSign, Clock, ArrowUp } from "iconoir-react";
+import {
+  Activity,
+  StatUp as TrendingUp,
+  Star,
+  Group as Users,
+  Dollar as DollarSign,
+  Clock,
+  ArrowUp,
+} from "iconoir-react";
 import Link from "next/link";
 import { createUrl } from "~/lib/utils";
 

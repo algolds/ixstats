@@ -8,7 +8,6 @@ import { isSystemOwner } from "~/lib/auth";
 import { notificationHooks } from "~/lib/notifications/hooks";
 
 export const adminCountriesGodModeRouter = createTRPCRouter({
-
   // Get ThinkPages statistics (real DB values)
 
   // Get system status

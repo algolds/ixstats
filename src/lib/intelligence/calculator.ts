@@ -143,8 +143,8 @@ async function calculateCountryIntelligence(countryId: string) {
 
     const unemploymentHistory =
       historicalRecords.length > 0
-        // oxlint-disable-next-line typescript/no-unused-vars
-        ? historicalRecords.map((h) => country.unemploymentRate || 5.0).reverse()
+        ? // oxlint-disable-next-line typescript/no-unused-vars
+          historicalRecords.map((h) => country.unemploymentRate || 5.0).reverse()
         : [country.unemploymentRate || 5.0];
 
     // Calculate REAL peer averages from database

@@ -2,7 +2,19 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Star, NavArrowDown as ChevronDown, StatsReport as BarChart3, Refresh as RefreshCw, Copy, Check, Hashtag as Hash, Wrench, Bookmark as BookmarkPlus, Search } from "iconoir-react";
+import {
+  Clock,
+  Star,
+  NavArrowDown as ChevronDown,
+  StatsReport as BarChart3,
+  Refresh as RefreshCw,
+  Copy,
+  Check,
+  Hashtag as Hash,
+  Wrench,
+  Bookmark as BookmarkPlus,
+  Search,
+} from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { useOnomaHistory } from "~/hooks/useOnomaHistory";
 import { useNameBank } from "~/hooks/useNameBank";
@@ -197,7 +209,7 @@ export default function HistorySection({
             placeholder="Search run hash or name..."
             value={hashFilter}
             onChange={(e) => setHashFilter(e.target.value)}
-            className="border-border/60 bg-background text-foreground placeholder-muted-foreground w-full rounded-lg border py-1.5 pr-4 pl-8 text-xs focus:border-onoma-primary/50 focus:ring-1 focus:ring-onoma-primary/50 focus:outline-none"
+            className="border-border/60 bg-background text-foreground placeholder-muted-foreground focus:border-onoma-primary/50 focus:ring-onoma-primary/50 w-full rounded-lg border py-1.5 pr-4 pl-8 text-xs focus:ring-1 focus:outline-none"
           />
         </div>
 
@@ -237,9 +249,9 @@ export default function HistorySection({
       {/* Timeline */}
       {filteredEvents.length === 0 ? (
         <FacetMaterial material="satin" className="border-border/20 border">
-          <div className="flex flex-col items-center justify-center p-8 text-center space-y-2">
+          <div className="flex flex-col items-center justify-center space-y-2 p-8 text-center">
             <Clock className="text-muted-foreground mb-1 h-10 w-10 opacity-40" />
-            <p className="text-muted-foreground text-sm max-w-sm">
+            <p className="text-muted-foreground max-w-sm text-sm">
               {hashFilter
                 ? "No generation events match your search query."
                 : favoritesOnly
@@ -284,7 +296,7 @@ export default function HistorySection({
                                 setCopiedHash(event.sessionId!);
                                 setTimeout(() => setCopiedHash(null), 1500);
                               }}
-                              className="flex items-center gap-1 font-mono text-[10px] bg-onoma-primary/10 text-onoma-primary hover:bg-onoma-primary/20 px-2 py-0.5 rounded transition-colors"
+                              className="bg-onoma-primary/10 text-onoma-primary hover:bg-onoma-primary/20 flex items-center gap-1 rounded px-2 py-0.5 font-mono text-[10px] transition-colors"
                               title="Click to copy unique run hash"
                             >
                               <Hash className="h-2.5 w-2.5" />
@@ -333,10 +345,10 @@ export default function HistorySection({
                             exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="border-border/20 border-t px-3 pt-2.5 pb-3.5 space-y-3">
+                            <div className="border-border/20 space-y-3 border-t px-3 pt-2.5 pb-3.5">
                               {/* Batch Actions Bar */}
-                              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/10 pb-2">
-                                <div className="text-[11px] text-muted-foreground">
+                              <div className="border-border/10 flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+                                <div className="text-muted-foreground text-[11px]">
                                   Run payload ({names.length} names)
                                 </div>
                                 <div className="flex flex-wrap items-center gap-1.5">
@@ -346,10 +358,12 @@ export default function HistorySection({
                                       onClick={() =>
                                         onLoadToStudio(
                                           names,
-                                          event.sessionId ? `Run ${event.sessionId}` : `${event.category} batch`
+                                          event.sessionId
+                                            ? `Run ${event.sessionId}`
+                                            : `${event.category} batch`
                                         )
                                       }
-                                      className="flex cursor-pointer items-center gap-1 rounded bg-onoma-primary/10 px-2 py-1 text-[11px] font-semibold text-onoma-primary hover:bg-onoma-primary/20 active:scale-95 transition-all"
+                                      className="bg-onoma-primary/10 text-onoma-primary hover:bg-onoma-primary/20 flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold transition-all active:scale-95"
                                       title="Load entire run into Studio Workshop"
                                     >
                                       <Wrench className="h-3 w-3" />
@@ -370,7 +384,7 @@ export default function HistorySection({
                                       });
                                       notify.success(`Saved run as dictionary "${title}"!`);
                                     }}
-                                    className="flex cursor-pointer items-center gap-1 rounded bg-indigo-500/10 px-2 py-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 active:scale-95 transition-all"
+                                    className="flex cursor-pointer items-center gap-1 rounded bg-indigo-500/10 px-2 py-1 text-[11px] font-semibold text-indigo-600 transition-all hover:bg-indigo-500/20 active:scale-95 dark:text-indigo-400"
                                     title="Save entire run as custom Stash Dictionary"
                                   >
                                     <BookmarkPlus className="h-3 w-3" />
@@ -382,7 +396,7 @@ export default function HistorySection({
                                       void navigator.clipboard.writeText(names.join(", "));
                                       notify.success("Copied all names to clipboard.");
                                     }}
-                                    className="flex cursor-pointer items-center gap-1 rounded bg-secondary/30 px-2 py-1 text-[11px] font-medium text-foreground hover:bg-secondary/60 active:scale-95 transition-all"
+                                    className="bg-secondary/30 text-foreground hover:bg-secondary/60 flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-all active:scale-95"
                                     title="Copy all names comma-separated"
                                   >
                                     <Copy className="h-3 w-3" />

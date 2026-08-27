@@ -7,12 +7,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { clearDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
-import type {
-  StashEntity,
-  StashItemEntity,
-  WikimediaImageMeta,
-  SaveActionType,
-} from "../types";
+import type { StashEntity, StashItemEntity, WikimediaImageMeta, SaveActionType } from "../types";
 import type { EditorModalState } from "../context/EditorModalContext";
 
 export interface UseWikiEditorStateProps {
@@ -120,7 +115,7 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
 
   const imageItems = useMemo(() => {
     return stashItems.filter((item) => item.pageTitle.startsWith("commons:"));
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [stashItems]);
 
   const imageTitles = useMemo(() => {
@@ -232,14 +227,28 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
       imagesMap,
     }),
     [
-      showImageSearch, showInfoboxModal, showCountryStatsModal,
-      showBusinessStatsModal, showMapCoordsModal,
-      templatesOpen, stashesOpen, settingsOpen,
-      enableAutocomplete, showLineNumbers, enableWordWrap,
-      summary, minor, saving, showSavePanel,
-      saveDropdownOpen, saveActionType,
+      showImageSearch,
+      showInfoboxModal,
+      showCountryStatsModal,
+      showBusinessStatsModal,
+      showMapCoordsModal,
+      templatesOpen,
+      stashesOpen,
+      settingsOpen,
+      enableAutocomplete,
+      showLineNumbers,
+      enableWordWrap,
+      summary,
+      minor,
+      saving,
+      showSavePanel,
+      saveDropdownOpen,
+      saveActionType,
       // oxlint-disable-next-line
-      stashes, activeStashId, imageItems, imagesMap,
+      stashes,
+      activeStashId,
+      imageItems,
+      imagesMap,
     ]
   );
 

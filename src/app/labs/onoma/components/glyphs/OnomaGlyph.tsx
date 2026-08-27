@@ -7,10 +7,7 @@
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "~/lib/utils";
-import {
-  GLYPH_CATALOG,
-  type OnomaGlyphName,
-} from "./onoma-glyphs-catalog";
+import { GLYPH_CATALOG, type OnomaGlyphName } from "./onoma-glyphs-catalog";
 
 export type OnomaGlyphSize = "xs" | "sm" | "md" | "lg" | "xl" | "display";
 export type OnomaGlyphState = "idle" | "active" | "generating" | "disabled";
@@ -61,13 +58,13 @@ export function OnomaGlyph({
     return (
       <span
         className={cn(
-          "inline-flex items-center font-mono font-semibold tracking-tight select-none transition-colors",
-          size === "xs" && "text-[10px] gap-0.5",
-          size === "sm" && "text-[11px] gap-0.5",
-          size === "md" && "text-xs gap-1",
-          size === "lg" && "text-sm gap-1",
-          size === "xl" && "text-base gap-1.5",
-          size === "display" && "text-xl gap-2",
+          "inline-flex items-center font-mono font-semibold tracking-tight transition-colors select-none",
+          size === "xs" && "gap-0.5 text-[10px]",
+          size === "sm" && "gap-0.5 text-[11px]",
+          size === "md" && "gap-1 text-xs",
+          size === "lg" && "gap-1 text-sm",
+          size === "xl" && "gap-1.5 text-base",
+          size === "display" && "gap-2 text-xl",
           state === "active" ? "text-foreground font-bold" : "text-muted-foreground",
           className
         )}
@@ -86,20 +83,20 @@ export function OnomaGlyph({
     return (
       <span
         className={cn(
-          "inline-flex items-center font-mono select-none transition-all",
-          size === "xs" && "text-[10px] gap-1",
-          size === "sm" && "text-[11px] gap-1",
-          size === "md" && "text-xs gap-1.5",
-          size === "lg" && "text-sm gap-2",
-          size === "xl" && "text-base gap-2.5",
-          size === "display" && "text-lg gap-3",
+          "inline-flex items-center font-mono transition-all select-none",
+          size === "xs" && "gap-1 text-[10px]",
+          size === "sm" && "gap-1 text-[11px]",
+          size === "md" && "gap-1.5 text-xs",
+          size === "lg" && "gap-2 text-sm",
+          size === "xl" && "gap-2.5 text-base",
+          size === "display" && "gap-3 text-lg",
           state === "active" ? "text-foreground font-semibold" : "text-muted-foreground",
           className
         )}
         style={state === "active" && accentColor ? { color: accentColor } : undefined}
         title={title || `${from} → ${to}`}
       >
-        <span className="font-semibold text-foreground">{from}</span>
+        <span className="text-foreground font-semibold">{from}</span>
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -111,7 +108,7 @@ export function OnomaGlyph({
         >
           <path d="M4 12h14m-5-5l5 5-5 5" />
         </svg>
-        <span className="font-semibold text-foreground">{to}</span>
+        <span className="text-foreground font-semibold">{to}</span>
       </span>
     );
   }
@@ -122,7 +119,7 @@ export function OnomaGlyph({
   const content = (
     <div
       className={cn(
-        "inline-flex items-center justify-center shrink-0 select-none transition-transform duration-150",
+        "inline-flex shrink-0 items-center justify-center transition-transform duration-150 select-none",
         sizeConfig.className,
         state === "idle" && "text-foreground/75 hover:text-foreground",
         state === "active" && "text-foreground font-bold drop-shadow-xs",
@@ -142,9 +139,7 @@ export function OnomaGlyph({
     return (
       <motion.div
         animate={
-          shouldReduceMotion
-            ? { opacity: [0.6, 1, 0.6] }
-            : { rotate: 360, scale: [1, 1.08, 1] }
+          shouldReduceMotion ? { opacity: [0.6, 1, 0.6] } : { rotate: 360, scale: [1, 1.08, 1] }
         }
         transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}
         className="inline-flex items-center justify-center"

@@ -13,12 +13,7 @@ export interface StashImageCardProps {
   onInsert: () => void;
 }
 
-export function StashImageCard({
-  imgInfo,
-  cleanTitle,
-  filename,
-  onInsert,
-}: StashImageCardProps) {
+export function StashImageCard({ imgInfo, cleanTitle, filename, onInsert }: StashImageCardProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = (e: React.MouseEvent) => {

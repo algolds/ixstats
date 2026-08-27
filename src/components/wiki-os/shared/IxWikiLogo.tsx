@@ -8,11 +8,7 @@ export interface IxWikiLogoProps extends React.SVGProps<SVGSVGElement> {
   size?: number | string;
 }
 
-export function IxWikiLogo({
-  className,
-  size,
-  ...props
-}: IxWikiLogoProps) {
+export function IxWikiLogo({ className, size, ...props }: IxWikiLogoProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

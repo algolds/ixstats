@@ -3,7 +3,15 @@
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
-import { Bank as Landmark, StatsReport as BarChart2, Page as ScrollText, WarningTriangle as AlertTriangle, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Bank as Landmark,
+  StatsReport as BarChart2,
+  Page as ScrollText,
+  WarningTriangle as AlertTriangle,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 // oxlint-disable-next-line eslint/no-unused-vars
@@ -109,7 +117,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
     if (!parliament) return [];
     if (chambers.length <= 1) return parliament.seats;
     return parliament.seats.filter((s: any) => s.chamber === activeChamberTab);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [parliament, chambers, activeChamberTab]);
 
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -118,7 +126,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
     if (chambers.length <= 1) return parliament.legislature.totalSeats;
     const activeChamber = chambers.find((c: any) => c.name === activeChamberTab);
     return activeChamber ? activeChamber.seats : activeChamberSeats.length;
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [parliament, chambers, activeChamberTab, activeChamberSeats]);
 
   // Lore-first: surface a non-default selection method (sortition, appointed, …) for the
@@ -136,7 +144,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
       chambers.length <= 1 ? chambers[0] : chambers.find((c: any) => c.name === activeChamberTab);
     const method = (active as any)?.selectionMethod;
     return method && method !== "elected" ? (labels[method] ?? null) : null;
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [chambers, activeChamberTab]);
 
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -166,7 +174,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
       }
     }
     return Array.from(counts.values()).sort((a, b) => b.seats - a.seats);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [parliament, activeChamberSeats, chambers]);
 
   // oxlint-disable-next-line eslint/no-unused-vars

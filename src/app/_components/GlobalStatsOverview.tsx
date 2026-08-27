@@ -5,7 +5,16 @@ import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Group as Users, Dollar as DollarSign, StatUp as TrendingUp, Globe, City as Building2, MapPin, Activity, Archery as Target } from "iconoir-react";
+import {
+  Group as Users,
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
+  Globe,
+  City as Building2,
+  MapPin,
+  Activity,
+  Archery as Target,
+} from "iconoir-react";
 import type { GlobalEconomicSnapshot } from "~/types/ixstats";
 
 interface GlobalStatsOverviewProps {

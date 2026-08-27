@@ -1,7 +1,13 @@
 "use client";
 
 import React from "react";
-import { StatUp as TrendingUp, StatDown as TrendingDown, Activity, NavArrowRight as ChevronRight, OpenBook as BookOpen } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Activity,
+  NavArrowRight as ChevronRight,
+  OpenBook as BookOpen,
+} from "iconoir-react";
 import Link from "next/link";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { Card, CardContent } from "~/components/ui/card";
@@ -9,7 +15,11 @@ import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { smartNormalizeGrowthRate } from "~/lib/statecraft/growth-calculations";
 import { OVERVIEW_IDENTITY_FIELDS } from "./overview-identity-fields";
-import { extractWikiIntroHtml, findCoatOfArmsUrl, type WikiIntro } from "~/lib/wiki-os/adapters/ixstates/integration";
+import {
+  extractWikiIntroHtml,
+  findCoatOfArmsUrl,
+  type WikiIntro,
+} from "~/lib/wiki-os/adapters/ixstates/integration";
 
 type MetricView = {
   gdp: "perCapita" | "total";

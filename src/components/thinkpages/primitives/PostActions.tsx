@@ -3,7 +3,12 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "~/lib/utils";
-import { Heart, ChatBubble as MessageCircle, Refresh as Repeat2, ShareAndroid as Share } from "iconoir-react";
+import {
+  Heart,
+  ChatBubble as MessageCircle,
+  Refresh as Repeat2,
+  ShareAndroid as Share,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
@@ -408,19 +413,12 @@ export function PostActions({
             postId,
             accountId: currentUserAccountId,
             reactionType: reactionType as
-              | "like"
-              | "laugh"
-              | "angry"
-              | "sad"
-              | "fire"
-              | "thumbsup"
-              | "thumbsdown"
-              | string,
+              "like" | "laugh" | "angry" | "sad" | "fire" | "thumbsup" | "thumbsdown" | string,
           });
         }
 
         onReaction?.(postId, reactionType);
-      } catch  {
+      } catch {
         // Handled in mutation onError
       }
     },
@@ -485,7 +483,7 @@ export function PostActions({
           />
           <span>Reply</span>
           {showCounts && replyCount > 0 && (
-            <span className="tabular-nums font-semibold">{replyCount}</span>
+            <span className="font-semibold tabular-nums">{replyCount}</span>
           )}
         </button>
 
@@ -510,7 +508,7 @@ export function PostActions({
           />
           <span>Repost</span>
           {showCounts && repostCount > 0 && (
-            <span className="tabular-nums font-semibold">{repostCount}</span>
+            <span className="font-semibold tabular-nums">{repostCount}</span>
           )}
         </button>
 
@@ -553,7 +551,7 @@ export function PostActions({
             />
             <span>{isLiked ? "Liked" : "Like"}</span>
             {showCounts && likeCount > 0 && (
-              <span className="tabular-nums font-semibold">{likeCount}</span>
+              <span className="font-semibold tabular-nums">{likeCount}</span>
             )}
           </button>
 
@@ -576,13 +574,13 @@ export function PostActions({
                     zIndex: 99999,
                     // oxlint-disable-next-line
                     top: reactionButtonRef.current
-                      // oxlint-disable-next-line
-                      ? Math.max(10, reactionButtonRef.current.getBoundingClientRect().top - 60)
+                      ? // oxlint-disable-next-line
+                        Math.max(10, reactionButtonRef.current.getBoundingClientRect().top - 60)
                       : 100,
                     // oxlint-disable-next-line
                     left: reactionButtonRef.current
-                      // oxlint-disable-next-line
-                      ? Math.max(10, reactionButtonRef.current.getBoundingClientRect().left - 140)
+                      ? // oxlint-disable-next-line
+                        Math.max(10, reactionButtonRef.current.getBoundingClientRect().left - 140)
                       : 100,
                   }}
                   onClick={(e) => e.stopPropagation()}

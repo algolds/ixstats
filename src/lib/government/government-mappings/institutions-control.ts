@@ -1,7 +1,8 @@
 import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import type { AtomicGovernmentMapping } from "./types";
 
-export const institutions_control_mapping: Partial<Record<ComponentType, AtomicGovernmentMapping>> = {
+export const institutions_control_mapping: Partial<Record<ComponentType, AtomicGovernmentMapping>> =
+  {
     [ComponentType.ELECTORAL_LEGITIMACY]: {
       component: ComponentType.ELECTORAL_LEGITIMACY,
       departments: [
@@ -427,4 +428,4 @@ export const institutions_control_mapping: Partial<Record<ComponentType, AtomicG
         },
       ],
     },
-};
+  };

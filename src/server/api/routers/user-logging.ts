@@ -78,7 +78,8 @@ export const userLoggingRouter = createTRPCRouter({
           select: { id: true, clerkUserId: true, wikiUsername: true, discordUsername: true },
         });
 
-        const submitterName = (ctx.user as any).username || (ctx.user as any).clerkUserId || ctx.user.id || "User";
+        const submitterName =
+          (ctx.user as any).username || (ctx.user as any).clerkUserId || ctx.user.id || "User";
         const feedbackHeadline = `[Feedback] ${input.feedbackType.toUpperCase()} from ${submitterName}`;
         const feedbackContent = `📬 **New User Feedback (${input.feedbackType.toUpperCase()})**\n\n**Submitted by:** ${submitterName} (\`${ctx.user.id}\`)\n**Origin Page:** ${input.url}\n\n**Message:**\n${input.message}\n\n*Diagnostic logs attached: ${input.logs?.length ?? 0} entries*`;
 

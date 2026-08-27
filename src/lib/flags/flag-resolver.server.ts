@@ -8,7 +8,11 @@ import type {
   FlagResolverOptions,
   PersistentFlagCacheAdapter,
 } from "./contracts";
-import { normalizeCountryName, normalizeFlagUrl, getFlagCandidateFileTitles } from "./normalization";
+import {
+  normalizeCountryName,
+  normalizeFlagUrl,
+  getFlagCandidateFileTitles,
+} from "./normalization";
 import { fetchMediaWikiImageBatch } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { withBasePath } from "~/lib/base-path";
@@ -124,9 +128,7 @@ export class ServerFlagResolver implements FlagResolver {
     try {
       const resolution = await resolutionPromise;
 
-      const ttl = resolution.isPlaceholder
-        ? DEFAULT_NEGATIVE_TTL_MS
-        : DEFAULT_POSITIVE_TTL_MS;
+      const ttl = resolution.isPlaceholder ? DEFAULT_NEGATIVE_TTL_MS : DEFAULT_POSITIVE_TTL_MS;
 
       this.memoryCache.set(cacheKey, {
         resolution,
@@ -197,10 +199,7 @@ export class ServerFlagResolver implements FlagResolver {
     // 3. Query Fictional Wiki (if policy allows)
     if (policy === "fictional-wiki") {
       try {
-        const iiwikiMap = await fetchMediaWikiImageBatch(
-          candidates,
-          getMediaWikiApiUrl("iiwiki")
-        );
+        const iiwikiMap = await fetchMediaWikiImageBatch(candidates, getMediaWikiApiUrl("iiwiki"));
 
         for (const candidate of candidates) {
           const found = iiwikiMap.get(candidate) || iiwikiMap.get(`File:${candidate}`);

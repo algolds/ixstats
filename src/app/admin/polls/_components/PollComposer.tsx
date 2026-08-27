@@ -15,7 +15,17 @@ import {
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
-import { Trash as Trash2, Plus, Send, Calendar, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Sparks as Sparkles, InfoCircle as Info, CheckCircle } from "iconoir-react";
+import {
+  Trash as Trash2,
+  Plus,
+  Send,
+  Calendar,
+  NavArrowLeft as ChevronLeft,
+  NavArrowRight as ChevronRight,
+  Sparks as Sparkles,
+  InfoCircle as Info,
+  CheckCircle,
+} from "iconoir-react";
 import { toast } from "sonner";
 import { cn } from "~/lib/utils";
 
@@ -145,7 +155,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
           <CardHeader className="border-border/20 border-b">
             <div className="flex items-center justify-between">
               <CardTitle className="text-foreground flex items-center gap-2 text-base font-bold">
-                <Sparkles className="h-4 w-4 text-poll" />
+                <Sparkles className="text-poll h-4 w-4" />
                 Poll Wizard Composer
               </CardTitle>
               <span className="text-muted-foreground text-xs font-semibold">Step {step} of 3</span>
@@ -166,7 +176,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                   <span
                     className={cn(
                       "text-[10px] font-bold tracking-tight transition-colors",
-                      step === s.number ? "font-extrabold text-poll" : "text-muted-foreground"
+                      step === s.number ? "text-poll font-extrabold" : "text-muted-foreground"
                     )}
                   >
                     {s.label}
@@ -330,7 +340,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                       variant="outline"
                       size="sm"
                       onClick={handleAddOption}
-                      className="h-8 cursor-pointer gap-1 border-poll/35 text-xs font-semibold text-poll hover:bg-poll/10 dark:text-poll"
+                      className="border-poll/35 text-poll hover:bg-poll/10 dark:text-poll h-8 cursor-pointer gap-1 text-xs font-semibold"
                     >
                       <Plus className="h-3.5 w-3.5" /> Add Option
                     </Button>
@@ -367,7 +377,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                     ))}
                   </div>
 
-                  <div className="mt-4 flex items-start gap-2 rounded-lg border border-poll/20 bg-poll/5 p-3 text-xs text-poll">
+                  <div className="border-poll/20 bg-poll/5 text-poll mt-4 flex items-start gap-2 rounded-lg border p-3 text-xs">
                     <Info className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>
                       Review all parameters. Clicking <strong>Create & Publish</strong> will record
@@ -393,7 +403,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                   <Button
                     type="button"
                     onClick={nextStep}
-                    className="h-9 cursor-pointer gap-1.5 bg-poll text-xs font-semibold text-white hover:bg-poll/90"
+                    className="bg-poll hover:bg-poll/90 h-9 cursor-pointer gap-1.5 text-xs font-semibold text-white"
                   >
                     Next <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -401,7 +411,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                   <Button
                     type="submit"
                     disabled={createMutation.isPending}
-                    className="h-9 cursor-pointer gap-1.5 bg-poll px-6 text-xs font-semibold text-white hover:bg-poll/90"
+                    className="bg-poll hover:bg-poll/90 h-9 cursor-pointer gap-1.5 px-6 text-xs font-semibold text-white"
                   >
                     {createMutation.isPending ? (
                       "Creating..."

@@ -6,7 +6,17 @@ import { Button } from "~/components/ui/button";
 import { Card, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
-import { Trash as Trash2, Plus, Calendar, Globe, Group as Users, StatsReport as BarChart3, Clock, Send, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Trash as Trash2,
+  Plus,
+  Calendar,
+  Globe,
+  Group as Users,
+  StatsReport as BarChart3,
+  Clock,
+  Send,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { toast } from "sonner";
 
 interface PollManagerProps {
@@ -80,8 +90,8 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
   if (!polls || polls.length === 0) {
     return (
       <Card className="border-border/60 bg-card/20 flex flex-col items-center justify-center border border-dashed p-10 text-center backdrop-blur-md">
-        <div className="mb-4 rounded-full bg-poll/10 p-4">
-          <BarChart3 className="h-8 w-8 text-poll" />
+        <div className="bg-poll/10 mb-4 rounded-full p-4">
+          <BarChart3 className="text-poll h-8 w-8" />
         </div>
         <CardTitle className="text-xl font-bold">No polls configured</CardTitle>
         <CardDescription className="text-muted-foreground mt-2 mb-6 max-w-md text-sm">
@@ -90,7 +100,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
         </CardDescription>
         <Button
           onClick={onCreateNew}
-          className="cursor-pointer gap-1.5 bg-poll font-semibold text-white hover:bg-poll/90"
+          className="bg-poll hover:bg-poll/90 cursor-pointer gap-1.5 font-semibold text-white"
         >
           <Plus className="h-4 w-4" /> Create First Poll
         </Button>
@@ -102,19 +112,31 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
     <div className="space-y-6">
       {/* Stats Overview */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Ballots Configured</p>
-          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">{polls.length}</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Ballots Configured
+          </p>
+          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+            {polls.length}
+          </p>
         </div>
 
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Active Ballots</p>
-          <p className="text-emerald-400 mt-1 font-mono text-xl font-bold tracking-tight">{activePollsCount}</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Active Ballots
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
+            {activePollsCount}
+          </p>
         </div>
 
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Responses Collected</p>
-          <p className="text-cyan-400 mt-1 font-mono text-xl font-bold tracking-tight">{totalVotesCast}</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Responses Collected
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
+            {totalVotesCast}
+          </p>
         </div>
       </div>
 
@@ -130,15 +152,13 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
           return (
             <div
               key={poll.id}
-              className="rounded-2xl border border-border/30 bg-card/25 p-4 backdrop-blur-md shadow-xs space-y-3"
+              className="border-border/30 bg-card/25 space-y-3 rounded-2xl border p-4 shadow-xs backdrop-blur-md"
             >
               <div className="border-border/20 border-b pb-3">
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h4 className="text-foreground text-sm font-bold">
-                        {poll.question}
-                      </h4>
+                      <h4 className="text-foreground text-sm font-bold">{poll.question}</h4>
                       <Badge
                         variant="outline"
                         className="bg-background/40 border-border/60 text-[9px] font-bold tracking-wider uppercase"
@@ -193,7 +213,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                       variant="outline"
                       onClick={() => handlePublishToDiscord(poll.id)}
                       disabled={publishToDiscordMutation.isPending}
-                      className="h-7 cursor-pointer gap-1 border-poll/35 text-[10px] font-semibold text-poll transition-all duration-200 hover:bg-poll/10"
+                      className="border-poll/35 text-poll hover:bg-poll/10 h-7 cursor-pointer gap-1 text-[10px] font-semibold transition-all duration-200"
                       size="sm"
                     >
                       {publishToDiscordMutation.isPending ? (
@@ -222,7 +242,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                   <div className="flex items-center gap-1">
                     {poll.countryId ? (
                       <>
-                        <Users className="h-3.5 w-3.5 text-poll" />
+                        <Users className="text-poll h-3.5 w-3.5" />
                         <span>
                           Target: <span className="text-foreground">{countryName}</span>
                         </span>
@@ -271,7 +291,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                     return (
                       <div key={opt.id} className="group/opt space-y-1.5">
                         <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-foreground transition-colors group-hover/opt:text-poll">
+                          <span className="text-foreground group-hover/opt:text-poll transition-colors">
                             {opt.label}
                           </span>
                           <span className="text-muted-foreground">
@@ -282,7 +302,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                         {/* Linear Progress Bar */}
                         <div className="bg-muted/35 relative h-2 w-full overflow-hidden rounded-full">
                           <div
-                            className="h-full rounded-full bg-poll transition-all duration-500"
+                            className="bg-poll h-full rounded-full transition-all duration-500"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
@@ -292,9 +312,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                 </div>
                 <div className="border-border/20 text-muted-foreground/70 mt-4 flex justify-between border-t pt-3 text-[10px] font-bold tracking-tight uppercase">
                   <span>Total Option Votes Cast: {votesCount}</span>
-                  {poll.multiple && (
-                    <span className="text-poll">Multiple selection enabled</span>
-                  )}
+                  {poll.multiple && <span className="text-poll">Multiple selection enabled</span>}
                 </div>
               </div>
             </div>

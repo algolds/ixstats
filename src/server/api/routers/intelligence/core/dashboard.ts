@@ -558,6 +558,4 @@ export const intelCoreDashboardRouter = createTRPCRouter({
             });
       }
     }),
-
 });
-

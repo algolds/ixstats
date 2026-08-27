@@ -29,16 +29,10 @@ export function useWikiPrefetch() {
 
       try {
         // Warm up tRPC / React Query cache directly
-        await utils.wikios.getArticleHtml.prefetch(
-          { title },
-          { staleTime: 10 * 60 * 1000 }
-        );
+        await utils.wikios.getArticleHtml.prefetch({ title }, { staleTime: 10 * 60 * 1000 });
 
         if (prefetchWikitext) {
-          await utils.wikios.getWikitext.prefetch(
-            { title },
-            { staleTime: 10 * 60 * 1000 }
-          );
+          await utils.wikios.getWikitext.prefetch({ title }, { staleTime: 10 * 60 * 1000 });
         }
       } catch {
         // Prefetch is speculative and best-effort; silently ignore errors

@@ -33,10 +33,7 @@ import {
 import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
 import { autocompletion, closeBrackets } from "@codemirror/autocomplete";
 
-import {
-  wikitextHighlightPlugin,
-  wrapSelectionCM,
-} from "./utils/codemirror-wikitext";
+import { wikitextHighlightPlugin, wrapSelectionCM } from "./utils/codemirror-wikitext";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
 import { EditorModalProvider } from "./context/EditorModalContext";
 import { getDraft } from "~/lib/wiki-os/editor/draft-store";
@@ -89,9 +86,7 @@ export function WikiSourceEditor({
     if (viewRef.current) {
       viewRef.current.dispatch({
         effects: lineNumbersComp.current.reconfigure(
-          state.showLineNumbers
-            ? [lineNumbers(), highlightActiveLineGutter(), foldGutter()]
-            : []
+          state.showLineNumbers ? [lineNumbers(), highlightActiveLineGutter(), foldGutter()] : []
         ),
       });
     }
@@ -142,9 +137,7 @@ export function WikiSourceEditor({
       doc: initialWikitext,
       extensions: [
         lineNumbersComp.current.of(
-          state.showLineNumbers
-            ? [lineNumbers(), highlightActiveLineGutter(), foldGutter()]
-            : []
+          state.showLineNumbers ? [lineNumbers(), highlightActiveLineGutter(), foldGutter()] : []
         ),
         wordWrapComp.current.of(state.enableWordWrap ? EditorView.lineWrapping : []),
         autocompleteComp.current.of(
@@ -175,7 +168,9 @@ export function WikiSourceEditor({
             {
               key: "Mod-s",
               run: () => {
-                void state.executeSave(() => viewRef.current?.state.doc.toString() ?? initialWikitext);
+                void state.executeSave(
+                  () => viewRef.current?.state.doc.toString() ?? initialWikitext
+                );
                 return true;
               },
             },
@@ -394,87 +389,85 @@ export function WikiSourceEditor({
 
   return (
     <EditorModalProvider value={state.modalContextValue}>
-    <div className="wikios-editor-modern">
-      <WikiSourceToolbar
-        title={title}
-        isDirty={state.isDirty}
-        repulsionProgress={repulsionProgress}
-        showPreview={showPreview}
-        setShowPreview={setShowPreview}
-        onSwitchToVisual={() => {
-          const currentWikitext = viewRef.current?.state.doc.toString() ?? "";
-          onSwitchToVisual?.(state.isDirty, currentWikitext);
-        }}
-        onCancel={onCancel}
-        onSave={handleSave}
-        handleSaveDraft={handleSaveDraft}
-        saving={state.saving}
-        saveDropdownOpen={state.saveDropdownOpen}
-        setSaveDropdownOpen={state.setSaveDropdownOpen}
-        saveActionType={state.saveActionType}
-        setSaveActionType={state.setSaveActionType}
-        setShowSavePanel={state.setShowSavePanel}
-        summary={state.summary}
-        setSummary={state.setSummary}
-        handleUndo={handleUndo}
-        handleRedo={handleRedo}
-        wrapSelection={wrapSelection}
-        insertAtCursor={insertAtCursor}
-        insertAtLine={insertAtLine}
-        handleInsertStashedImage={(filename) =>
-          insertAtCursor(`[[File:${filename}|thumb|]]`)
-        }
-      />
+      <div className="wikios-editor-modern">
+        <WikiSourceToolbar
+          title={title}
+          isDirty={state.isDirty}
+          repulsionProgress={repulsionProgress}
+          showPreview={showPreview}
+          setShowPreview={setShowPreview}
+          onSwitchToVisual={() => {
+            const currentWikitext = viewRef.current?.state.doc.toString() ?? "";
+            onSwitchToVisual?.(state.isDirty, currentWikitext);
+          }}
+          onCancel={onCancel}
+          onSave={handleSave}
+          handleSaveDraft={handleSaveDraft}
+          saving={state.saving}
+          saveDropdownOpen={state.saveDropdownOpen}
+          setSaveDropdownOpen={state.setSaveDropdownOpen}
+          saveActionType={state.saveActionType}
+          setSaveActionType={state.setSaveActionType}
+          setShowSavePanel={state.setShowSavePanel}
+          summary={state.summary}
+          setSummary={state.setSummary}
+          handleUndo={handleUndo}
+          handleRedo={handleRedo}
+          wrapSelection={wrapSelection}
+          insertAtCursor={insertAtCursor}
+          insertAtLine={insertAtLine}
+          handleInsertStashedImage={(filename) => insertAtCursor(`[[File:${filename}|thumb|]]`)}
+        />
 
-      <WikiEditorSavePanel
-        showSavePanel={state.showSavePanel}
-        summary={state.summary}
-        setSummary={state.setSummary}
-        minor={state.minor}
-        setMinor={state.setMinor}
-        saving={state.saving}
-        saveActionType={state.saveActionType}
-        onSave={handleSave}
-      />
+        <WikiEditorSavePanel
+          showSavePanel={state.showSavePanel}
+          summary={state.summary}
+          setSummary={state.setSummary}
+          minor={state.minor}
+          setMinor={state.setMinor}
+          saving={state.saving}
+          saveActionType={state.saveActionType}
+          onSave={handleSave}
+        />
 
-      {/* Editor + Preview container */}
-      <div className={`wikios-editor-body ${showPreview ? "wikios-editor-split" : ""}`}>
-        <div ref={containerRef} className="wikios-editor-cm-container wikios-editor-cm" />
-        {showPreview && (
-          <div className="wikios-editor-preview">
-            <div className="wikios-editor-preview-header">
-              <span>Preview</span>
-              {previewMutation.isPending && (
-                <span className="wikios-editor-preview-loading">Rendering...</span>
-              )}
+        {/* Editor + Preview container */}
+        <div className={`wikios-editor-body ${showPreview ? "wikios-editor-split" : ""}`}>
+          <div ref={containerRef} className="wikios-editor-cm-container wikios-editor-cm" />
+          {showPreview && (
+            <div className="wikios-editor-preview">
+              <div className="wikios-editor-preview-header">
+                <span>Preview</span>
+                {previewMutation.isPending && (
+                  <span className="wikios-editor-preview-loading">Rendering...</span>
+                )}
+              </div>
+              <div
+                className="wikios-editor-preview-content wikios-article-body"
+                dangerouslySetInnerHTML={{
+                  __html: previewMutation.data?.html || "<em>Loading preview...</em>",
+                }}
+              />
             </div>
-            <div
-              className="wikios-editor-preview-content wikios-article-body"
-              dangerouslySetInnerHTML={{
-                __html: previewMutation.data?.html || "<em>Loading preview...</em>",
-              }}
-            />
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Status bar */}
+        <WikiEditorStatusBar
+          cursorPos={cursorPos}
+          wordCount={state.wordCount}
+          lineCount={lineCount}
+          formatName="Wikitext"
+          encoding="UTF-8"
+        />
+
+        <WikiEditorModalHost
+          onInsertImage={insertAtCursor}
+          onInsertInfobox={insertAtCursor}
+          onInsertCountryStats={insertAtCursor}
+          onInsertBusinessStats={insertAtCursor}
+          onInsertMapCoords={insertAtCursor}
+        />
       </div>
-
-      {/* Status bar */}
-      <WikiEditorStatusBar
-        cursorPos={cursorPos}
-        wordCount={state.wordCount}
-        lineCount={lineCount}
-        formatName="Wikitext"
-        encoding="UTF-8"
-      />
-
-      <WikiEditorModalHost
-        onInsertImage={insertAtCursor}
-        onInsertInfobox={insertAtCursor}
-        onInsertCountryStats={insertAtCursor}
-        onInsertBusinessStats={insertAtCursor}
-        onInsertMapCoords={insertAtCursor}
-      />
-    </div>
     </EditorModalProvider>
   );
 }

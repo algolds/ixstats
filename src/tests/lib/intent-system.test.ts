@@ -3,11 +3,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 // Mock env
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 
-import {
-  assemblePackages,
-  classifyGoal,
-  weightAcceptance,
-} from "~/lib/intent/assemble";
+import { assemblePackages, classifyGoal, weightAcceptance } from "~/lib/intent/assemble";
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
 
 describe("Intent System & Package Assembly", () => {

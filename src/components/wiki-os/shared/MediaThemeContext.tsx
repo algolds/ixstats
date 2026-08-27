@@ -53,7 +53,9 @@ interface MediaThemeContextType {
 const MediaThemeContext = createContext<MediaThemeContextType | undefined>(undefined);
 
 export function MediaThemeProvider({ children }: { children: ReactNode }) {
-  const [mediaThemeMode, setMediaThemeModeState] = useState<"auto" | "plinth">(getStoredMediaThemeMode);
+  const [mediaThemeMode, setMediaThemeModeState] = useState<"auto" | "plinth">(
+    getStoredMediaThemeMode
+  );
   const [imageOverrides, setImageOverrides] = useState<Record<string, "auto" | "plinth">>({});
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(() => {
     if (typeof document === "undefined") return true;
@@ -212,11 +214,7 @@ export function MediaThemeProvider({ children }: { children: ReactNode }) {
     ]
   );
 
-  return (
-    <MediaThemeContext.Provider value={value}>
-      {children}
-    </MediaThemeContext.Provider>
-  );
+  return <MediaThemeContext.Provider value={value}>{children}</MediaThemeContext.Provider>;
 }
 
 /**

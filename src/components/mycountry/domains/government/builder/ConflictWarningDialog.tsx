@@ -20,7 +20,13 @@ import {
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { WarningTriangle as AlertTriangle, InfoCircle as Info, WarningCircle as AlertCircle, Database, CheckCircle as CheckCircle2 } from "iconoir-react";
+import {
+  WarningTriangle as AlertTriangle,
+  InfoCircle as Info,
+  WarningCircle as AlertCircle,
+  Database,
+  CheckCircle as CheckCircle2,
+} from "iconoir-react";
 import type { ConflictWarning } from "~/server/services/builderIntegrationService";
 
 interface ConflictWarningDialogProps {

@@ -1,7 +1,19 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Search, WarningTriangle as AlertTriangle, CheckCircle, Eye, EyeClosed as EyeOff, Component as Layers, ControlSlider as SlidersHorizontal, Xmark as X, ArrowSeparateVertical as ArrowUpDown, EditPencil as Edit2, Check } from "iconoir-react";
+import {
+  Search,
+  WarningTriangle as AlertTriangle,
+  CheckCircle,
+  Eye,
+  EyeClosed as EyeOff,
+  Component as Layers,
+  ControlSlider as SlidersHorizontal,
+  Xmark as X,
+  ArrowSeparateVertical as ArrowUpDown,
+  EditPencil as Edit2,
+  Check,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -227,7 +239,12 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
     sortBy,
   };
 
-  const { data, isLoading, isFetching: _isFetching, refetch } = api.cards.getNSCards.useQuery(queryInput);
+  const {
+    data,
+    isLoading,
+    isFetching: _isFetching,
+    refetch,
+  } = api.cards.getNSCards.useQuery(queryInput);
 
   const updateDetailsMutation = api.cards.updateCardDetails.useMutation({
     onSuccess: () => {
@@ -378,10 +395,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
               className="border-border bg-muted/60 hover:border-primary/60 group/thumb relative flex h-11 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-md border shadow-xs transition-all hover:scale-110 hover:shadow-md active:scale-95"
             >
               <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-1">
-                <CategoryIcon
-                  category={card.category || "SPECIAL"}
-                  treatment="seal"
-                />
+                <CategoryIcon category={card.category || "SPECIAL"} treatment="seal" />
               </div>
               {proxiedUrl && (
                 <img
@@ -557,9 +571,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
             (card.category && card.category !== "NS_IMPORT");
 
           const resolvedCategory = (
-            card.category &&
-            isValidLoreCategory(card.category) &&
-            card.category !== "NS_IMPORT"
+            card.category && isValidLoreCategory(card.category) && card.category !== "NS_IMPORT"
               ? (card.category as LoreCategory)
               : isLoreCard
                 ? classifyFromWikitext(
@@ -572,11 +584,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
           if (isLoreCard) {
             return (
               <div className="bg-primary/10 border-primary/20 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 backdrop-blur-md">
-                <CategoryIcon
-                  category={resolvedCategory || "SPECIAL"}
-                  treatment="seal"
-                  size="xs"
-                />
+                <CategoryIcon category={resolvedCategory || "SPECIAL"} treatment="seal" size="xs" />
                 <span className="text-primary text-[10px] font-bold">
                   {resolvedCategory ? getCategoryLabel(resolvedCategory) : "Lore"}
                 </span>
@@ -654,7 +662,13 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
         ),
       },
     ],
-    [editingTitleId, editingTitleValue, editingValueId, editingValueNum, updateDetailsMutation.isPending]
+    [
+      editingTitleId,
+      editingTitleValue,
+      editingValueId,
+      editingValueNum,
+      updateDetailsMutation.isPending,
+    ]
   );
 
   return (

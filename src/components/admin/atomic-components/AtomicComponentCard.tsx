@@ -27,23 +27,28 @@ export function AtomicComponentCard({
 }: AtomicComponentCardProps) {
   const Icon = domain === "economy" ? Factory : Building2;
   const accentColor = domain === "economy" ? "text-amber-400" : "text-cyan-400";
-  const badgeColor = domain === "economy" ? "bg-amber-500/10 text-amber-300 border-amber-500/20" : "bg-cyan-500/10 text-cyan-300 border-cyan-500/20";
+  const badgeColor =
+    domain === "economy"
+      ? "bg-amber-500/10 text-amber-300 border-amber-500/20"
+      : "bg-cyan-500/10 text-cyan-300 border-cyan-500/20";
 
   return (
-    <div className="group relative rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs transition-colors hover:border-border/60">
+    <div className="group border-border/30 bg-card/25 hover:border-border/60 relative rounded-2xl border p-3.5 shadow-xs backdrop-blur-md transition-colors">
       {/* Header */}
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1 pr-2">
           <div className="mb-1 flex items-center gap-2">
             <Icon className={`h-4 w-4 shrink-0 ${accentColor}`} />
-            <h3 className="text-foreground line-clamp-1 font-semibold text-sm">{component.name}</h3>
+            <h3 className="text-foreground line-clamp-1 text-sm font-semibold">{component.name}</h3>
           </div>
-          <span className={`inline-block rounded-md border px-2 py-0.5 text-xs font-medium ${badgeColor}`}>
+          <span
+            className={`inline-block rounded-md border px-2 py-0.5 text-xs font-medium ${badgeColor}`}
+          >
             {component.category}
           </span>
         </div>
         {!component.isActive && (
-          <EyeOff className="h-4 w-4 text-red-400 shrink-0" aria-label="Inactive" />
+          <EyeOff className="h-4 w-4 shrink-0 text-red-400" aria-label="Inactive" />
         )}
       </div>
 
@@ -58,7 +63,7 @@ export function AtomicComponentCard({
           <span className="text-muted-foreground">Effectiveness</span>
           <span className="text-foreground font-semibold">{component.effectiveness}%</span>
         </div>
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-card/60">
+        <div className="bg-card/60 h-1.5 w-full overflow-hidden rounded-full">
           <div
             className={`h-full transition-all ${
               component.effectiveness >= 75
@@ -74,7 +79,9 @@ export function AtomicComponentCard({
 
       {/* Metrics & Synergies count */}
       <div className="border-border/30 text-muted-foreground flex items-center justify-between border-t pt-2 text-xs">
-        <span className="font-mono text-[11px] capitalize">Tier: {component.complexity || "Standard"}</span>
+        <span className="font-mono text-[11px] capitalize">
+          Tier: {component.complexity || "Standard"}
+        </span>
         {component.synergies && (
           <span className="flex items-center gap-1">
             <Network className="h-3 w-3" />
@@ -98,7 +105,7 @@ export function AtomicComponentCard({
           variant="ghost"
           size="sm"
           onClick={onDelete}
-          className="h-7 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 active:scale-[0.98]"
+          className="h-7 px-2 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300 active:scale-[0.98]"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>

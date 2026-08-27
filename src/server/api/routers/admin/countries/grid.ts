@@ -6,7 +6,6 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 
 export const adminCountriesGridRouter = createTRPCRouter({
-
   // Get ThinkPages statistics (real DB values)
 
   // Get system status

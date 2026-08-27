@@ -12,7 +12,20 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Separator } from "~/components/ui/separator";
-import { City as Building2, User, Group as Users, MapPin, Dollar as DollarSign, StatUp as TrendingUp, Star, Flash as Zap, Clock, CheckCircle, ArrowUpCircle, XmarkCircle as XCircle } from "iconoir-react";
+import {
+  City as Building2,
+  User,
+  Group as Users,
+  MapPin,
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
+  Star,
+  Flash as Zap,
+  Clock,
+  CheckCircle,
+  ArrowUpCircle,
+  XmarkCircle as XCircle,
+} from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 
 interface EmbassyDetailSheetProps {

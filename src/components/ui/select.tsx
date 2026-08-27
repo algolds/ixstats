@@ -2,7 +2,11 @@
 
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check as CheckIcon, NavArrowDown as ChevronDownIcon, NavArrowUp as ChevronUpIcon } from "iconoir-react";
+import {
+  Check as CheckIcon,
+  NavArrowDown as ChevronDownIcon,
+  NavArrowUp as ChevronUpIcon,
+} from "iconoir-react";
 
 import { cn } from "~/lib/utils";
 

@@ -2,7 +2,13 @@
 
 import React, { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Group as Users, ScaleFrameEnlarge as Scale, City as Building2, Page as FileText, Crown } from "iconoir-react";
+import {
+  Group as Users,
+  ScaleFrameEnlarge as Scale,
+  City as Building2,
+  Page as FileText,
+  Crown,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 const CabinetPanel = dynamic(

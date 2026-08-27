@@ -1,7 +1,26 @@
 "use client";
 
 import React from "react";
-import { ArrowLeft, Map, NavArrowRight as ChevronRight, Undo as Undo2, Redo as Redo2, ViewGrid as Grid3X3, Archery as Crosshair, Compress as Minimize2, Droplet as Droplets, ModernTv as MountainIcon, Train, Refresh as RefreshCw, Settings, Upload as FileUp, HelpCircle, Network, Magnet, Eye } from "iconoir-react";
+import {
+  ArrowLeft,
+  Map,
+  NavArrowRight as ChevronRight,
+  Undo as Undo2,
+  Redo as Redo2,
+  ViewGrid as Grid3X3,
+  Archery as Crosshair,
+  Compress as Minimize2,
+  Droplet as Droplets,
+  ModernTv as MountainIcon,
+  Train,
+  Refresh as RefreshCw,
+  Settings,
+  Upload as FileUp,
+  HelpCircle,
+  Network,
+  Magnet,
+  Eye,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "~/components/ui/dialog";
@@ -61,11 +80,11 @@ export function EditorHeader({
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   return (
-    <div className="border-border/60 bg-card/85 z-20 flex h-10 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-xl shadow-xs">
+    <div className="border-border/60 bg-card/85 z-20 flex h-10 shrink-0 items-center gap-2 border-b px-3 shadow-xs backdrop-blur-xl">
       {/* Exit button */}
       <button
         onClick={handleRequestExit}
-        className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1.5 transition-all active:scale-95 duration-100 ease-out"
+        className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1.5 transition-all duration-100 ease-out active:scale-95"
         title="Exit Editor (Esc)"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -104,7 +123,7 @@ export function EditorHeader({
           <button
             disabled={!editor.historyCanUndo}
             onClick={() => editor.undo()}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-all active:scale-95 duration-100 disabled:pointer-events-none disabled:opacity-30"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-all duration-100 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
             title="Undo (Ctrl+Z)"
           >
             <Undo2 className="h-3.5 w-3.5" />
@@ -112,7 +131,7 @@ export function EditorHeader({
           <button
             disabled={!editor.historyCanRedo}
             onClick={() => editor.redo()}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-all active:scale-95 duration-100 disabled:pointer-events-none disabled:opacity-30"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-all duration-100 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
             title="Redo (Ctrl+Shift+Z)"
           >
             <Redo2 className="h-3.5 w-3.5" />

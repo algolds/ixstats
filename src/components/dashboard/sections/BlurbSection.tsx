@@ -48,18 +48,18 @@ export function BlurbSection() {
 
   if (isLoading) {
     return (
-      <div className="no-wiki-tooltip relative space-y-3 overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-4 shadow-xs backdrop-blur-xl">
+      <div className="no-wiki-tooltip border-border/50 bg-card/60 relative space-y-3 overflow-hidden rounded-2xl border p-4 shadow-xs backdrop-blur-xl">
         <div className="flex items-center justify-between">
-          <div className="h-4 w-28 animate-pulse rounded-md bg-muted/40" />
-          <div className="h-4 w-16 animate-pulse rounded-full bg-muted/40" />
+          <div className="bg-muted/40 h-4 w-28 animate-pulse rounded-md" />
+          <div className="bg-muted/40 h-4 w-16 animate-pulse rounded-full" />
         </div>
         <div className="space-y-2 py-1">
-          <div className="h-4 w-full animate-pulse rounded-md bg-muted/40" />
-          <div className="h-4 w-4/5 animate-pulse rounded-md bg-muted/40" />
+          <div className="bg-muted/40 h-4 w-full animate-pulse rounded-md" />
+          <div className="bg-muted/40 h-4 w-4/5 animate-pulse rounded-md" />
         </div>
         <div className="flex items-center justify-between pt-1">
-          <div className="h-3 w-20 animate-pulse rounded-md bg-muted/40" />
-          <div className="h-6 w-20 animate-pulse rounded-full bg-muted/40" />
+          <div className="bg-muted/40 h-3 w-20 animate-pulse rounded-md" />
+          <div className="bg-muted/40 h-6 w-20 animate-pulse rounded-full" />
         </div>
       </div>
     );
@@ -92,10 +92,7 @@ export function BlurbSection() {
           </span>
 
           <CutoutCorner className="text-card absolute -bottom-px left-0" size={20} />
-          <CutoutCorner
-            className="text-card absolute right-0 -bottom-px -scale-x-100"
-            size={20}
-          />
+          <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={20} />
         </div>
 
         <CutoutCardContent className="space-y-3.5 px-4 pt-0 pb-4">
@@ -106,7 +103,7 @@ export function BlurbSection() {
                 {prompt.title}
               </p>
             )}
-            <blockquote className="text-foreground/90 dark:text-zinc-200 line-clamp-3 text-[13px] font-normal leading-relaxed tracking-normal select-text">
+            <blockquote className="text-foreground/90 line-clamp-3 text-[13px] leading-relaxed font-normal tracking-normal select-text dark:text-zinc-200">
               &ldquo;{prompt.question}&rdquo;
             </blockquote>
           </div>
@@ -195,7 +192,7 @@ export function BlurbResponseModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onCloseAction()}>
-      <DialogContent className="flex max-h-[85vh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border border-indigo-500/15 bg-background/95 p-0 shadow-2xl backdrop-blur-2xl dark:border-indigo-400/20 sm:max-w-lg">
+      <DialogContent className="bg-background/95 flex max-h-[85vh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border border-indigo-500/15 p-0 shadow-2xl backdrop-blur-2xl sm:max-w-lg dark:border-indigo-400/20">
         {/* Header */}
         <DialogHeader className="border-border/40 border-b px-5 py-4 text-left">
           <div className="flex items-start gap-3">
@@ -214,7 +211,7 @@ export function BlurbResponseModal({
                   {totalCount} {totalCount === 1 ? "response" : "responses"}
                 </Badge>
               </div>
-              <p className="text-foreground/90 dark:text-zinc-300 mt-1.5 text-xs leading-relaxed font-normal">
+              <p className="text-foreground/90 mt-1.5 text-xs leading-relaxed font-normal dark:text-zinc-300">
                 &ldquo;{prompt.question}&rdquo;
               </p>
             </div>
@@ -225,7 +222,7 @@ export function BlurbResponseModal({
         {isSignedIn && !myResponse && (
           <div className="border-border/30 bg-muted/20 border-b px-5 py-3.5">
             <div className="flex flex-col gap-2.5">
-              <div className="relative rounded-xl border border-border/60 bg-card/80 shadow-2xs transition-colors focus-within:border-indigo-500/40">
+              <div className="border-border/60 bg-card/80 relative rounded-xl border shadow-2xs transition-colors focus-within:border-indigo-500/40">
                 <textarea
                   value={newResponse}
                   onChange={(e) => setNewResponse(e.target.value)}
@@ -238,9 +235,7 @@ export function BlurbResponseModal({
                   <span
                     className={cn(
                       "font-mono transition-colors",
-                      newResponse.length > 900
-                        ? "text-amber-500"
-                        : "text-muted-foreground/70"
+                      newResponse.length > 900 ? "text-amber-500" : "text-muted-foreground/70"
                     )}
                   >
                     {newResponse.length} / 1000
@@ -255,9 +250,7 @@ export function BlurbResponseModal({
                       })
                     }
                     disabled={
-                      !newResponse.trim() ||
-                      newResponse.length > 1000 ||
-                      submitMutation.isPending
+                      !newResponse.trim() || newResponse.length > 1000 || submitMutation.isPending
                     }
                   >
                     {submitMutation.isPending ? (
@@ -290,7 +283,7 @@ export function BlurbResponseModal({
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>Your Country&apos;s Dispatch</span>
             </div>
-            <p className="text-foreground/90 dark:text-zinc-200 text-xs leading-relaxed whitespace-pre-wrap">
+            <p className="text-foreground/90 text-xs leading-relaxed whitespace-pre-wrap dark:text-zinc-200">
               {myResponse.content}
             </p>
           </div>
@@ -309,8 +302,8 @@ export function BlurbResponseModal({
         <div className="flex-1 space-y-2.5 overflow-y-auto px-5 py-4">
           {responsesLoading && (
             <div className="space-y-2 py-4">
-              <div className="h-16 animate-pulse rounded-xl bg-muted/40" />
-              <div className="h-16 animate-pulse rounded-xl bg-muted/40" />
+              <div className="bg-muted/40 h-16 animate-pulse rounded-xl" />
+              <div className="bg-muted/40 h-16 animate-pulse rounded-xl" />
             </div>
           )}
 
@@ -376,7 +369,7 @@ export function BlurbResponseModal({
                   )}
                 </div>
 
-                <p className="text-foreground/90 dark:text-zinc-200 text-xs leading-relaxed whitespace-pre-wrap select-text">
+                <p className="text-foreground/90 text-xs leading-relaxed whitespace-pre-wrap select-text dark:text-zinc-200">
                   {r.content}
                 </p>
 
@@ -384,16 +377,18 @@ export function BlurbResponseModal({
                   Array.isArray(r.linkedArticles) &&
                   r.linkedArticles.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      {r.linkedArticles.map((article: { title: string; url: string }, i: number) => (
-                        <Link
-                          key={i}
-                          href={article.url}
-                          className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 inline-flex items-center gap-1 text-[10px] underline underline-offset-2"
-                        >
-                          <ExternalLink className="h-2.5 w-2.5" />
-                          {article.title}
-                        </Link>
-                      ))}
+                      {r.linkedArticles.map(
+                        (article: { title: string; url: string }, i: number) => (
+                          <Link
+                            key={i}
+                            href={article.url}
+                            className="inline-flex items-center gap-1 text-[10px] text-indigo-600 underline underline-offset-2 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                          >
+                            <ExternalLink className="h-2.5 w-2.5" />
+                            {article.title}
+                          </Link>
+                        )
+                      )}
                     </div>
                   )}
               </div>
@@ -426,7 +421,7 @@ export function BlurbResponseModal({
         <div className="border-border/40 flex items-center justify-between border-t px-5 py-3">
           <Link
             href={createUrl(`/blurbs/${prompt.slug ?? prompt.id}`)}
-            className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 inline-flex items-center gap-1.5 text-xs transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-indigo-600 transition-colors hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
           >
             <ExternalLink className="h-3 w-3" />
             <span>Open full topic</span>
@@ -443,4 +438,3 @@ export function BlurbResponseModal({
     </Dialog>
   );
 }
-

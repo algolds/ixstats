@@ -113,10 +113,7 @@ export async function syncIncomeAndSpending(
   governmentSpending: any,
   fiscalSystem: any
 ): Promise<void> {
-  if (
-    Array.isArray(incomeWealth?.economicClasses) &&
-    incomeWealth.economicClasses.length > 0
-  ) {
+  if (Array.isArray(incomeWealth?.economicClasses) && incomeWealth.economicClasses.length > 0) {
     const economicClassesJson = JSON.stringify(incomeWealth.economicClasses);
     await tx.incomeDistribution.upsert({
       where: { countryId },
@@ -538,10 +535,7 @@ export async function syncEconomyBuilderState(
     where: { countryId },
   });
 
-  if (
-    economyState.selectedAtomicComponents &&
-    economyState.selectedAtomicComponents.length > 0
-  ) {
+  if (economyState.selectedAtomicComponents && economyState.selectedAtomicComponents.length > 0) {
     for (const componentType of economyState.selectedAtomicComponents) {
       await tx.economicComponent.create({
         data: {
@@ -560,10 +554,8 @@ export async function syncEconomyBuilderState(
 
   const gdpGrowthVolatility =
     sectors.length > 0
-      ? sectors.reduce(
-          (sum: number, s: any) => sum + Math.abs((s.growthRate ?? 2.5) - 2.5),
-          0
-        ) / sectors.length
+      ? sectors.reduce((sum: number, s: any) => sum + Math.abs((s.growthRate ?? 2.5) - 2.5), 0) /
+        sectors.length
       : undefined;
 
   const economicComplexity =
@@ -577,8 +569,7 @@ export async function syncEconomyBuilderState(
 
   const innovationIndex =
     sectors.length > 0
-      ? sectors.reduce((sum: number, s: any) => sum + (s.innovation ?? 50), 0) /
-        sectors.length
+      ? sectors.reduce((sum: number, s: any) => sum + (s.innovation ?? 50), 0) / sectors.length
       : undefined;
 
   const competitivenessRank =
@@ -593,8 +584,7 @@ export async function syncEconomyBuilderState(
   const exportsGDPPercent =
     sectors.length > 0
       ? sectors.reduce(
-          (sum: number, s: any) =>
-            sum + ((s.exports ?? 0) * (s.gdpContribution ?? 0)) / 100,
+          (sum: number, s: any) => sum + ((s.exports ?? 0) * (s.gdpContribution ?? 0)) / 100,
           0
         )
       : undefined;
@@ -602,8 +592,7 @@ export async function syncEconomyBuilderState(
   const importsGDPPercent =
     sectors.length > 0
       ? sectors.reduce(
-          (sum: number, s: any) =>
-            sum + ((s.imports ?? 0) * (s.gdpContribution ?? 0)) / 100,
+          (sum: number, s: any) => sum + ((s.imports ?? 0) * (s.gdpContribution ?? 0)) / 100,
           0
         )
       : undefined;
@@ -613,8 +602,7 @@ export async function syncEconomyBuilderState(
       ? economyState.structure.totalGDP *
         sectors.reduce(
           (sum: number, s: any) =>
-            sum +
-            (((s.exports ?? 0) - (s.imports ?? 0)) * (s.gdpContribution ?? 0)) / 10000,
+            sum + (((s.exports ?? 0) - (s.imports ?? 0)) * (s.gdpContribution ?? 0)) / 10000,
           0
         )
       : undefined;
@@ -664,9 +652,7 @@ export async function syncEconomyBuilderState(
     const youthUnemploymentRate = laborConfig.youthUnemploymentRate;
     const femaleParticipationRate = laborConfig.femaleParticipationRate;
     const medianWage =
-      laborConfig.livingWageHourly !== undefined
-        ? laborConfig.livingWageHourly * 2000
-        : undefined;
+      laborConfig.livingWageHourly !== undefined ? laborConfig.livingWageHourly * 2000 : undefined;
     const wageGrowthRate = 2.5;
 
     const employmentBySector =

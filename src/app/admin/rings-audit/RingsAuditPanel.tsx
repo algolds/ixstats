@@ -7,12 +7,7 @@ import { api } from "~/trpc/react";
 import { HealthRing } from "~/components/ui/health-ring";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import {
-  Activity,
-  StatsReport as BarChart3,
-  Heart,
-  Shield,
-} from "iconoir-react";
+import { Activity, StatsReport as BarChart3, Heart, Shield } from "iconoir-react";
 
 const RING_META = [
   { key: "economicVitality", label: "Economic", color: "#22c55e", icon: BarChart3 },
@@ -57,7 +52,7 @@ function CountryRingsCard({
   const loading = loadingA || loadingD;
 
   return (
-    <div className="rounded-2xl border border-border/30 bg-card/25 overflow-hidden backdrop-blur-md shadow-xs">
+    <div className="border-border/30 bg-card/25 overflow-hidden rounded-2xl border shadow-xs backdrop-blur-md">
       <div className="border-border/20 bg-muted/20 flex items-center gap-3 border-b px-4 py-3">
         {flagUrl && (
           <img src={flagUrl} alt="" className="h-6 w-10 rounded object-cover shadow-sm" />
@@ -139,7 +134,10 @@ export function RingsAuditPanel() {
     { refetchOnWindowFocus: false }
   );
 
-  const sampleCountries = useMemo(() => countriesData?.countries?.slice(0, 10) ?? [], [countriesData]);
+  const sampleCountries = useMemo(
+    () => countriesData?.countries?.slice(0, 10) ?? [],
+    [countriesData]
+  );
 
   return (
     <div className="space-y-6">

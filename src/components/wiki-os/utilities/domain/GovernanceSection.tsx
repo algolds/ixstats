@@ -31,8 +31,9 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
   const { data: archivedArticles, isLoading: loadingArchived } =
     api.wikios.getArchivedArticles.useQuery({ limit: 50 });
 
-  const { data: auditData, isLoading: loadingLogs } =
-    api.wikios.getAuditLogs.useQuery({ limit: 50 });
+  const { data: auditData, isLoading: loadingLogs } = api.wikios.getAuditLogs.useQuery({
+    limit: 50,
+  });
 
   const restoreMutation = api.wikios.restoreArticle.useMutation({
     onSuccess: () => {
@@ -64,7 +65,8 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
     {
       id: "logs",
       title: "System Audit & Event Logs",
-      description: "Immutable transaction logs tracking page moves, deletions, protection, and sync events.",
+      description:
+        "Immutable transaction logs tracking page moves, deletions, protection, and sync events.",
       legacyAlias: "Special:Log",
       icon: Book,
       badge: `${auditData?.total ?? 0} Events`,
@@ -95,7 +97,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
     <div className="space-y-4">
       <div className="flex items-center gap-2 px-1">
         <Shield className="h-4 w-4 text-amber-400" />
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Realm Governance & Audit ({filteredTools.length})
         </h3>
       </div>
@@ -114,7 +116,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
               onClick={() => setSelectedTab(selectedTab === tool.id ? null : (tool.id as any))}
               className={`group flex flex-col justify-between rounded-xl border p-4 text-left backdrop-blur-md transition-all duration-200 active:scale-[0.98] ${
                 isSelected
-                  ? "border-wiki/60 bg-card/90 shadow-md ring-1 ring-wiki/30"
+                  ? "border-wiki/60 bg-card/90 ring-wiki/30 shadow-md ring-1"
                   : "border-border/40 bg-card/60 hover:border-wiki/30 hover:bg-card/80"
               }`}
             >
@@ -125,19 +127,19 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                   >
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className="rounded-full border border-border/40 bg-secondary/50 px-2 py-0.5 text-[10px] font-medium text-foreground">
+                  <span className="border-border/40 bg-secondary/50 text-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
                     {tool.badge}
                   </span>
                 </div>
-                <h4 className="text-xs font-semibold text-foreground group-hover:text-wiki">
+                <h4 className="text-foreground group-hover:text-wiki text-xs font-semibold">
                   {tool.title}
                 </h4>
-                <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">
+                <p className="text-muted-foreground mt-1 line-clamp-2 text-[11px]">
                   {tool.description}
                 </p>
               </div>
 
-              <div className="mt-3 flex items-center justify-between border-t border-border/30 pt-2 text-[10px] text-muted-foreground">
+              <div className="border-border/30 text-muted-foreground mt-3 flex items-center justify-between border-t pt-2 text-[10px]">
                 <span className="font-mono opacity-60">{tool.legacyAlias}</span>
                 <NavArrowRight className="h-3 w-3 opacity-60" />
               </div>
@@ -154,28 +156,28 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
             animate={{ opacity: 1, height: "auto", scale: 1 }}
             exit={{ opacity: 0, height: 0, scale: 0.98 }}
             transition={{ type: "spring", bounce: 0.1, duration: 0.3 }}
-            className="overflow-hidden rounded-xl border border-border/40 bg-card/50 backdrop-blur-md shadow-md"
+            className="border-border/40 bg-card/50 overflow-hidden rounded-xl border shadow-md backdrop-blur-md"
           >
-            <div className="flex items-center justify-between border-b border-border/40 bg-muted/20 px-4 py-2.5">
-              <span className="text-xs font-medium text-foreground">
+            <div className="border-border/40 bg-muted/20 flex items-center justify-between border-b px-4 py-2.5">
+              <span className="text-foreground text-xs font-medium">
                 Active Governance Console:{" "}
-                <span className="font-semibold text-wiki">
+                <span className="text-wiki font-semibold">
                   {selectedTab === "archive"
                     ? "Archived Articles (Soft-Delete)"
                     : selectedTab === "logs"
-                    ? "Audit Log Ledger"
-                    : "Content Protection & Permissions"}
+                      ? "Audit Log Ledger"
+                      : "Content Protection & Permissions"}
                 </span>
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-muted-foreground text-[11px]">
                   Authoritative PostgreSQL Transaction Layer
                 </span>
                 <button
                   type="button"
                   data-cuelume-press="tap"
                   onClick={() => setSelectedTab(null)}
-                  className="rounded-md p-1 text-muted-foreground hover:bg-muted/40 hover:text-foreground active:scale-90"
+                  className="text-muted-foreground hover:bg-muted/40 hover:text-foreground rounded-md p-1 active:scale-90"
                   title="Close Console"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -183,11 +185,11 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
               </div>
             </div>
 
-            <div className="max-h-72 overflow-y-auto divide-y divide-border/20 p-2">
+            <div className="divide-border/20 max-h-72 divide-y overflow-y-auto p-2">
               {selectedTab === "archive" && (
                 <div>
                   {loadingArchived ? (
-                    <div className="flex items-center justify-center p-8 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center justify-center p-8 text-xs">
                       <Refresh className="mr-2 h-4 w-4 animate-spin" /> Querying archived records...
                     </div>
                   ) : archivedArticles && archivedArticles.length > 0 ? (
@@ -195,12 +197,12 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                       {archivedArticles.map((item: any, idx: number) => (
                         <div
                           key={item.id || item.slug || `archive-${idx}`}
-                          className="flex items-center justify-between rounded-lg px-3 py-2 text-xs transition-colors hover:bg-muted/30"
+                          className="hover:bg-muted/30 flex items-center justify-between rounded-lg px-3 py-2 text-xs transition-colors"
                         >
                           <div>
-                            <span className="font-medium text-foreground">{item.title}</span>
+                            <span className="text-foreground font-medium">{item.title}</span>
                             {item.summary && (
-                              <p className="text-[11px] text-muted-foreground">{item.summary}</p>
+                              <p className="text-muted-foreground text-[11px]">{item.summary}</p>
                             )}
                           </div>
                           <button
@@ -209,7 +211,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                             data-cuelume-hover="tick"
                             onClick={() => handleRestore(item.title, item.slug)}
                             disabled={restoringSlug === item.slug}
-                            className="rounded-lg border border-wiki/40 bg-wiki/10 px-2.5 py-1 text-[11px] font-medium text-wiki transition-colors hover:bg-wiki/20 active:scale-[0.97] disabled:opacity-50"
+                            className="border-wiki/40 bg-wiki/10 text-wiki hover:bg-wiki/20 rounded-lg border px-2.5 py-1 text-[11px] font-medium transition-colors active:scale-[0.97] disabled:opacity-50"
                           >
                             {restoringSlug === item.slug ? "Restoring..." : "Restore to Published"}
                           </button>
@@ -228,7 +230,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
               {selectedTab === "logs" && (
                 <div>
                   {loadingLogs ? (
-                    <div className="flex items-center justify-center p-8 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center justify-center p-8 text-xs">
                       <Refresh className="mr-2 h-4 w-4 animate-spin" /> Loading audit logs...
                     </div>
                   ) : auditData && auditData.logs.length > 0 ? (
@@ -236,20 +238,20 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                       {auditData.logs.map((log: any, idx: number) => (
                         <div
                           key={log.id || `log-${idx}`}
-                          className="flex items-center justify-between rounded-lg px-3 py-2 text-xs transition-colors hover:bg-muted/30"
+                          className="hover:bg-muted/30 flex items-center justify-between rounded-lg px-3 py-2 text-xs transition-colors"
                         >
                           <div className="flex items-center gap-2">
-                            <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-mono uppercase text-muted-foreground">
+                            <span className="bg-secondary text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px] uppercase">
                               {log.action}
                             </span>
-                            <span className="font-medium text-foreground">{log.title}</span>
+                            <span className="text-foreground font-medium">{log.title}</span>
                             {log.details?.reason && (
-                              <span className="text-[11px] text-muted-foreground">
+                              <span className="text-muted-foreground text-[11px]">
                                 — {log.details.reason}
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <div className="text-muted-foreground flex items-center gap-1 text-[10px]">
                             <Clock className="h-3 w-3" />
                             <span>{new Date(log.createdAt).toLocaleTimeString()}</span>
                           </div>
@@ -257,7 +259,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                       ))}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 text-center text-xs text-muted-foreground">
+                    <div className="text-muted-foreground flex flex-col items-center justify-center p-6 text-center text-xs">
                       <span>No recent audit logs recorded.</span>
                     </div>
                   )}
@@ -267,8 +269,10 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
               {selectedTab === "protection" && (
                 <div className="flex items-center justify-between p-4 text-xs">
                   <div>
-                    <h4 className="font-semibold text-foreground">Protected Namespaces & Permissions</h4>
-                    <p className="text-[11px] text-muted-foreground">
+                    <h4 className="text-foreground font-semibold">
+                      Protected Namespaces & Permissions
+                    </h4>
+                    <p className="text-muted-foreground text-[11px]">
                       Administer system owner edit locks, sysop barriers, and namespace guardrails.
                     </p>
                   </div>
@@ -276,7 +280,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                     href={withBasePath("/admin/wikios-settings")}
                     data-cuelume-press="press"
                     data-cuelume-hover="tick"
-                    className="rounded-lg border border-wiki/40 bg-wiki/10 px-3 py-1.5 text-xs font-medium text-wiki transition-colors hover:bg-wiki/20 active:scale-95"
+                    className="border-wiki/40 bg-wiki/10 text-wiki hover:bg-wiki/20 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors active:scale-95"
                   >
                     Open Sysop Panel
                   </Link>

@@ -4,7 +4,19 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { OpenBook as BookOpen, Search, Eye, Bookmark, ClockRotateRight as History, User, Clock, ArrowUpRight, CheckCircle, PagePlus as FilePlus, EditPencil as Edit3 } from "iconoir-react";
+import {
+  OpenBook as BookOpen,
+  Search,
+  Eye,
+  Bookmark,
+  ClockRotateRight as History,
+  User,
+  Clock,
+  ArrowUpRight,
+  CheckCircle,
+  PagePlus as FilePlus,
+  EditPencil as Edit3,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
@@ -45,15 +57,19 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   // 1. Fetch recent MediaWiki changes
-  const { data: recentChanges, isLoading: isLoadingRecent } =
-    api.wikios.getRecentChanges.useQuery({ limit: 40 }, { staleTime: 30000 });
+  const { data: recentChanges, isLoading: isLoadingRecent } = api.wikios.getRecentChanges.useQuery(
+    { limit: 40 },
+    { staleTime: 30000 }
+  );
 
   // 2. Fetch user watchlist items
-  const { data: watchlistItems, isLoading: isLoadingWatchlist } =
-    api.wikios.getWatchlist.useQuery(undefined, {
+  const { data: watchlistItems, isLoading: isLoadingWatchlist } = api.wikios.getWatchlist.useQuery(
+    undefined,
+    {
       enabled: !!currentUserId,
       staleTime: 30000,
-    });
+    }
+  );
 
   // 3. Fetch user stashes
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -142,7 +158,11 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
     return result;
   }, [feedItems, activeFilter, searchQuery]);
 
-  const filterTabs: { id: LoreFeedFilter; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  const filterTabs: {
+    id: LoreFeedFilter;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }[] = [
     { id: "all", label: "All Lorefeed", icon: BookOpen },
     { id: "watchlist", label: `Watchlist (${watchlistItems?.length ?? 0})`, icon: Eye },
     { id: "recent", label: "Recent Edits", icon: Edit3 },
@@ -152,10 +172,10 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Top Filter & Search Controls */}
-      <div className="border-b border-border/40 bg-teal-500/[0.02] p-3 backdrop-blur-md dark:bg-teal-500/[0.04]">
+      <div className="border-border/40 border-b bg-teal-500/[0.02] p-3 backdrop-blur-md dark:bg-teal-500/[0.04]">
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           {/* Spring Pills */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+          <div className="flex scrollbar-none items-center gap-1 overflow-x-auto">
             {filterTabs.map((tab) => {
               const isActive = activeFilter === tab.id;
               const Icon = tab.icon;
@@ -188,13 +208,13 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
           </div>
 
           {/* Search bar */}
-          <div className="relative min-w-[180px] max-w-xs">
+          <div className="relative max-w-xs min-w-[180px]">
             <Search className="text-muted-foreground/60 absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter lore updates..."
-              className="h-8 rounded-xl border-border/40 bg-background/50 pl-8 text-xs backdrop-blur-xs"
+              className="border-border/40 bg-background/50 h-8 rounded-xl pl-8 text-xs backdrop-blur-xs"
             />
           </div>
         </div>
@@ -202,22 +222,24 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
 
       {/* Main Stream */}
       <div
-        className="flex-1 space-y-3 overflow-y-auto p-4 scrollbar-none"
+        className="flex-1 scrollbar-none space-y-3 overflow-y-auto p-4"
         style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}
       >
         {isLoading ? (
           <div className="flex h-64 flex-col items-center justify-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-teal-500/20 bg-teal-500/10 text-teal-400 shadow-sm animate-pulse">
+            <div className="flex h-10 w-10 animate-pulse items-center justify-center rounded-2xl border border-teal-500/20 bg-teal-500/10 text-teal-400 shadow-sm">
               <BookOpen className="h-5 w-5" />
             </div>
-            <p className="text-xs font-semibold text-muted-foreground">Syncing LoreBot dispatches...</p>
+            <p className="text-muted-foreground text-xs font-semibold">
+              Syncing LoreBot dispatches...
+            </p>
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="mx-auto flex max-w-sm flex-col items-center justify-center py-16 text-center">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-teal-500/20 bg-teal-500/10 text-teal-400 shadow-sm">
               <BookOpen className="h-6 w-6" />
             </div>
-            <h4 className="text-sm font-semibold text-foreground">No lore activity found</h4>
+            <h4 className="text-foreground text-sm font-semibold">No lore activity found</h4>
             <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
               {searchQuery
                 ? `No articles match "${searchQuery}" in this filter.`
@@ -240,24 +262,24 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                className="group relative rounded-2xl border border-border/50 bg-card/65 p-4 shadow-2xs backdrop-blur-xl transition-all duration-200 hover:border-teal-500/30 hover:bg-card/90 hover:shadow-md"
+                className="group border-border/50 bg-card/65 hover:bg-card/90 relative rounded-2xl border p-4 shadow-2xs backdrop-blur-xl transition-all duration-200 hover:border-teal-500/30 hover:shadow-md"
               >
                 {/* Top Badge & Author Line */}
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     {/* Source badge */}
                     {item.type === "new" ? (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9.5px] font-bold tracking-wider uppercase text-emerald-500">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-emerald-500 uppercase">
                         <FilePlus className="h-3 w-3" />
                         New Article
                       </span>
                     ) : item.type === "watchlist" ? (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9.5px] font-bold tracking-wider uppercase text-amber-500">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-amber-500 uppercase">
                         <Eye className="h-3 w-3" />
                         Watchlist
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-teal-500/30 bg-teal-500/10 px-2 py-0.5 text-[9.5px] font-bold tracking-wider uppercase text-teal-400">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-teal-500/30 bg-teal-500/10 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-teal-400 uppercase">
                         <Edit3 className="h-3 w-3" />
                         Revision
                       </span>
@@ -295,34 +317,31 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
 
                 {/* Article Header & Excerpt */}
                 <div className="mb-3">
-                  <h4 className="text-foreground group-hover:text-teal-400 text-sm font-bold tracking-tight transition-colors">
-                    <Link
-                      href={titleToWikiOSRoute(item.title)}
-                      className="hover:underline"
-                    >
+                  <h4 className="text-foreground text-sm font-bold tracking-tight transition-colors group-hover:text-teal-400">
+                    <Link href={titleToWikiOSRoute(item.title)} className="hover:underline">
                       {item.title}
                     </Link>
                   </h4>
 
                   {item.comment && (
                     <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed font-normal">
-                      <span className="font-semibold text-foreground/80">{item.user}: </span>
+                      <span className="text-foreground/80 font-semibold">{item.user}: </span>
                       {item.comment}
                     </p>
                   )}
                 </div>
 
                 {/* Bottom Action Tray */}
-                <div className="flex items-center justify-between gap-2 border-t border-border/30 pt-2.5">
-                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <div className="border-border/30 flex items-center justify-between gap-2 border-t pt-2.5">
+                  <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
                     <User className="h-3 w-3" />
-                    <span className="font-medium text-foreground/80">{item.user}</span>
+                    <span className="text-foreground/80 font-medium">{item.user}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Link
                       href={`${titleToWikiOSRoute(item.title)}?tab=history`}
-                      className="inline-flex items-center gap-1 rounded-lg border border-border/40 bg-accent/20 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground transition-all hover:bg-accent/40 hover:text-foreground active:scale-95"
+                      className="border-border/40 bg-accent/20 text-muted-foreground hover:bg-accent/40 hover:text-foreground inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all active:scale-95"
                     >
                       <History className="h-3 w-3" />
                       <span>History</span>

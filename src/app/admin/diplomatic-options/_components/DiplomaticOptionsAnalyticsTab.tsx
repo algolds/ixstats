@@ -4,21 +4,9 @@
 
 import React from "react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { api } from "~/trpc/react";
-import {
-  StatsReport as BarChart3,
-  Reports as PieChartIcon,
-} from "iconoir-react";
+import { StatsReport as BarChart3, Reports as PieChartIcon } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 
 export function DiplomaticOptionsAnalyticsTab() {
@@ -47,7 +35,7 @@ export function DiplomaticOptionsAnalyticsTab() {
   if (usageError || !usageStats) {
     return (
       <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center backdrop-blur-md">
-        <p className="text-red-400 text-xs">Failed to load diplomatic options analytics.</p>
+        <p className="text-xs text-red-400">Failed to load diplomatic options analytics.</p>
       </div>
     );
   }
@@ -74,27 +62,35 @@ export function DiplomaticOptionsAnalyticsTab() {
     <div className="space-y-5">
       {/* KPI Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Total Options</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Total Options
+          </p>
           <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
             {usageStats.summary.totalOptions}
           </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Active Options</p>
-          <p className="text-emerald-400 mt-1 font-mono text-xl font-bold tracking-tight">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Active Options
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
             {usageStats.summary.activeOptions}
           </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Total Usages</p>
-          <p className="text-cyan-400 mt-1 font-mono text-xl font-bold tracking-tight">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Total Usages
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
             {usageStats.summary.totalCurrentUsage}
           </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Categories</p>
-          <p className="text-purple-400 mt-1 font-mono text-xl font-bold tracking-tight">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Categories
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
             {Object.keys(usageStats.categoryStats).length}
           </p>
         </div>
@@ -102,7 +98,7 @@ export function DiplomaticOptionsAnalyticsTab() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
+        <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
           <h3 className="text-foreground flex items-center gap-2 text-xs font-bold">
             <BarChart3 className="h-4 w-4 text-cyan-400" />
             Top 10 Most Selected Diplomatic Options
@@ -126,7 +122,7 @@ export function DiplomaticOptionsAnalyticsTab() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
+        <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
           <h3 className="text-foreground flex items-center gap-2 text-xs font-bold">
             <PieChartIcon className="h-4 w-4 text-purple-400" />
             Option Distribution by Category

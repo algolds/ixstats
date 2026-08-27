@@ -14,13 +14,20 @@ import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
-import { Dollar as DollarSign, WarningTriangle as AlertTriangle, FloppyDisk as Save, Undo as RotateCcw, Database, Package, Archery as Target, StatUp as TrendingUp, Flash as Zap } from "iconoir-react";
+import {
+  Dollar as DollarSign,
+  WarningTriangle as AlertTriangle,
+  FloppyDisk as Save,
+  Undo as RotateCcw,
+  Database,
+  Package,
+  Archery as Target,
+  StatUp as TrendingUp,
+  Flash as Zap,
+} from "iconoir-react";
 
 // Data imports
-import {
-  ATOMIC_ECONOMIC_COMPONENTS,
-  type EconomicComponentType,
-} from "~/lib/economy/atomic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/economy/atomic-data";
 
 // Hook import for database integration
 import { useEconomicComponentsData } from "~/hooks/useEconomicComponentsData";
@@ -490,9 +497,7 @@ export function AtomicEconomicComponentSelector({
         </Dialog>
 
         {/* Main Workspace wrapped in a single premium Card */}
-        <Card
-          className="border-white/10 bg-white/[0.01] shadow-2xl backdrop-blur-xl dark:bg-black/20"
-        >
+        <Card className="border-white/10 bg-white/[0.01] shadow-2xl backdrop-blur-xl dark:bg-black/20">
           <div className="space-y-6 p-6">
             {/* Filter, Search and Template Selector Row */}
             <div className="flex flex-col gap-4 border-b border-white/5 pb-6">

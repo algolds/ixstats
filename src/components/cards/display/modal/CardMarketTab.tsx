@@ -2,7 +2,16 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { StatsReport as BarChart3, ClockRotateRight as History, Package, Trophy as Award, Gift, ArrowSeparate as ArrowRightLeft, ShoppingBag, Star } from "iconoir-react";
+import {
+  StatsReport as BarChart3,
+  ClockRotateRight as History,
+  Package,
+  Trophy as Award,
+  Gift,
+  ArrowSeparate as ArrowRightLeft,
+  ShoppingBag,
+  Star,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { CardPriceHistoryChart } from "../CardPriceHistoryChart";
@@ -118,7 +127,7 @@ export function CardMarketTab({
                   <span className="inline-flex items-center gap-1">
                     Purchased at Auction by {event.toUserName}
                     {event.price && (
-                      <span className="inline-flex items-center gap-0.5 text-amber-500 font-bold">
+                      <span className="inline-flex items-center gap-0.5 font-bold text-amber-500">
                         for <IxCreditsSymbol className="h-3 w-3 shrink-0" />
                         {event.price.toLocaleString()}
                       </span>

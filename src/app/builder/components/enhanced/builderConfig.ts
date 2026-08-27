@@ -1,7 +1,13 @@
 // Configuration file for Atomic Builder steps and constants
 // Extracted from AtomicBuilderPage.tsx for modularity
 
-import { Crown, WhiteFlag as Flag, City as Building2, StatUp as TrendingUp, CheckCircle } from "iconoir-react";
+import {
+  Crown,
+  WhiteFlag as Flag,
+  City as Building2,
+  StatUp as TrendingUp,
+  CheckCircle,
+} from "iconoir-react";
 
 export type BuilderStep = "foundation" | "core" | "government" | "economics" | "preview";
 

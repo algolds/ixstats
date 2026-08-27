@@ -71,7 +71,11 @@ export function useMapEditorSelection({
   );
 
   const applyRectSelection = useCallback(
-    (bounds: { west: number; south: number; east: number; north: number } | [[number, number], [number, number]]) => {
+    (
+      bounds:
+        | { west: number; south: number; east: number; north: number }
+        | [[number, number], [number, number]]
+    ) => {
       let minLng: number, minLat: number, maxLng: number, maxLat: number;
       if (Array.isArray(bounds)) {
         [[minLng, minLat], [maxLng, maxLat]] = bounds;

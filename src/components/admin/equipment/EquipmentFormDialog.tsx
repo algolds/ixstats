@@ -26,7 +26,13 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Settings, Page as FileText, Rocket, Dollar as DollarSign, MediaImage as Image } from "iconoir-react";
+import {
+  Settings,
+  Page as FileText,
+  Rocket,
+  Dollar as DollarSign,
+  MediaImage as Image,
+} from "iconoir-react";
 import {
   CATEGORIES,
   SUBCATEGORIES,
@@ -284,7 +290,7 @@ function SpecificationsTab({
     try {
       const parsed = JSON.parse(value);
       setFormData({ ...formData, specifications: parsed });
-    } catch  {
+    } catch {
       // Invalid JSON, don't update formData
     }
   };
@@ -325,7 +331,7 @@ function CapabilitiesTab({
     try {
       const parsed = JSON.parse(value);
       setFormData({ ...formData, capabilities: parsed });
-    } catch  {
+    } catch {
       // Invalid JSON, don't update formData
     }
   };

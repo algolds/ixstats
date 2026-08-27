@@ -63,7 +63,8 @@ export const managementLifecycleProcedures = {
       } catch (error) {
         console.error("[Countries API] Failed to update country:", error);
         throw new Error(
-          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
+          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`,
+          { cause: error }
         );
       }
     }),

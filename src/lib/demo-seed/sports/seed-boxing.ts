@@ -11,7 +11,11 @@ type Prisma = PrismaClient;
 
 const { boxingFighters: BOXING_FIGHTERS } = sportsData;
 
-export async function seedBoxingLeague(prisma: Prisma, userId: string, ixNow: number): Promise<number> {
+export async function seedBoxingLeague(
+  prisma: Prisma,
+  userId: string,
+  ixNow: number
+): Promise<number> {
   let count = 0;
   const leagueSeed = hashString("ICC Heavyweight Grand Prix");
 

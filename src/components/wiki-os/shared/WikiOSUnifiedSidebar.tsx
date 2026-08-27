@@ -5,11 +5,7 @@
 
 import { useEffect, useState, useRef, type ReactNode } from "react";
 import Link from "next/link";
-import {
-  motion,
-  AnimatePresence,
-  useMotionValue,
-} from "motion/react";
+import { motion, AnimatePresence, useMotionValue } from "motion/react";
 import {
   Search,
   MediaImage as ImageIcon,
@@ -244,7 +240,9 @@ export function WikiOSUnifiedSidebar({
             "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap transition-all duration-300 ease-in-out",
             !isRowExpanded ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100",
             isActive
-              ? (id === "margin" ? "font-bold text-[var(--wikios-text)]" : cn("font-semibold", activeColorClass.split(" ")[0]))
+              ? id === "margin"
+                ? "font-bold text-[var(--wikios-text)]"
+                : cn("font-semibold", activeColorClass.split(" ")[0])
               : "text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)]"
           )}
           style={transitionStyle}
@@ -379,8 +377,7 @@ export function WikiOSUnifiedSidebar({
             glowClass =
               "border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15 rail-glow-amber rail-animate-spin";
           } else if (item.id === "utilities") {
-            glowClass =
-              "border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20 rail-glow-di";
+            glowClass = "border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20 rail-glow-di";
           } else if (item.id === "random") {
             glowClass =
               "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15 rail-glow-di rail-animate-wiggle";
@@ -405,29 +402,35 @@ export function WikiOSUnifiedSidebar({
           href: withBasePath("/stashes"),
           icon: isArticlePage && isCurrentPageStashed ? BookmarkCheck : Bookmark,
           title: "Stashes",
-          glowClass: isArticlePage && isCurrentPageStashed
-            ? "rail-glow-rose rail-animate-pulse border-rose-500/40 bg-rose-500/15 text-rose-300 hover:bg-rose-500/25"
-            : "rail-glow-rose rail-animate-pulse border-rose-500/20 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15",
+          glowClass:
+            isArticlePage && isCurrentPageStashed
+              ? "rail-glow-rose rail-animate-pulse border-rose-500/40 bg-rose-500/15 text-rose-300 hover:bg-rose-500/25"
+              : "rail-glow-rose rail-animate-pulse border-rose-500/20 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15",
           isActive: pathname === "/stashes" || pathname.startsWith("/stashes/"),
-          badge: isArticlePage && isSignedIn ? (
-            <button
-              type="button"
-              onClick={handleToggleCurrentPageStash}
-              className={cn(
-                "p-1 rounded-md transition-all active:scale-90 cursor-pointer shadow-xs",
-                isCurrentPageStashed
-                  ? "bg-rose-500/25 text-rose-300 hover:bg-rose-500/35 border border-rose-500/40"
-                  : "bg-white/5 text-[var(--wikios-text-dim)] hover:text-rose-400 hover:bg-white/10 border border-white/10"
-              )}
-              title={isCurrentPageStashed ? "Remove current article from Stash" : "Quick save current article to Stash"}
-            >
-              {isCurrentPageStashed ? (
-                <Check className="w-3 h-3 text-rose-300" />
-              ) : (
-                <Plus className="w-3 h-3" />
-              )}
-            </button>
-          ) : undefined,
+          badge:
+            isArticlePage && isSignedIn ? (
+              <button
+                type="button"
+                onClick={handleToggleCurrentPageStash}
+                className={cn(
+                  "cursor-pointer rounded-md p-1 shadow-xs transition-all active:scale-90",
+                  isCurrentPageStashed
+                    ? "border border-rose-500/40 bg-rose-500/25 text-rose-300 hover:bg-rose-500/35"
+                    : "border border-white/10 bg-white/5 text-[var(--wikios-text-dim)] hover:bg-white/10 hover:text-rose-400"
+                )}
+                title={
+                  isCurrentPageStashed
+                    ? "Remove current article from Stash"
+                    : "Quick save current article to Stash"
+                }
+              >
+                {isCurrentPageStashed ? (
+                  <Check className="h-3 w-3 text-rose-300" />
+                ) : (
+                  <Plus className="h-3 w-3" />
+                )}
+              </button>
+            ) : undefined,
           index: rowIndex++,
         })}
 
@@ -438,20 +441,26 @@ export function WikiOSUnifiedSidebar({
           title: "Repository",
           glowClass:
             "rail-glow-purple rail-animate-wiggle border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15",
-          isActive: pathname === "/util/repository" || pathname.startsWith("/util/repository/") || pathname.startsWith("/wiki/repository/"),
+          isActive:
+            pathname === "/util/repository" ||
+            pathname.startsWith("/util/repository/") ||
+            pathname.startsWith("/wiki/repository/"),
           index: rowIndex++,
         })}
 
-        {!isArticlePage && renderRow({
-          id: "utilities",
-          href: withBasePath("/util"),
-          icon: Wrench,
-          title: "Utilities",
-          glowClass:
-            "rail-glow-di border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20",
-          isActive: pathname === "/util" || pathname.startsWith("/util") || pathname.startsWith("/wiki/utilities"),
-          index: rowIndex++,
-        })}
+        {!isArticlePage &&
+          renderRow({
+            id: "utilities",
+            href: withBasePath("/util"),
+            icon: Wrench,
+            title: "Utilities",
+            glowClass: "rail-glow-di border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20",
+            isActive:
+              pathname === "/util" ||
+              pathname.startsWith("/util") ||
+              pathname.startsWith("/wiki/utilities"),
+            index: rowIndex++,
+          })}
 
         {/* Page Tools: Dynamically shown on article page */}
         {isArticlePage && (
@@ -479,7 +488,7 @@ export function WikiOSUnifiedSidebar({
                 "rail-glow-highlighter rail-animate-wiggle border-yellow-400/50 bg-margin-accent/15 text-[var(--wikios-text)] hover:bg-margin-accent/25",
               isActive: isMarginOpen || activeId === "margin",
               badge: (
-                <kbd className="text-muted-foreground/60 rounded border border-white/5 bg-white/5 px-1 text-[8px] font-mono">
+                <kbd className="text-muted-foreground/60 rounded border border-white/5 bg-white/5 px-1 font-mono text-[8px]">
                   T
                 </kbd>
               ),
@@ -507,13 +516,13 @@ export function WikiOSUnifiedSidebar({
                       <button
                         type="button"
                         className={cn(
-                          "group relative flex items-center rounded-xl px-2.5 py-1.5 transition-all duration-200 ease-in-out cursor-pointer",
+                          "group relative flex cursor-pointer items-center rounded-xl px-2.5 py-1.5 transition-all duration-200 ease-in-out",
                           isMoreHovered
                             ? "z-50 w-max border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] pr-4 shadow-lg backdrop-blur-md"
                             : "hover:bg-foreground/5 w-full border-transparent bg-transparent"
                         )}
                       >
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)] group-hover:bg-white/10 transition-colors shadow-xs">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[var(--wikios-text-muted)] shadow-xs transition-colors group-hover:bg-white/10 group-hover:text-[var(--wikios-text)]">
                           <MoreHorizontal className="h-4.5 w-4.5" />
                         </div>
                         <span
@@ -533,54 +542,70 @@ export function WikiOSUnifiedSidebar({
                       side="right"
                       align="start"
                       sideOffset={12}
-                      className="w-56 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 p-1.5 shadow-2xl backdrop-blur-2xl text-[var(--wikios-text)] z-[100050]"
+                      className="z-[100050] w-56 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 p-1.5 text-[var(--wikios-text)] shadow-2xl backdrop-blur-2xl"
                     >
-                      <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--wikios-text-dim)] border-b border-[var(--wikios-border)] mb-1">
+                      <div className="mb-1 border-b border-[var(--wikios-border)] px-2.5 py-1 text-[10px] font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
                         Page Tools
                       </div>
                       <DropdownMenuItem
                         onClick={() => setActiveModal("history")}
-                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium cursor-pointer hover:bg-[var(--wikios-border)]/50 focus:bg-[var(--wikios-border)]/50 transition-colors"
+                        className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-medium transition-colors hover:bg-[var(--wikios-border)]/50 focus:bg-[var(--wikios-border)]/50"
                       >
-                        <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-[var(--wikios-text)]">Revision History</div>
-                          <div className="text-[10px] text-[var(--wikios-text-dim)] truncate">Past edits & revisions</div>
+                        <Clock className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-[var(--wikios-text)]">
+                            Revision History
+                          </div>
+                          <div className="truncate text-[10px] text-[var(--wikios-text-dim)]">
+                            Past edits & revisions
+                          </div>
                         </div>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => setActiveModal("backlinks")}
-                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium cursor-pointer hover:bg-[var(--wikios-border)]/50 focus:bg-[var(--wikios-border)]/50 transition-colors"
+                        className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-medium transition-colors hover:bg-[var(--wikios-border)]/50 focus:bg-[var(--wikios-border)]/50"
                       >
-                        <Link2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-[var(--wikios-text)]">What Links Here</div>
-                          <div className="text-[10px] text-[var(--wikios-text-dim)] truncate">Inbound wiki backlinks</div>
+                        <Link2 className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-[var(--wikios-text)]">
+                            What Links Here
+                          </div>
+                          <div className="truncate text-[10px] text-[var(--wikios-text-dim)]">
+                            Inbound wiki backlinks
+                          </div>
                         </div>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link
                           href={withBasePath("/util")}
-                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium cursor-pointer hover:bg-[var(--wikios-border)]/50 focus:bg-[var(--wikios-border)]/50 transition-colors"
+                          className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-medium transition-colors hover:bg-[var(--wikios-border)]/50 focus:bg-[var(--wikios-border)]/50"
                         >
-                          <Wrench className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-[var(--wikios-text)]">Utilities & Special Hub</div>
-                            <div className="text-[10px] text-[var(--wikios-text-dim)] truncate">Diagnostics, tools & special pages</div>
+                          <Wrench className="h-3.5 w-3.5 shrink-0 text-purple-400" />
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-[var(--wikios-text)]">
+                              Utilities & Special Hub
+                            </div>
+                            <div className="truncate text-[10px] text-[var(--wikios-text-dim)]">
+                              Diagnostics, tools & special pages
+                            </div>
                           </div>
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-[var(--wikios-border)] my-1" />
+                      <DropdownMenuSeparator className="my-1 bg-[var(--wikios-border)]" />
                       <DropdownMenuItem
                         onClick={() => {
                           if (typeof window !== "undefined") window.print();
                         }}
-                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium cursor-pointer hover:bg-[var(--wikios-border)]/50 focus:bg-[var(--wikios-border)]/50 transition-colors"
+                        className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-medium transition-colors hover:bg-[var(--wikios-border)]/50 focus:bg-[var(--wikios-border)]/50"
                       >
-                        <Printer className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-[var(--wikios-text)]">Print / Clean View</div>
-                          <div className="text-[10px] text-[var(--wikios-text-dim)] truncate">Export clean page</div>
+                        <Printer className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-[var(--wikios-text)]">
+                            Print / Clean View
+                          </div>
+                          <div className="truncate text-[10px] text-[var(--wikios-text-dim)]">
+                            Export clean page
+                          </div>
                         </div>
                       </DropdownMenuItem>
                     </DropdownMenuContent>

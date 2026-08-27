@@ -53,7 +53,7 @@ export function FloatingRibbonRack({
                   {/* Frameless Vertical Ribbon Fabric Bar */}
                   <div
                     className={cn(
-                      "relative flex h-5 w-4 items-center justify-center overflow-hidden rounded-xs border border-border/60 shadow-md transition-all duration-150 group-hover/ribbon:border-amber-400 group-hover/ribbon:shadow-[0_0_12px_rgba(251,191,36,0.4)]",
+                      "border-border/60 relative flex h-5 w-4 items-center justify-center overflow-hidden rounded-xs border shadow-md transition-all duration-150 group-hover/ribbon:border-amber-400 group-hover/ribbon:shadow-[0_0_12px_rgba(251,191,36,0.4)]",
                       isUnlocked ? `bg-gradient-to-b ${ribbon.stripeGradient}` : "bg-muted/80"
                     )}
                   >
@@ -81,21 +81,19 @@ export function FloatingRibbonRack({
                 side="bottom"
                 align="center"
                 sideOffset={8}
-                className="z-[100] max-w-xs rounded-xl border border-amber-500/30 bg-popover/95 p-3 text-xs text-popover-foreground shadow-2xl backdrop-blur-2xl transition-all duration-200 dark:border-amber-400/35"
+                className="bg-popover/95 text-popover-foreground z-[100] max-w-xs rounded-xl border border-amber-500/30 p-3 text-xs shadow-2xl backdrop-blur-2xl transition-all duration-200 dark:border-amber-400/35"
               >
-                <div className="mb-1.5 flex items-center gap-2 border-b border-border/60 pb-1.5">
+                <div className="border-border/60 mb-1.5 flex items-center gap-2 border-b pb-1.5">
                   <Award className="h-3.5 w-3.5 shrink-0 text-amber-500 dark:text-amber-400" />
                   <span className="text-xs font-extrabold tracking-wider text-amber-600 uppercase dark:text-amber-400">
                     {ribbon.title}
                   </span>
                 </div>
-                <p className="mb-1.5 text-[11px] leading-snug font-medium text-muted-foreground">
+                <p className="text-muted-foreground mb-1.5 text-[11px] leading-snug font-medium">
                   Conferred platform honor for excellence in {ribbon.category}.
                 </p>
-                <div className="flex items-center justify-between border-t border-border/50 pt-1 text-[10px]">
-                  <span className="font-medium text-muted-foreground">
-                    Platform Honor
-                  </span>
+                <div className="border-border/50 flex items-center justify-between border-t pt-1 text-[10px]">
+                  <span className="text-muted-foreground font-medium">Platform Honor</span>
                   <span className="rounded-xs border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 font-mono font-semibold text-amber-600 dark:bg-amber-500/15 dark:text-amber-300">
                     {ribbon.badgeLabel}
                   </span>

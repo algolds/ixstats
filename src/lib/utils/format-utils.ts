@@ -604,7 +604,7 @@ export function safeFormatCurrency(
     );
     try {
       return formatCurrency(amount, fallbackCurrency, forceDecimals);
-    } catch  {
+    } catch {
       return `${currency} ${amount.toLocaleString("en-US", {
         minimumFractionDigits: forceDecimals ? 2 : 0,
         maximumFractionDigits: forceDecimals ? 2 : 0,

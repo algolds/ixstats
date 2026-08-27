@@ -5,7 +5,6 @@
  * contextual identity resolution, and cross-system message sources.
  */
 
-
 import type { ThinkShareConversation } from "./thinkshare";
 
 // ─── Folder System ───────────────────────────────────────────────

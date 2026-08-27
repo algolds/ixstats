@@ -59,11 +59,14 @@ export function formatMWDate(
   const d = parseMWDateObject(timestamp);
   if (!d) return "";
 
-  return d.toLocaleDateString(undefined, options ?? {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return d.toLocaleDateString(
+    undefined,
+    options ?? {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }
+  );
 }
 
 /**

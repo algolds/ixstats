@@ -89,7 +89,10 @@ export async function getBotSessionAndToken(): Promise<{ cookies: string[]; csrf
         updateCookies(loginRes);
       }
     } catch (botLoginErr) {
-      console.warn("[CsrfCache] Bot login attempt encountered issue, proceeding with standard session:", botLoginErr);
+      console.warn(
+        "[CsrfCache] Bot login attempt encountered issue, proceeding with standard session:",
+        botLoginErr
+      );
     }
   }
 

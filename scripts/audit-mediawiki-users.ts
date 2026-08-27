@@ -100,8 +100,13 @@ async function main() {
   const total = users.length;
   const withEdits = users.filter((u) => u.editcount > 0);
   const zeroEdits = users.filter((u) => u.editcount === 0);
-  const sysops = users.filter((u) => u.groups?.includes("sysop") || u.groups?.includes("bureaucrat") || u.groups?.includes("admin"));
-  const botAccounts = users.filter((u) => u.groups?.includes("bot") || u.name.toLowerCase().includes("bot"));
+  const sysops = users.filter(
+    (u) =>
+      u.groups?.includes("sysop") || u.groups?.includes("bureaucrat") || u.groups?.includes("admin")
+  );
+  const botAccounts = users.filter(
+    (u) => u.groups?.includes("bot") || u.name.toLowerCase().includes("bot")
+  );
 
   const sortedByEdits = [...withEdits].sort((a, b) => b.editcount - a.editcount);
 
@@ -113,10 +118,10 @@ async function main() {
   md += `| Category | Count | Percentage |\n`;
   md += `| :--- | :--- | :--- |\n`;
   md += `| **Total Registered MediaWiki Accounts** | **${total}** | 100.0% |\n`;
-  md += `| **Active Contributors (Edit Count > 0)** | **${withEdits.length}** | ${(withEdits.length / total * 100).toFixed(1)}% |\n`;
-  md += `| **Dormant / 0-Edit Accounts** | **${zeroEdits.length}** | ${(zeroEdits.length / total * 100).toFixed(1)}% |\n`;
-  md += `| **Sysops / Bureaucrats / Admins** | **${sysops.length}** | ${(sysops.length / total * 100).toFixed(1)}% |\n`;
-  md += `| **Automated / Bot Accounts** | **${botAccounts.length}** | ${(botAccounts.length / total * 100).toFixed(1)}% |\n\n`;
+  md += `| **Active Contributors (Edit Count > 0)** | **${withEdits.length}** | ${((withEdits.length / total) * 100).toFixed(1)}% |\n`;
+  md += `| **Dormant / 0-Edit Accounts** | **${zeroEdits.length}** | ${((zeroEdits.length / total) * 100).toFixed(1)}% |\n`;
+  md += `| **Sysops / Bureaucrats / Admins** | **${sysops.length}** | ${((sysops.length / total) * 100).toFixed(1)}% |\n`;
+  md += `| **Automated / Bot Accounts** | **${botAccounts.length}** | ${((botAccounts.length / total) * 100).toFixed(1)}% |\n\n`;
 
   md += `## 2. Top Tier Historical Authors (Edit Count >= 50)\n\n`;
   md += `| User ID | Username | Edit Count | Registration | Privileged Groups |\n`;

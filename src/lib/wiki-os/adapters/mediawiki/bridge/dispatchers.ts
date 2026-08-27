@@ -258,7 +258,9 @@ export async function getCategoryMembers(
     try {
       const native = await CategoryService.getCategoryMembers(category, limit || 50);
       if (native && native.length > 0) {
-        const filtered = native.filter((m: { title: string; type: "page" | "subcat" | "file" }) => !type || m.type === type);
+        const filtered = native.filter(
+          (m: { title: string; type: "page" | "subcat" | "file" }) => !type || m.type === type
+        );
         if (filtered.length > 0) {
           return {
             members: filtered.map((m: { title: string; type: "page" | "subcat" | "file" }) => ({
@@ -443,8 +445,8 @@ export async function getImageMeta(filename: string) {
 }
 
 /**
-   * Get page action log (stub — returns [] until wikiLog is implemented).
-   */
+ * Get page action log (stub — returns [] until wikiLog is implemented).
+ */
 export async function getPageLog(title: string, limit?: number) {
   return ixwikiGetPageLog(title, limit);
 }

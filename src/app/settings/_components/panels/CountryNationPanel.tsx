@@ -133,7 +133,7 @@ export function CountryNationPanel({
           glyphClass="bg-muted/60 text-foreground"
         >
           <div className="flex items-center gap-3">
-            <div className="relative flex h-8 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border/60 bg-muted/60 shadow-2xs">
+            <div className="border-border/60 bg-muted/60 relative flex h-8 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border shadow-2xs">
               <UnifiedCountryFlag
                 countryName={country.name}
                 flagUrl={country.flagUrl}
@@ -147,7 +147,7 @@ export function CountryNationPanel({
                 setFlagUploadMode(!flagUploadMode);
               }}
               data-cuelume-press="soft"
-              className="facet-interactive rounded-xl border border-border/60 bg-secondary/80 px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-secondary active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
             >
               {flagUploadMode ? "Cancel" : "Change Flag"}
             </button>
@@ -155,24 +155,24 @@ export function CountryNationPanel({
         </SettingsRow>
 
         {flagUploadMode && (
-          <div className="border-t border-border/40 p-4 space-y-4">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="border-border/40 space-y-4 border-t p-4">
+            <div className="flex flex-col items-center gap-4 sm:flex-row">
               <label
                 htmlFor="flag-upload-input"
-                className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-border/60 rounded-xl p-4 cursor-pointer hover:border-border hover:bg-muted/20 transition-all text-center w-full"
+                className="border-border/60 hover:border-border hover:bg-muted/20 flex w-full flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition-all"
               >
                 {isUploadingFlag ? (
-                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Uploading flag image...</span>
                   </div>
                 ) : (
                   <>
-                    <Upload className="h-5 w-5 text-muted-foreground mb-1" />
-                    <span className="text-xs font-semibold text-foreground">
+                    <Upload className="text-muted-foreground mb-1 h-5 w-5" />
+                    <span className="text-foreground text-xs font-semibold">
                       Choose a flag image to upload
                     </span>
-                    <span className="text-[10px] text-muted-foreground mt-0.5">
+                    <span className="text-muted-foreground mt-0.5 text-[10px]">
                       PNG, JPG, SVG or WEBP up to 5MB
                     </span>
                   </>
@@ -189,14 +189,14 @@ export function CountryNationPanel({
 
               {uploadedFlagUrl && (
                 <div className="flex flex-col items-center gap-2">
-                  <div className="relative h-16 w-24 overflow-hidden rounded-lg border border-border/60 bg-muted/60 shadow-xs">
+                  <div className="border-border/60 bg-muted/60 relative h-16 w-24 overflow-hidden rounded-lg border shadow-xs">
                     <img
                       src={uploadedFlagUrl}
                       alt="Flag Preview"
                       className="h-full w-full object-cover"
                     />
                   </div>
-                  <span className="text-[10px] font-semibold text-muted-foreground">Preview</span>
+                  <span className="text-muted-foreground text-[10px] font-semibold">Preview</span>
                 </div>
               )}
             </div>
@@ -209,7 +209,7 @@ export function CountryNationPanel({
                   setFlagUploadMode(false);
                   setUploadedFlagUrl(null);
                 }}
-                className="facet-interactive rounded-xl border border-border/60 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/70 hover:text-foreground active:scale-[0.98]"
+                className="facet-interactive border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground rounded-xl border px-3 py-1.5 text-xs font-semibold active:scale-[0.98]"
               >
                 Cancel
               </button>
@@ -217,7 +217,7 @@ export function CountryNationPanel({
                 type="button"
                 onClick={handleFlagSave}
                 disabled={!uploadedFlagUrl || updateCountryFlagMutation.isPending}
-                className="facet-interactive rounded-xl bg-foreground px-3.5 py-1.5 text-xs font-semibold text-background hover:bg-foreground/90 active:scale-[0.98] disabled:opacity-50"
+                className="facet-interactive bg-foreground text-background hover:bg-foreground/90 rounded-xl px-3.5 py-1.5 text-xs font-semibold active:scale-[0.98] disabled:opacity-50"
               >
                 {updateCountryFlagMutation.isPending ? "Saving..." : "Save Flag"}
               </button>
@@ -251,7 +251,7 @@ export function CountryNationPanel({
                 onClick={handleUpdateCountryName}
                 disabled={updateCountryNameMutation.isPending || !newCountryName.trim()}
                 data-cuelume-press="soft"
-                className="facet-interactive flex h-8 w-8 items-center justify-center rounded-xl bg-foreground text-background transition-all hover:bg-foreground/90 active:scale-[0.97] disabled:opacity-50"
+                className="facet-interactive bg-foreground text-background hover:bg-foreground/90 flex h-8 w-8 items-center justify-center rounded-xl transition-all active:scale-[0.97] disabled:opacity-50"
               >
                 <Save className="h-3.5 w-3.5" />
               </button>
@@ -262,14 +262,14 @@ export function CountryNationPanel({
                   setIsEditingCountry(false);
                 }}
                 data-cuelume-press="soft"
-                className="facet-interactive flex h-8 w-8 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground transition-all hover:bg-muted/70 hover:text-foreground active:scale-[0.97]"
+                className="facet-interactive border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-all active:scale-[0.97]"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-foreground">{country.name}</span>
+              <span className="text-foreground text-xs font-bold">{country.name}</span>
               <button
                 type="button"
                 onClick={() => {
@@ -278,7 +278,7 @@ export function CountryNationPanel({
                   setIsEditingCountry(true);
                 }}
                 data-cuelume-press="soft"
-                className="facet-interactive rounded-xl border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-semibold text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground active:scale-[0.98]"
+                className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground rounded-xl border px-2.5 py-1 text-xs font-semibold transition-all active:scale-[0.98]"
               >
                 Rename
               </button>
@@ -295,7 +295,7 @@ export function CountryNationPanel({
           <Link
             href={getCountryPath({ id: country.id, name: country.name, slug: country.slug })}
             data-cuelume-press="soft"
-            className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-muted/70 active:scale-[0.98]"
+            className="facet-interactive border-border/60 bg-muted/40 text-foreground hover:bg-muted/70 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
           >
             <span>Open Dossier</span>
             <ExternalLink className="h-3 w-3 opacity-60" />
@@ -351,11 +351,9 @@ export function CountryNationPanel({
             onClick={handleRebase}
             disabled={rebaseMutation.isPending}
             data-cuelume-press="soft"
-            className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/60 bg-secondary/80 px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-secondary active:scale-[0.98] disabled:opacity-50"
+            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98] disabled:opacity-50"
           >
-            <RefreshCw
-              className={`h-3 w-3 ${rebaseMutation.isPending ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className={`h-3 w-3 ${rebaseMutation.isPending ? "animate-spin" : ""}`} />
             <span>{rebaseMutation.isPending ? "Rebasing..." : "Rebase Stats"}</span>
           </button>
         </SettingsRow>

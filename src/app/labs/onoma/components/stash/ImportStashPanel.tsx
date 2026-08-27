@@ -64,7 +64,7 @@ export function ImportStashPanel() {
 
       {uploadStatus && (
         <div className="border-border/20 bg-secondary/15 flex items-center gap-2 rounded-xl border p-3 text-xs leading-normal">
-          <Loader2 className="h-4 w-4 animate-spin text-onoma-primary" />
+          <Loader2 className="text-onoma-primary h-4 w-4 animate-spin" />
           <span>{uploadStatus}</span>
         </div>
       )}

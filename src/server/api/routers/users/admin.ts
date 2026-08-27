@@ -194,7 +194,8 @@ export const usersAdminRouter = createTRPCRouter({
     } catch (error) {
       console.error("Error setting up database:", error);
       throw new Error(
-        `Failed to setup database: ${error instanceof Error ? error.message : String(error)}`, { cause: error }
+        `Failed to setup database: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
       );
     }
   }),

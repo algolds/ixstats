@@ -23,93 +23,290 @@ const db = new PrismaClient({
 });
 
 function toArticleSlug(str: string): string {
-  return str
-    .trim()
-    .toLowerCase()
-    .replace(/^category:/i, "")
-    .replace(/https?:\/\/[^\s]+/gi, "")
-    .replace(/[^a-z0-9_\-]/g, "_")
-    .replace(/_{2,}/g, "_")
-    .replace(/^_|_$/g, "") || "category";
+  return (
+    str
+      .trim()
+      .toLowerCase()
+      .replace(/^category:/i, "")
+      .replace(/https?:\/\/[^\s]+/gi, "")
+      .replace(/[^a-z0-9_\-]/g, "_")
+      .replace(/_{2,}/g, "_")
+      .replace(/^_|_$/g, "") || "category"
+  );
 }
 
 // The 12 primary domain root categories in WikiOS
 const DOMAIN_CATEGORIES = [
-  { name: "Countries", description: "Nations, sovereign states, dependent territories, and geopolitical entities." },
-  { name: "Economy", description: "Economic systems, international trade, currencies, financial markets, and industry." },
-  { name: "Government", description: "Political systems, constitutional structures, governance, and public administration." },
-  { name: "Military", description: "Armed forces branches, military equipment, defense doctrines, and historic conflicts." },
-  { name: "People", description: "Demographics, ethnic groups, linguistics, notable figures, and social structures." },
-  { name: "Politics", description: "Elections, political movements, political parties, alliances, and diplomacy." },
-  { name: "History", description: "Historical events, timelines, ancient eras, revolutions, and world history." },
-  { name: "Geography", description: "Physical geography, continents, mountain ranges, bodies of water, and climates." },
-  { name: "Culture", description: "Art, architecture, music, folklore, cuisine, holidays, and cultural traditions." },
-  { name: "Technology", description: "Science, technological development, aerospace, transport, and research institutions." },
-  { name: "Companies", description: "Commercial enterprises, conglomerates, state-owned corporations, and market leaders." },
-  { name: "Nature", description: "Flora, fauna, nature reserves, ecosystems, and natural phenomena across the world." },
-  { name: "Miscellaneous", description: "General topics, uncategorized articles, cross-disciplinary subjects, and reference indexes." },
+  {
+    name: "Countries",
+    description: "Nations, sovereign states, dependent territories, and geopolitical entities.",
+  },
+  {
+    name: "Economy",
+    description:
+      "Economic systems, international trade, currencies, financial markets, and industry.",
+  },
+  {
+    name: "Government",
+    description:
+      "Political systems, constitutional structures, governance, and public administration.",
+  },
+  {
+    name: "Military",
+    description:
+      "Armed forces branches, military equipment, defense doctrines, and historic conflicts.",
+  },
+  {
+    name: "People",
+    description:
+      "Demographics, ethnic groups, linguistics, notable figures, and social structures.",
+  },
+  {
+    name: "Politics",
+    description: "Elections, political movements, political parties, alliances, and diplomacy.",
+  },
+  {
+    name: "History",
+    description: "Historical events, timelines, ancient eras, revolutions, and world history.",
+  },
+  {
+    name: "Geography",
+    description: "Physical geography, continents, mountain ranges, bodies of water, and climates.",
+  },
+  {
+    name: "Culture",
+    description: "Art, architecture, music, folklore, cuisine, holidays, and cultural traditions.",
+  },
+  {
+    name: "Technology",
+    description:
+      "Science, technological development, aerospace, transport, and research institutions.",
+  },
+  {
+    name: "Companies",
+    description:
+      "Commercial enterprises, conglomerates, state-owned corporations, and market leaders.",
+  },
+  {
+    name: "Nature",
+    description:
+      "Flora, fauna, nature reserves, ecosystems, and natural phenomena across the world.",
+  },
+  {
+    name: "Miscellaneous",
+    description:
+      "General topics, uncategorized articles, cross-disciplinary subjects, and reference indexes.",
+  },
 ];
 
 const DOMAIN_SUB_PATTERNS: Record<string, string[]> = {
   People: [
-    "people_in_", "people_of_", "peoples_of_", "_people", "_peoples", "people", "peoples",
-    "politicians", "monarchs", "presidents", "prime_ministers",
-    "nobility", "citizens", "rulers",
-    "scientists", "writers", "artists", "ministers", "diplomats", "philosophers",
-    "actors", "athletes", "dynasties"
+    "people_in_",
+    "people_of_",
+    "peoples_of_",
+    "_people",
+    "_peoples",
+    "people",
+    "peoples",
+    "politicians",
+    "monarchs",
+    "presidents",
+    "prime_ministers",
+    "nobility",
+    "citizens",
+    "rulers",
+    "scientists",
+    "writers",
+    "artists",
+    "ministers",
+    "diplomats",
+    "philosophers",
+    "actors",
+    "athletes",
+    "dynasties",
   ],
   Economy: [
-    "economy", "currencies", "trade", "banks", "industry",
-    "agriculture", "infrastructure", "finance", "business",
-    "commerce", "taxation", "markets", "railways", "ports", "energy"
+    "economy",
+    "currencies",
+    "trade",
+    "banks",
+    "industry",
+    "agriculture",
+    "infrastructure",
+    "finance",
+    "business",
+    "commerce",
+    "taxation",
+    "markets",
+    "railways",
+    "ports",
+    "energy",
   ],
   Government: [
-    "government", "ministries", "law", "parliament",
-    "judiciary", "constitution", "agencies", "foreign_relations", "treaties",
-    "diplomacy", "legislation", "cabinets", "departments", "councils"
+    "government",
+    "ministries",
+    "law",
+    "parliament",
+    "judiciary",
+    "constitution",
+    "agencies",
+    "foreign_relations",
+    "treaties",
+    "diplomacy",
+    "legislation",
+    "cabinets",
+    "departments",
+    "councils",
   ],
   Military: [
-    "military", "armed_forces", "wars", "battles", "equipment", "navy",
-    "army", "air_force", "weapons", "fortifications", "vehicles", "defense",
-    "regiments", "conflicts", "submarines", "warships", "aircraft", "flotilla"
+    "military",
+    "armed_forces",
+    "wars",
+    "battles",
+    "equipment",
+    "navy",
+    "army",
+    "air_force",
+    "weapons",
+    "fortifications",
+    "vehicles",
+    "defense",
+    "regiments",
+    "conflicts",
+    "submarines",
+    "warships",
+    "aircraft",
+    "flotilla",
   ],
   Geography: [
-    "geography", "cities", "rivers", "islands", "mountains", "regions",
-    "provinces", "settlements", "lakes", "oceans", "landmarks", "capitals",
-    "bays", "straits", "hills", "forests", "valleys", "districts", "territories"
+    "geography",
+    "cities",
+    "rivers",
+    "islands",
+    "mountains",
+    "regions",
+    "provinces",
+    "settlements",
+    "lakes",
+    "oceans",
+    "landmarks",
+    "capitals",
+    "bays",
+    "straits",
+    "hills",
+    "forests",
+    "valleys",
+    "districts",
+    "territories",
   ],
   History: [
-    "history", "empires", "treaties", "ancient", "medieval", "dynasties",
-    "conflicts", "chronology", "revolutions", "events", "eras", "periods", "decades"
+    "history",
+    "empires",
+    "treaties",
+    "ancient",
+    "medieval",
+    "dynasties",
+    "conflicts",
+    "chronology",
+    "revolutions",
+    "events",
+    "eras",
+    "periods",
+    "decades",
   ],
   Culture: [
-    "culture", "music", "religion", "language", "art", "cinema",
-    "literature", "festivals", "cuisine", "sports", "folklore", "traditions",
-    "mythology", "media", "holidays", "food", "fashion"
+    "culture",
+    "music",
+    "religion",
+    "language",
+    "art",
+    "cinema",
+    "literature",
+    "festivals",
+    "cuisine",
+    "sports",
+    "folklore",
+    "traditions",
+    "mythology",
+    "media",
+    "holidays",
+    "food",
+    "fashion",
   ],
   Technology: [
-    "technology", "science", "aerospace", "computing", "inventions",
-    "energy", "telecommunications", "space", "engineering", "electronics", "reactors"
+    "technology",
+    "science",
+    "aerospace",
+    "computing",
+    "inventions",
+    "energy",
+    "telecommunications",
+    "space",
+    "engineering",
+    "electronics",
+    "reactors",
   ],
   Companies: [
-    "companies", "corporations", "enterprises", "brands", "manufacturers",
-    "airlines", "conglomerates", "retailers", "media_companies"
+    "companies",
+    "corporations",
+    "enterprises",
+    "brands",
+    "manufacturers",
+    "airlines",
+    "conglomerates",
+    "retailers",
+    "media_companies",
   ],
   Nature: [
-    "nature", "flora", "fauna", "animals", "plants", "ecosystems",
-    "wildlife", "parks", "species", "environment", "climate", "geology"
+    "nature",
+    "flora",
+    "fauna",
+    "animals",
+    "plants",
+    "ecosystems",
+    "wildlife",
+    "parks",
+    "species",
+    "environment",
+    "climate",
+    "geology",
   ],
   Countries: [
-    "countries", "nations", "states", "dependencies", "realms", "geopolitics",
-    "federations", "republics", "kingdoms", "principalities"
+    "countries",
+    "nations",
+    "states",
+    "dependencies",
+    "realms",
+    "geopolitics",
+    "federations",
+    "republics",
+    "kingdoms",
+    "principalities",
   ],
   Politics: [
-    "politics", "political_parties", "elections", "ideologies", "movements",
-    "activism", "voting", "campaigns", "alliances", "international_organizations"
+    "politics",
+    "political_parties",
+    "elections",
+    "ideologies",
+    "movements",
+    "activism",
+    "voting",
+    "campaigns",
+    "alliances",
+    "international_organizations",
   ],
   Miscellaneous: [
-    "other", "misc", "general", "lists", "indexes", "uncategorized",
-    "archives", "reference", "documents", "symbols", "concepts"
+    "other",
+    "misc",
+    "general",
+    "lists",
+    "indexes",
+    "uncategorized",
+    "archives",
+    "reference",
+    "documents",
+    "symbols",
+    "concepts",
   ],
 };
 
@@ -216,7 +413,8 @@ function isIrlOrMaintenanceCategory(name: string): boolean {
   }
 
   // 6. Real-World IRL Country / Political Entities (excluding IxWorld lore)
-  const irlRegex = /\b(?:iran|iranian|portugal|portuguese|north america|south america|united states|u\.s\.|usa|russia|russian|china|chinese|germany|german|france|french|spain|spanish|italy|italian|japan|japanese|india|indian|brazil|brazilian|mexico|mexican|turkey|turkish|egypt|egyptian|israel|israeli|saudi|syria|syrian|iraq|iraqi|korea|korean|vietnam|vietnamese|netherlands|dutch|belgium|belgian|sweden|swedish|norway|norwegian|denmark|danish|finland|finnish|poland|polish|ukraine|ukrainian|canada|canadian|australia|australian|new zealand|argentina|chile|colombia|venezuela|peru|cuba|south africa|nigeria|kenya|ghana|morocco|algeria|tunisia|ethiopia|philippines|indonesia|malaysia|thailand|singapore|pakistan|bangladesh|ireland|irish|scotland|scottish|wales|welsh|england|english|united kingdom|british|austria|austrian|switzerland|swiss|greece|greek|hungary|hungarian|romania|romanian|bulgaria|serbia|croatia|czech|slovakia|albania|iceland|estonia|latvia|lithuania|taiwan|hong kong|latter day saint)\b/i;
+  const irlRegex =
+    /\b(?:iran|iranian|portugal|portuguese|north america|south america|united states|u\.s\.|usa|russia|russian|china|chinese|germany|german|france|french|spain|spanish|italy|italian|japan|japanese|india|indian|brazil|brazilian|mexico|mexican|turkey|turkish|egypt|egyptian|israel|israeli|saudi|syria|syrian|iraq|iraqi|korea|korean|vietnam|vietnamese|netherlands|dutch|belgium|belgian|sweden|swedish|norway|norwegian|denmark|danish|finland|finnish|poland|polish|ukraine|ukrainian|canada|canadian|australia|australian|new zealand|argentina|chile|colombia|venezuela|peru|cuba|south africa|nigeria|kenya|ghana|morocco|algeria|tunisia|ethiopia|philippines|indonesia|malaysia|thailand|singapore|pakistan|bangladesh|ireland|irish|scotland|scottish|wales|welsh|england|english|united kingdom|british|austria|austrian|switzerland|swiss|greece|greek|hungary|hungarian|romania|romanian|bulgaria|serbia|croatia|czech|slovakia|albania|iceland|estonia|latvia|lithuania|taiwan|hong kong|latter day saint)\b/i;
   if (irlRegex.test(lower)) {
     return true;
   }
@@ -297,12 +495,16 @@ async function seedCategories() {
     const categoryRegex = /\[\[Category:([^\]|]+)(?:\|[^\]]*)?\]\]/gi;
 
     const categoryNames = new Set<string>();
-    const memberships: Array<{ articleId: string; categorySlug: string; categoryName: string }> = [];
+    const memberships: Array<{ articleId: string; categorySlug: string; categoryName: string }> =
+      [];
 
     for (const art of articles) {
       // If this article is itself a Category page (namespace: 14)
       if (art.namespace === 14 || art.title.startsWith("Category:")) {
-        const catName = art.title.replace(/^Category:/i, "").trim().replace(/_/g, " ");
+        const catName = art.title
+          .replace(/^Category:/i, "")
+          .trim()
+          .replace(/_/g, " ");
         if (catName && !isIrlOrMaintenanceCategory(catName)) {
           categoryNames.add(catName);
         }
@@ -327,10 +529,14 @@ async function seedCategories() {
       }
     }
 
-    console.log(`   Found ${categoryNames.size} distinct categories across ${memberships.length} citations.`);
+    console.log(
+      `   Found ${categoryNames.size} distinct categories across ${memberships.length} citations.`
+    );
 
     // 4. Batch Upsert all discovered categories into PostgreSQL `wiki_categories`
-    console.log(`\n💾 4. Upserting ${categoryNames.size} categories into PostgreSQL \`wiki_categories\`...`);
+    console.log(
+      `\n💾 4. Upserting ${categoryNames.size} categories into PostgreSQL \`wiki_categories\`...`
+    );
     let catUpserted = 0;
 
     for (const name of categoryNames) {
@@ -374,10 +580,12 @@ async function seedCategories() {
           return words.includes(p) || slug.startsWith(`${parentSlug}_`);
         });
         if (matchesPattern) {
-          await db.wikiCategory.update({
-            where: { id },
-            data: { parentId },
-          }).catch(() => {});
+          await db.wikiCategory
+            .update({
+              where: { id },
+              data: { parentId },
+            })
+            .catch(() => {});
           hierarchyLinked++;
         }
       }
@@ -394,18 +602,24 @@ async function seedCategories() {
       });
 
       for (const orphan of orphans) {
-        await db.wikiCategory.update({
-          where: { id: orphan.id },
-          data: { parentId: miscId },
-        }).catch(() => {});
+        await db.wikiCategory
+          .update({
+            where: { id: orphan.id },
+            data: { parentId: miscId },
+          })
+          .catch(() => {});
         hierarchyLinked++;
       }
     }
 
-    console.log(`   ✅ Linked ${hierarchyLinked} category hierarchy DAG nodes across all 13 domains.`);
+    console.log(
+      `   ✅ Linked ${hierarchyLinked} category hierarchy DAG nodes across all 13 domains.`
+    );
 
     // 6. Bulk Insert Memberships into PostgreSQL `wiki_category_members`
-    console.log(`\n🔗 6. Writing ${memberships.length} article memberships into \`wiki_category_members\`...`);
+    console.log(
+      `\n🔗 6. Writing ${memberships.length} article memberships into \`wiki_category_members\`...`
+    );
     const uniqueMembers = new Map<string, { categoryId: string; articleId: string }>();
     const memberedArticleIds = new Set<string>();
 
@@ -433,7 +647,9 @@ async function seedCategories() {
         }
       }
       if (unassignedCount > 0) {
-        console.log(`   📦 Linked ${unassignedCount} unassigned general articles to [Miscellaneous] domain.`);
+        console.log(
+          `   📦 Linked ${unassignedCount} unassigned general articles to [Miscellaneous] domain.`
+        );
       }
     }
 
@@ -474,7 +690,9 @@ async function seedCategories() {
       console.log(`   ✅ PASS: All ${DOMAIN_CATEGORIES.length} root domain categories exist.`);
       testsPassed++;
     } else {
-      console.error(`   ❌ FAIL: Expected ${DOMAIN_CATEGORIES.length} root domains, found ${rootCategories.length}.`);
+      console.error(
+        `   ❌ FAIL: Expected ${DOMAIN_CATEGORIES.length} root domains, found ${rootCategories.length}.`
+      );
       testsFailed++;
     }
 
@@ -487,12 +705,16 @@ async function seedCategories() {
       const childCount = root?.children.length ?? 0;
       const memberCount = root?.members.length ?? 0;
       if (childCount === 0 && memberCount === 0) {
-        console.warn(`   ⚠️ Warning: Domain [${dom.name}] has 0 direct members and 0 subcategories.`);
+        console.warn(
+          `   ⚠️ Warning: Domain [${dom.name}] has 0 direct members and 0 subcategories.`
+        );
         emptyDomains++;
       }
     }
     if (emptyDomains === 0) {
-      console.log(`   ✅ PASS: All ${DOMAIN_CATEGORIES.length} domain hubs are populated with DAG branches.`);
+      console.log(
+        `   ✅ PASS: All ${DOMAIN_CATEGORIES.length} domain hubs are populated with DAG branches.`
+      );
       testsPassed++;
     } else {
       console.warn(`   ⚠️ PARTIAL: ${emptyDomains} domain(s) have 0 direct members.`);
@@ -508,24 +730,46 @@ async function seedCategories() {
       by: ["articleId"],
     });
 
-    const coveragePct = totalMainArticles > 0 ? ((coveredArticles.length / totalMainArticles) * 100).toFixed(1) : "100";
-    console.log(`   📊 Main Articles: ${totalMainArticles.toLocaleString()} | Categorized: ${coveredArticles.length.toLocaleString()} (${coveragePct}%)`);
+    const coveragePct =
+      totalMainArticles > 0
+        ? ((coveredArticles.length / totalMainArticles) * 100).toFixed(1)
+        : "100";
+    console.log(
+      `   📊 Main Articles: ${totalMainArticles.toLocaleString()} | Categorized: ${coveredArticles.length.toLocaleString()} (${coveragePct}%)`
+    );
     if (coveredArticles.length >= totalMainArticles) {
       console.log(`   ✅ PASS: 100% of namespace 0 articles are indexed in the category graph.`);
       testsPassed++;
     } else {
-      console.warn(`   ⚠️ WARN: ${totalMainArticles - coveredArticles.length} uncategorized articles remaining.`);
+      console.warn(
+        `   ⚠️ WARN: ${totalMainArticles - coveredArticles.length} uncategorized articles remaining.`
+      );
       testsPassed++;
     }
 
     // Test 4: Semantic Domain Spot-Checks (Verify articles match domain semantics)
     console.log("   [Test 4/5] Running Domain Semantic Accuracy Spot-Checks...");
     const semanticChecks = [
-      { domain: "people", keywords: ["people", "biography", "politicians", "monarchs", "president", "minister"] },
-      { domain: "military", keywords: ["military", "army", "navy", "war", "battle", "defense", "forces"] },
-      { domain: "economy", keywords: ["economy", "trade", "bank", "currency", "industry", "company", "companies"] },
-      { domain: "geography", keywords: ["geography", "city", "cities", "river", "island", "province", "mountains"] },
-      { domain: "government", keywords: ["government", "politics", "ministry", "law", "parliament", "election"] },
+      {
+        domain: "people",
+        keywords: ["people", "biography", "politicians", "monarchs", "president", "minister"],
+      },
+      {
+        domain: "military",
+        keywords: ["military", "army", "navy", "war", "battle", "defense", "forces"],
+      },
+      {
+        domain: "economy",
+        keywords: ["economy", "trade", "bank", "currency", "industry", "company", "companies"],
+      },
+      {
+        domain: "geography",
+        keywords: ["geography", "city", "cities", "river", "island", "province", "mountains"],
+      },
+      {
+        domain: "government",
+        keywords: ["government", "politics", "ministry", "law", "parliament", "election"],
+      },
     ];
 
     let semanticPassed = 0;
@@ -556,7 +800,9 @@ async function seedCategories() {
         ].filter(Boolean);
 
         if (sampleArticles.length > 0) {
-          console.log(`      ✓ [${check.domain}]: Verified ${sampleArticles.length} sample articles (e.g. "${sampleArticles[0]}")`);
+          console.log(
+            `      ✓ [${check.domain}]: Verified ${sampleArticles.length} sample articles (e.g. "${sampleArticles[0]}")`
+          );
           semanticPassed++;
         } else {
           console.warn(`      ⚠️ [${check.domain}]: No sample articles found in subtree.`);
@@ -565,15 +811,21 @@ async function seedCategories() {
     }
 
     if (semanticPassed >= 4) {
-      console.log(`   ✅ PASS: Semantic accuracy confirmed across ${semanticPassed}/${semanticChecks.length} domain trees.`);
+      console.log(
+        `   ✅ PASS: Semantic accuracy confirmed across ${semanticPassed}/${semanticChecks.length} domain trees.`
+      );
       testsPassed++;
     } else {
-      console.error(`   ❌ FAIL: Only ${semanticPassed}/${semanticChecks.length} semantic domain checks passed.`);
+      console.error(
+        `   ❌ FAIL: Only ${semanticPassed}/${semanticChecks.length} semantic domain checks passed.`
+      );
       testsFailed++;
     }
 
     // Test 5: Wikitext Tag 1:1 Membership Verification Sampling
-    console.log("   [Test 5/5] Wikitext Tag ↔ Database 1:1 Parity Sampling (10 Random Articles)...");
+    console.log(
+      "   [Test 5/5] Wikitext Tag ↔ Database 1:1 Parity Sampling (10 Random Articles)..."
+    );
     const sampleArticlesForParity = await db.wikiArticle.findMany({
       where: {
         source: "ixwiki",
@@ -602,12 +854,16 @@ async function seedCategories() {
       }
     }
 
-    console.log(`      Wikitext Tag Parity Sample: ${parityMatches}/${sampleArticlesForParity.length} exact matches.`);
+    console.log(
+      `      Wikitext Tag Parity Sample: ${parityMatches}/${sampleArticlesForParity.length} exact matches.`
+    );
     if (parityMatches >= 8) {
       console.log(`   ✅ PASS: Wikitext [[Category:...]] tags correctly map to database members.`);
       testsPassed++;
     } else {
-      console.warn(`   ⚠️ Warning: Parity matches lower than expected (${parityMatches}/${sampleArticlesForParity.length}).`);
+      console.warn(
+        `   ⚠️ Warning: Parity matches lower than expected (${parityMatches}/${sampleArticlesForParity.length}).`
+      );
       testsPassed++;
     }
 
@@ -616,9 +872,10 @@ async function seedCategories() {
     console.log(`🎉 WikiOS Category Seeding & Validation Complete in ${elapsed}s!`);
     console.log(`   - Total Categories in PostgreSQL:  ${categoryMap.size.toLocaleString()}`);
     console.log(`   - Total Memberships in PostgreSQL: ${memberData.length.toLocaleString()}`);
-    console.log(`   - Validation Test Results:         ${testsPassed} Passed, ${testsFailed} Failed`);
+    console.log(
+      `   - Validation Test Results:         ${testsPassed} Passed, ${testsFailed} Failed`
+    );
     console.log("==================================================================");
-
   } catch (err) {
     console.error("❌ Fatal error during category seeding:", err);
   } finally {

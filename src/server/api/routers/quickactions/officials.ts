@@ -252,8 +252,12 @@ export const quickActionsOfficialsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // oxlint-disable-next-line typescript/no-unused-vars
-      const { governmentStructureId: _governmentStructureId, departmentId, responsibilities, ...safeUpdates } =
-        input.updates;
+      const {
+        governmentStructureId: _governmentStructureId,
+        departmentId,
+        responsibilities,
+        ...safeUpdates
+      } = input.updates;
 
       const official = await ctx.db.governmentOfficial.update({
         where: { id: input.officialId },

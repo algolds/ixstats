@@ -4,11 +4,7 @@
  * Output: 7-layer GeoJSON compatible with IxWorldMap renderer.
  */
 
-import type {
-  WorldGenParams,
-  GeneratedWorld,
-  ProgressCallback,
-} from "./types";
+import type { WorldGenParams, GeneratedWorld, ProgressCallback } from "./types";
 import { DEFAULT_PARAMS } from "./types";
 import { generateWorld as generateWorldV2 } from "./v2";
 
@@ -27,4 +23,3 @@ export function generateWorld(
   const v2World = generateWorldV2(params, onProgress as any);
   return v2World as unknown as GeneratedWorld;
 }
-

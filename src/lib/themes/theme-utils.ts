@@ -97,7 +97,6 @@ export function getResponsiveClasses(mobile: string, tablet?: string, desktop?: 
 import { cn } from "~/lib/utils/cn";
 export { cn };
 
-
 /**
  * Theme-aware button class generator
  */
@@ -253,4 +252,3 @@ export function getAnimationClasses(
 }
 
 export { formatNumber } from "~/lib/utils/format-utils";
-

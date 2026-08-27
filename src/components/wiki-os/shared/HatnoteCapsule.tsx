@@ -29,14 +29,14 @@ export function HatnoteCapsule({
   const getIcon = () => {
     switch (type) {
       case "redirect":
-        return <ArrowUpRight className="h-3.5 w-3.5 text-amber-400 shrink-0" />;
+        return <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-amber-400" />;
       case "main":
-        return <Pin className="h-3.5 w-3.5 text-wiki shrink-0" />;
+        return <Pin className="text-wiki h-3.5 w-3.5 shrink-0" />;
       case "see_also":
-        return <NavArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />;
+        return <NavArrowRight className="text-muted-foreground h-3.5 w-3.5 shrink-0" />;
       case "disambiguation":
       default:
-        return <InfoCircle className="h-3.5 w-3.5 text-sky-400 shrink-0" />;
+        return <InfoCircle className="h-3.5 w-3.5 shrink-0 text-sky-400" />;
     }
   };
 
@@ -50,14 +50,16 @@ export function HatnoteCapsule({
         return "See also:";
       case "disambiguation":
       default:
-        return forContext ? `This article is about ${forContext}. For other uses, see` : "Disambiguation:";
+        return forContext
+          ? `This article is about ${forContext}. For other uses, see`
+          : "Disambiguation:";
     }
   };
 
   return (
     <aside
       aria-label="Hatnote notice"
-      className="my-3 flex items-center gap-2 rounded-xl border border-border/40 bg-secondary/35 px-3.5 py-2 text-xs text-muted-foreground backdrop-blur-md transition-all duration-160 hover:border-border/60 hover:bg-secondary/50"
+      className="border-border/40 bg-secondary/35 text-muted-foreground hover:border-border/60 hover:bg-secondary/50 my-3 flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs backdrop-blur-md transition-all duration-160"
     >
       {getIcon()}
       <div className="flex flex-wrap items-center gap-1.5 leading-relaxed">
@@ -66,7 +68,7 @@ export function HatnoteCapsule({
         {targetSlug && targetTitle && (
           <Link
             href={withBasePath(`/wiki/${encodeURIComponent(targetSlug)}`)}
-            className="font-semibold text-wiki hover:underline transition-colors"
+            className="text-wiki font-semibold transition-colors hover:underline"
           >
             {targetTitle}
           </Link>

@@ -54,28 +54,28 @@ export function MilitaryEquipmentPanel() {
           <TabsList className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md sm:w-auto">
             <TabsTrigger
               value="catalog"
-              className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               <Rocket className="h-4 w-4" />
               Equipment Catalog
             </TabsTrigger>
             <TabsTrigger
               value="manufacturers"
-              className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               <Factory className="h-4 w-4" />
               Manufacturers
             </TabsTrigger>
             <TabsTrigger
               value="small-arms"
-              className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               <Target className="h-4 w-4" />
               Small Arms
             </TabsTrigger>
             <TabsTrigger
               value="analytics"
-              className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               <BarChart3 className="h-4 w-4" />
               Analytics
@@ -107,10 +107,7 @@ export function MilitaryEquipmentPanel() {
         </div>
 
         <TabsContent value="catalog" className="mt-6 focus-visible:outline-none">
-          <CatalogTab
-            {...catalog}
-            manufacturers={manufacturers.normalizedManufacturers}
-          />
+          <CatalogTab {...catalog} manufacturers={manufacturers.normalizedManufacturers} />
         </TabsContent>
 
         <TabsContent value="manufacturers" className="mt-6 focus-visible:outline-none">
@@ -148,20 +145,13 @@ export function MilitaryEquipmentPanel() {
           catalog.setIsAddDialogOpen(false);
           catalog.setEditingEquipment(null);
         }}
-        onSave={
-          catalog.editingEquipment ? catalog.handleUpdate : catalog.handleCreate
-        }
-        isPending={
-          catalog.createMutation.isPending || catalog.updateMutation.isPending
-        }
+        onSave={catalog.editingEquipment ? catalog.handleUpdate : catalog.handleCreate}
+        isPending={catalog.createMutation.isPending || catalog.updateMutation.isPending}
       />
 
       {/* Manufacturer Add/Edit Dialog */}
       <ManufacturerFormDialog
-        isOpen={
-          manufacturers.isManufacturerDialogOpen ||
-          !!manufacturers.editingManufacturerId
-        }
+        isOpen={manufacturers.isManufacturerDialogOpen || !!manufacturers.editingManufacturerId}
         onOpenChange={manufacturers.setIsManufacturerDialogOpen}
         editingManufacturerId={manufacturers.editingManufacturerId}
         manufacturerFormData={manufacturers.manufacturerFormData}

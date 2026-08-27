@@ -1,6 +1,12 @@
 "use client";
 
-import { InfoCircle as Info, Group as Users, Calendar, Shield, WarningCircle as AlertCircle } from "iconoir-react";
+import {
+  InfoCircle as Info,
+  Group as Users,
+  Calendar,
+  Shield,
+  WarningCircle as AlertCircle,
+} from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 

@@ -2,7 +2,15 @@
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Reply, EditPencil as Edit, Trash as Trash2, Check, CheckCircle as CheckCheck, Shield, Emoji as Smile } from "iconoir-react";
+import {
+  Reply,
+  EditPencil as Edit,
+  Trash as Trash2,
+  Check,
+  CheckCircle as CheckCheck,
+  Shield,
+  Emoji as Smile,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { usePretextWithSegments, useShrinkwrap } from "~/lib/pretext/use-pretext";
@@ -186,7 +194,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
   return (
     <div
       className={cn(
-        "group relative flex w-full transition-colors gap-2.5 px-3 md:px-4 py-0.5",
+        "group relative flex w-full gap-2.5 px-3 py-0.5 transition-colors md:px-4",
         isOwn ? "flex-row-reverse" : "flex-row",
         !isConsecutive && "mt-3 pt-0.5"
       )}
@@ -194,7 +202,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
       {/* Avatar column */}
       <div className={cn("w-8 shrink-0", isOwn && "hidden")}>
         {!isConsecutive ? (
-          <Avatar className="h-8 w-8 rounded-full border border-border/50 shadow-2xs">
+          <Avatar className="border-border/50 h-8 w-8 rounded-full border shadow-2xs">
             <AvatarImage src={account.profileImageUrl ?? undefined} />
             <AvatarFallback className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
               {account.country?.flag ? account.country.flag : initials}
@@ -206,16 +214,19 @@ export const MessagesBubble = React.memo(function MessagesBubble({
       </div>
 
       {/* Message content container */}
-      <div className={cn("relative flex max-w-[85%] sm:max-w-[75%] flex-col", isOwn ? "items-end" : "items-start")}>
+      <div
+        className={cn(
+          "relative flex max-w-[85%] flex-col sm:max-w-[75%]",
+          isOwn ? "items-end" : "items-start"
+        )}
+      >
         {!isConsecutive && !isOwn && (
           <div className="mb-1 ml-1 flex items-baseline gap-1.5">
-            <span className="text-[11px] font-semibold text-foreground/80">
+            <span className="text-foreground/80 text-[11px] font-semibold">
               {resolvedDisplayName}
             </span>
             {account.country?.name && (
-              <span className="text-[10px] text-muted-foreground">
-                · {account.country.name}
-              </span>
+              <span className="text-muted-foreground text-[10px]">· {account.country.name}</span>
             )}
           </div>
         )}
@@ -228,7 +239,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
                 "mb-0.5 flex items-center gap-1.5 rounded-t-xl px-2.5 py-1 text-[10px] backdrop-blur-md",
                 isOwn
                   ? "bg-emerald-700/60 text-emerald-100"
-                  : "bg-muted/60 text-muted-foreground border border-b-0 border-border/40"
+                  : "bg-muted/60 text-muted-foreground border-border/40 border border-b-0"
               )}
             >
               <Reply className="h-2.5 w-2.5 shrink-0" />
@@ -240,25 +251,25 @@ export const MessagesBubble = React.memo(function MessagesBubble({
           )}
 
           {isEditing ? (
-            <div className="w-full min-w-[280px] rounded-2xl border border-emerald-500/40 bg-card p-2.5 shadow-lg backdrop-blur-xl">
+            <div className="bg-card w-full min-w-[280px] rounded-2xl border border-emerald-500/40 p-2.5 shadow-lg backdrop-blur-xl">
               <textarea
                 ref={editInputRef}
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
                 onKeyDown={handleKeyDown}
                 rows={2}
-                className="w-full resize-none bg-transparent text-xs text-foreground outline-none leading-relaxed"
+                className="text-foreground w-full resize-none bg-transparent text-xs leading-relaxed outline-none"
               />
-              <div className="mt-2 flex items-center justify-end gap-1.5 border-t border-border/30 pt-1.5">
+              <div className="border-border/30 mt-2 flex items-center justify-end gap-1.5 border-t pt-1.5">
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="cursor-pointer rounded-lg px-2.5 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-muted-foreground hover:text-foreground cursor-pointer rounded-lg px-2.5 py-1 text-[10px] font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
-                  className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 text-[10px] font-semibold text-white shadow-xs hover:bg-emerald-700 active:scale-95 transition-all"
+                  className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 text-[10px] font-semibold text-white shadow-xs transition-all hover:bg-emerald-700 active:scale-95"
                 >
                   Save
                 </button>
@@ -268,10 +279,10 @@ export const MessagesBubble = React.memo(function MessagesBubble({
             /* Apple-Grade iMessage Bubble */
             <div
               className={cn(
-                "relative overflow-hidden break-words px-3.5 py-2 text-[13.5px] leading-[1.42] tracking-[-0.01em] transition-all",
+                "relative overflow-hidden px-3.5 py-2 text-[13.5px] leading-[1.42] tracking-[-0.01em] break-words transition-all",
                 isOwn
-                  ? "rounded-[18px] rounded-br-[4px] bg-emerald-600 text-white shadow-xs dark:bg-emerald-500 selection:bg-white/20 selection:text-white"
-                  : "rounded-[18px] rounded-bl-[4px] border border-border/50 bg-card/85 text-foreground shadow-2xs backdrop-blur-md dark:border-white/10 dark:bg-zinc-800/90 dark:text-zinc-100",
+                  ? "rounded-[18px] rounded-br-[4px] bg-emerald-600 text-white shadow-xs selection:bg-white/20 selection:text-white dark:bg-emerald-500"
+                  : "border-border/50 bg-card/85 text-foreground rounded-[18px] rounded-bl-[4px] border shadow-2xs backdrop-blur-md dark:border-white/10 dark:bg-zinc-800/90 dark:text-zinc-100",
                 message.replyTo && "rounded-t-none"
               )}
               style={{
@@ -281,7 +292,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
             >
               {message.classification && (
                 <div className="mb-1 flex items-center gap-1">
-                  <span className="flex items-center gap-1 rounded-md bg-amber-500/20 px-1.5 py-0.2 text-[8px] font-bold uppercase tracking-wider text-amber-200 border border-amber-400/30">
+                  <span className="py-0.2 flex items-center gap-1 rounded-md border border-amber-400/30 bg-amber-500/20 px-1.5 text-[8px] font-bold tracking-wider text-amber-200 uppercase">
                     <Shield className="h-2.5 w-2.5" />
                     {message.classification}
                   </span>
@@ -289,17 +300,15 @@ export const MessagesBubble = React.memo(function MessagesBubble({
               )}
 
               <div
-                className="[&>p]:mb-0 selection:bg-white/30"
+                className="selection:bg-white/30 [&>p]:mb-0"
                 dangerouslySetInnerHTML={{ __html: sanitizeUserContent(highlightedContent) }}
               />
 
               {/* Timestamp & Delivery Indicators */}
               <div
                 className={cn(
-                  "mt-1 flex items-center gap-1.5 text-[9.5px] font-medium select-none tabular-nums",
-                  isOwn
-                    ? "text-white/70 justify-end"
-                    : "text-muted-foreground/65 justify-start"
+                  "mt-1 flex items-center gap-1.5 text-[9.5px] font-medium tabular-nums select-none",
+                  isOwn ? "justify-end text-white/70" : "text-muted-foreground/65 justify-start"
                 )}
               >
                 <span>{formatTimestamp(message.createdAt ?? message.ixTimeTimestamp)}</span>
@@ -328,12 +337,12 @@ export const MessagesBubble = React.memo(function MessagesBubble({
               {Object.entries(message.reactions).map(([emoji, count]) => (
                 <button
                   key={emoji}
-                  className="flex items-center gap-1 rounded-full border border-border/60 bg-background/90 px-1.5 py-0.2 text-[10px] font-semibold text-foreground shadow-xs backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+                  className="border-border/60 bg-background/90 py-0.2 text-foreground flex items-center gap-1 rounded-full border px-1.5 text-[10px] font-semibold shadow-xs backdrop-blur-md transition-all hover:scale-105 active:scale-95"
                   onClick={() => actions.onRemoveReaction(message.id, emoji)}
                   title="Remove reaction"
                 >
                   <span>{emoji}</span>
-                  <span className="text-[9px] text-muted-foreground">{count as number}</span>
+                  <span className="text-muted-foreground text-[9px]">{count as number}</span>
                 </button>
               ))}
             </div>
@@ -343,14 +352,14 @@ export const MessagesBubble = React.memo(function MessagesBubble({
           {!isEditing && (
             <div
               className={cn(
-                "absolute -top-3.5 z-20 hidden items-center gap-0.5 rounded-full border border-border/50 bg-background/90 px-1 py-0.5 shadow-md backdrop-blur-xl group-hover/bubble:flex transition-all duration-150 animate-in fade-in zoom-in-95",
+                "border-border/50 bg-background/90 animate-in fade-in zoom-in-95 absolute -top-3.5 z-20 hidden items-center gap-0.5 rounded-full border px-1 py-0.5 shadow-md backdrop-blur-xl transition-all duration-150 group-hover/bubble:flex",
                 isOwn ? "right-1" : "left-1"
               )}
             >
               {/* React Trigger */}
               <div className="relative">
                 <button
-                  className="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors active:scale-90"
+                  className="text-muted-foreground hover:bg-muted/80 hover:text-foreground flex h-6 w-6 items-center justify-center rounded-full transition-colors active:scale-90"
                   title="React"
                   onClick={() => {
                     soundEffects.press();
@@ -364,7 +373,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
                 {showReactions && (
                   <div
                     className={cn(
-                      "absolute bottom-full z-30 mb-1.5 flex items-center gap-1 rounded-full border border-border/60 bg-background/95 p-1 shadow-xl backdrop-blur-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-90",
+                      "border-border/60 bg-background/95 animate-in fade-in zoom-in-90 absolute bottom-full z-30 mb-1.5 flex items-center gap-1 rounded-full border p-1 shadow-xl ring-1 ring-black/5 backdrop-blur-2xl",
                       isOwn ? "right-0" : "left-0"
                     )}
                   >
@@ -387,7 +396,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
 
               {/* Reply */}
               <button
-                className="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors active:scale-90"
+                className="text-muted-foreground hover:bg-muted/80 hover:text-foreground flex h-6 w-6 items-center justify-center rounded-full transition-colors active:scale-90"
                 title="Reply"
                 onClick={() => {
                   soundEffects.press();
@@ -401,7 +410,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
               {isOwn && (
                 <>
                   <button
-                    className="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors active:scale-90"
+                    className="text-muted-foreground hover:bg-muted/80 hover:text-foreground flex h-6 w-6 items-center justify-center rounded-full transition-colors active:scale-90"
                     title="Edit"
                     onClick={() => {
                       soundEffects.press();
@@ -413,7 +422,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
 
                   <div className="relative">
                     <button
-                      className="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/15 hover:text-destructive transition-colors active:scale-90"
+                      className="text-muted-foreground hover:bg-destructive/15 hover:text-destructive flex h-6 w-6 items-center justify-center rounded-full transition-colors active:scale-90"
                       title="Delete"
                       onClick={() => {
                         soundEffects.press();
@@ -426,15 +435,17 @@ export const MessagesBubble = React.memo(function MessagesBubble({
                     {showDeleteConfirm && (
                       <div
                         className={cn(
-                          "absolute bottom-full z-30 mb-1.5 flex flex-col gap-1.5 rounded-xl border border-border bg-popover p-2 text-xs shadow-xl backdrop-blur-md",
+                          "border-border bg-popover absolute bottom-full z-30 mb-1.5 flex flex-col gap-1.5 rounded-xl border p-2 text-xs shadow-xl backdrop-blur-md",
                           isOwn ? "right-0" : "left-0"
                         )}
                       >
-                        <span className="text-[11px] font-semibold text-foreground">Delete message?</span>
+                        <span className="text-foreground text-[11px] font-semibold">
+                          Delete message?
+                        </span>
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => setShowDeleteConfirm(false)}
-                            className="rounded-md px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted"
+                            className="text-muted-foreground hover:bg-muted rounded-md px-2 py-0.5 text-[10px] font-medium"
                           >
                             Cancel
                           </button>
@@ -443,7 +454,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
                               setShowDeleteConfirm(false);
                               actions.onDeleteMessage(message.id);
                             }}
-                            className="rounded-md bg-destructive px-2 py-0.5 text-[10px] font-semibold text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md px-2 py-0.5 text-[10px] font-semibold"
                           >
                             Delete
                           </button>

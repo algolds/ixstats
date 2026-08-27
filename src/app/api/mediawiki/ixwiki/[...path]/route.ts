@@ -63,14 +63,16 @@ export async function GET(
 
     // 1. Check & Auto-register in PostgreSQL `wiki_assets` if new
     if (isImageFile && cleanFilename) {
-      void MediaAssetService.findAsset(cleanFilename).then(async (existing) => {
-        if (!existing) {
-          await MediaAssetService.registerAsset({
-            filename: cleanFilename,
-            originBaseUrl: baseUrl,
-          }).catch(() => null);
-        }
-      }).catch(() => null);
+      void MediaAssetService.findAsset(cleanFilename)
+        .then(async (existing) => {
+          if (!existing) {
+            await MediaAssetService.registerAsset({
+              filename: cleanFilename,
+              originBaseUrl: baseUrl,
+            }).catch(() => null);
+          }
+        })
+        .catch(() => null);
     }
 
     // 2. Fetch from origin media source
@@ -97,7 +99,7 @@ export async function GET(
           method: "GET",
           headers: {
             "User-Agent": "IxStats/1.4 (https://ixwiki.com; info@ixwiki.com)",
-            "Accept": "image/*,*/*",
+            Accept: "image/*,*/*",
           },
           redirect: "follow",
           signal: AbortSignal.timeout(10000),
@@ -115,7 +117,7 @@ export async function GET(
           const commonsRes = await fetch(commonsUrl, {
             headers: {
               "User-Agent": "IxStats/1.4 (https://ixwiki.com; info@ixwiki.com)",
-              "Accept": "image/*,*/*",
+              Accept: "image/*,*/*",
             },
             signal: AbortSignal.timeout(10000),
           }).catch(() => null);

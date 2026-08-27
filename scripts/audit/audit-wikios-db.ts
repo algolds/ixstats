@@ -11,7 +11,10 @@
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 import { cleanExcerpt } from "../../src/lib/wiki-os/transformers/excerpt";
-import type { WikiArticleCardData, WikiCategoryPortalData } from "../../src/lib/wiki-os/types/canonical";
+import type {
+  WikiArticleCardData,
+  WikiCategoryPortalData,
+} from "../../src/lib/wiki-os/types/canonical";
 
 dotenv.config({ path: ".env.local.dev" });
 dotenv.config({ path: ".env.local" });
@@ -26,10 +29,19 @@ const prisma = new PrismaClient({
 });
 
 const EXPECTED_DOMAINS = [
-  "Countries", "Economy", "Government", "Military",
-  "People", "Politics", "History", "Geography",
-  "Culture", "Technology", "Companies", "Nature",
-  "Miscellaneous"
+  "Countries",
+  "Economy",
+  "Government",
+  "Military",
+  "People",
+  "Politics",
+  "History",
+  "Geography",
+  "Culture",
+  "Technology",
+  "Companies",
+  "Nature",
+  "Miscellaneous",
 ];
 
 async function main() {
@@ -47,10 +59,14 @@ async function main() {
   console.log(`   Total Wiki Articles: ${articleCount.toLocaleString()}`);
 
   if (articleCount < 100) {
-    console.error(`   ❌ FATAL: wiki_articles count is critically low (${articleCount} < 100). Database requires sync!`);
+    console.error(
+      `   ❌ FATAL: wiki_articles count is critically low (${articleCount} < 100). Database requires sync!`
+    );
     errors++;
   } else if (articleCount < 4000) {
-    console.warn(`   ⚠️ WARNING: wiki_articles count is below canonical threshold (${articleCount} < 4,000).`);
+    console.warn(
+      `   ⚠️ WARNING: wiki_articles count is below canonical threshold (${articleCount} < 4,000).`
+    );
     warnings++;
   } else {
     console.log(`   ✅ Article count meets production threshold (>= 4,000).`);
@@ -63,11 +79,18 @@ async function main() {
   });
   console.log("   Namespace Breakdown:");
   for (const ns of nsDistribution) {
-    const label = ns.namespace === 0 ? "Main (Articles)" :
-                  ns.namespace === 14 ? "Categories" :
-                  ns.namespace === 10 ? "Templates" :
-                  ns.namespace === 2 ? "User Pages" :
-                  ns.namespace === 4 ? "Project Pages" : `Namespace ${ns.namespace}`;
+    const label =
+      ns.namespace === 0
+        ? "Main (Articles)"
+        : ns.namespace === 14
+          ? "Categories"
+          : ns.namespace === 10
+            ? "Templates"
+            : ns.namespace === 2
+              ? "User Pages"
+              : ns.namespace === 4
+                ? "Project Pages"
+                : `Namespace ${ns.namespace}`;
     console.log(`     - ${label.padEnd(20)}: ${ns._count.id.toLocaleString()}`);
   }
 
@@ -91,14 +114,18 @@ async function main() {
   console.log(`   Total Memberships: ${memberCount.toLocaleString()}`);
 
   if (categoryCount < 500) {
-    console.warn(`   ⚠️ WARNING: Total categories count (${categoryCount}) is below expected (~750).`);
+    console.warn(
+      `   ⚠️ WARNING: Total categories count (${categoryCount}) is below expected (~750).`
+    );
     warnings++;
   } else {
     console.log(`   ✅ Category taxonomy is populated.`);
   }
 
   if (memberCount < 3000) {
-    console.warn(`   ⚠️ WARNING: Total category memberships (${memberCount}) is below expected (~5,000).`);
+    console.warn(
+      `   ⚠️ WARNING: Total category memberships (${memberCount}) is below expected (~5,000).`
+    );
     warnings++;
   } else {
     console.log(`   ✅ Category membership graph is connected.`);
@@ -119,7 +146,9 @@ async function main() {
       console.error(`   ❌ Missing domain category: "${domain}"`);
       errors++;
     } else {
-      console.log(`   ✅ Domain [${domain.padEnd(12)}]: ${cat._count.members.toString().padStart(4)} direct members, ${cat._count.children.toString().padStart(3)} subcategories`);
+      console.log(
+        `   ✅ Domain [${domain.padEnd(12)}]: ${cat._count.members.toString().padStart(4)} direct members, ${cat._count.children.toString().padStart(3)} subcategories`
+      );
     }
   }
 
@@ -137,7 +166,9 @@ async function main() {
   if (topAuthors.length > 0) {
     console.log("   Top Active Editors:");
     for (const a of topAuthors) {
-      console.log(`     - ${a.username.padEnd(20)}: Score: ${a.totalScore.toLocaleString()}, Bytes: ${a.totalBytes.toLocaleString()}`);
+      console.log(
+        `     - ${a.username.padEnd(20)}: Score: ${a.totalScore.toLocaleString()}, Bytes: ${a.totalBytes.toLocaleString()}`
+      );
     }
   }
 
@@ -187,7 +218,9 @@ async function main() {
   if (errors === 0) {
     console.log(`🎉 WikiOS Database Audit PASSED with ${warnings} warnings.`);
   } else {
-    console.error(`❌ WikiOS Database Audit FAILED with ${errors} critical errors and ${warnings} warnings.`);
+    console.error(
+      `❌ WikiOS Database Audit FAILED with ${errors} critical errors and ${warnings} warnings.`
+    );
   }
   console.log("==================================================================");
 

@@ -8,7 +8,10 @@
  */
 
 import { db as prisma } from "../../src/server/db";
-import { getIxWikiPool, closeWikiBridge } from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
+import {
+  getIxWikiPool,
+  closeWikiBridge,
+} from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
 import { toArticleSlug } from "../../src/lib/wiki-os/core/domain-types";
 import type mysql from "mysql2/promise";
 
@@ -62,16 +65,28 @@ async function main() {
         categoryMap.set(slug, cat.id);
         catCreated++;
       } catch (err: any) {
-        console.warn(`   ⚠️ Could not upsert category "${rawTitle}":`, err.message?.substring(0, 80));
+        console.warn(
+          `   ⚠️ Could not upsert category "${rawTitle}":`,
+          err.message?.substring(0, 80)
+        );
       }
     }
     console.log(`   ✅ Upserted ${catCreated} categories into PostgreSQL.`);
 
     // 3. Ensure the 12 primary domain categories exist
     const DOMAIN_CATEGORIES = [
-      "Countries", "Economy", "Government", "Military", "People",
-      "Politics", "History", "Geography", "Culture", "Technology",
-      "Companies", "Nature"
+      "Countries",
+      "Economy",
+      "Government",
+      "Military",
+      "People",
+      "Politics",
+      "History",
+      "Geography",
+      "Culture",
+      "Technology",
+      "Companies",
+      "Nature",
     ];
 
     for (const dom of DOMAIN_CATEGORIES) {
@@ -121,19 +136,29 @@ async function main() {
     `);
     console.log(`   Found ${links.length} category links in MariaDB.`);
 
-    const memberRecords: Array<{ categoryId: string; articleId: string; sortKey: string | null }> = [];
-    const subcategoryHierarchy: Array<{ childSlug: string; parentSlug: string; childName: string; parentName: string }> = [];
+    const memberRecords: Array<{ categoryId: string; articleId: string; sortKey: string | null }> =
+      [];
+    const subcategoryHierarchy: Array<{
+      childSlug: string;
+      parentSlug: string;
+      childName: string;
+      parentName: string;
+    }> = [];
 
     let matchedLinks = 0;
 
     for (const link of links) {
       const fromPageId = Number(link.cl_from);
-      const toCatTitle = sanitizeUtf8(String(link.cl_to || "")).replace(/_/g, " ").trim();
+      const toCatTitle = sanitizeUtf8(String(link.cl_to || ""))
+        .replace(/_/g, " ")
+        .trim();
       if (!toCatTitle) continue;
       const toCatSlug = toArticleSlug(toCatTitle);
       const clType = String(link.cl_type || "");
       const ns = Number(link.page_namespace ?? 0);
-      const fromTitle = sanitizeUtf8(String(link.from_title || "")).replace(/_/g, " ").trim();
+      const fromTitle = sanitizeUtf8(String(link.from_title || ""))
+        .replace(/_/g, " ")
+        .trim();
       const sortKey = link.cl_sortkey ? sanitizeUtf8(String(link.cl_sortkey)) : null;
 
       // Ensure target category exists in map
@@ -168,7 +193,9 @@ async function main() {
         // Article member: find article in PostgreSQL by pageId, slug, or title
         let articleId = pageIdToArticleId.get(fromPageId);
         if (!articleId && fromTitle) {
-          articleId = titleToArticleId.get(fromTitle.toLowerCase()) || titleToArticleId.get(toArticleSlug(fromTitle));
+          articleId =
+            titleToArticleId.get(fromTitle.toLowerCase()) ||
+            titleToArticleId.get(toArticleSlug(fromTitle));
         }
 
         if (articleId && categoryId) {
@@ -226,7 +253,10 @@ async function main() {
 
     // 7. Deduplicate and bulk-insert into PostgreSQL `wiki_category_members`
     console.log(`\n💾 6. Writing ${memberRecords.length} category memberships to PostgreSQL...`);
-    const uniqueMembers = new Map<string, { categoryId: string; articleId: string; sortKey: string | null }>();
+    const uniqueMembers = new Map<
+      string,
+      { categoryId: string; articleId: string; sortKey: string | null }
+    >();
     for (const m of memberRecords) {
       const key = `${m.categoryId}:${m.articleId}`;
       if (!uniqueMembers.has(key)) {
@@ -251,7 +281,9 @@ async function main() {
     }
 
     // 8. Establish Subcategory Parent-Child Hierarchy in PostgreSQL
-    console.log(`\n🌳 7. Linking ${subcategoryHierarchy.length} subcategory parent-child relationships...`);
+    console.log(
+      `\n🌳 7. Linking ${subcategoryHierarchy.length} subcategory parent-child relationships...`
+    );
     let subcatsLinked = 0;
     for (const sub of subcategoryHierarchy) {
       try {
@@ -291,7 +323,6 @@ async function main() {
     console.log(`   - Categories Created/Updated: ${catCreated}`);
     console.log(`   - Memberships Established:   ${deduplicated.length}`);
     console.log("==================================================================");
-
   } catch (err) {
     console.error("❌ Fatal error in category sync:", err);
   } finally {

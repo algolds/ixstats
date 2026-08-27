@@ -4,7 +4,12 @@
 // Interactive audio sandbox, IPA synthesis testbed, G2P phoneme suggester
 
 import React, { useState, useEffect } from "react";
-import { SoundHigh as Volume2, WarningTriangle as AlertTriangle, SystemRestart as Loader2, Refresh as RefreshCw } from "iconoir-react";
+import {
+  SoundHigh as Volume2,
+  WarningTriangle as AlertTriangle,
+  SystemRestart as Loader2,
+  Refresh as RefreshCw,
+} from "iconoir-react";
 import {
   Select,
   SelectContent,
@@ -117,7 +122,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
               <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
                 <SelectItem
                   value="default"
-                  className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                  className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
                 >
                   Default voice
                 </SelectItem>
@@ -125,7 +130,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
                   <SelectItem
                     key={id}
                     value={id}
-                    className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
+                    className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
                   >
                     {voiceLabel(id)}
                   </SelectItem>
@@ -140,21 +145,20 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
             <label className="text-muted-foreground text-[10px] font-bold uppercase">
               IPA Sound Transcribe
             </label>
-            {speechConfig?.kokoro?.enabled &&
-              speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
-                <button
-                  type="button"
-                  onClick={handleSuggestSandboxIpa}
-                  disabled={suggestMutation.isPending}
-                  className="flex cursor-pointer items-center gap-1 text-[9px] font-bold text-onoma-primary select-none hover:underline disabled:opacity-50"
-                >
-                  {suggestMutation.isPending ? (
-                    <Loader2 className="h-2 w-2 animate-spin" />
-                  ) : (
-                    "Suggest IPA"
-                  )}
-                </button>
-              )}
+            {speechConfig?.kokoro?.enabled && speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
+              <button
+                type="button"
+                onClick={handleSuggestSandboxIpa}
+                disabled={suggestMutation.isPending}
+                className="text-onoma-primary flex cursor-pointer items-center gap-1 text-[9px] font-bold select-none hover:underline disabled:opacity-50"
+              >
+                {suggestMutation.isPending ? (
+                  <Loader2 className="h-2 w-2 animate-spin" />
+                ) : (
+                  "Suggest IPA"
+                )}
+              </button>
+            )}
           </div>
           <input
             type="text"
@@ -183,7 +187,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
         <button
           onClick={handlePlaySandbox}
           disabled={isPlayingSandbox || !sandboxText}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-onoma-primary px-3 py-1.5 text-xs font-bold text-white transition-colors select-none hover:bg-onoma-primary-light disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          className="bg-onoma-primary hover:bg-onoma-primary-light flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-white transition-colors select-none disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPlayingSandbox ? (
             <RefreshCw className="h-3.5 w-3.5 animate-spin" />

@@ -6,10 +6,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
-import {
-  resolveRace,
-  simpleHash,
-} from "~/lib/sports";
+import { resolveRace, simpleHash } from "~/lib/sports";
 
 export const raceSimulationRouter = createTRPCRouter({
   simulateRace: protectedProcedure

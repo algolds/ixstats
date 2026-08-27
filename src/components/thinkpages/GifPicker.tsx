@@ -139,7 +139,7 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
               placeholder="Search GIPHY..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-input bg-secondary text-foreground h-8 pl-8 text-xs focus:bg-secondary/80"
+              className="border-input bg-secondary text-foreground focus:bg-secondary/80 h-8 pl-8 text-xs"
             />
           </div>
 
@@ -161,7 +161,7 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
                     key={gif.id}
                     onClick={() => handleSelectGif(gif)}
                     title={gif.title}
-                    className="border-border/40 hover:border-emerald-500/50 group relative aspect-video overflow-hidden rounded-lg border transition-all hover:scale-[1.02]"
+                    className="border-border/40 group relative aspect-video overflow-hidden rounded-lg border transition-all hover:scale-[1.02] hover:border-emerald-500/50"
                   >
                     <img
                       src={gif.images.fixed_height.url}

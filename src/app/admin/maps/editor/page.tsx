@@ -12,7 +12,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 const MapEditorOverlay = dynamicImport(() => import("~/components/maps/editor/MapEditorOverlay"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-screen w-screen items-center justify-center bg-map-ocean">
+    <div className="bg-map-ocean flex h-screen w-screen items-center justify-center">
       <div className="text-center">
         <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-emerald-500" />
         <p className="text-sm font-medium text-white/60">Loading World Editor...</p>

@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, SunLight as Sun, HalfMoon as Moon, ModernTv as Monitor, User, Dashboard as LayoutDashboard, Magnet } from "iconoir-react";
+import {
+  Settings,
+  SunLight as Sun,
+  HalfMoon as Moon,
+  ModernTv as Monitor,
+  User,
+  Dashboard as LayoutDashboard,
+  Magnet,
+} from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import type { ProjectionMode } from "~/lib/maps/map-config";
 import type { Theme } from "~/context/theme-context";

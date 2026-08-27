@@ -37,7 +37,18 @@ import {
   type SportPresetKey,
   type ArchetypeType,
 } from "~/lib/sports";
-import { Trophy, Group as Users, Calendar, Tournament as Swords, Play, Undo as RotateCcw, ControlSlider as Sliders, Database, Suitcase as Briefcase, StatUp as TrendingUp } from "iconoir-react";
+import {
+  Trophy,
+  Group as Users,
+  Calendar,
+  Tournament as Swords,
+  Play,
+  Undo as RotateCcw,
+  ControlSlider as Sliders,
+  Database,
+  Suitcase as Briefcase,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 interface SportsLabsInspectorProps {

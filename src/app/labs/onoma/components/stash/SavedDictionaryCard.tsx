@@ -4,7 +4,21 @@
 // Onoma Custom Studio Workshop — Saved Dictionary Card Component
 
 import { useState, useEffect, useRef } from "react";
-import { Globe, Lock, NavArrowUp as ChevronUp, NavArrowDown as ChevronDown, Wrench, FolderPlus, EditPencil as Pencil, Download, Trash as Trash2, SystemRestart as Loader2, SoundHigh as AudioLines, GitFork, Sparks as Sparkles } from "iconoir-react";
+import {
+  Globe,
+  Lock,
+  NavArrowUp as ChevronUp,
+  NavArrowDown as ChevronDown,
+  Wrench,
+  FolderPlus,
+  EditPencil as Pencil,
+  Download,
+  Trash as Trash2,
+  SystemRestart as Loader2,
+  SoundHigh as AudioLines,
+  GitFork,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
@@ -103,9 +117,7 @@ export function SavedDictionaryCard({
   const previewWords = dict.values.slice(0, 12).join(", ");
 
   return (
-    <FacetCard
-      className="border-border/40 bg-card/40 rounded-xl p-3.5 shadow-sm transition-all"
-    >
+    <FacetCard className="border-border/40 bg-card/40 rounded-xl p-3.5 shadow-sm transition-all">
       <div className="space-y-2.5">
         {/* Header & Meta Row */}
         <div className="flex items-start justify-between gap-2">
@@ -137,7 +149,7 @@ export function SavedDictionaryCard({
               )}
             </span>
             {dict.role && (
-              <span className="rounded bg-onoma-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-onoma-primary capitalize">
+              <span className="bg-onoma-primary/10 text-onoma-primary rounded px-1.5 py-0.5 text-[9px] font-bold capitalize">
                 {dict.role}
                 {dict.gender && dict.gender !== "any" ? ` · ${dict.gender}` : ""}
               </span>
@@ -150,7 +162,7 @@ export function SavedDictionaryCard({
             {dict.clonedFromId && (
               <>
                 <span>•</span>
-                <span className="font-semibold text-onoma-primary/80">Cloned</span>
+                <span className="text-onoma-primary/80 font-semibold">Cloned</span>
               </>
             )}
             {dict.stashName && (
@@ -177,7 +189,7 @@ export function SavedDictionaryCard({
             {/* Expand Button */}
             <button
               onClick={onToggleExpand}
-              className="bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-[11px] active:scale-[0.97] transition-all"
+              className="bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-[11px] transition-all active:scale-[0.97]"
               title={isExpanded ? "Hide word list" : "Show word list"}
             >
               {isExpanded ? (
@@ -192,7 +204,7 @@ export function SavedDictionaryCard({
             {onLoadToStudio && (
               <button
                 onClick={() => onLoadToStudio(dict.values, dict.title)}
-                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-onoma-primary/10 px-2 text-[11px] font-semibold text-onoma-primary hover:bg-onoma-primary/20 active:scale-[0.97] transition-all"
+                className="bg-onoma-primary/10 text-onoma-primary hover:bg-onoma-primary/20 flex h-7 cursor-pointer items-center gap-1.5 rounded px-2 text-[11px] font-semibold transition-all active:scale-[0.97]"
                 title="Load into Studio Workshop"
               >
                 <Wrench className="h-3 w-3" />
@@ -204,7 +216,7 @@ export function SavedDictionaryCard({
             {onNavigateExplore && (
               <button
                 onClick={() => onNavigateExplore("phonology", dict.values, dict.title)}
-                className="bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-500/20 flex h-7 cursor-pointer items-center gap-1.5 rounded px-2 text-[11px] font-semibold active:scale-[0.97] transition-all"
+                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-violet-500/10 px-2 text-[11px] font-semibold text-violet-600 transition-all hover:bg-violet-500/20 active:scale-[0.97] dark:text-violet-400"
                 title="Inspect IPA acoustics & compare profile"
               >
                 <AudioLines className="h-3 w-3" />
@@ -215,7 +227,7 @@ export function SavedDictionaryCard({
             {onNavigateStudio && (
               <button
                 onClick={() => onNavigateStudio("shifts", dict.values, dict.title)}
-                className="bg-pink-500/10 text-pink-600 dark:text-pink-400 hover:bg-pink-500/20 flex h-7 cursor-pointer items-center gap-1.5 rounded px-2 text-[11px] font-semibold active:scale-[0.97] transition-all"
+                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-pink-500/10 px-2 text-[11px] font-semibold text-pink-600 transition-all hover:bg-pink-500/20 active:scale-[0.97] dark:text-pink-400"
                 title="Evolve words in Historical Sound Shifts"
               >
                 <GitFork className="h-3 w-3" />
@@ -226,7 +238,7 @@ export function SavedDictionaryCard({
             {onNavigateExplore && (
               <button
                 onClick={() => onNavigateExplore("writing", dict.values, dict.title)}
-                className="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/20 flex h-7 cursor-pointer items-center gap-1.5 rounded px-2 text-[11px] font-semibold active:scale-[0.97] transition-all"
+                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-cyan-500/10 px-2 text-[11px] font-semibold text-cyan-600 transition-all hover:bg-cyan-500/20 active:scale-[0.97] dark:text-cyan-400"
                 title="Typeset words in Writing Systems"
               >
                 <Sparkles className="h-3 w-3" />
@@ -310,7 +322,7 @@ export function SavedDictionaryCard({
             {/* Edit (rename / re-tag) */}
             <button
               onClick={() => onEdit(dict)}
-              className="bg-secondary/30 text-muted-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded transition-colors hover:bg-onoma-primary/10 hover:text-onoma-primary"
+              className="bg-secondary/30 text-muted-foreground hover:bg-onoma-primary/10 hover:text-onoma-primary flex h-7 w-7 cursor-pointer items-center justify-center rounded transition-colors"
               title="Edit dictionary (rename, role, set)"
             >
               <Pencil className="h-3.5 w-3.5" />

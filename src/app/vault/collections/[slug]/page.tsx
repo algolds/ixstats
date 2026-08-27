@@ -11,7 +11,14 @@ import Link from "next/link";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
-import { ArrowLeft, Plus, Filter, ViewGrid as Grid3x3, Sparks as Sparkles, ChatBubble as MessageCircle } from "iconoir-react";
+import {
+  ArrowLeft,
+  Plus,
+  Filter,
+  ViewGrid as Grid3x3,
+  Sparks as Sparkles,
+  ChatBubble as MessageCircle,
+} from "iconoir-react";
 import { useCollections } from "~/hooks/vault/useCollections";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";

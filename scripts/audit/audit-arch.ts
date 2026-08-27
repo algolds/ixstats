@@ -456,7 +456,11 @@ export function analyzeRouterImports(options?: {
           } else {
             // Non-literal dynamic import
             const argText = arg.getText();
-            if (argText.includes("routers") || argText.startsWith("./") || argText.startsWith("../")) {
+            if (
+              argText.includes("routers") ||
+              argText.startsWith("./") ||
+              argText.startsWith("../")
+            ) {
               violations.push({
                 importer: fileRel,
                 specifier: argText,
@@ -540,12 +544,15 @@ export function checkClientServerEntrypoints(rootDir: string = DEFAULT_ROOT): st
   for (const domain of domains) {
     const indexPath = path.join(srcDir, "lib", domain, "index.ts");
     if (fs.existsSync(indexPath)) {
-      errors.push(`Barrel index file exists: src/lib/${domain}/index.ts. Barrel roots are prohibited; use direct leaves or /client or /server.`);
+      errors.push(
+        `Barrel index file exists: src/lib/${domain}/index.ts. Barrel roots are prohibited; use direct leaves or /client or /server.`
+      );
     }
   }
 
   const files = walk("src", rootDir);
-  const barrelRegex = /from\s+["'](?:~\/lib\/(system|vault|cards|wiki)|@\/lib\/(system|vault|cards|wiki))["']/;
+  const barrelRegex =
+    /from\s+["'](?:~\/lib\/(system|vault|cards|wiki)|@\/lib\/(system|vault|cards|wiki))["']/;
 
   for (const rel of files) {
     const abs = path.join(rootDir, rel);
@@ -588,7 +595,13 @@ export function runCLI(): void {
   const serverBoundaryErrors = checkServerBoundary();
   const residueErrors = checkResidue();
   const entrypointErrors = checkClientServerEntrypoints();
-  const all = [...sizeErrors, ...crossErrors, ...serverBoundaryErrors, ...residueErrors, ...entrypointErrors];
+  const all = [
+    ...sizeErrors,
+    ...crossErrors,
+    ...serverBoundaryErrors,
+    ...residueErrors,
+    ...entrypointErrors,
+  ];
 
   if (all.length === 0) {
     console.log(

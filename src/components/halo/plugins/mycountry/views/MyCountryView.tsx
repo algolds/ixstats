@@ -1,7 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
-import { Crown, Globe, User, NavArrowRight as ChevronRight, LogOut, Xmark as X, Shield, Map, ChatBubble as MessageSquare, Community as Handshake, OpenBook as BookOpen, ScaleFrameEnlarge as Scale, EditPencil as Edit3 } from "iconoir-react";
+import {
+  Crown,
+  Globe,
+  User,
+  NavArrowRight as ChevronRight,
+  LogOut,
+  Xmark as X,
+  Shield,
+  Map,
+  ChatBubble as MessageSquare,
+  Community as Handshake,
+  OpenBook as BookOpen,
+  ScaleFrameEnlarge as Scale,
+  EditPencil as Edit3,
+} from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
@@ -112,7 +126,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                   const slug = country.slug || country.name.replace(/\s+/g, "_");
                   window.location.href = createAbsoluteUrl(`/countries/${slug}`);
                 }}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/15 inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border/50 bg-accent/10 px-2 py-1 text-[10.5px] font-medium transition-all duration-150 hover:border-border active:scale-95"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/15 border-border/50 bg-accent/10 hover:border-border inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-1 text-[10.5px] font-medium transition-all duration-150 active:scale-95"
                 title="Public Country Profile"
               >
                 <User className="h-3 w-3 text-blue-400" />
@@ -123,7 +137,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 onClick={() => {
                   window.location.href = createAbsoluteUrl("/mycountry/editor");
                 }}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/15 inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border/50 bg-accent/10 px-2 py-1 text-[10.5px] font-medium transition-all duration-150 hover:border-border active:scale-95"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/15 border-border/50 bg-accent/10 hover:border-border inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-1 text-[10.5px] font-medium transition-all duration-150 active:scale-95"
                 title="Open MyCountry Map Editor"
               >
                 <Edit3 className="h-3 w-3 text-amber-400" />

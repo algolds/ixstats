@@ -67,7 +67,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
             return (
               <div
                 key={c.id}
-                className="group/c border-border/30 relative flex items-center gap-2 overflow-hidden rounded-xl border bg-card/40 p-2 transition-all duration-150 hover:border-border/60 hover:bg-card/70"
+                className="group/c border-border/30 bg-card/40 hover:border-border/60 hover:bg-card/70 relative flex items-center gap-2 overflow-hidden rounded-xl border p-2 transition-all duration-150"
               >
                 {c.flagUrl && (
                   <div className="pointer-events-none absolute inset-0 z-0 opacity-40">
@@ -128,7 +128,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
         </div>
         <Link
           href={"/countries"}
-          className="text-muted-foreground hover:text-foreground mt-2 flex items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-medium transition-colors hover:bg-muted/40 active:scale-[0.98]"
+          className="text-muted-foreground hover:text-foreground hover:bg-muted/40 mt-2 flex items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-medium transition-colors active:scale-[0.98]"
         >
           <Globe className="h-3.5 w-3.5" />
           <span>Explore all countries →</span>

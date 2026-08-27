@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { Dollar as CircleDollarSign, StatUp as TrendingUp, Cart as ShoppingCart, Clock } from "iconoir-react";
+import {
+  Dollar as CircleDollarSign,
+  StatUp as TrendingUp,
+  Cart as ShoppingCart,
+  Clock,
+} from "iconoir-react";
 import {
   ArticleLayout,
   Section,
@@ -19,10 +24,11 @@ export default function IxCreditsArticle() {
       <ContentCard>
         <Section title="What Are IxCredits?">
           <p>
-            IxCredits (<IxCreditsSymbol className="inline h-3.5 w-3.5 align-middle" />) are the virtual currency powering the Vault economy. They are earned
-            through gameplay actions and spent on card packs, marketplace purchases, and cosmetic
-            items. Your Vault tracks your balance, lifetime earned/spent totals, vault level, XP,
-            login streak, and daily earnings.
+            IxCredits (<IxCreditsSymbol className="inline h-3.5 w-3.5 align-middle" />) are the
+            virtual currency powering the Vault economy. They are earned through gameplay actions
+            and spent on card packs, marketplace purchases, and cosmetic items. Your Vault tracks
+            your balance, lifetime earned/spent totals, vault level, XP, login streak, and daily
+            earnings.
           </p>
         </Section>
 
@@ -35,27 +41,39 @@ export default function IxCreditsArticle() {
                 for Impoverished up to 3.5x for Extravagant). Population and growth bonuses apply.
               </li>
               <li>
-                <Clock className="inline h-4 w-4" /> <strong>Daily Login:</strong> 1-7 <IxCreditsSymbol className="inline h-3.5 w-3.5 align-middle" /> scaling
-                with consecutive login streak days. Streak resets after a missed day.
+                <Clock className="inline h-4 w-4" /> <strong>Daily Login:</strong> 1-7{" "}
+                <IxCreditsSymbol className="inline h-3.5 w-3.5 align-middle" /> scaling with
+                consecutive login streak days. Streak resets after a missed day.
               </li>
               <li>
-                <strong>Achievements:</strong> 5 <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> (Common), 10 <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> (Uncommon), 25 <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> (Rare), 50{" "}
-                <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> (Epic), 100 <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> (Legendary) per achievement unlock.
+                <strong>Achievements:</strong> 5{" "}
+                <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> (Common), 10{" "}
+                <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> (Uncommon), 25{" "}
+                <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> (Rare), 50{" "}
+                <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> (Epic), 100{" "}
+                <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> (Legendary) per
+                achievement unlock.
               </li>
               <li>
-                <strong>Diplomatic Actions:</strong> Establishing an embassy earns 15 <IxCreditsSymbol className="inline h-3 w-3 align-middle" />. Cultural
-                exchanges earn 12 <IxCreditsSymbol className="inline h-3 w-3 align-middle" />.
+                <strong>Diplomatic Actions:</strong> Establishing an embassy earns 15{" "}
+                <IxCreditsSymbol className="inline h-3 w-3 align-middle" />. Cultural exchanges earn
+                12 <IxCreditsSymbol className="inline h-3 w-3 align-middle" />.
               </li>
               <li>
-                <strong>Diplomatic Scenarios:</strong> 5 <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> base reward plus 0-8 <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> risk bonus
-                depending on chosen response difficulty.
+                <strong>Diplomatic Scenarios:</strong> 5{" "}
+                <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> base reward plus 0-8{" "}
+                <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> risk bonus depending on
+                chosen response difficulty.
               </li>
               <li>
-                <strong>Crisis Responses:</strong> 8-20 <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> based on crisis severity and response
-                quality.
+                <strong>Crisis Responses:</strong> 8-20{" "}
+                <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> based on crisis severity
+                and response quality.
               </li>
               <li>
-                <strong>Social Posts:</strong> 1 <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> per ThinkPages post (max 5 per day).
+                <strong>Social Posts:</strong> 1{" "}
+                <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> per ThinkPages post (max
+                5 per day).
               </li>
             </ul>
           </InfoBox>
@@ -89,10 +107,14 @@ export default function IxCreditsArticle() {
             <p>Certain earning categories have daily limits to maintain economy balance:</p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
-                <strong>Active Earnings:</strong> 100 <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> per day (achievements, diplomatic, crisis)
+                <strong>Active Earnings:</strong> 100{" "}
+                <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> per day (achievements,
+                diplomatic, crisis)
               </li>
               <li>
-                <strong>Social Earnings:</strong> 50 <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> per day (posts, interactions)
+                <strong>Social Earnings:</strong> 50{" "}
+                <IxCreditsSymbol className="inline h-3 w-3 align-middle" /> per day (posts,
+                interactions)
               </li>
               <li>
                 <strong>Passive Income:</strong> No daily cap (based on economic performance)

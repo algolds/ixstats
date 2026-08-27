@@ -1,7 +1,23 @@
 "use client";
 
 import React from "react";
-import { StatUp as TrendingUp, Dollar as DollarSign, Group as Users, City as Building2, Calculator, StatsReport as BarChart3, Reports as PieChart, Archery as Target, WarningTriangle as AlertTriangle, CheckCircle, InfoCircle as Info, Tree as Trees, Industry as Factory, Activity, Sparks as Sparkles } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  Dollar as DollarSign,
+  Group as Users,
+  City as Building2,
+  Calculator,
+  StatsReport as BarChart3,
+  Reports as PieChart,
+  Archery as Target,
+  WarningTriangle as AlertTriangle,
+  CheckCircle,
+  InfoCircle as Info,
+  Tree as Trees,
+  Industry as Factory,
+  Activity,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
 /**

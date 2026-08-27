@@ -24,12 +24,7 @@ export function SettingsSwitchRow({
   disabled = false,
 }: SettingsSwitchRowProps) {
   return (
-    <SettingsRow
-      label={label}
-      description={description}
-      icon={icon}
-      glyphClass={glyphClass}
-    >
+    <SettingsRow label={label} description={description} icon={icon} glyphClass={glyphClass}>
       <Switch
         id={id}
         checked={checked}

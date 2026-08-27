@@ -35,10 +35,7 @@ import {
 import { format } from "date-fns";
 import { IxTime } from "~/lib/ixtime";
 import { getIxCutoff } from "~/lib/ixtime/range";
-import {
-  BaseMetricDetailsModal,
-  type MetricModalTab,
-} from "./BaseMetricDetailsModal";
+import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
 import type { TimeRange, ChartType } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
 
@@ -271,7 +268,8 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                 GDP Performance Summary
               </CardTitle>
               <CardDescription>
-                Key performance indicators and historical volatility metrics. Volatility / Peak-Trough / Total Growth merged from former Details tab.
+                Key performance indicators and historical volatility metrics. Volatility /
+                Peak-Trough / Total Growth merged from former Details tab.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col justify-center p-0">
@@ -302,7 +300,9 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-purple-400">
-                    {gdpStats ? `${(((gdpStats.maxGdp - gdpStats.minGdp) / gdpStats.maxGdp) * 100).toFixed(1)}%` : "N/A"}
+                    {gdpStats
+                      ? `${(((gdpStats.maxGdp - gdpStats.minGdp) / gdpStats.maxGdp) * 100).toFixed(1)}%`
+                      : "N/A"}
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">Peak-to-Trough</div>
                 </div>

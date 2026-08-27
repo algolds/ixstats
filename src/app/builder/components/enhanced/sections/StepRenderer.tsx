@@ -2,7 +2,17 @@
 
 import React, { memo, useCallback } from "react";
 import { motion } from "motion/react";
-import { Globe, WhiteFlag as Flag, StatsReport as BarChart3, City as Building2, Settings, Crown, Eye, HelpCircle, CheckCircle } from "iconoir-react";
+import {
+  Globe,
+  WhiteFlag as Flag,
+  StatsReport as BarChart3,
+  City as Building2,
+  Settings,
+  Crown,
+  Eye,
+  HelpCircle,
+  CheckCircle,
+} from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import {

@@ -2,7 +2,10 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { runStrictStages, type VerificationStage } from "../../../scripts/verification/verify-strict";
+import {
+  runStrictStages,
+  type VerificationStage,
+} from "../../../scripts/verification/verify-strict";
 
 describe("verification-gates", () => {
   const rootDir = path.resolve(__dirname, "../../..");
@@ -52,14 +55,10 @@ describe("verification-gates", () => {
 
       try {
         const tsconfigPass = path.resolve(fixturesDir, "tsconfig-pass.json");
-        const result = spawnSync(
-          "bun",
-          [runTypecheckScript, tsconfigPass, "--log", tempLogPath],
-          {
-            cwd: rootDir,
-            encoding: "utf-8",
-          }
-        );
+        const result = spawnSync("bun", [runTypecheckScript, tsconfigPass, "--log", tempLogPath], {
+          cwd: rootDir,
+          encoding: "utf-8",
+        });
 
         expect(result.status).toBe(0);
         expect(fs.existsSync(tempLogPath)).toBe(true);
@@ -112,9 +111,7 @@ describe("verification-gates", () => {
   });
 
   describe("package.json verification scripts", () => {
-    const pkg = JSON.parse(
-      fs.readFileSync(path.resolve(rootDir, "package.json"), "utf-8")
-    );
+    const pkg = JSON.parse(fs.readFileSync(path.resolve(rootDir, "package.json"), "utf-8"));
 
     it("does not pipe typecheck scripts to tee or mask errors", () => {
       const scripts = pkg.scripts || {};
@@ -131,10 +128,7 @@ describe("verification-gates", () => {
   });
 
   describe("CI configuration (.github/workflows/ci.yml)", () => {
-    const ciContent = fs.readFileSync(
-      path.resolve(rootDir, ".github/workflows/ci.yml"),
-      "utf-8"
-    );
+    const ciContent = fs.readFileSync(path.resolve(rootDir, ".github/workflows/ci.yml"), "utf-8");
 
     it("includes v2 branch in push triggers and retains pull_request", () => {
       expect(ciContent).toMatch(/pull_request:/);
@@ -154,10 +148,7 @@ describe("verification-gates", () => {
   });
 
   describe("Next.js build configuration (next.config.js)", () => {
-    const nextConfigContent = fs.readFileSync(
-      path.resolve(rootDir, "next.config.js"),
-      "utf-8"
-    );
+    const nextConfigContent = fs.readFileSync(path.resolve(rootDir, "next.config.js"), "utf-8");
 
     it("does not ignore TypeScript build errors (ignoreBuildErrors: false)", () => {
       expect(nextConfigContent).toMatch(/ignoreBuildErrors:\s*false/);

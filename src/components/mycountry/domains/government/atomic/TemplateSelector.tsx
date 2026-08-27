@@ -19,7 +19,18 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
-import { Page as FileText, Flask as FlaskConical, Globe as Globe2, Heart, Bank as Landmark, HelpCircle as LifeBuoy, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, Shield, StatUp as TrendingUp } from "iconoir-react";
+import {
+  Page as FileText,
+  Flask as FlaskConical,
+  Globe as Globe2,
+  Heart,
+  Bank as Landmark,
+  HelpCircle as LifeBuoy,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  Shield,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { ComponentType } from "~/lib/enums";
 
 export interface GovernmentTemplate {

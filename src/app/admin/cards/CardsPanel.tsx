@@ -4,7 +4,21 @@
 
 import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Database, CheckCircle, StatUp as TrendingUp, WarningTriangle as AlertTriangle, Globe, Component as Layers, Search, OpenBook as BookOpen, ControlSlider as Sliders, Page as FileText, Sparks as Sparkles, Palette, Refresh as RefreshCw } from "iconoir-react";
+import {
+  Database,
+  CheckCircle,
+  StatUp as TrendingUp,
+  WarningTriangle as AlertTriangle,
+  Globe,
+  Component as Layers,
+  Search,
+  OpenBook as BookOpen,
+  ControlSlider as Sliders,
+  Page as FileText,
+  Sparks as Sparkles,
+  Palette,
+  Refresh as RefreshCw,
+} from "iconoir-react";
 
 import { api } from "~/trpc/react";
 import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
@@ -132,7 +146,6 @@ export default function CardAdminDashboardPage() {
       <div className="space-y-6">
         {/* ─── Facet Navigation Top Header ─────────────────────────── */}
         <FacetNavigation className="border-border/30 bg-card/25 text-card-foreground space-y-6 rounded-2xl border p-6 shadow-sm backdrop-blur-md">
-
           {/* Embedded Library Overview / NS Sync Health Metrics (Switches dynamically per active tab) */}
           {(() => {
             const isNSTab = activeTab === "imports" && importSubtab === "ns";

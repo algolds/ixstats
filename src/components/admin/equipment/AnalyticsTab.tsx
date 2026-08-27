@@ -18,7 +18,14 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { SystemRestart as Loader2, Shield, Activity, StatUp as TrendingUp, WarningTriangle as AlertTriangle, Industry as Factory } from "iconoir-react";
+import {
+  SystemRestart as Loader2,
+  Shield,
+  Activity,
+  StatUp as TrendingUp,
+  WarningTriangle as AlertTriangle,
+  Industry as Factory,
+} from "iconoir-react";
 
 interface AnalyticsTabProps {
   usageStats: any;

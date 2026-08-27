@@ -137,7 +137,10 @@ function parseTemplateInner(
 
   // 1. Check for Parser Function / Magic Word: {{#if: cond | then | else}} or {{formatnum: 1234}}
   const colonIdx = rawHead.indexOf(":");
-  if (colonIdx !== -1 && (rawHead.startsWith("#") || isMagicWordPrefix(rawHead.slice(0, colonIdx)))) {
+  if (
+    colonIdx !== -1 &&
+    (rawHead.startsWith("#") || isMagicWordPrefix(rawHead.slice(0, colonIdx)))
+  ) {
     const fnName = rawHead.slice(0, colonIdx).trim();
     const expression = rawHead.slice(colonIdx + 1).trim();
     const branches = parts.slice(1);

@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeSimple as Home, ViewGrid as Grid3x3, Cart as ShoppingCart, Download } from "iconoir-react";
+import {
+  HomeSimple as Home,
+  ViewGrid as Grid3x3,
+  Cart as ShoppingCart,
+  Download,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { stripBasePath } from "~/lib/base-path";
 import { useTheme } from "~/context/theme-context";

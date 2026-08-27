@@ -6,12 +6,30 @@ const API_URL = `${MEDIAWIKI_URL}/api.php`;
 
 // Kiravian lore keywords and known articles
 const KIRAVIA_KEYWORDS = [
-  "Kiravia", "Kiravian", "North Varshan", "Varshan", "Bérasar", "Farravonia",
-  "Caritist", "Mid-Atrassic", "Seváronsa", "Mérosar", "Merav", "Atrassia",
-  "Carthinova", "Atrassic", "Déra", "Kavei", "Eret", "Savria", "Great Levantia"
+  "Kiravia",
+  "Kiravian",
+  "North Varshan",
+  "Varshan",
+  "Bérasar",
+  "Farravonia",
+  "Caritist",
+  "Mid-Atrassic",
+  "Seváronsa",
+  "Mérosar",
+  "Merav",
+  "Atrassia",
+  "Carthinova",
+  "Atrassic",
+  "Déra",
+  "Kavei",
+  "Eret",
+  "Savria",
+  "Great Levantia",
 ];
 
-async function fetchPageRevisions(title: string): Promise<Array<{ user: string; timestamp: string }>> {
+async function fetchPageRevisions(
+  title: string
+): Promise<Array<{ user: string; timestamp: string }>> {
   const url = new URL(API_URL);
   url.searchParams.set("action", "query");
   url.searchParams.set("prop", "revisions");
@@ -56,7 +74,7 @@ async function main() {
     "Merav",
     "Political ideologies in Kiravia",
     "Varshan",
-    "Atrassia"
+    "Atrassia",
   ];
 
   const authorCounts = new Map<string, { totalEdits: number; pages: Set<string> }>();

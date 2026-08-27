@@ -1,11 +1,7 @@
 import { create } from "zustand";
 import { persist, subscribeWithSelector } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
-import {
-  clampPlaybackRate,
-  isLive,
-  type Track,
-} from "~/lib/playback-engine";
+import { clampPlaybackRate, isLive, type Track } from "~/lib/playback-engine";
 
 type RepeatMode = "none" | "one" | "all";
 type InsertMode = "first" | "last" | "after";
@@ -69,11 +65,7 @@ type AudioStore = {
 };
 
 function canUseDOM() {
-  return !!(
-    typeof window !== "undefined" &&
-    window.document &&
-    window.document.createElement
-  );
+  return !!(typeof window !== "undefined" && window.document && window.document.createElement);
 }
 
 type QueueNavigationParams = {
@@ -111,8 +103,7 @@ type CalculateQueueIndexParams = QueueNavigationParams & {
  * Calculates the next or previous index in the queue based on direction
  */
 const calculateQueueIndex = (params: CalculateQueueIndexParams): number => {
-  const { queue, currentQueueIndex, shuffleEnabled, repeatMode, direction } =
-    params;
+  const { queue, currentQueueIndex, shuffleEnabled, repeatMode, direction } = params;
 
   if (queue.length === 0) {
     return -1;
@@ -188,8 +179,7 @@ const loadAndPlayTrack = (params: LoadAndPlayTrackParams): void => {
   const { track, queueIndex, set, get } = params;
   // Check if it's a live stream using track.live property or duration
   const isLiveStream =
-    track.live === true ||
-    (track.duration !== undefined && isLive(track.duration));
+    track.live === true || (track.duration !== undefined && isLive(track.duration));
 
   set({
     currentQueueIndex: queueIndex,
@@ -254,9 +244,7 @@ const useAudioStore = create<AudioStore>()(
 
         const state = get();
         const currentQueueIds = new Set(state.queue.map((s) => s.id));
-        const newTracks = tracksToAdd.filter(
-          (track) => !currentQueueIds.has(track.id)
-        );
+        const newTracks = tracksToAdd.filter((track) => !currentQueueIds.has(track.id));
 
         if (newTracks.length > 0) {
           set({ queue: [...state.queue, ...newTracks] });
@@ -362,9 +350,7 @@ const useAudioStore = create<AudioStore>()(
         const prevTrack = state.queue[prevIndex];
         if (prevIndex === -1 || !prevTrack) {
           if (prevIndex !== -1) {
-            console.error(
-              "Inconsistency: previous index is valid but track not found"
-            );
+            console.error("Inconsistency: previous index is valid but track not found");
           }
           set({ isBuffering: false, isLoading: false, isPlaying: false });
           return;
@@ -390,9 +376,7 @@ const useAudioStore = create<AudioStore>()(
         const newQueue = state.queue.filter((s) => s.id !== trackId);
         set({
           currentQueueIndex:
-            index < state.currentQueueIndex
-              ? state.currentQueueIndex - 1
-              : state.currentQueueIndex,
+            index < state.currentQueueIndex ? state.currentQueueIndex - 1 : state.currentQueueIndex,
           queue: newQueue,
         });
       },
@@ -401,8 +385,7 @@ const useAudioStore = create<AudioStore>()(
       seek(time: number) {
         const state = get();
         const duration = state.duration;
-        const validTime =
-          duration > 0 ? Math.max(0, Math.min(time, duration)) : time;
+        const validTime = duration > 0 ? Math.max(0, Math.min(time, duration)) : time;
         const newProgress = duration > 0 ? (validTime / duration) * 100 : 0;
         set({ currentTime: validTime, progress: newProgress });
       },
@@ -519,20 +502,12 @@ const useAudioStore = create<AudioStore>()(
 
       shuffle() {
         const state = get();
-        if (
-          !state.queue.length ||
-          state.queue.length < 2 ||
-          !state.currentTrack
-        ) {
+        if (!state.queue.length || state.queue.length < 2 || !state.currentTrack) {
           return;
         }
 
-        const remainingQueue = state.queue.filter(
-          (_, index) => index !== state.currentQueueIndex
-        );
-        const shuffledRemaining = remainingQueue.sort(
-          () => Math.random() - 0.5
-        );
+        const remainingQueue = state.queue.filter((_, index) => index !== state.currentQueueIndex);
+        const shuffledRemaining = remainingQueue.sort(() => Math.random() - 0.5);
         const newQueue = [state.currentTrack, ...shuffledRemaining];
 
         set({

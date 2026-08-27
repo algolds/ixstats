@@ -6,11 +6,13 @@ describe("Plan 159: Messages Conversations Unread Query Batching", () => {
   const createCaller = createCallerFactory(messagesRouter);
 
   it("batches unread message counts into a single findMany call with 0 count calls", async () => {
-    const findManyMessagesMock = jest.fn().mockResolvedValue([
-      { conversationId: "conv-1" },
-      { conversationId: "conv-1" },
-      { conversationId: "conv-2" },
-    ]);
+    const findManyMessagesMock = jest
+      .fn()
+      .mockResolvedValue([
+        { conversationId: "conv-1" },
+        { conversationId: "conv-1" },
+        { conversationId: "conv-2" },
+      ]);
     const countMessagesMock = jest.fn();
 
     const mockDb = {
@@ -23,7 +25,12 @@ describe("Plan 159: Messages Conversations Unread Query Batching", () => {
             lastActivity: new Date("2026-01-02"),
             participants: [
               { id: "p1", userId: "user-me", lastReadAt: new Date("2026-01-01"), isActive: true },
-              { id: "p2", userId: "user-other-1", lastReadAt: new Date("2026-01-01"), isActive: true },
+              {
+                id: "p2",
+                userId: "user-other-1",
+                lastReadAt: new Date("2026-01-01"),
+                isActive: true,
+              },
             ],
             messages: [{ id: "m1", userId: "user-other-1", content: "hi" }],
           },
@@ -34,7 +41,12 @@ describe("Plan 159: Messages Conversations Unread Query Batching", () => {
             lastActivity: new Date("2026-01-02"),
             participants: [
               { id: "p3", userId: "user-me", lastReadAt: new Date("2026-01-01"), isActive: true },
-              { id: "p4", userId: "user-other-2", lastReadAt: new Date("2026-01-01"), isActive: true },
+              {
+                id: "p4",
+                userId: "user-other-2",
+                lastReadAt: new Date("2026-01-01"),
+                isActive: true,
+              },
             ],
             messages: [{ id: "m2", userId: "user-other-2", content: "hey" }],
           },
@@ -45,7 +57,12 @@ describe("Plan 159: Messages Conversations Unread Query Batching", () => {
             lastActivity: new Date("2026-01-02"),
             participants: [
               { id: "p5", userId: "user-me", lastReadAt: new Date("2026-01-01"), isActive: true },
-              { id: "p6", userId: "user-other-3", lastReadAt: new Date("2026-01-01"), isActive: true },
+              {
+                id: "p6",
+                userId: "user-other-3",
+                lastReadAt: new Date("2026-01-01"),
+                isActive: true,
+              },
             ],
             messages: [{ id: "m3", userId: "user-other-3", content: "yo" }],
           },

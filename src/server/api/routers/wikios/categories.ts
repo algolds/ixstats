@@ -48,7 +48,10 @@ export const wikiosCategoriesRouter = createTRPCRouter({
 
       // 1. Fast-path: Native PostgreSQL Category DAG
       const nativeDetails = await CategoryService.getCategoryDetails(input.category);
-      if (nativeDetails.category && (nativeDetails.articles.length > 0 || nativeDetails.subcategories.length > 0)) {
+      if (
+        nativeDetails.category &&
+        (nativeDetails.articles.length > 0 || nativeDetails.subcategories.length > 0)
+      ) {
         if (!input.type || input.type === "subcat") {
           for (const c of nativeDetails.subcategories) {
             rawMembers.push({
@@ -137,7 +140,10 @@ export const wikiosCategoriesRouter = createTRPCRouter({
         }
 
         const missingTitles = titles.filter(
-          (t) => !imageMap.has(t) && !imageMap.has(toArticleSlug(t)) && !imageMap.has(t.replace(/_/g, " "))
+          (t) =>
+            !imageMap.has(t) &&
+            !imageMap.has(toArticleSlug(t)) &&
+            !imageMap.has(t.replace(/_/g, " "))
         );
         if (missingTitles.length > 0) {
           try {
@@ -252,7 +258,10 @@ export const wikiosCategoriesRouter = createTRPCRouter({
         const fromTerm = input.from ? input.from.trim() : "";
 
         const whereCat: {
-          OR?: Array<{ name?: { contains: string; mode: "insensitive" }; slug?: { contains: string; mode: "insensitive" } }>;
+          OR?: Array<{
+            name?: { contains: string; mode: "insensitive" };
+            slug?: { contains: string; mode: "insensitive" };
+          }>;
           name?: { gte: string; mode: "insensitive" };
         } = {};
         if (queryTerm) {

@@ -55,16 +55,10 @@ export function compileRuleRegex(source: string, context?: string): RegExp {
   let rightCtx = rawCtx.substring(underscoreIdx + 1);
 
   const expandLeft = (s: string) =>
-    s
-      .replace(/#/g, "^")
-      .replace(/V/g, VOWEL_CLASS)
-      .replace(/C/g, CONSONANT_CLASS);
+    s.replace(/#/g, "^").replace(/V/g, VOWEL_CLASS).replace(/C/g, CONSONANT_CLASS);
 
   const expandRight = (s: string) =>
-    s
-      .replace(/#/g, "$")
-      .replace(/V/g, VOWEL_CLASS)
-      .replace(/C/g, CONSONANT_CLASS);
+    s.replace(/#/g, "$").replace(/V/g, VOWEL_CLASS).replace(/C/g, CONSONANT_CLASS);
 
   leftCtx = expandLeft(leftCtx);
   rightCtx = expandRight(rightCtx);
@@ -92,7 +86,11 @@ export function applySingleRule(word: string, rule: SoundShiftRule): string {
     const regex = new RegExp(escapedSource, "gi");
     return word.replace(regex, (match) => {
       // Preserve uppercase on first letter if source was capitalized
-      if (match.length > 0 && match[0] === match[0].toUpperCase() && match[0] !== match[0].toLowerCase()) {
+      if (
+        match.length > 0 &&
+        match[0] === match[0].toUpperCase() &&
+        match[0] !== match[0].toLowerCase()
+      ) {
         return rule.target.charAt(0).toUpperCase() + rule.target.slice(1);
       }
       return rule.target;
@@ -103,16 +101,10 @@ export function applySingleRule(word: string, rule: SoundShiftRule): string {
   const rightCtx = rawCtx.substring(underscoreIdx + 1);
 
   const expandLeft = (s: string) =>
-    s
-      .replace(/#/g, "^")
-      .replace(/V/g, VOWEL_CLASS)
-      .replace(/C/g, CONSONANT_CLASS);
+    s.replace(/#/g, "^").replace(/V/g, VOWEL_CLASS).replace(/C/g, CONSONANT_CLASS);
 
   const expandRight = (s: string) =>
-    s
-      .replace(/#/g, "$")
-      .replace(/V/g, VOWEL_CLASS)
-      .replace(/C/g, CONSONANT_CLASS);
+    s.replace(/#/g, "$").replace(/V/g, VOWEL_CLASS).replace(/C/g, CONSONANT_CLASS);
 
   const leftRegexStr = leftCtx ? expandLeft(leftCtx) : "";
   const rightRegexStr = rightCtx ? expandRight(rightCtx) : "";
@@ -258,8 +250,22 @@ export const SOUND_SHIFT_PRESETS: SoundShiftPreset[] = [
         name: "Classical → Vulgar Latin Palatalization",
         description: "Velars palatalize before front vowels [e, i]",
         rules: [
-          { id: "r1", source: "c", target: "tʃ", context: "_[ei]", description: "c → tʃ / _[ei]", enabled: true },
-          { id: "r2", source: "g", target: "dʒ", context: "_[ei]", description: "g → dʒ / _[ei]", enabled: true },
+          {
+            id: "r1",
+            source: "c",
+            target: "tʃ",
+            context: "_[ei]",
+            description: "c → tʃ / _[ei]",
+            enabled: true,
+          },
+          {
+            id: "r2",
+            source: "g",
+            target: "dʒ",
+            context: "_[ei]",
+            description: "g → dʒ / _[ei]",
+            enabled: true,
+          },
         ],
       },
       {
@@ -267,9 +273,30 @@ export const SOUND_SHIFT_PRESETS: SoundShiftPreset[] = [
         name: "Intervocalic Lenition",
         description: "Voiceless stops voice between vowels",
         rules: [
-          { id: "r3", source: "p", target: "b", context: "V_V", description: "p → b / V_V", enabled: true },
-          { id: "r4", source: "t", target: "d", context: "V_V", description: "t → d / V_V", enabled: true },
-          { id: "r5", source: "c", target: "g", context: "V_V", description: "c → g / V_V", enabled: true },
+          {
+            id: "r3",
+            source: "p",
+            target: "b",
+            context: "V_V",
+            description: "p → b / V_V",
+            enabled: true,
+          },
+          {
+            id: "r4",
+            source: "t",
+            target: "d",
+            context: "V_V",
+            description: "t → d / V_V",
+            enabled: true,
+          },
+          {
+            id: "r5",
+            source: "c",
+            target: "g",
+            context: "V_V",
+            description: "c → g / V_V",
+            enabled: true,
+          },
         ],
       },
       {
@@ -277,7 +304,14 @@ export const SOUND_SHIFT_PRESETS: SoundShiftPreset[] = [
         name: "Terminal Consonant Apocope",
         description: "Loss of final -m and -t",
         rules: [
-          { id: "r6", source: "m", target: "", context: "_#", description: "m → ∅ / _#", enabled: true },
+          {
+            id: "r6",
+            source: "m",
+            target: "",
+            context: "_#",
+            description: "m → ∅ / _#",
+            enabled: true,
+          },
         ],
       },
     ],
@@ -295,10 +329,38 @@ export const SOUND_SHIFT_PRESETS: SoundShiftPreset[] = [
         name: "First Slavic Palatalization",
         description: "k, g, x → č, ž, š before front vowels",
         rules: [
-          { id: "s1", source: "k", target: "č", context: "_[eiěь]", description: "k → č / _[front]", enabled: true },
-          { id: "s2", source: "g", target: "ž", context: "_[eiěь]", description: "g → ž / _[front]", enabled: true },
-          { id: "s3", source: "x", target: "š", context: "_[eiěь]", description: "x → š / _[front]", enabled: true },
-          { id: "s4", source: "h", target: "š", context: "_[eiěь]", description: "h → š / _[front]", enabled: true },
+          {
+            id: "s1",
+            source: "k",
+            target: "č",
+            context: "_[eiěь]",
+            description: "k → č / _[front]",
+            enabled: true,
+          },
+          {
+            id: "s2",
+            source: "g",
+            target: "ž",
+            context: "_[eiěь]",
+            description: "g → ž / _[front]",
+            enabled: true,
+          },
+          {
+            id: "s3",
+            source: "x",
+            target: "š",
+            context: "_[eiěь]",
+            description: "x → š / _[front]",
+            enabled: true,
+          },
+          {
+            id: "s4",
+            source: "h",
+            target: "š",
+            context: "_[eiěь]",
+            description: "h → š / _[front]",
+            enabled: true,
+          },
         ],
       },
     ],
@@ -316,7 +378,14 @@ export const SOUND_SHIFT_PRESETS: SoundShiftPreset[] = [
         name: "Phase 1: High Vowel Diphthongization",
         description: "High long vowels diphthongize to /aɪ/ and /aʊ/",
         rules: [
-          { id: "v1", source: "i", target: "ai", context: "_[tksdn]", description: "i → ai", enabled: true },
+          {
+            id: "v1",
+            source: "i",
+            target: "ai",
+            context: "_[tksdn]",
+            description: "i → ai",
+            enabled: true,
+          },
           { id: "v2", source: "ou", target: "au", description: "ou → au", enabled: true },
         ],
       },
@@ -327,7 +396,14 @@ export const SOUND_SHIFT_PRESETS: SoundShiftPreset[] = [
         rules: [
           { id: "v3", source: "ee", target: "i", description: "ee → i", enabled: true },
           { id: "v4", source: "oo", target: "u", description: "oo → u", enabled: true },
-          { id: "v5", source: "a", target: "ei", context: "_[ktp]", description: "a → ei", enabled: true },
+          {
+            id: "v5",
+            source: "a",
+            target: "ei",
+            context: "_[ktp]",
+            description: "a → ei",
+            enabled: true,
+          },
         ],
       },
     ],

@@ -5,7 +5,12 @@
 "use client";
 
 import React from "react";
-import { Headset as Headphones, OpenBook as BookOpen, Xmark as X, ShieldAlert } from "iconoir-react";
+import {
+  Headset as Headphones,
+  OpenBook as BookOpen,
+  Xmark as X,
+  ShieldAlert,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
@@ -30,44 +35,39 @@ function getRgbaColor(colorStr: string, opacity: number): string {
 
 export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProps) {
   const hasNarratorAccess = useHasNarratorAccess();
-  const {
-    articleTitle,
-    tocEntries,
-    themeColors,
-    activeSectionId,
-    narratorState,
-    narratorActions,
-  } = useWikiContext();
+  const { articleTitle, tocEntries, themeColors, activeSectionId, narratorState, narratorActions } =
+    useWikiContext();
 
   const accentColor = themeColors?.primary || "#3b82f6";
   const visibleToc = React.useMemo(() => tocEntries.filter((e) => e.level <= 3), [tocEntries]);
 
   if (!hasNarratorAccess) {
     return (
-      <div className="flex flex-col gap-3 p-4 select-none w-full animate-in fade-in zoom-in-95 duration-150">
+      <div className="animate-in fade-in zoom-in-95 flex w-full flex-col gap-3 p-4 duration-150 select-none">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-4 w-4 text-amber-400" />
-            <span className="text-xs font-bold text-foreground">Early Access Feature</span>
+            <span className="text-foreground text-xs font-bold">Early Access Feature</span>
           </div>
           <Button
             size="sm"
             variant="ghost"
             onClick={onClose}
-            className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground h-7 w-7 rounded-lg p-0"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          WikiOS Audio Narrator is currently restricted to system owners, administrators, and beta testers.
+        <p className="text-muted-foreground text-xs">
+          WikiOS Audio Narrator is currently restricted to system owners, administrators, and beta
+          testers.
         </p>
         {onSwitchMode && (
           <Button
             size="sm"
             variant="outline"
             onClick={() => onSwitchMode("plugin:wiki")}
-            className="w-full text-xs font-semibold gap-1.5 rounded-lg border-border/50"
+            className="border-border/50 w-full gap-1.5 rounded-lg text-xs font-semibold"
           >
             <BookOpen className="h-3.5 w-3.5" />
             Go to Wiki Workspace
@@ -83,10 +83,10 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
       : 0;
 
   return (
-    <div className="flex flex-col gap-2 p-3 select-none w-full animate-in fade-in zoom-in-95 duration-150">
+    <div className="animate-in fade-in zoom-in-95 flex w-full flex-col gap-2 p-3 duration-150 select-none">
       {/* ── Top Header with Quick Action to Switch to Wiki Workspace ── */}
       <div className="flex items-center justify-between gap-2 px-1 pb-1">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border shadow-2xs"
             style={{
@@ -97,8 +97,8 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
           >
             <Headphones className="h-3.5 w-3.5" />
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-[9.5px] font-bold text-muted-foreground uppercase tracking-wider">
+          <div className="flex min-w-0 flex-col">
+            <span className="text-muted-foreground text-[9.5px] font-bold tracking-wider uppercase">
               Now Playing · Narrator
             </span>
             <span
@@ -110,14 +110,14 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5">
           {/* Progress Reading Pill */}
           {narratorState && narratorState.totalBlocks > 0 && (
-            <div className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground tabular-nums px-1.5 py-0.5 rounded-md bg-muted/40 border border-border/30">
+            <div className="text-muted-foreground bg-muted/40 border-border/30 flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-[11px] tabular-nums">
               <span>
                 {narratorState.activeBlockIndex + 1}/{narratorState.totalBlocks}
               </span>
-              <span className="font-bold text-foreground">({Math.round(displayPercent)}%)</span>
+              <span className="text-foreground font-bold">({Math.round(displayPercent)}%)</span>
             </div>
           )}
 
@@ -127,7 +127,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
               size="sm"
               variant="outline"
               onClick={() => onSwitchMode("plugin:wiki")}
-              className="h-7 px-2 text-xs font-semibold gap-1.5 rounded-lg border-border/50 hover:bg-muted/60 active:scale-95 cursor-pointer"
+              className="border-border/50 hover:bg-muted/60 h-7 cursor-pointer gap-1.5 rounded-lg px-2 text-xs font-semibold active:scale-95"
             >
               <BookOpen className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Workspace</span>
@@ -139,7 +139,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
             size="sm"
             variant="ghost"
             onClick={onClose}
-            className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-foreground active:scale-95 cursor-pointer"
+            className="text-muted-foreground hover:text-foreground h-7 w-7 cursor-pointer rounded-lg p-0 active:scale-95"
           >
             <X className="h-4 w-4" />
           </Button>

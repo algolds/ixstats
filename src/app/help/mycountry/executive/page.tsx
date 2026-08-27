@@ -1,4 +1,10 @@
-import { KeyCommand as Command, Calendar, Page as FileText, Bell, Archery as Target } from "iconoir-react";
+import {
+  KeyCommand as Command,
+  Calendar,
+  Page as FileText,
+  Bell,
+  Archery as Target,
+} from "iconoir-react";
 import Link from "next/link";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 

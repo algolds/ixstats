@@ -185,7 +185,7 @@ export function CountryGrid({
     } else {
       setDisplayCountries([]);
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [searchTerm, selectedArchetype, filteredCountries, generateRandomChunk]);
 
   useEffect(() => {

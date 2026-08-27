@@ -2,7 +2,16 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Sparks as Sparkles, SystemRestart as Loader2, StatUp as TrendingUp, Globe, StatsReport as BarChart3, Group as Users, Suitcase as Briefcase, Activity } from "iconoir-react";
+import {
+  Sparks as Sparkles,
+  SystemRestart as Loader2,
+  StatUp as TrendingUp,
+  Globe,
+  StatsReport as BarChart3,
+  Group as Users,
+  Suitcase as Briefcase,
+  Activity,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 

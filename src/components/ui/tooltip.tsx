@@ -41,13 +41,17 @@ function Tooltip({
       <TooltipProvider>
         <TooltipPrimitive.Root data-slot="tooltip" {...props}>
           <TooltipPrimitive.Trigger asChild data-slot="tooltip-trigger">
-            {typeof children === "string" ? <span>{children}</span> : (children as React.ReactElement)}
+            {typeof children === "string" ? (
+              <span>{children}</span>
+            ) : (
+              (children as React.ReactElement)
+            )}
           </TooltipPrimitive.Trigger>
           <TooltipContent side={side} sideOffset={sideOffset} className={contentClassName}>
             <div className="flex items-center gap-2">
               <span>{content}</span>
               {shortcut && (
-                <kbd className="bg-muted text-muted-foreground pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded px-1.5 font-mono text-[10px] font-medium opacity-100">
+                <kbd className="bg-muted text-muted-foreground pointer-events-none inline-flex h-4 items-center gap-0.5 rounded px-1.5 font-mono text-[10px] font-medium opacity-100 select-none">
                   {shortcut}
                 </kbd>
               )}
@@ -68,7 +72,9 @@ function Tooltip({
 }
 
 function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" data-cuelume-hover="tick" {...props} />;
+  return (
+    <TooltipPrimitive.Trigger data-slot="tooltip-trigger" data-cuelume-hover="tick" {...props} />
+  );
 }
 
 function TooltipContent({

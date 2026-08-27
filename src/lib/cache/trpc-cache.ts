@@ -50,7 +50,7 @@ function getRedisClient(): Redis | null {
       });
 
       return redis;
-    } catch  {
+    } catch {
       console.warn("[TRPC_CACHE] Failed to connect to Redis, using memory cache fallback");
       return null;
     }

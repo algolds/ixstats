@@ -145,12 +145,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   } | null>(null);
 
   // Use the useDossier hook for data management
-  const {
-    wikiData,
-    isLoading,
-    handleRefresh,
-    hasAccess,
-  } = useDossier({
+  const { wikiData, isLoading, handleRefresh, hasAccess } = useDossier({
     countryName,
     countryData,
   });
@@ -277,14 +272,17 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                         <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
                         <h3 className="mb-2 text-lg font-semibold">No Wiki Sections Found</h3>
                         <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
-                          There is no active WikiOS database entry for <strong>{countryName}</strong>.
+                          There is no active WikiOS database entry for{" "}
+                          <strong>{countryName}</strong>.
                         </p>
                         <div className="flex flex-wrap items-center justify-center gap-3">
                           <Button
                             asChild
                             className="bg-blue-600 font-bold text-white hover:bg-blue-700"
                           >
-                            <Link href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}/edit`}>
+                            <Link
+                              href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}/edit`}
+                            >
                               Create Page on WikiOS
                             </Link>
                           </Button>
@@ -455,7 +453,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                             <button
                               type="button"
                               onClick={() => handleDeleteNativeDoc(doc.id)}
-                              className="text-muted-foreground hover:text-rose-400 flex h-7 w-7 items-center justify-center rounded-lg hover:bg-rose-500/10"
+                              className="text-muted-foreground flex h-7 w-7 items-center justify-center rounded-lg hover:bg-rose-500/10 hover:text-rose-400"
                               title="Delete Document"
                             >
                               <Trash2 className="h-3.5 w-3.5" />

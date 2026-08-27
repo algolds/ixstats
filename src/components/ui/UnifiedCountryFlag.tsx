@@ -71,7 +71,7 @@ export function UnifiedCountryFlag({
   useEffect(() => {
     // oxlint-disable-next-line
     setImageError(false);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [externalFlagUrl, hookResult.flagUrl]);
 
   // Determine which values to use (null flagUrl falls through to hook result)

@@ -5,7 +5,14 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Search, Xmark as X, Bell, Settings, Bookmark, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Search,
+  Xmark as X,
+  Bell,
+  Settings,
+  Bookmark,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useAuth } from "@clerk/nextjs";
@@ -15,11 +22,7 @@ import { navigateWithBasePath } from "~/lib/base-path";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import type { DIViewProps } from "~/components/halo/types";
-import {
-  WikiNarratorPlayer,
-  WikiWorkspaceTab,
-  WikiSearchDropdown,
-} from "../components";
+import { WikiNarratorPlayer, WikiWorkspaceTab, WikiSearchDropdown } from "../components";
 import { type LocalDraft, type PausedSession } from "../types";
 import { listDrafts } from "~/lib/wiki-os/editor/draft-store";
 
@@ -28,14 +31,8 @@ export interface WikiViewProps extends DIViewProps {}
 export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const {
-    articleTitle,
-    tocEntries,
-    themeColors,
-    activeSectionId,
-    narratorState,
-    narratorActions,
-  } = useWikiContext();
+  const { articleTitle, tocEntries, themeColors, activeSectionId, narratorState, narratorActions } =
+    useWikiContext();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [localDrafts, setLocalDrafts] = useState<LocalDraft[]>([]);
@@ -81,7 +78,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
     } catch (e) {
       console.error("Failed to read paused sessions:", e);
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [articleTitle, pathname]);
 
   const isMainPage =
@@ -222,7 +219,9 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
               disabled={isStashPending}
               className={cn(
                 "h-7 w-7 rounded-full p-0 transition-colors",
-                isStashed ? "text-amber-400 hover:text-amber-300" : "text-muted-foreground hover:text-foreground"
+                isStashed
+                  ? "text-amber-400 hover:text-amber-300"
+                  : "text-muted-foreground hover:text-foreground"
               )}
               title={isStashed ? "Remove from Stash" : "Save to Stash"}
             >
@@ -259,7 +258,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             type="button"
             onClick={() => setWikiTab("workspace")}
             className={cn(
-              "flex-1 rounded-md py-1 text-center text-xs font-semibold transition-all cursor-pointer",
+              "flex-1 cursor-pointer rounded-md py-1 text-center text-xs font-semibold transition-all",
               wikiTab === "workspace"
                 ? "bg-white text-zinc-900 shadow-sm dark:bg-white/15 dark:text-white"
                 : "text-muted-foreground hover:text-foreground"
@@ -271,7 +270,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             type="button"
             onClick={() => setWikiTab("narrator")}
             className={cn(
-              "flex-1 rounded-md py-1 text-center text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5",
+              "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md py-1 text-center text-xs font-semibold transition-all",
               wikiTab === "narrator"
                 ? "bg-white text-blue-600 shadow-sm dark:bg-white/15 dark:text-blue-400"
                 : "text-muted-foreground hover:text-foreground"
@@ -280,16 +279,16 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             <span>Narrator</span>
             <span
               className={cn(
-                "px-1.5 py-0.2 rounded-full text-[8.5px] font-bold tracking-widest uppercase transition-colors",
+                "py-0.2 rounded-full px-1.5 text-[8.5px] font-bold tracking-widest uppercase transition-colors",
                 wikiTab === "narrator"
-                  ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                  : "bg-white/10 text-zinc-400 border border-white/5"
+                  ? "border border-blue-500/30 bg-blue-500/20 text-blue-400"
+                  : "border border-white/5 bg-white/10 text-zinc-400"
               )}
             >
               BETA
             </span>
             {narratorState?.isPlaying && (
-              <span className="flex h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse ml-0.5" />
+              <span className="ml-0.5 flex h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
             )}
           </button>
         </div>

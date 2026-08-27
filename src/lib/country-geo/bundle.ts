@@ -7,63 +7,55 @@ import { featureIdToDisplayName } from "~/lib/maps/map-utils";
  */
 export async function getCountryGeoBundle(db: any, countryId: string) {
   // 1. Fetch all independent country entities concurrently in a single round-trip
-  const [
-    country,
-    mapLayer,
-    subdivisions,
-    cities,
-    pois,
-    storyPins,
-    mapLabels,
-    geoProfile,
-  ] = await Promise.all([
-    db.country.findUnique({
-      where: { id: countryId },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        currentPopulation: true,
-        currentTotalGdp: true,
-        geoRollupMode: true,
-        geometry: true,
-        centroid: true,
-        boundingBox: true,
-        landArea: true,
-        areaSqMi: true,
-      },
-    }),
-    db.mapLayer.findFirst({
-      where: {
-        layerType: "political",
-        countryId,
-        isActive: true,
-      },
-    }),
-    db.subdivision.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: { name: "asc" },
-    }),
-    db.city.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: [{ isNationalCapital: "desc" }, { population: "desc" }],
-    }),
-    db.pointOfInterest.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: { name: "asc" },
-    }),
-    db.storyPin.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: { ixTimeYear: "asc" },
-    }),
-    db.mapLabel.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: { text: "asc" },
-    }),
-    db.countryGeoProfile.findUnique({
-      where: { countryId },
-    }),
-  ]);
+  const [country, mapLayer, subdivisions, cities, pois, storyPins, mapLabels, geoProfile] =
+    await Promise.all([
+      db.country.findUnique({
+        where: { id: countryId },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          currentPopulation: true,
+          currentTotalGdp: true,
+          geoRollupMode: true,
+          geometry: true,
+          centroid: true,
+          boundingBox: true,
+          landArea: true,
+          areaSqMi: true,
+        },
+      }),
+      db.mapLayer.findFirst({
+        where: {
+          layerType: "political",
+          countryId,
+          isActive: true,
+        },
+      }),
+      db.subdivision.findMany({
+        where: { countryId, status: "approved" },
+        orderBy: { name: "asc" },
+      }),
+      db.city.findMany({
+        where: { countryId, status: "approved" },
+        orderBy: [{ isNationalCapital: "desc" }, { population: "desc" }],
+      }),
+      db.pointOfInterest.findMany({
+        where: { countryId, status: "approved" },
+        orderBy: { name: "asc" },
+      }),
+      db.storyPin.findMany({
+        where: { countryId, status: "approved" },
+        orderBy: { ixTimeYear: "asc" },
+      }),
+      db.mapLabel.findMany({
+        where: { countryId, status: "approved" },
+        orderBy: { text: "asc" },
+      }),
+      db.countryGeoProfile.findUnique({
+        where: { countryId },
+      }),
+    ]);
 
   if (!country) {
     throw new Error(`Country not found: ${countryId}`);

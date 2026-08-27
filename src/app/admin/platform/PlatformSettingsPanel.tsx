@@ -53,10 +53,9 @@ export function PlatformSettingsPanel({ defaultTab = "general" }: PlatformSettin
     enabled: false,
   });
 
-  const { refetch: refetchBotStatus } = api.admin.getBotStatus.useQuery(
-    undefined,
-    { enabled: false }
-  );
+  const { refetch: refetchBotStatus } = api.admin.getBotStatus.useQuery(undefined, {
+    enabled: false,
+  });
 
   const { data: configData, refetch: refetchConfig } = api.admin.getConfig.useQuery();
 
@@ -132,42 +131,42 @@ export function PlatformSettingsPanel({ defaultTab = "general" }: PlatformSettin
         <TabsList className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
           <TabsTrigger
             value="general"
-            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <TrendingUp className="h-4 w-4 text-emerald-400" />
             Economic Controls
           </TabsTrigger>
           <TabsTrigger
             value="autosave"
-            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Activity className="h-4 w-4 text-emerald-400" />
             Autosave Monitor
           </TabsTrigger>
           <TabsTrigger
             value="time"
-            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Clock className="h-4 w-4 text-blue-400" />
             Time Override
           </TabsTrigger>
           <TabsTrigger
             value="system-health"
-            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <HeartPulse className="h-4 w-4 text-rose-400" />
             System Diagnostics
           </TabsTrigger>
           <TabsTrigger
             value="navigation"
-            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Navigation className="h-4 w-4 text-cyan-400" />
             Navigation Controls
           </TabsTrigger>
           <TabsTrigger
             value="database"
-            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Database className="h-4 w-4 text-indigo-400" />
             Database Explorer
@@ -183,9 +182,7 @@ export function PlatformSettingsPanel({ defaultTab = "general" }: PlatformSettin
               onGlobalGrowthFactorChange={(value) =>
                 setConfig((prev) => ({ ...prev, globalGrowthFactor: value }))
               }
-              onAutoUpdateChange={(value) =>
-                setConfig((prev) => ({ ...prev, autoUpdate: value }))
-              }
+              onAutoUpdateChange={(value) => setConfig((prev) => ({ ...prev, autoUpdate: value }))}
               onBotSyncEnabledChange={(value) =>
                 setConfig((prev) => ({ ...prev, botSyncEnabled: value }))
               }
@@ -252,12 +249,8 @@ export function PlatformSettingsPanel({ defaultTab = "general" }: PlatformSettin
             customDate={timeState.customDate}
             customTime={timeState.customTime}
             onTimeMultiplierChange={handleTimeMultiplierChange}
-            onCustomDateChange={(value) =>
-              setTimeState((prev) => ({ ...prev, customDate: value }))
-            }
-            onCustomTimeChange={(value) =>
-              setTimeState((prev) => ({ ...prev, customTime: value }))
-            }
+            onCustomDateChange={(value) => setTimeState((prev) => ({ ...prev, customDate: value }))}
+            onCustomTimeChange={(value) => setTimeState((prev) => ({ ...prev, customTime: value }))}
             onSetCustomTime={handleSetCustomTime}
             onResetToRealTime={handleResetToRealTime}
             setTimePending={actionState.setTimePending}

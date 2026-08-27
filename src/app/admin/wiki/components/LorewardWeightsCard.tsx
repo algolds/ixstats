@@ -9,7 +9,11 @@ import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { ControlSlider as SlidersHorizontal, FloppyDisk as Save, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  ControlSlider as SlidersHorizontal,
+  FloppyDisk as Save,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export function LorewardWeightsCard() {
@@ -126,13 +130,13 @@ export function LorewardWeightsCard() {
   return (
     <div className="space-y-6">
       {/* Scoring Parameter Weights */}
-      <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
-        <div className="border-b border-border/20 pb-3">
+      <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+        <div className="border-border/20 border-b pb-3">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="h-4 w-4 text-blue-400" />
-            <h3 className="text-xs font-bold text-foreground">Scoring Parameters Tuning</h3>
+            <h3 className="text-foreground text-xs font-bold">Scoring Parameters Tuning</h3>
           </div>
-          <p className="text-muted-foreground text-[11px] mt-0.5">
+          <p className="text-muted-foreground mt-0.5 text-[11px]">
             Tune the daily Loreward scoring engine weights in real-time
           </p>
         </div>
@@ -156,7 +160,7 @@ export function LorewardWeightsCard() {
                     onChange={(e) =>
                       handleWeightChange("lorewardWeight_bytesAdded", parseFloat(e.target.value))
                     }
-                    className="w-full accent-blue-500 h-1.5 rounded-lg bg-muted/40"
+                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
                   />
                 </div>
 
@@ -176,7 +180,7 @@ export function LorewardWeightsCard() {
                     onChange={(e) =>
                       handleWeightChange("lorewardWeight_proseRatio", parseFloat(e.target.value))
                     }
-                    className="w-full accent-blue-500 h-1.5 rounded-lg bg-muted/40"
+                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
                   />
                 </div>
 
@@ -196,7 +200,7 @@ export function LorewardWeightsCard() {
                     onChange={(e) =>
                       handleWeightChange("lorewardWeight_editDepth", parseFloat(e.target.value))
                     }
-                    className="w-full accent-blue-500 h-1.5 rounded-lg bg-muted/40"
+                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
                   />
                 </div>
 
@@ -219,7 +223,7 @@ export function LorewardWeightsCard() {
                         parseFloat(e.target.value)
                       )
                     }
-                    className="w-full accent-blue-500 h-1.5 rounded-lg bg-muted/40"
+                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
                   />
                 </div>
 
@@ -242,7 +246,7 @@ export function LorewardWeightsCard() {
                         parseFloat(e.target.value)
                       )
                     }
-                    className="w-full accent-blue-500 h-1.5 rounded-lg bg-muted/40"
+                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
                   />
                 </div>
               </div>
@@ -250,7 +254,7 @@ export function LorewardWeightsCard() {
               <Button
                 type="submit"
                 disabled={saveWeightsMutation.isPending}
-                className="h-8 w-full gap-2 rounded-xl text-xs font-semibold active:scale-[0.98] transition-transform"
+                className="h-8 w-full gap-2 rounded-xl text-xs font-semibold transition-transform active:scale-[0.98]"
               >
                 {saveWeightsMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 <Save className="h-3.5 w-3.5" />
@@ -268,13 +272,15 @@ export function LorewardWeightsCard() {
       </div>
 
       {/* Weight Tuning Preview Console */}
-      <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
-        <div className="border-b border-border/20 pb-3">
+      <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+        <div className="border-border/20 border-b pb-3">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="h-4 w-4 text-indigo-400" />
-            <h3 className="text-xs font-bold text-foreground">Weight Tuning Preview</h3>
+            <h3 className="text-foreground text-xs font-bold">Weight Tuning Preview</h3>
           </div>
-          <p className="text-muted-foreground text-[11px] mt-0.5">Preview candidate ranks under simulated weights</p>
+          <p className="text-muted-foreground mt-0.5 text-[11px]">
+            Preview candidate ranks under simulated weights
+          </p>
         </div>
         <div className="space-y-4">
           <div className="flex items-end gap-2">
@@ -284,13 +290,13 @@ export function LorewardWeightsCard() {
                 type="date"
                 value={previewDate}
                 onChange={(e) => setPreviewDate(e.target.value)}
-                className="h-8 rounded-xl border-border/30 bg-background/50 text-xs"
+                className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
               />
             </div>
             <Button
               onClick={handleRunPreview}
               disabled={isPreviewLoading || !tempWeights}
-              className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               {isPreviewLoading ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -310,7 +316,7 @@ export function LorewardWeightsCard() {
           ) : rankDeltas.length > 0 ? (
             <div className="border-border/30 max-h-80 overflow-y-auto rounded-xl border text-xs">
               <table className="w-full">
-                <thead className="bg-muted/30 sticky top-0 font-medium backdrop-blur-md border-b border-border/30 text-muted-foreground">
+                <thead className="bg-muted/30 border-border/30 text-muted-foreground sticky top-0 border-b font-medium backdrop-blur-md">
                   <tr>
                     <th className="w-16 px-3 py-2 text-left">Rank</th>
                     <th className="px-3 py-2 text-left">Candidate</th>

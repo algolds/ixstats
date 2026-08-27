@@ -86,7 +86,9 @@ export class InboundMediaWikiSyncService {
         select: { mwLatestRevId: true },
       });
 
-      const currentMaxRevId = latestArticle?.mwLatestRevId ? Number(latestArticle.mwLatestRevId) : 0;
+      const currentMaxRevId = latestArticle?.mwLatestRevId
+        ? Number(latestArticle.mwLatestRevId)
+        : 0;
       maxRev = currentMaxRevId;
 
       // 2. Query MediaWiki Action API for recent changes
@@ -124,7 +126,16 @@ export class InboundMediaWikiSyncService {
           const fullTitle = this.sanitize(String(rc.title || "").replace(/_/g, " "));
           const slug = toArticleSlug(fullTitle);
           const ns = Number(rc.ns ?? 0);
-          const prefix = ns === 10 ? "Template" : ns === 14 ? "Category" : ns === 2 ? "User" : ns === 1 ? "Talk" : "";
+          const prefix =
+            ns === 10
+              ? "Template"
+              : ns === 14
+                ? "Category"
+                : ns === 2
+                  ? "User"
+                  : ns === 1
+                    ? "Talk"
+                    : "";
           const byteDelta = Number(rc.newlen || 0) - Number(rc.oldlen || 0);
 
           // 3. Check existing article for echo prevention
@@ -188,7 +199,9 @@ export class InboundMediaWikiSyncService {
 
           // 7. Update Link Graph if wikitext is present
           if (wikitext) {
-            void LinkGraphService.syncArticleLinks(article.id, wikitext, undefined, realm).catch(() => {});
+            void LinkGraphService.syncArticleLinks(article.id, wikitext, undefined, realm).catch(
+              () => {}
+            );
           }
 
           synced++;

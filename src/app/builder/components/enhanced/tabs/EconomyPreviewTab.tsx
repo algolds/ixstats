@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Dollar as DollarSign, Group as Users, Flash as Zap, CheckCircle, WarningTriangle as AlertTriangle } from "iconoir-react";
+import {
+  Dollar as DollarSign,
+  Group as Users,
+  Flash as Zap,
+  CheckCircle,
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import { MetricCard } from "../../../primitives/enhanced";
 import type { EconomyBuilderState, EconomicHealthMetrics } from "~/types/economy-builder";
 import type { EconomicInputs } from "../../../lib/economy-data-service";

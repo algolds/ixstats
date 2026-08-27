@@ -1,6 +1,18 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, WhiteFlag as Flag, MapPin, City as Building2, StatUp as TrendingUp, Group as Users, Globe, Clock, Translate as Languages, Sparks as Sparkles } from "iconoir-react";
+import {
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+  WhiteFlag as Flag,
+  MapPin,
+  City as Building2,
+  StatUp as TrendingUp,
+  Group as Users,
+  Globe,
+  Clock,
+  Translate as Languages,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";

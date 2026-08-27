@@ -1,7 +1,17 @@
 // src/app/admin/wiki/components/types.ts
 // Shared types and formatting helpers for Admin Wiki Panel.
 
-import { Trophy, Medal, Star, Crown, Shield, Trophy as Award, Group as Users, Check, Sparks as Sparkles } from "iconoir-react";
+import {
+  Trophy,
+  Medal,
+  Star,
+  Crown,
+  Shield,
+  Trophy as Award,
+  Group as Users,
+  Check,
+  Sparks as Sparkles,
+} from "iconoir-react";
 
 export type FilterTab = "all" | "linked" | "unlinked";
 

@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { GraphUp as ChartLine, CalendarRotate as CalendarClock, Dashboard as LayoutDashboard } from "iconoir-react";
+import {
+  GraphUp as ChartLine,
+  CalendarRotate as CalendarClock,
+  Dashboard as LayoutDashboard,
+} from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function ForecastingArticle() {

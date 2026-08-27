@@ -35,7 +35,20 @@ import { ColorPickerInput } from "~/components/ui/color-picker";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { NavArrowDown as ChevronDown, Plus, EditPencil as Edit2, ClockRotateRight as History, Sparks as Sparkles, Database, Shield, Coins, Dashboard as Gauge, SystemRestart as Loader2, SwitchOff as ToggleLeft, SwitchOn as ToggleRight } from "iconoir-react";
+import {
+  NavArrowDown as ChevronDown,
+  Plus,
+  EditPencil as Edit2,
+  ClockRotateRight as History,
+  Sparks as Sparkles,
+  Database,
+  Shield,
+  Coins,
+  Dashboard as Gauge,
+  SystemRestart as Loader2,
+  SwitchOff as ToggleLeft,
+  SwitchOn as ToggleRight,
+} from "iconoir-react";
 import { ICON_MAP } from "~/components/vault/sections/marketplace/VaultStoreTab";
 
 export function VaultStoreControl() {

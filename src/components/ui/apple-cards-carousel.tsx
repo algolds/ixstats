@@ -47,7 +47,7 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
       carouselRef.current.scrollLeft = initialScroll;
       checkScrollability();
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [initialScroll]);
 
   const checkScrollability = () => {

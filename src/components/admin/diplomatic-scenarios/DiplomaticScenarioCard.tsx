@@ -4,10 +4,7 @@ import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Globe, EditPencil as Pencil, Copy, Trash as Trash2 } from "iconoir-react";
-import {
-  SCENARIO_TYPES,
-  RELATIONSHIP_LEVELS,
-} from "~/lib/admin/diplomatic-scenario-transforms";
+import { SCENARIO_TYPES, RELATIONSHIP_LEVELS } from "~/lib/admin/diplomatic-scenario-transforms";
 
 interface DiplomaticScenarioCardProps {
   scenario: any;
@@ -43,7 +40,7 @@ export function DiplomaticScenarioCard({
     : 0;
 
   return (
-    <Card className="facet-card-child p-4 transition-all hover:border-[--intel-gold]/50 flex flex-col justify-between">
+    <Card className="facet-card-child flex flex-col justify-between p-4 transition-all hover:border-[--intel-gold]/50">
       <div>
         {/* Header */}
         <div className="mb-3 flex items-start justify-between">
@@ -58,7 +55,9 @@ export function DiplomaticScenarioCard({
                 <span className="rounded bg-white/5 px-2 py-0.5 text-xs text-[--intel-silver]">
                   {typeConfig?.label || scenario.type}
                 </span>
-                <span className={`rounded bg-white/5 px-2 py-0.5 text-xs ${relConfig?.color || ""}`}>
+                <span
+                  className={`rounded bg-white/5 px-2 py-0.5 text-xs ${relConfig?.color || ""}`}
+                >
                   {relConfig?.label || scenario.relationshipState}
                 </span>
                 {difficulty && (

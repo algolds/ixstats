@@ -290,9 +290,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                           overviewData.priorities
                                         ),
                                         partnershipGoals: JSON.stringify(overviewData.goals),
-                                        keyAchievements: JSON.stringify(
-                                          overviewData.achievements
-                                        ),
+                                        keyAchievements: JSON.stringify(overviewData.achievements),
                                       });
                                     }}
                                     disabled={updateProfileMutation.isPending}
@@ -586,10 +584,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                           <EconomicDataTab data={sharedData?.economic} />
                         </TabsContent>
                         <TabsContent value="intelligence" className="space-y-4">
-                          <IntelligenceDataTab
-                            data={sharedData?.intelligence}
-                            isOwner={isOwner}
-                          />
+                          <IntelligenceDataTab data={sharedData?.intelligence} isOwner={isOwner} />
                         </TabsContent>
                         <TabsContent value="research" className="space-y-4">
                           <ResearchDataTab data={sharedData?.research} />

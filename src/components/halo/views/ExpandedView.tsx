@@ -29,7 +29,7 @@ function ExpandedViewComponent({
       setIsImpersonating(!!playAs);
       setTargetUser(playAs || "");
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [mode]);
 
   const handleStopImpersonating = () => {

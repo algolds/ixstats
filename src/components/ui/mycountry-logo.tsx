@@ -227,8 +227,10 @@ export function MyCountryIcon({
 
 export function MyCountryLogomark({ className }: { className?: string }) {
   return (
-    <div className={cn("relative flex h-3.5 w-3.5 items-center justify-center shrink-0", className)}>
-      <div className="relative flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-amber-200 to-amber-400 border border-amber-300/50 shadow-2xs">
+    <div
+      className={cn("relative flex h-3.5 w-3.5 shrink-0 items-center justify-center", className)}
+    >
+      <div className="relative flex h-full w-full items-center justify-center rounded-full border border-amber-300/50 bg-gradient-to-br from-amber-200 to-amber-400 shadow-2xs">
         <Globe className="h-2.5 w-2.5 text-amber-900/80" />
       </div>
       <div className="absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-full border border-amber-300 bg-amber-400 p-[0.5px] shadow-2xs">
@@ -237,4 +239,3 @@ export function MyCountryLogomark({ className }: { className?: string }) {
     </div>
   );
 }
-

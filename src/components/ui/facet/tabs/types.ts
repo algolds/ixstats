@@ -35,4 +35,3 @@ export interface FacetTabsProps {
    * container's corner radius at the edge tabs). twMerge lets this override defaults. */
   indicatorClassName?: string;
 }
-

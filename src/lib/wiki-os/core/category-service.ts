@@ -76,8 +76,14 @@ export class CategoryService {
       },
     });
 
-    const articleMap = new Map<string, { id: string; slug: string; title: string; summary: string | null }>();
-    const subcatMap = new Map<string, { id: string; slug: string; name: string; memberCount: number }>();
+    const articleMap = new Map<
+      string,
+      { id: string; slug: string; title: string; summary: string | null }
+    >();
+    const subcatMap = new Map<
+      string,
+      { id: string; slug: string; name: string; memberCount: number }
+    >();
 
     if (cat) {
       if (cat.members && cat.members.length > 0) {
@@ -169,7 +175,9 @@ export class CategoryService {
     }
 
     const articles = Array.from(articleMap.values()).sort((a, b) => a.title.localeCompare(b.title));
-    const subcategories = Array.from(subcatMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+    const subcategories = Array.from(subcatMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
 
     return {
       category: cat
@@ -194,10 +202,7 @@ export class CategoryService {
   /**
    * Sync Category Memberships for an article
    */
-  static async syncArticleCategories(
-    articleId: string,
-    categoryNames: string[]
-  ): Promise<void> {
+  static async syncArticleCategories(articleId: string, categoryNames: string[]): Promise<void> {
     if (categoryNames.length === 0) {
       return;
     }

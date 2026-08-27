@@ -91,7 +91,10 @@ export function WorldConfigsTab() {
               const isEditing = editingId === config.id;
 
               return (
-                <tr key={config.id} className="border-border/20 hover:bg-muted/20 border-b transition-colors">
+                <tr
+                  key={config.id}
+                  className="border-border/20 hover:bg-muted/20 border-b transition-colors"
+                >
                   <td className="text-muted-foreground px-4 py-3 font-mono text-xs">
                     {config.worldId}
                   </td>
@@ -103,7 +106,7 @@ export function WorldConfigsTab() {
                         onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
                       />
                     ) : (
-                      <span className="font-medium text-foreground">{config.name}</span>
+                      <span className="text-foreground font-medium">{config.name}</span>
                     )}
                   </td>
                   <td className="text-muted-foreground px-4 py-3 font-mono text-xs">
@@ -150,7 +153,7 @@ export function WorldConfigsTab() {
                         placeholder="https://..."
                       />
                     ) : config.wikiBaseUrl ? (
-                      <span className="font-mono text-xs truncate max-w-[120px] block">
+                      <span className="block max-w-[120px] truncate font-mono text-xs">
                         {config.wikiBaseUrl}
                       </span>
                     ) : (
@@ -161,7 +164,7 @@ export function WorldConfigsTab() {
                     {isEditing ? (
                       <input
                         type="number"
-                        className="border-border/40 bg-background text-foreground w-16 rounded-lg border px-2 py-1 text-xs font-mono focus:outline-none"
+                        className="border-border/40 bg-background text-foreground w-16 rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
                         value={editForm.defaultZoom ?? 2}
                         onChange={(e) =>
                           setEditForm((f) => ({
@@ -179,10 +182,8 @@ export function WorldConfigsTab() {
                       <input
                         type="checkbox"
                         checked={editForm.isActive ?? true}
-                        onChange={(e) =>
-                          setEditForm((f) => ({ ...f, isActive: e.target.checked }))
-                        }
-                        className="h-4 w-4 rounded cursor-pointer accent-primary"
+                        onChange={(e) => setEditForm((f) => ({ ...f, isActive: e.target.checked }))}
+                        className="accent-primary h-4 w-4 cursor-pointer rounded"
                       />
                     ) : (
                       <span
@@ -201,11 +202,11 @@ export function WorldConfigsTab() {
                           onChange={(e) =>
                             setEditForm((f) => ({ ...f, syncEnabled: e.target.checked }))
                           }
-                          className="h-3.5 w-3.5 rounded cursor-pointer accent-primary"
+                          className="accent-primary h-3.5 w-3.5 cursor-pointer rounded"
                         />
                         <input
                           type="number"
-                          className="border-border/40 bg-background text-foreground w-14 rounded-lg border px-1.5 py-0.5 text-xs font-mono focus:outline-none"
+                          className="border-border/40 bg-background text-foreground w-14 rounded-lg border px-1.5 py-0.5 font-mono text-xs focus:outline-none"
                           value={editForm.syncIntervalMin ?? 60}
                           onChange={(e) =>
                             setEditForm((f) => ({
@@ -228,7 +229,7 @@ export function WorldConfigsTab() {
                         <button
                           onClick={() => saveEdit(config.id)}
                           disabled={updateMutation.isPending}
-                          className="rounded-lg p-1 text-emerald-500 hover:bg-emerald-500/10 active:scale-[0.98] transition-transform"
+                          className="rounded-lg p-1 text-emerald-500 transition-transform hover:bg-emerald-500/10 active:scale-[0.98]"
                         >
                           {updateMutation.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -238,7 +239,7 @@ export function WorldConfigsTab() {
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="text-muted-foreground hover:bg-muted/50 rounded-lg p-1 active:scale-[0.98] transition-transform"
+                          className="text-muted-foreground hover:bg-muted/50 rounded-lg p-1 transition-transform active:scale-[0.98]"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -246,7 +247,7 @@ export function WorldConfigsTab() {
                     ) : (
                       <button
                         onClick={() => startEdit(config)}
-                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 active:scale-[0.98] transition-transform"
+                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 transition-transform active:scale-[0.98]"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>

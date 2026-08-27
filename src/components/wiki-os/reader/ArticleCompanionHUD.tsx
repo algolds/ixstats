@@ -67,7 +67,10 @@ export function ArticleCompanionHUD({
   // Calculate word count & estimated reading time dynamically
   const { wordCount, readingTime } = useMemo(() => {
     if (!contentHtml) return { wordCount: 0, readingTime: 1 };
-    const plainText = contentHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const plainText = contentHtml
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
     const words = plainText ? plainText.split(/\s+/).length : 0;
     const time = Math.max(1, Math.ceil(words / 200));
     return { wordCount: words, readingTime: time };
@@ -77,7 +80,7 @@ export function ArticleCompanionHUD({
   const creatorName =
     typeof creator === "object"
       ? (creator as any)?.username
-      : (creator || (authorInfo as any)?.author || null);
+      : creator || (authorInfo as any)?.author || null;
   const creatorAvatar =
     (typeof creator === "object" ? (creator as any)?.avatar : null) ||
     (authorInfo as any)?.creatorAvatar ||
@@ -91,9 +94,7 @@ export function ArticleCompanionHUD({
 
   const lastEditor = authorInfo?.lastEditor;
   const lastEditorName =
-    typeof lastEditor === "object"
-      ? (lastEditor as any)?.username
-      : (lastEditor || null);
+    typeof lastEditor === "object" ? (lastEditor as any)?.username : lastEditor || null;
   const lastEditorAvatar =
     (typeof lastEditor === "object" ? (lastEditor as any)?.avatar : null) ||
     (authorInfo as any)?.lastEditorAvatar ||
@@ -110,12 +111,11 @@ export function ArticleCompanionHUD({
     return rawContributors.filter(
       (c) => c.username && (!creatorName || c.username.toLowerCase() !== creatorName.toLowerCase())
     );
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [rawContributors, creatorName]);
 
   const totalContributorsCount =
-    authorInfo?.totalContributors ||
-    (otherContributors.length + (creatorName ? 1 : 0));
+    authorInfo?.totalContributors || otherContributors.length + (creatorName ? 1 : 0);
 
   const hasNotes = marginThreadsCount > 0 || marginAnnotationsCount > 0;
 
@@ -124,43 +124,48 @@ export function ArticleCompanionHUD({
   return (
     <div className="wikios-companion-hud flex flex-col gap-3 select-none">
       {/* 1. Article Intelligence & Provenance Capsule */}
-      <div className="facet-surface rounded-2xl border border-white/10 bg-card/40 p-3 shadow-xs backdrop-blur-xl transition-all duration-300">
-        <div className="flex items-center justify-between gap-2 border-b border-border/30 pb-2 mb-2.5">
+      <div className="facet-surface bg-card/40 rounded-2xl border border-white/10 p-3 shadow-xs backdrop-blur-xl transition-all duration-300">
+        <div className="border-border/30 mb-2.5 flex items-center justify-between gap-2 border-b pb-2">
           {awardsData?.hasLoreward && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[9px] font-bold text-amber-400">
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-400">
               <Trophy className="h-2.5 w-2.5" />
               Awarded
             </span>
           )}
         </div>
 
-        <div className="space-y-2 text-xs text-muted-foreground font-ui">
+        <div className="text-muted-foreground font-ui space-y-2 text-xs">
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-muted-foreground/70">Read Time</span>
-            <span className="font-semibold text-foreground tabular-nums" title={`${wordCount.toLocaleString()} words`}>
+            <span
+              className="text-foreground font-semibold tabular-nums"
+              title={`${wordCount.toLocaleString()} words`}
+            >
               ~{readingTime} min
             </span>
           </div>
 
           {/* Original Creator / Author — with IxnayID avatar when available */}
           {creatorName && (
-            <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-border/20">
+            <div className="border-border/20 flex items-center justify-between border-t pt-1.5 text-[11px]">
               <span className="text-muted-foreground/70">Created by</span>
               <Link
-                href={withBasePath(`/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`)}
-                className="inline-flex items-center gap-1.5 font-semibold text-foreground hover:text-purple-400 transition-colors max-w-[140px]"
+                href={withBasePath(
+                  `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
+                )}
+                className="text-foreground inline-flex max-w-[140px] items-center gap-1.5 font-semibold transition-colors hover:text-purple-400"
                 title={`Original Author: ${creatorName}`}
               >
                 {creatorAvatar ? (
                   <img
                     src={creatorAvatar}
                     alt=""
-                    className="h-4 w-4 rounded-full object-cover shrink-0 border border-white/10"
+                    className="h-4 w-4 shrink-0 rounded-full border border-white/10 object-cover"
                     loading="lazy"
                     decoding="async"
                   />
                 ) : (
-                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[8px] font-bold leading-none text-muted-foreground">
+                  <span className="text-muted-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[8px] leading-none font-bold">
                     {creatorName.charAt(0).toUpperCase()}
                   </span>
                 )}
@@ -173,7 +178,7 @@ export function ArticleCompanionHUD({
           {createdAt && (
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground/70">Created</span>
-              <span className="font-medium text-foreground/80 tabular-nums text-[10.5px]">
+              <span className="text-foreground/80 text-[10.5px] font-medium tabular-nums">
                 {new Date(createdAt).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -185,9 +190,9 @@ export function ArticleCompanionHUD({
 
           {/* Last Updated Timestamp */}
           {effectiveLastModified && (
-            <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-border/20">
+            <div className="border-border/20 flex items-center justify-between border-t pt-1.5 text-[11px]">
               <span className="text-muted-foreground/70">Last Updated</span>
-              <span className="font-medium text-foreground/90 tabular-nums text-[10.5px]">
+              <span className="text-foreground/90 text-[10.5px] font-medium tabular-nums">
                 {new Date(effectiveLastModified).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -202,20 +207,22 @@ export function ArticleCompanionHUD({
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground/70">Last Editor</span>
               <Link
-                href={withBasePath(`/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`)}
-                className="inline-flex items-center gap-1.5 font-medium text-foreground/90 hover:text-purple-400 transition-colors max-w-[140px]"
+                href={withBasePath(
+                  `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
+                )}
+                className="text-foreground/90 inline-flex max-w-[140px] items-center gap-1.5 font-medium transition-colors hover:text-purple-400"
                 title={`Last edited by ${lastEditorName}`}
               >
                 {lastEditorAvatar ? (
                   <img
                     src={lastEditorAvatar}
                     alt=""
-                    className="h-4 w-4 rounded-full object-cover shrink-0 border border-white/10"
+                    className="h-4 w-4 shrink-0 rounded-full border border-white/10 object-cover"
                     loading="lazy"
                     decoding="async"
                   />
                 ) : (
-                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[8px] font-bold leading-none text-muted-foreground">
+                  <span className="text-muted-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[8px] leading-none font-bold">
                     {lastEditorName.charAt(0).toUpperCase()}
                   </span>
                 )}
@@ -226,39 +233,43 @@ export function ArticleCompanionHUD({
 
           {/* Other Contributors Section */}
           {otherContributors.length > 0 && (
-            <div className="pt-2 border-t border-border/20 space-y-1.5">
+            <div className="border-border/20 space-y-1.5 border-t pt-2">
               <div className="flex items-center justify-between text-[10.5px]">
-                <span className="text-muted-foreground/80 font-medium flex items-center gap-1">
+                <span className="text-muted-foreground/80 flex items-center gap-1 font-medium">
                   <Users className="h-3 w-3 text-cyan-400" />
                   Contributors
                 </span>
-                <span className="text-[10px] font-bold text-muted-foreground/70 tabular-nums">
+                <span className="text-muted-foreground/70 text-[10px] font-bold tabular-nums">
                   {totalContributorsCount}
                 </span>
               </div>
 
               <div className="flex flex-wrap gap-1 pt-0.5">
-                {(showAllContributors ? otherContributors : otherContributors.slice(0, 3)).map((contrib) => (
-                  <Link
-                    key={contrib.username}
-                    href={withBasePath(`/wiki/User:${encodeURIComponent(contrib.username.replace(/ /g, "_"))}`)}
-                    className="inline-flex items-center gap-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 px-1.5 py-0.5 text-[10px] font-medium text-foreground/90 hover:text-cyan-300 transition-colors truncate max-w-[140px]"
-                    title={`${contrib.username} (${contrib.editCount || 1} edits)`}
-                  >
-                    <span>{contrib.username}</span>
-                    {contrib.editCount && contrib.editCount > 1 && (
-                      <span className="text-[8.5px] text-muted-foreground/70 tabular-nums">
-                        ({contrib.editCount})
-                      </span>
-                    )}
-                  </Link>
-                ))}
+                {(showAllContributors ? otherContributors : otherContributors.slice(0, 3)).map(
+                  (contrib) => (
+                    <Link
+                      key={contrib.username}
+                      href={withBasePath(
+                        `/wiki/User:${encodeURIComponent(contrib.username.replace(/ /g, "_"))}`
+                      )}
+                      className="text-foreground/90 inline-flex max-w-[140px] items-center gap-1 truncate rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium transition-colors hover:bg-white/10 hover:text-cyan-300"
+                      title={`${contrib.username} (${contrib.editCount || 1} edits)`}
+                    >
+                      <span>{contrib.username}</span>
+                      {contrib.editCount && contrib.editCount > 1 && (
+                        <span className="text-muted-foreground/70 text-[8.5px] tabular-nums">
+                          ({contrib.editCount})
+                        </span>
+                      )}
+                    </Link>
+                  )
+                )}
 
                 {otherContributors.length > 3 && (
                   <button
                     type="button"
                     onClick={() => setShowAllContributors((v) => !v)}
-                    className="text-[9.5px] font-semibold text-cyan-400 hover:text-cyan-300 px-1 py-0.5 cursor-pointer transition-colors"
+                    className="cursor-pointer px-1 py-0.5 text-[9.5px] font-semibold text-cyan-400 transition-colors hover:text-cyan-300"
                   >
                     {showAllContributors ? "Show less" : `+${otherContributors.length - 3} more`}
                   </button>
@@ -270,7 +281,7 @@ export function ArticleCompanionHUD({
       </div>
 
       {/* 2. Quick Actions Glass Control Center */}
-      <div className="facet-surface rounded-2xl border border-white/10 bg-card/40 p-2.5 shadow-xs backdrop-blur-xl space-y-1.5">
+      <div className="facet-surface bg-card/40 space-y-1.5 rounded-2xl border border-white/10 p-2.5 shadow-xs backdrop-blur-xl">
         {/* Listen / Voice Narrator Toggle */}
         {narrator && (
           <button
@@ -284,17 +295,17 @@ export function ArticleCompanionHUD({
               }
             }}
             className={cn(
-              "group flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-[0.97]",
+              "group flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-xs font-semibold transition-all duration-200 active:scale-[0.97]",
               narrator.isPlaying
-                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-xs"
-                : "bg-white/5 hover:bg-white/10 text-foreground border border-white/5"
+                ? "border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 shadow-xs"
+                : "text-foreground border border-white/5 bg-white/5 hover:bg-white/10"
             )}
           >
             <div className="flex items-center gap-2">
               {narrator.isPlaying ? (
-                <Pause className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+                <Pause className="h-3.5 w-3.5 animate-pulse text-cyan-400" />
               ) : (
-                <Play className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground" />
+                <Play className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5" />
               )}
               <span>{narrator.isPlaying ? "Narrating..." : "Listen to article"}</span>
             </div>
@@ -305,7 +316,7 @@ export function ArticleCompanionHUD({
                 <span className="h-2 w-0.5 animate-[bounce_1s_infinite_300ms] rounded-full bg-cyan-400" />
               </span>
             ) : (
-              <span className="rounded-full bg-cyan-500/15 border border-cyan-500/30 px-1.5 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-cyan-400 leading-none">
+              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/15 px-1.5 py-0.5 text-[8.5px] leading-none font-bold tracking-wider text-cyan-400 uppercase">
                 Beta
               </span>
             )}
@@ -320,7 +331,7 @@ export function ArticleCompanionHUD({
               soundEffects.bloom();
               onOpenBacklinks?.();
             }}
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 py-1.5 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-all duration-200 cursor-pointer active:scale-[0.97]"
+            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-[11px] font-medium transition-all duration-200 hover:bg-white/10 active:scale-[0.97]"
             title="What Links Here"
           >
             <LinkIcon className="h-3 w-3 text-cyan-400" />
@@ -333,7 +344,7 @@ export function ArticleCompanionHUD({
               soundEffects.bloom();
               onOpenHistory?.();
             }}
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 py-1.5 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-all duration-200 cursor-pointer active:scale-[0.97]"
+            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-[11px] font-medium transition-all duration-200 hover:bg-white/10 active:scale-[0.97]"
             title="Revision History"
           >
             <Clock className="h-3 w-3 text-purple-400" />
@@ -348,36 +359,41 @@ export function ArticleCompanionHUD({
             soundEffects.bloom();
             onOpenMargin?.("threads");
           }}
-          className="group flex w-full items-center justify-between border-t border-border/20 pt-2 mt-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+          className="group border-border/20 text-muted-foreground hover:text-foreground mt-1 flex w-full cursor-pointer items-center justify-between border-t pt-2 text-[11px] font-medium transition-colors"
         >
           <span className="flex items-center gap-1.5">
             <ChatBubble className="h-3 w-3 text-amber-400/80 group-hover:text-amber-400" />
             <span>Margin notes</span>
             {hasNotes ? (
-              <span className="tabular-nums text-muted-foreground/60">· {marginThreadsCount + marginAnnotationsCount} {marginThreadsCount + marginAnnotationsCount === 1 ? "thread" : "threads"}</span>
+              <span className="text-muted-foreground/60 tabular-nums">
+                · {marginThreadsCount + marginAnnotationsCount}{" "}
+                {marginThreadsCount + marginAnnotationsCount === 1 ? "thread" : "threads"}
+              </span>
             ) : (
               <span className="text-muted-foreground/40">· none yet</span>
             )}
           </span>
-          <span className="text-muted-foreground/40 transition-colors group-hover:text-foreground">→</span>
+          <span className="text-muted-foreground/40 group-hover:text-foreground transition-colors">
+            →
+          </span>
         </button>
       </div>
 
       {/* 3. Top Categories / Domain Tags */}
       {categories.length > 0 && (
-        <div className="facet-surface rounded-2xl border border-white/10 bg-card/40 p-3 shadow-xs backdrop-blur-xl">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 font-brand mb-2">
+        <div className="facet-surface bg-card/40 rounded-2xl border border-white/10 p-3 shadow-xs backdrop-blur-xl">
+          <div className="text-muted-foreground/80 font-brand mb-2 text-[10px] font-bold tracking-wider uppercase">
             Categories
           </div>
           <div className="flex flex-wrap gap-1.5">
             {categories.slice(0, 4).map((cat) => {
-              const cleanCat = typeof cat === "string" ? cat : (cat as any)?.title ?? "";
+              const cleanCat = typeof cat === "string" ? cat : ((cat as any)?.title ?? "");
               if (!cleanCat) return null;
               return (
                 <Link
                   key={cleanCat}
                   href={`/wiki/categories/${encodeURIComponent(cleanCat.replace(/ /g, "_"))}`}
-                  className="rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-all duration-150 active:scale-95 truncate max-w-[180px]"
+                  className="text-muted-foreground hover:text-foreground max-w-[180px] truncate rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium transition-all duration-150 hover:bg-white/10 active:scale-95"
                 >
                   {cleanCat}
                 </Link>

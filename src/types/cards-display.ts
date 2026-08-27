@@ -183,8 +183,6 @@ export interface NationCardInstance extends CardInstance {
 
 export type DiscriminatedCardInstance = LoreCardInstance | NSCardInstance | NationCardInstance;
 
-
-
 /**
  * Formatted card stats for display
  */

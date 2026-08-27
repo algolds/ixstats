@@ -153,7 +153,10 @@ export const thinkpagesMessagingMessagesRouter = createTRPCRouter({
         });
       } catch (err: any) {
         if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You are not a participant in this conversation" });
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You are not a participant in this conversation",
+          });
         }
         throw err;
       }
@@ -191,7 +194,10 @@ export const thinkpagesMessagingMessagesRouter = createTRPCRouter({
         });
       } catch (err: any) {
         if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Not a participant in this conversation" });
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Not a participant in this conversation",
+          });
         }
         throw err;
       }

@@ -1,7 +1,13 @@
 "use client";
 
 import React, { memo } from "react";
-import { Navigator as Route, Check, Undo as Undo2, ArrowSeparate as ArrowLeftRight, Magnet } from "iconoir-react";
+import {
+  Navigator as Route,
+  Check,
+  Undo as Undo2,
+  ArrowSeparate as ArrowLeftRight,
+  Magnet,
+} from "iconoir-react";
 import { ROUTE_STYLES } from "~/lib/maps/map-config";
 import {
   ToolLabel,

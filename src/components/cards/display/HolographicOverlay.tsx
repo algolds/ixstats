@@ -227,8 +227,8 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
             backgroundPosition:
               // oxlint-disable-next-line
               isHovered && containerRef.current
-                // oxlint-disable-next-line
-                ? `${(mousePosition.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePosition.y / (containerRef.current.offsetHeight || 1)) * 100}%`
+                ? // oxlint-disable-next-line
+                  `${(mousePosition.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePosition.y / (containerRef.current.offsetHeight || 1)) * 100}%`
                 : "50% 50%",
             opacity: isHovered ? 0.75 : 0,
             transition: "background-position 0.1s ease-out, opacity 0.3s ease-out",

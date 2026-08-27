@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { Xmark as X, MapPin, SystemRestart as Loader2, WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
+import {
+  Xmark as X,
+  MapPin,
+  SystemRestart as Loader2,
+  WarningTriangle as AlertTriangle,
+  CheckCircle,
+} from "iconoir-react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
 import { Button } from "~/components/ui/button";
@@ -298,14 +304,14 @@ export function MapPickerModal({
         </div>
 
         {/* Content */}
-        <div className="relative flex-1 bg-map-ocean">
+        <div className="bg-map-ocean relative flex-1">
           {isLoading ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-map-ocean text-white">
+            <div className="bg-map-ocean absolute inset-0 flex flex-col items-center justify-center gap-3 text-white">
               <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
               <p className="text-sm text-white/60">Loading map data...</p>
             </div>
           ) : !geometry ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-map-ocean p-6 text-center text-white">
+            <div className="bg-map-ocean absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center text-white">
               <AlertTriangle className="h-10 w-10 text-amber-500" />
               <p className="text-sm font-semibold">No map boundary linked</p>
               <p className="max-w-xs text-xs text-white/50">

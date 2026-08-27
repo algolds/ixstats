@@ -3,7 +3,16 @@
 import React from "react";
 import { motion } from "motion/react";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { MoreHoriz as MoreHorizontal, Pin, Bookmark, WhiteFlag as Flag, EditPencil as Edit, Trash as Trash2, Journal as Newspaper, Group as Users } from "iconoir-react";
+import {
+  MoreHoriz as MoreHorizontal,
+  Pin,
+  Bookmark,
+  WhiteFlag as Flag,
+  EditPencil as Edit,
+  Trash as Trash2,
+  Journal as Newspaper,
+  Group as Users,
+} from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -96,7 +105,7 @@ export function HeroPostView({
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="group relative space-y-4 overflow-hidden rounded-2xl border border-border/60 bg-card/85 p-5 shadow-sm backdrop-blur-2xl transition-all duration-200 hover:border-border hover:bg-card/95 hover:shadow-md"
+      className="group border-border/60 bg-card/85 hover:border-border hover:bg-card/95 relative space-y-4 overflow-hidden rounded-2xl border p-5 shadow-sm backdrop-blur-2xl transition-all duration-200 hover:shadow-md"
     >
       {/* Header section */}
       <div className="flex items-center justify-between">
@@ -189,7 +198,10 @@ export function HeroPostView({
               className="border-border/60 bg-card/95 w-56 backdrop-blur-xl"
             >
               {canEdit && (
-                <DropdownMenuItem onClick={handleEdit} className="text-foreground hover:bg-accent/20">
+                <DropdownMenuItem
+                  onClick={handleEdit}
+                  className="text-foreground hover:bg-accent/20"
+                >
                   <Edit className="mr-2 h-4 w-4" />
                   <span>Edit Post</span>
                 </DropdownMenuItem>

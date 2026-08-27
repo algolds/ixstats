@@ -10,7 +10,12 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Undo as RotateCcw, Refresh as RotateCw, Expand as Maximize2, ControlSlider as SlidersHorizontal } from "iconoir-react";
+import {
+  Undo as RotateCcw,
+  Refresh as RotateCw,
+  Expand as Maximize2,
+  ControlSlider as SlidersHorizontal,
+} from "iconoir-react";
 
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";

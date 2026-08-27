@@ -60,7 +60,7 @@ export function FacetTablePagination({
     <div
       data-slot="facet-table-pagination"
       className={cn(
-        "border-border/30 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between text-xs",
+        "border-border/30 flex flex-col gap-3 border-t pt-4 text-xs sm:flex-row sm:items-center sm:justify-between",
         className
       )}
     >
@@ -69,17 +69,15 @@ export function FacetTablePagination({
         <span>
           Showing <strong className="text-foreground font-semibold">{startItem}</strong> to{" "}
           <strong className="text-foreground font-semibold">{endItem}</strong> of{" "}
-          <strong className="text-foreground font-semibold">{totalItems.toLocaleString()}</strong> results
+          <strong className="text-foreground font-semibold">{totalItems.toLocaleString()}</strong>{" "}
+          results
         </span>
 
         {pageSizeOptions && onPageSizeChange && (
-          <div className="flex items-center gap-1.5 pl-2 border-l border-border/40">
+          <div className="border-border/40 flex items-center gap-1.5 border-l pl-2">
             <span className="text-[11px]">Per page:</span>
-            <Select
-              value={String(pageSize)}
-              onValueChange={(val) => onPageSizeChange(Number(val))}
-            >
-              <SelectTrigger className="border-border/40 bg-background/50 h-7 w-16 text-xs rounded-lg">
+            <Select value={String(pageSize)} onValueChange={(val) => onPageSizeChange(Number(val))}>
+              <SelectTrigger className="border-border/40 bg-background/50 h-7 w-16 rounded-lg text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -103,7 +101,7 @@ export function FacetTablePagination({
             size="sm"
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="border-border/40 bg-card/60 hover:bg-muted text-foreground h-8 w-8 p-0 rounded-lg active:scale-95 transition-all"
+            className="border-border/40 bg-card/60 hover:bg-muted text-foreground h-8 w-8 rounded-lg p-0 transition-all active:scale-95"
             aria-label="Previous Page"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -126,7 +124,7 @@ export function FacetTablePagination({
                     size="sm"
                     onClick={() => onPageChange(p)}
                     className={cn(
-                      "h-8 min-w-8 px-2 text-xs font-semibold rounded-lg active:scale-95 transition-all",
+                      "h-8 min-w-8 rounded-lg px-2 text-xs font-semibold transition-all active:scale-95",
                       isCurrent
                         ? "bg-primary text-primary-foreground shadow-xs"
                         : "border-border/40 bg-card/60 hover:bg-muted text-foreground"
@@ -145,7 +143,7 @@ export function FacetTablePagination({
             size="sm"
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="border-border/40 bg-card/60 hover:bg-muted text-foreground h-8 w-8 p-0 rounded-lg active:scale-95 transition-all"
+            className="border-border/40 bg-card/60 hover:bg-muted text-foreground h-8 w-8 rounded-lg p-0 transition-all active:scale-95"
             aria-label="Next Page"
           >
             <ChevronRight className="h-4 w-4" />

@@ -2,7 +2,24 @@
 
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { Star, Trophy, Dollar as DollarSign, Group as Users, Dashboard as Gauge, Map, StatUp as TrendingUp, Suitcase as Briefcase, GraduationCap, Heart, Bank as Landmark, Search, Crown, Medal, Trophy as Award, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Star,
+  Trophy,
+  Dollar as DollarSign,
+  Group as Users,
+  Dashboard as Gauge,
+  Map,
+  StatUp as TrendingUp,
+  Suitcase as Briefcase,
+  GraduationCap,
+  Heart,
+  Bank as Landmark,
+  Search,
+  Crown,
+  Medal,
+  Trophy as Award,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { Input } from "~/components/ui/input";
@@ -105,7 +122,7 @@ function FlagGraphic({ countryName, flag }: { countryName: string; flag?: string
       <img
         src={flag}
         alt={`Flag of ${countryName}`}
-        className="h-5 w-7 shrink-0 rounded border border-border/60 object-cover shadow-sm"
+        className="border-border/60 h-5 w-7 shrink-0 rounded border object-cover shadow-sm"
       />
     );
   }
@@ -133,8 +150,7 @@ function PodiumCard({
 }) {
   const styles = {
     1: {
-      badgeBg:
-        "bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/40 shadow-sm",
+      badgeBg: "bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/40 shadow-sm",
       cardBg: "from-amber-500/15 via-amber-500/5 to-card border-amber-500/30",
       icon: Crown,
       iconColor: "text-amber-500 dark:text-amber-400 drop-shadow-sm",
@@ -179,7 +195,7 @@ function PodiumCard({
           >
             #{rank}
           </span>
-          <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
             {styles.label}
           </span>
         </div>
@@ -189,10 +205,10 @@ function PodiumCard({
       <div className="relative z-10 mt-4 space-y-1">
         <div className="flex items-center gap-2">
           <FlagGraphic countryName={name} flag={flag} />
-          <div className="truncate text-base font-bold text-foreground">{name}</div>
+          <div className="text-foreground truncate text-base font-bold">{name}</div>
         </div>
-        <div className="font-mono text-2xl font-bold text-foreground tabular-nums">{primary}</div>
-        <div className="text-xs text-muted-foreground">{secondary}</div>
+        <div className="text-foreground font-mono text-2xl font-bold tabular-nums">{primary}</div>
+        <div className="text-muted-foreground text-xs">{secondary}</div>
       </div>
     </motion.div>
   );
@@ -223,9 +239,9 @@ function Row({
       whileHover={{ y: -2, scale: 1.004 }}
       whileTap={{ scale: 0.985 }}
       className={cn(
-        "flex items-center justify-between rounded-2xl border border-border/60 border-t-white/10 p-4 backdrop-blur-2xl transition-all hover:border-border hover:shadow-lg",
+        "border-border/60 hover:border-border flex items-center justify-between rounded-2xl border border-t-white/10 p-4 backdrop-blur-2xl transition-all hover:shadow-lg",
         index < 3
-          ? "border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-card/75 to-card/75"
+          ? "via-card/75 to-card/75 border-amber-500/30 bg-gradient-to-r from-amber-500/10"
           : "bg-card/70 dark:bg-card/50"
       )}
     >
@@ -247,14 +263,14 @@ function Row({
         <div>
           <div className="flex items-center gap-2">
             <FlagGraphic countryName={name} flag={flag} />
-            <div className="font-bold text-foreground">{name}</div>
+            <div className="text-foreground font-bold">{name}</div>
           </div>
-          <div className="text-xs text-muted-foreground">{secondary}</div>
+          <div className="text-muted-foreground text-xs">{secondary}</div>
         </div>
       </div>
       <div className="flex items-center gap-2">
         <Star className="h-4.5 w-4.5 fill-amber-400/20 text-amber-500 dark:text-amber-400" />
-        <span className="font-mono text-lg font-bold text-foreground tabular-nums">{primary}</span>
+        <span className="text-foreground font-mono text-lg font-bold tabular-nums">{primary}</span>
       </div>
     </motion.div>
   );
@@ -310,33 +326,33 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
         }));
 
   const mainContent = (
-    <div className="relative overflow-hidden rounded-3xl border border-border/60 border-t-white/20 bg-card/75 p-6 shadow-xl backdrop-blur-2xl transition-all dark:border-border/40 dark:border-t-white/10 dark:bg-card/60">
+    <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/20 p-6 shadow-xl backdrop-blur-2xl transition-all dark:border-t-white/10">
       <TextureOverlay texture="dots" opacity={0.03} />
 
       <div className="relative z-10 space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-xl font-bold tracking-tight text-foreground">
+            <h3 className="text-foreground text-xl font-bold tracking-tight">
               Global World Leaderboards
             </h3>
-            <p className="text-xs font-medium text-muted-foreground">
+            <p className="text-muted-foreground text-xs font-medium">
               Rankings across {active.label.toLowerCase()} • {limit} nations displayed
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative w-full sm:w-64">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 type="text"
                 placeholder="Search nation..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 rounded-full border-border/60 bg-background/60 pl-9 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:border-amber-500/50"
+                className="border-border/60 bg-background/60 text-foreground placeholder:text-muted-foreground h-9 rounded-full pl-9 text-xs font-medium focus:border-amber-500/50"
               />
             </div>
 
-            <div className="flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1 text-xs backdrop-blur-md">
+            <div className="border-border/60 bg-muted/40 flex items-center gap-1 rounded-full border p-1 text-xs backdrop-blur-md">
               {[10, 25, 50, 100].map((l) => (
                 <button
                   key={l}
@@ -355,7 +371,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-border/50 pb-3">
+        <div className="border-border/50 flex flex-wrap items-center gap-2 border-b pb-3">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
@@ -364,7 +380,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
                 "rounded-full px-3 py-1 text-xs font-bold transition-all active:scale-95",
                 activeDomain === cat.id
                   ? "bg-primary text-primary-foreground shadow-sm"
-                  : "border border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                  : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground border"
               )}
             >
               {cat.label}
@@ -434,7 +450,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
               ))}
             </div>
           ) : (
-            <div className="py-12 text-center text-xs text-muted-foreground">
+            <div className="text-muted-foreground py-12 text-center text-xs">
               No achievement data available for search query
             </div>
           )
@@ -456,7 +472,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
             ))}
           </div>
         ) : (
-          <div className="py-12 text-center text-xs text-muted-foreground">
+          <div className="text-muted-foreground py-12 text-center text-xs">
             No nation metrics found matching your criteria
           </div>
         )}

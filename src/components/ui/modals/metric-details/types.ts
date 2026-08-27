@@ -1,5 +1,10 @@
 import type React from "react";
-import { StatsReport as BarChart3, GraphUp as LineChart, Globe, InfoCircle as Info } from "iconoir-react";
+import {
+  StatsReport as BarChart3,
+  GraphUp as LineChart,
+  Globe,
+  InfoCircle as Info,
+} from "iconoir-react";
 
 /**
  * Tab configuration for metric detail modals

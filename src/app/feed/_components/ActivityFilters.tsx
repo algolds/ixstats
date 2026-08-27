@@ -1,7 +1,13 @@
 "use client";
 
 import React from "react";
-import { Trophy, Globe, StatUp as TrendingUp, ChatBubble as MessageSquare, Activity } from "iconoir-react";
+import {
+  Trophy,
+  Globe,
+  StatUp as TrendingUp,
+  ChatBubble as MessageSquare,
+  Activity,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
 type ActivityFilter = "all" | "achievements" | "diplomatic" | "economic" | "social" | "meta";

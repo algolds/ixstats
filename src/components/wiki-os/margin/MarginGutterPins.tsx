@@ -6,10 +6,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import {
-  ChatBubble as MessageSquare,
-  DesignPencil as Highlighter,
-} from "iconoir-react";
+import { ChatBubble as MessageSquare, DesignPencil as Highlighter } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 
@@ -130,7 +127,10 @@ export function MarginGutterPins({
 
       if (markEl) {
         const elRect = markEl.getBoundingClientRect();
-        const top = Math.max(0, elRect.top - containerRect.top + container.scrollTop + elRect.height / 2);
+        const top = Math.max(
+          0,
+          elRect.top - containerRect.top + container.scrollTop + elRect.height / 2
+        );
         rawPins.push({
           id: ann.id,
           type: "annotation",
@@ -281,7 +281,11 @@ export function MarginGutterPins({
       onSelectAnchor(pin.sectionAnchor || null, pin.id, "threads");
     } else if (pin.type === "cluster" && pin.children && pin.children.length > 0) {
       const first = pin.children[0]!;
-      onSelectAnchor(first.sectionAnchor || null, first.id, first.type === "thread" ? "threads" : "markup");
+      onSelectAnchor(
+        first.sectionAnchor || null,
+        first.id,
+        first.type === "thread" ? "threads" : "markup"
+      );
     }
     onOpenDrawer();
 
@@ -339,7 +343,7 @@ export function MarginGutterPins({
   if (pins.length === 0 || isMarginOpen) return null;
 
   return (
-    <div className="absolute right-0 top-0 bottom-0 pointer-events-none z-20 select-none hidden md:block">
+    <div className="pointer-events-none absolute top-0 right-0 bottom-0 z-20 hidden select-none md:block">
       {pins.map((pin) => {
         const isHovered = hoveredPinId === pin.id;
         const isCluster = pin.type === "cluster";
@@ -352,25 +356,30 @@ export function MarginGutterPins({
           <div
             key={pin.id}
             style={{ top: `${pin.top}px` }}
-            className="absolute right-[-14px] lg:right-[-20px] -translate-y-1/2 flex items-center group/gutter"
+            className="group/gutter absolute right-[-14px] flex -translate-y-1/2 items-center lg:right-[-20px]"
             onMouseEnter={() => handlePinMouseEnter(pin)}
             onMouseLeave={() => handlePinMouseLeave(pin)}
           >
             {/* Elevated Flyout Tooltip (Floats above pin to avoid blocking article text) */}
             {isHovered && hasFlyout && (
-              <div className="absolute bottom-full mb-2 right-0 px-3 py-1.5 rounded-xl bg-[var(--wikios-surface)]/95 border border-[var(--wikios-border)] shadow-2xl text-xs text-[var(--wikios-text)] whitespace-nowrap pointer-events-none animate-in fade-in zoom-in-95 duration-150 z-50 flex flex-col gap-1 backdrop-blur-xl max-w-xs origin-bottom-right">
+              <div className="animate-in fade-in zoom-in-95 pointer-events-none absolute right-0 bottom-full z-50 mb-2 flex max-w-xs origin-bottom-right flex-col gap-1 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 px-3 py-1.5 text-xs whitespace-nowrap text-[var(--wikios-text)] shadow-2xl backdrop-blur-xl duration-150">
                 {isCluster ? (
                   <>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-[var(--wikios-text)] border-b border-[var(--wikios-border)] pb-1">
-                      <span className="px-1.5 py-0.2 rounded bg-margin-accent text-stone-950 font-bold text-[9px]">Cluster</span>
+                    <div className="flex items-center gap-2 border-b border-[var(--wikios-border)] pb-1 text-[10px] font-bold text-[var(--wikios-text)]">
+                      <span className="py-0.2 bg-margin-accent rounded px-1.5 text-[9px] font-bold text-stone-950">
+                        Cluster
+                      </span>
                       <span>({pin.count} items)</span>
                       <span className="opacity-50">·</span>
                       <span>💬 {pin.threadCount || 0}</span>
                       <span>🖍️ {pin.annotationCount || 0}</span>
                     </div>
-                    <div className="space-y-0.5 max-h-32 overflow-y-auto">
+                    <div className="max-h-32 space-y-0.5 overflow-y-auto">
                       {pin.children?.slice(0, 3).map((c) => (
-                        <div key={c.id} className="text-[10.5px] truncate font-medium text-[var(--wikios-text-dim)]">
+                        <div
+                          key={c.id}
+                          className="truncate text-[10.5px] font-medium text-[var(--wikios-text-dim)]"
+                        >
                           • {c.title}
                         </div>
                       ))}
@@ -378,29 +387,29 @@ export function MarginGutterPins({
                   </>
                 ) : (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded bg-margin-accent text-stone-950">
+                    <span className="py-0.2 bg-margin-accent rounded px-1.5 text-[9px] font-black tracking-wider text-stone-950 uppercase">
                       {isAnnotation ? "Note" : "Thread"}
                     </span>
                     <span className="opacity-40">·</span>
-                    <span className="truncate max-w-[190px] font-medium">{pin.title}</span>
+                    <span className="max-w-[190px] truncate font-medium">{pin.title}</span>
                   </div>
                 )}
               </div>
             )}
 
             {/* Stable Hitbox Container */}
-            <div className="w-8 h-8 flex items-center justify-center pointer-events-auto">
+            <div className="pointer-events-auto flex h-8 w-8 items-center justify-center">
               <button
                 type="button"
                 onClick={() => handlePinClick(pin)}
                 aria-label={pin.title}
                 className={cn(
-                  "flex items-center justify-center rounded-full border border-yellow-400/60 bg-margin-accent text-stone-950 cursor-pointer shadow-md active:scale-95 transition-all duration-150 backdrop-blur-md font-bold",
+                  "bg-margin-accent flex cursor-pointer items-center justify-center rounded-full border border-yellow-400/60 font-bold text-stone-950 shadow-md backdrop-blur-md transition-all duration-150 active:scale-95",
                   isHovered
-                    ? "scale-110 z-40 shadow-[0_0_14px_rgba(254,240,54,0.5)] border-yellow-400"
+                    ? "z-40 scale-110 border-yellow-400 shadow-[0_0_14px_rgba(254,240,54,0.5)]"
                     : isCluster
-                    ? "px-2 py-0.5 min-w-7 h-6 hover:scale-105"
-                    : "hover:scale-105 w-6 h-6"
+                      ? "h-6 min-w-7 px-2 py-0.5 hover:scale-105"
+                      : "h-6 w-6 hover:scale-105"
                 )}
               >
                 {isCluster ? (
@@ -409,9 +418,9 @@ export function MarginGutterPins({
                     {pin.annotationCount ? <span>🖍️{pin.annotationCount}</span> : null}
                   </div>
                 ) : isAnnotation ? (
-                  <Highlighter className="w-3 h-3 shrink-0 stroke-[2.5]" />
+                  <Highlighter className="h-3 w-3 shrink-0 stroke-[2.5]" />
                 ) : (
-                  <MessageSquare className="w-3 h-3 shrink-0 stroke-[2.5]" />
+                  <MessageSquare className="h-3 w-3 shrink-0 stroke-[2.5]" />
                 )}
               </button>
             </div>
@@ -421,5 +430,3 @@ export function MarginGutterPins({
     </div>
   );
 }
-
-

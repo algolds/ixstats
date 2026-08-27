@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   // oxlint-disable-next-line typescript/no-unused-vars
@@ -16,7 +13,6 @@ import {
 } from "~/lib/diplomacy/cultural-compatibility";
 // oxlint-disable-next-line typescript/no-unused-vars
 import { vaultService } from "~/lib/vault/vault-service";
-
 
 // Helper functions for cultural exchange <-> embassy mission integration
 

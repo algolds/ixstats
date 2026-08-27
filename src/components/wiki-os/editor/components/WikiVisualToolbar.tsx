@@ -126,8 +126,16 @@ export function WikiVisualToolbar({
       <div className="wikios-ve-toolbar">
         {/* Undo / Redo */}
         <div className="wikios-ve-toolbar-group">
-          <VEBtn icon={<Undo2 className="h-3.5 w-3.5" />} title="Undo (Ctrl+Z)" onClick={() => exec("undo")} />
-          <VEBtn icon={<Redo2 className="h-3.5 w-3.5" />} title="Redo (Ctrl+Y)" onClick={() => exec("redo")} />
+          <VEBtn
+            icon={<Undo2 className="h-3.5 w-3.5" />}
+            title="Undo (Ctrl+Z)"
+            onClick={() => exec("undo")}
+          />
+          <VEBtn
+            icon={<Redo2 className="h-3.5 w-3.5" />}
+            title="Redo (Ctrl+Y)"
+            onClick={() => exec("redo")}
+          />
         </div>
         <span className="wikios-ve-toolbar-sep" />
 
@@ -184,7 +192,11 @@ export function WikiVisualToolbar({
 
         {/* Block formatting */}
         <div className="wikios-ve-toolbar-group">
-          <VEBtn icon={<Type className="h-3.5 w-3.5" />} title="Normal paragraph" onClick={setParagraph} />
+          <VEBtn
+            icon={<Type className="h-3.5 w-3.5" />}
+            title="Normal paragraph"
+            onClick={setParagraph}
+          />
           <VEBtn
             icon={<span className="wikios-ve-heading-label">H2</span>}
             title="Section heading"
@@ -222,8 +234,16 @@ export function WikiVisualToolbar({
             title="Blockquote"
             onClick={() => exec("formatBlock", "blockquote")}
           />
-          <VEBtn icon={<Indent className="h-3.5 w-3.5" />} title="Indent" onClick={() => exec("indent")} />
-          <VEBtn icon={<Outdent className="h-3.5 w-3.5" />} title="Outdent" onClick={() => exec("outdent")} />
+          <VEBtn
+            icon={<Indent className="h-3.5 w-3.5" />}
+            title="Indent"
+            onClick={() => exec("indent")}
+          />
+          <VEBtn
+            icon={<Outdent className="h-3.5 w-3.5" />}
+            title="Outdent"
+            onClick={() => exec("outdent")}
+          />
         </div>
         <span className="wikios-ve-toolbar-sep" />
 
@@ -249,8 +269,16 @@ export function WikiVisualToolbar({
 
         {/* Links */}
         <div className="wikios-ve-toolbar-group">
-          <VEBtn icon={<Link2 className="h-3.5 w-3.5" />} title="Insert link (Ctrl+K)" onClick={insertLink} />
-          <VEBtn icon={<Unlink className="h-3.5 w-3.5" />} title="Remove link" onClick={removeLink} />
+          <VEBtn
+            icon={<Link2 className="h-3.5 w-3.5" />}
+            title="Insert link (Ctrl+K)"
+            onClick={insertLink}
+          />
+          <VEBtn
+            icon={<Unlink className="h-3.5 w-3.5" />}
+            title="Remove link"
+            onClick={removeLink}
+          />
         </div>
         <span className="wikios-ve-toolbar-sep" />
 
@@ -273,11 +301,19 @@ export function WikiVisualToolbar({
             onBeforeOpen={saveSelection}
           />
 
-          <VEBtn icon={<Table className="h-3.5 w-3.5" />} title="Insert table" onClick={insertTable} />
+          <VEBtn
+            icon={<Table className="h-3.5 w-3.5" />}
+            title="Insert table"
+            onClick={insertTable}
+          />
 
           {/* Templates dropdown */}
           <TemplateDropdown onSelect={restoreSelection} onBeforeOpen={saveSelection} />
-          <VEBtn icon={<Minus className="h-3.5 w-3.5" />} title="Horizontal rule" onClick={insertHR} />
+          <VEBtn
+            icon={<Minus className="h-3.5 w-3.5" />}
+            title="Horizontal rule"
+            onClick={insertHR}
+          />
           <VEBtn
             icon={
               <span className="wikios-ve-heading-label" style={{ fontSize: 9 }}>

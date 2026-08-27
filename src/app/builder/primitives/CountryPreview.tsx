@@ -78,10 +78,7 @@ export function CountryPreview({ country, size = "large" }: CountryPreviewProps)
       {!isSmall && (
         <div className="mb-6 text-center">
           <div className="mb-3 flex h-auto w-full justify-center">
-            <UnifiedCountryFlag
-              countryName={country.name}
-              size="xl"
-            />
+            <UnifiedCountryFlag countryName={country.name} size="xl" />
           </div>
           <h4 className="mb-1 text-xl font-bold text-[var(--color-text-primary)]">
             {country.name}

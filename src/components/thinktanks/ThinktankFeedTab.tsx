@@ -47,11 +47,10 @@ export function ThinktankFeedTab({
   const [showMediaInput, setShowMediaInput] = useState(false);
 
   // Queries
-  const { data: feedData, isLoading: isLoadingFeed } =
-    api.thinkpages.getGroupFeed.useQuery(
-      { groupId, limit: 30 },
-      { enabled: Boolean(groupId), staleTime: 15000 }
-    );
+  const { data: feedData, isLoading: isLoadingFeed } = api.thinkpages.getGroupFeed.useQuery(
+    { groupId, limit: 30 },
+    { enabled: Boolean(groupId), staleTime: 15000 }
+  );
 
   const { data: myAccountsData } = api.thinkpages.getMyAccounts.useQuery(undefined, {
     enabled: Boolean(currentUserId),
@@ -117,17 +116,17 @@ export function ThinktankFeedTab({
       {/* ── Main Content / Feed Container (Frosted Blur if not joined) ── */}
       <div
         className={cn(
-          "mx-auto max-w-3xl space-y-6 p-4 md:p-6 transition-all duration-300",
-          !isMember && "select-none pointer-events-none filter blur-[5px] opacity-40"
+          "mx-auto max-w-3xl space-y-6 p-4 transition-all duration-300 md:p-6",
+          !isMember && "pointer-events-none opacity-40 blur-[5px] filter select-none"
         )}
       >
         {/* ── Group Feed Composer ── */}
-        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-4 shadow-lg backdrop-blur-xl transition-all dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="border-border/50 bg-card/60 overflow-hidden rounded-2xl border p-4 shadow-lg backdrop-blur-xl transition-all dark:border-white/10 dark:bg-white/[0.03]">
           <form onSubmit={handlePublish} className="space-y-3">
             {/* Multi-Persona Selector Chips */}
             {allowPersonaPosting && accounts.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-border/30">
-                <span className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground mr-1">
+              <div className="border-border/30 flex flex-wrap items-center gap-1.5 border-b pb-2">
+                <span className="text-muted-foreground mr-1 flex items-center gap-1 text-[11px] font-semibold">
                   <Group className="h-3 w-3 text-purple-500" /> Post as:
                 </span>
                 {accounts.map((acc: any) => {
@@ -161,7 +160,7 @@ export function ThinktankFeedTab({
               placeholder={`Share a note, idea, or update with ${groupName}...`}
               value={postContent}
               onChange={(e) => setPostContent(e.target.value)}
-              className="min-h-[90px] resize-none border-0 bg-transparent p-1 text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/60"
+              className="placeholder:text-muted-foreground/60 min-h-[90px] resize-none border-0 bg-transparent p-1 text-sm shadow-none focus-visible:ring-0"
             />
 
             {/* Quick Intent Tag Presets */}
@@ -181,7 +180,7 @@ export function ThinktankFeedTab({
                       setPostContent((prev) => `${item.label}\n\n${prev}`.trim());
                     }
                   }}
-                  className="rounded-md border border-border/40 bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent/40 hover:text-foreground transition-all"
+                  className="border-border/40 bg-muted/30 text-muted-foreground hover:bg-accent/40 hover:text-foreground rounded-md border px-2 py-0.5 text-[10px] font-medium transition-all"
                 >
                   {item.label}
                 </button>
@@ -190,20 +189,20 @@ export function ThinktankFeedTab({
 
             {/* Media URL Row */}
             {showMediaInput && (
-              <div className="flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-1.5 border border-border/40">
-                <MediaImage className="h-4 w-4 text-muted-foreground" />
+              <div className="bg-muted/40 border-border/40 flex items-center gap-2 rounded-xl border px-3 py-1.5">
+                <MediaImage className="text-muted-foreground h-4 w-4" />
                 <input
                   type="url"
                   placeholder="Paste image or media URL..."
                   value={mediaUrlInput}
                   onChange={(e) => setMediaUrlInput(e.target.value)}
-                  className="w-full bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
+                  className="text-foreground placeholder:text-muted-foreground w-full bg-transparent text-xs outline-none"
                 />
               </div>
             )}
 
             {/* Composer Action Toolbar */}
-            <div className="flex items-center justify-between pt-2 border-t border-border/30">
+            <div className="border-border/30 flex items-center justify-between border-t pt-2">
               <div className="flex items-center gap-1">
                 <Button
                   type="button"
@@ -215,7 +214,9 @@ export function ThinktankFeedTab({
                   }}
                   className={cn(
                     "h-8 rounded-lg px-2.5 text-xs",
-                    showMediaInput ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"
+                    showMediaInput
+                      ? "bg-accent text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <MediaImage className="mr-1.5 h-3.5 w-3.5" />
@@ -224,7 +225,7 @@ export function ThinktankFeedTab({
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-muted-foreground text-[11px]">
                   {postContent.length} / 5000
                 </span>
                 <Button
@@ -245,18 +246,20 @@ export function ThinktankFeedTab({
         <div className="space-y-4">
           {isLoadingFeed ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 animate-pulse">
-                <span className="h-4 w-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+              <div className="flex h-10 w-10 animate-pulse items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
               </div>
-              <p className="text-xs font-medium text-muted-foreground">Loading group timeline...</p>
+              <p className="text-muted-foreground text-xs font-medium">Loading group timeline...</p>
             </div>
           ) : posts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 py-16 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground">
+            <div className="border-border/60 flex flex-col items-center justify-center rounded-2xl border border-dashed py-16 text-center">
+              <div className="bg-muted/60 text-muted-foreground flex h-12 w-12 items-center justify-center rounded-2xl">
                 <RssFeed className="h-6 w-6" />
               </div>
-              <h3 className="mt-3 text-sm font-semibold text-foreground">No Notes or Updates Yet</h3>
-              <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+              <h3 className="text-foreground mt-3 text-sm font-semibold">
+                No Notes or Updates Yet
+              </h3>
+              <p className="text-muted-foreground mt-1 max-w-sm text-xs">
                 Be the first to share an idea, note to self, or update in this group.
               </p>
             </div>
@@ -268,7 +271,11 @@ export function ThinktankFeedTab({
               // If multi-persona posting is off, display the real account/user
               const displayName = allowPersonaPosting
                 ? personaAccount?.displayName || personaAccount?.username || "Unknown"
-                : realUser?.country?.name || realUser?.forumUsername || realUser?.wikiUsername || personaAccount?.displayName || "Member";
+                : realUser?.country?.name ||
+                  realUser?.forumUsername ||
+                  realUser?.wikiUsername ||
+                  personaAccount?.displayName ||
+                  "Member";
 
               const countryName = allowPersonaPosting
                 ? personaAccount?.country?.name || personaAccount?.countryName
@@ -290,40 +297,43 @@ export function ThinktankFeedTab({
               return (
                 <div
                   key={post.id}
-                  className="overflow-hidden rounded-2xl border border-border/40 bg-card/60 p-4.5 shadow-sm backdrop-blur-xl transition-all duration-200 hover:border-border/80 dark:border-white/10 dark:bg-white/[0.02]"
+                  className="border-border/40 bg-card/60 hover:border-border/80 overflow-hidden rounded-2xl border p-4.5 shadow-sm backdrop-blur-xl transition-all duration-200 dark:border-white/10 dark:bg-white/[0.02]"
                 >
                   {/* Author row */}
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/50 bg-muted font-bold text-foreground">
+                      <div className="border-border/50 bg-muted text-foreground flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border font-bold">
                         {avatarUrl ? (
-                          <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                          <img
+                            src={avatarUrl}
+                            alt={displayName}
+                            className="h-full w-full object-cover"
+                          />
                         ) : countryFlag ? (
                           <span className="text-base">{countryFlag}</span>
                         ) : (
-                          <User className="h-4 w-4 text-muted-foreground" />
+                          <User className="text-muted-foreground h-4 w-4" />
                         )}
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-foreground">
-                            {displayName}
-                          </span>
+                          <span className="text-foreground text-xs font-bold">{displayName}</span>
                           {countryName && (
-                            <span className="text-[10px] text-muted-foreground">
-                              · {countryFlag && allowPersonaPosting ? `${countryFlag} ` : ""}{countryName}
+                            <span className="text-muted-foreground text-[10px]">
+                              · {countryFlag && allowPersonaPosting ? `${countryFlag} ` : ""}
+                              {countryName}
                             </span>
                           )}
                           {showPersonaBadge && (
                             <Badge
                               variant="outline"
-                              className="text-[9px] font-semibold text-purple-600 border-purple-500/30 bg-purple-500/10 dark:text-purple-400"
+                              className="border-purple-500/30 bg-purple-500/10 text-[9px] font-semibold text-purple-600 dark:text-purple-400"
                             >
                               {personaAccount.accountType}
                             </Badge>
                           )}
                         </div>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-muted-foreground text-[10px]">
                           {new Date(post.createdAt).toLocaleDateString()}
                         </span>
                       </div>
@@ -331,13 +341,13 @@ export function ThinktankFeedTab({
                   </div>
 
                   {/* Body Content */}
-                  <div className="mt-3 text-xs leading-relaxed text-foreground/90 whitespace-pre-wrap">
+                  <div className="text-foreground/90 mt-3 text-xs leading-relaxed whitespace-pre-wrap">
                     {post.content}
                   </div>
 
                   {/* Media attachments */}
                   {post.mediaUrls && post.mediaUrls.length > 0 && (
-                    <div className="mt-3 overflow-hidden rounded-xl border border-border/40 bg-black/20">
+                    <div className="border-border/40 mt-3 overflow-hidden rounded-xl border bg-black/20">
                       <img
                         src={post.mediaUrls[0]}
                         alt="Post media"
@@ -348,24 +358,24 @@ export function ThinktankFeedTab({
                   )}
 
                   {/* Actions Footer */}
-                  <div className="mt-3.5 flex items-center gap-4 border-t border-border/20 pt-2.5 text-muted-foreground">
+                  <div className="border-border/20 text-muted-foreground mt-3.5 flex items-center gap-4 border-t pt-2.5">
                     <button
                       onClick={() => soundEffects.press()}
-                      className="flex items-center gap-1 text-[11px] hover:text-foreground transition-colors"
+                      className="hover:text-foreground flex items-center gap-1 text-[11px] transition-colors"
                     >
                       <Heart className="h-3.5 w-3.5" />
                       <span>{post.reactions?.length ?? 0}</span>
                     </button>
                     <button
                       onClick={() => soundEffects.press()}
-                      className="flex items-center gap-1 text-[11px] hover:text-foreground transition-colors"
+                      className="hover:text-foreground flex items-center gap-1 text-[11px] transition-colors"
                     >
                       <ChatBubble className="h-3.5 w-3.5" />
                       <span>{post.replies?.length ?? 0}</span>
                     </button>
                     <button
                       onClick={() => soundEffects.press()}
-                      className="flex items-center gap-1 text-[11px] hover:text-foreground transition-colors"
+                      className="hover:text-foreground flex items-center gap-1 text-[11px] transition-colors"
                     >
                       <Repeat className="h-3.5 w-3.5" />
                       <span>{post.repostsCount ?? 0}</span>
@@ -380,22 +390,22 @@ export function ThinktankFeedTab({
 
       {/* ── Floating Frosted Glass Overlay (Apple Design) ── */}
       {!isMember && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-background/20 backdrop-blur-xs">
+        <div className="bg-background/20 absolute inset-0 z-20 flex items-center justify-center p-4 backdrop-blur-xs">
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 28 }}
-            className="flex w-full max-w-md flex-col items-center justify-center rounded-3xl border border-border/60 bg-card/85 p-6 md:p-8 text-center shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-card/90"
+            className="border-border/60 bg-card/85 dark:bg-card/90 flex w-full max-w-md flex-col items-center justify-center rounded-3xl border p-6 text-center shadow-2xl backdrop-blur-2xl md:p-8 dark:border-white/15"
           >
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 shadow-xs dark:text-emerald-400">
               <Group className="h-7 w-7" />
             </div>
 
-            <h3 className="mt-4 text-base font-bold text-foreground tracking-tight">
+            <h3 className="text-foreground mt-4 text-base font-bold tracking-tight">
               Join {groupName}
             </h3>
 
-            <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed max-w-xs">
+            <p className="text-muted-foreground mt-1.5 max-w-xs text-xs leading-relaxed">
               Join this group to post notes, read the full feed, and join the discussion.
             </p>
 
@@ -410,7 +420,7 @@ export function ThinktankFeedTab({
                 soundEffects.press();
                 joinMutation.mutate({ groupId, userId: currentUserId });
               }}
-              className="mt-5 w-full max-w-xs cursor-pointer rounded-xl bg-emerald-600 font-semibold text-white shadow-md hover:bg-emerald-700 active:scale-[0.97] dark:bg-emerald-500 dark:hover:bg-emerald-600 transition-all"
+              className="mt-5 w-full max-w-xs cursor-pointer rounded-xl bg-emerald-600 font-semibold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-[0.97] dark:bg-emerald-500 dark:hover:bg-emerald-600"
             >
               <Plus className="mr-1.5 h-4 w-4" />
               {joinMutation.isPending ? "Joining Group..." : "Join Group"}

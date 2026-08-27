@@ -1,13 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Group,
-  Plus,
-  Globe,
-  Lock,
-  MediaImage,
-} from "iconoir-react";
+import { Group, Plus, Globe, Lock, MediaImage } from "iconoir-react";
 import {
   Dialog,
   DialogContent,
@@ -60,10 +54,12 @@ export function ThinktankCreateModal({
 
       // If multi-persona posting was toggled on, save setting
       if (allowPersonaPosting && newGroup?.id) {
-        void updateSettingsMutation.mutateAsync({
-          groupId: newGroup.id,
-          allowPersonaPosting: true,
-        }).catch(() => {});
+        void updateSettingsMutation
+          .mutateAsync({
+            groupId: newGroup.id,
+            allowPersonaPosting: true,
+          })
+          .catch(() => {});
       }
 
       onClose();
@@ -110,17 +106,17 @@ export function ThinktankCreateModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-md rounded-2xl border-border/50 bg-card/90 backdrop-blur-2xl p-6 shadow-2xl dark:border-white/10 dark:bg-card/95">
+        <DialogContent className="border-border/50 bg-card/90 dark:bg-card/95 max-w-md rounded-2xl p-6 shadow-2xl backdrop-blur-2xl dark:border-white/10">
           <DialogHeader>
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <Group className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-base font-bold text-foreground">
+                <DialogTitle className="text-foreground text-base font-bold">
                   Create a Group
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+                <DialogDescription className="text-muted-foreground text-xs">
                   Set up a shared lore hub and discussion workspace.
                 </DialogDescription>
               </div>
@@ -129,10 +125,10 @@ export function ThinktankCreateModal({
 
           <form onSubmit={handleSubmit} className="space-y-3.5 pt-2">
             {/* Logo / Avatar Picker */}
-            <div className="flex items-center gap-3 rounded-xl border border-border/40 bg-muted/20 p-2.5">
-              <Avatar className="h-11 w-11 rounded-xl border border-border/50 shadow-xs">
+            <div className="border-border/40 bg-muted/20 flex items-center gap-3 rounded-xl border p-2.5">
+              <Avatar className="border-border/50 h-11 w-11 rounded-xl border shadow-xs">
                 <AvatarImage src={avatarUrl || undefined} alt={name} />
-                <AvatarFallback className="rounded-xl bg-emerald-500/10 text-emerald-600 font-bold text-xs dark:text-emerald-400">
+                <AvatarFallback className="rounded-xl bg-emerald-500/10 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                   {name.slice(0, 2).toUpperCase() || "TT"}
                 </AvatarFallback>
               </Avatar>
@@ -151,7 +147,7 @@ export function ThinktankCreateModal({
                   <button
                     type="button"
                     onClick={() => setAvatarUrl("")}
-                    className="ml-2 text-[10px] text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground ml-2 text-[10px]"
                   >
                     Clear
                   </button>
@@ -160,28 +156,28 @@ export function ThinktankCreateModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Group Name</label>
+              <label className="text-foreground text-xs font-semibold">Group Name</label>
               <Input
                 placeholder="e.g., Grand Vandarch Lore Archive"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="h-8.5 rounded-xl text-xs bg-background/50 border-border/40"
+                className="bg-background/50 border-border/40 h-8.5 rounded-xl text-xs"
                 required
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Description</label>
+              <label className="text-foreground text-xs font-semibold">Description</label>
               <Textarea
                 placeholder="Purpose, scope, and objectives of this group..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="min-h-[55px] rounded-xl text-xs bg-background/50 border-border/40"
+                className="bg-background/50 border-border/40 min-h-[55px] rounded-xl text-xs"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Category</label>
+              <label className="text-foreground text-xs font-semibold">Category</label>
               <div className="flex flex-wrap gap-1">
                 {categories.map((cat) => (
                   <button
@@ -204,24 +200,26 @@ export function ThinktankCreateModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Tags (comma-separated)</label>
+              <label className="text-foreground text-xs font-semibold">
+                Tags (comma-separated)
+              </label>
               <Input
                 placeholder="treaty, economics, maritime, vandarch"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
-                className="h-8.5 rounded-xl text-xs bg-background/50 border-border/40"
+                className="bg-background/50 border-border/40 h-8.5 rounded-xl text-xs"
               />
             </div>
 
             {/* Multi-Persona Posting Switch */}
-            <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-3 flex items-center justify-between">
+            <div className="flex items-center justify-between rounded-xl border border-purple-500/20 bg-purple-500/5 p-3">
               <div className="flex items-center gap-2">
                 <Group className="h-4 w-4 text-purple-500" />
                 <div>
-                  <span className="text-xs font-bold text-foreground">
+                  <span className="text-foreground text-xs font-bold">
                     Enable Multi-Persona Posting
                   </span>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-muted-foreground text-[10px]">
                     Allow members to post as Government, Media, or Citizen personas.
                   </p>
                 </div>
@@ -236,7 +234,7 @@ export function ThinktankCreateModal({
             </div>
 
             {/* Privacy Choice */}
-            <div className="rounded-xl border border-border/40 bg-muted/20 p-3 flex items-center justify-between">
+            <div className="border-border/40 bg-muted/20 flex items-center justify-between rounded-xl border p-3">
               <div className="flex items-center gap-2">
                 {type === "public" ? (
                   <Globe className="h-4 w-4 text-emerald-500" />
@@ -244,10 +242,10 @@ export function ThinktankCreateModal({
                   <Lock className="h-4 w-4 text-amber-500" />
                 )}
                 <div>
-                  <span className="text-xs font-bold text-foreground">
+                  <span className="text-foreground text-xs font-bold">
                     {type === "public" ? "Public Group" : "Private Group"}
                   </span>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-muted-foreground text-[10px]">
                     {type === "public" ? "Open to all users" : "Invite or approval required"}
                   </p>
                 </div>
@@ -260,13 +258,13 @@ export function ThinktankCreateModal({
                   soundEffects.press();
                   setType(type === "public" ? "private" : "public");
                 }}
-                className="h-7 text-[11px] rounded-lg border-border/40"
+                className="border-border/40 h-7 rounded-lg text-[11px]"
               >
                 Toggle
               </Button>
             </div>
 
-            <div className="flex items-center justify-end gap-2 border-t border-border/30 pt-3">
+            <div className="border-border/30 flex items-center justify-end gap-2 border-t pt-3">
               <Button
                 type="button"
                 variant="outline"

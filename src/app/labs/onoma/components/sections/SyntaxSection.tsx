@@ -170,21 +170,24 @@ export default function SyntaxSection() {
   return (
     <div className="space-y-6">
       {/* Grammar Rules Formulation Card */}
-      <FacetMaterial material="satin" className="rounded-xl border border-border/40 p-5 shadow-sm space-y-4 text-left">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/20 pb-3">
+      <FacetMaterial
+        material="satin"
+        className="border-border/40 space-y-4 rounded-xl border p-5 text-left shadow-sm"
+      >
+        <div className="border-border/20 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
           <div className="flex items-center gap-2">
             <input
               type="text"
               placeholder="Grammar Profile Name (e.g. Imperial High Latinate)"
               value={profileName}
               onChange={(e) => setProfileName(e.target.value)}
-              className="rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none w-64"
+              className="border-border/60 bg-background text-foreground w-64 rounded-md border px-3 py-1.5 text-xs focus:outline-none"
             />
             {profiles && profiles.length > 0 && (
               <select
                 value={selectedProfileId || ""}
                 onChange={(e) => setSelectedProfileId(e.target.value || null)}
-                className="rounded-md border border-border/60 bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none"
+                className="border-border/60 bg-background text-foreground rounded-md border px-2 py-1.5 text-xs focus:outline-none"
               >
                 <option value="">Load Existing Profile...</option>
                 {profiles.map((p) => (
@@ -200,7 +203,7 @@ export default function SyntaxSection() {
             {selectedProfileId && (
               <button
                 onClick={() => deleteProfileMutation.mutate({ id: selectedProfileId })}
-                className="flex items-center gap-1 rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-500/20 cursor-pointer active:scale-[0.97] transition-all"
+                className="flex cursor-pointer items-center gap-1 rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600 transition-all hover:bg-red-500/20 active:scale-[0.97]"
               >
                 <Trash2 className="h-3 w-3" /> Delete
               </button>
@@ -208,7 +211,7 @@ export default function SyntaxSection() {
             <button
               onClick={handleSave}
               disabled={saveProfileMutation.isPending}
-              className="rounded-md bg-onoma-primary px-3.5 py-1 text-xs font-bold text-white shadow hover:bg-onoma-primary-active transition-all cursor-pointer active:scale-[0.97] disabled:opacity-50"
+              className="bg-onoma-primary hover:bg-onoma-primary-active cursor-pointer rounded-md px-3.5 py-1 text-xs font-bold text-white shadow transition-all active:scale-[0.97] disabled:opacity-50"
             >
               {saveProfileMutation.isPending ? "Saving..." : "Save Profile"}
             </button>
@@ -216,14 +219,16 @@ export default function SyntaxSection() {
         </div>
 
         {/* Word Order & Morphosyntax Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
           {/* Word Order */}
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-muted-foreground uppercase">Word Order</label>
+            <label className="text-muted-foreground text-[10px] font-bold uppercase">
+              Word Order
+            </label>
             <select
               value={wordOrder}
               onChange={(e) => setWordOrder(e.target.value)}
-              className="w-full rounded border border-border/60 bg-background px-2 py-1.5 focus:outline-none"
+              className="border-border/60 bg-background w-full rounded border px-2 py-1.5 focus:outline-none"
             >
               <option value="SVO">SVO (English, Romance)</option>
               <option value="SOV">SOV (Japanese, Latin, Turkish)</option>
@@ -236,11 +241,13 @@ export default function SyntaxSection() {
 
           {/* Adjective Placement */}
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-muted-foreground uppercase">Adjective Order</label>
+            <label className="text-muted-foreground text-[10px] font-bold uppercase">
+              Adjective Order
+            </label>
             <select
               value={adjectiveOrder}
               onChange={(e) => setAdjectiveOrder(e.target.value)}
-              className="w-full rounded border border-border/60 bg-background px-2 py-1.5 focus:outline-none"
+              className="border-border/60 bg-background w-full rounded border px-2 py-1.5 focus:outline-none"
             >
               <option value="before">Before Noun (Red apple)</option>
               <option value="after">After Noun (Apple red)</option>
@@ -249,25 +256,29 @@ export default function SyntaxSection() {
 
           {/* Accusative Suffix */}
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-muted-foreground uppercase">Accusative Suffix</label>
+            <label className="text-muted-foreground text-[10px] font-bold uppercase">
+              Accusative Suffix
+            </label>
             <input
               type="text"
               value={accSuffix}
               onChange={(e) => setAccSuffix(e.target.value)}
               placeholder="e.g. -m, -on"
-              className="w-full rounded border border-border/60 bg-background px-2 py-1.5 focus:outline-none font-mono"
+              className="border-border/60 bg-background w-full rounded border px-2 py-1.5 font-mono focus:outline-none"
             />
           </div>
 
           {/* Plural Suffix */}
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-muted-foreground uppercase">Plural Suffix</label>
+            <label className="text-muted-foreground text-[10px] font-bold uppercase">
+              Plural Suffix
+            </label>
             <input
               type="text"
               value={pluralSuffix}
               onChange={(e) => setPluralSuffix(e.target.value)}
               placeholder="e.g. -s, -n, -i"
-              className="w-full rounded border border-border/60 bg-background px-2 py-1.5 focus:outline-none font-mono"
+              className="border-border/60 bg-background w-full rounded border px-2 py-1.5 font-mono focus:outline-none"
             />
           </div>
         </div>

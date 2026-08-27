@@ -7,7 +7,7 @@ export function Empty({ className, children, ...props }: EmptyProps) {
   return (
     <div
       className={cn(
-        "flex min-h-[140px] flex-col items-center justify-center rounded-xl border border-dashed border-border/60 p-6 text-center animate-in fade-in-50",
+        "border-border/60 animate-in fade-in-50 flex min-h-[140px] flex-col items-center justify-center rounded-xl border border-dashed p-6 text-center",
         className
       )}
       {...props}
@@ -17,7 +17,11 @@ export function Empty({ className, children, ...props }: EmptyProps) {
   );
 }
 
-export function EmptyHeader({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export function EmptyHeader({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div className={cn("flex flex-col items-center gap-1.5", className)} {...props}>
       {children}
@@ -34,7 +38,7 @@ export function EmptyMedia({
   return (
     <div
       className={cn(
-        "mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground",
+        "bg-muted text-muted-foreground mb-2 flex h-10 w-10 items-center justify-center rounded-full",
         className
       )}
       {...props}
@@ -44,17 +48,28 @@ export function EmptyMedia({
   );
 }
 
-export function EmptyTitle({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+export function EmptyTitle({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h4 className={cn("text-sm font-semibold tracking-tight text-foreground", className)} {...props}>
+    <h4
+      className={cn("text-foreground text-sm font-semibold tracking-tight", className)}
+      {...props}
+    >
       {children}
     </h4>
   );
 }
 
-export function EmptyDescription({ className, children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+export function EmptyDescription({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn("text-xs text-muted-foreground max-w-sm", className)} {...props}>
+    <p className={cn("text-muted-foreground max-w-sm text-xs", className)} {...props}>
       {children}
     </p>
   );

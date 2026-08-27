@@ -3,7 +3,16 @@
 import React from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { City as Building2, Group as Users, Dollar as DollarSign, Globe, Heart, Shield, Crown, Sparks as Sparkles } from "iconoir-react";
+import {
+  City as Building2,
+  Group as Users,
+  Dollar as DollarSign,
+  Globe,
+  Heart,
+  Shield,
+  Crown,
+  Sparks as Sparkles,
+} from "iconoir-react";
 
 interface GlobalBuilderLoadingProps {
   message?: string;

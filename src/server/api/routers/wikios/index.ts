@@ -39,4 +39,3 @@ export const wikiosRouter = mergeRouters(
   wikiosDiscussionsRouter,
   wikiosUtilitiesRouter
 );
-

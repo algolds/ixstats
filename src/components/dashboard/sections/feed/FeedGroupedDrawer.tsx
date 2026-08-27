@@ -20,7 +20,7 @@ export function FeedGroupedDrawer({ subEdits, isWiki, className }: FeedGroupedDr
     <div className={cn("pt-1", className)}>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border/50 bg-accent/10 px-2.5 py-1 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-accent/20 active:scale-[0.96]"
+        className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[10px] font-medium tracking-tight transition-all duration-150 active:scale-[0.96]"
       >
         <ChevronDown
           className={cn("h-3 w-3 transition-transform duration-200", expanded && "rotate-180")}
@@ -31,7 +31,7 @@ export function FeedGroupedDrawer({ subEdits, isWiki, className }: FeedGroupedDr
       </button>
 
       {expanded && (
-        <div className="animate-in fade-in mt-2 space-y-1.5 rounded-xl border border-border/50 bg-muted/40 p-2.5 shadow-2xs backdrop-blur-md duration-150 dark:bg-black/30">
+        <div className="animate-in fade-in border-border/50 bg-muted/40 mt-2 space-y-1.5 rounded-xl border p-2.5 shadow-2xs backdrop-blur-md duration-150 dark:bg-black/30">
           {subEdits.map((sub: any, i: number) => {
             const subTitle = sub.content?.title ?? "";
             const subDesc = sub.content?.description ?? "";
@@ -46,7 +46,7 @@ export function FeedGroupedDrawer({ subEdits, isWiki, className }: FeedGroupedDr
                     {sub.user?.name ?? "?"}
                   </span>
                   <span className="text-muted-foreground/40">·</span>
-                  <span className="truncate text-foreground/80">{display}</span>
+                  <span className="text-foreground/80 truncate">{display}</span>
                 </div>
                 <span className="text-muted-foreground/70 ml-2 shrink-0 font-medium tabular-nums">
                   {formatTimeAgo(new Date(sub.timestamp))}

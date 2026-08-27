@@ -347,7 +347,9 @@ export class IxTimeSyncManager {
           clearTimeout(timeoutId);
           if (fetchError instanceof Error) {
             if (fetchError.name === "AbortError") {
-              throw new Error("Request timeout - Discord bot may be unresponsive", { cause: fetchError });
+              throw new Error("Request timeout - Discord bot may be unresponsive", {
+                cause: fetchError,
+              });
             }
             if (fetchError.message.includes("fetch")) {
               throw new Error("Network error - Discord bot may be offline", { cause: fetchError });
@@ -386,10 +388,14 @@ export class IxTimeSyncManager {
           clearTimeout(timeoutId);
           if (fetchError instanceof Error) {
             if (fetchError.name === "AbortError") {
-              throw new Error("Request timeout - external service unresponsive", { cause: fetchError });
+              throw new Error("Request timeout - external service unresponsive", {
+                cause: fetchError,
+              });
             }
             if (fetchError.message.includes("fetch")) {
-              throw new Error("Network error - external service unavailable", { cause: fetchError });
+              throw new Error("Network error - external service unavailable", {
+                cause: fetchError,
+              });
             }
           }
           throw fetchError;

@@ -107,7 +107,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
         >
           <div className="min-w-0 flex-1 text-left">
             <div className="mb-1 flex items-center gap-1.5">
-              <WikiOSLogomark className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+              <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
               <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                 {source === "iiwiki" ? "IIWiki Article" : "IxWiki Article"}
               </span>
@@ -343,160 +343,156 @@ export function MentionPopover({
           <span>{label}</span>
         </Link>
       </HoverCardTrigger>
-      <HoverCardContent
-        side="top"
-        align="center"
-        sideOffset={6}
-        className="w-64 p-4"
-      >
-          {isLoading ? (
-            <div className="flex flex-col gap-2 py-1">
-              <div className="h-4 w-24 animate-pulse rounded bg-neutral-200 dark:bg-white/10" />
-              <div className="h-3 w-40 animate-pulse rounded bg-neutral-100 dark:bg-white/5" />
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {/* League Popover content */}
-              {isLeague && leagueData && (
-                <div className="flex flex-col gap-2 text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🏆</span>
-                    <div>
-                      <h4 className="text-sm font-bold text-amber-700 dark:text-amber-300">
-                        {leagueData.name}
-                      </h4>
-                      <p className="text-[10px] text-neutral-500 capitalize dark:text-slate-400">
-                        {leagueData.sportPreset} · {leagueData.archetype}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-1 flex gap-2">
-                    <Link
-                      href={withBasePath(`/myleague/${entityId}`)}
-                      className="flex-1 rounded bg-amber-500/10 py-1 text-center text-xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:bg-amber-500/20 dark:text-amber-200 dark:hover:bg-amber-500/30"
-                    >
-                      View Workspace
-                    </Link>
+      <HoverCardContent side="top" align="center" sideOffset={6} className="w-64 p-4">
+        {isLoading ? (
+          <div className="flex flex-col gap-2 py-1">
+            <div className="h-4 w-24 animate-pulse rounded bg-neutral-200 dark:bg-white/10" />
+            <div className="h-3 w-40 animate-pulse rounded bg-neutral-100 dark:bg-white/5" />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {/* League Popover content */}
+            {isLeague && leagueData && (
+              <div className="flex flex-col gap-2 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🏆</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-amber-700 dark:text-amber-300">
+                      {leagueData.name}
+                    </h4>
+                    <p className="text-[10px] text-neutral-500 capitalize dark:text-slate-400">
+                      {leagueData.sportPreset} · {leagueData.archetype}
+                    </p>
                   </div>
                 </div>
-              )}
-
-              {/* Club/Team Popover content */}
-              {isClub && teamData && (
-                <div className="flex flex-col gap-2 text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg" style={{ color: teamData.color || "var(--color-warning-light)" }}>
-                      🛡️
-                    </span>
-                    <div>
-                      <h4 className="text-sm font-bold text-blue-700 dark:text-blue-300">
-                        {teamData.name}
-                      </h4>
-                      <p className="text-[10px] text-neutral-500 dark:text-slate-400">
-                        Stadium Cap: {teamData.stadiumCapacity}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-1 flex gap-2">
-                    <Link
-                      href={withBasePath(`/myclub/${entityId}`)}
-                      className="flex-1 rounded bg-blue-500/10 py-1 text-center text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-200 dark:hover:bg-blue-500/30"
-                    >
-                      View Roster & Stats
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {/* Country Popover content */}
-              {isCountry && countryData && (
-                <div className="flex flex-col gap-2 text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🌍</span>
-                    <div>
-                      <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                        {(countryData as any)?.title ?? entityId}
-                      </h4>
-                      <p className="line-clamp-2 text-[10px] text-neutral-500 dark:text-slate-400">
-                        {countryData.paragraphs?.[0] || "Explore country details."}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-1 flex gap-2">
-                    <Link
-                      href={withBasePath(`/countries/${entityId}`)}
-                      className="flex-1 rounded bg-emerald-500/10 py-1 text-center text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-200 dark:hover:bg-emerald-500/30"
-                    >
-                      View Profile
-                    </Link>
-                    <Link
-                      href={withBasePath(`/mycountry/diplomacy`)}
-                      className="flex-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                    >
-                      Open Embassy
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {/* ThinkPages User / Account Popover content */}
-              {isUser && authorData && (
-                <div className="flex flex-col gap-2 text-left">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/10">
-                      <span className="text-sm font-bold text-purple-600 dark:text-purple-300">
-                        👤
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-purple-700 dark:text-purple-300">
-                        @{entityId}
-                      </h4>
-                      {authorData.country && (
-                        <p className="text-[10px] text-neutral-500 dark:text-slate-400">
-                          From {authorData.country.name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-1 flex gap-2">
-                    <Link
-                      href={withBasePath(`/dashboard`)}
-                      className="flex-1 rounded bg-purple-500/10 py-1 text-center text-xs font-semibold text-purple-700 hover:bg-purple-500/20 dark:bg-purple-500/20 dark:text-purple-200 dark:hover:bg-purple-500/30"
-                    >
-                      View Feed
-                    </Link>
-                    <Link
-                      href={withBasePath(`/messages`)}
-                      className="flex-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                    >
-                      Message
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {/* Fallback if no data was found or loaded */}
-              {!isLoading && !leagueData && !teamData && !countryData && !authorData && (
-                <div className="flex flex-col gap-2 text-left">
-                  <h4 className="text-xs font-bold text-neutral-600 dark:text-slate-300">
-                    {label}
-                  </h4>
-                  <p className="text-[10px] text-neutral-500 dark:text-slate-400">
-                    Explore page profile.
-                  </p>
+                <div className="mt-1 flex gap-2">
                   <Link
-                    href={withBasePath(href)}
-                    className="mt-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    href={withBasePath(`/myleague/${entityId}`)}
+                    className="flex-1 rounded bg-amber-500/10 py-1 text-center text-xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:bg-amber-500/20 dark:text-amber-200 dark:hover:bg-amber-500/30"
                   >
-                    Go to Page
+                    View Workspace
                   </Link>
                 </div>
-              )}
-            </div>
-          )}
-          <HoverCardArrow className="fill-popover" />
-        </HoverCardContent>
+              </div>
+            )}
+
+            {/* Club/Team Popover content */}
+            {isClub && teamData && (
+              <div className="flex flex-col gap-2 text-left">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-lg"
+                    style={{ color: teamData.color || "var(--color-warning-light)" }}
+                  >
+                    🛡️
+                  </span>
+                  <div>
+                    <h4 className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                      {teamData.name}
+                    </h4>
+                    <p className="text-[10px] text-neutral-500 dark:text-slate-400">
+                      Stadium Cap: {teamData.stadiumCapacity}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-1 flex gap-2">
+                  <Link
+                    href={withBasePath(`/myclub/${entityId}`)}
+                    className="flex-1 rounded bg-blue-500/10 py-1 text-center text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-200 dark:hover:bg-blue-500/30"
+                  >
+                    View Roster & Stats
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Country Popover content */}
+            {isCountry && countryData && (
+              <div className="flex flex-col gap-2 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🌍</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                      {(countryData as any)?.title ?? entityId}
+                    </h4>
+                    <p className="line-clamp-2 text-[10px] text-neutral-500 dark:text-slate-400">
+                      {countryData.paragraphs?.[0] || "Explore country details."}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-1 flex gap-2">
+                  <Link
+                    href={withBasePath(`/countries/${entityId}`)}
+                    className="flex-1 rounded bg-emerald-500/10 py-1 text-center text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-200 dark:hover:bg-emerald-500/30"
+                  >
+                    View Profile
+                  </Link>
+                  <Link
+                    href={withBasePath(`/mycountry/diplomacy`)}
+                    className="flex-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  >
+                    Open Embassy
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* ThinkPages User / Account Popover content */}
+            {isUser && authorData && (
+              <div className="flex flex-col gap-2 text-left">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/10">
+                    <span className="text-sm font-bold text-purple-600 dark:text-purple-300">
+                      👤
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-purple-700 dark:text-purple-300">
+                      @{entityId}
+                    </h4>
+                    {authorData.country && (
+                      <p className="text-[10px] text-neutral-500 dark:text-slate-400">
+                        From {authorData.country.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-1 flex gap-2">
+                  <Link
+                    href={withBasePath(`/dashboard`)}
+                    className="flex-1 rounded bg-purple-500/10 py-1 text-center text-xs font-semibold text-purple-700 hover:bg-purple-500/20 dark:bg-purple-500/20 dark:text-purple-200 dark:hover:bg-purple-500/30"
+                  >
+                    View Feed
+                  </Link>
+                  <Link
+                    href={withBasePath(`/messages`)}
+                    className="flex-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  >
+                    Message
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Fallback if no data was found or loaded */}
+            {!isLoading && !leagueData && !teamData && !countryData && !authorData && (
+              <div className="flex flex-col gap-2 text-left">
+                <h4 className="text-xs font-bold text-neutral-600 dark:text-slate-300">{label}</h4>
+                <p className="text-[10px] text-neutral-500 dark:text-slate-400">
+                  Explore page profile.
+                </p>
+                <Link
+                  href={withBasePath(href)}
+                  className="mt-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  Go to Page
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+        <HoverCardArrow className="fill-popover" />
+      </HoverCardContent>
     </HoverCard>
   );
 }

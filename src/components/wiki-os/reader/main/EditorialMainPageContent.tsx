@@ -31,11 +31,11 @@ function ActivityItemThumbnail({ src, title }: { src?: string | null; title?: st
 
   if (src && !hasError) {
     return (
-      <div className="h-9 w-9 rounded-lg overflow-hidden border border-black/10 dark:border-white/10 shrink-0 bg-muted/40 mt-0.5 shadow-2xs">
+      <div className="bg-muted/40 mt-0.5 h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-black/10 shadow-2xs dark:border-white/10">
         <img
           src={src}
           alt={title ?? ""}
-          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
           onError={() => setHasError(true)}
         />
@@ -44,7 +44,7 @@ function ActivityItemThumbnail({ src, title }: { src?: string | null; title?: st
   }
 
   return (
-    <div className="h-9 w-9 rounded-lg border border-black/5 dark:border-white/10 shrink-0 bg-foreground/[0.02] flex items-center justify-center mt-0.5 text-muted-foreground/60 group-hover:text-blue-500 transition-colors">
+    <div className="bg-foreground/[0.02] text-muted-foreground/60 mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-black/5 transition-colors group-hover:text-blue-500 dark:border-white/10">
       <Page className="h-4 w-4" />
     </div>
   );
@@ -80,31 +80,28 @@ export function EditorialMainPageContent({
   }, [recentChanges]);
 
   return (
-    <div className="w-full space-y-5 sm:space-y-6 select-none pb-2">
+    <div className="w-full space-y-5 pb-2 select-none sm:space-y-6">
       {/* ── 1. Two-Column Grid: Topic Taxonomy + Live Revisions Ledger (Equal Proportion) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
+      <div className="grid grid-cols-1 items-stretch gap-6 sm:gap-8 lg:grid-cols-12">
         {/* Left Column (col-span-6): Topic Taxonomy Matrix */}
-        <section
-          aria-label="Browse by Topic"
-          className="lg:col-span-6 flex flex-col h-full"
-        >
-          <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-2 mb-3">
-            <h2 className="text-sm font-semibold text-foreground tracking-tight">
+        <section aria-label="Browse by Topic" className="flex h-full flex-col lg:col-span-6">
+          <div className="mb-3 flex items-center justify-between border-b border-black/[0.06] pb-2 dark:border-white/[0.08]">
+            <h2 className="text-foreground text-sm font-semibold tracking-tight">
               Browse by topic
             </h2>
             <Link
               href={withBasePath("/wiki/categories/Countries")}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 font-medium group/all"
+              className="text-muted-foreground hover:text-foreground group/all flex items-center gap-1 text-xs font-medium transition-colors"
             >
               <span>All Topics</span>
               <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover/all:translate-x-0.5" />
             </Link>
           </div>
 
-          <div className="rounded-2xl sm:rounded-3xl border border-black/[0.08] dark:border-white/[0.1] bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl p-2.5 sm:p-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_20px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_6px_24px_rgba(0,0,0,0.2)] flex-1 flex flex-col justify-between">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 flex-1">
+          <div className="flex flex-1 flex-col justify-between rounded-2xl border border-black/[0.08] bg-white/70 p-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_20px_rgba(0,0,0,0.02)] backdrop-blur-xl sm:rounded-3xl sm:p-3 dark:border-white/[0.1] dark:bg-zinc-900/70 dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_6px_24px_rgba(0,0,0,0.2)]">
+            <div className="grid flex-1 grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2">
               {categories.map((cat) => {
                 const meta = CATEGORY_META[cat.name] || {
                   icon: IconoirGlobe,
@@ -118,21 +115,21 @@ export function EditorialMainPageContent({
                     data-cuelume-press="page"
                     data-cuelume-hover="tick"
                     className={cn(
-                      "flex items-start gap-2.5 p-2 sm:p-2.5 rounded-xl",
-                      "hover:bg-foreground/[0.04] transition-all duration-150 group active:scale-[0.98]"
+                      "flex items-start gap-2.5 rounded-xl p-2 sm:p-2.5",
+                      "hover:bg-foreground/[0.04] group transition-all duration-150 active:scale-[0.98]"
                     )}
                   >
                     <div
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-foreground/10 shrink-0 mt-0.5 transition-transform group-hover:scale-105"
+                      className="border-foreground/10 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-transform group-hover:scale-105"
                       style={{ backgroundColor: `${cat.color}18`, color: cat.color }}
                     >
                       <Icon className="h-3.5 w-3.5" />
                     </div>
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-xs font-semibold text-foreground/90 group-hover:text-foreground truncate">
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <span className="text-foreground/90 group-hover:text-foreground truncate text-xs font-semibold">
                         {cat.name}
                       </span>
-                      <span className="text-[10.5px] text-muted-foreground/75 truncate mt-0.5 leading-snug">
+                      <span className="text-muted-foreground/75 mt-0.5 truncate text-[10.5px] leading-snug">
                         {meta.desc}
                       </span>
                     </div>
@@ -144,28 +141,25 @@ export function EditorialMainPageContent({
         </section>
 
         {/* Right Column (col-span-6): Live Revisions Ledger */}
-        <section
-          aria-label="Recent Wiki Activity"
-          className="lg:col-span-6 flex flex-col h-full"
-        >
-          <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-2 mb-3">
-            <h2 className="text-sm font-semibold text-foreground tracking-tight">
+        <section aria-label="Recent Wiki Activity" className="flex h-full flex-col lg:col-span-6">
+          <div className="mb-3 flex items-center justify-between border-b border-black/[0.06] pb-2 dark:border-white/[0.08]">
+            <h2 className="text-foreground text-sm font-semibold tracking-tight">
               Recent activity
             </h2>
             <Link
               href={withBasePath("/wiki/recent-changes")}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 font-medium group/all"
+              className="text-muted-foreground hover:text-foreground group/all flex items-center gap-1 text-xs font-medium transition-colors"
             >
               <span>View all</span>
               <ArrowUpRight className="h-3 w-3 transition-transform duration-200 group-hover/all:translate-x-0.5 group-hover/all:-translate-y-0.5" />
             </Link>
           </div>
 
-          <div className="rounded-2xl sm:rounded-3xl border border-black/[0.08] dark:border-white/[0.1] bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl p-2.5 sm:p-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_20px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_6px_24px_rgba(0,0,0,0.2)] flex-1 flex flex-col justify-between overflow-hidden relative">
+          <div className="relative flex flex-1 flex-col justify-between overflow-hidden rounded-2xl border border-black/[0.08] bg-white/70 p-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_20px_rgba(0,0,0,0.02)] backdrop-blur-xl sm:rounded-3xl sm:p-3 dark:border-white/[0.1] dark:bg-zinc-900/70 dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_6px_24px_rgba(0,0,0,0.2)]">
             {visibleChanges.length > 0 ? (
-              <ul className="divide-y divide-border/30 flex-1 flex flex-col justify-between">
+              <ul className="divide-border/30 flex flex-1 flex-col justify-between divide-y">
                 {visibleChanges.map((rc, idx) => {
                   const diff = (rc.newLen ?? 0) - (rc.oldLen ?? 0);
                   const diffSign = diff > 0 ? "+" : "";
@@ -181,12 +175,12 @@ export function EditorialMainPageContent({
                   return (
                     <li
                       key={idx}
-                      className="py-2.5 px-3 flex items-start justify-between gap-3 hover:bg-foreground/[0.04] rounded-2xl transition-all duration-200 group flex-1"
+                      className="hover:bg-foreground/[0.04] group flex flex-1 items-start justify-between gap-3 rounded-2xl px-3 py-2.5 transition-all duration-200"
                     >
-                      <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                      <div className="flex min-w-0 flex-1 items-start gap-2.5">
                         <ActivityItemThumbnail src={rc.thumbnail} title={rc.title} />
 
-                        <div className="flex flex-col min-w-0 flex-1">
+                        <div className="flex min-w-0 flex-1 flex-col">
                           <div className="flex items-center gap-1.5">
                             <Link
                               href={withBasePath(
@@ -194,7 +188,7 @@ export function EditorialMainPageContent({
                               )}
                               data-cuelume-press="droplet"
                               data-cuelume-hover="tick"
-                              className="text-xs sm:text-sm font-semibold text-foreground truncate hover:text-blue-500 transition-colors"
+                              className="text-foreground truncate text-xs font-semibold transition-colors hover:text-blue-500 sm:text-sm"
                             >
                               {rc.title}
                             </Link>
@@ -202,22 +196,22 @@ export function EditorialMainPageContent({
 
                           {/* Page Blurb / Description */}
                           {rc.blurb && (
-                            <p className="text-[11px] text-muted-foreground/80 line-clamp-1 leading-snug mt-0.5">
+                            <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-[11px] leading-snug">
                               {rc.blurb}
                             </p>
                           )}
 
                           {/* Edit Notes / Summary */}
                           {rc.comment && rc.comment.trim() && (
-                            <div className="flex items-center gap-1 mt-1 text-[10.5px] text-foreground/75 bg-foreground/[0.03] border border-border/40 rounded-md px-1.5 py-0.5 max-w-fit">
-                              <EditPencil className="h-2.5 w-2.5 text-muted-foreground/70 shrink-0" />
-                              <span className="truncate italic font-sans">{rc.comment}</span>
+                            <div className="text-foreground/75 bg-foreground/[0.03] border-border/40 mt-1 flex max-w-fit items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10.5px]">
+                              <EditPencil className="text-muted-foreground/70 h-2.5 w-2.5 shrink-0" />
+                              <span className="truncate font-sans italic">{rc.comment}</span>
                             </div>
                           )}
 
                           {/* Author & Timestamp */}
-                          <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground mt-1">
-                            <span className="font-medium text-foreground/80">{rc.user}</span>
+                          <div className="text-muted-foreground mt-1 flex items-center gap-1.5 text-[10.5px]">
+                            <span className="text-foreground/80 font-medium">{rc.user}</span>
                             <span className="opacity-40">·</span>
                             <span>{formatMWTimeAgo(rc.timestamp)}</span>
                           </div>
@@ -227,7 +221,7 @@ export function EditorialMainPageContent({
                       {/* Byte Diff Pill */}
                       <span
                         className={cn(
-                          "text-[11px] font-semibold shrink-0 rounded-md px-1.5 py-0.5 bg-foreground/[0.03] border border-border/20 flex items-center gap-1 mt-0.5 tabular-nums",
+                          "bg-foreground/[0.03] border-border/20 mt-0.5 flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
                           diffClass
                         )}
                         title={`${rc.oldLen} → ${rc.newLen} bytes`}
@@ -238,7 +232,7 @@ export function EditorialMainPageContent({
                             transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                             className="inline-flex items-center"
                           >
-                            <ArrowUpRight className="h-3 w-3 text-emerald-500 shrink-0" />
+                            <ArrowUpRight className="h-3 w-3 shrink-0 text-emerald-500" />
                           </motion.span>
                         ) : diff < 0 ? (
                           <motion.span
@@ -246,7 +240,7 @@ export function EditorialMainPageContent({
                             transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                             className="inline-flex items-center"
                           >
-                            <ArrowDownRight className="h-3 w-3 text-rose-500 shrink-0" />
+                            <ArrowDownRight className="h-3 w-3 shrink-0 text-rose-500" />
                           </motion.span>
                         ) : null}
                         <span>{formattedDiff}</span>
@@ -256,11 +250,11 @@ export function EditorialMainPageContent({
                 })}
               </ul>
             ) : isLoadingRecent ? (
-              <div className="py-8 text-center text-xs text-muted-foreground flex-1 flex items-center justify-center">
+              <div className="text-muted-foreground flex flex-1 items-center justify-center py-8 text-center text-xs">
                 Loading recent edits...
               </div>
             ) : (
-              <div className="py-8 text-center text-xs text-muted-foreground flex-1 flex items-center justify-center">
+              <div className="text-muted-foreground flex flex-1 items-center justify-center py-8 text-center text-xs">
                 No recent activity recorded yet.
               </div>
             )}
@@ -273,24 +267,24 @@ export function EditorialMainPageContent({
         <section
           id="sovereign-nations"
           aria-label="Countries of Ixnay"
-          className="w-full flex flex-col pt-1 scroll-mt-6"
+          className="flex w-full scroll-mt-6 flex-col pt-1"
         >
-          <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-2 mb-3">
-            <h2 className="text-sm font-semibold text-foreground tracking-tight">
+          <div className="mb-3 flex items-center justify-between border-b border-black/[0.06] pb-2 dark:border-white/[0.08]">
+            <h2 className="text-foreground text-sm font-semibold tracking-tight">
               Explore Countries
             </h2>
             <Link
               href={withBasePath("/countries")}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 font-medium group/all"
+              className="text-muted-foreground hover:text-foreground group/all flex items-center gap-1 text-xs font-medium transition-colors"
             >
               <span>All 82 Realms</span>
               <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover/all:translate-x-0.5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {countries.slice(0, 12).map((c) => (
               <motion.div
                 key={c.id}
@@ -305,32 +299,32 @@ export function EditorialMainPageContent({
                   data-cuelume-press="droplet"
                   data-cuelume-hover="tick"
                   className={cn(
-                    "group relative overflow-hidden flex flex-col p-3 rounded-2xl",
+                    "group relative flex flex-col overflow-hidden rounded-2xl p-3",
                     "border border-black/[0.08] dark:border-white/[0.1]",
-                    "bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl",
+                    "bg-white/70 backdrop-blur-xl dark:bg-zinc-900/70",
                     "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_24px_rgba(0,0,0,0.3)]",
-                    "hover:border-purple-500/40 hover:bg-white/90 dark:hover:bg-zinc-900/90 hover:shadow-md",
-                    "transition-colors duration-150 block text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900"
+                    "hover:border-purple-500/40 hover:bg-white/90 hover:shadow-md dark:hover:bg-zinc-900/90",
+                    "block text-left transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none dark:focus-visible:ring-offset-zinc-900"
                   )}
                 >
-                  <div className="w-full h-16 rounded-xl overflow-hidden mb-2.5 bg-foreground/5 border border-foreground/10 relative shadow-2xs">
+                  <div className="bg-foreground/5 border-foreground/10 relative mb-2.5 h-16 w-full overflow-hidden rounded-xl border shadow-2xs">
                     {c.flagUrl ? (
                       <img
                         src={c.flagUrl}
                         alt={c.name}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
+                      <div className="text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
                         FLAG
                       </div>
                     )}
                   </div>
-                  <span className="text-xs font-semibold text-foreground truncate group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors">
+                  <span className="text-foreground truncate text-xs font-semibold transition-colors group-hover:text-purple-500 dark:group-hover:text-purple-400">
                     {c.name}
                   </span>
-                  <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground mt-0.5 tabular-nums truncate font-medium">
+                  <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate text-[10.5px] font-medium tabular-nums">
                     {c.population ? <span>Pop {formatNumber(c.population, 1)}</span> : null}
                     {c.population && c.gdp ? <span className="opacity-40">·</span> : null}
                     {c.gdp ? <span>{formatCurrency(c.gdp)}</span> : null}

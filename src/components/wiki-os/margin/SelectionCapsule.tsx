@@ -179,7 +179,10 @@ export function SelectionCapsule({
   if (!selectionData || typeof document === "undefined") return null;
 
   // Compute position centered above the selection with safe viewport bounds
-  const x = Math.max(160, Math.min(window.innerWidth - 160, selectionData.rect.left + selectionData.rect.width / 2));
+  const x = Math.max(
+    160,
+    Math.min(window.innerWidth - 160, selectionData.rect.left + selectionData.rect.width / 2)
+  );
   const y = Math.max(70, selectionData.rect.top - 12);
 
   const style: React.CSSProperties = {
@@ -196,19 +199,19 @@ export function SelectionCapsule({
       ref={capsuleRef}
       style={style}
       className={cn(
-        "flex items-center gap-1 p-1 rounded-2xl border border-[var(--wikios-border)] shadow-[0_12px_36px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-transform duration-100 select-none animate-in fade-in zoom-in-95",
+        "animate-in fade-in zoom-in-95 flex items-center gap-1 rounded-2xl border border-[var(--wikios-border)] p-1 shadow-[0_12px_36px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-transform duration-100 select-none",
         "bg-[var(--wikios-surface)]/95 text-[var(--wikios-text)]"
       )}
     >
       {/* Highlight Color Palette */}
       {isAuthenticated && (
-        <div className="flex items-center gap-1 pr-1.5 border-r border-[var(--wikios-border)] pl-0.5">
+        <div className="flex items-center gap-1 border-r border-[var(--wikios-border)] pr-1.5 pl-0.5">
           {HIGHLIGHT_PALETTE.map((p) => (
             <button
               key={p.color}
               type="button"
               onClick={() => handleHighlight(p.color)}
-              className="w-4.5 h-4.5 rounded-full border border-white/25 transition-transform duration-100 active:scale-85 hover:scale-110 cursor-pointer shadow-xs"
+              className="h-4.5 w-4.5 cursor-pointer rounded-full border border-white/25 shadow-xs transition-transform duration-100 hover:scale-110 active:scale-85"
               style={{ backgroundColor: p.color }}
               title={`Highlight (${p.label})`}
             />
@@ -220,10 +223,10 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleComment}
-        className="flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-semibold text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
+        className="flex cursor-pointer items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold text-[var(--wikios-text-muted)] transition-transform duration-100 hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
         title="Discuss"
       >
-        <MessageSquare className="w-3.5 h-3.5 text-margin-accent" />
+        <MessageSquare className="text-margin-accent h-3.5 w-3.5" />
         <span>Discuss</span>
       </button>
 
@@ -232,10 +235,10 @@ export function SelectionCapsule({
         <button
           type="button"
           onClick={handleSuggest}
-          className="flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-semibold text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
+          className="flex cursor-pointer items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold text-[var(--wikios-text-muted)] transition-transform duration-100 hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
           title="Suggest edit"
         >
-          <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
+          <Edit3 className="h-3.5 w-3.5 text-cyan-400" />
           <span>Suggest edit</span>
         </button>
       )}
@@ -245,10 +248,10 @@ export function SelectionCapsule({
         <button
           type="button"
           onClick={handleStash}
-          className="flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-semibold text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
+          className="flex cursor-pointer items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold text-[var(--wikios-text-muted)] transition-transform duration-100 hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
           title="Save quote"
         >
-          <Bookmark className="w-3.5 h-3.5 text-rose-400" />
+          <Bookmark className="h-3.5 w-3.5 text-rose-400" />
           <span>Stash</span>
         </button>
       )}
@@ -257,23 +260,23 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleShare}
-        className="p-1 rounded-xl text-[var(--wikios-text-dim)] hover:text-margin-accent hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
+        className="hover:text-margin-accent cursor-pointer rounded-xl p-1 text-[var(--wikios-text-dim)] transition-transform duration-100 hover:bg-[var(--wikios-border)] active:scale-95"
         title="Share quote"
       >
-        <Share2 className="w-3.5 h-3.5" />
+        <Share2 className="h-3.5 w-3.5" />
       </button>
 
       {/* Action: Copy Text */}
       <button
         type="button"
         onClick={handleCopy}
-        className="p-1 rounded-xl text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
+        className="cursor-pointer rounded-xl p-1 text-[var(--wikios-text-dim)] transition-transform duration-100 hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
         title="Copy text"
       >
         {copied ? (
-          <Check className="w-3.5 h-3.5 text-emerald-400" />
+          <Check className="h-3.5 w-3.5 text-emerald-400" />
         ) : (
-          <Copy className="w-3.5 h-3.5" />
+          <Copy className="h-3.5 w-3.5" />
         )}
       </button>
     </div>,

@@ -31,7 +31,16 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { NavArrowRight as ChevronRight, SystemRestart as Loader2, Gift, ArrowSeparateVertical as ArrowUpDown, MoreHoriz as MoreHorizontal, FireFlame as Flame, ClockRotateRight as History, Crown as Gem } from "iconoir-react";
+import {
+  NavArrowRight as ChevronRight,
+  SystemRestart as Loader2,
+  Gift,
+  ArrowSeparateVertical as ArrowUpDown,
+  MoreHoriz as MoreHorizontal,
+  FireFlame as Flame,
+  ClockRotateRight as History,
+  Crown as Gem,
+} from "iconoir-react";
 
 import { FacetDataTable, type FacetColumn } from "~/components/ui/data-table";
 
@@ -391,16 +400,28 @@ export function VaultUserDirectory() {
                 <MoreHorizontal className="h-3.5 w-3.5 shrink-0" />
                 <span>Actions</span>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-popover border-border text-foreground w-44">
-                <DropdownMenuItem onClick={() => handleOpenAdjust(user)} className="cursor-pointer gap-2 py-2">
+              <DropdownMenuContent
+                align="end"
+                className="bg-popover border-border text-foreground w-44"
+              >
+                <DropdownMenuItem
+                  onClick={() => handleOpenAdjust(user)}
+                  className="cursor-pointer gap-2 py-2"
+                >
                   <ArrowUpDown className="h-3.5 w-3.5 text-amber-500" />
                   <span>Adjust Credits</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleOpenPack(user)} className="cursor-pointer gap-2 py-2">
+                <DropdownMenuItem
+                  onClick={() => handleOpenPack(user)}
+                  className="cursor-pointer gap-2 py-2"
+                >
                   <Gift className="h-3.5 w-3.5 text-blue-500" />
                   <span>Award Card Pack</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleOpenCosmetics(user)} className="cursor-pointer gap-2 py-2">
+                <DropdownMenuItem
+                  onClick={() => handleOpenCosmetics(user)}
+                  className="cursor-pointer gap-2 py-2"
+                >
                   <Gem className="h-3.5 w-3.5 text-purple-500" />
                   <span>Manage Cosmetics</span>
                 </DropdownMenuItem>

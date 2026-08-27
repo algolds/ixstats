@@ -23,7 +23,10 @@ const API_URL = `${MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`;
 
 function sanitize(str: string | null | undefined): string {
   if (!str) return "";
-  return str.replace(/\0/g, "").replace(/\u0000/g, "").trim();
+  return str
+    .replace(/\0/g, "")
+    .replace(/\u0000/g, "")
+    .trim();
 }
 
 function normalize(str: string | null | undefined): string {
@@ -274,7 +277,9 @@ async function main() {
   log("==================================================================");
   log(`Total already linked: ${alreadyLinked.length}`);
   for (const al of alreadyLinked) {
-    log(`  - User: ${al.user.id.substring(0, 10)}... | Clerk: ${al.user.clerkUserId.substring(0, 15)}... | Wiki: "${al.user.wikiUsername}" (MW UserID: ${al.user.wikiUserId || "N/A"}) | Country: "${al.user.country?.name || "N/A"}" | Forum: "${al.user.forumUsername || "N/A"}" | Discord: "${al.user.discordUsername || "N/A"}"`);
+    log(
+      `  - User: ${al.user.id.substring(0, 10)}... | Clerk: ${al.user.clerkUserId.substring(0, 15)}... | Wiki: "${al.user.wikiUsername}" (MW UserID: ${al.user.wikiUserId || "N/A"}) | Country: "${al.user.country?.name || "N/A"}" | Forum: "${al.user.forumUsername || "N/A"}" | Discord: "${al.user.discordUsername || "N/A"}"`
+    );
   }
 
   log("\n==================================================================");
@@ -283,14 +288,23 @@ async function main() {
   log(`Total match candidates found: ${candidates.length}`);
   for (const c of candidates) {
     log(`  [${c.confidence}] ${c.matchType}`);
-    log(`      IxStates User: ID=${c.user.id.substring(0, 10)}... Country="${c.user.country?.name || "N/A"}" Forum="${c.user.forumUsername || "N/A"}" Discord="${c.user.discordUsername || "N/A"}"`);
-    log(`      Matched MW User: "${c.mwUser.name}" (MW ID: ${c.mwUser.userid}, Edits: ${c.mwUser.editcount})`);
+    log(
+      `      IxStates User: ID=${c.user.id.substring(0, 10)}... Country="${c.user.country?.name || "N/A"}" Forum="${c.user.forumUsername || "N/A"}" Discord="${c.user.discordUsername || "N/A"}"`
+    );
+    log(
+      `      Matched MW User: "${c.mwUser.name}" (MW ID: ${c.mwUser.userid}, Edits: ${c.mwUser.editcount})`
+    );
     log(`      Details: ${c.details}\n`);
   }
 
   // 5. Active MediaWiki users with edits > 0 that remain unmatched
   const activeUnmatchedMW = mwUsers
-    .filter((mwu) => mwu.editcount > 0 && !usedMwUsers.has(mwu.name.toLowerCase()) && !candidates.some((c) => c.mwUser.name.toLowerCase() === mwu.name.toLowerCase()))
+    .filter(
+      (mwu) =>
+        mwu.editcount > 0 &&
+        !usedMwUsers.has(mwu.name.toLowerCase()) &&
+        !candidates.some((c) => c.mwUser.name.toLowerCase() === mwu.name.toLowerCase())
+    )
     .sort((a, b) => b.editcount - a.editcount);
 
   log("\n==================================================================");
@@ -298,7 +312,9 @@ async function main() {
   log("==================================================================");
   log(`Total active unmatched MediaWiki users: ${activeUnmatchedMW.length}`);
   for (const u of activeUnmatchedMW.slice(0, 30)) {
-    log(`  - "${u.name}" (ID: ${u.userid}) | Edits: ${u.editcount} | Registered: ${u.registration || "N/A"} | Groups: ${u.groups?.join(", ") || "none"}`);
+    log(
+      `  - "${u.name}" (ID: ${u.userid}) | Edits: ${u.editcount} | Registered: ${u.registration || "N/A"} | Groups: ${u.groups?.join(", ") || "none"}`
+    );
   }
   if (activeUnmatchedMW.length > 30) {
     log(`  ... and ${activeUnmatchedMW.length - 30} more.`);
@@ -312,7 +328,9 @@ async function main() {
   log("==================================================================");
   log(`Total unmatched IxStates users: ${remainingUnlinkedUsers.length}`);
   for (const u of remainingUnlinkedUsers) {
-    log(`  - User: ${u.id.substring(0, 10)}... | Clerk: ${u.clerkUserId.substring(0, 15)}... | Country: "${u.country?.name || "N/A"}" | Forum: "${u.forumUsername || "N/A"}" | Discord: "${u.discordUsername || "N/A"}"`);
+    log(
+      `  - User: ${u.id.substring(0, 10)}... | Clerk: ${u.clerkUserId.substring(0, 15)}... | Country: "${u.country?.name || "N/A"}" | Forum: "${u.forumUsername || "N/A"}" | Discord: "${u.discordUsername || "N/A"}"`
+    );
   }
 }
 

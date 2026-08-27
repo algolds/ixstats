@@ -60,9 +60,7 @@ export default function CountriesPage() {
       populationGrowthRate: country.populationGrowthRate ?? undefined,
       // Use database flag first, then cached/resolved flag, then undefined
       flagUrl:
-        normalizeFlagUrl(country.flag) ||
-        normalizeFlagUrl(flagUrls[country.name]) ||
-        undefined,
+        normalizeFlagUrl(country.flag) || normalizeFlagUrl(flagUrls[country.name]) || undefined,
       // Identity & Governance
       continent: country.continent ?? undefined,
       region: country.region ?? undefined,

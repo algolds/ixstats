@@ -4,7 +4,16 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
-import { Plus, EditPencil as Edit, Trash as Trash2, Group as Users, MapPin, Shield, Star, CheckCircle as CheckCircle2 } from "iconoir-react";
+import {
+  Plus,
+  EditPencil as Edit,
+  Trash as Trash2,
+  Group as Users,
+  MapPin,
+  Shield,
+  Star,
+  CheckCircle as CheckCircle2,
+} from "iconoir-react";
 import {
   Dialog,
   DialogContent,
@@ -302,7 +311,7 @@ function UnitDialog({
         effectiveness: 50,
       });
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [unit, open]);
 
   const handleSubmit = () => {

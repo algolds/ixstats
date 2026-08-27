@@ -3,7 +3,12 @@
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Play, SystemRestart as Loader2, CheckCircle, WarningTriangle as AlertTriangle } from "iconoir-react";
+import {
+  Play,
+  SystemRestart as Loader2,
+  CheckCircle,
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import type { CalculationModule, CalculationResult } from "./calculation-types";
 
 interface CalculationSimulatorProps {
@@ -24,14 +29,14 @@ export function CalculationSimulator({
   onRunSimulation,
 }: CalculationSimulatorProps) {
   return (
-    <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
-      <div className="flex items-center justify-between border-b border-border/20 pb-3">
+    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+      <div className="border-border/20 flex items-center justify-between border-b pb-3">
         <h4 className="text-foreground text-xs font-bold">Interactive Sandbox</h4>
         <Button
           onClick={onRunSimulation}
           disabled={isSimulating}
           size="sm"
-          className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+          className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
         >
           {isSimulating ? (
             <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -56,7 +61,7 @@ export function CalculationSimulator({
                     [key]: parseFloat(e.target.value) || 0,
                   }))
                 }
-                className="h-8 rounded-xl border-border/30 bg-background/50 font-mono text-xs"
+                className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
               />
             </div>
           ))}
@@ -67,8 +72,8 @@ export function CalculationSimulator({
           <div
             className={`rounded-xl border p-4 text-xs ${
               sandboxResult.success
-                ? "bg-emerald-500/10 border-emerald-500/20"
-                : "bg-red-500/10 border-red-500/20"
+                ? "border-emerald-500/20 bg-emerald-500/10"
+                : "border-red-500/20 bg-red-500/10"
             }`}
           >
             <div className="flex items-center justify-between">
@@ -78,7 +83,7 @@ export function CalculationSimulator({
                 ) : (
                   <AlertTriangle className="h-4 w-4 text-red-400" />
                 )}
-                <span className="font-semibold text-foreground">
+                <span className="text-foreground font-semibold">
                   {sandboxResult.success ? "Calculation Successful" : "Execution Error"}
                 </span>
               </div>
@@ -102,12 +107,10 @@ export function CalculationSimulator({
               </div>
             )}
 
-            {sandboxResult.error && (
-              <p className="mt-2 text-red-300">{sandboxResult.error}</p>
-            )}
+            {sandboxResult.error && <p className="mt-2 text-red-300">{sandboxResult.error}</p>}
 
             {sandboxResult.intermediateSteps && (
-              <div className="mt-3 border-border/20 border-t pt-2">
+              <div className="border-border/20 mt-3 border-t pt-2">
                 <p className="text-muted-foreground mb-1 text-[10px] font-semibold uppercase">
                   Intermediate Variables
                 </p>

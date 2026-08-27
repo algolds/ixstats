@@ -23,18 +23,22 @@ export function useCountryFlagRouteAware(countryName: string) {
     return pathname?.includes("/builder/import") ? "fictional-wiki" : "commons-only";
   }, [pathname]);
 
-  const { data: batchResult, isLoading, error: trpcError, refetch } =
-    api.countries.flags.resolveBatch.useQuery(
-      {
-        countryNames: cleanName ? [cleanName] : [],
-        fallbackPolicy,
-      },
-      {
-        enabled: Boolean(cleanName),
-        staleTime: 1000 * 60 * 60,
-        retry: 1,
-      }
-    );
+  const {
+    data: batchResult,
+    isLoading,
+    error: trpcError,
+    refetch,
+  } = api.countries.flags.resolveBatch.useQuery(
+    {
+      countryNames: cleanName ? [cleanName] : [],
+      fallbackPolicy,
+    },
+    {
+      enabled: Boolean(cleanName),
+      staleTime: 1000 * 60 * 60,
+      retry: 1,
+    }
+  );
 
   const rawUrl = cleanName && batchResult ? batchResult[cleanName] : null;
   const isPlaceholder = !rawUrl || rawUrl.includes("placeholder");
@@ -47,8 +51,8 @@ export function useCountryFlagRouteAware(countryName: string) {
       source: isPlaceholder
         ? "placeholder"
         : fallbackPolicy === "fictional-wiki"
-        ? "fictional-wiki"
-        : "commons",
+          ? "fictional-wiki"
+          : "commons",
       cached: Boolean(batchResult),
       isPlaceholder,
     };

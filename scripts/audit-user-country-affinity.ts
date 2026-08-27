@@ -101,18 +101,102 @@ async function fetchKnownCountries(): Promise<Set<string>> {
 
   // Add explicit known IxStates nations & IxWiki states
   const seedNations = [
-    "Urcea", "Caphiria", "Burgundie", "Cartadania", "Castadilla", "Corumm", "Daxia", "Tierrador",
-    "Pelaxia", "Valcenia", "Galata", "Metzetta", "Caldera", "Alstin", "Carthinova", "Hendalarsk",
-    "Eldmora", "Puertego", "Diamavya", "Nolis", "Aciria", "Ralkern", "Drasenia", "Olmeria",
-    "Fiannria", "Akcelis", "Argyrea", "Farmandie", "Asteria", "Grajnidar", "Helvianir", "Syliria",
-    "Terazta", "Ogonkai", "Asteklion", "Qubuj", "Patraja", "Almadaria", "Sakartvelos", "Enserlano",
-    "Yueguo", "Kloistan", "Dectroia", "Aleajayib", "Unintra", "Azikoria", "Ghebeek", "Orecula",
-    "Insulam", "Sassain", "Vesta", "Grussland", "Dhayavastan", "Thalaia", "Yytuskia-Helvana", "Etzil",
-    "Neutropic", "Solgavden", "Tashidaypa", "Vellara", "Ekelos", "Locrya", "Ishonga", "Rylivian",
-    "The Alesian Empire", "Daito", "Pukhtunkhwa", "Qustantistan", "Vallorania", "Kistan", "Yonderre",
-    "Nasastan", "Kirvia", "Tirghal", "Odoninia", "Levantia", "Sarpedon", "Audonia", "Crona", "Thalassa",
-    "Isles of Caphiria", "New Burgundie", "Aharon", "Great Levantia", "Marchenia", "Vayan", "Varina",
-    "Zendavia", "Arcerion", "Soropia", "Lariana", "Norgsveldet", "Morwall", "Ulanya", "Vinya", "Bontopia"
+    "Urcea",
+    "Caphiria",
+    "Burgundie",
+    "Cartadania",
+    "Castadilla",
+    "Corumm",
+    "Daxia",
+    "Tierrador",
+    "Pelaxia",
+    "Valcenia",
+    "Galata",
+    "Metzetta",
+    "Caldera",
+    "Alstin",
+    "Carthinova",
+    "Hendalarsk",
+    "Eldmora",
+    "Puertego",
+    "Diamavya",
+    "Nolis",
+    "Aciria",
+    "Ralkern",
+    "Drasenia",
+    "Olmeria",
+    "Fiannria",
+    "Akcelis",
+    "Argyrea",
+    "Farmandie",
+    "Asteria",
+    "Grajnidar",
+    "Helvianir",
+    "Syliria",
+    "Terazta",
+    "Ogonkai",
+    "Asteklion",
+    "Qubuj",
+    "Patraja",
+    "Almadaria",
+    "Sakartvelos",
+    "Enserlano",
+    "Yueguo",
+    "Kloistan",
+    "Dectroia",
+    "Aleajayib",
+    "Unintra",
+    "Azikoria",
+    "Ghebeek",
+    "Orecula",
+    "Insulam",
+    "Sassain",
+    "Vesta",
+    "Grussland",
+    "Dhayavastan",
+    "Thalaia",
+    "Yytuskia-Helvana",
+    "Etzil",
+    "Neutropic",
+    "Solgavden",
+    "Tashidaypa",
+    "Vellara",
+    "Ekelos",
+    "Locrya",
+    "Ishonga",
+    "Rylivian",
+    "The Alesian Empire",
+    "Daito",
+    "Pukhtunkhwa",
+    "Qustantistan",
+    "Vallorania",
+    "Kistan",
+    "Yonderre",
+    "Nasastan",
+    "Kirvia",
+    "Tirghal",
+    "Odoninia",
+    "Levantia",
+    "Sarpedon",
+    "Audonia",
+    "Crona",
+    "Thalassa",
+    "Isles of Caphiria",
+    "New Burgundie",
+    "Aharon",
+    "Great Levantia",
+    "Marchenia",
+    "Vayan",
+    "Varina",
+    "Zendavia",
+    "Arcerion",
+    "Soropia",
+    "Lariana",
+    "Norgsveldet",
+    "Morwall",
+    "Ulanya",
+    "Vinya",
+    "Bontopia",
   ];
 
   for (const n of seedNations) {
@@ -161,7 +245,12 @@ async function analyzeUserContributions(
 
   for (const c of contribs) {
     const title = String(c.title || "").trim();
-    if (!title || title.startsWith("User:") || title.startsWith("User talk:") || title.startsWith("Template:")) {
+    if (
+      !title ||
+      title.startsWith("User:") ||
+      title.startsWith("User talk:") ||
+      title.startsWith("Template:")
+    ) {
       continue;
     }
 
@@ -178,7 +267,7 @@ async function analyzeUserContributions(
           nationScores.set(country, { score: 0, evidence: new Set() });
         }
         const record = nationScores.get(country)!;
-        record.score += (title.toLowerCase() === country.toLowerCase()) ? 5 : 1;
+        record.score += title.toLowerCase() === country.toLowerCase() ? 5 : 1;
         record.evidence.add(title);
       }
     }
@@ -188,7 +277,10 @@ async function analyzeUserContributions(
   for (const country of knownCountries) {
     if (country.toLowerCase() === user.name.toLowerCase()) {
       if (!nationScores.has(country)) {
-        nationScores.set(country, { score: 10, evidence: new Set([`User name is "${user.name}"`]) });
+        nationScores.set(country, {
+          score: 10,
+          evidence: new Set([`User name is "${user.name}"`]),
+        });
       } else {
         const record = nationScores.get(country)!;
         record.score += 20;
@@ -233,7 +325,9 @@ async function main() {
   const knownCountries = await fetchKnownCountries();
   console.log(`Compiled index of ${knownCountries.size} known geopolitical entities / nations.`);
 
-  console.log("\n📦 3/3 Analyzing contribution patterns and nation affinities (this may take ~20s)...");
+  console.log(
+    "\n📦 3/3 Analyzing contribution patterns and nation affinities (this may take ~20s)..."
+  );
   const affinities: UserAffinity[] = [];
 
   for (let i = 0; i < users.length; i++) {
@@ -260,9 +354,15 @@ async function main() {
   md += `| :--- | :--- | :--- | :--- | :--- | :--- |\n`;
 
   for (const aff of affinities.filter((a) => a.user.editcount >= 50)) {
-    const nations = aff.candidateNations.map((n) => `**${n.name}** (${n.score} pts)`).join("<br/>") || "*General / Multi-regional*";
-    const topPagesList = aff.topPages.slice(0, 4).map((p) => `${p.title} (${p.count})`).join("<br/>") || "*None recorded*";
-    
+    const nations =
+      aff.candidateNations.map((n) => `**${n.name}** (${n.score} pts)`).join("<br/>") ||
+      "*General / Multi-regional*";
+    const topPagesList =
+      aff.topPages
+        .slice(0, 4)
+        .map((p) => `${p.title} (${p.count})`)
+        .join("<br/>") || "*None recorded*";
+
     let confidence = "HIGH";
     if (aff.candidateNations.length === 0) confidence = "LOW";
     else if (aff.candidateNations[0].score < 5) confidence = "MEDIUM";
@@ -275,9 +375,18 @@ async function main() {
   md += `| :--- | :--- | :--- | :--- | :--- | :--- |\n`;
 
   for (const aff of affinities.filter((a) => a.user.editcount >= 10 && a.user.editcount < 50)) {
-    const nations = aff.candidateNations.slice(0, 2).map((n) => `**${n.name}**`).join(", ") || "*Unspecified*";
-    const topPagesList = aff.topPages.slice(0, 3).map((p) => `${p.title} (${p.count})`).join(", ") || "*None*";
-    const confidence = aff.candidateNations.length > 0 && aff.candidateNations[0].score >= 3 ? "HIGH" : "MEDIUM";
+    const nations =
+      aff.candidateNations
+        .slice(0, 2)
+        .map((n) => `**${n.name}**`)
+        .join(", ") || "*Unspecified*";
+    const topPagesList =
+      aff.topPages
+        .slice(0, 3)
+        .map((p) => `${p.title} (${p.count})`)
+        .join(", ") || "*None*";
+    const confidence =
+      aff.candidateNations.length > 0 && aff.candidateNations[0].score >= 3 ? "HIGH" : "MEDIUM";
     md += `| \`${aff.user.userid}\` | **${aff.user.name}** | ${aff.user.editcount} | ${nations} | ${topPagesList} | \`${confidence}\` |\n`;
   }
 
@@ -286,8 +395,16 @@ async function main() {
   md += `| :--- | :--- | :--- | :--- | :--- |\n`;
 
   for (const aff of affinities.filter((a) => a.user.editcount < 10)) {
-    const nations = aff.candidateNations.slice(0, 2).map((n) => n.name).join(", ") || "—";
-    const topPagesList = aff.topPages.slice(0, 2).map((p) => p.title).join(", ") || "—";
+    const nations =
+      aff.candidateNations
+        .slice(0, 2)
+        .map((n) => n.name)
+        .join(", ") || "—";
+    const topPagesList =
+      aff.topPages
+        .slice(0, 2)
+        .map((p) => p.title)
+        .join(", ") || "—";
     md += `| \`${aff.user.userid}\` | ${aff.user.name} | ${aff.user.editcount} | ${nations} | ${topPagesList} |\n`;
   }
 

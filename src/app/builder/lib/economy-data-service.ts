@@ -967,7 +967,7 @@ export function saveBaselineToStorage(inputs: EconomicInputs): void {
         })
       );
     }
-  } catch  {
+  } catch {
     // Failed to save baseline to localStorage
   }
 }
@@ -984,7 +984,7 @@ export function loadBaselineFromStorage(): EconomicInputs | null {
       return inputs;
     }
     return null;
-  } catch  {
+  } catch {
     return null;
   }
 }

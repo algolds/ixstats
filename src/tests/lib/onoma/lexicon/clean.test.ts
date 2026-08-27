@@ -90,7 +90,6 @@ describe("cleanLexicon", () => {
   });
 });
 
-
 import { assignBucket, topCompounds } from "~/lib/onoma/lexicon/bucket";
 import { classifyCulture } from "~/lib/onoma/lexicon/culture-classifier";
 

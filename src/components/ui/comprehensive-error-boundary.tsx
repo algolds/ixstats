@@ -1,7 +1,13 @@
 "use client";
 
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
-import { WarningTriangle as AlertTriangle, Refresh as RefreshCw, Bug, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp } from "iconoir-react";
+import {
+  WarningTriangle as AlertTriangle,
+  Refresh as RefreshCw,
+  Bug,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+} from "iconoir-react";
 import { Button } from "./button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
 import { Badge } from "./badge";

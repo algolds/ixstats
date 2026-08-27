@@ -5,13 +5,7 @@
 
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Xmark as X,
@@ -65,8 +59,7 @@ export function useImageLightbox(containerRef: React.RefObject<HTMLElement | nul
       const link = img.closest("a") as HTMLAnchorElement | null;
 
       // Ignore tiny utility icons
-      const width =
-        img.naturalWidth || img.width || parseInt(img.getAttribute("width") ?? "0", 10);
+      const width = img.naturalWidth || img.width || parseInt(img.getAttribute("width") ?? "0", 10);
       const height =
         img.naturalHeight || img.height || parseInt(img.getAttribute("height") ?? "0", 10);
       if (width > 0 && width < 32 && height > 0 && height < 32 && !img.closest(".thumbinner")) {
@@ -115,7 +108,9 @@ function ImageLightboxModal({
   const [isClosing, setIsClosing] = useState(false);
   const [showInspector, setShowInspector] = useState(false);
   const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
-  const [imgNaturalSize, setImgNaturalSize] = useState<{ width: number; height: number } | null>(null);
+  const [imgNaturalSize, setImgNaturalSize] = useState<{ width: number; height: number } | null>(
+    null
+  );
 
   const { user } = useUser();
   const isAuthenticated = !!user;
@@ -302,8 +297,7 @@ function ImageLightboxModal({
 
   // Format file extension badge
   const fileExt = useMemo(() => {
-    const ext =
-      image.filename.split(".").pop()?.toUpperCase() || (image.isSvg ? "SVG" : "IMAGE");
+    const ext = image.filename.split(".").pop()?.toUpperCase() || (image.isSvg ? "SVG" : "IMAGE");
     return ext.length <= 4 ? ext : "IMG";
   }, [image.filename, image.isSvg]);
 
@@ -353,7 +347,7 @@ function ImageLightboxModal({
       onWheel={handleWheel}
     >
       {/* Top Right Corner Dismiss Button (Esc) */}
-      <div className="fixed top-4 right-4 sm:top-5 sm:right-6 z-30">
+      <div className="fixed top-4 right-4 z-30 sm:top-5 sm:right-6">
         <button
           type="button"
           onClick={triggerClose}
@@ -361,9 +355,7 @@ function ImageLightboxModal({
           title="Dismiss Lightbox (Esc)"
         >
           <X className="h-4 w-4" />
-          <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">
-            Esc
-          </span>
+          <span className="text-[10px] font-bold tracking-wider uppercase opacity-70">Esc</span>
         </button>
       </div>
 
@@ -387,9 +379,7 @@ function ImageLightboxModal({
           className="wikios-lightbox-canvas"
           style={{
             transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${scale})`,
-            transition: isDragging
-              ? "none"
-              : "transform 180ms cubic-bezier(0.23, 1, 0.32, 1)",
+            transition: isDragging ? "none" : "transform 180ms cubic-bezier(0.23, 1, 0.32, 1)",
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -433,9 +423,9 @@ function ImageLightboxModal({
               <aside className="wikios-lightbox-bolted-wing">
                 {/* Header */}
                 <div className="wikios-lightbox-flank-header">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Sparkles className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--wikios-text)] truncate">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                    <h3 className="truncate text-xs font-bold tracking-wider text-[var(--wikios-text)] uppercase">
                       Media Details
                     </h3>
                   </div>
@@ -450,11 +440,11 @@ function ImageLightboxModal({
                 </div>
 
                 {/* Body */}
-                <div className="p-3.5 space-y-3 overflow-y-auto flex-1 min-h-0">
+                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3.5">
                   {/* File Details Card */}
                   <div className="wikios-lightbox-flank-box">
                     <span className="wikios-lightbox-side-label">File Details</span>
-                    <p className="mt-1 font-semibold text-[var(--wikios-text)] break-words text-xs">
+                    <p className="mt-1 text-xs font-semibold break-words text-[var(--wikios-text)]">
                       {cleanTitle}
                     </p>
                     {imgNaturalSize && (
@@ -479,18 +469,18 @@ function ImageLightboxModal({
                           className="wikios-lightbox-flank-btn"
                         >
                           {copiedFormat === fmt ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                            <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
                           ) : (
-                            <Copy className="h-3.5 w-3.5 opacity-60 shrink-0" />
+                            <Copy className="h-3.5 w-3.5 shrink-0 opacity-60" />
                           )}
                           <span className="truncate">
                             {fmt === "thumb"
                               ? "Thumb"
                               : fmt === "embed"
-                              ? "250px"
-                              : fmt === "raw"
-                              ? "Raw"
-                              : "URL"}
+                                ? "250px"
+                                : fmt === "raw"
+                                  ? "Raw"
+                                  : "URL"}
                           </span>
                         </button>
                       ))}
@@ -514,8 +504,8 @@ function ImageLightboxModal({
                         {stashMutation.isSuccess
                           ? "Saved to Stash"
                           : stashMutation.isPending
-                          ? "Stashing..."
-                          : "Bookmark in Stash"}
+                            ? "Stashing..."
+                            : "Bookmark in Stash"}
                       </span>
                     </button>
                   )}
@@ -546,17 +536,14 @@ function ImageLightboxModal({
       </div>
 
       {/* Floating Bottom Facet Control Dock */}
-      <div
-        className="wikios-lightbox-bottom-dock"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="wikios-lightbox-bottom-dock" onClick={(e) => e.stopPropagation()}>
         {/* Left: File metadata chip */}
-        <div className="flex items-center gap-2 min-w-0 pr-2">
+        <div className="flex min-w-0 items-center gap-2 pr-2">
           <div className="wikios-lightbox-badge flex items-center gap-1">
             <FileImage className="h-3 w-3 opacity-70" />
             <span>{fileExt}</span>
           </div>
-          <span className="wikios-lightbox-title max-w-[120px] sm:max-w-[200px] truncate font-medium text-xs">
+          <span className="wikios-lightbox-title max-w-[120px] truncate text-xs font-medium sm:max-w-[200px]">
             {cleanTitle}
           </span>
         </div>
@@ -627,9 +614,7 @@ function ImageLightboxModal({
           {image.fileUrl && (
             <a
               href={
-                image.fileUrl.startsWith("/")
-                  ? `https://ixwiki.com${image.fileUrl}`
-                  : image.fileUrl
+                image.fileUrl.startsWith("/") ? `https://ixwiki.com${image.fileUrl}` : image.fileUrl
               }
               target="_blank"
               rel="noreferrer"

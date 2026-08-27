@@ -33,14 +33,14 @@ export function DiplomaticScenariosPanel() {
           <TabsList className="bg-card/40 border-border/40 flex w-full max-w-xs justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
             <TabsTrigger
               value="catalog"
-              className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               <Shield className="h-4 w-4 text-purple-400" />
               Scenarios
             </TabsTrigger>
             <TabsTrigger
               value="analytics"
-              className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               <BarChart3 className="h-4 w-4 text-cyan-400" />
               Analytics
@@ -87,8 +87,10 @@ export function DiplomaticScenariosPanel() {
               ))}
             </div>
           ) : admin.filteredScenarios.length === 0 ? (
-            <div className="rounded-2xl border border-border/30 bg-card/25 p-12 text-center backdrop-blur-md">
-              <p className="text-muted-foreground text-xs">No scenarios found matching your filters</p>
+            <div className="border-border/30 bg-card/25 rounded-2xl border p-12 text-center backdrop-blur-md">
+              <p className="text-muted-foreground text-xs">
+                No scenarios found matching your filters
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

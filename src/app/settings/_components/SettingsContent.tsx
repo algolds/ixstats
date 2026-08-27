@@ -22,14 +22,14 @@ export { SettingsSkeleton };
 function PanelSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="h-20 animate-pulse rounded-2xl border border-border/40 bg-card/40 backdrop-blur-md" />
+      <div className="border-border/40 bg-card/40 h-20 animate-pulse rounded-2xl border backdrop-blur-md" />
       <div className="space-y-3">
-        <div className="h-4 w-32 animate-pulse rounded-md bg-muted/40" />
-        <div className="h-48 animate-pulse rounded-2xl border border-border/40 bg-card/40 backdrop-blur-md" />
+        <div className="bg-muted/40 h-4 w-32 animate-pulse rounded-md" />
+        <div className="border-border/40 bg-card/40 h-48 animate-pulse rounded-2xl border backdrop-blur-md" />
       </div>
       <div className="space-y-3">
-        <div className="h-4 w-40 animate-pulse rounded-md bg-muted/40" />
-        <div className="h-40 animate-pulse rounded-2xl border border-border/40 bg-card/40 backdrop-blur-md" />
+        <div className="bg-muted/40 h-4 w-40 animate-pulse rounded-md" />
+        <div className="border-border/40 bg-card/40 h-40 animate-pulse rounded-2xl border backdrop-blur-md" />
       </div>
     </div>
   );
@@ -113,15 +113,12 @@ export function SettingsContent() {
     }
   }, [tabParam, activeSection]);
 
-  const handleSelectSection = useCallback(
-    (id: SettingSectionId) => {
-      setActiveSection(id);
-      const url = new URL(window.location.href);
-      url.searchParams.set("tab", id);
-      window.history.replaceState({}, "", url.toString());
-    },
-    []
-  );
+  const handleSelectSection = useCallback((id: SettingSectionId) => {
+    setActiveSection(id);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", id);
+    window.history.replaceState({}, "", url.toString());
+  }, []);
 
   const setupStatus: "loading" | "unauthenticated" | "needs-setup" | "complete" =
     !isLoaded || profileLoading
@@ -191,7 +188,7 @@ export function SettingsContent() {
             {setupStatus === "needs-setup" && (
               <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
                 <div className="flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 dark:text-amber-400" />
+                  <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
                   <div className="flex-1">
                     <h3 className="text-xs font-bold text-amber-900 dark:text-amber-200">
                       Country Setup Required
@@ -214,65 +211,48 @@ export function SettingsContent() {
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
               {/* Left Column: Active Settings Viewport */}
               <main className="min-w-0 lg:col-span-8">
-                {activeSection === "account" && (
-                  <AccountIdentityPanel user={user} />
-                )}
+                {activeSection === "account" && <AccountIdentityPanel user={user} />}
 
-                {activeSection === "country" && (
-                  country?.newStats || userProfile?.country ? (
+                {activeSection === "country" &&
+                  (country?.newStats || userProfile?.country ? (
                     <CountryNationPanel
                       country={country?.newStats ?? userProfile?.country}
                       membershipTier={userProfile?.membershipTier}
                       roleDisplayName={userProfile?.role?.displayName || userProfile?.role?.name}
                     />
                   ) : (
-                    <div className="rounded-2xl border border-border/40 bg-card/40 p-8 text-center backdrop-blur-md">
-                      <Globe className="mx-auto h-8 w-8 text-muted-foreground/60 mb-2" />
-                      <h3 className="text-sm font-bold text-foreground">No Country Linked</h3>
-                      <p className="text-xs text-muted-foreground mt-1 mb-4">
+                    <div className="border-border/40 bg-card/40 rounded-2xl border p-8 text-center backdrop-blur-md">
+                      <Globe className="text-muted-foreground/60 mx-auto mb-2 h-8 w-8" />
+                      <h3 className="text-foreground text-sm font-bold">No Country Linked</h3>
+                      <p className="text-muted-foreground mt-1 mb-4 text-xs">
                         You need to link or create a country to manage nation settings.
                       </p>
                       <Link
                         href="/setup"
-                        className="facet-interactive inline-flex items-center rounded-xl bg-primary px-3.5 py-1.5 text-xs font-bold text-primary-foreground hover:bg-primary/90"
+                        className="facet-interactive bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center rounded-xl px-3.5 py-1.5 text-xs font-bold"
                       >
                         Launch Setup
                       </Link>
                     </div>
-                  )
-                )}
+                  ))}
 
-                {activeSection === "appearance" && (
-                  <AppearanceThemePanel />
-                )}
+                {activeSection === "appearance" && <AppearanceThemePanel />}
 
-                {activeSection === "wikios" && (
-                  <WikiOSOptionsPanel />
-                )}
+                {activeSection === "wikios" && <WikiOSOptionsPanel />}
 
                 {activeSection === "notifications" && user?.id && (
                   <NotificationSettingsPanel userId={user.id} />
                 )}
 
-                {activeSection === "social" && user?.id && (
-                  <SocialPersonaPanel userId={user.id} />
-                )}
+                {activeSection === "social" && user?.id && <SocialPersonaPanel userId={user.id} />}
 
-                {activeSection === "privacy" && (
-                  <PrivacySecurityPanel />
-                )}
+                {activeSection === "privacy" && <PrivacySecurityPanel />}
 
-                {activeSection === "vault" && (
-                  <VaultStatusPanel />
-                )}
+                {activeSection === "vault" && <VaultStatusPanel />}
 
-                {activeSection === "cosmetics" && (
-                  <CosmeticsUpgradesPanel />
-                )}
+                {activeSection === "cosmetics" && <CosmeticsUpgradesPanel />}
 
-                {activeSection === "cards" && (
-                  <NationStatesCardsPanel />
-                )}
+                {activeSection === "cards" && <NationStatesCardsPanel />}
               </main>
 
               {/* Right Column: Sticky Navigation Rail */}

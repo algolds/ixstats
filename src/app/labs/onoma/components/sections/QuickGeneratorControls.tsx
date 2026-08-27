@@ -4,7 +4,18 @@
 // Onoma Lab — Quick Generator Controls Bar with Expanded Seed Editor & Custom Lexicon Management
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { ControlSlider as SlidersHorizontal, SystemRestart as Loader2, NavArrowDown as ChevronDown, Undo as RotateCcw, Plus, FloppyDisk as Save, Trash as Trash2, EditPencil as Edit2, Check, Xmark as X } from "iconoir-react";
+import {
+  ControlSlider as SlidersHorizontal,
+  SystemRestart as Loader2,
+  NavArrowDown as ChevronDown,
+  Undo as RotateCcw,
+  Plus,
+  FloppyDisk as Save,
+  Trash as Trash2,
+  EditPencil as Edit2,
+  Check,
+  Xmark as X,
+} from "iconoir-react";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { PatternDepthControl } from "../shared/PatternDepthControl";
@@ -99,7 +110,8 @@ export function QuickGeneratorControls({
 
   const selectedDict = allDicts.find((d) => d.id === selectedDictId);
   const isCustomDict = Boolean(
-    selectedDict && ("isCustom" in selectedDict || customDicts.some((cd) => cd.id === selectedDictId))
+    selectedDict &&
+    ("isCustom" in selectedDict || customDicts.some((cd) => cd.id === selectedDictId))
   );
 
   const defaultValues: string[] = useMemo(() => {
@@ -120,7 +132,7 @@ export function QuickGeneratorControls({
     } else {
       setWordDraft(defaultValues.join(", "));
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [selectedDictId, defaultValues, customWords]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -166,7 +178,10 @@ export function QuickGeneratorControls({
     const seen = new Set<string>();
     const unique: string[] = [];
     // oxlint-disable-next-line eslint/no-shadow -- shadowed 'w' is intentional in this scope
-    for (const w of wordDraft.split(/[,\r\n]+/).map((w) => w.trim()).filter(Boolean)) {
+    for (const w of wordDraft
+      .split(/[,\r\n]+/)
+      .map((w) => w.trim())
+      .filter(Boolean)) {
       const normalized = w.toLowerCase();
       if (!seen.has(normalized)) {
         seen.add(normalized);
@@ -220,20 +235,20 @@ export function QuickGeneratorControls({
 
   const isWordsModified = Boolean(
     customWords &&
-      customWords.length > 0 &&
-      (customWords.length !== defaultValues.length ||
-        customWords.some((w, idx) => w !== defaultValues[idx]))
+    customWords.length > 0 &&
+    (customWords.length !== defaultValues.length ||
+      customWords.some((w, idx) => w !== defaultValues[idx]))
   );
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-zinc-200/85 bg-white/95 dark:border-zinc-800/85 dark:bg-zinc-900/90 p-4.5 shadow-sm space-y-4">
+    <div className="relative space-y-4 overflow-hidden rounded-2xl border border-zinc-200/85 bg-white/95 p-4.5 shadow-sm dark:border-zinc-800/85 dark:bg-zinc-900/90">
       {/* Specular top highlight */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-onoma-primary/30 via-onoma-primary/10 to-transparent" />
+      <div className="from-onoma-primary/30 via-onoma-primary/10 pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r to-transparent" />
 
       {/* 1. Dictionary Selector & Actions */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-zinc-800 dark:text-zinc-200 text-xs font-semibold tracking-tight">
+          <label className="text-xs font-semibold tracking-tight text-zinc-800 dark:text-zinc-200">
             Dictionary
           </label>
 
@@ -244,17 +259,20 @@ export function QuickGeneratorControls({
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
               className={cn(
-                "flex cursor-pointer items-center gap-1 text-xs font-medium tracking-tight transition-all px-2.5 py-0.5 rounded-lg border shadow-2xs active:scale-95",
+                "flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-0.5 text-xs font-medium tracking-tight shadow-2xs transition-all active:scale-95",
                 showAdvanced
                   ? "border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary"
-                  : "border-zinc-200/80 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  : "border-zinc-200/80 bg-zinc-50 text-zinc-600 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100"
               )}
               title="Toggle phonotactic rules"
             >
               <SlidersHorizontal className="h-3 w-3" />
               <span>Rules</span>
               <ChevronDown
-                className={cn("h-3 w-3 transition-transform duration-200", showAdvanced && "rotate-180")}
+                className={cn(
+                  "h-3 w-3 transition-transform duration-200",
+                  showAdvanced && "rotate-180"
+                )}
               />
             </button>
             {isCustomDict && (
@@ -264,7 +282,7 @@ export function QuickGeneratorControls({
                   <button
                     type="button"
                     onClick={handleUpdateCurrentDict}
-                    className="flex cursor-pointer items-center gap-1 text-[11px] font-medium tracking-tight text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 px-2 py-0.5 rounded-lg transition-all shadow-2xs active:scale-95"
+                    className="flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium tracking-tight text-emerald-600 shadow-2xs transition-all hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-400"
                     title="Save changes to this dictionary"
                   >
                     <Save className="h-2.5 w-2.5" />
@@ -279,7 +297,7 @@ export function QuickGeneratorControls({
                     setIsRenaming(true);
                     setRenameTitle(selectedDict?.title || "");
                   }}
-                  className="flex cursor-pointer items-center gap-1 text-[11px] font-medium tracking-tight text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white px-2 py-0.5 rounded-lg border border-zinc-200/80 dark:border-zinc-700 transition-all shadow-2xs active:scale-95"
+                  className="flex cursor-pointer items-center gap-1 rounded-lg border border-zinc-200/80 bg-zinc-100 px-2 py-0.5 text-[11px] font-medium tracking-tight text-zinc-600 shadow-2xs transition-all hover:text-zinc-900 active:scale-95 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:text-white"
                   title="Rename this custom dictionary"
                 >
                   <Edit2 className="h-2.5 w-2.5" />
@@ -290,7 +308,7 @@ export function QuickGeneratorControls({
                 <button
                   type="button"
                   onClick={handleDeleteCurrentDict}
-                  className="flex cursor-pointer items-center text-[11px] font-medium tracking-tight text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 p-1.5 rounded-lg transition-all shadow-2xs active:scale-95"
+                  className="flex cursor-pointer items-center rounded-lg border border-rose-500/20 bg-rose-500/10 p-1.5 text-[11px] font-medium tracking-tight text-rose-600 shadow-2xs transition-all hover:bg-rose-500/20 active:scale-95 dark:text-rose-400"
                   title="Delete this custom dictionary"
                 >
                   <Trash2 className="h-2.5 w-2.5" />
@@ -304,11 +322,9 @@ export function QuickGeneratorControls({
                 type="button"
                 onClick={() => {
                   setIsCreatingNew(true);
-                  setNewDictTitle(
-                    `${selectedDict?.title || "Custom"} (Edited)`
-                  );
+                  setNewDictTitle(`${selectedDict?.title || "Custom"} (Edited)`);
                 }}
-                className="flex cursor-pointer items-center gap-1 text-[11px] font-medium tracking-tight text-onoma-primary bg-onoma-primary/10 hover:bg-onoma-primary/15 border border-onoma-primary/25 px-2 py-0.5 rounded-lg transition-all shadow-2xs active:scale-95 animate-in fade-in duration-150"
+                className="text-onoma-primary bg-onoma-primary/10 hover:bg-onoma-primary/15 border-onoma-primary/25 animate-in fade-in flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-medium tracking-tight shadow-2xs transition-all duration-150 active:scale-95"
                 title="Save current modified words as a new custom dictionary"
               >
                 <Plus className="h-2.5 w-2.5" />
@@ -320,13 +336,13 @@ export function QuickGeneratorControls({
 
         {/* Inline Rename Form */}
         {isRenaming && (
-          <div className="flex items-center gap-1.5 p-1.5 rounded-xl border border-onoma-primary/30 bg-onoma-primary/5 animate-in fade-in duration-150">
+          <div className="border-onoma-primary/30 bg-onoma-primary/5 animate-in fade-in flex items-center gap-1.5 rounded-xl border p-1.5 duration-150">
             <input
               type="text"
               value={renameTitle}
               onChange={(e) => setRenameTitle(e.target.value)}
               placeholder="Dictionary name..."
-              className="h-7.5 flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 text-xs font-medium text-foreground focus:border-onoma-primary/60 focus:outline-none"
+              className="text-foreground focus:border-onoma-primary/60 h-7.5 flex-1 rounded-lg border border-zinc-200 bg-white px-2.5 text-xs font-medium focus:outline-none dark:border-zinc-700 dark:bg-zinc-900"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleRenameCurrentDict();
@@ -336,14 +352,14 @@ export function QuickGeneratorControls({
             <button
               type="button"
               onClick={handleRenameCurrentDict}
-              className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-onoma-primary text-white hover:bg-onoma-primary-hover active:scale-95 cursor-pointer shadow-xs"
+              className="bg-onoma-primary hover:bg-onoma-primary-hover flex h-7.5 w-7.5 cursor-pointer items-center justify-center rounded-lg text-white shadow-xs active:scale-95"
             >
               <Check className="h-3 w-3" />
             </button>
             <button
               type="button"
               onClick={() => setIsRenaming(false)}
-              className="flex h-7.5 w-7.5 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 active:scale-95 cursor-pointer"
+              className="flex h-7.5 w-7.5 cursor-pointer items-center justify-center rounded-lg border border-zinc-200 bg-zinc-100 text-zinc-500 hover:text-zinc-900 active:scale-95 dark:border-zinc-700 dark:bg-zinc-800"
             >
               <X className="h-3 w-3" />
             </button>
@@ -352,13 +368,13 @@ export function QuickGeneratorControls({
 
         {/* Inline Create New Lexicon Form */}
         {isCreatingNew && (
-          <div className="flex items-center gap-1.5 p-1.5 rounded-xl border border-onoma-primary/30 bg-onoma-primary/5 animate-in fade-in duration-150">
+          <div className="border-onoma-primary/30 bg-onoma-primary/5 animate-in fade-in flex items-center gap-1.5 rounded-xl border p-1.5 duration-150">
             <input
               type="text"
               value={newDictTitle}
               onChange={(e) => setNewDictTitle(e.target.value)}
               placeholder="New dictionary title..."
-              className="h-7.5 flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 text-xs font-medium text-foreground focus:border-onoma-primary/60 focus:outline-none"
+              className="text-foreground focus:border-onoma-primary/60 h-7.5 flex-1 rounded-lg border border-zinc-200 bg-white px-2.5 text-xs font-medium focus:outline-none dark:border-zinc-700 dark:bg-zinc-900"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSaveAsNewDict();
@@ -368,14 +384,14 @@ export function QuickGeneratorControls({
             <button
               type="button"
               onClick={handleSaveAsNewDict}
-              className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-onoma-primary text-white hover:bg-onoma-primary-hover active:scale-95 cursor-pointer shadow-xs"
+              className="bg-onoma-primary hover:bg-onoma-primary-hover flex h-7.5 w-7.5 cursor-pointer items-center justify-center rounded-lg text-white shadow-xs active:scale-95"
             >
               <Check className="h-3 w-3" />
             </button>
             <button
               type="button"
               onClick={() => setIsCreatingNew(false)}
-              className="flex h-7.5 w-7.5 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 active:scale-95 cursor-pointer"
+              className="flex h-7.5 w-7.5 cursor-pointer items-center justify-center rounded-lg border border-zinc-200 bg-zinc-100 text-zinc-500 hover:text-zinc-900 active:scale-95 dark:border-zinc-700 dark:bg-zinc-800"
             >
               <X className="h-3 w-3" />
             </button>
@@ -384,25 +400,27 @@ export function QuickGeneratorControls({
 
         {/* Dictionary Select Dropdown */}
         <Select value={selectedDictId} onValueChange={setSelectedDictId}>
-          <SelectTrigger className="border-zinc-200/85 dark:border-zinc-700/80 bg-zinc-50/80 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 h-9 w-full rounded-xl border px-3 text-xs font-medium tracking-tight transition-all focus:border-onoma-primary/60 focus:outline-none shadow-2xs">
+          <SelectTrigger className="focus:border-onoma-primary/60 h-9 w-full rounded-xl border border-zinc-200/85 bg-zinc-50/80 px-3 text-xs font-medium tracking-tight text-zinc-900 shadow-2xs transition-all hover:bg-white focus:outline-none dark:border-zinc-700/80 dark:bg-zinc-800/60 dark:text-zinc-100 dark:hover:bg-zinc-800">
             <SelectValue placeholder="Select lexicon..." />
           </SelectTrigger>
-          <SelectContent className="border-zinc-200/80 dark:border-zinc-700/80 bg-popover/95 max-h-[320px] backdrop-blur-xl shadow-lg">
+          <SelectContent className="bg-popover/95 max-h-[320px] border-zinc-200/80 shadow-lg backdrop-blur-xl dark:border-zinc-700/80">
             {/* Custom Dictionaries Group */}
             {customDicts.length > 0 && (
               <SelectGroup>
-                <SelectLabel className="text-[10px] uppercase font-semibold text-onoma-primary tracking-wider px-2 py-1">
+                <SelectLabel className="text-onoma-primary px-2 py-1 text-[10px] font-semibold tracking-wider uppercase">
                   Your Lexicons ({customDicts.length})
                 </SelectLabel>
                 {customDicts.map((dict) => (
                   <SelectItem
                     key={dict.id}
                     value={dict.id}
-                    className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer py-1.5 font-medium"
+                    className="focus:text-foreground focus:bg-onoma-primary/10 cursor-pointer py-1.5 text-xs font-medium"
                   >
-                    <div className="flex items-center justify-between min-w-0 w-full gap-2">
-                      <span className="font-semibold text-foreground truncate">{dict.title}</span>
-                      <span className="text-[10px] font-mono text-muted-foreground ml-auto">({dict.values.length})</span>
+                    <div className="flex w-full min-w-0 items-center justify-between gap-2">
+                      <span className="text-foreground truncate font-semibold">{dict.title}</span>
+                      <span className="text-muted-foreground ml-auto font-mono text-[10px]">
+                        ({dict.values.length})
+                      </span>
                     </div>
                   </SelectItem>
                 ))}
@@ -411,16 +429,16 @@ export function QuickGeneratorControls({
 
             {/* Built-in Presets Group */}
             <SelectGroup>
-              <SelectLabel className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider px-2 py-1">
+              <SelectLabel className="text-muted-foreground px-2 py-1 text-[10px] font-semibold tracking-wider uppercase">
                 Built-in Presets ({publicDicts.length})
               </SelectLabel>
               {publicDicts.map((dict) => (
                 <SelectItem
                   key={dict.id}
                   value={dict.id}
-                  className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer py-1.5 font-medium"
+                  className="focus:text-foreground focus:bg-onoma-primary/10 cursor-pointer py-1.5 text-xs font-medium"
                 >
-                  <span className="font-medium text-foreground truncate">{dict.title}</span>
+                  <span className="text-foreground truncate font-medium">{dict.title}</span>
                 </SelectItem>
               ))}
             </SelectGroup>
@@ -436,7 +454,7 @@ export function QuickGeneratorControls({
               <button
                 type="button"
                 onClick={handleCleanWords}
-                className="text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 flex items-center gap-1 cursor-pointer transition-all px-2 py-0.5 rounded-lg active:scale-95 shadow-2xs animate-in fade-in zoom-in-95 duration-150 tracking-tight"
+                className="animate-in fade-in zoom-in-95 flex cursor-pointer items-center gap-1 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium tracking-tight text-amber-600 shadow-2xs transition-all duration-150 hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
                 title={`Remove ${duplicateCount} duplicate word${duplicateCount === 1 ? "" : "s"}`}
               >
                 <span>Dedupe</span>
@@ -447,7 +465,7 @@ export function QuickGeneratorControls({
               <button
                 type="button"
                 onClick={handleResetToDefault}
-                className="text-[11px] font-medium text-onoma-primary hover:underline flex items-center gap-1 cursor-pointer px-1.5 py-0.5 tracking-tight"
+                className="text-onoma-primary flex cursor-pointer items-center gap-1 px-1.5 py-0.5 text-[11px] font-medium tracking-tight hover:underline"
                 title="Revert to original dictionary"
               >
                 <RotateCcw className="h-2.5 w-2.5" />
@@ -462,12 +480,12 @@ export function QuickGeneratorControls({
           onChange={handleTextChange}
           placeholder="Enter training words separated by commas or line breaks..."
           rows={8}
-          className="border border-zinc-200/90 dark:border-zinc-700/80 bg-white dark:bg-zinc-900/90 text-foreground placeholder:text-muted-foreground/50 w-full min-h-[160px] resize-y rounded-xl p-3 font-mono text-[12px] tracking-tight leading-relaxed focus:border-onoma-primary/60 focus:ring-1 focus:ring-onoma-primary/25 focus:outline-none shadow-inner"
+          className="text-foreground placeholder:text-muted-foreground/50 focus:border-onoma-primary/60 focus:ring-onoma-primary/25 min-h-[160px] w-full resize-y rounded-xl border border-zinc-200/90 bg-white p-3 font-mono text-[12px] leading-relaxed tracking-tight shadow-inner focus:ring-1 focus:outline-none dark:border-zinc-700/80 dark:bg-zinc-900/90"
         />
 
-        <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 px-0.5">
+        <div className="flex items-center justify-between px-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
           <span className="font-normal">Comma or newline separated</span>
-          <span className="font-mono text-[10.5px] font-medium text-onoma-primary bg-onoma-primary/10 px-1.5 py-0.2 rounded-md">
+          <span className="text-onoma-primary bg-onoma-primary/10 py-0.2 rounded-md px-1.5 font-mono text-[10.5px] font-medium">
             {activeWords.length} active words
           </span>
         </div>
@@ -483,13 +501,13 @@ export function QuickGeneratorControls({
 
       {/* 4. Batch Size Stepper */}
       {/* 4. Unified Generate Action & Quantity Pill */}
-      <div className="relative flex h-11 w-full items-center rounded-xl bg-onoma-primary hover:bg-onoma-primary-hover active:bg-onoma-primary-active shadow-md shadow-onoma-primary/25 border border-white/20 select-none overflow-hidden transition-all group">
+      <div className="bg-onoma-primary hover:bg-onoma-primary-hover active:bg-onoma-primary-active shadow-onoma-primary/25 group relative flex h-11 w-full items-center overflow-hidden rounded-xl border border-white/20 shadow-md transition-all select-none">
         {/* Left / Center: Primary Generate Action Trigger */}
         <button
           type="button"
           onClick={handleGenerate}
           disabled={isGenerating || !selectedDictId}
-          className="flex h-full flex-1 cursor-pointer items-center justify-center gap-2 pl-4 pr-3 text-xs font-semibold tracking-tight text-white transition-all active:scale-[0.98] disabled:opacity-40 select-none"
+          className="flex h-full flex-1 cursor-pointer items-center justify-center gap-2 pr-3 pl-4 text-xs font-semibold tracking-tight text-white transition-all select-none active:scale-[0.98] disabled:opacity-40"
         >
           {isGenerating ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -504,27 +522,30 @@ export function QuickGeneratorControls({
         </button>
 
         {/* Subtle Vertical Divider */}
-        <div className="h-5 w-[1px] bg-white/25 shrink-0" />
+        <div className="h-5 w-[1px] shrink-0 bg-white/25" />
 
         {/* Right: Quantity Stepper Pill */}
-        <div className="flex h-full items-center pr-1.5 pl-1 text-white shrink-0">
+        <div className="flex h-full shrink-0 items-center pr-1.5 pl-1 text-white">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               setBatchCount((c) =>
                 c > 100 ? Math.max(100, c - 50) : c > 50 ? Math.max(50, c - 25) : Math.max(5, c - 5)
-              )
+              );
             }}
             disabled={batchCount <= 5 || isGenerating}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-white/80 hover:text-white hover:bg-black/15 active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-all"
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-xs font-bold text-white/80 transition-all hover:bg-black/15 hover:text-white active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent"
             title="Decrease count"
             aria-label="Decrease count"
           >
             -
           </button>
-          <div className="flex items-center px-1 min-w-[28px] justify-center text-sm font-bold tracking-tight text-white leading-none">
-            <NumberFlowDisplay value={batchCount} className="text-sm font-bold tracking-tight text-white" />
+          <div className="flex min-w-[28px] items-center justify-center px-1 text-sm leading-none font-bold tracking-tight text-white">
+            <NumberFlowDisplay
+              value={batchCount}
+              className="text-sm font-bold tracking-tight text-white"
+            />
           </div>
           <button
             type="button"
@@ -532,10 +553,10 @@ export function QuickGeneratorControls({
               e.stopPropagation();
               setBatchCount((c) =>
                 c >= 100 ? Math.min(500, c + 50) : c >= 50 ? Math.min(100, c + 25) : c + 5
-              )
+              );
             }}
             disabled={batchCount >= 500 || isGenerating}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-white/80 hover:text-white hover:bg-black/15 active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-all"
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-xs font-bold text-white/80 transition-all hover:bg-black/15 hover:text-white active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent"
             title="Increase count"
             aria-label="Increase count"
           >
@@ -551,7 +572,7 @@ export function QuickGeneratorControls({
             {/* Length Range */}
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+                <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
                   Min Length
                 </label>
                 <input
@@ -562,12 +583,12 @@ export function QuickGeneratorControls({
                   onChange={(e) =>
                     setOptions({ ...options, minLength: parseInt(e.target.value) || 0 })
                   }
-                  className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-onoma-primary/50 focus:outline-none"
+                  className="border-border/60 bg-background text-foreground focus:border-onoma-primary/50 w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+                <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
                   Max Length
                 </label>
                 <input
@@ -578,41 +599,43 @@ export function QuickGeneratorControls({
                   onChange={(e) =>
                     setOptions({ ...options, maxLength: parseInt(e.target.value) || 0 })
                   }
-                  className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-onoma-primary/50 focus:outline-none"
+                  className="border-border/60 bg-background text-foreground focus:border-onoma-primary/50 w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Prefix / Suffix Affixes */}
             <div className="space-y-1">
-              <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
-                Starts With <span className="font-mono text-[10px] text-muted-foreground/75">(#_)</span>
+              <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
+                Starts With{" "}
+                <span className="text-muted-foreground/75 font-mono text-[10px]">(#_)</span>
               </label>
               <input
                 type="text"
                 placeholder="#_"
                 value={options.startsWith || ""}
                 onChange={(e) => setOptions({ ...options, startsWith: e.target.value })}
-                className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-onoma-primary/50 focus:outline-none"
+                className="border-border/60 bg-background text-foreground focus:border-onoma-primary/50 w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
-                Ends With <span className="font-mono text-[10px] text-muted-foreground/75">(_#)</span>
+              <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
+                Ends With{" "}
+                <span className="text-muted-foreground/75 font-mono text-[10px]">(_#)</span>
               </label>
               <input
                 type="text"
                 placeholder="_#"
                 value={options.endsWith || ""}
                 onChange={(e) => setOptions({ ...options, endsWith: e.target.value })}
-                className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-onoma-primary/50 focus:outline-none"
+                className="border-border/60 bg-background text-foreground focus:border-onoma-primary/50 w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
               />
             </div>
 
             {/* Contains Filter */}
             <div className="space-y-1">
-              <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+              <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
                 Contains Pattern
               </label>
               <input
@@ -620,13 +643,13 @@ export function QuickGeneratorControls({
                 placeholder="e.g. 'an'"
                 value={options.contains || ""}
                 onChange={(e) => setOptions({ ...options, contains: e.target.value })}
-                className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-onoma-primary/50 focus:outline-none"
+                className="border-border/60 bg-background text-foreground focus:border-onoma-primary/50 w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
               />
             </div>
 
             {/* Excludes Filter */}
             <div className="space-y-1">
-              <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+              <label className="block text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
                 Excludes Pattern
               </label>
               <input
@@ -634,20 +657,20 @@ export function QuickGeneratorControls({
                 placeholder="e.g. 'xx'"
                 value={options.excludes || ""}
                 onChange={(e) => setOptions({ ...options, excludes: e.target.value })}
-                className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-onoma-primary/50 focus:outline-none"
+                className="border-border/60 bg-background text-foreground focus:border-onoma-primary/50 w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
               />
             </div>
 
             {/* Permit Seed Duplicates */}
-            <div className="flex items-center justify-between rounded-lg border border-border/40 bg-secondary/15 px-2.5 py-2">
-              <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight">
+            <div className="border-border/40 bg-secondary/15 flex items-center justify-between rounded-lg border px-2.5 py-2">
+              <label className="text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
                 Allow Seed Duplicates
               </label>
               <input
                 type="checkbox"
                 checked={options.allowDuplicates}
                 onChange={(e) => setOptions({ ...options, allowDuplicates: e.target.checked })}
-                className="border-border/60 h-3.5 w-3.5 rounded text-onoma-primary focus:ring-onoma-primary/50 cursor-pointer"
+                className="border-border/60 text-onoma-primary focus:ring-onoma-primary/50 h-3.5 w-3.5 cursor-pointer rounded"
               />
             </div>
           </div>

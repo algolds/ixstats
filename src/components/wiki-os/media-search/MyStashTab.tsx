@@ -3,13 +3,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { cn } from "~/lib/utils";
-import {
-  Search,
-  SystemRestart as Loader2,
-  Bookmark,
-  Folder,
-  ZoomIn,
-} from "iconoir-react";
+import { Search, SystemRestart as Loader2, Bookmark, Folder, ZoomIn } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
@@ -67,30 +61,41 @@ export function MyStashTab({
               title: item.pageTitle,
             });
             if (!isMounted) return [];
-            return (images ?? []).map((img: { title?: string; thumbUrl?: string; url?: string; width?: number; height?: number }, imgIdx: number) => {
-              const ext = (img.title || "").split(".").pop()?.toLowerCase() ?? "";
-              const guessedMime =
-                ext === "svg"
-                  ? "image/svg+xml"
-                  : ext === "png"
-                    ? "image/png"
-                    : ext === "jpg" || ext === "jpeg"
-                      ? "image/jpeg"
-                      : "image/png";
-              return {
-                pageid: idx * 1000 + imgIdx + 5000000,
-                title: img.title || "",
-                thumbUrl: img.thumbUrl || img.url || "",
-                url: img.url || "",
-                descriptionUrl: img.url || "",
-                width: img.width || 0,
-                height: img.height || 0,
-                mime: guessedMime,
-                description: `From stashed page: ${item.pageTitle}`,
-                artist: "Wiki Contributor",
-                license: "CC BY-SA 3.0",
-              };
-            });
+            return (images ?? []).map(
+              (
+                img: {
+                  title?: string;
+                  thumbUrl?: string;
+                  url?: string;
+                  width?: number;
+                  height?: number;
+                },
+                imgIdx: number
+              ) => {
+                const ext = (img.title || "").split(".").pop()?.toLowerCase() ?? "";
+                const guessedMime =
+                  ext === "svg"
+                    ? "image/svg+xml"
+                    : ext === "png"
+                      ? "image/png"
+                      : ext === "jpg" || ext === "jpeg"
+                        ? "image/jpeg"
+                        : "image/png";
+                return {
+                  pageid: idx * 1000 + imgIdx + 5000000,
+                  title: img.title || "",
+                  thumbUrl: img.thumbUrl || img.url || "",
+                  url: img.url || "",
+                  descriptionUrl: img.url || "",
+                  width: img.width || 0,
+                  height: img.height || 0,
+                  mime: guessedMime,
+                  description: `From stashed page: ${item.pageTitle}`,
+                  artist: "Wiki Contributor",
+                  license: "CC BY-SA 3.0",
+                };
+              }
+            );
           } catch (e) {
             console.error("Failed to fetch page images for:", item.pageTitle, e);
             return [];

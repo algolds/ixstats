@@ -19,12 +19,15 @@ export function useEditorModalState() {
     position: null,
   });
 
-  const openContextMenu = useCallback((feature: EditorFeature, screenPos: { x: number; y: number }) => {
-    setContextMenu({
-      feature,
-      position: screenPos,
-    });
-  }, []);
+  const openContextMenu = useCallback(
+    (feature: EditorFeature, screenPos: { x: number; y: number }) => {
+      setContextMenu({
+        feature,
+        position: screenPos,
+      });
+    },
+    []
+  );
 
   const closeContextMenu = useCallback(() => {
     setContextMenu({

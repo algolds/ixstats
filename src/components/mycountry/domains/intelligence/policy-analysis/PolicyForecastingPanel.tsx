@@ -16,7 +16,14 @@ import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
-import { Send, StatUp as TrendingUp, StatDown as TrendingDown, Activity, WarningCircle as AlertCircle, CheckCircle } from "iconoir-react";
+import {
+  Send,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Activity,
+  WarningCircle as AlertCircle,
+  CheckCircle,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { SimulatedImpactData } from "~/hooks/usePolicyAnalytics";
 

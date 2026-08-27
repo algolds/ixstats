@@ -169,15 +169,12 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     .input(z.object({ pageTitle: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
-      
+
       // 1. Find article in PostgreSQL
       const article = await ctx.db.wikiArticle.findFirst({
         where: {
           source: "ixwiki",
-          OR: [
-            { title: input.pageTitle },
-            { title: input.pageTitle.replace(/_/g, " ") },
-          ],
+          OR: [{ title: input.pageTitle }, { title: input.pageTitle.replace(/_/g, " ") }],
         },
         select: { id: true },
       });
@@ -222,15 +219,12 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     .input(z.object({ pageTitle: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
-      
+
       // 1. Remove from WikiWatchlist
       const article = await ctx.db.wikiArticle.findFirst({
         where: {
           source: "ixwiki",
-          OR: [
-            { title: input.pageTitle },
-            { title: input.pageTitle.replace(/_/g, " ") },
-          ],
+          OR: [{ title: input.pageTitle }, { title: input.pageTitle.replace(/_/g, " ") }],
         },
         select: { id: true },
       });
@@ -380,14 +374,11 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     .input(z.object({ pageTitle: z.string() }))
     .query(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
-      
+
       const article = await ctx.db.wikiArticle.findFirst({
         where: {
           source: "ixwiki",
-          OR: [
-            { title: input.pageTitle },
-            { title: input.pageTitle.replace(/_/g, " ") },
-          ],
+          OR: [{ title: input.pageTitle }, { title: input.pageTitle.replace(/_/g, " ") }],
         },
         select: { id: true },
       });
@@ -409,4 +400,3 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       return !!item;
     }),
 });
-

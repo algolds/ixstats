@@ -57,9 +57,9 @@ export function GlyphMapRegistry({
       className="border-border/30 flex h-full flex-col space-y-3 rounded-2xl border p-4 shadow-sm"
     >
       {/* Header Bar with Search & Starter Pack Button (Single line, aligned with Canvas header) */}
-      <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2.5">
+      <div className="border-border/40 flex items-center justify-between gap-2 border-b pb-2.5">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-secondary/40 text-foreground">
+          <div className="bg-secondary/40 text-foreground flex h-6 w-6 items-center justify-center rounded-lg">
             <Type className="h-3.5 w-3.5" />
           </div>
           <div>
@@ -68,7 +68,7 @@ export function GlyphMapRegistry({
                 Glyph Registry
               </h4>
               {glyphs.length > 0 && (
-                <span className="text-muted-foreground bg-secondary/50 rounded-full px-1.5 py-0.2 text-[9px] font-mono">
+                <span className="text-muted-foreground bg-secondary/50 py-0.2 rounded-full px-1.5 font-mono text-[9px]">
                   {glyphs.length}
                 </span>
               )}
@@ -81,7 +81,7 @@ export function GlyphMapRegistry({
           type="button"
           onClick={() => setShowPackDrawer(!showPackDrawer)}
           className={cn(
-            "flex h-6.5 items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-all cursor-pointer active:scale-95 shrink-0",
+            "flex h-6.5 shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-all active:scale-95",
             showPackDrawer
               ? "border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary"
               : "border-border/40 bg-secondary/20 text-muted-foreground hover:text-foreground"
@@ -103,7 +103,7 @@ export function GlyphMapRegistry({
             className="border-border/30 bg-secondary/15 overflow-hidden rounded-xl border p-3"
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-muted-foreground text-[9px] font-semibold uppercase tracking-wider">
+              <span className="text-muted-foreground text-[9px] font-semibold tracking-wider uppercase">
                 Preset Script Packs
               </span>
               <button
@@ -123,11 +123,11 @@ export function GlyphMapRegistry({
                     onLoadStarterPack(pack);
                     setShowPackDrawer(false);
                   }}
-                  className="border-border/30 bg-background/60 hover:border-onoma-primary/40 hover:bg-onoma-primary/5 flex flex-col rounded-xl border p-2.5 text-left transition-all cursor-pointer active:scale-[0.97]"
+                  className="border-border/30 bg-background/60 hover:border-onoma-primary/40 hover:bg-onoma-primary/5 flex cursor-pointer flex-col rounded-xl border p-2.5 text-left transition-all active:scale-[0.97]"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-foreground text-xs font-bold">{pack.name}</span>
-                    <span className="text-muted-foreground bg-secondary/40 rounded px-1.5 py-0.5 text-[9px] font-mono">
+                    <span className="text-muted-foreground bg-secondary/40 rounded px-1.5 py-0.5 font-mono text-[9px]">
                       {pack.glyphs.length} glyphs
                     </span>
                   </div>
@@ -150,15 +150,15 @@ export function GlyphMapRegistry({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search glyphs by phoneme..."
-            className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-onoma-primary/50 focus:ring-2 focus:ring-onoma-primary/15 h-8 w-full rounded-xl border pr-3 pl-8 text-xs transition-all outline-none"
+            className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-onoma-primary/50 focus:ring-onoma-primary/15 h-8 w-full rounded-xl border pr-3 pl-8 text-xs transition-all outline-none focus:ring-2"
           />
         </div>
       )}
 
       {/* Glyph Grid or Clean Empty State */}
       {glyphs.length === 0 ? (
-        <div className="border-border/20 bg-secondary/5 flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center min-h-[220px]">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary/30 text-muted-foreground mb-2 shadow-2xs">
+        <div className="border-border/20 bg-secondary/5 flex min-h-[220px] flex-1 flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center">
+          <div className="bg-secondary/30 text-muted-foreground mb-2 flex h-10 w-10 items-center justify-center rounded-2xl shadow-2xs">
             <Type className="h-5 w-5 opacity-40" />
           </div>
           <p className="text-foreground text-xs font-semibold">No glyphs mapped yet</p>
@@ -167,11 +167,11 @@ export function GlyphMapRegistry({
           </p>
         </div>
       ) : filteredGlyphs.length === 0 ? (
-        <div className="text-muted-foreground flex flex-1 items-center justify-center text-xs italic min-h-[180px]">
+        <div className="text-muted-foreground flex min-h-[180px] flex-1 items-center justify-center text-xs italic">
           No glyphs match &quot;{searchTerm}&quot;
         </div>
       ) : (
-        <div className="grid max-h-[320px] flex-1 grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 scrollbar-thin">
+        <div className="grid max-h-[320px] flex-1 scrollbar-thin grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
           <AnimatePresence mode="popLayout">
             {filteredGlyphs.map((g) => {
               const isSelected = selectedGlyphId === g.id;
@@ -196,15 +196,19 @@ export function GlyphMapRegistry({
                       type="button"
                       onClick={() => handleCopySvg(g)}
                       title="Copy SVG markup"
-                      className="hover:bg-secondary/60 text-muted-foreground hover:text-foreground rounded p-1 transition-colors cursor-pointer active:scale-90"
+                      className="hover:bg-secondary/60 text-muted-foreground hover:text-foreground cursor-pointer rounded p-1 transition-colors active:scale-90"
                     >
-                      {isCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                      {isCopied ? (
+                        <Check className="h-3 w-3 text-emerald-400" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
                     </button>
                     <button
                       type="button"
                       onClick={() => onRemoveGlyph(g.id)}
                       title="Delete glyph"
-                      className="text-muted-foreground hover:bg-red-500/10 hover:text-red-400 rounded p-1 transition-colors cursor-pointer active:scale-90"
+                      className="text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:bg-red-500/10 hover:text-red-400 active:scale-90"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -218,7 +222,7 @@ export function GlyphMapRegistry({
                   >
                     <svg
                       viewBox="0 0 128 128"
-                      className="stroke-foreground h-full w-full fill-none drop-shadow-2xs"
+                      className="stroke-foreground drop-shadow-2xs h-full w-full fill-none"
                       style={{
                         strokeWidth: 6,
                         strokeLinecap: "round",

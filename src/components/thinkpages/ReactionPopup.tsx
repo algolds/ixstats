@@ -2,7 +2,16 @@
 
 import React, { useState, type FC } from "react";
 import { motion } from "motion/react";
-import { Heart, Emoji as Smile, Emoji as Angry, ThumbsUp, ThumbsDown, FireFlame as Flame, Plus, Sparks as Sparkles } from "iconoir-react";
+import {
+  Heart,
+  Emoji as Smile,
+  Emoji as Angry,
+  ThumbsUp,
+  ThumbsDown,
+  FireFlame as Flame,
+  Plus,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 
@@ -80,7 +89,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 8, scale: 0.95 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      className="min-w-[290px] rounded-2xl border border-black/10 bg-white/90 p-3 shadow-2xl backdrop-blur-2xl dark:border-border/80 dark:bg-card/95 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+      className="dark:border-border/80 dark:bg-card/95 min-w-[290px] rounded-2xl border border-black/10 bg-white/90 p-3 shadow-2xl backdrop-blur-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
     >
       <Tabs
         value={activeTab}
@@ -88,11 +97,17 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
         className="w-full"
       >
         <TabsList className="mb-2.5 grid w-full grid-cols-2 rounded-xl bg-black/5 p-1 dark:bg-white/5">
-          <TabsTrigger value="reactions" className="flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold data-[state=active]:bg-white data-[state=active]:shadow-xs dark:data-[state=active]:bg-white/10">
+          <TabsTrigger
+            value="reactions"
+            className="flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold data-[state=active]:bg-white data-[state=active]:shadow-xs dark:data-[state=active]:bg-white/10"
+          >
             <Heart className="h-3.5 w-3.5" />
             <span>Built-in</span>
           </TabsTrigger>
-          <TabsTrigger value="discord" className="flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold data-[state=active]:bg-white data-[state=active]:shadow-xs dark:data-[state=active]:bg-white/10">
+          <TabsTrigger
+            value="discord"
+            className="flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold data-[state=active]:bg-white data-[state=active]:shadow-xs dark:data-[state=active]:bg-white/10"
+          >
             <Sparkles className="h-3.5 w-3.5" />
             <span>Discord</span>
           </TabsTrigger>
@@ -108,7 +123,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                   key={type}
                   type="button"
                   onClick={() => onSelectReaction(type)}
-                  className="rounded-full p-2 text-muted-foreground transition-all duration-150 hover:scale-125 hover:bg-black/5 hover:text-foreground active:scale-95 dark:hover:bg-white/10"
+                  className="text-muted-foreground hover:text-foreground rounded-full p-2 transition-all duration-150 hover:scale-125 hover:bg-black/5 active:scale-95 dark:hover:bg-white/10"
                   title={type}
                   aria-label={type}
                 >
@@ -190,7 +205,9 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                 )}
               </>
             ) : (
-              <div className="text-muted-foreground w-full p-2 text-center text-xs">No Discord emojis available</div>
+              <div className="text-muted-foreground w-full p-2 text-center text-xs">
+                No Discord emojis available
+              </div>
             )}
           </div>
         </TabsContent>
@@ -199,7 +216,9 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
       {/* Current Reaction Counts */}
       {postReactionCounts && Object.keys(postReactionCounts).length > 0 && (
         <div className="border-border/40 mt-2 border-t pt-2">
-          <div className="text-muted-foreground mb-1.5 text-[10px] font-medium tracking-tight">Current reactions:</div>
+          <div className="text-muted-foreground mb-1.5 text-[10px] font-medium tracking-tight">
+            Current reactions:
+          </div>
           <div className="flex flex-wrap gap-1 text-xs">
             {Object.entries(postReactionCounts).map(([type, count]) => {
               if ((count as number) === 0) return null;
@@ -208,7 +227,10 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
               const isDiscordEmoji = type.startsWith("discord:");
 
               return (
-                <div key={type} className="flex items-center gap-1 rounded-full bg-black/5 px-2 py-0.5 text-[11px] font-semibold dark:bg-white/10">
+                <div
+                  key={type}
+                  className="flex items-center gap-1 rounded-full bg-black/5 px-2 py-0.5 text-[11px] font-semibold dark:bg-white/10"
+                >
                   {isDiscordEmoji ? (
                     <img
                       src={

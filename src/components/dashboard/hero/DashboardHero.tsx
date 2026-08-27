@@ -3,7 +3,14 @@
 import { useState, useMemo, memo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Crown, Calendar, Globe, Tournament as Swords, NavArrowUp as ChevronUp, NavArrowRight as ChevronRight } from "iconoir-react";
+import {
+  Crown,
+  Calendar,
+  Globe,
+  Tournament as Swords,
+  NavArrowUp as ChevronUp,
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
 import * as IconoirIcons from "iconoir-react";
 import { useUser } from "~/context/auth-context";
 import { usePremium } from "~/hooks/usePremium";

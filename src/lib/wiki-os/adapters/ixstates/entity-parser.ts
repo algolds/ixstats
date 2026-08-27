@@ -13,7 +13,11 @@
  * skipped.
  */
 
-import { parseInfobox, parsePopulation, type InfoboxField } from "~/lib/wiki-os/transformers/infobox-parser";
+import {
+  parseInfobox,
+  parsePopulation,
+  type InfoboxField,
+} from "~/lib/wiki-os/transformers/infobox-parser";
 import { compareValues, type ContradictionVerdict } from "~/lib/country-geo";
 
 export type EntityKind = "city" | "subdivision" | "poi";

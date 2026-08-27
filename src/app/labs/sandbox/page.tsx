@@ -4,7 +4,32 @@ import React, { useState, useTransition } from "react";
 import { FacetContainer } from "~/components/ui/facet-container";
 import type { FacetVariant, FacetDepth, FacetInteractivity } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
-import { Trophy, Lock, CheckCircle as CheckCircle2, XmarkCircle as XCircle, HelpCircle, Play, SystemRestart as Loader2, ControlSlider as Sliders, Database, Component as Layers, Code as Code2, NavArrowRight as ChevronRight, WarningCircle as AlertCircle, Suitcase as Briefcase, StatUp as TrendingUp, Palette, Eye, Copy, Send, OpenBook as BookOpen, ArrowSeparateVertical as ArrowUpDown, ShieldAlert, Folder as FolderTree, LightBulb as Lightbulb } from "iconoir-react";
+import {
+  Trophy,
+  Lock,
+  CheckCircle as CheckCircle2,
+  XmarkCircle as XCircle,
+  HelpCircle,
+  Play,
+  SystemRestart as Loader2,
+  ControlSlider as Sliders,
+  Database,
+  Component as Layers,
+  Code as Code2,
+  NavArrowRight as ChevronRight,
+  WarningCircle as AlertCircle,
+  Suitcase as Briefcase,
+  StatUp as TrendingUp,
+  Palette,
+  Eye,
+  Copy,
+  Send,
+  OpenBook as BookOpen,
+  ArrowSeparateVertical as ArrowUpDown,
+  ShieldAlert,
+  Folder as FolderTree,
+  LightBulb as Lightbulb,
+} from "iconoir-react";
 
 // Import Kistan's 5 CS Intro Level Files
 import * as Level1 from "./challenges/level1_variables";

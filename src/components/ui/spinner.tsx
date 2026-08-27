@@ -8,9 +8,6 @@ export interface SpinnerProps extends React.SVGAttributes<SVGSVGElement> {
 
 export function Spinner({ className, ...props }: SpinnerProps) {
   return (
-    <Loader2
-      className={cn("h-4 w-4 animate-spin text-muted-foreground", className)}
-      {...props}
-    />
+    <Loader2 className={cn("text-muted-foreground h-4 w-4 animate-spin", className)} {...props} />
   );
 }

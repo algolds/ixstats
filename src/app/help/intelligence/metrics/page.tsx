@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { Dashboard as GaugeCircle, StatsReport as BarChart2, BellNotification as BellRing } from "iconoir-react";
+import {
+  Dashboard as GaugeCircle,
+  StatsReport as BarChart2,
+  BellNotification as BellRing,
+} from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function IntelligenceMetricsArticle() {

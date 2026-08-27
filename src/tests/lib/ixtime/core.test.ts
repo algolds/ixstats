@@ -1,7 +1,5 @@
 import { IxTime } from "~/lib/ixtime";
 
-
-
 describe("IxTime Core Chronometry & Temporal Engine", () => {
   beforeEach(() => {
     IxTime.clearTimeOverride();
@@ -152,7 +150,6 @@ describe("IxTime Core Chronometry & Temporal Engine", () => {
     });
   });
 });
-
 
 import { getPrimeMeridianWeather } from "~/lib/ixtime/weather";
 

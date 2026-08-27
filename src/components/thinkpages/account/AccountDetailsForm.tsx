@@ -1,6 +1,11 @@
 "use client";
 
-import { ArrowLeft, Check, WarningCircle as AlertCircle, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  ArrowLeft,
+  Check,
+  WarningCircle as AlertCircle,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface AccountDetailsFormProps {

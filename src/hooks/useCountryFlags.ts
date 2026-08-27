@@ -8,7 +8,8 @@ import { withBasePath } from "~/lib/base-path";
 export interface CountryFlag {
   countryName: string;
   flagUrl: string | null;
-  source: "provided" | "persistent-cache" | "memory-cache" | "commons" | "fictional-wiki" | "placeholder";
+  source:
+    "provided" | "persistent-cache" | "memory-cache" | "commons" | "fictional-wiki" | "placeholder";
   cached: boolean;
   isPlaceholder: boolean;
 }
@@ -42,15 +43,19 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
     return [...countries];
   }, [countries]);
 
-  const { data: batchResult, isLoading, error: trpcError, refetch } =
-    api.countries.flags.resolveBatch.useQuery(
-      { countryNames: memoizedCountryNames },
-      {
-        enabled: memoizedCountryNames.length > 0,
-        staleTime: 1000 * 60 * 60,
-        retry: 1,
-      }
-    );
+  const {
+    data: batchResult,
+    isLoading,
+    error: trpcError,
+    refetch,
+  } = api.countries.flags.resolveBatch.useQuery(
+    { countryNames: memoizedCountryNames },
+    {
+      enabled: memoizedCountryNames.length > 0,
+      staleTime: 1000 * 60 * 60,
+      retry: 1,
+    }
+  );
 
   const flags = useMemo(() => {
     const map = new Map<string, CountryFlag>();
@@ -75,9 +80,12 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
     [flags]
   );
 
-  const refetchFlag = useCallback(async (_countryName: string) => {
-    await refetch();
-  }, [refetch]);
+  const refetchFlag = useCallback(
+    async (_countryName: string) => {
+      await refetch();
+    },
+    [refetch]
+  );
 
   const clearCache = useCallback(() => {
     // No-op for tRPC query cache
@@ -115,7 +123,7 @@ export function useCountryFlag(countryName: string) {
   const cleanName = countryName?.trim() || "";
   const countries = useMemo(() => (cleanName ? [cleanName] : []), [cleanName]);
   const { flags, loading, error, refetchFlag } = useCountryFlags({ countries });
-  const flag = cleanName ? flags.get(cleanName) ?? null : null;
+  const flag = cleanName ? (flags.get(cleanName) ?? null) : null;
 
   return {
     flag,
@@ -124,4 +132,3 @@ export function useCountryFlag(countryName: string) {
     refetch: () => refetchFlag(cleanName),
   };
 }
-

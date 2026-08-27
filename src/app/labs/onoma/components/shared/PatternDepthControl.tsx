@@ -35,7 +35,8 @@ export const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     label: "Fluid",
     editorialTier: "Fluid",
     tag: "High Variation",
-    description: "Broad linguistic patterns; high phonetic variation and exploratory sound combinations.",
+    description:
+      "Broad linguistic patterns; high phonetic variation and exploratory sound combinations.",
     color: "#06b6d4",
     textClassName: "text-cyan-600 dark:text-cyan-400",
     bgClassName: "bg-cyan-500/10 dark:bg-cyan-500/15",
@@ -47,7 +48,8 @@ export const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     label: "Organic",
     editorialTier: "Organic",
     tag: "Recommended",
-    description: "Natural linguistic cadence; optimal conlang sweet spot balancing novelty & cohesion.",
+    description:
+      "Natural linguistic cadence; optimal conlang sweet spot balancing novelty & cohesion.",
     color: "#0091ff",
     textClassName: "text-onoma-primary dark:text-onoma-primary-light",
     bgClassName: "bg-onoma-primary/10 dark:bg-onoma-primary/15",
@@ -71,7 +73,8 @@ export const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     label: "Strict",
     editorialTier: "Strict",
     tag: "Corpus Lock",
-    description: "High pattern constraints; closely preserves literal word structures from training data.",
+    description:
+      "High pattern constraints; closely preserves literal word structures from training data.",
     color: "#f59e0b",
     textClassName: "text-amber-600 dark:text-amber-400",
     bgClassName: "bg-amber-500/10 dark:bg-amber-500/15",
@@ -116,7 +119,9 @@ export function PatternDepthControl({
               )}
             />
             <span className="font-mono text-xs font-bold">{level.depth}</span>
-            <span className="text-[11px] tracking-tight leading-none font-medium">{level.editorialTier}</span>
+            <span className="text-[11px] leading-none font-medium tracking-tight">
+              {level.editorialTier}
+            </span>
           </span>
         ),
         themeColor: level.color,
@@ -131,7 +136,7 @@ export function PatternDepthControl({
       <div className={cn("space-y-1", className)}>
         {showLabels && (
           <div className="flex items-center gap-1">
-            <label className="text-zinc-800 dark:text-zinc-200 text-xs font-semibold tracking-tight block">
+            <label className="block text-xs font-semibold tracking-tight text-zinc-800 dark:text-zinc-200">
               Pattern Depth
             </label>
             <button
@@ -144,12 +149,12 @@ export function PatternDepthControl({
             </button>
           </div>
         )}
-        <div className="flex h-9 w-full items-center justify-between rounded-xl border border-zinc-200/85 bg-zinc-100/75 p-1 select-none dark:border-zinc-700/70 dark:bg-zinc-800/60 shadow-2xs">
+        <div className="flex h-9 w-full items-center justify-between rounded-xl border border-zinc-200/85 bg-zinc-100/75 p-1 shadow-2xs select-none dark:border-zinc-700/70 dark:bg-zinc-800/60">
           <button
             type="button"
             onClick={() => onChange(Math.max(1, value - 1))}
             disabled={value <= 1}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-xs font-bold text-zinc-700 shadow-2xs transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-30 disabled:shadow-none dark:bg-zinc-700 dark:text-zinc-200 cursor-pointer"
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg bg-white text-xs font-bold text-zinc-700 shadow-2xs transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-30 disabled:shadow-none dark:bg-zinc-700 dark:text-zinc-200"
             title="Broader patterns / higher variation"
           >
             -
@@ -158,7 +163,12 @@ export function PatternDepthControl({
             <span className={cn("font-mono text-xs font-bold", currentLevel.textClassName)}>
               {value}
             </span>
-            <span className={cn("text-[11px] font-semibold leading-none tracking-tight", currentLevel.textClassName)}>
+            <span
+              className={cn(
+                "text-[11px] leading-none font-semibold tracking-tight",
+                currentLevel.textClassName
+              )}
+            >
               {currentLevel.editorialTier}
             </span>
           </div>
@@ -166,7 +176,7 @@ export function PatternDepthControl({
             type="button"
             onClick={() => onChange(Math.min(4, value + 1))}
             disabled={value >= 4}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-xs font-bold text-zinc-700 shadow-2xs transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-30 disabled:shadow-none dark:bg-zinc-700 dark:text-zinc-200 cursor-pointer"
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg bg-white text-xs font-bold text-zinc-700 shadow-2xs transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-30 disabled:shadow-none dark:bg-zinc-700 dark:text-zinc-200"
             title="Deeper patterns / tighter corpus fidelity"
           >
             +
@@ -181,7 +191,7 @@ export function PatternDepthControl({
     <div className={cn("space-y-1.5", className)}>
       {showLabels && (
         <div className="flex items-center gap-1.5 pb-0.5">
-          <label className="text-zinc-800 dark:text-zinc-200 text-xs font-semibold tracking-tight">
+          <label className="text-xs font-semibold tracking-tight text-zinc-800 dark:text-zinc-200">
             Pattern Depth
           </label>
 
@@ -190,7 +200,7 @@ export function PatternDepthControl({
             type="button"
             onClick={() => setShowHelp(!showHelp)}
             className={cn(
-              "flex h-4 w-4 items-center justify-center rounded-full transition-all cursor-pointer",
+              "flex h-4 w-4 cursor-pointer items-center justify-center rounded-full transition-all",
               showHelp
                 ? "bg-secondary text-foreground font-bold"
                 : "text-muted-foreground/60 hover:text-foreground hover:bg-secondary/40"
@@ -224,8 +234,8 @@ export function PatternDepthControl({
             transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
             className="overflow-hidden"
           >
-            <div className="border border-border/60 bg-secondary/25 rounded-xl p-2.5 text-[11px] text-muted-foreground space-y-1.5 backdrop-blur-md">
-              <div className="flex items-center justify-between text-foreground font-semibold">
+            <div className="border-border/60 bg-secondary/25 text-muted-foreground space-y-1.5 rounded-xl border p-2.5 text-[11px] backdrop-blur-md">
+              <div className="text-foreground flex items-center justify-between font-semibold">
                 <span className="text-foreground">About Pattern Depth</span>
                 <button
                   type="button"
@@ -236,27 +246,33 @@ export function PatternDepthControl({
                 </button>
               </div>
               <p className="leading-relaxed font-normal">
-                Controls the depth of preceding linguistic context used to model and generate forms. Higher depth creates tighter fidelity to the seed language, while lower depth introduces abstract phonetic variation.
+                Controls the depth of preceding linguistic context used to model and generate forms.
+                Higher depth creates tighter fidelity to the seed language, while lower depth
+                introduces abstract phonetic variation.
               </p>
-              <div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-border/30 text-[10.5px]">
+              <div className="border-border/30 grid grid-cols-2 gap-1.5 border-t pt-1.5 text-[10.5px]">
                 <div className="flex items-center gap-1.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />
-                  <span className="text-cyan-600 dark:text-cyan-400 font-semibold">1 Fluid:</span>
+                  <span className="font-semibold text-cyan-600 dark:text-cyan-400">1 Fluid:</span>
                   <span>High variation</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-onoma-primary" />
+                  <span className="bg-onoma-primary h-1.5 w-1.5 rounded-full" />
                   <span className="text-onoma-primary font-semibold">2 Organic:</span>
                   <span>Natural flow (★)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
-                  <span className="text-violet-600 dark:text-violet-400 font-semibold">3 Faithful:</span>
+                  <span className="font-semibold text-violet-600 dark:text-violet-400">
+                    3 Faithful:
+                  </span>
                   <span>Strong resonance</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                  <span className="text-amber-600 dark:text-amber-400 font-semibold">4 Strict:</span>
+                  <span className="font-semibold text-amber-600 dark:text-amber-400">
+                    4 Strict:
+                  </span>
                   <span>Corpus lock</span>
                 </div>
               </div>
@@ -267,8 +283,10 @@ export function PatternDepthControl({
 
       {/* Dynamic Contextual Micro-Description if enabled */}
       {showDescription && !showHelp && (
-        <p className="text-muted-foreground animate-in fade-in text-[11px] leading-relaxed duration-200 px-0.5 font-normal">
-          <strong className={cn("font-semibold", currentLevel.textClassName)}>{currentLevel.editorialTier}:</strong>{" "}
+        <p className="text-muted-foreground animate-in fade-in px-0.5 text-[11px] leading-relaxed font-normal duration-200">
+          <strong className={cn("font-semibold", currentLevel.textClassName)}>
+            {currentLevel.editorialTier}:
+          </strong>{" "}
           {currentLevel.description}
         </p>
       )}

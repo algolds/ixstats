@@ -17,7 +17,8 @@ describe("WikiOS Domain Types & Slugifier", () => {
 
 describe("WikiOS LinkGraphService", () => {
   it("extracts internal wikitext links with labels and section anchors", () => {
-    const wikitext = "The [[Treaty of Oakhaven|peace treaty]] was signed in [[Vesper#Constitution|the capital]].";
+    const wikitext =
+      "The [[Treaty of Oakhaven|peace treaty]] was signed in [[Vesper#Constitution|the capital]].";
     const links = LinkGraphService.extractLinks(wikitext);
 
     expect(links).toHaveLength(2);

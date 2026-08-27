@@ -157,7 +157,7 @@ export function EconomicArchetypesPanel() {
       if (a.region) uniqueRegions.add(a.region);
     });
     return Array.from(uniqueRegions).sort();
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [archetypes]);
 
   // Filtered archetypes
@@ -165,10 +165,7 @@ export function EconomicArchetypesPanel() {
     return archetypes.filter((archetype: any) => {
       if (selectedEra !== "all" && archetype.era !== selectedEra) return false;
       if (selectedRegion !== "all" && archetype.region !== selectedRegion) return false;
-      if (
-        selectedComplexity !== "all" &&
-        archetype.implementationComplexity !== selectedComplexity
-      )
+      if (selectedComplexity !== "all" && archetype.implementationComplexity !== selectedComplexity)
         return false;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -179,7 +176,7 @@ export function EconomicArchetypesPanel() {
       }
       return true;
     });
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [archetypes, selectedEra, selectedRegion, selectedComplexity, searchQuery]);
 
   const resetForm = () => {
@@ -307,7 +304,7 @@ export function EconomicArchetypesPanel() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
           <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
             Total Archetypes
           </div>
@@ -315,27 +312,27 @@ export function EconomicArchetypesPanel() {
             {archetypes?.length ?? 0}
           </div>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
           <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
             Modern Policy
           </div>
-          <div className="text-blue-400 mt-1 font-mono text-xl font-bold tracking-tight">
+          <div className="mt-1 font-mono text-xl font-bold tracking-tight text-blue-400">
             {archetypes?.filter((a: any) => a.era === "modern").length ?? 0}
           </div>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
           <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
             Historical Models
           </div>
-          <div className="text-amber-400 mt-1 font-mono text-xl font-bold tracking-tight">
+          <div className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400">
             {archetypes?.filter((a: any) => a.era === "historical").length ?? 0}
           </div>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
           <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
             Filtered Roster
           </div>
-          <div className="text-purple-400 mt-1 font-mono text-xl font-bold tracking-tight">
+          <div className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
             {filteredArchetypes.length}
           </div>
         </div>
@@ -344,33 +341,41 @@ export function EconomicArchetypesPanel() {
       {/* Filter & Action Rail */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <div className="relative max-w-sm min-w-[200px] flex-1">
             <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search archetypes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 rounded-xl border-border/30 bg-background/50 pl-8 text-xs backdrop-blur-md focus:border-border/60"
+              className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
             />
           </div>
 
           <Select value={selectedEra} onValueChange={(v: any) => setSelectedEra(v)}>
-            <SelectTrigger className="h-8 w-36 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-36 rounded-xl text-xs backdrop-blur-md">
               <SelectValue placeholder="All Eras" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">All Eras</SelectItem>
-              <SelectItem value="modern" className="text-xs">Modern</SelectItem>
-              <SelectItem value="historical" className="text-xs">Historical</SelectItem>
+              <SelectItem value="all" className="text-xs">
+                All Eras
+              </SelectItem>
+              <SelectItem value="modern" className="text-xs">
+                Modern
+              </SelectItem>
+              <SelectItem value="historical" className="text-xs">
+                Historical
+              </SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-            <SelectTrigger className="h-8 w-36 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-36 rounded-xl text-xs backdrop-blur-md">
               <SelectValue placeholder="All Regions" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">All Regions</SelectItem>
+              <SelectItem value="all" className="text-xs">
+                All Regions
+              </SelectItem>
               {regions.map((region) => (
                 <SelectItem key={region} value={region} className="text-xs">
                   {region}
@@ -380,11 +385,13 @@ export function EconomicArchetypesPanel() {
           </Select>
 
           <Select value={selectedComplexity} onValueChange={setSelectedComplexity}>
-            <SelectTrigger className="h-8 w-40 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-40 rounded-xl text-xs backdrop-blur-md">
               <SelectValue placeholder="All Complexities" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">All Complexities</SelectItem>
+              <SelectItem value="all" className="text-xs">
+                All Complexities
+              </SelectItem>
               {COMPLEXITY_LEVELS.map((level) => (
                 <SelectItem key={level} value={level} className="text-xs">
                   {level}
@@ -399,7 +406,7 @@ export function EconomicArchetypesPanel() {
             resetForm();
             setIsAddDialogOpen(true);
           }}
-          className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+          className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
         >
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           Add Archetype
@@ -414,14 +421,14 @@ export function EconomicArchetypesPanel() {
           ))}
         </div>
       ) : filteredArchetypes.length === 0 ? (
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-12 text-center backdrop-blur-md">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-12 text-center backdrop-blur-md">
           <p className="text-muted-foreground text-xs">No archetypes found matching criteria.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-border/30 bg-card/25 backdrop-blur-md shadow-xs">
+        <div className="border-border/30 bg-card/25 overflow-x-auto rounded-2xl border shadow-xs backdrop-blur-md">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border/30 bg-muted/20 text-muted-foreground font-semibold">
+              <tr className="border-border/30 bg-muted/20 text-muted-foreground border-b font-semibold">
                 <th className="px-4 py-2.5 text-left font-medium">Model & Focus</th>
                 <th className="px-4 py-2.5 text-left font-medium">Era & Region</th>
                 <th className="px-4 py-2.5 text-left font-medium">Complexity</th>
@@ -429,12 +436,12 @@ export function EconomicArchetypesPanel() {
                 <th className="px-4 py-2.5 text-right font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/15">
+            <tbody className="divide-border/15 divide-y">
               {filteredArchetypes.map((archetype: any) => (
                 <tr key={archetype.id} className="hover:bg-foreground/[0.02] transition-colors">
                   <td className="px-4 py-2.5">
-                    <div className="font-semibold text-foreground">{archetype.name}</div>
-                    <div className="text-muted-foreground text-[11px] truncate max-w-sm">
+                    <div className="text-foreground font-semibold">{archetype.name}</div>
+                    <div className="text-muted-foreground max-w-sm truncate text-[11px]">
                       {archetype.description}
                     </div>
                   </td>
@@ -443,8 +450,8 @@ export function EconomicArchetypesPanel() {
                       <span
                         className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${
                           archetype.era === "modern"
-                            ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                            : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                            ? "border border-blue-500/20 bg-blue-500/10 text-blue-400"
+                            : "border border-amber-500/20 bg-amber-500/10 text-amber-400"
                         }`}
                       >
                         {archetype.era}
@@ -453,32 +460,37 @@ export function EconomicArchetypesPanel() {
                     </div>
                   </td>
                   <td className="px-4 py-2.5 font-medium">
-                    <span className={COMPLEXITY_COLORS[archetype.implementationComplexity] || "text-muted-foreground"}>
+                    <span
+                      className={
+                        COMPLEXITY_COLORS[archetype.implementationComplexity] ||
+                        "text-muted-foreground"
+                      }
+                    >
                       {archetype.implementationComplexity}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-foreground font-medium">
+                  <td className="text-foreground px-4 py-2.5 font-mono font-medium">
                     {archetype.usageCount || 0}×
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     <div className="inline-flex items-center gap-1">
                       <button
                         onClick={() => handleClone(archetype)}
-                        className="rounded-lg p-1 text-muted-foreground hover:bg-muted/50 hover:text-foreground active:scale-[0.98] transition-transform"
+                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 transition-transform active:scale-[0.98]"
                         title="Clone"
                       >
                         <Copy className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleEdit(archetype)}
-                        className="rounded-lg p-1 text-muted-foreground hover:bg-muted/50 hover:text-foreground active:scale-[0.98] transition-transform"
+                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 transition-transform active:scale-[0.98]"
                         title="Edit"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete(archetype.id, archetype.name)}
-                        className="rounded-lg p-1 text-red-400 hover:bg-red-500/10 hover:text-red-300 active:scale-[0.98] transition-transform"
+                        className="rounded-lg p-1 text-red-400 transition-transform hover:bg-red-500/10 hover:text-red-300 active:scale-[0.98]"
                         title="Delete"
                       >
                         <Trash2 className="h-3.5 w-3.5" />

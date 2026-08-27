@@ -34,9 +34,7 @@ function getErrorInfo(errorCode: number): {
   }
 }
 
-function describeAudioError(
-  audio: HTMLAudioElement
-): PlaybackEngineErrorDetail {
+function describeAudioError(audio: HTMLAudioElement): PlaybackEngineErrorDetail {
   if (audio.error) {
     const errorCode = audio.error.code;
     return { ...getErrorInfo(errorCode), errorCode };
@@ -204,9 +202,7 @@ class HtmlAudioEngine implements PlaybackEngine {
 
   async load(params: LoadEngineParams): Promise<void> {
     const { url, startTime = 0, isLiveStream = false } = params;
-    const result = this.ifClient(() =>
-      this._load({ isLiveStream, startTime, url })
-    );
+    const result = this.ifClient(() => this._load({ isLiveStream, startTime, url }));
     if (result) {
       await result;
     }
@@ -237,9 +233,7 @@ class HtmlAudioEngine implements PlaybackEngine {
     audio.src = url;
     audio.preload = "auto";
 
-    const loadTimeout = isLiveStream
-      ? this.LOAD_TIMEOUT_LIVE
-      : this.LOAD_TIMEOUT_NORMAL;
+    const loadTimeout = isLiveStream ? this.LOAD_TIMEOUT_LIVE : this.LOAD_TIMEOUT_NORMAL;
 
     await new Promise<void>((resolve, reject) => {
       let timeoutId: NodeJS.Timeout | null = null;
@@ -291,8 +285,7 @@ class HtmlAudioEngine implements PlaybackEngine {
         isResolved = true;
         cleanup();
         const error = audio.error;
-        const errorMessage =
-          error?.message || `Error code: ${error?.code ?? "unknown"}`;
+        const errorMessage = error?.message || `Error code: ${error?.code ?? "unknown"}`;
         reject(new Error(`Audio load failed: ${errorMessage}`));
       };
 
@@ -496,9 +489,7 @@ class HtmlAudioEngine implements PlaybackEngine {
       }
 
       const isValidTime = time >= 0 && time <= duration;
-      const validTime = isValidTime
-        ? time
-        : Math.max(0, Math.min(time, duration));
+      const validTime = isValidTime ? time : Math.max(0, Math.min(time, duration));
 
       if (audio.readyState >= audio.HAVE_METADATA) {
         audio.currentTime = validTime;

@@ -1,7 +1,13 @@
 "use client";
 
 import { motion, AnimatePresence } from "motion/react";
-import { Trash as Trash2, WhiteFlag as Flag, OpenNewWindow as ExternalLink, Copy, Xmark as X } from "iconoir-react";
+import {
+  Trash as Trash2,
+  WhiteFlag as Flag,
+  OpenNewWindow as ExternalLink,
+  Copy,
+  Xmark as X,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Dialog, DialogContent } from "~/components/ui/dialog";

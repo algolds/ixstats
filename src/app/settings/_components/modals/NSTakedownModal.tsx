@@ -29,11 +29,7 @@ export interface NSTakedownModalProps {
   defaultNationName?: string;
 }
 
-export function NSTakedownModal({
-  isOpen,
-  onClose,
-  defaultNationName = "",
-}: NSTakedownModalProps) {
+export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NSTakedownModalProps) {
   const notify = useNotify();
   const utils = api.useUtils();
 
@@ -51,7 +47,9 @@ export function NSTakedownModal({
   });
 
   const { data: verifyUrlData } = api.nsImport.getVerificationUrl.useQuery(
-    claimNation.trim() ? { nationName: claimNation.trim() } : { nationName: defaultNationName || "test" },
+    claimNation.trim()
+      ? { nationName: claimNation.trim() }
+      : { nationName: defaultNationName || "test" },
     { enabled: isOpen && Boolean(claimNation.trim()) }
   );
 
@@ -118,17 +116,17 @@ export function NSTakedownModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="border-border/60 bg-card/95 rounded-2xl p-6 shadow-2xl backdrop-blur-xl sm:max-w-xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="border-border/60 bg-card/95 max-h-[85vh] overflow-y-auto rounded-2xl p-6 shadow-2xl backdrop-blur-xl sm:max-w-xl">
         <DialogHeader className="space-y-2">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500">
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-bold text-foreground">
+              <DialogTitle className="text-foreground text-lg font-bold">
                 NationStates Card Takedown & Opt-Out
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
+              <DialogDescription className="text-muted-foreground text-xs">
                 Remove your nation&apos;s flag from cards served on the platform.
               </DialogDescription>
             </div>
@@ -136,7 +134,7 @@ export function NSTakedownModal({
         </DialogHeader>
 
         {/* Tab switcher */}
-        <div className="flex rounded-xl border border-border/60 bg-muted/30 p-1">
+        <div className="border-border/60 bg-muted/30 flex rounded-xl border p-1">
           <button
             type="button"
             onClick={() => {
@@ -171,13 +169,14 @@ export function NSTakedownModal({
         {activeTab === "owned" && (
           <div className="space-y-4 pt-2">
             {isLoading ? (
-              <div className="flex items-center justify-center p-8 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center justify-center p-8">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : cards.length === 0 ? (
-              <div className="rounded-xl border border-border/40 bg-muted/20 p-5 text-center">
-                <p className="text-xs text-muted-foreground">
-                  You don&apos;t have any NationStates-imported cards in your collection. If your nation&apos;s flag appears on other cards, use the{" "}
+              <div className="border-border/40 bg-muted/20 rounded-xl border p-5 text-center">
+                <p className="text-muted-foreground text-xs">
+                  You don&apos;t have any NationStates-imported cards in your collection. If your
+                  nation&apos;s flag appears on other cards, use the{" "}
                   <strong>Verify Nation Claim</strong> tab to submit a takedown.
                 </p>
               </div>
@@ -190,11 +189,11 @@ export function NSTakedownModal({
                   return (
                     <div
                       key={key}
-                      className="rounded-xl border border-border/60 bg-muted/15 p-3.5 space-y-2.5"
+                      className="border-border/60 bg-muted/15 space-y-2.5 rounded-xl border p-3.5"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-foreground">{nation}</span>
+                          <span className="text-foreground text-xs font-bold">{nation}</span>
                           {isVerified ? (
                             <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
                               <ShieldCheck className="h-2.5 w-2.5" />
@@ -206,7 +205,7 @@ export function NSTakedownModal({
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-muted-foreground text-[10px]">
                           {nationCards.length} {nationCards.length === 1 ? "card" : "cards"}
                         </span>
                       </div>
@@ -215,13 +214,13 @@ export function NSTakedownModal({
                         {nationCards.map((card) => (
                           <div
                             key={card.cardId}
-                            className="flex items-center justify-between gap-3 rounded-lg border border-border/40 bg-card/60 px-3 py-2"
+                            className="border-border/40 bg-card/60 flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
                           >
                             <div className="min-w-0">
-                              <p className="truncate text-xs font-medium text-foreground">
+                              <p className="text-foreground truncate text-xs font-medium">
                                 {card.title}
                               </p>
-                              <p className="text-[10px] text-muted-foreground">
+                              <p className="text-muted-foreground text-[10px]">
                                 Card #{card.nsCardId} · S{card.nsSeason}
                               </p>
                             </div>
@@ -248,7 +247,7 @@ export function NSTakedownModal({
                               data-cuelume-press="soft"
                               className={`facet-interactive flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition-all active:scale-[0.98] ${
                                 card.isHidden
-                                  ? "border border-border/60 bg-muted text-muted-foreground"
+                                  ? "border-border/60 bg-muted text-muted-foreground border"
                                   : "border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 dark:text-rose-400"
                               }`}
                             >
@@ -283,13 +282,13 @@ export function NSTakedownModal({
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/20 text-emerald-500">
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
-                <h4 className="text-sm font-bold text-foreground">Takedown Request Submitted</h4>
-                <p className="text-xs text-muted-foreground">{claimSuccessMessage}</p>
+                <h4 className="text-foreground text-sm font-bold">Takedown Request Submitted</h4>
+                <p className="text-muted-foreground text-xs">{claimSuccessMessage}</p>
                 <button
                   type="button"
                   onClick={handleClose}
                   data-cuelume-press="soft"
-                  className="facet-interactive mt-2 rounded-xl bg-foreground px-4 py-2 text-xs font-bold text-background hover:opacity-90 active:scale-[0.98]"
+                  className="facet-interactive bg-foreground text-background mt-2 rounded-xl px-4 py-2 text-xs font-bold hover:opacity-90 active:scale-[0.98]"
                 >
                   Done
                 </button>
@@ -297,7 +296,7 @@ export function NSTakedownModal({
             ) : (
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-foreground">
+                  <label className="text-foreground mb-1 block text-xs font-semibold">
                     NationStates Nation Name
                   </label>
                   <Input
@@ -309,26 +308,27 @@ export function NSTakedownModal({
                   />
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-muted/20 p-3.5 space-y-2">
-                  <p className="text-xs font-medium text-foreground">
+                <div className="border-border/40 bg-muted/20 space-y-2 rounded-xl border p-3.5">
+                  <p className="text-foreground text-xs font-medium">
                     Step 1: Get your verification checksum code
                   </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Sign in to NationStates and generate a temporary code to prove ownership of this flag.
+                  <p className="text-muted-foreground text-[11px]">
+                    Sign in to NationStates and generate a temporary code to prove ownership of this
+                    flag.
                   </p>
                   <a
                     href={verifyUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="facet-interactive inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-card px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted active:scale-[0.98]"
+                    className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold active:scale-[0.98]"
                   >
                     <span>Open NationStates Verification</span>
-                    <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                    <ExternalLink className="text-muted-foreground h-3 w-3" />
                   </a>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-foreground">
+                  <label className="text-foreground mb-1 block text-xs font-semibold">
                     Step 2: Paste Verification Checksum
                   </label>
                   <Input
@@ -336,7 +336,7 @@ export function NSTakedownModal({
                     value={claimChecksum}
                     onChange={(e) => setClaimChecksum(e.target.value)}
                     placeholder="Paste checksum code..."
-                    className="text-xs font-mono"
+                    className="font-mono text-xs"
                   />
                 </div>
 
@@ -344,7 +344,7 @@ export function NSTakedownModal({
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="facet-interactive rounded-xl border border-border/60 bg-card px-3.5 py-1.5 text-xs font-bold text-foreground hover:bg-muted active:scale-[0.98]"
+                    className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted rounded-xl border px-3.5 py-1.5 text-xs font-bold active:scale-[0.98]"
                   >
                     Cancel
                   </button>
@@ -352,9 +352,7 @@ export function NSTakedownModal({
                     type="button"
                     onClick={handleVerifyClaim}
                     disabled={
-                      !claimNation.trim() ||
-                      !claimChecksum.trim() ||
-                      verifyClaimMutation.isPending
+                      !claimNation.trim() || !claimChecksum.trim() || verifyClaimMutation.isPending
                     }
                     data-cuelume-press="soft"
                     className="facet-interactive flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-rose-700 active:scale-[0.98] disabled:opacity-50"

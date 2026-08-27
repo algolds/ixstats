@@ -5,7 +5,19 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Plus, Trash as Trash2, ArrowRight, Copy, Check, Refresh as RefreshCw, ControlSlider as Sliders, Globe as Globe2, HelpCircle, Xmark as X, OpenBook as BookOpen } from "iconoir-react";
+import {
+  Plus,
+  Trash as Trash2,
+  ArrowRight,
+  Copy,
+  Check,
+  Refresh as RefreshCw,
+  ControlSlider as Sliders,
+  Globe as Globe2,
+  HelpCircle,
+  Xmark as X,
+  OpenBook as BookOpen,
+} from "iconoir-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
@@ -263,7 +275,7 @@ export default function LoanwordsSection() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-onoma-primary" />
+                  <BookOpen className="text-onoma-primary h-4 w-4" />
                   <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
                     Loanwords & Historical Language Contact Guide
                   </h4>
@@ -271,7 +283,7 @@ export default function LoanwordsSection() {
                 <button
                   type="button"
                   onClick={() => setShowHelpGuide(false)}
-                  className="hover:bg-secondary/40 text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors cursor-pointer"
+                  className="hover:bg-secondary/40 text-muted-foreground hover:text-foreground cursor-pointer rounded-md p-1 transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -280,19 +292,22 @@ export default function LoanwordsSection() {
                 <div className="space-y-1">
                   <span className="text-foreground font-semibold">1. Contact Channels</span>
                   <p className="text-muted-foreground text-[11px] leading-relaxed">
-                    Map relationships between Donor (L1) and Recipient (L2) languages across trade, warfare, or academic domains.
+                    Map relationships between Donor (L1) and Recipient (L2) languages across trade,
+                    warfare, or academic domains.
                   </p>
                 </div>
                 <div className="space-y-1">
                   <span className="text-foreground font-semibold">2. Phonetic Shifts</span>
                   <p className="text-muted-foreground text-[11px] leading-relaxed">
-                    Loanwords mutate to match target phonology (e.g. Greek ⟨ph⟩ → Romance ⟨f⟩ or Grimm&apos;s Consonant Shift).
+                    Loanwords mutate to match target phonology (e.g. Greek ⟨ph⟩ → Romance ⟨f⟩ or
+                    Grimm&apos;s Consonant Shift).
                   </p>
                 </div>
                 <div className="space-y-1">
                   <span className="text-foreground font-semibold">3. Syllable Constraints</span>
                   <p className="text-muted-foreground text-[11px] leading-relaxed">
-                    Use Coda Drop to strip illegal terminal consonants or Vowel Epenthesis (+V) to maintain open syllable harmony.
+                    Use Coda Drop to strip illegal terminal consonants or Vowel Epenthesis (+V) to
+                    maintain open syllable harmony.
                   </p>
                 </div>
               </div>
@@ -306,10 +321,13 @@ export default function LoanwordsSection() {
         {/* Left Column: Contact Links & Configuration (5 cols) */}
         <div className="space-y-4 lg:col-span-5">
           {/* Contact Registry List */}
-          <FacetMaterial material="satin" className="border-border/30 space-y-3 rounded-2xl border p-4 shadow-sm">
-            <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
+          <FacetMaterial
+            material="satin"
+            className="border-border/30 space-y-3 rounded-2xl border p-4 shadow-sm"
+          >
+            <div className="border-border/40 flex items-center justify-between border-b pb-2.5">
               <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-onoma-primary/10 text-onoma-primary">
+                <div className="bg-onoma-primary/10 text-onoma-primary flex h-6 w-6 items-center justify-center rounded-lg">
                   <Globe2 className="h-3.5 w-3.5" />
                 </div>
                 <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">
@@ -322,7 +340,7 @@ export default function LoanwordsSection() {
                   onClick={() => setShowHelpGuide(!showHelpGuide)}
                   title="Toggle Contact Guide"
                   className={cn(
-                    "flex h-6.5 w-6.5 items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95",
+                    "flex h-6.5 w-6.5 cursor-pointer items-center justify-center rounded-lg border transition-all active:scale-95",
                     showHelpGuide
                       ? "border-onoma-primary/40 bg-onoma-primary/15 text-onoma-primary"
                       : "border-border/40 bg-secondary/20 text-muted-foreground hover:text-foreground"
@@ -333,7 +351,7 @@ export default function LoanwordsSection() {
                 <button
                   type="button"
                   onClick={handleNewChannel}
-                  className="hover:border-onoma-primary/40 hover:bg-onoma-primary/10 border-border/40 bg-secondary/20 flex h-6.5 items-center gap-1 rounded-lg border px-2.5 text-[10px] font-bold text-onoma-primary transition-all cursor-pointer active:scale-[0.97]"
+                  className="hover:border-onoma-primary/40 hover:bg-onoma-primary/10 border-border/40 bg-secondary/20 text-onoma-primary flex h-6.5 cursor-pointer items-center gap-1 rounded-lg border px-2.5 text-[10px] font-bold transition-all active:scale-[0.97]"
                 >
                   <Plus className="h-3 w-3" />
                   <span>New Channel</span>
@@ -344,7 +362,7 @@ export default function LoanwordsSection() {
             {contactsLoading ? (
               <div className="text-muted-foreground py-2 text-xs">Loading contact channels...</div>
             ) : !contacts || contacts.length === 0 ? (
-              <div className="text-muted-foreground py-3 text-xs italic text-center">
+              <div className="text-muted-foreground py-3 text-center text-xs italic">
                 No active contact channels mapped yet. Click &quot;New Channel&quot; to begin.
               </div>
             ) : (
@@ -357,18 +375,18 @@ export default function LoanwordsSection() {
                       type="button"
                       onClick={() => setSelectedContactId(c.id)}
                       className={cn(
-                        "flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-xs transition-all cursor-pointer active:scale-[0.98]",
+                        "flex w-full cursor-pointer items-center justify-between rounded-xl border px-3 py-2 text-left text-xs transition-all active:scale-[0.98]",
                         isSelected
-                          ? "border-onoma-primary/50 bg-onoma-primary/10 text-onoma-primary shadow-xs font-semibold"
+                          ? "border-onoma-primary/50 bg-onoma-primary/10 text-onoma-primary font-semibold shadow-xs"
                           : "border-border/30 bg-background/50 hover:bg-secondary/20 text-foreground"
                       )}
                     >
                       <div className="flex items-center gap-1.5 truncate">
-                        <span className="font-bold truncate">{c.sourcePack?.name}</span>
-                        <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                        <span className="font-bold truncate">{c.targetPack?.name}</span>
+                        <span className="truncate font-bold">{c.sourcePack?.name}</span>
+                        <ArrowRight className="text-muted-foreground h-3 w-3 shrink-0" />
+                        <span className="truncate font-bold">{c.targetPack?.name}</span>
                       </div>
-                      <span className="text-muted-foreground bg-secondary/40 rounded px-1.5 py-0.5 text-[9px] font-mono capitalize shrink-0 ml-1">
+                      <span className="text-muted-foreground bg-secondary/40 ml-1 shrink-0 rounded px-1.5 py-0.5 font-mono text-[9px] capitalize">
                         {c.domain}
                       </span>
                     </button>
@@ -379,15 +397,18 @@ export default function LoanwordsSection() {
           </FacetMaterial>
 
           {/* Form to configure Contact Registry */}
-          <FacetMaterial material="satin" className="border-border/30 space-y-4 rounded-2xl border p-4 shadow-sm">
+          <FacetMaterial
+            material="satin"
+            className="border-border/30 space-y-4 rounded-2xl border p-4 shadow-sm"
+          >
             <form onSubmit={handleSaveContact} className="space-y-3.5">
-              <div className="flex items-center justify-between border-b border-border/40 pb-2">
+              <div className="border-border/40 flex items-center justify-between border-b pb-2">
                 <div className="flex items-center gap-1.5">
                   <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
                     Channel Settings
                   </h4>
                   {!selectedContactId && (
-                    <span className="text-onoma-primary bg-onoma-primary/10 border border-onoma-primary/30 rounded px-1.5 py-0.2 text-[9px] font-mono font-semibold">
+                    <span className="text-onoma-primary bg-onoma-primary/10 border-onoma-primary/30 py-0.2 rounded border px-1.5 font-mono text-[9px] font-semibold">
                       New
                     </span>
                   )}
@@ -396,7 +417,7 @@ export default function LoanwordsSection() {
                   <button
                     type="button"
                     onClick={() => deleteContactMutation.mutate({ id: selectedContactId })}
-                    className="text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400 flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-semibold transition-colors cursor-pointer active:scale-[0.97]"
+                    className="text-muted-foreground flex cursor-pointer items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-semibold transition-colors hover:bg-rose-500/10 hover:text-rose-400 active:scale-[0.97]"
                   >
                     <Trash2 className="h-3 w-3" />
                     <span>Delete</span>
@@ -467,8 +488,10 @@ export default function LoanwordsSection() {
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-[10px]">
-                    <span className="text-muted-foreground font-bold tracking-wider uppercase">Intensity</span>
-                    <span className="text-onoma-primary font-mono font-bold bg-onoma-primary/10 rounded px-1.5 py-0.2">
+                    <span className="text-muted-foreground font-bold tracking-wider uppercase">
+                      Intensity
+                    </span>
+                    <span className="text-onoma-primary bg-onoma-primary/10 py-0.2 rounded px-1.5 font-mono font-bold">
                       {Math.round(intensity * 100)}%
                     </span>
                   </div>
@@ -479,7 +502,7 @@ export default function LoanwordsSection() {
                     step="0.05"
                     value={intensity}
                     onChange={(e) => setIntensity(Number(e.target.value))}
-                    className="accent-onoma-primary mt-1 h-1.5 w-full cursor-pointer rounded-lg bg-secondary/40"
+                    className="accent-onoma-primary bg-secondary/40 mt-1 h-1.5 w-full cursor-pointer rounded-lg"
                   />
                 </div>
               </div>
@@ -497,7 +520,7 @@ export default function LoanwordsSection() {
                         type="button"
                         onClick={() => handleApplyPhoneticLaw(law)}
                         title={law.description}
-                        className="hover:border-onoma-primary/40 hover:bg-onoma-primary/10 border-border/30 bg-secondary/20 rounded-md border px-1.5 py-0.5 text-[9px] font-mono font-semibold transition-all cursor-pointer active:scale-95"
+                        className="hover:border-onoma-primary/40 hover:bg-onoma-primary/10 border-border/30 bg-secondary/20 cursor-pointer rounded-md border px-1.5 py-0.5 font-mono text-[9px] font-semibold transition-all active:scale-95"
                       >
                         {law.name.split(" ")[0]}
                       </button>
@@ -506,7 +529,7 @@ export default function LoanwordsSection() {
                 </div>
 
                 {/* Syllable Coda & Epenthesis Controls */}
-                <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/30 bg-secondary/15 p-2 text-xs">
+                <div className="border-border/30 bg-secondary/15 flex flex-wrap items-center gap-3 rounded-xl border p-2 text-xs">
                   <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
                     <input
                       type="checkbox"
@@ -563,7 +586,7 @@ export default function LoanwordsSection() {
                       type="button"
                       onClick={handleAddShift}
                       disabled={!newFrom.trim()}
-                      className="hover:border-onoma-primary/40 bg-secondary/30 hover:bg-onoma-primary/10 text-foreground rounded-xl border border-border/40 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-30"
+                      className="hover:border-onoma-primary/40 bg-secondary/30 hover:bg-onoma-primary/10 text-foreground border-border/40 cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-bold transition-all active:scale-95 disabled:opacity-30"
                     >
                       Add
                     </button>
@@ -575,7 +598,9 @@ export default function LoanwordsSection() {
                       {soundShifts.map((shift, idx) => (
                         <motion.span
                           key={`${shift.from}-${shift.to}-${idx}`}
-                          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
+                          initial={
+                            shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }
+                          }
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.95 }}
                           className="bg-onoma-primary/10 border-onoma-primary/25 text-onoma-primary inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 font-mono text-xs font-semibold"
@@ -584,7 +609,7 @@ export default function LoanwordsSection() {
                           <button
                             type="button"
                             onClick={() => handleRemoveShift(idx)}
-                            className="text-onoma-primary/60 hover:text-rose-400 font-bold transition-colors cursor-pointer"
+                            className="text-onoma-primary/60 cursor-pointer font-bold transition-colors hover:text-rose-400"
                           >
                             ×
                           </button>
@@ -598,9 +623,11 @@ export default function LoanwordsSection() {
               <button
                 type="submit"
                 disabled={saveContactMutation.isPending}
-                className="bg-onoma-primary hover:bg-onoma-primary-hover disabled:opacity-40 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-[0.97]"
+                className="bg-onoma-primary hover:bg-onoma-primary-hover flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-[0.97] disabled:opacity-40"
               >
-                <span>{saveContactMutation.isPending ? "Saving Channel..." : "Save Contact Channel"}</span>
+                <span>
+                  {saveContactMutation.isPending ? "Saving Channel..." : "Save Contact Channel"}
+                </span>
               </button>
             </form>
           </FacetMaterial>
@@ -608,11 +635,14 @@ export default function LoanwordsSection() {
 
         {/* Right Column: Loanword Adaptation Simulator Sandbox (7 cols) */}
         <div className="space-y-4 lg:col-span-7">
-          <FacetMaterial material="satin" className="border-border/30 space-y-4 rounded-2xl border p-4 shadow-sm">
+          <FacetMaterial
+            material="satin"
+            className="border-border/30 space-y-4 rounded-2xl border p-4 shadow-sm"
+          >
             {/* Simulator Header & Action Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-3">
+            <div className="border-border/40 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-onoma-primary/10 text-onoma-primary">
+                <div className="bg-onoma-primary/10 text-onoma-primary flex h-7 w-7 items-center justify-center rounded-xl">
                   <Sliders className="h-4 w-4" />
                 </div>
                 <div>
@@ -632,7 +662,7 @@ export default function LoanwordsSection() {
                     type="button"
                     onClick={handleSyncSourceLexicon}
                     title={`Sync lexicon words from ${sourcePack.name}`}
-                    className="hover:border-onoma-primary/40 hover:bg-onoma-primary/10 border-border/40 bg-secondary/20 flex items-center gap-1 rounded-xl border px-2.5 py-1 text-[10px] font-bold text-onoma-primary transition-all cursor-pointer active:scale-95"
+                    className="hover:border-onoma-primary/40 hover:bg-onoma-primary/10 border-border/40 bg-secondary/20 text-onoma-primary flex cursor-pointer items-center gap-1 rounded-xl border px-2.5 py-1 text-[10px] font-bold transition-all active:scale-95"
                   >
                     <RefreshCw className="h-3 w-3" />
                     <span>Sync {sourcePack.name}</span>
@@ -640,7 +670,7 @@ export default function LoanwordsSection() {
                 )}
 
                 {/* Thematic Preset Selector */}
-                <div className="flex items-center gap-0.5 rounded-xl border border-border/40 bg-secondary/20 p-0.5">
+                <div className="border-border/40 bg-secondary/20 flex items-center gap-0.5 rounded-xl border p-0.5">
                   {Object.keys(THEMATIC_PRESETS).map((key) => {
                     const preset = THEMATIC_PRESETS[key];
                     const isSelected = activePresetKey === key;
@@ -654,9 +684,9 @@ export default function LoanwordsSection() {
                           notify.info(`Loaded ${preset.label} vocabulary.`);
                         }}
                         className={cn(
-                          "rounded-lg px-2 py-1 text-[9px] font-semibold transition-all cursor-pointer active:scale-95",
+                          "cursor-pointer rounded-lg px-2 py-1 text-[9px] font-semibold transition-all active:scale-95",
                           isSelected
-                            ? "bg-background text-foreground shadow-2xs font-bold"
+                            ? "bg-background text-foreground font-bold shadow-2xs"
                             : "text-muted-foreground hover:text-foreground"
                         )}
                       >
@@ -669,7 +699,7 @@ export default function LoanwordsSection() {
             </div>
 
             {/* Simulated Words Output Table */}
-            <div className="border-border/30 overflow-hidden rounded-xl border bg-background/50 dark:bg-card/20 shadow-inner">
+            <div className="border-border/30 bg-background/50 dark:bg-card/20 overflow-hidden rounded-xl border shadow-inner">
               <div className="bg-secondary/20 text-muted-foreground border-border/20 grid grid-cols-12 gap-2 border-b px-4 py-2 text-[10px] font-bold tracking-wider uppercase select-none">
                 <span className="col-span-4">Donor Word (L1)</span>
                 <span className="col-span-4">Transformation Pipeline</span>
@@ -688,7 +718,9 @@ export default function LoanwordsSection() {
                       >
                         {/* Column 1: Source Word & Meaning */}
                         <div className="col-span-4 flex flex-col">
-                          <span className="text-foreground font-mono font-bold text-xs">{res.original}</span>
+                          <span className="text-foreground font-mono text-xs font-bold">
+                            {res.original}
+                          </span>
                           <span className="text-muted-foreground truncate text-[10px] italic">
                             {res.meaning}
                           </span>
@@ -697,17 +729,17 @@ export default function LoanwordsSection() {
                         {/* Column 2: Applied Rules Breakdown */}
                         <div className="col-span-4 flex flex-wrap gap-1 font-mono text-[9px]">
                           {soundShifts.some((s) => res.original.toLowerCase().includes(s.from)) && (
-                            <span className="text-onoma-primary bg-onoma-primary/10 rounded px-1.5 py-0.2 font-semibold">
+                            <span className="text-onoma-primary bg-onoma-primary/10 py-0.2 rounded px-1.5 font-semibold">
                               shift
                             </span>
                           )}
                           {codaDrop && (
-                            <span className="text-amber-500 bg-amber-500/10 rounded px-1.5 py-0.2 font-semibold">
+                            <span className="py-0.2 rounded bg-amber-500/10 px-1.5 font-semibold text-amber-500">
                               -coda
                             </span>
                           )}
                           {vowelEpenthesis && (
-                            <span className="text-indigo-400 bg-indigo-500/10 rounded px-1.5 py-0.2 font-semibold">
+                            <span className="py-0.2 rounded bg-indigo-500/10 px-1.5 font-semibold text-indigo-400">
                               +{epentheticVowel}
                             </span>
                           )}
@@ -720,7 +752,7 @@ export default function LoanwordsSection() {
 
                         {/* Column 3: Adapted Result & Actions */}
                         <div className="col-span-4 flex items-center justify-end gap-2">
-                          <span className="text-sm font-extrabold font-mono text-onoma-primary tracking-tight">
+                          <span className="text-onoma-primary font-mono text-sm font-extrabold tracking-tight">
                             {adaptedWord}
                           </span>
                           <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -728,7 +760,7 @@ export default function LoanwordsSection() {
                               type="button"
                               onClick={() => handleCopyWord(adaptedWord, idx)}
                               title="Copy adapted word"
-                              className="hover:bg-secondary/60 text-muted-foreground hover:text-foreground rounded p-1 transition-colors cursor-pointer active:scale-90"
+                              className="hover:bg-secondary/60 text-muted-foreground hover:text-foreground cursor-pointer rounded p-1 transition-colors active:scale-90"
                             >
                               {isCopied ? (
                                 <Check className="h-3 w-3 text-emerald-400" />
@@ -740,7 +772,7 @@ export default function LoanwordsSection() {
                               type="button"
                               onClick={() => handleRemoveTestWord(idx)}
                               title="Remove word"
-                              className="text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400 rounded p-1 transition-colors cursor-pointer active:scale-90"
+                              className="text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:bg-rose-500/10 hover:text-rose-400 active:scale-90"
                             >
                               <Trash2 className="h-3 w-3" />
                             </button>
@@ -758,7 +790,10 @@ export default function LoanwordsSection() {
             </div>
 
             {/* Add Custom Word to Simulator Form */}
-            <form onSubmit={handleAddTestWord} className="border-border/20 space-y-2.5 border-t pt-3.5">
+            <form
+              onSubmit={handleAddTestWord}
+              className="border-border/20 space-y-2.5 border-t pt-3.5"
+            >
               <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 Add Custom Word to Simulator
               </h4>
@@ -781,9 +816,9 @@ export default function LoanwordsSection() {
                 />
                 <button
                   type="submit"
-                  className="hover:border-onoma-primary/40 bg-secondary/30 hover:bg-onoma-primary/10 text-foreground rounded-xl border border-border/40 px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 shrink-0"
+                  className="hover:border-onoma-primary/40 bg-secondary/30 hover:bg-onoma-primary/10 text-foreground border-border/40 shrink-0 cursor-pointer rounded-xl border px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95"
                 >
-                  <Plus className="inline h-3.5 w-3.5 mr-1 text-onoma-primary" />
+                  <Plus className="text-onoma-primary mr-1 inline h-3.5 w-3.5" />
                   <span>Add Word</span>
                 </button>
               </div>

@@ -22,12 +22,7 @@ const MAX_HEIGHT_MOBILE_MASSIVE = 700;
 // Performance optimization constants
 const RESIZE_DEBOUNCE_MS = 100;
 
-import {
-  type SizePresets,
-  type Preset,
-  SIZE_PRESETS,
-  DynamicIslandSizePresets,
-} from "./presets";
+import { type SizePresets, type Preset, SIZE_PRESETS, DynamicIslandSizePresets } from "./presets";
 
 export * from "./presets";
 
@@ -247,8 +242,10 @@ const calculateDimensions = (
   };
 };
 
-export interface DynamicIslandContentProps
-  extends Omit<React.ComponentPropsWithoutRef<typeof motion.div>, "id"> {
+export interface DynamicIslandContentProps extends Omit<
+  React.ComponentPropsWithoutRef<typeof motion.div>,
+  "id"
+> {
   children: React.ReactNode;
   id: string;
   screenSize: string;
@@ -313,7 +310,7 @@ export const DynamicIslandContent = ({
     return () => {
       observer.disconnect();
     };
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [state.size, children]);
 
   const isAutoHeight = dimensions.height === "auto";

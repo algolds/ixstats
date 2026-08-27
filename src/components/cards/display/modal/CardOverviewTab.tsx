@@ -1,6 +1,13 @@
 import React from "react";
 import { motion } from "motion/react";
-import { StatUp as TrendingUp, Group as Users, Calendar, Page as ScrollText, Component as Layers, Globe } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  Group as Users,
+  Calendar,
+  Page as ScrollText,
+  Component as Layers,
+  Globe,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Card3DViewer } from "../Card3DViewer";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";

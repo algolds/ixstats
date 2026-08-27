@@ -45,7 +45,12 @@ export class MediaAssetService {
    * Calculate standard MediaWiki MD5 shard path
    * e.g. "Caphiria_flag.svg" -> shard "8/8c", path "8/8c/Caphiria_flag.svg"
    */
-  static getMd5ShardPath(filename: string): { shard: string; fullPath: string; hash: string; cleanName: string } {
+  static getMd5ShardPath(filename: string): {
+    shard: string;
+    fullPath: string;
+    hash: string;
+    cleanName: string;
+  } {
     const cleanName = filename.replace(/^(?:File|Image):/i, "").replace(/ /g, "_");
     const hash = crypto.createHash("md5").update(cleanName).digest("hex");
     const shard = `${hash[0]}/${hash.slice(0, 2)}`;
@@ -61,7 +66,10 @@ export class MediaAssetService {
    * Resolve an asset from PostgreSQL `wiki_assets` by filename or slug (<1ms)
    */
   static async findAsset(filenameOrSlug: string): Promise<MediaAssetRecord | null> {
-    const clean = filenameOrSlug.replace(/^(?:File|Image):/i, "").replace(/ /g, "_").trim();
+    const clean = filenameOrSlug
+      .replace(/^(?:File|Image):/i, "")
+      .replace(/ /g, "_")
+      .trim();
     if (!clean) return null;
 
     const slug = clean.toLowerCase();
@@ -92,16 +100,20 @@ export class MediaAssetService {
     const map = new Map<string, MediaAssetRecord>();
     if (!filenames || filenames.length === 0) return map;
 
-    const cleanNames = filenames.map((f) => f.replace(/^(?:File|Image):/i, "").replace(/ /g, "_").trim()).filter(Boolean);
+    const cleanNames = filenames
+      .map((f) =>
+        f
+          .replace(/^(?:File|Image):/i, "")
+          .replace(/ /g, "_")
+          .trim()
+      )
+      .filter(Boolean);
     const hashes = cleanNames.map((n) => this.getMd5ShardPath(n).hash);
 
     try {
       const assets = await db.wikiAsset.findMany({
         where: {
-          OR: [
-            { filename: { in: cleanNames } },
-            { md5Hash: { in: hashes } },
-          ],
+          OR: [{ filename: { in: cleanNames } }, { md5Hash: { in: hashes } }],
         },
       });
 
@@ -127,10 +139,12 @@ export class MediaAssetService {
     const { shard, fullPath, hash, cleanName } = this.getMd5ShardPath(data.filename);
     const title = data.title || cleanName.replace(/_/g, " ");
     let slug = cleanName.toLowerCase();
-    
+
     const baseUrl = (data.originBaseUrl || DEFAULT_MEDIAWIKI_URL).replace(/\/+$/, "");
     const canonicalUrl = data.url || `${baseUrl}/images/${fullPath}`;
-    const canonicalThumb = data.thumbnailUrl || `${baseUrl}/images/thumb/${fullPath}/300px-${encodeURIComponent(cleanName)}`;
+    const canonicalThumb =
+      data.thumbnailUrl ||
+      `${baseUrl}/images/thumb/${fullPath}/300px-${encodeURIComponent(cleanName)}`;
 
     try {
       // 1. Check if asset already exists by md5Hash
@@ -231,16 +245,23 @@ export class MediaAssetService {
     }
 
     // 2. Match infobox parameters | image = Name.ext, | flag = Name.ext
-    const infoboxParamRegex = /\|\s*(?:image|logo|flag|coat_of_arms|seal|map|photo)\s*=\s*([^|\n\r]+)/gi;
+    const infoboxParamRegex =
+      /\|\s*(?:image|logo|flag|coat_of_arms|seal|map|photo)\s*=\s*([^|\n\r]+)/gi;
     while ((match = infoboxParamRegex.exec(content)) !== null) {
       const raw = match[1]?.trim();
       if (raw && !raw.startsWith("{{") && /\.(?:png|jpg|jpeg|svg|gif|webp)$/i.test(raw)) {
-        foundFilenames.add(raw.replace(/^\[\[(?:File|Image):/i, "").replace(/\]\].*$/, "").trim());
+        foundFilenames.add(
+          raw
+            .replace(/^\[\[(?:File|Image):/i, "")
+            .replace(/\]\].*$/, "")
+            .trim()
+        );
       }
     }
 
     // 3. Match <img src="/images/..." data-file="Name.ext">
-    const htmlImgRegex = /<img[^>]+(?:src=["'](?:[^"']*\/images\/[^"']*\/([^"'/?#]+))|data-file=["']([^"']+)["'])/gi;
+    const htmlImgRegex =
+      /<img[^>]+(?:src=["'](?:[^"']*\/images\/[^"']*\/([^"'/?#]+))|data-file=["']([^"']+)["'])/gi;
     while ((match = htmlImgRegex.exec(content)) !== null) {
       const raw = match[1] || match[2];
       if (raw) {

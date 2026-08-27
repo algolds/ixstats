@@ -66,7 +66,7 @@ export function WikiRepositoryTab({
     setActiveCategories([]);
     setWikiSearchQuery("");
     setDebouncedWikiQuery("");
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [wikiSource]);
 
   // Debounce wiki query

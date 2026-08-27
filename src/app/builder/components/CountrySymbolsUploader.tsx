@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { WhiteFlag as Flag, Shield, MediaImage as ImageIcon, Sparks as Sparkles, Upload } from "iconoir-react";
+import {
+  WhiteFlag as Flag,
+  Shield,
+  MediaImage as ImageIcon,
+  Sparks as Sparkles,
+  Upload,
+} from "iconoir-react";
 import { extractColorsFromImage, type ExtractedColors } from "~/lib/media";
 import { getFlagColors } from "~/lib/flags/flag-color-extractor";
 import { useNotify } from "~/hooks/useNotify";

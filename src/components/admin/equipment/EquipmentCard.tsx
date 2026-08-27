@@ -6,7 +6,13 @@
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import { EditPencil as Pencil, Copy, Trash as Trash2, EyeClosed as EyeOff, Rocket } from "iconoir-react";
+import {
+  EditPencil as Pencil,
+  Copy,
+  Trash as Trash2,
+  EyeClosed as EyeOff,
+  Rocket,
+} from "iconoir-react";
 import { CATEGORY_ICONS } from "~/lib/military/catalog-utils";
 
 interface EquipmentCardProps {

@@ -29,7 +29,9 @@ export function NarratorPlaygroundTab() {
 
   const [sandboxMode, setSandboxMode] = useState(true);
   const [selectedCountryId, setSelectedCountryId] = useState("");
-  const [selectedEventType, setSelectedEventType] = useState<"issue" | "policy" | "decision">("issue");
+  const [selectedEventType, setSelectedEventType] = useState<"issue" | "policy" | "decision">(
+    "issue"
+  );
   const [selectedEventId, setSelectedEventId] = useState("");
 
   const [playgroundTitle, setPlaygroundTitle] = useState("Tensions at the Border");
@@ -114,18 +116,20 @@ export function NarratorPlaygroundTab() {
     <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
       {/* Input Config Panel (Left) */}
       <div className="space-y-4 xl:col-span-7">
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
-          <div className="border-b border-border/20 pb-3">
+        <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+          <div className="border-border/20 border-b pb-3">
             <div className="flex items-center gap-2">
               <FileCode2 className="h-4 w-4 text-amber-400" />
-              <h3 className="text-xs font-bold text-foreground">Event Simulation Telemetry</h3>
+              <h3 className="text-foreground text-xs font-bold">Event Simulation Telemetry</h3>
             </div>
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex items-center justify-between rounded-xl border border-border/20 bg-background/30 p-3.5">
+          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
             <div>
-              <Label className="text-foreground text-xs font-bold uppercase">Sandbox Snapshot Mode</Label>
+              <Label className="text-foreground text-xs font-bold uppercase">
+                Sandbox Snapshot Mode
+              </Label>
               <p className="text-muted-foreground text-[10px]">
                 Inject custom JSON metrics directly instead of querying database instances.
               </p>
@@ -144,9 +148,11 @@ export function NarratorPlaygroundTab() {
 
           {/* Database Select Controls */}
           {!sandboxMode && (
-            <div className="grid grid-cols-1 gap-3 rounded-xl border border-border/20 bg-background/30 p-3.5 sm:grid-cols-3">
+            <div className="border-border/20 bg-background/30 grid grid-cols-1 gap-3 rounded-xl border p-3.5 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[10px] font-semibold uppercase">1. Country</Label>
+                <Label className="text-muted-foreground text-[10px] font-semibold uppercase">
+                  1. Country
+                </Label>
                 <Select
                   value={selectedCountryId}
                   onValueChange={(val) => {
@@ -154,7 +160,7 @@ export function NarratorPlaygroundTab() {
                     setSelectedEventId("");
                   }}
                 >
-                  <SelectTrigger className="h-8 rounded-xl border-border/30 bg-background/50 text-xs">
+                  <SelectTrigger className="border-border/30 bg-background/50 h-8 rounded-xl text-xs">
                     <SelectValue placeholder="Choose nation..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -168,7 +174,9 @@ export function NarratorPlaygroundTab() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[10px] font-semibold uppercase">2. Event Type</Label>
+                <Label className="text-muted-foreground text-[10px] font-semibold uppercase">
+                  2. Event Type
+                </Label>
                 <Select
                   value={selectedEventType}
                   onValueChange={(val: "issue" | "policy" | "decision") => {
@@ -176,7 +184,7 @@ export function NarratorPlaygroundTab() {
                     setSelectedEventId("");
                   }}
                 >
-                  <SelectTrigger className="h-8 rounded-xl border-border/30 bg-background/50 text-xs">
+                  <SelectTrigger className="border-border/30 bg-background/50 h-8 rounded-xl text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -188,13 +196,15 @@ export function NarratorPlaygroundTab() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[10px] font-semibold uppercase">3. Live Incident</Label>
+                <Label className="text-muted-foreground text-[10px] font-semibold uppercase">
+                  3. Live Incident
+                </Label>
                 <Select
                   value={selectedEventId}
                   onValueChange={setSelectedEventId}
                   disabled={eventsLoading || !selectedCountryId}
                 >
-                  <SelectTrigger className="h-8 rounded-xl border-border/30 bg-background/50 text-xs">
+                  <SelectTrigger className="border-border/30 bg-background/50 h-8 rounded-xl text-xs">
                     <SelectValue placeholder={eventsLoading ? "Loading..." : "Choose event..."} />
                   </SelectTrigger>
                   <SelectContent>
@@ -212,23 +222,27 @@ export function NarratorPlaygroundTab() {
           {/* Title & Description */}
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Event Title</Label>
+              <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                Event Title
+              </Label>
               <Input
                 value={playgroundTitle}
                 onChange={(e) => setPlaygroundTitle(e.target.value)}
                 placeholder="e.g. Grain Tariff Act"
-                className="h-8 rounded-xl border-border/30 bg-background/50 text-xs font-semibold"
+                className="border-border/30 bg-background/50 h-8 rounded-xl text-xs font-semibold"
               />
             </div>
 
             <div className="space-y-1">
-              <Label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Event Details</Label>
+              <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                Event Details
+              </Label>
               <Textarea
                 value={playgroundDescription}
                 onChange={(e) => setPlaygroundDescription(e.target.value)}
                 placeholder="Describe the context, severity, and options..."
                 rows={3}
-                className="rounded-xl border-border/30 bg-background/50 text-xs leading-relaxed"
+                className="border-border/30 bg-background/50 rounded-xl text-xs leading-relaxed"
               />
             </div>
           </div>
@@ -236,21 +250,21 @@ export function NarratorPlaygroundTab() {
           {/* Sandbox JSON */}
           {sandboxMode && (
             <div className="space-y-1">
-              <Label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">
+              <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                 Sandbox Country Snapshot (JSON)
               </Label>
               <Textarea
                 value={sandboxMetricsJson}
                 onChange={(e) => setSandboxMetricsJson(e.target.value)}
                 rows={5}
-                className="rounded-xl border-border/30 bg-background/50 font-mono text-[11px] leading-relaxed"
+                className="border-border/30 bg-background/50 rounded-xl font-mono text-[11px] leading-relaxed"
               />
             </div>
           )}
 
           {/* Custom Prompt */}
           <div className="space-y-1">
-            <Label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">
+            <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
               Prompt Override (Playground only)
             </Label>
             <Textarea
@@ -258,14 +272,14 @@ export function NarratorPlaygroundTab() {
               onChange={(e) => setCustomSystemPrompt(e.target.value)}
               placeholder="Override global system prompt rules temporarily to test modifications..."
               rows={2}
-              className="rounded-xl border-border/30 bg-background/50 font-mono text-xs leading-relaxed"
+              className="border-border/30 bg-background/50 rounded-xl font-mono text-xs leading-relaxed"
             />
           </div>
 
           <Button
             onClick={handleTestFlavorize}
             disabled={testFlavorizeMutation.isPending}
-            className="h-8 w-full text-xs font-semibold active:scale-[0.98] transition-transform rounded-xl"
+            className="h-8 w-full rounded-xl text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             {testFlavorizeMutation.isPending ? (
               <>
@@ -285,7 +299,7 @@ export function NarratorPlaygroundTab() {
       {/* Preview Card Panel (Right) */}
       <div className="space-y-4 xl:col-span-5">
         <div className="flex items-center justify-between">
-          <Label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">
+          <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
             Chronicle Card Mockup Preview
           </Label>
           {playgroundLatency !== null && (
@@ -302,7 +316,7 @@ export function NarratorPlaygroundTab() {
               <ScrollText className="h-4 w-4" />
               <span>The Chronicle</span>
             </div>
-            <span className="font-serif text-xs leading-relaxed text-muted-foreground italic">
+            <span className="text-muted-foreground font-serif text-xs leading-relaxed italic">
               Drafting Chronicle narrative...
             </span>
           </div>
@@ -318,21 +332,24 @@ export function NarratorPlaygroundTab() {
                 {selectedEventType}
               </span>
             </div>
-            <span className="font-serif text-xs leading-relaxed text-foreground italic">
+            <span className="text-foreground font-serif text-xs leading-relaxed italic">
               {playgroundOutput}
             </span>
           </div>
         ) : (
-          <div className="border-border/30 text-muted-foreground/60 flex min-h-[160px] flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center text-xs italic bg-card/10">
+          <div className="border-border/30 text-muted-foreground/60 bg-card/10 flex min-h-[160px] flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center text-xs italic">
             <ScrollText className="text-muted-foreground/30 mb-2 h-8 w-8" />
-            Configure the parameters on the left and run test to view the Paradox-style narrative wrapper.
+            Configure the parameters on the left and run test to view the Paradox-style narrative
+            wrapper.
           </div>
         )}
 
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-4 backdrop-blur-md shadow-xs space-y-1.5 text-xs">
+        <div className="border-border/30 bg-card/25 space-y-1.5 rounded-2xl border p-4 text-xs shadow-xs backdrop-blur-md">
           <h4 className="text-foreground text-xs font-bold uppercase">Immersion Snapshots</h4>
           <p className="text-muted-foreground text-[11px] leading-relaxed">
-            During live simulation, when a player views an Issue, Policy, or Cabinet Decision, a contextual snapshot of live national metrics (GDP, stability, approval, government type) is passed alongside details to generate immersion flavor text.
+            During live simulation, when a player views an Issue, Policy, or Cabinet Decision, a
+            contextual snapshot of live national metrics (GDP, stability, approval, government type)
+            is passed alongside details to generate immersion flavor text.
           </p>
         </div>
       </div>

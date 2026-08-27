@@ -1,5 +1,16 @@
 import type React from "react";
-import { Bell, OpenBook as BookOpen, CheckCircle, InfoCircle as Info, WarningTriangle as AlertTriangle, WarningCircle as AlertCircle, StatUp as TrendingUp, Globe, Group as Users, City as Building2 } from "iconoir-react";
+import {
+  Bell,
+  OpenBook as BookOpen,
+  CheckCircle,
+  InfoCircle as Info,
+  WarningTriangle as AlertTriangle,
+  WarningCircle as AlertCircle,
+  StatUp as TrendingUp,
+  Globe,
+  Group as Users,
+  City as Building2,
+} from "iconoir-react";
 
 export type NotificationTab = "alerts" | "messages";
 

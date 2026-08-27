@@ -87,7 +87,9 @@ async function main() {
 
     const tRow = templateArticlesSize[0];
     console.log("\n🧩 Namespace 10 (Templates in wiki_articles) Footprint:");
-    console.log(`   - Total Template Articles:  ${Number(tRow.template_article_count).toLocaleString()}`);
+    console.log(
+      `   - Total Template Articles:  ${Number(tRow.template_article_count).toLocaleString()}`
+    );
     console.log(`   - Raw Wikitext Size:        ${tRow.wikitext_size || "0 bytes"}`);
   } catch (err) {
     // ignore
@@ -101,7 +103,9 @@ async function main() {
   `);
 
   console.log("------------------------------------------------------------------");
-  console.log(`📦 Total WikiOS Storage Footprint: ${(totalBytesAll / (1024 * 1024)).toFixed(2)} MB`);
+  console.log(
+    `📦 Total WikiOS Storage Footprint: ${(totalBytesAll / (1024 * 1024)).toFixed(2)} MB`
+  );
   console.log(`🏢 Entire PostgreSQL Public DB:    ${totalPrettyResult[0]?.total_db_size || "N/A"}`);
   console.log("==================================================================");
 }

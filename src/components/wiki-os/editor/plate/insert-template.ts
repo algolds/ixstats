@@ -26,7 +26,10 @@ export function templatePresetToNode(preset: MasterTemplatePreset): Record<strin
 }
 
 /** Insert a template preset at the editor's current selection. */
-export function insertTemplatePreset(editor: BaseEditor & Record<string, any>, preset: MasterTemplatePreset): void {
+export function insertTemplatePreset(
+  editor: BaseEditor & Record<string, any>,
+  preset: MasterTemplatePreset
+): void {
   Transforms.insertNodes(editor, templatePresetToNode(preset) as unknown as Descendant);
   Transforms.insertNodes(editor, { type: "p", children: [{ text: "" }] } as unknown as Descendant);
 }

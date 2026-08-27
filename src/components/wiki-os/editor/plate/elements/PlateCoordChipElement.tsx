@@ -5,7 +5,13 @@ import { useElement } from "platejs/react";
 import type { ChipCoordEl, ChipMapEmbedEl } from "../wiki-html";
 
 /** Interactive 📍 coordinate badge with title-tooltip preview. */
-export function PlateCoordChipElement({ attributes, children }: { attributes: Record<string, unknown>; children: React.ReactNode }) {
+export function PlateCoordChipElement({
+  attributes,
+  children,
+}: {
+  attributes: Record<string, unknown>;
+  children: React.ReactNode;
+}) {
   const el = useElement() as unknown as ChipCoordEl | undefined;
   if (!el) return <span {...attributes}>{children}</span>;
   return (
@@ -25,7 +31,13 @@ export function PlateCoordChipElement({ attributes, children }: { attributes: Re
 }
 
 /** Interactive 🗺️ map-embed badge. */
-export function PlateMapEmbedChipElement({ attributes, children }: { attributes: Record<string, unknown>; children: React.ReactNode }) {
+export function PlateMapEmbedChipElement({
+  attributes,
+  children,
+}: {
+  attributes: Record<string, unknown>;
+  children: React.ReactNode;
+}) {
   const el = useElement() as unknown as ChipMapEmbedEl | undefined;
   if (!el) return <span {...attributes}>{children}</span>;
   return (

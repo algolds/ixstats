@@ -12,7 +12,27 @@
 
 import React, { memo } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { Crown, Trash as Trash2, Copy, MapPin, Bank as Landmark, Type, Bookmark as BookMarked, Check, Undo as Undo2, ArrowSeparate as ArrowLeftRight, Eye, Cut as Scissors, GitMerge, ControlSlider as Sliders, Sparks as Sparkles, HandBrake as Hand, SelectWindow as LassoSelect, ColorPicker as PaintBucket, ColorPicker as Pipette } from "iconoir-react";
+import {
+  Crown,
+  Trash as Trash2,
+  Copy,
+  MapPin,
+  Bank as Landmark,
+  Type,
+  Bookmark as BookMarked,
+  Check,
+  Undo as Undo2,
+  ArrowSeparate as ArrowLeftRight,
+  Eye,
+  Cut as Scissors,
+  GitMerge,
+  ControlSlider as Sliders,
+  Sparks as Sparkles,
+  HandBrake as Hand,
+  SelectWindow as LassoSelect,
+  ColorPicker as PaintBucket,
+  ColorPicker as Pipette,
+} from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Label } from "~/components/ui/label";
@@ -193,7 +213,6 @@ const SUGGESTED_LABEL_COLORS = [
   { name: "Green", hex: "#047857" },
   { name: "Red", hex: "#b91c1c" },
 ];
-
 
 export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBarProps) {
   const { mode } = props;

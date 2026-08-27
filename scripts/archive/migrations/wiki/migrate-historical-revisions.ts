@@ -11,7 +11,10 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { getIxWikiPool, closeWikiBridge } from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
+import {
+  getIxWikiPool,
+  closeWikiBridge,
+} from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
 import { toArticleSlug } from "../../src/lib/wiki-os/core/domain-types";
 import type mysql from "mysql2/promise";
 
@@ -99,7 +102,7 @@ function parseMediaWikiTimestamp(ts: string): Date {
 
 async function migrateNonMainNamespaces(pool: mysql.Pool, isDryRun: boolean): Promise<number> {
   console.log("\n📦 Migrating non-main namespaces (Talk, User, Template, Category, Project)...");
-  
+
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(
     `SELECT p.page_id, p.page_namespace, p.page_title, p.page_is_redirect, p.page_latest, p.page_len, t.old_text
      FROM page p
@@ -114,7 +117,9 @@ async function migrateNonMainNamespaces(pool: mysql.Pool, isDryRun: boolean): Pr
   console.log(`   Found ${pages.length} non-main namespace articles in MariaDB.`);
 
   if (isDryRun) {
-    console.log(`   [DRY-RUN] Would upsert ${pages.length} articles across namespaces 1, 2, 3, 4, 10, 14.`);
+    console.log(
+      `   [DRY-RUN] Would upsert ${pages.length} articles across namespaces 1, 2, 3, 4, 10, 14.`
+    );
     return pages.length;
   }
 
@@ -206,9 +211,13 @@ async function migrateNonMainNamespaces(pool: mysql.Pool, isDryRun: boolean): Pr
   return count;
 }
 
-async function migrateHistoricalRevisions(pool: mysql.Pool, limit: number, isDryRun: boolean): Promise<number> {
+async function migrateHistoricalRevisions(
+  pool: mysql.Pool,
+  limit: number,
+  isDryRun: boolean
+): Promise<number> {
   console.log("\n📜 Migrating historical revisions stream...");
-  
+
   // Cache article map: mwPageId -> articleId and (namespace:title) -> articleId
   const articles = await prisma.wikiArticle.findMany({
     select: { id: true, title: true, namespace: true, mwPageId: true },
@@ -221,7 +230,9 @@ async function migrateHistoricalRevisions(pool: mysql.Pool, limit: number, isDry
     titleToArticleId.set(`${a.namespace}:${a.title.toLowerCase().replace(/_/g, " ")}`, a.id);
   }
 
-  console.log(`   Cached ${articles.length} article mappings for fast relational foreign key binding.`);
+  console.log(
+    `   Cached ${articles.length} article mappings for fast relational foreign key binding.`
+  );
 
   let lastRevId = 0;
   let totalImported = 0;
@@ -229,7 +240,7 @@ async function migrateHistoricalRevisions(pool: mysql.Pool, limit: number, isDry
 
   while (totalImported < limit) {
     const fetchLimit = limit === Infinity ? batchSize : Math.min(batchSize, limit - totalImported);
-    
+
     const [rows] = await pool.execute<mysql.RowDataPacket[]>(
       `SELECT r.rev_id, r.rev_page, r.rev_parent_id, r.rev_timestamp, r.rev_len, r.rev_minor_edit,
               a.actor_name, c.comment_text, t.old_text, p.page_title, p.page_namespace
@@ -250,7 +261,9 @@ async function migrateHistoricalRevisions(pool: mysql.Pool, limit: number, isDry
     if (revisions.length === 0) break;
 
     if (isDryRun) {
-      console.log(`   [DRY-RUN] Batch: ${revisions.length} revisions (rev_id ${revisions[0]?.rev_id} to ${revisions[revisions.length - 1]?.rev_id}).`);
+      console.log(
+        `   [DRY-RUN] Batch: ${revisions.length} revisions (rev_id ${revisions[0]?.rev_id} to ${revisions[revisions.length - 1]?.rev_id}).`
+      );
       totalImported += revisions.length;
       lastRevId = revisions[revisions.length - 1]!.rev_id;
       continue;
@@ -334,7 +347,7 @@ async function migrateHistoricalRevisions(pool: mysql.Pool, limit: number, isDry
 
 async function migrateWatchlists(pool: mysql.Pool, isDryRun: boolean): Promise<number> {
   console.log("\n⭐ Migrating user watchlists...");
-  
+
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(
     `SELECT w.wl_user, w.wl_namespace, w.wl_title, w.wl_notificationtimestamp, u.user_name
      FROM watchlist w
@@ -385,10 +398,14 @@ async function migrateWatchlists(pool: mysql.Pool, isDryRun: boolean): Promise<n
         create: {
           userId,
           articleId: article.id,
-          notificationTime: w.wl_notificationtimestamp ? parseMediaWikiTimestamp(w.wl_notificationtimestamp) : null,
+          notificationTime: w.wl_notificationtimestamp
+            ? parseMediaWikiTimestamp(w.wl_notificationtimestamp)
+            : null,
         },
         update: {
-          notificationTime: w.wl_notificationtimestamp ? parseMediaWikiTimestamp(w.wl_notificationtimestamp) : undefined,
+          notificationTime: w.wl_notificationtimestamp
+            ? parseMediaWikiTimestamp(w.wl_notificationtimestamp)
+            : undefined,
         },
       });
       count++;
@@ -399,9 +416,13 @@ async function migrateWatchlists(pool: mysql.Pool, isDryRun: boolean): Promise<n
   return count;
 }
 
-async function migrateSystemLogs(pool: mysql.Pool, limit: number, isDryRun: boolean): Promise<number> {
+async function migrateSystemLogs(
+  pool: mysql.Pool,
+  limit: number,
+  isDryRun: boolean
+): Promise<number> {
   console.log("\n🛡️ Migrating system event and governance logs...");
-  
+
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(
     `SELECT l.log_id, l.log_type, l.log_action, l.log_timestamp, l.log_actor,
             l.log_namespace, l.log_title, c.comment_text as log_comment, l.log_params,
@@ -467,7 +488,9 @@ async function main() {
   const limit = isAll ? Infinity : limitArg ? parseInt(limitArg.split("=")[1]!, 10) : 50;
 
   console.log(`⚙️  Configuration:`);
-  console.log(`   - Mode:       ${isDryRun ? "DRY RUN (Preview Only)" : "LIVE DATABASE INGESTION"}`);
+  console.log(
+    `   - Mode:       ${isDryRun ? "DRY RUN (Preview Only)" : "LIVE DATABASE INGESTION"}`
+  );
   console.log(`   - Limit:      ${limit === Infinity ? "ALL (Unlimited)" : limit}`);
 
   const pool = getIxWikiPool();

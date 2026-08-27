@@ -2,10 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Group,
-  Plus,
-} from "iconoir-react";
+import { Group, Plus } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useNotify } from "~/hooks/useNotify";
@@ -100,7 +97,9 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
 
     // 1. Check localStorage for last viewed group
     try {
-      const lastGroupId = localStorage.getItem(`ix_thinktanks_last_selected_${currentUserId || "guest"}`);
+      const lastGroupId = localStorage.getItem(
+        `ix_thinktanks_last_selected_${currentUserId || "guest"}`
+      );
       if (lastGroupId && groups.some((g) => g.id === lastGroupId)) {
         setSelectedGroupId(lastGroupId);
         return;
@@ -129,19 +128,20 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
   useEffect(() => {
     if (selectedGroupId) {
       try {
-        localStorage.setItem(`ix_thinktanks_last_selected_${currentUserId || "guest"}`, selectedGroupId);
+        localStorage.setItem(
+          `ix_thinktanks_last_selected_${currentUserId || "guest"}`,
+          selectedGroupId
+        );
       } catch {}
     }
   }, [selectedGroupId, currentUserId]);
 
   // Selected Group Details
-  const {
-    data: activeGroupData,
-    isLoading: isLoadingActiveGroup,
-  } = api.thinkpages.getThinktankById.useQuery(
-    { groupId: selectedGroupId!, userId: currentUserId },
-    { enabled: !!selectedGroupId, staleTime: 10000 }
-  );
+  const { data: activeGroupData, isLoading: isLoadingActiveGroup } =
+    api.thinkpages.getThinktankById.useQuery(
+      { groupId: selectedGroupId!, userId: currentUserId },
+      { enabled: !!selectedGroupId, staleTime: 10000 }
+    );
 
   const activeGroup = activeGroupData ?? null;
 
@@ -224,10 +224,10 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
         workspacePanel={
           isLoadingActiveGroup && selectedGroupId ? (
             <div className="flex h-full flex-col items-center justify-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-xs animate-pulse">
-                <span className="h-4 w-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+              <div className="flex h-10 w-10 animate-pulse items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-xs">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
               </div>
-              <p className="text-xs font-semibold text-muted-foreground">Loading group...</p>
+              <p className="text-muted-foreground text-xs font-semibold">Loading group...</p>
             </div>
           ) : activeGroup ? (
             <div className="flex h-full flex-col overflow-hidden">
@@ -275,9 +275,10 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 shadow-xs dark:text-emerald-400">
                 <Group className="h-7 w-7" />
               </div>
-              <h3 className="mt-4 text-base font-bold text-foreground">Select a Group</h3>
-              <p className="mt-1.5 max-w-sm text-xs text-muted-foreground leading-relaxed">
-                Choose a group from the sidebar to view the feed, open discussions, or check the roster.
+              <h3 className="text-foreground mt-4 text-base font-bold">Select a Group</h3>
+              <p className="text-muted-foreground mt-1.5 max-w-sm text-xs leading-relaxed">
+                Choose a group from the sidebar to view the feed, open discussions, or check the
+                roster.
               </p>
               <Button
                 onClick={() => {

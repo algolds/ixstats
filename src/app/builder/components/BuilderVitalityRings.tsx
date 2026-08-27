@@ -5,7 +5,16 @@ import { motion } from "motion/react";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Badge } from "~/components/ui/badge";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
-import { StatUp as TrendingUp, Group as Users, Dollar as DollarSign, Shield, Archery as Target, Activity, Crown, Flash as Zap } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  Group as Users,
+  Dollar as DollarSign,
+  Shield,
+  Archery as Target,
+  Activity,
+  Crown,
+  Flash as Zap,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import type { ExtractedColors } from "~/lib/media";

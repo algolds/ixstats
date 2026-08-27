@@ -15,8 +15,6 @@ import { WebPhotosTab } from "./WebPhotosTab";
 import { WikiRepositoryTab } from "./WikiRepositoryTab";
 import { UploadTab } from "./UploadTab";
 
-
-
 interface MediaSearchModalProps {
   isOpen: boolean;
   onClose: () => void;

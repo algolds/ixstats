@@ -10,7 +10,16 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Activity, StatUp as TrendingUp, Archery as Target, Globe, Flash as Zap, Building, Group as Users, Page as FileText } from "iconoir-react";
+import {
+  Activity,
+  StatUp as TrendingUp,
+  Archery as Target,
+  Globe,
+  Flash as Zap,
+  Building,
+  Group as Users,
+  Page as FileText,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { exportDataToCSV, exportChartToPDF, exportDashboardReport } from "~/lib/utils";
 import { useNotify } from "~/hooks/useNotify";
@@ -265,7 +274,12 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
         ? economicChartData[economicChartData.length - 1]!.gdpPerCapita
         : 50000;
 
-    return calculateProjectionData(predictiveModels as any, dateRange, selectedScenarios, baseValue);
+    return calculateProjectionData(
+      predictiveModels as any,
+      dateRange,
+      selectedScenarios,
+      baseValue
+    );
   }, [predictiveModels, dateRange, selectedScenarios, economicChartData]);
 
   const diplomaticInfluenceData = useMemo(

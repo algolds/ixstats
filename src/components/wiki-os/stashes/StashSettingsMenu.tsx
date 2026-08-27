@@ -118,16 +118,16 @@ export function StashSettingsMenu({
         type="button"
         onClick={handleToggle}
         className={cn(
-          "flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
-          "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/50",
+          "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition-all select-none",
+          "focus-visible:ring-2 focus-visible:ring-rose-500/50 focus-visible:outline-hidden",
           isOpen
-            ? "bg-[var(--wikios-surface)] text-[var(--wikios-text)] border border-[var(--wikios-border)] shadow-md scale-102 ring-1 ring-white/10"
-            : "text-[var(--wikios-text)] bg-white/8 hover:bg-white/12 border border-[var(--wikios-border)] shadow-xs hover:shadow-sm active:scale-96"
+            ? "scale-102 border border-[var(--wikios-border)] bg-[var(--wikios-surface)] text-[var(--wikios-text)] shadow-md ring-1 ring-white/10"
+            : "border border-[var(--wikios-border)] bg-white/8 text-[var(--wikios-text)] shadow-xs hover:bg-white/12 hover:shadow-sm active:scale-96"
         )}
         title="Collection Settings & Actions"
       >
         <span
-          className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs transition-transform"
+          className="h-2.5 w-2.5 shrink-0 rounded-full shadow-xs transition-transform"
           style={{
             backgroundColor: stash.color,
             boxShadow: `0 0 8px ${stash.color}80`,
@@ -161,28 +161,28 @@ export function StashSettingsMenu({
             transition={{ type: "spring", stiffness: 500, damping: 32 }}
             style={{ transformOrigin: "top right" }}
             className={cn(
-              "absolute right-0 top-full mt-2 w-76 z-50 rounded-2xl p-3 space-y-2.5 text-xs select-none",
-              "bg-white dark:bg-zinc-900 text-stone-900 dark:text-stone-100",
-              "border border-black/10 dark:border-white/12 ring-1 ring-black/5 dark:ring-white/5",
+              "absolute top-full right-0 z-50 mt-2 w-76 space-y-2.5 rounded-2xl p-3 text-xs select-none",
+              "bg-white text-stone-900 dark:bg-zinc-900 dark:text-stone-100",
+              "border border-black/10 ring-1 ring-black/5 dark:border-white/12 dark:ring-white/5",
               "shadow-[0_20px_50px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_60px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.12)]",
               "overflow-hidden"
             )}
           >
             {/* Header Lockup: Swatch + Title + Close */}
-            <div className="flex items-center justify-between gap-2 px-1 pb-2 border-b border-black/8 dark:border-white/10">
-              <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 border-b border-black/8 px-1 pb-2 dark:border-white/10">
+              <div className="flex min-w-0 items-center gap-2.5">
                 <span
-                  className="w-3.5 h-3.5 rounded-full shrink-0 shadow-xs"
+                  className="h-3.5 w-3.5 shrink-0 rounded-full shadow-xs"
                   style={{
                     backgroundColor: stash.color,
                     boxShadow: `0 0 10px ${stash.color}90`,
                   }}
                 />
                 <div className="min-w-0">
-                  <h4 className="font-bold text-sm text-stone-950 dark:text-white truncate tracking-tight">
+                  <h4 className="truncate text-sm font-bold tracking-tight text-stone-950 dark:text-white">
                     {stash.name}
                   </h4>
-                  <p className="text-[10.5px] text-stone-500 dark:text-stone-400 font-medium">
+                  <p className="text-[10.5px] font-medium text-stone-500 dark:text-stone-400">
                     {stash.itemCount} saved item{stash.itemCount === 1 ? "" : "s"}
                   </p>
                 </div>
@@ -191,7 +191,7 @@ export function StashSettingsMenu({
               <button
                 type="button"
                 onClick={handleClose}
-                className="h-6 w-6 flex items-center justify-center rounded-full bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-zinc-700 active:scale-90 transition-all cursor-pointer"
+                className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-stone-100 text-stone-500 transition-all hover:bg-stone-200 hover:text-stone-900 active:scale-90 dark:bg-zinc-800 dark:text-stone-400 dark:hover:bg-zinc-700 dark:hover:text-white"
                 title="Close"
               >
                 <X className="h-3.5 w-3.5" />
@@ -199,8 +199,8 @@ export function StashSettingsMenu({
             </div>
 
             {/* Section 1: Color Palette Selector */}
-            <div className="p-2.5 rounded-xl bg-stone-100/90 dark:bg-zinc-800/80 border border-black/5 dark:border-white/8 space-y-2">
-              <span className="text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider block">
+            <div className="space-y-2 rounded-xl border border-black/5 bg-stone-100/90 p-2.5 dark:border-white/8 dark:bg-zinc-800/80">
+              <span className="block text-[10px] font-bold tracking-wider text-stone-500 uppercase dark:text-stone-400">
                 Theme Color
               </span>
               <div className="flex items-center justify-between gap-1">
@@ -210,15 +210,15 @@ export function StashSettingsMenu({
                     type="button"
                     onClick={() => handleColorChange(c)}
                     className={cn(
-                      "w-6 h-6 rounded-full transition-transform active:scale-90 cursor-pointer shadow-xs relative flex items-center justify-center",
+                      "relative flex h-6 w-6 cursor-pointer items-center justify-center rounded-full shadow-xs transition-transform active:scale-90",
                       stash.color === c
-                        ? "scale-115 ring-2 ring-stone-900 dark:ring-white shadow-md"
-                        : "hover:scale-105 opacity-85 hover:opacity-100"
+                        ? "scale-115 shadow-md ring-2 ring-stone-900 dark:ring-white"
+                        : "opacity-85 hover:scale-105 hover:opacity-100"
                     )}
                     style={{ backgroundColor: c }}
                     title={c}
                   >
-                    {stash.color === c && <Check className="w-3 h-3 text-white stroke-[2.5]" />}
+                    {stash.color === c && <Check className="h-3 w-3 stroke-[2.5] text-white" />}
                   </button>
                 ))}
               </div>
@@ -228,12 +228,12 @@ export function StashSettingsMenu({
             <div className="space-y-0.5">
               {/* Rename Action */}
               {isRenaming ? (
-                <div className="p-2 rounded-xl bg-stone-50 dark:bg-zinc-800 border border-rose-500/40 space-y-2 animate-in fade-in duration-150">
+                <div className="animate-in fade-in space-y-2 rounded-xl border border-rose-500/40 bg-stone-50 p-2 duration-150 dark:bg-zinc-800">
                   <input
                     type="text"
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-black/10 dark:border-white/15 bg-white dark:bg-zinc-900 text-xs text-stone-900 dark:text-white font-semibold outline-none focus:border-rose-500 shadow-2xs"
+                    className="w-full rounded-lg border border-black/10 bg-white px-2.5 py-1.5 text-xs font-semibold text-stone-900 shadow-2xs outline-none focus:border-rose-500 dark:border-white/15 dark:bg-zinc-900 dark:text-white"
                     autoFocus
                     placeholder="Collection name..."
                     onKeyDown={(e) => {
@@ -245,7 +245,7 @@ export function StashSettingsMenu({
                     <button
                       type="button"
                       onClick={() => setIsRenaming(false)}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+                      className="cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-semibold text-stone-500 transition-all hover:bg-black/5 hover:text-stone-900 active:scale-95 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-white"
                     >
                       Cancel
                     </button>
@@ -253,7 +253,7 @@ export function StashSettingsMenu({
                       type="button"
                       onClick={handleSaveRename}
                       disabled={isUpdating || !renameValue.trim()}
-                      className="px-3 py-1 rounded-lg text-[11px] font-bold text-white bg-rose-500 hover:bg-rose-600 active:scale-95 transition-all cursor-pointer shadow-xs disabled:opacity-40"
+                      className="cursor-pointer rounded-lg bg-rose-500 px-3 py-1 text-[11px] font-bold text-white shadow-xs transition-all hover:bg-rose-600 active:scale-95 disabled:opacity-40"
                     >
                       Save
                     </button>
@@ -263,9 +263,9 @@ export function StashSettingsMenu({
                 <button
                   type="button"
                   onClick={() => setIsRenaming(true)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all cursor-pointer text-left font-semibold"
+                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left font-semibold text-stone-700 transition-all hover:bg-stone-100 hover:text-stone-950 active:scale-[0.98] dark:text-stone-300 dark:hover:bg-zinc-800 dark:hover:text-white"
                 >
-                  <div className="h-6 w-6 rounded-lg bg-stone-100 dark:bg-zinc-800 border border-black/5 dark:border-white/10 flex items-center justify-center text-stone-500 dark:text-stone-400 shrink-0">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-black/5 bg-stone-100 text-stone-500 dark:border-white/10 dark:bg-zinc-800 dark:text-stone-400">
                     <Pencil className="h-3.5 w-3.5" />
                   </div>
                   <span>Rename Collection</span>
@@ -276,9 +276,9 @@ export function StashSettingsMenu({
               <button
                 type="button"
                 onClick={handleShareLink}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all cursor-pointer text-left font-semibold"
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left font-semibold text-stone-700 transition-all hover:bg-stone-100 hover:text-stone-950 active:scale-[0.98] dark:text-stone-300 dark:hover:bg-zinc-800 dark:hover:text-white"
               >
-                <div className="h-6 w-6 rounded-lg bg-stone-100 dark:bg-zinc-800 border border-black/5 dark:border-white/10 flex items-center justify-center text-stone-500 dark:text-stone-400 shrink-0">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-black/5 bg-stone-100 text-stone-500 dark:border-white/10 dark:bg-zinc-800 dark:text-stone-400">
                   <ShareIos className="h-3.5 w-3.5" />
                 </div>
                 <span>Copy Share Link</span>
@@ -291,9 +291,9 @@ export function StashSettingsMenu({
                   onExportMarkdown();
                   setIsOpen(false);
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all cursor-pointer text-left font-semibold"
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left font-semibold text-stone-700 transition-all hover:bg-stone-100 hover:text-stone-950 active:scale-[0.98] dark:text-stone-300 dark:hover:bg-zinc-800 dark:hover:text-white"
               >
-                <div className="h-6 w-6 rounded-lg bg-stone-100 dark:bg-zinc-800 border border-black/5 dark:border-white/10 flex items-center justify-center text-stone-500 dark:text-stone-400 shrink-0">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-black/5 bg-stone-100 text-stone-500 dark:border-white/10 dark:bg-zinc-800 dark:text-stone-400">
                   <Download className="h-3.5 w-3.5" />
                 </div>
                 <span>Export as Markdown (.md)</span>
@@ -306,9 +306,9 @@ export function StashSettingsMenu({
                   onExportJson();
                   setIsOpen(false);
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all cursor-pointer text-left font-semibold"
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left font-semibold text-stone-700 transition-all hover:bg-stone-100 hover:text-stone-950 active:scale-[0.98] dark:text-stone-300 dark:hover:bg-zinc-800 dark:hover:text-white"
               >
-                <div className="h-6 w-6 rounded-lg bg-stone-100 dark:bg-zinc-800 border border-black/5 dark:border-white/10 flex items-center justify-center text-stone-500 dark:text-stone-400 shrink-0">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-black/5 bg-stone-100 text-stone-500 dark:border-white/10 dark:bg-zinc-800 dark:text-stone-400">
                   <FileJson className="h-3.5 w-3.5" />
                 </div>
                 <span>Export as JSON (.json)</span>
@@ -317,17 +317,17 @@ export function StashSettingsMenu({
 
             {/* Section 3: Destructive Delete */}
             {!stash.isDefault && (
-              <div className="pt-1 border-t border-black/8 dark:border-white/10">
+              <div className="border-t border-black/8 pt-1 dark:border-white/10">
                 {showDeleteConfirm ? (
-                  <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-500/30 space-y-2 animate-in fade-in duration-150">
-                    <p className="text-[11px] text-rose-700 dark:text-rose-300 font-medium leading-tight">
+                  <div className="animate-in fade-in space-y-2 rounded-xl border border-rose-500/30 bg-rose-50 p-2.5 duration-150 dark:bg-rose-950/40">
+                    <p className="text-[11px] leading-tight font-medium text-rose-700 dark:text-rose-300">
                       Delete <strong>{stash.name}</strong> and all its saved references?
                     </p>
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         type="button"
                         onClick={() => setShowDeleteConfirm(false)}
-                        className="px-2.5 py-1 rounded-lg text-[10.5px] font-semibold text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+                        className="cursor-pointer rounded-lg px-2.5 py-1 text-[10.5px] font-semibold text-stone-500 transition-all hover:bg-black/5 hover:text-stone-900 active:scale-95 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-white"
                       >
                         Cancel
                       </button>
@@ -335,9 +335,13 @@ export function StashSettingsMenu({
                         type="button"
                         onClick={handleDelete}
                         disabled={isDeleting}
-                        className="px-3 py-1 rounded-lg text-[10.5px] font-bold text-white bg-rose-500 hover:bg-rose-600 active:scale-95 transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                        className="flex cursor-pointer items-center gap-1 rounded-lg bg-rose-500 px-3 py-1 text-[10.5px] font-bold text-white shadow-xs transition-all hover:bg-rose-600 active:scale-95"
                       >
-                        {isDeleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                        {isDeleting ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
                         Confirm Delete
                       </button>
                     </div>
@@ -346,9 +350,9 @@ export function StashSettingsMenu({
                   <button
                     type="button"
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 active:scale-[0.98] transition-all cursor-pointer text-left font-semibold"
+                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left font-semibold text-rose-600 transition-all hover:bg-rose-50 active:scale-[0.98] dark:text-rose-400 dark:hover:bg-rose-950/30"
                   >
-                    <div className="h-6 w-6 rounded-lg bg-rose-100 dark:bg-rose-950/50 border border-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-rose-500/20 bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400">
                       <Trash2 className="h-3.5 w-3.5" />
                     </div>
                     <span>Delete Collection</span>

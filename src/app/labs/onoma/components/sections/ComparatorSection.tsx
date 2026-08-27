@@ -137,7 +137,8 @@ export default function ComparatorSection({
             Linguistic Comparison
           </h2>
           <p className="text-muted-foreground mt-0.5 text-xs">
-            Analyze phonetic distance, bigram entropy, and synthesize hybrid vocabulary between natural cultures and custom conlangs.
+            Analyze phonetic distance, bigram entropy, and synthesize hybrid vocabulary between
+            natural cultures and custom conlangs.
           </p>
         </div>
       )}
@@ -246,14 +247,14 @@ export default function ComparatorSection({
           <div className="border-border/10 grid grid-cols-1 gap-4 border-t pt-2 sm:grid-cols-2">
             {/* Unique to A */}
             <div className="space-y-1.5">
-              <span className="text-[11px] font-bold text-onoma-primary capitalize">
+              <span className="text-onoma-primary text-[11px] font-bold capitalize">
                 Unique to {corpusA.label} ({comparison.uniqueToA.length})
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {comparison.uniqueToA.map((ph) => (
                   <span
                     key={ph}
-                    className="rounded border border-onoma-primary/10 bg-onoma-primary/10 px-2 py-0.5 font-mono text-sm text-onoma-primary"
+                    className="border-onoma-primary/10 bg-onoma-primary/10 text-onoma-primary rounded border px-2 py-0.5 font-mono text-sm"
                   >
                     /{ph}/
                   </span>
@@ -304,16 +305,14 @@ export default function ComparatorSection({
             <div className="space-y-2">
               <div>
                 <div className="mb-1 flex justify-between text-[11px]">
-                  <span className="text-foreground capitalize">
-                    {corpusA.label}
-                  </span>
+                  <span className="text-foreground capitalize">{corpusA.label}</span>
                   <span className="font-mono font-semibold">
                     {comparison.entropyA.toFixed(3)} bits
                   </span>
                 </div>
                 <div className="bg-secondary/30 h-2 w-full overflow-hidden rounded-full">
                   <div
-                    className="h-full rounded-full bg-onoma-primary"
+                    className="bg-onoma-primary h-full rounded-full"
                     style={{ width: `${Math.min(100, (comparison.entropyA / 4.7) * 100)}%` }}
                   />
                 </div>
@@ -321,9 +320,7 @@ export default function ComparatorSection({
 
               <div>
                 <div className="mb-1 flex justify-between text-[11px]">
-                  <span className="text-foreground capitalize">
-                    {corpusB.label}
-                  </span>
+                  <span className="text-foreground capitalize">{corpusB.label}</span>
                   <span className="font-mono font-semibold">
                     {comparison.entropyB.toFixed(3)} bits
                   </span>
@@ -401,7 +398,7 @@ export default function ComparatorSection({
           </h3>
           <button
             onClick={handleBlendPreview}
-            className="flex cursor-pointer items-center justify-center rounded-lg bg-amber-500 px-3.5 py-1.5 text-xs font-semibold text-white transition-all hover:bg-amber-600 active:scale-95 shadow-xs"
+            className="flex cursor-pointer items-center justify-center rounded-lg bg-amber-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-all hover:bg-amber-600 active:scale-95"
           >
             Blend Profiles
           </button>
@@ -419,7 +416,13 @@ export default function ComparatorSection({
                   <span className="text-muted-foreground ml-2 font-mono">{item.ipa}</span>
                 </div>
                 <button
-                  onClick={() => playName(item.name, item.ipa, `${corpusA.fallbackCulture}+${corpusB.fallbackCulture}`)}
+                  onClick={() =>
+                    playName(
+                      item.name,
+                      item.ipa,
+                      `${corpusA.fallbackCulture}+${corpusB.fallbackCulture}`
+                    )
+                  }
                   className="hover:bg-secondary/45 text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:text-amber-500"
                 >
                   <Volume2 className="h-3.5 w-3.5" />

@@ -11,7 +11,14 @@
  */
 
 import React from "react";
-import { StatUp as TrendingUp, Dollar as DollarSign, Flash as Zap, WarningTriangle as AlertTriangle, Package, Archery as Target } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  Dollar as DollarSign,
+  Flash as Zap,
+  WarningTriangle as AlertTriangle,
+  Package,
+  Archery as Target,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface MetricsPanelProps {

@@ -5,7 +5,18 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Virtuoso } from "react-virtuoso";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { Xmark as X, Heart, Emoji as Smile, Emoji as Angry, FireFlame as Flame, ThumbsUp, ThumbsDown, Journal as Newspaper, Group as Users, ChatBubble as MessageSquare } from "iconoir-react";
+import {
+  Xmark as X,
+  Heart,
+  Emoji as Smile,
+  Emoji as Angry,
+  FireFlame as Flame,
+  ThumbsUp,
+  ThumbsDown,
+  Journal as Newspaper,
+  Group as Users,
+  ChatBubble as MessageSquare,
+} from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -110,16 +121,14 @@ export function ReactionsDialog({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Inner glass card with overflow-hidden */}
-            <div className="text-foreground relative flex max-h-[580px] w-full flex-col overflow-hidden rounded-2xl bg-card/95 backdrop-blur-2xl dark:border-white/10 dark:bg-card/95">
+            <div className="text-foreground bg-card/95 dark:bg-card/95 relative flex max-h-[580px] w-full flex-col overflow-hidden rounded-2xl backdrop-blur-2xl dark:border-white/10">
               {/* Ambient inner glow */}
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-violet-500/10 via-transparent to-transparent" />
 
               {/* Header */}
               <div className="border-border bg-muted/20 relative flex items-center justify-between border-b px-6 py-4.5 dark:border-white/10 dark:bg-white/5">
                 <div>
-                  <h3 className="text-foreground text-lg font-bold tracking-wide">
-                    Post Activity
-                  </h3>
+                  <h3 className="text-foreground text-lg font-bold tracking-wide">Post Activity</h3>
                   <p className="text-muted-foreground text-xs">View interactions and reactions</p>
                 </div>
                 <button

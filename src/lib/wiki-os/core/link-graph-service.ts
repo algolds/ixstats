@@ -47,7 +47,8 @@ export class LinkGraphService {
 
     // 2. Parse HTML anchors: <a href="/wiki/Target">
     if (html) {
-      const htmlRegex = /<a\s+[^>]*href=["'](?:\/wiki\/|\/w\/)([^"#'?]+)(?:#([^"']+))?["'][^>]*>(.*?)<\/a>/gi;
+      const htmlRegex =
+        /<a\s+[^>]*href=["'](?:\/wiki\/|\/w\/)([^"#'?]+)(?:#([^"']+))?["'][^>]*>(.*?)<\/a>/gi;
       while ((match = htmlRegex.exec(html)) !== null) {
         const rawTarget = match[1]?.trim();
         const section = match[2]?.trim();
@@ -86,18 +87,16 @@ export class LinkGraphService {
     const targetSlugs = extracted.map((l) => l.targetSlug);
     const targetTitles = extracted.map((l) => l.targetSlug.replace(/_/g, " "));
 
-    const existingTargets: Array<{ id: string; title: string }> = targetSlugs.length > 0
-      ? await db.wikiArticle.findMany({
-          where: {
-            source,
-            OR: [
-              { title: { in: targetTitles } },
-              { title: { in: targetSlugs } },
-            ],
-          },
-          select: { id: true, title: true },
-        })
-      : [];
+    const existingTargets: Array<{ id: string; title: string }> =
+      targetSlugs.length > 0
+        ? await db.wikiArticle.findMany({
+            where: {
+              source,
+              OR: [{ title: { in: targetTitles } }, { title: { in: targetSlugs } }],
+            },
+            select: { id: true, title: true },
+          })
+        : [];
 
     const targetMap = new Map<string, string>();
     for (const t of existingTargets) {

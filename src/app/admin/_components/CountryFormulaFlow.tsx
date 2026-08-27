@@ -78,7 +78,6 @@ function CalcNode({ data, selected }: NodeProps) {
     diplomatic: "shadow-indigo-500/5",
   };
 
-
   return (
     <div
       className={cn(

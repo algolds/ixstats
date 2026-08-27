@@ -24,7 +24,18 @@ import {
 } from "~/components/ui/dialog";
 import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
-import { Plus, EditPencil as Pencil, Trash as Trash2, Search, Package, EyeClosed as EyeOff, Coins, Component as Layers, Star, MediaImage as ImageIcon } from "iconoir-react";
+import {
+  Plus,
+  EditPencil as Pencil,
+  Trash as Trash2,
+  Search,
+  Package,
+  EyeClosed as EyeOff,
+  Coins,
+  Component as Layers,
+  Star,
+  MediaImage as ImageIcon,
+} from "iconoir-react";
 import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
 
 // ─── Pack types & rarity options ─────────────────────────────────

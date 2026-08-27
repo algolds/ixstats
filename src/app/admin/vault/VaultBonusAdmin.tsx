@@ -3,7 +3,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Gift, Refresh as RefreshCw, FloppyDisk as Save, UserBadgeCheck as UserCheck, Globe, Trophy, Trophy as Award } from "iconoir-react";
+import {
+  Gift,
+  Refresh as RefreshCw,
+  FloppyDisk as Save,
+  UserBadgeCheck as UserCheck,
+  Globe,
+  Trophy,
+  Trophy as Award,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";

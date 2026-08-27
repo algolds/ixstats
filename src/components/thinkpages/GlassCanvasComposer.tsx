@@ -4,7 +4,12 @@ import React from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { Xmark as X, Refresh as Repeat2, Journal as Newspaper, CheckSquare as Vote } from "iconoir-react";
+import {
+  Xmark as X,
+  Refresh as Repeat2,
+  Journal as Newspaper,
+  CheckSquare as Vote,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -19,7 +24,8 @@ import { ComposerActionBar } from "./composer/ComposerActionBar";
 import { ComposerPollModal } from "./composer/ComposerPollModal";
 
 const MediaSearchModal = dynamic(
-  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 

@@ -84,7 +84,7 @@ function WikiBreadcrumb() {
   // ── Narrator Active in Breadcrumb: Clean, tactile, zero clutter ──
   if (isNarratorActive && narratorActions) {
     return (
-      <div className="flex items-center gap-1.5 min-w-0 max-w-[170px] sm:max-w-[220px] select-none">
+      <div className="flex max-w-[170px] min-w-0 items-center gap-1.5 select-none sm:max-w-[220px]">
         {/* Leading: Tactile Apple Play/Pause Morph Button */}
         <button
           type="button"
@@ -97,7 +97,7 @@ function WikiBreadcrumb() {
             }
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white shadow-xs transition-all duration-150 active:scale-88 hover:scale-105 cursor-pointer"
+          className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-white shadow-xs transition-all duration-150 hover:scale-105 active:scale-88"
           style={{
             backgroundColor: accentColor,
             boxShadow: `0 1px 6px ${getRgbaColor(accentColor, 0.35)}`,
@@ -120,7 +120,7 @@ function WikiBreadcrumb() {
         </span>
 
         {activeSectionName && (
-          <span className="truncate text-[10px] text-muted-foreground/75 hidden sm:inline">
+          <span className="text-muted-foreground/75 hidden truncate text-[10px] sm:inline">
             · {activeSectionName}
           </span>
         )}
@@ -130,28 +130,28 @@ function WikiBreadcrumb() {
 
   // ── Default Reading / Profile Breadcrumb ──
   return (
-    <div className="flex items-center gap-1.5 min-w-0 max-w-[160px] sm:max-w-[200px]">
+    <div className="flex max-w-[160px] min-w-0 items-center gap-1.5 sm:max-w-[200px]">
       {/* Title or Personalized Greeting */}
       {hasSpecificTitle ? (
         <span
-          className="truncate text-xs font-semibold max-w-[90px] sm:max-w-[120px] transition-colors"
+          className="max-w-[90px] truncate text-xs font-semibold transition-colors sm:max-w-[120px]"
           style={themeColors?.primary ? { color: themeColors.primary } : undefined}
         >
           {articleTitle}
         </span>
       ) : (
-        <span className="flex items-center gap-1.5 min-w-0">
+        <span className="flex min-w-0 items-center gap-1.5">
           {user?.imageUrl ? (
             <img
               src={user.imageUrl}
               alt=""
-              className="h-4 w-4 rounded-full object-cover ring-1 ring-white/20 shrink-0"
+              className="h-4 w-4 shrink-0 rounded-full object-cover ring-1 ring-white/20"
             />
           ) : (
-            <span className="text-muted-foreground h-3.5 w-3.5 text-xs shrink-0">👤</span>
+            <span className="text-muted-foreground h-3.5 w-3.5 shrink-0 text-xs">👤</span>
           )}
           <PreText
-            className="text-foreground/90 truncate text-xs font-medium max-w-[100px] sm:max-w-[130px]"
+            className="text-foreground/90 max-w-[100px] truncate text-xs font-medium sm:max-w-[130px]"
             whiteSpace="nowrap"
           >
             {greetingText}
@@ -166,7 +166,7 @@ function WikiBreadcrumb() {
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
               <span
-                className="hover:text-foreground relative z-[60] inline-block max-w-[70px] truncate cursor-pointer overflow-hidden rounded px-1 py-0.5 text-left text-[10px] font-medium text-foreground/50 transition-all duration-200 hover:bg-white/20 active:scale-95"
+                className="hover:text-foreground text-foreground/50 relative z-[60] inline-block max-w-[70px] cursor-pointer truncate overflow-hidden rounded px-1 py-0.5 text-left text-[10px] font-medium transition-all duration-200 hover:bg-white/20 active:scale-95"
                 onClick={(e) => {
                   e.stopPropagation();
                   setPopoverOpen((prev) => !prev);

@@ -54,22 +54,24 @@ export function DiplomaticScenariosHeader({
     <div className="space-y-4">
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <div className="relative max-w-sm min-w-[200px] flex-1">
             <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search scenarios..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 rounded-xl border-border/30 bg-background/50 pl-8 text-xs backdrop-blur-md focus:border-border/60"
+              className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
             />
           </div>
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="h-8 w-44 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-44 rounded-xl text-xs backdrop-blur-md">
               <SelectValue placeholder="Scenario Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">All Types</SelectItem>
+              <SelectItem value="all" className="text-xs">
+                All Types
+              </SelectItem>
               {SCENARIO_TYPES.map((t) => (
                 <SelectItem key={t.value} value={t.value} className="text-xs">
                   {t.label}
@@ -78,7 +80,7 @@ export function DiplomaticScenariosHeader({
             </SelectContent>
           </Select>
 
-          <label className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground cursor-pointer select-none">
+          <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 px-2 text-xs select-none">
             <Checkbox
               id="showInactive"
               checked={showInactive}
@@ -91,7 +93,7 @@ export function DiplomaticScenariosHeader({
 
         <Button
           onClick={onOpenAddDialog}
-          className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+          className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
         >
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           Create Scenario
@@ -100,7 +102,7 @@ export function DiplomaticScenariosHeader({
 
       {/* Advanced Tag Filter Pills */}
       <div className="flex flex-wrap items-center gap-1.5 pt-1">
-        <span className="text-[11px] font-medium text-muted-foreground mr-1">Filter by:</span>
+        <span className="text-muted-foreground mr-1 text-[11px] font-medium">Filter by:</span>
 
         {/* Relationship filters */}
         {RELATIONSHIP_LEVELS.map((rel) => {
@@ -139,7 +141,7 @@ export function DiplomaticScenariosHeader({
               }}
               className={`rounded-full px-3 py-1 text-xs transition-colors ${
                 isSelected
-                  ? "bg-yellow-500 text-black font-medium"
+                  ? "bg-yellow-500 font-medium text-black"
                   : "bg-white/5 text-[--intel-silver] hover:bg-white/10"
               }`}
             >

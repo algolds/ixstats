@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { Airplane as Plane, CheckCircle, WarningCircle as AlertCircle, MapPin, Clock } from "iconoir-react";
+import {
+  Airplane as Plane,
+  CheckCircle,
+  WarningCircle as AlertCircle,
+  MapPin,
+  Clock,
+} from "iconoir-react";
 import {
   ArticleLayout,
   Section,

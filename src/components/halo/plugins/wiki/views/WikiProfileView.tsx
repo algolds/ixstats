@@ -4,7 +4,24 @@ import { api } from "~/trpc/react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { useRouter } from "next/navigation";
-import { OpenBook as BookOpen, User, Trophy, FireFlame as Flame, NavArrowRight as ChevronRight, Xmark as X, Page as FileText, Crown, ClockRotateRight as History, ArrowLeft, City as Building2, Page as ScrollText, Community as Handshake, Map, Wallet, ScaleFrameEnlarge as Scale } from "iconoir-react";
+import {
+  OpenBook as BookOpen,
+  User,
+  Trophy,
+  FireFlame as Flame,
+  NavArrowRight as ChevronRight,
+  Xmark as X,
+  Page as FileText,
+  Crown,
+  ClockRotateRight as History,
+  ArrowLeft,
+  City as Building2,
+  Page as ScrollText,
+  Community as Handshake,
+  Map,
+  Wallet,
+  ScaleFrameEnlarge as Scale,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";

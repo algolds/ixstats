@@ -25,7 +25,8 @@ export const CANONICAL_BUILTIN_TEMPLATES = [
   // 1. Sovereign & Geopolitical
   {
     name: "Infobox country",
-    description: "Master nation-state, realm, former empire, or territory factbook with dynamic variant toggles.",
+    description:
+      "Master nation-state, realm, former empire, or territory factbook with dynamic variant toggles.",
     category: "sovereign",
     paramCount: 24,
     isCanonical: true,
@@ -35,7 +36,8 @@ export const CANONICAL_BUILTIN_TEMPLATES = [
   },
   {
     name: "Infobox settlement",
-    description: "Cities, provinces, municipalities, and geographic landmarks with skyline and spatial coordinates.",
+    description:
+      "Cities, provinces, municipalities, and geographic landmarks with skyline and spatial coordinates.",
     category: "sovereign",
     paramCount: 20,
     isCanonical: true,
@@ -47,7 +49,8 @@ export const CANONICAL_BUILTIN_TEMPLATES = [
   // 2. Biographies & Leadership
   {
     name: "Infobox person",
-    description: "Universal biography for leaders, monarchs, commanders, scientists, aristocrats, and historical figures.",
+    description:
+      "Universal biography for leaders, monarchs, commanders, scientists, aristocrats, and historical figures.",
     category: "biography",
     paramCount: 22,
     isCanonical: true,
@@ -59,7 +62,8 @@ export const CANONICAL_BUILTIN_TEMPLATES = [
   // 3. Defense, Military & Fleet
   {
     name: "Infobox military conflict",
-    description: "Historical wars, tactical campaigns, naval battles, sieges, and strategic outcomes.",
+    description:
+      "Historical wars, tactical campaigns, naval battles, sieges, and strategic outcomes.",
     category: "defense",
     paramCount: 16,
     isCanonical: true,
@@ -317,7 +321,7 @@ export const CANONICAL_ALIASES_MAP: Record<string, { target: string; variant?: s
   "infobox kirstate": { target: "Infobox country", variant: "subdivision" },
   "infobox state of cartadania": { target: "Infobox country", variant: "subdivision" },
   "infobox province": { target: "Infobox country", variant: "subdivision" },
-  
+
   // Settlement merges
   "infobox city": { target: "Infobox settlement", variant: "city" },
   "infobox town": { target: "Infobox settlement", variant: "city" },
@@ -374,106 +378,435 @@ export const BUILTIN_TEMPLATE_SCHEMAS: Record<
   {
     description: string;
     category: string;
-    params: Record<string, { label: string; description: string; type: string; required?: boolean; default?: string; example?: string }>;
+    params: Record<
+      string,
+      {
+        label: string;
+        description: string;
+        type: string;
+        required?: boolean;
+        default?: string;
+        example?: string;
+      }
+    >;
   }
 > = {
   "infobox country": {
     description: "Master sovereign nation, empire, federation, or realm factbook.",
     category: "sovereign",
     params: {
-      common_name: { label: "Common Name", description: "Short English name of the realm", type: "string", required: true, example: "Burgundie" },
-      official_name: { label: "Official Name", description: "Full formal official state title", type: "string", example: "Grand Republic of Burgundie" },
-      native_name: { label: "Native Name", description: "Name in indigenous language", type: "string" },
-      capital: { label: "Capital City", description: "Primary seat of government", type: "wiki-page-name", required: true, example: "Vilena" },
-      largest_city: { label: "Largest City", description: "Most populous city if different", type: "wiki-page-name" },
-      government_type: { label: "Government Structure", description: "Constitutional structure", type: "string", example: "Federal Constitutional Republic" },
-      leader_title1: { label: "Head of State Title", description: "Title (President, Emperor, Chancellor)", type: "string", example: "President" },
-      leader_name1: { label: "Head of State Name", description: "Current leader name", type: "string", example: "Jean Dupont" },
-      area_km2: { label: "Land Area (km²)", description: "Total geographic surface area", type: "number", example: "450000" },
-      population_estimate: { label: "Population", description: "Total citizen population", type: "number", example: "45200000" },
-      gdp_nominal: { label: "Nominal GDP", description: "Gross Domestic Product", type: "currency", example: "$1.82 Trillion" },
-      currency: { label: "Currency", description: "Official national legal tender", type: "string", example: "Burgundian Franc (BGF)" },
-      image_flag: { label: "Flag Image", description: "National flag vector filename", type: "wiki-file-name", example: "File:Flag_of_Burgundie.svg" },
-      image_coat: { label: "Coat of Arms", description: "Emblem or national seal", type: "wiki-file-name", example: "File:Coat_of_Burgundie.svg" },
-      image_map: { label: "Locator Map", description: "Cartographic territory map", type: "wiki-file-name" },
-      motto: { label: "National Motto", description: "State motto", type: "string", example: "Liberté, Ordre, Concorde" },
+      common_name: {
+        label: "Common Name",
+        description: "Short English name of the realm",
+        type: "string",
+        required: true,
+        example: "Burgundie",
+      },
+      official_name: {
+        label: "Official Name",
+        description: "Full formal official state title",
+        type: "string",
+        example: "Grand Republic of Burgundie",
+      },
+      native_name: {
+        label: "Native Name",
+        description: "Name in indigenous language",
+        type: "string",
+      },
+      capital: {
+        label: "Capital City",
+        description: "Primary seat of government",
+        type: "wiki-page-name",
+        required: true,
+        example: "Vilena",
+      },
+      largest_city: {
+        label: "Largest City",
+        description: "Most populous city if different",
+        type: "wiki-page-name",
+      },
+      government_type: {
+        label: "Government Structure",
+        description: "Constitutional structure",
+        type: "string",
+        example: "Federal Constitutional Republic",
+      },
+      leader_title1: {
+        label: "Head of State Title",
+        description: "Title (President, Emperor, Chancellor)",
+        type: "string",
+        example: "President",
+      },
+      leader_name1: {
+        label: "Head of State Name",
+        description: "Current leader name",
+        type: "string",
+        example: "Jean Dupont",
+      },
+      area_km2: {
+        label: "Land Area (km²)",
+        description: "Total geographic surface area",
+        type: "number",
+        example: "450000",
+      },
+      population_estimate: {
+        label: "Population",
+        description: "Total citizen population",
+        type: "number",
+        example: "45200000",
+      },
+      gdp_nominal: {
+        label: "Nominal GDP",
+        description: "Gross Domestic Product",
+        type: "currency",
+        example: "$1.82 Trillion",
+      },
+      currency: {
+        label: "Currency",
+        description: "Official national legal tender",
+        type: "string",
+        example: "Burgundian Franc (BGF)",
+      },
+      image_flag: {
+        label: "Flag Image",
+        description: "National flag vector filename",
+        type: "wiki-file-name",
+        example: "File:Flag_of_Burgundie.svg",
+      },
+      image_coat: {
+        label: "Coat of Arms",
+        description: "Emblem or national seal",
+        type: "wiki-file-name",
+        example: "File:Coat_of_Burgundie.svg",
+      },
+      image_map: {
+        label: "Locator Map",
+        description: "Cartographic territory map",
+        type: "wiki-file-name",
+      },
+      motto: {
+        label: "National Motto",
+        description: "State motto",
+        type: "string",
+        example: "Liberté, Ordre, Concorde",
+      },
       national_anthem: { label: "National Anthem", description: "State anthem", type: "string" },
       // Former state variant fields
-      year_start: { label: "Established Year", description: "Formation date (for former states)", type: "string" },
-      year_end: { label: "Dissolved Year", description: "Dissolution date (for former states)", type: "string" },
-      predecessor: { label: "Predecessor State", description: "Predecessor realm", type: "wiki-page-name" },
-      successor: { label: "Successor State", description: "Successor realm", type: "wiki-page-name" },
-      countrydata_id: { label: "IxStates Simulation Slug", description: "Auto-binds to real-time engine metrics", type: "string" },
+      year_start: {
+        label: "Established Year",
+        description: "Formation date (for former states)",
+        type: "string",
+      },
+      year_end: {
+        label: "Dissolved Year",
+        description: "Dissolution date (for former states)",
+        type: "string",
+      },
+      predecessor: {
+        label: "Predecessor State",
+        description: "Predecessor realm",
+        type: "wiki-page-name",
+      },
+      successor: {
+        label: "Successor State",
+        description: "Successor realm",
+        type: "wiki-page-name",
+      },
+      countrydata_id: {
+        label: "IxStates Simulation Slug",
+        description: "Auto-binds to real-time engine metrics",
+        type: "string",
+      },
     },
   },
   "infobox settlement": {
     description: "Cities, municipalities, provinces, and geographic landmark factbook.",
     category: "sovereign",
     params: {
-      name: { label: "Settlement Name", description: "City or region name", type: "string", required: true, example: "Vilena" },
-      settlement_type: { label: "Settlement Type", description: "Capital City, Province, Port, Mountain", type: "string", example: "Capital City & Municipality" },
-      subdivision_name: { label: "Country / Realm", description: "Parent sovereign state", type: "wiki-page-name", required: true, example: "Burgundie" },
-      leader_title: { label: "Mayor / Governor Title", description: "Title of executive", type: "string", example: "Mayor" },
-      leader_name: { label: "Leader Name", description: "Current officeholder", type: "string", example: "Clara Vane" },
-      population_total: { label: "Total Population", description: "Citizen population count", type: "number", example: "3420000" },
-      area_km2: { label: "Area (km²)", description: "Total geographic area", type: "number", example: "582" },
-      elevation_m: { label: "Elevation (m)", description: "Height above sea level", type: "number", example: "120" },
-      coordinates: { label: "Coordinates", description: "GIS latitude & longitude", type: "coordinates", example: "40.7128, -74.0060" },
-      image_skyline: { label: "Skyline Image", description: "City skyline photo", type: "wiki-file-name", example: "File:Vilena_Skyline.jpg" },
+      name: {
+        label: "Settlement Name",
+        description: "City or region name",
+        type: "string",
+        required: true,
+        example: "Vilena",
+      },
+      settlement_type: {
+        label: "Settlement Type",
+        description: "Capital City, Province, Port, Mountain",
+        type: "string",
+        example: "Capital City & Municipality",
+      },
+      subdivision_name: {
+        label: "Country / Realm",
+        description: "Parent sovereign state",
+        type: "wiki-page-name",
+        required: true,
+        example: "Burgundie",
+      },
+      leader_title: {
+        label: "Mayor / Governor Title",
+        description: "Title of executive",
+        type: "string",
+        example: "Mayor",
+      },
+      leader_name: {
+        label: "Leader Name",
+        description: "Current officeholder",
+        type: "string",
+        example: "Clara Vane",
+      },
+      population_total: {
+        label: "Total Population",
+        description: "Citizen population count",
+        type: "number",
+        example: "3420000",
+      },
+      area_km2: {
+        label: "Area (km²)",
+        description: "Total geographic area",
+        type: "number",
+        example: "582",
+      },
+      elevation_m: {
+        label: "Elevation (m)",
+        description: "Height above sea level",
+        type: "number",
+        example: "120",
+      },
+      coordinates: {
+        label: "Coordinates",
+        description: "GIS latitude & longitude",
+        type: "coordinates",
+        example: "40.7128, -74.0060",
+      },
+      image_skyline: {
+        label: "Skyline Image",
+        description: "City skyline photo",
+        type: "wiki-file-name",
+        example: "File:Vilena_Skyline.jpg",
+      },
     },
   },
   "infobox person": {
     description: "Universal biography for leaders, monarchs, commanders, scientists, and figures.",
     category: "biography",
     params: {
-      name: { label: "Full Name", description: "Legal or historical name", type: "string", required: true, example: "Arthur Vance" },
-      image: { label: "Portrait", description: "Portrait illustration or photo", type: "wiki-file-name", example: "File:Arthur_Vance.jpg" },
-      birth_date: { label: "Birth Date", description: "Date of birth", type: "date", example: "14 May 1968" },
-      birth_place: { label: "Birth Place", description: "City / country of birth", type: "string", example: "Vilena, Burgundie" },
+      name: {
+        label: "Full Name",
+        description: "Legal or historical name",
+        type: "string",
+        required: true,
+        example: "Arthur Vance",
+      },
+      image: {
+        label: "Portrait",
+        description: "Portrait illustration or photo",
+        type: "wiki-file-name",
+        example: "File:Arthur_Vance.jpg",
+      },
+      birth_date: {
+        label: "Birth Date",
+        description: "Date of birth",
+        type: "date",
+        example: "14 May 1968",
+      },
+      birth_place: {
+        label: "Birth Place",
+        description: "City / country of birth",
+        type: "string",
+        example: "Vilena, Burgundie",
+      },
       death_date: { label: "Death Date", description: "Date of death if deceased", type: "date" },
-      nationality: { label: "Nationality", description: "Citizenship allegiance", type: "string", example: "Burgundian" },
-      occupation: { label: "Occupation / Role", description: "Primary vocation", type: "string", example: "High Chancellor" },
-      office: { label: "Public Office", description: "State office held", type: "string", example: "High Chancellor of Vesper" },
-      term_start: { label: "Term Start", description: "Start year of term", type: "string", example: "2020" },
-      term_end: { label: "Term End", description: "End year of term", type: "string", example: "Present" },
-      political_party: { label: "Political Party", description: "Party affiliation", type: "wiki-page-name", example: "Concord Party" },
+      nationality: {
+        label: "Nationality",
+        description: "Citizenship allegiance",
+        type: "string",
+        example: "Burgundian",
+      },
+      occupation: {
+        label: "Occupation / Role",
+        description: "Primary vocation",
+        type: "string",
+        example: "High Chancellor",
+      },
+      office: {
+        label: "Public Office",
+        description: "State office held",
+        type: "string",
+        example: "High Chancellor of Vesper",
+      },
+      term_start: {
+        label: "Term Start",
+        description: "Start year of term",
+        type: "string",
+        example: "2020",
+      },
+      term_end: {
+        label: "Term End",
+        description: "End year of term",
+        type: "string",
+        example: "Present",
+      },
+      political_party: {
+        label: "Political Party",
+        description: "Party affiliation",
+        type: "wiki-page-name",
+        example: "Concord Party",
+      },
       // Monarch & Military Variant Fields
-      title: { label: "Noble / Dynastic Title", description: "Royal title or rank", type: "string" },
+      title: {
+        label: "Noble / Dynastic Title",
+        description: "Royal title or rank",
+        type: "string",
+      },
       dynasty: { label: "House / Dynasty", description: "Ruling house", type: "string" },
-      rank: { label: "Military Rank", description: "Military rank (General, Admiral)", type: "string" },
-      allegiance: { label: "Military Allegiance", description: "Branch or realm allegiance", type: "string" },
+      rank: {
+        label: "Military Rank",
+        description: "Military rank (General, Admiral)",
+        type: "string",
+      },
+      allegiance: {
+        label: "Military Allegiance",
+        description: "Branch or realm allegiance",
+        type: "string",
+      },
     },
   },
   "infobox ship": {
     description: "Warships, aircraft carriers, submarines, and maritime flagships.",
     category: "defense",
     params: {
-      name: { label: "Ship Name & Hull No.", description: "Full ship designation", type: "string", required: true, example: "BNS Vilena (BB-04)" },
-      ship_class: { label: "Ship Class", description: "Vessel design class", type: "string", example: "Vilena-class Battleship" },
-      operator: { label: "Operating Navy", description: "Operating service branch", type: "wiki-page-name", required: true, example: "Royal Burgundian Navy" },
-      commissioned: { label: "Commissioned Date", description: "Entry into active service", type: "date", example: "1938" },
-      displacement_tons: { label: "Displacement (tonnes)", description: "Full load displacement", type: "number", example: "45000" },
-      length_m: { label: "Length (m)", description: "Overall vessel length", type: "number", example: "245" },
-      propulsion: { label: "Propulsion", description: "Power turbines or nuclear reactor", type: "string", example: "4 Geared Steam Turbines, 150,000 shp" },
-      speed_knots: { label: "Top Speed (knots)", description: "Maximum flank speed", type: "number", example: "30" },
-      armament: { label: "Armament", description: "Main artillery and missile battery", type: "string", example: "9 × 406mm Guns, 20 × 127mm Guns" },
-      armor: { label: "Armor Protection", description: "Belt, deck, and turret armor", type: "string", example: "Belt: 340mm, Deck: 150mm" },
-      aircraft_carried: { label: "Aircraft Carried", description: "Air wing or floatplanes", type: "string" },
-      ship_image: { label: "Ship Image", description: "Photo or silhouette", type: "wiki-file-name", example: "File:BNS_Vilena.jpg" },
+      name: {
+        label: "Ship Name & Hull No.",
+        description: "Full ship designation",
+        type: "string",
+        required: true,
+        example: "BNS Vilena (BB-04)",
+      },
+      ship_class: {
+        label: "Ship Class",
+        description: "Vessel design class",
+        type: "string",
+        example: "Vilena-class Battleship",
+      },
+      operator: {
+        label: "Operating Navy",
+        description: "Operating service branch",
+        type: "wiki-page-name",
+        required: true,
+        example: "Royal Burgundian Navy",
+      },
+      commissioned: {
+        label: "Commissioned Date",
+        description: "Entry into active service",
+        type: "date",
+        example: "1938",
+      },
+      displacement_tons: {
+        label: "Displacement (tonnes)",
+        description: "Full load displacement",
+        type: "number",
+        example: "45000",
+      },
+      length_m: {
+        label: "Length (m)",
+        description: "Overall vessel length",
+        type: "number",
+        example: "245",
+      },
+      propulsion: {
+        label: "Propulsion",
+        description: "Power turbines or nuclear reactor",
+        type: "string",
+        example: "4 Geared Steam Turbines, 150,000 shp",
+      },
+      speed_knots: {
+        label: "Top Speed (knots)",
+        description: "Maximum flank speed",
+        type: "number",
+        example: "30",
+      },
+      armament: {
+        label: "Armament",
+        description: "Main artillery and missile battery",
+        type: "string",
+        example: "9 × 406mm Guns, 20 × 127mm Guns",
+      },
+      armor: {
+        label: "Armor Protection",
+        description: "Belt, deck, and turret armor",
+        type: "string",
+        example: "Belt: 340mm, Deck: 150mm",
+      },
+      aircraft_carried: {
+        label: "Aircraft Carried",
+        description: "Air wing or floatplanes",
+        type: "string",
+      },
+      ship_image: {
+        label: "Ship Image",
+        description: "Photo or silhouette",
+        type: "wiki-file-name",
+        example: "File:BNS_Vilena.jpg",
+      },
     },
   },
   "infobox military conflict": {
     description: "Historical wars, tactical campaigns, naval battles, and sieges.",
     category: "defense",
     params: {
-      conflict: { label: "Conflict Name", description: "Name of the battle or war", type: "string", required: true, example: "The Sand War" },
-      date: { label: "Date / Duration", description: "Hostility date range", type: "string", required: true, example: "14 June 1984 – 3 August 1986" },
-      place: { label: "Location / Theater", description: "Geographic theater of operations", type: "string", required: true, example: "Northern Oakhaven Basin" },
-      result: { label: "Outcome", description: "Decisive treaty or victory outcome", type: "string", required: true, example: "Decisive Burgundian Victory" },
-      combatant1: { label: "Belligerents (Side A)", description: "First alliance or state forces", type: "string", example: "Burgundie & Vesper Alliance" },
-      combatant2: { label: "Belligerents (Side B)", description: "Opposing alliance or state forces", type: "string", example: "Paulastran Cyber Corps" },
-      commanders1: { label: "Commanders (Side A)", description: "Commanding officers", type: "string", example: "Gen. Arthur Vance" },
-      commanders2: { label: "Commanders (Side B)", description: "Opposing commanders", type: "string", example: "Marshal Kirov" },
+      conflict: {
+        label: "Conflict Name",
+        description: "Name of the battle or war",
+        type: "string",
+        required: true,
+        example: "The Sand War",
+      },
+      date: {
+        label: "Date / Duration",
+        description: "Hostility date range",
+        type: "string",
+        required: true,
+        example: "14 June 1984 – 3 August 1986",
+      },
+      place: {
+        label: "Location / Theater",
+        description: "Geographic theater of operations",
+        type: "string",
+        required: true,
+        example: "Northern Oakhaven Basin",
+      },
+      result: {
+        label: "Outcome",
+        description: "Decisive treaty or victory outcome",
+        type: "string",
+        required: true,
+        example: "Decisive Burgundian Victory",
+      },
+      combatant1: {
+        label: "Belligerents (Side A)",
+        description: "First alliance or state forces",
+        type: "string",
+        example: "Burgundie & Vesper Alliance",
+      },
+      combatant2: {
+        label: "Belligerents (Side B)",
+        description: "Opposing alliance or state forces",
+        type: "string",
+        example: "Paulastran Cyber Corps",
+      },
+      commanders1: {
+        label: "Commanders (Side A)",
+        description: "Commanding officers",
+        type: "string",
+        example: "Gen. Arthur Vance",
+      },
+      commanders2: {
+        label: "Commanders (Side B)",
+        description: "Opposing commanders",
+        type: "string",
+        example: "Marshal Kirov",
+      },
       casualties1: { label: "Casualties (Side A)", description: "Losses Side A", type: "string" },
       casualties2: { label: "Casualties (Side B)", description: "Losses Side B", type: "string" },
     },
@@ -482,73 +815,239 @@ export const BUILTIN_TEMPLATE_SCHEMAS: Record<
     description: "Commercial corporations, conglomerates, central banks, and state enterprises.",
     category: "economy",
     params: {
-      name: { label: "Company Name", description: "Official corporate name", type: "string", required: true, example: "Solcordia Energy Corp" },
-      industry: { label: "Primary Industry", description: "Commercial sector", type: "string", required: true, example: "Energy & Infrastructure" },
-      headquarters: { label: "Headquarters", description: "Corporate HQ location", type: "string", required: true, example: "Vilena, Burgundie" },
-      key_people: { label: "Key Executives", description: "CEO, Chairman, Founders", type: "string", example: "Marcus Sterling (CEO)" },
-      revenue: { label: "Annual Revenue", description: "Total annual turnover", type: "currency", example: "$42.5 Billion" },
-      employees: { label: "Total Employees", description: "Workforce headcount", type: "number", example: "84000" },
-      logo: { label: "Logo Image", description: "Corporate logo vector", type: "wiki-file-name", example: "File:Solcordia_Logo.svg" },
-      businessdata_id: { label: "IxStates Corporate Slug", description: "Auto-binds to real-time company ledger", type: "string" },
+      name: {
+        label: "Company Name",
+        description: "Official corporate name",
+        type: "string",
+        required: true,
+        example: "Solcordia Energy Corp",
+      },
+      industry: {
+        label: "Primary Industry",
+        description: "Commercial sector",
+        type: "string",
+        required: true,
+        example: "Energy & Infrastructure",
+      },
+      headquarters: {
+        label: "Headquarters",
+        description: "Corporate HQ location",
+        type: "string",
+        required: true,
+        example: "Vilena, Burgundie",
+      },
+      key_people: {
+        label: "Key Executives",
+        description: "CEO, Chairman, Founders",
+        type: "string",
+        example: "Marcus Sterling (CEO)",
+      },
+      revenue: {
+        label: "Annual Revenue",
+        description: "Total annual turnover",
+        type: "currency",
+        example: "$42.5 Billion",
+      },
+      employees: {
+        label: "Total Employees",
+        description: "Workforce headcount",
+        type: "number",
+        example: "84000",
+      },
+      logo: {
+        label: "Logo Image",
+        description: "Corporate logo vector",
+        type: "wiki-file-name",
+        example: "File:Solcordia_Logo.svg",
+      },
+      businessdata_id: {
+        label: "IxStates Corporate Slug",
+        description: "Auto-binds to real-time company ledger",
+        type: "string",
+      },
     },
   },
   countrydata: {
-    description: "Live real-time economic and geopolitical data connector powered by the IxStates Engine.",
+    description:
+      "Live real-time economic and geopolitical data connector powered by the IxStates Engine.",
     category: "engine",
     params: {
-      id: { label: "Country Identifier", description: "Country slug or ISO identifier in IxStates", type: "string", required: true, example: "burgundie" },
-      metric: { label: "Metric Name", description: "gdp, population, debt, hdi, vitality, or stability", type: "string", required: true, example: "gdp" },
-      format: { label: "Display Format", description: "currency, compact, percentage, or number", type: "string", example: "currency" },
-      fallback: { label: "Fallback Value", description: "Fallback text if live sync is offline", type: "string", example: "$1.82T" },
+      id: {
+        label: "Country Identifier",
+        description: "Country slug or ISO identifier in IxStates",
+        type: "string",
+        required: true,
+        example: "burgundie",
+      },
+      metric: {
+        label: "Metric Name",
+        description: "gdp, population, debt, hdi, vitality, or stability",
+        type: "string",
+        required: true,
+        example: "gdp",
+      },
+      format: {
+        label: "Display Format",
+        description: "currency, compact, percentage, or number",
+        type: "string",
+        example: "currency",
+      },
+      fallback: {
+        label: "Fallback Value",
+        description: "Fallback text if live sync is offline",
+        type: "string",
+        example: "$1.82T",
+      },
     },
   },
   businessdata: {
     description: "Corporate, trade balance, and commercial enterprise financial indicators.",
     category: "engine",
     params: {
-      company: { label: "Company Identifier", description: "Corporate entity slug", type: "string", required: true, example: "solcordia" },
-      metric: { label: "Metric", description: "revenue, valuation, employees, or headquarters", type: "string", required: true, example: "revenue" },
-      fallback: { label: "Fallback Value", description: "Fallback text if offline", type: "string" },
+      company: {
+        label: "Company Identifier",
+        description: "Corporate entity slug",
+        type: "string",
+        required: true,
+        example: "solcordia",
+      },
+      metric: {
+        label: "Metric",
+        description: "revenue, valuation, employees, or headquarters",
+        type: "string",
+        required: true,
+        example: "revenue",
+      },
+      fallback: {
+        label: "Fallback Value",
+        description: "Fallback text if offline",
+        type: "string",
+      },
     },
   },
   navbox: {
     description: "Thematic series footer navigation matrix with grouped topic links.",
     category: "navigation",
     params: {
-      title: { label: "Navbox Header Title", description: "Main title banner", type: "string", required: true, example: "Provinces & Territories of Burgundie" },
-      group1: { label: "Group 1 Name", description: "First subcategory label", type: "string", example: "Core Provinces" },
-      list1: { label: "Articles in Group 1", description: "Wikitext links", type: "string", example: "[[Vilena]] • [[Oakhaven]] • [[Sudmoll]]" },
-      group2: { label: "Group 2 Name", description: "Second subcategory label", type: "string", example: "Autonomous Territories" },
-      list2: { label: "Articles in Group 2", description: "Wikitext links", type: "string", example: "[[Vonein Basin]] • [[Seneca Islands]]" },
+      title: {
+        label: "Navbox Header Title",
+        description: "Main title banner",
+        type: "string",
+        required: true,
+        example: "Provinces & Territories of Burgundie",
+      },
+      group1: {
+        label: "Group 1 Name",
+        description: "First subcategory label",
+        type: "string",
+        example: "Core Provinces",
+      },
+      list1: {
+        label: "Articles in Group 1",
+        description: "Wikitext links",
+        type: "string",
+        example: "[[Vilena]] • [[Oakhaven]] • [[Sudmoll]]",
+      },
+      group2: {
+        label: "Group 2 Name",
+        description: "Second subcategory label",
+        type: "string",
+        example: "Autonomous Territories",
+      },
+      list2: {
+        label: "Articles in Group 2",
+        description: "Wikitext links",
+        type: "string",
+        example: "[[Vonein Basin]] • [[Seneca Islands]]",
+      },
     },
   },
   "quote box": {
     description: "Highlighted speech excerpt, lore document citation, or quotation capsule.",
     category: "formatting",
     params: {
-      quote: { label: "Quote Text", description: "Direct text quote", type: "string", required: true, example: "Freedom is won in the assembly and held on the border." },
-      author: { label: "Speaker / Author", description: "Attributed figure", type: "string", required: true, example: "Chancellor Elspeth Kane" },
-      source: { label: "Source / Speech", description: "Historical address or treaty", type: "string", example: "Address to the Continental Senate, 2021" },
+      quote: {
+        label: "Quote Text",
+        description: "Direct text quote",
+        type: "string",
+        required: true,
+        example: "Freedom is won in the assembly and held on the border.",
+      },
+      author: {
+        label: "Speaker / Author",
+        description: "Attributed figure",
+        type: "string",
+        required: true,
+        example: "Chancellor Elspeth Kane",
+      },
+      source: {
+        label: "Source / Speech",
+        description: "Historical address or treaty",
+        type: "string",
+        example: "Address to the Continental Senate, 2021",
+      },
     },
   },
   hatnote: {
     description: "Article disambiguation notice, main article reference, or redirect banner.",
     category: "formatting",
     params: {
-      text: { label: "Notice Text", description: "Disambiguation explanation", type: "string", required: true, example: "This article is about the sovereign state. For the capital city, see [[Vilena]]." },
-      type: { label: "Hatnote Type", description: "disambiguation | redirect | main | see_also", type: "string" },
+      text: {
+        label: "Notice Text",
+        description: "Disambiguation explanation",
+        type: "string",
+        required: true,
+        example: "This article is about the sovereign state. For the capital city, see [[Vilena]].",
+      },
+      type: {
+        label: "Hatnote Type",
+        description: "disambiguation | redirect | main | see_also",
+        type: "string",
+      },
     },
   },
   "cite web": {
     description: "Structured citation format for web sources, publications, and treaties.",
     category: "citation",
     params: {
-      url: { label: "Source URL", description: "Direct web hyperlink", type: "string", required: true, example: "https://archives.ixwiki.com/doc/142" },
-      title: { label: "Article Title", description: "Title of cited publication", type: "string", required: true, example: "Constitutional History of Burgundie" },
-      author: { label: "Author", description: "Author or publishing agency", type: "string", example: "Dr. Henri Dubois" },
-      publisher: { label: "Publisher", description: "Organization or publishing house", type: "string", example: "Vilena University Press" },
-      date: { label: "Publication Date", description: "Release date", type: "date", example: "2018" },
-      accessdate: { label: "Access Date", description: "Date source was accessed", type: "date", example: "2026-08-25" },
+      url: {
+        label: "Source URL",
+        description: "Direct web hyperlink",
+        type: "string",
+        required: true,
+        example: "https://archives.ixwiki.com/doc/142",
+      },
+      title: {
+        label: "Article Title",
+        description: "Title of cited publication",
+        type: "string",
+        required: true,
+        example: "Constitutional History of Burgundie",
+      },
+      author: {
+        label: "Author",
+        description: "Author or publishing agency",
+        type: "string",
+        example: "Dr. Henri Dubois",
+      },
+      publisher: {
+        label: "Publisher",
+        description: "Organization or publishing house",
+        type: "string",
+        example: "Vilena University Press",
+      },
+      date: {
+        label: "Publication Date",
+        description: "Release date",
+        type: "date",
+        example: "2018",
+      },
+      accessdate: {
+        label: "Access Date",
+        description: "Date source was accessed",
+        type: "date",
+        example: "2026-08-25",
+      },
     },
   },
 };
@@ -567,24 +1066,31 @@ export const wikiosTemplatesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const templateMap = new Map<string, {
-        name: string;
-        description: string | null;
-        category: string;
-        paramCount: number;
-        isCanonical: boolean;
-        canonicalTarget: string | null;
-        hasTemplateData: boolean;
-        variants?: string[];
-      }>();
+      const templateMap = new Map<
+        string,
+        {
+          name: string;
+          description: string | null;
+          category: string;
+          paramCount: number;
+          isCanonical: boolean;
+          canonicalTarget: string | null;
+          hasTemplateData: boolean;
+          variants?: string[];
+        }
+      >();
 
       const queryLower = input.query.trim().toLowerCase();
 
       // 1. Primary: Seed and prioritize Canonical Master Templates
       for (const canonical of CANONICAL_BUILTIN_TEMPLATES) {
         const key = canonical.name.toLowerCase();
-        const matchesQuery = !queryLower || key.includes(queryLower) || canonical.description.toLowerCase().includes(queryLower);
-        const matchesCat = !input.category || input.category === "all" || input.category === canonical.category;
+        const matchesQuery =
+          !queryLower ||
+          key.includes(queryLower) ||
+          canonical.description.toLowerCase().includes(queryLower);
+        const matchesCat =
+          !input.category || input.category === "all" || input.category === canonical.category;
 
         if (matchesQuery && matchesCat) {
           templateMap.set(key, canonical);
@@ -648,7 +1154,8 @@ export const wikiosTemplatesRouter = createTRPCRouter({
             if (!input.category || input.category === "all" || input.category === cat) {
               templateMap.set(key, {
                 name: cleanName,
-                description: art.summary || (alias ? `Variant of ${alias.target}` : "Registered Template"),
+                description:
+                  art.summary || (alias ? `Variant of ${alias.target}` : "Registered Template"),
                 category: cat,
                 paramCount: 0,
                 isCanonical: false,
@@ -797,7 +1304,10 @@ export const wikiosTemplatesRouter = createTRPCRouter({
     .input(z.object({ limit: z.number().min(1).max(200).default(50) }))
     .mutation(async ({ input }) => {
       const templates = await searchTemplatesDB("", input.limit * 2);
-      const cleanNames = templates.map((t) => t.replace(/^Template:/i, "")).filter((t) => !isNoiseTemplate(t)).slice(0, input.limit);
+      const cleanNames = templates
+        .map((t) => t.replace(/^Template:/i, ""))
+        .filter((t) => !isNoiseTemplate(t))
+        .slice(0, input.limit);
       const tdMap = await fetchTemplateData(cleanNames);
       let synced = 0;
 
@@ -946,4 +1456,3 @@ export const wikiosTemplatesRouter = createTRPCRouter({
       return { success: true };
     }),
 });
-

@@ -1,7 +1,19 @@
 "use client";
 
 import React from "react";
-import { StatUp as TrendingUp, Globe, Trophy, Activity, ChatBubble as MessageSquare, Heart, ShareAndroid as Share2, Eye, Clock, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  Globe,
+  Trophy,
+  Activity,
+  ChatBubble as MessageSquare,
+  Heart,
+  ShareAndroid as Share2,
+  Eye,
+  Clock,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { formatDistanceToNow } from "date-fns";

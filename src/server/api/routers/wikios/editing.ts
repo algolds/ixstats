@@ -248,7 +248,9 @@ export const wikiosEditingRouter = createTRPCRouter({
       if (revisions.length < 2) throw new Error("Not enough revisions to rollback");
 
       const lastEditor = revisions[0]!.user;
-      const targetRev = revisions.find((r: { user: string; revid: number }) => r.user !== lastEditor);
+      const targetRev = revisions.find(
+        (r: { user: string; revid: number }) => r.user !== lastEditor
+      );
       if (!targetRev) throw new Error("All revisions are by the same user");
 
       const oldContent = await getRevisionWikitextShadow(targetRev.revid, "ixwiki");
@@ -311,7 +313,13 @@ export const wikiosEditingRouter = createTRPCRouter({
         const cleanName = input.filename.replace(/^File:/, "").replace(/ /g, "_");
         const ext = cleanName.split(".").pop()?.toLowerCase() || "png";
         const mimeType =
-          ext === "svg" ? "image/svg+xml" : ext === "jpg" || ext === "jpeg" ? "image/jpeg" : ext === "webp" ? "image/webp" : "image/png";
+          ext === "svg"
+            ? "image/svg+xml"
+            : ext === "jpg" || ext === "jpeg"
+              ? "image/jpeg"
+              : ext === "webp"
+                ? "image/webp"
+                : "image/png";
 
         await MediaAssetService.registerAsset({
           filename: cleanName,
@@ -447,4 +455,3 @@ export const wikiosEditingRouter = createTRPCRouter({
       };
     }),
 });
-

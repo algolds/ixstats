@@ -8,7 +8,11 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
-import { OpenNewWindow as ExternalLink, OpenBook as BookOpen, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  OpenNewWindow as ExternalLink,
+  OpenBook as BookOpen,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import type { CardInstance } from "~/types/cards-display";
 import { WikiLinkPreview, WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";

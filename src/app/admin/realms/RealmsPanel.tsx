@@ -29,21 +29,21 @@ export function RealmsPanel({ defaultTab = "realms" }: RealmsPanelProps) {
         <TabsList className="bg-card/40 border-border/40 flex w-full max-w-lg justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
           <TabsTrigger
             value="realms"
-            className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Globe className="h-4 w-4 text-cyan-400" />
             Realms
           </TabsTrigger>
           <TabsTrigger
             value="worlds"
-            className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Settings className="h-4 w-4 text-amber-400" />
             World Configs
           </TabsTrigger>
           <TabsTrigger
             value="users"
-            className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Users className="h-4 w-4 text-purple-400" />
             User Access
@@ -67,4 +67,3 @@ export function RealmsPanel({ defaultTab = "realms" }: RealmsPanelProps) {
 }
 
 export default RealmsPanel;
-

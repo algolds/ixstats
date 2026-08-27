@@ -33,7 +33,10 @@ function extractTemplateNames(wikitext: string): string[] {
     if (raw.startsWith("#") || raw.startsWith("$")) continue;
 
     // Normalize name
-    let clean = raw.replace(/^Template:/i, "").replace(/_/g, " ").trim();
+    let clean = raw
+      .replace(/^Template:/i, "")
+      .replace(/_/g, " ")
+      .trim();
     if (clean.length > 0 && clean.length < 80) {
       matches.add(clean);
     }
@@ -103,9 +106,18 @@ async function main() {
     const lower = tf.name.toLowerCase();
     if (lower.startsWith("infobox") || lower.includes("infobox")) {
       infoboxes.push(tf);
-    } else if (lower.startsWith("navbox") || lower.includes("navbox") || lower.includes("campaignbox") || lower.includes("footer")) {
+    } else if (
+      lower.startsWith("navbox") ||
+      lower.includes("navbox") ||
+      lower.includes("campaignbox") ||
+      lower.includes("footer")
+    ) {
       navboxes.push(tf);
-    } else if (lower.startsWith("cite") || lower.includes("citation") || lower.includes("reflist")) {
+    } else if (
+      lower.startsWith("cite") ||
+      lower.includes("citation") ||
+      lower.includes("reflist")
+    ) {
       citations.push(tf);
     } else if (
       lower.includes("quote") ||
@@ -156,8 +168,12 @@ async function main() {
 
   console.log("\n💀 6. Dead & Bloat Template Analysis:");
   console.log(`   - Total Registered in WikiTemplates:  ${totalRegistered.toLocaleString()}`);
-  console.log(`   - Templates with >=1 Real Article Use: ${usedRegistered.toLocaleString()} (${((usedRegistered / totalRegistered) * 100).toFixed(1)}%)`);
-  console.log(`   - Zero-Usage Dead Templates:          ${zeroUseCount.toLocaleString()} (${((zeroUseCount / totalRegistered) * 100).toFixed(1)}%)`);
+  console.log(
+    `   - Templates with >=1 Real Article Use: ${usedRegistered.toLocaleString()} (${((usedRegistered / totalRegistered) * 100).toFixed(1)}%)`
+  );
+  console.log(
+    `   - Zero-Usage Dead Templates:          ${zeroUseCount.toLocaleString()} (${((zeroUseCount / totalRegistered) * 100).toFixed(1)}%)`
+  );
 
   console.log("\n==================================================================");
   console.log("✅ Usage Frequency Audit Complete!");

@@ -9,8 +9,24 @@ import { AdminHeader } from "../_components/AdminHeader";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
-import { Database, WhiteFlag as Flag, Emoji as Drama, Rocket, User as UserCog, Journal as Newspaper, Building, StatUp as TrendingUp, CreditCard, OpenBook as BookOpen, Component as Layers, Page as FileText, Tournament as Swords, Brain, OpenNewWindow as ExternalLink, Refresh as RefreshCw } from "iconoir-react";
-
+import {
+  Database,
+  WhiteFlag as Flag,
+  Emoji as Drama,
+  Rocket,
+  User as UserCog,
+  Journal as Newspaper,
+  Building,
+  StatUp as TrendingUp,
+  CreditCard,
+  OpenBook as BookOpen,
+  Component as Layers,
+  Page as FileText,
+  Tournament as Swords,
+  Brain,
+  OpenNewWindow as ExternalLink,
+  Refresh as RefreshCw,
+} from "iconoir-react";
 
 // ── Data Type Registry ───────────────────────────────────────────────────────
 
@@ -267,20 +283,18 @@ export default function ReferenceDataPage() {
                     <Link
                       key={type.key}
                       href={type.href}
-                      className="group rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs transition-colors hover:border-border/60 active:scale-[0.98] transition-transform block"
+                      className="group border-border/30 bg-card/25 hover:border-border/60 block rounded-2xl border p-3.5 shadow-xs backdrop-blur-md transition-colors transition-transform active:scale-[0.98]"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div
-                            className="rounded-xl border border-border/40 bg-card/40 p-2 text-foreground"
-                          >
-                            <Icon className="h-4 w-4 text-primary" />
+                          <div className="border-border/40 bg-card/40 text-foreground rounded-xl border p-2">
+                            <Icon className="text-primary h-4 w-4" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <h3 className="text-foreground group-hover:text-primary text-xs font-semibold tracking-tight transition-colors">
                               {type.label}
                             </h3>
-                            <p className="text-muted-foreground mt-0.5 text-[11px] line-clamp-1">
+                            <p className="text-muted-foreground mt-0.5 line-clamp-1 text-[11px]">
                               {type.description}
                             </p>
                           </div>

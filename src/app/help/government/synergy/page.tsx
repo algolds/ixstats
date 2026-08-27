@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { Link as Link2, ScaleFrameEnlarge as Scale, WarningTriangle as AlertTriangle, Sparks as Sparkles } from "iconoir-react";
+import {
+  Link as Link2,
+  ScaleFrameEnlarge as Scale,
+  WarningTriangle as AlertTriangle,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import {
   ArticleLayout,
   Section,

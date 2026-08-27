@@ -38,17 +38,15 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
       <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item) => {
           const imgInfo = resolvedImagesMap.get(item.pageTitle);
-          const cleanTitle = item.pageTitle
-            .replace(/^commons:File:/, "")
-            .replace(/_/g, " ");
+          const cleanTitle = item.pageTitle.replace(/^commons:File:/, "").replace(/_/g, " ");
 
           return (
             <div
               key={item.id}
-              className="group relative cursor-pointer overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 hover:bg-[var(--wikios-surface)]/90 hover:border-[var(--wikios-border)]/80 shadow-xs hover:shadow-md transition-all duration-200 backdrop-blur-xl flex flex-col"
+              className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-[var(--wikios-border)]/80 hover:bg-[var(--wikios-surface)]/90 hover:shadow-md"
               onClick={() => imgInfo && setSelectedImage(imgInfo)}
             >
-              <div className="relative aspect-4/3 w-full overflow-hidden bg-white/5 border-b border-[var(--wikios-border)]/60">
+              <div className="relative aspect-4/3 w-full overflow-hidden border-b border-[var(--wikios-border)]/60 bg-white/5">
                 {imgInfo ? (
                   <img
                     src={imgInfo.thumbUrl}
@@ -62,8 +60,8 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
                 )}
 
                 {/* Hover overlay button */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white backdrop-blur-2xs">
-                  <div className="h-8 w-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center shadow-md">
+                <div className="backdrop-blur-2xs absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-white/20 shadow-md">
                     <ZoomIn className="h-4 w-4" />
                   </div>
                 </div>
@@ -75,18 +73,21 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
                     e.stopPropagation();
                     onUnstash(item.pageTitle);
                   }}
-                  className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-lg border border-white/20 bg-black/60 text-white opacity-0 transition-all group-hover:opacity-100 hover:bg-rose-500/80 hover:border-rose-500 shadow-xs"
+                  className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-lg border border-white/20 bg-black/60 text-white opacity-0 shadow-xs transition-all group-hover:opacity-100 hover:border-rose-500 hover:bg-rose-500/80"
                   title="Remove from stash"
                 >
                   <X className="h-3 w-3" />
                 </button>
               </div>
 
-              <div className="p-2.5 flex flex-col justify-between gap-1 flex-1">
-                <span className="text-xs font-bold text-[var(--wikios-text)] group-hover:text-[var(--wikios-accent)] transition-colors truncate" title={cleanTitle}>
+              <div className="flex flex-1 flex-col justify-between gap-1 p-2.5">
+                <span
+                  className="truncate text-xs font-bold text-[var(--wikios-text)] transition-colors group-hover:text-[var(--wikios-accent)]"
+                  title={cleanTitle}
+                >
                   {cleanTitle}
                 </span>
-                <span className="text-[10px] text-[var(--wikios-text-dim)] font-mono">
+                <span className="font-mono text-[10px] text-[var(--wikios-text-dim)]">
                   {imgInfo ? `${imgInfo.width} × ${imgInfo.height}` : "..."}
                 </span>
               </div>

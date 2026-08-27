@@ -1,12 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import {
-  ArrowSeparateVertical as ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  Database,
-} from "iconoir-react";
+import { ArrowSeparateVertical as ArrowUpDown, ArrowUp, ArrowDown, Database } from "iconoir-react";
 import {
   Table,
   TableHeader,
@@ -261,7 +256,7 @@ export function FacetDataTable<T extends Record<string, any>>({
 
     const visibleCols = columns.filter((col) => typeof col.header === "string");
     const headers = visibleCols.map((col) => `"${String(col.header).replace(/"/g, '""')}"`);
-    
+
     const rows = sortedData.map((row) =>
       visibleCols
         .map((col) => {
@@ -288,7 +283,8 @@ export function FacetDataTable<T extends Record<string, any>>({
   const renderCell = (col: FacetColumn<T>, row: T, index: number) => {
     const val = col.accessor ? col.accessor(row) : row[col.key];
     if (col.render) return col.render(val, row, index);
-    if (val === null || val === undefined || val === "") return <span className="text-muted-foreground/50">—</span>;
+    if (val === null || val === undefined || val === "")
+      return <span className="text-muted-foreground/50">—</span>;
     return val;
   };
 
@@ -330,11 +326,15 @@ export function FacetDataTable<T extends Record<string, any>>({
           {/* Desktop Table Skeleton */}
           <div
             className={cn(
-              layoutMode === "auto" ? "hidden sm:block" : layoutMode === "table" ? "block" : "hidden",
-              "border-border/40 overflow-hidden rounded-xl border p-4 space-y-3"
+              layoutMode === "auto"
+                ? "hidden sm:block"
+                : layoutMode === "table"
+                  ? "block"
+                  : "hidden",
+              "border-border/40 space-y-3 overflow-hidden rounded-xl border p-4"
             )}
           >
-            <div className="flex gap-4 border-b border-border/40 pb-3">
+            <div className="border-border/40 flex gap-4 border-b pb-3">
               {columns.slice(0, 5).map((_, i) => (
                 <Skeleton key={i} className="h-4 flex-1 rounded-md" />
               ))}
@@ -351,7 +351,11 @@ export function FacetDataTable<T extends Record<string, any>>({
           {/* Mobile Card Skeleton */}
           <div
             className={cn(
-              layoutMode === "auto" ? "flex flex-col gap-3 sm:hidden" : layoutMode === "cards" ? "flex flex-col gap-3" : "hidden"
+              layoutMode === "auto"
+                ? "flex flex-col gap-3 sm:hidden"
+                : layoutMode === "cards"
+                  ? "flex flex-col gap-3"
+                  : "hidden"
             )}
           >
             {Array.from({ length: 3 }).map((_, i) => (
@@ -361,7 +365,7 @@ export function FacetDataTable<T extends Record<string, any>>({
         </div>
       ) : isEmpty ? (
         /* ─── Empty State View ──────────────────────────────────────── */
-        <div className="border-border/40 bg-card/20 flex flex-col items-center justify-center rounded-2xl border border-dashed py-12 px-4 text-center backdrop-blur-md">
+        <div className="border-border/40 bg-card/20 flex flex-col items-center justify-center rounded-2xl border border-dashed px-4 py-12 text-center backdrop-blur-md">
           {emptyIcon || <Database className="text-muted-foreground/40 mb-3 h-10 w-10" />}
           <p className="text-foreground text-sm font-semibold">{emptyMessage}</p>
           {searchTerm && (
@@ -391,7 +395,8 @@ export function FacetDataTable<T extends Record<string, any>>({
                           "text-muted-foreground px-4 py-3 text-xs font-semibold tracking-wider select-none",
                           col.align === "center" && "text-center",
                           col.align === "right" && "text-right",
-                          col.sortable && "hover:text-foreground hover:bg-muted/50 cursor-pointer transition-colors",
+                          col.sortable &&
+                            "hover:text-foreground hover:bg-muted/50 cursor-pointer transition-colors",
                           col.className,
                           col.headerClassName
                         )}
@@ -419,7 +424,7 @@ export function FacetDataTable<T extends Record<string, any>>({
                       onClick={() => onRowClick?.(row)}
                       className={cn(
                         "hover:bg-muted/30 border-border/20 transition-colors",
-                        onRowClick && "cursor-pointer active:bg-muted/50",
+                        onRowClick && "active:bg-muted/50 cursor-pointer",
                         rowClassName?.(row, index)
                       )}
                     >

@@ -64,11 +64,11 @@ export function WikiLinkStatusSection({
   ];
 
   return (
-    <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
+    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Link2 className="h-4 w-4 text-emerald-400" />
-          <h3 className="text-xs font-bold text-foreground">Wiki Link Status</h3>
+          <h3 className="text-foreground text-xs font-bold">Wiki Link Status</h3>
         </div>
         <div className="bg-card/40 border-border/40 flex items-center gap-1 rounded-xl border p-1 backdrop-blur-md">
           {TABS.map((tab) => (
@@ -76,7 +76,7 @@ export function WikiLinkStatusSection({
               key={tab.key}
               onClick={() => setFilter(tab.key)}
               className={cn(
-                "rounded-lg px-2.5 py-1 text-xs font-semibold active:scale-[0.98] transition-all",
+                "rounded-lg px-2.5 py-1 text-xs font-semibold transition-all active:scale-[0.98]",
                 filter === tab.key
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -96,7 +96,7 @@ export function WikiLinkStatusSection({
           placeholder="Search countries..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-8 rounded-xl border-border/30 bg-background/50 pl-8 text-xs backdrop-blur-md focus:border-border/60"
+          className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
         />
       </div>
 
@@ -112,25 +112,25 @@ export function WikiLinkStatusSection({
           No countries match your filters.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-border/30 bg-card/25 backdrop-blur-md shadow-xs max-h-[28rem] overflow-y-auto">
+        <div className="border-border/30 bg-card/25 max-h-[28rem] overflow-x-auto overflow-y-auto rounded-2xl border shadow-xs backdrop-blur-md">
           <table className="w-full text-xs">
-            <thead className="bg-muted/20 sticky top-0 backdrop-blur-md border-b border-border/30 text-muted-foreground font-semibold">
+            <thead className="bg-muted/20 border-border/30 text-muted-foreground sticky top-0 border-b font-semibold backdrop-blur-md">
               <tr>
                 <th className="px-4 py-2.5 text-left font-medium">Country</th>
                 <th className="px-4 py-2.5 text-left font-medium">Wiki Page</th>
                 <th className="hidden px-4 py-2.5 text-left font-medium sm:table-cell">Source</th>
-                <th className="hidden px-4 py-2.5 text-left font-medium md:table-cell">Last Synced</th>
+                <th className="hidden px-4 py-2.5 text-left font-medium md:table-cell">
+                  Last Synced
+                </th>
                 <th className="px-4 py-2.5 text-right font-medium">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/15">
+            <tbody className="divide-border/15 divide-y">
               {filtered.map((country) => (
                 <tr key={country.id} className="hover:bg-foreground/[0.02] transition-colors">
                   <td className="text-foreground px-4 py-2.5 font-semibold">{country.name}</td>
                   <td className="text-muted-foreground max-w-[12rem] truncate px-4 py-2.5">
-                    {country.wikiPageTitle ?? (
-                      <span className="italic opacity-50">Not linked</span>
-                    )}
+                    {country.wikiPageTitle ?? <span className="italic opacity-50">Not linked</span>}
                   </td>
                   <td className="hidden px-4 py-2.5 sm:table-cell">
                     {country.wikiSource ? (

@@ -181,7 +181,10 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
               });
               group.conversationId = conv.id;
             } catch (e) {
-              console.warn(`[ThinkTanks] Failed to auto-heal conversation for group ${group.id}:`, e);
+              console.warn(
+                `[ThinkTanks] Failed to auto-heal conversation for group ${group.id}:`,
+                e
+              );
             }
           }
         }
@@ -413,13 +416,13 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
                   `User ${m.userId.slice(-6)}`,
               }
             : acc
-            ? {
-                clerkUserId: m.userId,
-                avatarUrl: acc.profileImageUrl || null,
-                displayName: acc.displayName || acc.username,
-                country: null,
-              }
-            : null,
+              ? {
+                  clerkUserId: m.userId,
+                  avatarUrl: acc.profileImageUrl || null,
+                  displayName: acc.displayName || acc.username,
+                  country: null,
+                }
+              : null,
         };
       });
 
@@ -621,9 +624,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
 
           const countryId = user?.countryId || (await db.country.findFirst())?.id || "";
           const username =
-            user?.forumUsername ||
-            user?.wikiUsername ||
-            `user_${currentUserId.slice(-6)}`;
+            user?.forumUsername || user?.wikiUsername || `user_${currentUserId.slice(-6)}`;
           const displayName = user?.country?.name || username;
 
           primaryAcc = await db.thinkpagesAccount.create({
@@ -643,9 +644,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       }
 
       const groupTag = `group:${input.groupId}`;
-      const allTags = input.hashtags
-        ? [...new Set([...input.hashtags, groupTag])]
-        : [groupTag];
+      const allTags = input.hashtags ? [...new Set([...input.hashtags, groupTag])] : [groupTag];
 
       const post = await db.thinkpagesPost.create({
         data: {

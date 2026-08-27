@@ -28,7 +28,8 @@ export const TimelineEraBadge = memo(function TimelineEraBadge({
   category = "cultural",
   className = "",
 }: TimelineEraBadgeProps) {
-  const colorClass = CATEGORY_COLORS[category] || "bg-muted/40 text-muted-foreground border-border/40";
+  const colorClass =
+    CATEGORY_COLORS[category] || "bg-muted/40 text-muted-foreground border-border/40";
 
   if (!eraLabel && ixTimeYear === undefined) return null;
 

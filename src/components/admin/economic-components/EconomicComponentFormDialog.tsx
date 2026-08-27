@@ -22,7 +22,21 @@ import {
 import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
 import { MultiSelect } from "~/components/ui/multi-select";
-import { Settings, Dollar as DollarSign, Network, StatUp as TrendingUp, Archery as Target, Group as Users, Trophy as Award, Palette, Suitcase as Briefcase, Flash as Zap, Industry as Factory, Leaf, City as Building2 } from "iconoir-react";
+import {
+  Settings,
+  Dollar as DollarSign,
+  Network,
+  StatUp as TrendingUp,
+  Archery as Target,
+  Group as Users,
+  Trophy as Award,
+  Palette,
+  Suitcase as Briefcase,
+  Flash as Zap,
+  Industry as Factory,
+  Leaf,
+  City as Building2,
+} from "iconoir-react";
 import { EconomicComponentType, ComponentType } from "~/lib/enums";
 import {
   type ComponentFormData,
@@ -286,9 +300,7 @@ function CostsTab({
         </label>
         <Slider
           value={[formData.requiredCapacity]}
-          onValueChange={([value]) =>
-            setFormData((prev) => ({ ...prev, requiredCapacity: value }))
-          }
+          onValueChange={([value]) => setFormData((prev) => ({ ...prev, requiredCapacity: value }))}
           min={0}
           max={100}
         />

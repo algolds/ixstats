@@ -31,10 +31,8 @@ export function defineAbilityFor(
   const isStaff = normalizedRole === "staff";
   const isPremium = normalizedTier === "mycountry_premium" || isOwner || isAdmin || isStaff;
 
-  const canManageUser =
-    isOwner || isAdmin || permissions.some((p) => p.startsWith("user."));
-  const canManageRole =
-    isOwner || isAdmin || permissions.some((p) => p.startsWith("role."));
+  const canManageUser = isOwner || isAdmin || permissions.some((p) => p.startsWith("user."));
+  const canManageRole = isOwner || isAdmin || permissions.some((p) => p.startsWith("role."));
   const canManageSystemConfig = isOwner || permissions.includes("system.config");
   const canReadSystemConfig =
     isOwner || isAdmin || canManageSystemConfig || permissions.includes("system.logs");
@@ -83,7 +81,12 @@ export function defineAbilityFor(
     }
 
     if (subject === "SystemConfig") {
-      if (action === "manage" || action === "update" || action === "create" || action === "delete") {
+      if (
+        action === "manage" ||
+        action === "update" ||
+        action === "create" ||
+        action === "delete"
+      ) {
         return canManageSystemConfig;
       }
       if (action === "read") {

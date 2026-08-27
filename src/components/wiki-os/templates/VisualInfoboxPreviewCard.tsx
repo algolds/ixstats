@@ -140,14 +140,22 @@ export function VisualInfoboxPreviewCard({
     }
 
     const sections = [];
-    if (historical.length > 0) sections.push({ id: "historical", title: "Historical Timeline", items: historical });
-    if (governance.length > 0) sections.push({ id: "governance", title: "Government & Politics", items: governance });
-    if (demographics.length > 0) sections.push({ id: "demographics", title: "Demographics & Society", items: demographics });
-    if (geography.length > 0) sections.push({ id: "geography", title: "Geography & Territories", items: geography });
-    if (economy.length > 0) sections.push({ id: "economy", title: "Economy & Currency", items: economy });
-    if (military.length > 0) sections.push({ id: "military", title: "Military & Service", items: military });
-    if (technical.length > 0) sections.push({ id: "technical", title: "Technical Specifications", items: technical });
-    if (general.length > 0) sections.push({ id: "general", title: "General Information", items: general });
+    if (historical.length > 0)
+      sections.push({ id: "historical", title: "Historical Timeline", items: historical });
+    if (governance.length > 0)
+      sections.push({ id: "governance", title: "Government & Politics", items: governance });
+    if (demographics.length > 0)
+      sections.push({ id: "demographics", title: "Demographics & Society", items: demographics });
+    if (geography.length > 0)
+      sections.push({ id: "geography", title: "Geography & Territories", items: geography });
+    if (economy.length > 0)
+      sections.push({ id: "economy", title: "Economy & Currency", items: economy });
+    if (military.length > 0)
+      sections.push({ id: "military", title: "Military & Service", items: military });
+    if (technical.length > 0)
+      sections.push({ id: "technical", title: "Technical Specifications", items: technical });
+    if (general.length > 0)
+      sections.push({ id: "general", title: "General Information", items: general });
 
     if (sections.length === 0 && activeParams.length > 0) {
       sections.push({ id: "all", title: "Entity Details", items: activeParams });
@@ -183,7 +191,7 @@ export function VisualInfoboxPreviewCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", bounce: 0, duration: 0.3 }}
       className={cn(
-        "wikios-infobox facet-hierarchy-child w-[330px] max-w-[340px] shrink-0 text-[13px] leading-[1.4] select-text shadow-xl border border-border/60 bg-card/90 backdrop-blur-xl rounded-2xl overflow-hidden",
+        "wikios-infobox facet-hierarchy-child border-border/60 bg-card/90 w-[330px] max-w-[340px] shrink-0 overflow-hidden rounded-2xl border text-[13px] leading-[1.4] shadow-xl backdrop-blur-xl select-text",
         className
       )}
       style={{ float: "none", margin: 0 }}
@@ -194,11 +202,11 @@ export function VisualInfoboxPreviewCard({
           <tr>
             <th
               colSpan={2}
-              className="infobox-above font-brand text-base font-bold text-center px-4 py-3 border-b border-border/40 bg-wiki/10 text-foreground"
+              className="infobox-above font-brand border-border/40 bg-wiki/10 text-foreground border-b px-4 py-3 text-center text-base font-bold"
             >
               <div className="tracking-tight">{title}</div>
               {subheader && (
-                <div className="infobox-subheader text-xs font-normal text-muted-foreground mt-0.5 italic">
+                <div className="infobox-subheader text-muted-foreground mt-0.5 text-xs font-normal italic">
                   {subheader}
                 </div>
               )}
@@ -208,27 +216,30 @@ export function VisualInfoboxPreviewCard({
           {/* ── 2. Media / Crest / Flag Plinth Slot ── */}
           {isCountryOrPlace ? (
             <tr>
-              <td colSpan={2} className="infobox-image p-3 border-b border-border/30 bg-secondary/15 text-center">
+              <td
+                colSpan={2}
+                className="infobox-image border-border/30 bg-secondary/15 border-b p-3 text-center"
+              >
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="flex flex-col items-center justify-center p-2 rounded-xl border border-border/40 bg-background/60 h-20">
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <div className="border-border/40 bg-background/60 flex h-20 flex-col items-center justify-center rounded-xl border p-2">
+                    <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                       National Flag
                     </span>
-                    <span className="text-[9px] text-muted-foreground/60 mt-1 font-mono">
+                    <span className="text-muted-foreground/60 mt-1 font-mono text-[9px]">
                       {customValues.image_flag || "Flag.svg"}
                     </span>
                   </div>
-                  <div className="flex flex-col items-center justify-center p-2 rounded-xl border border-border/40 bg-background/60 h-20">
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <div className="border-border/40 bg-background/60 flex h-20 flex-col items-center justify-center rounded-xl border p-2">
+                    <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                       Coat of Arms
                     </span>
-                    <span className="text-[9px] text-muted-foreground/60 mt-1 font-mono">
+                    <span className="text-muted-foreground/60 mt-1 font-mono text-[9px]">
                       {customValues.image_coat || "Crest.svg"}
                     </span>
                   </div>
                 </div>
                 {motto && (
-                  <div className="text-[11px] text-muted-foreground mt-2 italic font-serif">
+                  <div className="text-muted-foreground mt-2 font-serif text-[11px] italic">
                     &ldquo;{motto}&rdquo;
                   </div>
                 )}
@@ -236,12 +247,15 @@ export function VisualInfoboxPreviewCard({
             </tr>
           ) : (
             <tr>
-              <td colSpan={2} className="infobox-image p-3 border-b border-border/30 bg-secondary/15 text-center">
-                <div className="flex flex-col items-center justify-center p-4 rounded-xl border border-border/40 bg-background/60 h-24">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <td
+                colSpan={2}
+                className="infobox-image border-border/30 bg-secondary/15 border-b p-3 text-center"
+              >
+                <div className="border-border/40 bg-background/60 flex h-24 flex-col items-center justify-center rounded-xl border p-4">
+                  <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                     Primary Entity Image
                   </span>
-                  <span className="text-[9px] text-muted-foreground/60 mt-1 font-mono">
+                  <span className="text-muted-foreground/60 mt-1 font-mono text-[9px]">
                     {customValues.image || `${cleanName.replace(/\s+/g, "_")}.jpg`}
                   </span>
                 </div>
@@ -252,10 +266,13 @@ export function VisualInfoboxPreviewCard({
           {/* ── 3. Anthem / Motto Sub-Row (if present) ── */}
           {anthem && (
             <tr>
-              <th scope="row" className="infobox-label font-medium text-muted-foreground text-right px-3 py-1.5 w-[38%] border-b border-border/20 text-xs">
+              <th
+                scope="row"
+                className="infobox-label text-muted-foreground border-border/20 w-[38%] border-b px-3 py-1.5 text-right text-xs font-medium"
+              >
                 Anthem
               </th>
-              <td className="infobox-data text-foreground px-3 py-1.5 border-b border-border/20 text-xs font-normal">
+              <td className="infobox-data text-foreground border-border/20 border-b px-3 py-1.5 text-xs font-normal">
                 {anthem}
               </td>
             </tr>
@@ -267,7 +284,7 @@ export function VisualInfoboxPreviewCard({
               <tr>
                 <th
                   colSpan={2}
-                  className="infobox-header text-center font-semibold text-xs text-foreground/90 uppercase tracking-wider px-3 py-1.5 border-t border-b border-border/40 bg-secondary/30"
+                  className="infobox-header text-foreground/90 border-border/40 bg-secondary/30 border-t border-b px-3 py-1.5 text-center text-xs font-semibold tracking-wider uppercase"
                 >
                   {sec.title}
                 </th>
@@ -275,20 +292,17 @@ export function VisualInfoboxPreviewCard({
 
               {sec.items.map((p) => {
                 const rawVal =
-                  customValues[p.name] ||
-                  p.example ||
-                  p.label ||
-                  p.name.replace(/_/g, " ");
+                  customValues[p.name] || p.example || p.label || p.name.replace(/_/g, " ");
 
                 return (
                   <tr key={p.name} className="hover:bg-secondary/20 transition-colors">
                     <th
                       scope="row"
-                      className="infobox-label font-medium text-muted-foreground text-right align-top px-3 py-1.5 w-[38%] border-b border-border/20 text-xs break-words"
+                      className="infobox-label text-muted-foreground border-border/20 w-[38%] border-b px-3 py-1.5 text-right align-top text-xs font-medium break-words"
                     >
                       {p.label || p.name.replace(/_/g, " ")}
                     </th>
-                    <td className="infobox-data text-foreground align-top px-3 py-1.5 border-b border-border/20 text-xs font-normal break-words">
+                    <td className="infobox-data text-foreground border-border/20 border-b px-3 py-1.5 align-top text-xs font-normal break-words">
                       {rawVal}
                     </td>
                   </tr>

@@ -49,10 +49,7 @@ export function WikiEditBridge({
     data: wikitextData,
     isLoading: wtLoading,
     refetch: refetchWikitext,
-  } = api.wikios.getWikitext.useQuery(
-    { title },
-    { staleTime: 5 * 60 * 1000 }
-  );
+  } = api.wikios.getWikitext.useQuery({ title }, { staleTime: 5 * 60 * 1000 });
 
   const saveWikitext = api.wikios.saveWikitext.useMutation();
 

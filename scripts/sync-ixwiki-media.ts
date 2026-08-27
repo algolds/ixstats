@@ -52,7 +52,7 @@ async function main() {
       const res = await fetch(url.toString(), {
         headers: {
           "User-Agent": DEFAULT_USER_AGENT,
-          "Accept": "application/json",
+          Accept: "application/json",
         },
         signal: AbortSignal.timeout(15000),
       });
@@ -74,7 +74,10 @@ async function main() {
         if (!info) continue;
 
         const rawTitle = page.title || "";
-        const cleanName = rawTitle.replace(/^(?:File|Image):/i, "").replace(/ /g, "_").trim();
+        const cleanName = rawTitle
+          .replace(/^(?:File|Image):/i, "")
+          .replace(/ /g, "_")
+          .trim();
         if (!cleanName) continue;
 
         const { hash, fullPath } = MediaAssetService.getMd5ShardPath(cleanName);
@@ -113,7 +116,9 @@ async function main() {
       }
 
       const dur = ((Date.now() - startTime) / 1000).toFixed(1);
-      console.log(`   [Batch ${batchIndex}] Indexed ${batchPages.length} media files (Total: ${totalProcessed} in ${dur}s)`);
+      console.log(
+        `   [Batch ${batchIndex}] Indexed ${batchPages.length} media files (Total: ${totalProcessed} in ${dur}s)`
+      );
       batchIndex++;
 
       gaicontinue = data?.continue?.gaicontinue;

@@ -25,10 +25,7 @@ export function WikiOSBrandLockup({
     const isCompact = variant === "compact";
     return (
       <div
-        className={cn(
-          "inline-flex items-center gap-3 select-none group cursor-default",
-          className
-        )}
+        className={cn("group inline-flex cursor-default items-center gap-3 select-none", className)}
       >
         {/* Apple-grade glass icon tile */}
         <div
@@ -47,22 +44,19 @@ export function WikiOSBrandLockup({
           <IxWikiLogo
             size={isCompact ? 20 : 24}
             className={cn(
-              "relative z-10 text-wiki dark:text-blue-400 transition-transform duration-300 group-hover:scale-105"
+              "text-wiki relative z-10 transition-transform duration-300 group-hover:scale-105 dark:text-blue-400"
             )}
           />
 
           {/* Shimmer sweep */}
-          <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
+          <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full dark:via-white/10" />
         </div>
 
         {/* Text Stack */}
         <div className="flex flex-col justify-center text-left">
-          <IxWikiWordmark
-            size={isCompact ? "sm" : "md"}
-            className="text-foreground"
-          />
+          <IxWikiWordmark size={isCompact ? "sm" : "md"} className="text-foreground" />
           {showSubtitle && !isCompact && (
-            <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase mt-0.5">
+            <span className="text-muted-foreground mt-0.5 text-[10px] font-medium tracking-wider uppercase">
               Worldbuilding Encyclopedia
             </span>
           )}
@@ -75,7 +69,7 @@ export function WikiOSBrandLockup({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center text-center select-none group py-2",
+        "group flex flex-col items-center justify-center py-2 text-center select-none",
         className
       )}
     >
@@ -84,24 +78,27 @@ export function WikiOSBrandLockup({
         whileHover={{ scale: 1.05, y: -2 }}
         whileTap={{ scale: 0.96 }}
         transition={{ type: "spring", stiffness: 360, damping: 24 }}
-        className="relative mb-2.5 cursor-pointer flex items-center justify-center"
+        className="relative mb-2.5 flex cursor-pointer items-center justify-center"
       >
         {/* The Laurel Logo */}
         <IxWikiLogo
           size={84}
-          className="relative z-10 h-18 w-18 sm:h-22 sm:w-22 text-wiki dark:text-blue-400 drop-shadow-[0_4px_16px_rgba(29,78,137,0.2)] dark:drop-shadow-[0_4px_20px_rgba(96,165,250,0.35)] transition-transform duration-300 group-hover:scale-105"
+          className="text-wiki relative z-10 h-18 w-18 drop-shadow-[0_4px_16px_rgba(29,78,137,0.2)] transition-transform duration-300 group-hover:scale-105 sm:h-22 sm:w-22 dark:text-blue-400 dark:drop-shadow-[0_4px_20px_rgba(96,165,250,0.35)]"
         />
       </motion.div>
 
       {/* 2. Wordmark ("IxWiki") */}
       <div className="mb-1 flex items-center justify-center">
-        <IxWikiWordmark size="2xl" className="leading-none transition-all duration-300 group-hover:brightness-110" />
+        <IxWikiWordmark
+          size="2xl"
+          className="leading-none transition-all duration-300 group-hover:brightness-110"
+        />
       </div>
 
       {/* 3. Subtitle & Editorial Tagline */}
       {showSubtitle && (
-        <div className="flex items-center justify-center text-xs text-muted-foreground/80 font-medium tracking-wide mt-1">
-          <span className="tracking-[0.18em] uppercase text-[11px] sm:text-xs font-semibold text-muted-foreground/80 leading-none">
+        <div className="text-muted-foreground/80 mt-1 flex items-center justify-center text-xs font-medium tracking-wide">
+          <span className="text-muted-foreground/80 text-[11px] leading-none font-semibold tracking-[0.18em] uppercase sm:text-xs">
             Worldbuilding Encyclopedia
           </span>
         </div>

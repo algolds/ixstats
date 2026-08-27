@@ -6,7 +6,14 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { Xmark as X, Journal as Newspaper, Sparks as Sparkles, WarningCircle as AlertCircle, SystemRestart as Loader2, HelpCircle } from "iconoir-react";
+import {
+  Xmark as X,
+  Journal as Newspaper,
+  Sparks as Sparkles,
+  WarningCircle as AlertCircle,
+  SystemRestart as Loader2,
+  HelpCircle,
+} from "iconoir-react";
 
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -16,7 +23,8 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
-  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 

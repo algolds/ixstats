@@ -17,7 +17,15 @@
  */
 
 import { AnimatePresence, motion } from "motion/react";
-import { Search, Xmark as X, Globe, SystemRestart as Loader2, ChatBubble as MessageCircle, Bell, HelpCircle } from "iconoir-react";
+import {
+  Search,
+  Xmark as X,
+  Globe,
+  SystemRestart as Loader2,
+  ChatBubble as MessageCircle,
+  Bell,
+  HelpCircle,
+} from "iconoir-react";
 import type { ProjectionMode } from "~/lib/maps/map-config";
 import { cn } from "~/lib/utils";
 import { useIsMobile } from "~/hooks/useIsMobile";
@@ -178,7 +186,6 @@ export function MapDynamicIsland({
                 </span>
               </button>
             )}
-
 
             <MapSettingsPopover
               projectionMode={projectionMode}
@@ -357,7 +364,6 @@ export function MapDynamicIsland({
                     </span>
                   </button>
                 )}
-
 
                 {/* Settings */}
                 <MapSettingsPopover

@@ -16,7 +16,18 @@
 import React, { useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardHeader, CardTitle } from "~/components/ui/card";
-import { FloppyDisk as Save, Undo as RotateCcw, InfoCircle as Info, Component as Blocks, Flash as Zap, WarningTriangle as AlertTriangle, Package, Archery as Target, Dollar as DollarSign, StatUp as TrendingUp } from "iconoir-react";
+import {
+  FloppyDisk as Save,
+  Undo as RotateCcw,
+  InfoCircle as Info,
+  Component as Blocks,
+  Flash as Zap,
+  WarningTriangle as AlertTriangle,
+  Package,
+  Archery as Target,
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { useAtomicGovernmentBuilder } from "~/hooks/useAtomicGovernmentBuilder";
@@ -233,9 +244,7 @@ export function AtomicGovernmentComponents({
 
         {/* Header Section */}
         {!standalone && (
-          <Card
-            className="border-white/10 shadow-lg backdrop-blur-md"
-          >
+          <Card className="border-white/10 shadow-lg backdrop-blur-md">
             <CardHeader>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
@@ -623,9 +632,7 @@ export function AtomicGovernmentComponents({
         </Dialog>
 
         {/* Main Workspace wrapped in a single premium Card */}
-        <Card
-          className="border-white/10 bg-white/[0.01] shadow-2xl backdrop-blur-xl dark:bg-black/20"
-        >
+        <Card className="border-white/10 bg-white/[0.01] shadow-2xl backdrop-blur-xl dark:bg-black/20">
           <div className="space-y-6 p-6">
             {/* Filter, Search and Template Row */}
             <div className="flex flex-col gap-4 border-b border-white/5 pb-6">

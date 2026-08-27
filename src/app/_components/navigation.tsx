@@ -25,8 +25,7 @@ export function Navigation() {
   const pathname = usePathname();
   const normalizedPathname = stripBasePath(pathname || "/");
   const isWikiPage =
-    normalizedPathname.startsWith("/wiki") ||
-    normalizedPathname.startsWith("/blurbs");
+    normalizedPathname.startsWith("/wiki") || normalizedPathname.startsWith("/blurbs");
 
   const { isMobile, mobileMenuOpen, setMobileMenuOpen } = useResponsiveNav(normalizedPathname);
   const { user, isLoaded } = useUser();
@@ -36,9 +35,11 @@ export function Navigation() {
     normalizedPathname.startsWith("/messages") ||
     isWikiPage;
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
-  const { scrollY, isSticky, isNavVisible, onNavMouseEnter, onNavMouseLeave } = useNavigationScroll({
-    mode: isImmersionPage ? "hidden" : "default",
-  });
+  const { scrollY, isSticky, isNavVisible, onNavMouseEnter, onNavMouseLeave } = useNavigationScroll(
+    {
+      mode: isImmersionPage ? "hidden" : "default",
+    }
+  );
 
   const [isWriterMode, setIsWriterMode] = useState(false);
 
@@ -129,7 +130,8 @@ export function Navigation() {
           opacity: isNavVisible ? 1 : 0,
           transform: isNavVisible ? "translateY(0)" : "translateY(-100%)",
           pointerEvents: isNavVisible ? "auto" : "none",
-          transition: "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out, background-color 0.2s ease",
+          transition:
+            "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out, background-color 0.2s ease",
         }}
       >
         <div className="mx-auto max-w-none px-3 sm:px-4 md:px-6 lg:px-8">

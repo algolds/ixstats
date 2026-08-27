@@ -3,7 +3,12 @@
 import React from "react";
 import { Badge } from "~/components/ui/badge";
 import { SliderWithDirectInput } from "../../../../primitives/enhanced";
-import { Group as Users, StatUp as TrendingUp, StatDown as TrendingDown, Globe } from "iconoir-react";
+import {
+  Group as Users,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Globe,
+} from "iconoir-react";
 import type { DemographicsConfiguration } from "~/types/economy-builder";
 
 interface PopulationSectionProps {

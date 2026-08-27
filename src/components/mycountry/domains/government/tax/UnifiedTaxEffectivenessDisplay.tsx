@@ -10,7 +10,28 @@ import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Separator } from "~/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
-import { Archery as Target, StatUp as TrendingUp, StatDown as TrendingDown, WarningTriangle as AlertTriangle, CheckCircle, InfoCircle as Info, Flash as Zap, Shield, Dollar as DollarSign, StatsReport as BarChart3, Group as Users, City as Building2, ArrowSeparateVertical as ArrowUpDown, LightBulb, Eye, WarningCircle as AlertCircle, Sparks as Sparkles, Activity, Reports as PieChart, ScaleFrameEnlarge as Scale } from "iconoir-react";
+import {
+  Archery as Target,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  WarningTriangle as AlertTriangle,
+  CheckCircle,
+  InfoCircle as Info,
+  Flash as Zap,
+  Shield,
+  Dollar as DollarSign,
+  StatsReport as BarChart3,
+  Group as Users,
+  City as Building2,
+  ArrowSeparateVertical as ArrowUpDown,
+  LightBulb,
+  Eye,
+  WarningCircle as AlertCircle,
+  Sparks as Sparkles,
+  Activity,
+  Reports as PieChart,
+  ScaleFrameEnlarge as Scale,
+} from "iconoir-react";
 
 import type { TaxSystem } from "~/types/tax-system";
 import type { ComponentType } from "~/types/government";

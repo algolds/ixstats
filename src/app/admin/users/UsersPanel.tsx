@@ -44,7 +44,9 @@ export function UsersPanel() {
   usePageTitle({ title: "Admin - User Identity & Accounts Hub" });
 
   const notify = useNotify();
-  const [activeTab, setActiveTab] = useState<"identities" | "wiki-reconciliation" | "discord-sync" | "country-claims">("identities");
+  const [activeTab, setActiveTab] = useState<
+    "identities" | "wiki-reconciliation" | "discord-sync" | "country-claims"
+  >("identities");
   const [searchTerm, setSearchTerm] = useState("");
 
   // Modals state
@@ -78,10 +80,8 @@ export function UsersPanel() {
     enabled: activeTab === "discord-sync",
   });
 
-  const {
-    data: countriesWithUsers,
-    refetch: refetchCountries,
-  } = api.admin.listCountriesWithUsers.useQuery();
+  const { data: countriesWithUsers, refetch: refetchCountries } =
+    api.admin.listCountriesWithUsers.useQuery();
 
   // Mutations
   const linkWikiMutation = api.admin.linkUserWiki.useMutation({
@@ -127,11 +127,15 @@ export function UsersPanel() {
 
   const applyDiscordAutoAssignments = api.admin.applyDiscordAutoAssignments.useMutation({
     onSuccess: (res) => {
-      notify.success("Applied Auto-Assignments", `Successfully linked ${res.appliedCount} Discord accounts.`);
+      notify.success(
+        "Applied Auto-Assignments",
+        `Successfully linked ${res.appliedCount} Discord accounts.`
+      );
       void refetchIdentities();
       void refetchDiscordSync();
     },
-    onError: (err) => notify.error("Error", err.message || "Failed to auto-assign Discord accounts"),
+    onError: (err) =>
+      notify.error("Error", err.message || "Failed to auto-assign Discord accounts"),
   });
 
   const assignCountryMutation = api.admin.assignUserToCountry.useMutation({
@@ -210,7 +214,7 @@ export function UsersPanel() {
                 placeholder="Search across all identities..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-8 rounded-xl border-border/30 bg-background/50 pl-8 text-xs backdrop-blur-md"
+                className="border-border/30 bg-background/50 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
               />
             </div>
             <Button
@@ -233,12 +237,15 @@ export function UsersPanel() {
         {/* TAB 1: MASTER IDENTITY MATRIX */}
         {/* ================================================================= */}
         <TabsContent value="identities" className="mt-4 space-y-4">
-          <div className="rounded-2xl border border-border/40 bg-card/40 p-4 backdrop-blur-xl shadow-xs">
+          <div className="border-border/40 bg-card/40 rounded-2xl border p-4 shadow-xs backdrop-blur-xl">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Registered User Identities</h3>
-                <p className="text-xs text-muted-foreground">
-                  Showing {filteredIdentities?.length ?? 0} registered user profiles with unified cross-platform linkages.
+                <h3 className="text-foreground text-sm font-semibold">
+                  Registered User Identities
+                </h3>
+                <p className="text-muted-foreground text-xs">
+                  Showing {filteredIdentities?.length ?? 0} registered user profiles with unified
+                  cross-platform linkages.
                 </p>
               </div>
             </div>
@@ -250,10 +257,10 @@ export function UsersPanel() {
                 ))}
               </div>
             ) : (
-              <div className="divide-y divide-border/20 overflow-x-auto">
+              <div className="divide-border/20 divide-y overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="text-muted-foreground border-b border-border/30 pb-2">
+                    <tr className="text-muted-foreground border-border/30 border-b pb-2">
                       <th className="py-2.5 font-medium">User / Clerk ID</th>
                       <th className="py-2.5 font-medium">Claimed Nation</th>
                       <th className="py-2.5 font-medium">MediaWiki Account</th>
@@ -262,30 +269,39 @@ export function UsersPanel() {
                       <th className="py-2.5 text-right font-medium">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/20">
+                  <tbody className="divide-border/20 divide-y">
                     {filteredIdentities?.map((u) => (
                       <tr key={u.id} className="hover:bg-muted/20 transition-colors">
                         <td className="py-3">
                           <div className="flex items-center gap-2">
                             <div className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-lg font-mono text-[10px] font-bold">
-                              {u.country?.name ? u.country.name.substring(0, 2).toUpperCase() : "US"}
+                              {u.country?.name
+                                ? u.country.name.substring(0, 2).toUpperCase()
+                                : "US"}
                             </div>
                             <div>
-                              <div className="font-mono text-[11px] font-semibold text-foreground">
+                              <div className="text-foreground font-mono text-[11px] font-semibold">
                                 {u.clerkUserId}
                               </div>
-                              <div className="text-[10px] text-muted-foreground">ID: {u.id.substring(0, 10)}...</div>
+                              <div className="text-muted-foreground text-[10px]">
+                                ID: {u.id.substring(0, 10)}...
+                              </div>
                             </div>
                           </div>
                         </td>
 
                         <td className="py-3">
                           {u.country ? (
-                            <Badge variant="outline" className="border-border/40 bg-background/50 font-medium">
+                            <Badge
+                              variant="outline"
+                              className="border-border/40 bg-background/50 font-medium"
+                            >
                               {u.country.name}
                             </Badge>
                           ) : (
-                            <span className="text-[11px] text-muted-foreground italic">No nation claimed</span>
+                            <span className="text-muted-foreground text-[11px] italic">
+                              No nation claimed
+                            </span>
                           )}
                         </td>
 
@@ -293,44 +309,57 @@ export function UsersPanel() {
                           {u.wikiUsername ? (
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-1.5">
-                                <Badge variant="secondary" className="bg-wiki/15 text-wiki border-wiki/30 font-semibold">
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-wiki/15 text-wiki border-wiki/30 font-semibold"
+                                >
                                   {u.wikiUsername}
                                 </Badge>
-                                {u.wikiUserId && <span className="text-[10px] text-muted-foreground">#{u.wikiUserId}</span>}
+                                {u.wikiUserId && (
+                                  <span className="text-muted-foreground text-[10px]">
+                                    #{u.wikiUserId}
+                                  </span>
+                                )}
                               </div>
                               {u.wikiAlts && u.wikiAlts.length > 0 && (
-                                <div className="text-[10px] text-muted-foreground">
-                                  Alts: <span className="text-foreground">{u.wikiAlts.join(", ")}</span>
+                                <div className="text-muted-foreground text-[10px]">
+                                  Alts:{" "}
+                                  <span className="text-foreground">{u.wikiAlts.join(", ")}</span>
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <span className="text-[11px] text-muted-foreground">Unlinked</span>
+                            <span className="text-muted-foreground text-[11px]">Unlinked</span>
                           )}
                         </td>
 
                         <td className="py-3">
                           {u.discordUsername ? (
                             <div className="space-y-0.5">
-                              <Badge variant="secondary" className="bg-discord/15 text-discord border-discord/30 font-medium">
+                              <Badge
+                                variant="secondary"
+                                className="bg-discord/15 text-discord border-discord/30 font-medium"
+                              >
                                 @{u.discordUsername}
                               </Badge>
                               {u.discordUserId && (
-                                <div className="font-mono text-[9px] text-muted-foreground">ID: {u.discordUserId}</div>
+                                <div className="text-muted-foreground font-mono text-[9px]">
+                                  ID: {u.discordUserId}
+                                </div>
                               )}
                             </div>
                           ) : (
-                            <span className="text-[11px] text-muted-foreground">Unlinked</span>
+                            <span className="text-muted-foreground text-[11px]">Unlinked</span>
                           )}
                         </td>
 
                         <td className="py-3">
                           <div className="flex items-center gap-1.5">
-                            <Badge variant="outline" className="capitalize text-[10px]">
+                            <Badge variant="outline" className="text-[10px] capitalize">
                               {u.role?.name || "Member"}
                             </Badge>
                             {u.membershipTier === "mycountry_premium" && (
-                              <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30 text-[10px]">
+                              <Badge className="border-amber-500/30 bg-amber-500/20 text-[10px] text-amber-500">
                                 VIP
                               </Badge>
                             )}
@@ -379,11 +408,14 @@ export function UsersPanel() {
         {/* TAB 2: WIKI RECONCILIATION & ALTS */}
         {/* ================================================================= */}
         <TabsContent value="wiki-reconciliation" className="mt-4 space-y-4">
-          <div className="rounded-2xl border border-border/40 bg-card/40 p-4 backdrop-blur-xl shadow-xs">
+          <div className="border-border/40 bg-card/40 rounded-2xl border p-4 shadow-xs backdrop-blur-xl">
             <div className="mb-4">
-              <h3 className="text-sm font-semibold text-foreground">MediaWiki ↔ IxnayID Reconciliation Ledger</h3>
-              <p className="text-xs text-muted-foreground">
-                All 131 MediaWiki accounts cross-referenced with primary nation personas and active user profiles.
+              <h3 className="text-foreground text-sm font-semibold">
+                MediaWiki ↔ IxnayID Reconciliation Ledger
+              </h3>
+              <p className="text-muted-foreground text-xs">
+                All 131 MediaWiki accounts cross-referenced with primary nation personas and active
+                user profiles.
               </p>
             </div>
 
@@ -394,10 +426,10 @@ export function UsersPanel() {
                 ))}
               </div>
             ) : (
-              <div className="divide-y divide-border/20 overflow-x-auto">
+              <div className="divide-border/20 divide-y overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="text-muted-foreground border-b border-border/30 pb-2">
+                    <tr className="text-muted-foreground border-border/30 border-b pb-2">
                       <th className="py-2.5 font-medium">MediaWiki Account</th>
                       <th className="py-2.5 font-medium">Target Nation</th>
                       <th className="py-2.5 font-medium">Status & Confidence</th>
@@ -406,12 +438,10 @@ export function UsersPanel() {
                       <th className="py-2.5 text-right font-medium">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/20">
+                  <tbody className="divide-border/20 divide-y">
                     {wikiMatrix?.entries?.map((e) => (
                       <tr key={e.wikiUsername} className="hover:bg-muted/20 transition-colors">
-                        <td className="py-3 font-semibold text-foreground">
-                          {e.wikiUsername}
-                        </td>
+                        <td className="text-foreground py-3 font-semibold">{e.wikiUsername}</td>
                         <td className="py-3">
                           <Badge variant="outline" className="border-border/40 font-medium">
                             {e.targetCountry}
@@ -419,17 +449,17 @@ export function UsersPanel() {
                         </td>
                         <td className="py-3">
                           {e.status === "ALREADY_LINKED" && (
-                            <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 gap-1 text-[10px]">
+                            <Badge className="gap-1 border-emerald-500/30 bg-emerald-500/20 text-[10px] text-emerald-600 dark:text-emerald-400">
                               <CheckCircle className="h-3 w-3" /> Linked & Verified
                             </Badge>
                           )}
                           {e.status === "ALT_MERGED" && (
-                            <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30 gap-1 text-[10px]">
+                            <Badge className="gap-1 border-blue-500/30 bg-blue-500/20 text-[10px] text-blue-600 dark:text-blue-400">
                               <Sparkles className="h-3 w-3" /> Alt Merged ({e.isAltFor})
                             </Badge>
                           )}
                           {e.status === "READY_TO_LINK" && (
-                            <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1 text-[10px]">
+                            <Badge className="gap-1 border-amber-500/30 bg-amber-500/20 text-[10px] text-amber-600 dark:text-amber-400">
                               <WarningCircle className="h-3 w-3" /> Ready to Link
                             </Badge>
                           )}
@@ -442,16 +472,18 @@ export function UsersPanel() {
                         <td className="py-3">
                           {e.matchedUser ? (
                             <div>
-                              <div className="font-mono text-[11px] font-medium">{e.matchedUser.clerkUserId}</div>
-                              <div className="text-[10px] text-muted-foreground">{e.matchedUser.countryName}</div>
+                              <div className="font-mono text-[11px] font-medium">
+                                {e.matchedUser.clerkUserId}
+                              </div>
+                              <div className="text-muted-foreground text-[10px]">
+                                {e.matchedUser.countryName}
+                              </div>
                             </div>
                           ) : (
-                            <span className="text-[11px] text-muted-foreground italic">—</span>
+                            <span className="text-muted-foreground text-[11px] italic">—</span>
                           )}
                         </td>
-                        <td className="py-3 text-[11px] text-muted-foreground">
-                          {e.notes || "—"}
-                        </td>
+                        <td className="text-muted-foreground py-3 text-[11px]">{e.notes || "—"}</td>
                         <td className="py-3 text-right">
                           {e.matchedUser && e.status === "READY_TO_LINK" && (
                             <Button
@@ -494,12 +526,15 @@ export function UsersPanel() {
         {/* TAB 3: DISCORD BOT MEMBER SYNC */}
         {/* ================================================================= */}
         <TabsContent value="discord-sync" className="mt-4 space-y-4">
-          <div className="rounded-2xl border border-border/40 bg-card/40 p-4 backdrop-blur-xl shadow-xs">
+          <div className="border-border/40 bg-card/40 rounded-2xl border p-4 shadow-xs backdrop-blur-xl">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Discord Server Member Discovery</h3>
-                <p className="text-xs text-muted-foreground">
-                  Queries Ixnay Discord guild via bot token, parses server nicknames like <code>[Urcea] John</code>, and matches them to nations.
+                <h3 className="text-foreground text-sm font-semibold">
+                  Discord Server Member Discovery
+                </h3>
+                <p className="text-muted-foreground text-xs">
+                  Queries Ixnay Discord guild via bot token, parses server nicknames like{" "}
+                  <code>[Urcea] John</code>, and matches them to nations.
                 </p>
               </div>
 
@@ -537,28 +572,35 @@ export function UsersPanel() {
               <div className="space-y-6">
                 {/* Auto Match Suggestions */}
                 <div>
-                  <h4 className="mb-2 text-xs font-semibold text-foreground uppercase tracking-wider">
+                  <h4 className="text-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
                     High Confidence Match Candidates ({discordSyncData?.suggestions.length || 0})
                   </h4>
                   {discordSyncData?.suggestions.length === 0 ? (
-                    <p className="text-xs text-muted-foreground italic py-2">No unlinked high-confidence candidates found.</p>
+                    <p className="text-muted-foreground py-2 text-xs italic">
+                      No unlinked high-confidence candidates found.
+                    </p>
                   ) : (
-                    <div className="divide-y divide-border/20 rounded-xl border border-border/30 bg-background/30 p-2">
+                    <div className="divide-border/20 border-border/30 bg-background/30 divide-y rounded-xl border p-2">
                       {discordSyncData?.suggestions.map((s) => (
-                        <div key={s.discordUserId} className="flex items-center justify-between py-2.5 px-2">
+                        <div
+                          key={s.discordUserId}
+                          className="flex items-center justify-between px-2 py-2.5"
+                        >
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-foreground">@{s.discordUsername}</span>
+                              <span className="text-foreground font-semibold">
+                                @{s.discordUsername}
+                              </span>
                               {s.discordNick && (
                                 <Badge variant="secondary" className="text-[10px]">
                                   Nick: {s.discordNick}
                                 </Badge>
                               )}
-                              <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px]">
+                              <Badge className="border-emerald-500/30 bg-emerald-500/20 text-[10px] text-emerald-600 dark:text-emerald-400">
                                 Match: {s.matchedCountryName}
                               </Badge>
                             </div>
-                            <div className="text-[10px] text-muted-foreground">{s.reason}</div>
+                            <div className="text-muted-foreground text-[10px]">{s.reason}</div>
                           </div>
 
                           <Button
@@ -588,11 +630,15 @@ export function UsersPanel() {
         {/* TAB 4: COUNTRY CLAIMS & TIERS */}
         {/* ================================================================= */}
         <TabsContent value="country-claims" className="mt-4 space-y-4">
-          <div className="rounded-2xl border border-border/40 bg-card/40 p-4 backdrop-blur-xl shadow-xs">
+          <div className="border-border/40 bg-card/40 rounded-2xl border p-4 shadow-xs backdrop-blur-xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Country Claims & Player Overrides</h3>
-                <p className="text-xs text-muted-foreground">Manage direct country assignments and VIP executive privileges.</p>
+                <h3 className="text-foreground text-sm font-semibold">
+                  Country Claims & Player Overrides
+                </h3>
+                <p className="text-muted-foreground text-xs">
+                  Manage direct country assignments and VIP executive privileges.
+                </p>
               </div>
               <Button
                 size="sm"
@@ -604,24 +650,26 @@ export function UsersPanel() {
               </Button>
             </div>
 
-            <div className="divide-y divide-border/20 overflow-x-auto">
+            <div className="divide-border/20 divide-y overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-muted-foreground border-b border-border/30 pb-2">
+                  <tr className="text-muted-foreground border-border/30 border-b pb-2">
                     <th className="py-2.5 font-medium">Nation</th>
                     <th className="py-2.5 font-medium">Assigned User</th>
                     <th className="py-2.5 text-right font-medium">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/20">
+                <tbody className="divide-border/20 divide-y">
                   {countriesWithUsers?.map((c) => (
                     <tr key={c.id} className="hover:bg-muted/20 transition-colors">
-                      <td className="py-2.5 font-semibold text-foreground">{c.name}</td>
+                      <td className="text-foreground py-2.5 font-semibold">{c.name}</td>
                       <td className="py-2.5">
                         {c.user ? (
                           <span className="font-mono text-[11px]">{c.user.clerkUserId}</span>
                         ) : (
-                          <span className="text-[11px] text-muted-foreground italic">Unclaimed</span>
+                          <span className="text-muted-foreground text-[11px] italic">
+                            Unclaimed
+                          </span>
                         )}
                       </td>
                       <td className="py-2.5 text-right">
@@ -652,13 +700,14 @@ export function UsersPanel() {
 
       {/* Manual Wiki Link Dialog */}
       <Dialog open={isWikiDialogOpen} onOpenChange={setIsWikiDialogOpen}>
-        <DialogContent className="rounded-2xl border-border/40 bg-card/90 backdrop-blur-xl">
+        <DialogContent className="border-border/40 bg-card/90 rounded-2xl backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle className="text-sm font-semibold">Link MediaWiki Profile</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <p className="text-xs text-muted-foreground">
-              Enter the canonical MediaWiki username or known alt (e.g. <code>Kir</code>, <code>Carthinova</code>, <code>Urcea</code>).
+            <p className="text-muted-foreground text-xs">
+              Enter the canonical MediaWiki username or known alt (e.g. <code>Kir</code>,{" "}
+              <code>Carthinova</code>, <code>Urcea</code>).
             </p>
             <Input
               placeholder="MediaWiki Username..."
@@ -690,12 +739,12 @@ export function UsersPanel() {
 
       {/* Manual Discord Link Dialog */}
       <Dialog open={isDiscordDialogOpen} onOpenChange={setIsDiscordDialogOpen}>
-        <DialogContent className="rounded-2xl border-border/40 bg-card/90 backdrop-blur-xl">
+        <DialogContent className="border-border/40 bg-card/90 rounded-2xl backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle className="text-sm font-semibold">Link Discord Identity</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Enter the Discord username and numeric snowflake ID.
             </p>
             <Input
@@ -735,7 +784,7 @@ export function UsersPanel() {
 
       {/* Country Assign Dialog */}
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent className="rounded-2xl border-border/40 bg-card/90 backdrop-blur-xl">
+        <DialogContent className="border-border/40 bg-card/90 rounded-2xl backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle className="text-sm font-semibold">Assign Country to User</DialogTitle>
           </DialogHeader>

@@ -12,7 +12,17 @@ import { IxTime } from "~/lib/ixtime";
 import { cn } from "~/lib/utils";
 import { GlassCard } from "~/app/builder/components/glass/GlassCard";
 import { motion, AnimatePresence } from "motion/react";
-import { Dollar as DollarSign, StatUp as TrendingUp, StatDown as TrendingDown, WarningTriangle as AlertTriangle, CheckCircle, Clock, Calculator, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight } from "iconoir-react";
+import {
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  WarningTriangle as AlertTriangle,
+  CheckCircle,
+  Clock,
+  Calculator,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
 import type { BudgetAllocationInput, BudgetStatus } from "~/types/government";
 
 interface BudgetAllocationFormProps {

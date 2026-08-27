@@ -50,15 +50,15 @@ export function ValuationAdmin() {
   const busy = saveMutation.isPending || recomputeMutation.isPending;
 
   return (
-    <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-5">
-      <div className="border-b border-border/20 pb-4">
+    <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+      <div className="border-border/20 border-b pb-4">
         <div className="flex items-center gap-2">
           <Coins className="h-4 w-4 text-amber-400" />
           <h2 className="text-foreground text-xs font-bold">Card Valuation Formula</h2>
         </div>
         <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
           Single source of truth for every card&apos;s value:{" "}
-          <code className="font-mono text-[10px] text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded">
+          <code className="rounded bg-amber-500/10 px-1 py-0.5 font-mono text-[10px] text-amber-400">
             max(rarityFloor × typeMult, nsValue × premium)
           </code>
           . Saving applies the change and revalues all cards.
@@ -72,7 +72,9 @@ export function ValuationAdmin() {
           <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {FIELDS.map((f) => (
               <div key={f.key} className="space-y-1">
-                <span className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">{f.label}</span>
+                <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                  {f.label}
+                </span>
                 <input
                   type="number"
                   step="any"
@@ -81,9 +83,11 @@ export function ValuationAdmin() {
                   onChange={(e) =>
                     setForm((p) => ({ ...p, [f.key]: parseFloat(e.target.value) || 0 }))
                   }
-                  className="h-8 w-full rounded-xl border border-border/30 bg-background/50 px-3 font-mono text-xs text-foreground shadow-xs focus-visible:ring-1 focus-visible:outline-none"
+                  className="border-border/30 bg-background/50 text-foreground h-8 w-full rounded-xl border px-3 font-mono text-xs shadow-xs focus-visible:ring-1 focus-visible:outline-none"
                 />
-                {f.hint && <span className="text-muted-foreground text-[10px] block">{f.hint}</span>}
+                {f.hint && (
+                  <span className="text-muted-foreground block text-[10px]">{f.hint}</span>
+                )}
               </div>
             ))}
           </div>
@@ -93,7 +97,7 @@ export function ValuationAdmin() {
               onClick={() => saveMutation.mutate(form)}
               disabled={busy}
               size="sm"
-              className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               {saveMutation.isPending ? (
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -107,7 +111,7 @@ export function ValuationAdmin() {
               size="sm"
               onClick={() => recomputeMutation.mutate()}
               disabled={busy}
-              className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+              className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               {recomputeMutation.isPending ? (
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />

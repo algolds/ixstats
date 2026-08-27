@@ -224,196 +224,197 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
           try {
             // Filter relationship and embassy data in memory for this participant
             const relationships = allRelationships.filter(
-              (r: any) => r.country1 === participant.countryId || r.country2 === participant.countryId
+              (r: any) =>
+                r.country1 === participant.countryId || r.country2 === participant.countryId
             );
 
             const embassies = allEmbassies.filter(
               (e: any) =>
-                e.guestCountryId === participant.countryId || e.hostCountryId === participant.countryId
+                e.guestCountryId === participant.countryId ||
+                e.hostCountryId === participant.countryId
             );
 
-              // Build observable data for personality calculation
-              const observableData: ObservableData = {
-                relationships: {
-                  total: relationships.length,
-                  allied: relationships.filter(
-                    (r: { relationship: string }) => r.relationship === "alliance"
-                  ).length,
-                  friendly: relationships.filter(
-                    (r: { relationship: string }) =>
-                      r.relationship === "friendly" || r.relationship === "cooperative"
-                  ).length,
-                  tense: relationships.filter(
-                    (r: { relationship: string }) =>
-                      r.relationship === "cool" || r.relationship === "strained"
-                  ).length,
-                  hostile: relationships.filter(
-                    (r: { relationship: string }) => r.relationship === "hostile"
-                  ).length,
-                  neutral: relationships.filter(
-                    (r: { relationship: string }) => r.relationship === "neutral"
-                  ).length,
-                  averageStrength:
-                    relationships.length > 0
-                      ? relationships.reduce(
-                          (sum: number, r: { strength: number }) => sum + r.strength,
-                          0
-                        ) / relationships.length
-                      : 50,
-                  deterioratingCount: 0, // Could track this in future
-                },
-                embassies: {
-                  total: embassies.length,
-                  culturalSpecialized: embassies.filter(
-                    (e: { specialization: string | null }) => e.specialization === "cultural"
-                  ).length,
-                  economicSpecialized: embassies.filter(
-                    (e: { specialization: string | null }) => e.specialization === "economic"
-                  ).length,
-                  securitySpecialized: embassies.filter(
-                    (e: { specialization: string | null }) => e.specialization === "security"
-                  ).length,
-                  averageLevel:
-                    embassies.length > 0
-                      ? embassies.reduce((sum: number, e: { level: number }) => sum + e.level, 0) /
-                        embassies.length
-                      : 1,
-                  averageInfluence:
-                    embassies.length > 0
-                      ? embassies.reduce(
-                          (sum: number, e: { influence: number }) => sum + e.influence,
-                          0
-                        ) / embassies.length
-                      : 50,
-                },
-                treaties: {
-                  total: 0, // Would need treaty data
-                  multilateral: 0,
-                  defensive: 0,
-                  trade: 0,
-                  cultural: 0,
-                },
-                economic: {
-                  totalTradeVolume: 0, // Would need trade data
-                  highValuePartners: 0,
-                  tradeTreatyCount: 0,
-                  tradeGrowthTrend: 0,
-                },
-                cultural: {
-                  highExchangeCount: relationships.filter(
-                    (r: { culturalExchange: string | null }) => r.culturalExchange === "High"
-                  ).length,
-                  mediumExchangeCount: relationships.filter(
-                    (r: { culturalExchange: string | null }) => r.culturalExchange === "Medium"
-                  ).length,
-                  culturalTreatyCount: 0,
-                  totalExchangePrograms: 0, // Could calculate from cultural exchange data
-                },
-                historical: {
-                  totalActions: Math.max(1, relationships.length + embassies.length),
-                  cooperativeActions: relationships.filter(
-                    (r: { relationship: string }) =>
-                      r.relationship === "alliance" || r.relationship === "friendly"
-                  ).length,
-                  aggressiveActions: relationships.filter(
-                    (r: { relationship: string }) =>
-                      r.relationship === "hostile" || r.relationship === "strained"
-                  ).length,
-                  consistencyScore: 70, // Default moderate consistency
-                  policyVolatility: 30, // Default moderate volatility
-                },
-              };
+            // Build observable data for personality calculation
+            const observableData: ObservableData = {
+              relationships: {
+                total: relationships.length,
+                allied: relationships.filter(
+                  (r: { relationship: string }) => r.relationship === "alliance"
+                ).length,
+                friendly: relationships.filter(
+                  (r: { relationship: string }) =>
+                    r.relationship === "friendly" || r.relationship === "cooperative"
+                ).length,
+                tense: relationships.filter(
+                  (r: { relationship: string }) =>
+                    r.relationship === "cool" || r.relationship === "strained"
+                ).length,
+                hostile: relationships.filter(
+                  (r: { relationship: string }) => r.relationship === "hostile"
+                ).length,
+                neutral: relationships.filter(
+                  (r: { relationship: string }) => r.relationship === "neutral"
+                ).length,
+                averageStrength:
+                  relationships.length > 0
+                    ? relationships.reduce(
+                        (sum: number, r: { strength: number }) => sum + r.strength,
+                        0
+                      ) / relationships.length
+                    : 50,
+                deterioratingCount: 0, // Could track this in future
+              },
+              embassies: {
+                total: embassies.length,
+                culturalSpecialized: embassies.filter(
+                  (e: { specialization: string | null }) => e.specialization === "cultural"
+                ).length,
+                economicSpecialized: embassies.filter(
+                  (e: { specialization: string | null }) => e.specialization === "economic"
+                ).length,
+                securitySpecialized: embassies.filter(
+                  (e: { specialization: string | null }) => e.specialization === "security"
+                ).length,
+                averageLevel:
+                  embassies.length > 0
+                    ? embassies.reduce((sum: number, e: { level: number }) => sum + e.level, 0) /
+                      embassies.length
+                    : 1,
+                averageInfluence:
+                  embassies.length > 0
+                    ? embassies.reduce(
+                        (sum: number, e: { influence: number }) => sum + e.influence,
+                        0
+                      ) / embassies.length
+                    : 50,
+              },
+              treaties: {
+                total: 0, // Would need treaty data
+                multilateral: 0,
+                defensive: 0,
+                trade: 0,
+                cultural: 0,
+              },
+              economic: {
+                totalTradeVolume: 0, // Would need trade data
+                highValuePartners: 0,
+                tradeTreatyCount: 0,
+                tradeGrowthTrend: 0,
+              },
+              cultural: {
+                highExchangeCount: relationships.filter(
+                  (r: { culturalExchange: string | null }) => r.culturalExchange === "High"
+                ).length,
+                mediumExchangeCount: relationships.filter(
+                  (r: { culturalExchange: string | null }) => r.culturalExchange === "Medium"
+                ).length,
+                culturalTreatyCount: 0,
+                totalExchangePrograms: 0, // Could calculate from cultural exchange data
+              },
+              historical: {
+                totalActions: Math.max(1, relationships.length + embassies.length),
+                cooperativeActions: relationships.filter(
+                  (r: { relationship: string }) =>
+                    r.relationship === "alliance" || r.relationship === "friendly"
+                ).length,
+                aggressiveActions: relationships.filter(
+                  (r: { relationship: string }) =>
+                    r.relationship === "hostile" || r.relationship === "strained"
+                ).length,
+                consistencyScore: 70, // Default moderate consistency
+                policyVolatility: 30, // Default moderate volatility
+              },
+            };
 
-              // Calculate NPC personality
-              const npcPersonality = NPCPersonalitySystem.calculatePersonality(
-                participant.countryId,
-                participant.countryName,
-                observableData
-              );
+            // Calculate NPC personality
+            const npcPersonality = NPCPersonalitySystem.calculatePersonality(
+              participant.countryId,
+              participant.countryName,
+              observableData
+            );
 
-              // Get relationship with host country
-              const relationshipWithHost = relationships.find(
-                (r: any) =>
-                  (r.country1 === participant.countryId && r.country2 === input.hostCountryId) ||
-                  (r.country2 === participant.countryId && r.country1 === input.hostCountryId)
-              );
+            // Get relationship with host country
+            const relationshipWithHost = relationships.find(
+              (r: any) =>
+                (r.country1 === participant.countryId && r.country2 === input.hostCountryId) ||
+                (r.country2 === participant.countryId && r.country1 === input.hostCountryId)
+            );
 
-              // Build participation context
-              const participationContext: NPCParticipationContext = {
-                npcCountryId: participant.countryId,
-                npcCountryName: participant.countryName,
-                npcPersonality,
-                hostCountryId: input.hostCountryId,
-                hostCountryName: exchange.hostCountryName,
-                relationshipStrength: relationshipWithHost?.strength ?? 50,
-                relationshipState: relationshipWithHost?.relationship ?? "neutral",
-                exchangeType: exchange.type,
-                exchangeDetails: {
-                  title: exchange.title,
-                  description: exchange.description || "",
-                  culturalImpact: 50, // Default values - could calculate based on exchange type
-                  diplomaticValue: 40,
-                  economicCost: 25000,
-                  duration: Math.ceil(
-                    (new Date(exchange.endDate).getTime() -
-                      new Date(exchange.startDate).getTime()) /
-                      (1000 * 60 * 60 * 24)
-                  ),
-                },
-                existingExchanges:
-                  observableData.cultural.highExchangeCount +
-                  observableData.cultural.mediumExchangeCount,
-                historicalSuccess: 70, // Default - could track actual success rate
-              };
+            // Build participation context
+            const participationContext: NPCParticipationContext = {
+              npcCountryId: participant.countryId,
+              npcCountryName: participant.countryName,
+              npcPersonality,
+              hostCountryId: input.hostCountryId,
+              hostCountryName: exchange.hostCountryName,
+              relationshipStrength: relationshipWithHost?.strength ?? 50,
+              relationshipState: relationshipWithHost?.relationship ?? "neutral",
+              exchangeType: exchange.type,
+              exchangeDetails: {
+                title: exchange.title,
+                description: exchange.description || "",
+                culturalImpact: 50, // Default values - could calculate based on exchange type
+                diplomaticValue: 40,
+                economicCost: 25000,
+                duration: Math.ceil(
+                  (new Date(exchange.endDate).getTime() - new Date(exchange.startDate).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                ),
+              },
+              existingExchanges:
+                observableData.cultural.highExchangeCount +
+                observableData.cultural.mediumExchangeCount,
+              historicalSuccess: 70, // Default - could track actual success rate
+            };
 
-              // Get AI-generated participation decision
-              const decision = NPCCulturalParticipation.evaluateParticipation(participationContext);
+            // Get AI-generated participation decision
+            const decision = NPCCulturalParticipation.evaluateParticipation(participationContext);
 
-              return {
-                countryId: participant.countryId,
-                countryName: participant.countryName,
-                flagUrl: participant.flagUrl || "",
-                role: participant.role,
-                willParticipate: decision.willParticipate,
-                enthusiasmLevel: decision.enthusiasmLevel,
-                resourceCommitment: decision.resourceCommitment,
-                confidence: decision.confidence,
-                reasoning: decision.reasoning,
-                conditions: decision.conditions,
-                responseMessage: decision.responseMessage,
-                responseTimeline: decision.responseTimeline,
-                alternativeProposal: decision.alternativeProposal,
-                personality: {
-                  archetype: npcPersonality.archetype,
-                  culturalOpenness: npcPersonality.traits.culturalOpenness,
-                  cooperativeness: npcPersonality.traits.cooperativeness,
-                  assertiveness: npcPersonality.traits.assertiveness,
-                },
-              };
-            } catch (error) {
-              console.error(`Error generating NPC response for ${participant.countryId}:`, error);
-              // Return default response if AI generation fails
-              return {
-                countryId: participant.countryId,
-                countryName: participant.countryName,
-                flagUrl: participant.flagUrl || "",
-                role: participant.role,
-                willParticipate: true,
-                enthusiasmLevel: 60,
-                resourceCommitment: 50,
-                confidence: 50,
-                reasoning: ["Default response due to calculation error"],
-                responseMessage: `${participant.countryName} is evaluating this cultural exchange opportunity.`,
-                responseTimeline: "short_term" as const,
-                personality: {
-                  archetype: "Pragmatic Realist",
-                  culturalOpenness: 60,
-                  cooperativeness: 60,
-                  assertiveness: 50,
-                },
-              };
-            }
-          });
+            return {
+              countryId: participant.countryId,
+              countryName: participant.countryName,
+              flagUrl: participant.flagUrl || "",
+              role: participant.role,
+              willParticipate: decision.willParticipate,
+              enthusiasmLevel: decision.enthusiasmLevel,
+              resourceCommitment: decision.resourceCommitment,
+              confidence: decision.confidence,
+              reasoning: decision.reasoning,
+              conditions: decision.conditions,
+              responseMessage: decision.responseMessage,
+              responseTimeline: decision.responseTimeline,
+              alternativeProposal: decision.alternativeProposal,
+              personality: {
+                archetype: npcPersonality.archetype,
+                culturalOpenness: npcPersonality.traits.culturalOpenness,
+                cooperativeness: npcPersonality.traits.cooperativeness,
+                assertiveness: npcPersonality.traits.assertiveness,
+              },
+            };
+          } catch (error) {
+            console.error(`Error generating NPC response for ${participant.countryId}:`, error);
+            // Return default response if AI generation fails
+            return {
+              countryId: participant.countryId,
+              countryName: participant.countryName,
+              flagUrl: participant.flagUrl || "",
+              role: participant.role,
+              willParticipate: true,
+              enthusiasmLevel: 60,
+              resourceCommitment: 50,
+              confidence: 50,
+              reasoning: ["Default response due to calculation error"],
+              responseMessage: `${participant.countryName} is evaluating this cultural exchange opportunity.`,
+              responseTimeline: "short_term" as const,
+              personality: {
+                archetype: "Pragmatic Realist",
+                culturalOpenness: 60,
+                cooperativeness: 60,
+                assertiveness: 50,
+              },
+            };
+          }
+        });
 
         return responses;
       } catch (error) {

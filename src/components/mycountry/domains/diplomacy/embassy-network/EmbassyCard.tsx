@@ -5,7 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
-import { City as Building2, ShieldCheck, NavArrowRight as ChevronRight, CreditCard } from "iconoir-react";
+import {
+  City as Building2,
+  ShieldCheck,
+  NavArrowRight as ChevronRight,
+  CreditCard,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import Link from "next/link";

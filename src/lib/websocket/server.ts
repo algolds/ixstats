@@ -196,7 +196,8 @@ class RealTimeIntelligenceServer {
   }
 
   private startUpdateProcessor() {
-    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") return;
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined")
+      return;
     this.processingInterval = setInterval(() => {
       this.processUpdateQueue();
       this.cleanupStaleConnections();
@@ -241,7 +242,7 @@ class RealTimeIntelligenceServer {
         // Send ping to check connection health
         try {
           client.ws.ping();
-        } catch  {
+        } catch {
           console.log(`🧹 Connection failed ping: ${clientId}`);
           this.clients.delete(clientId);
         }

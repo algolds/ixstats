@@ -1,7 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Shield, Archery as Crosshair, SeaWaves as Anchor, Tournament as Swords, GraduationCap, Dollar as DollarSign, Group as Users, Xmark as X, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp } from "iconoir-react";
+import {
+  Shield,
+  Archery as Crosshair,
+  SeaWaves as Anchor,
+  Tournament as Swords,
+  GraduationCap,
+  Dollar as DollarSign,
+  Group as Users,
+  Xmark as X,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {

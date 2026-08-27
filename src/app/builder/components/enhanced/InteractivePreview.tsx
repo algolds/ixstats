@@ -2,7 +2,29 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
-import { Play, Pause, Undo as RotateCcw, FastArrowRight as FastForward, NavArrowLeft as ChevronLeft, Calendar, StatsReport as BarChart3, StatUp as TrendingUp, StatDown as TrendingDown, Group as Users, Dollar as DollarSign, Flash as Zap, WhiteFlag as Flag, Crown, Heart, Shield, Activity, CheckCircle, Clock, Archery as Target, Rocket } from "iconoir-react";
+import {
+  Play,
+  Pause,
+  Undo as RotateCcw,
+  FastArrowRight as FastForward,
+  NavArrowLeft as ChevronLeft,
+  Calendar,
+  StatsReport as BarChart3,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Group as Users,
+  Dollar as DollarSign,
+  Flash as Zap,
+  WhiteFlag as Flag,
+  Crown,
+  Heart,
+  Shield,
+  Activity,
+  CheckCircle,
+  Clock,
+  Archery as Target,
+  Rocket,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { GlassCard, GlassCardContent, GlassCardHeader } from "../glass/GlassCard";
 import { Button } from "~/components/ui/button";
@@ -323,10 +345,7 @@ export function InteractivePreview({
             </Button>
             {referenceCountry ? (
               <div className="flex items-center gap-4">
-                <UnifiedCountryFlag
-                  countryName={referenceCountry.name}
-                  size="lg"
-                />
+                <UnifiedCountryFlag countryName={referenceCountry.name} size="lg" />
                 <h2 className="text-3xl font-bold text-white">{inputs.countryName}</h2>
               </div>
             ) : (

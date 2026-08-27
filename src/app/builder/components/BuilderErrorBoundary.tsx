@@ -1,7 +1,12 @@
 "use client";
 
 import React from "react";
-import { WarningTriangle as AlertTriangle, Refresh as RefreshCw, HomeSimple as Home, ArrowLeft } from "iconoir-react";
+import {
+  WarningTriangle as AlertTriangle,
+  Refresh as RefreshCw,
+  HomeSimple as Home,
+  ArrowLeft,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -70,7 +75,7 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
         localStorage.removeItem("builder_state");
         localStorage.removeItem("builder_last_saved");
         localStorage.removeItem("builder_imported_data");
-      } catch  {
+      } catch {
         // Failed to clear storage
       }
     }

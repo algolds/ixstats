@@ -45,8 +45,7 @@ export function CountryIdentityStrip({
   const isDefaultRealm = realmSlug === "default" || realmSlug === "ixworld";
   const ownerHandle = sovereignUser?.username?.replace(/^@/, "") || null;
   const fallbackSlugForPassport =
-    (realmSlug !== "default" ? realmSlug : "") ||
-    (typeof window !== "undefined" ? "" : "");
+    (realmSlug !== "default" ? realmSlug : "") || (typeof window !== "undefined" ? "" : "");
   // Keep link stable even without owner — passport resolves via country slug fallback at layout level.
   const showOwner = Boolean(ownerHandle);
 
@@ -69,23 +68,17 @@ export function CountryIdentityStrip({
         className={cn(
           "group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide transition-all duration-150 ease-out active:scale-[0.97]",
           hasImage
-            ? "border-white/15 bg-black/35 text-white backdrop-blur-md supports-[backdrop-filter]:bg-black/30 hover:bg-black/45 hover:border-white/25"
-            : "border-border bg-card/60 text-foreground backdrop-blur-xl hover:bg-card hover:border-foreground/15"
+            ? "border-white/15 bg-black/35 text-white backdrop-blur-md hover:border-white/25 hover:bg-black/45 supports-[backdrop-filter]:bg-black/30"
+            : "border-border bg-card/60 text-foreground hover:bg-card hover:border-foreground/15 backdrop-blur-xl"
         )}
-        style={
-          hasImage
-            ? { backdropFilter: "blur(12px) saturate(180%)" }
-            : undefined
-        }
+        style={hasImage ? { backdropFilter: "blur(12px) saturate(180%)" } : undefined}
       >
         <Globe className="h-3.5 w-3.5 shrink-0 opacity-80 group-hover:opacity-100" />
         <span className="font-bold tracking-wider">{realmName}</span>
         <span
           className={cn(
-            "hidden sm:inline rounded-full px-1.5 py-0 text-[9px] font-bold uppercase tracking-widest",
-            hasImage
-              ? "bg-white/15 text-white/90"
-              : "bg-foreground/8 text-muted-foreground"
+            "hidden rounded-full px-1.5 py-0 text-[9px] font-bold tracking-widest uppercase sm:inline",
+            hasImage ? "bg-white/15 text-white/90" : "bg-foreground/8 text-muted-foreground"
           )}
         >
           {isDefaultRealm ? "Primary" : realmSlug}
@@ -97,7 +90,7 @@ export function CountryIdentityStrip({
       <span
         aria-hidden="true"
         className={cn(
-          "select-none text-[10px] font-bold",
+          "text-[10px] font-bold select-none",
           hasImage ? "text-white/35" : "text-muted-foreground/40"
         )}
       >
@@ -113,14 +106,10 @@ export function CountryIdentityStrip({
           className={cn(
             "group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide transition-all duration-150 ease-out active:scale-[0.97]",
             hasImage
-              ? "border-white/15 bg-black/35 text-white backdrop-blur-md hover:bg-black/45 hover:border-white/25"
-              : "border-border bg-card/60 text-foreground backdrop-blur-xl hover:bg-card hover:border-foreground/15"
+              ? "border-white/15 bg-black/35 text-white backdrop-blur-md hover:border-white/25 hover:bg-black/45"
+              : "border-border bg-card/60 text-foreground hover:bg-card hover:border-foreground/15 backdrop-blur-xl"
           )}
-          style={
-            hasImage
-              ? { backdropFilter: "blur(12px) saturate(180%)" }
-              : undefined
-          }
+          style={hasImage ? { backdropFilter: "blur(12px) saturate(180%)" } : undefined}
         >
           <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/12 dark:bg-white/10">
             <UserCircle className="h-3 w-3" />
@@ -129,10 +118,8 @@ export function CountryIdentityStrip({
           {sovereignUser?.roleName && (
             <span
               className={cn(
-                "hidden sm:inline-flex items-center gap-1 rounded-full px-1.5 py-0 text-[9px] font-bold uppercase tracking-widest",
-                hasImage
-                  ? "bg-white/12 text-white/85"
-                  : "bg-foreground/8 text-muted-foreground"
+                "hidden items-center gap-1 rounded-full px-1.5 py-0 text-[9px] font-bold tracking-widest uppercase sm:inline-flex",
+                hasImage ? "bg-white/12 text-white/85" : "bg-foreground/8 text-muted-foreground"
               )}
             >
               <Crown className="h-2.5 w-2.5" />
@@ -158,7 +145,7 @@ export function CountryIdentityStrip({
       {/* Subtle realm provenance hint — not a link, reduces to tooltip on mobile */}
       <span
         className={cn(
-          "hidden md:inline text-[10px] font-medium tracking-wide",
+          "hidden text-[10px] font-medium tracking-wide md:inline",
           hasImage ? "text-white/45" : "text-muted-foreground/60"
         )}
         title="Realm — sovereign simulation instance. IxWorld is the private default."

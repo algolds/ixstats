@@ -3,7 +3,30 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { UserPlus, UserXmark as UserMinus, ChatBubble as MessageSquare, City as Building2, Heart, Xmark as X, SystemRestart as Loader2, Sparks as Sparkles, Community as Handshake, Shield, ScaleFrameEnlarge as Scale, Globe, OpenNewWindow as ExternalLink, ShareAndroid as Share2, Copy, Check, Page as ScrollText, Tournament as Swords, Map, Wallet, Trophy, Calendar } from "iconoir-react";
+import {
+  UserPlus,
+  UserXmark as UserMinus,
+  ChatBubble as MessageSquare,
+  City as Building2,
+  Heart,
+  Xmark as X,
+  SystemRestart as Loader2,
+  Sparks as Sparkles,
+  Community as Handshake,
+  Shield,
+  ScaleFrameEnlarge as Scale,
+  Globe,
+  OpenNewWindow as ExternalLink,
+  ShareAndroid as Share2,
+  Copy,
+  Check,
+  Page as ScrollText,
+  Tournament as Swords,
+  Map,
+  Wallet,
+  Trophy,
+  Calendar,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
@@ -393,7 +416,7 @@ export function CountryActionsMenu({
                                   value={selectedAchievement}
                                   onChange={(e) => setSelectedAchievement(e.target.value)}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="min-w-[140px] cursor-pointer rounded-lg border border-border/60 bg-card/80 px-3 py-1.5 text-xs text-foreground backdrop-blur-md transition-colors hover:bg-card hover:border-border focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+                                  className="border-border/60 bg-card/80 text-foreground hover:bg-card hover:border-border min-w-[140px] cursor-pointer rounded-lg border px-3 py-1.5 text-xs backdrop-blur-md transition-colors focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
                                 >
                                   <option value="" className="bg-popover text-popover-foreground">
                                     Select achievement...

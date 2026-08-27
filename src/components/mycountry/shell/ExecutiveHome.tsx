@@ -186,48 +186,50 @@ export const DomainActionTiles = React.memo(function DomainActionTiles({
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {DOMAIN_TILES.map(({ id, title, icon: Icon, graphic: Graphic, badgeCls, drillKind, getPeek }) => (
-        <FacetCard
-          key={id}
-          depth={1}
-          interactive="none"
-          onClick={() => {
-            soundEffects.press();
-            if (onNavigate) {
-              onNavigate(id);
-            } else if (onOpenDrill) {
-              onOpenDrill(drillKind);
-            }
-          }}
-          className="group relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border border-border/70 bg-card/60 p-3 shadow-xs backdrop-blur-md transition-all duration-150 select-none hover:border-border hover:bg-card/90 active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
-        >
-          {/* Subtle Radial-Masked Architectural Watermark */}
-          <Graphic />
+      {DOMAIN_TILES.map(
+        ({ id, title, icon: Icon, graphic: Graphic, badgeCls, drillKind, getPeek }) => (
+          <FacetCard
+            key={id}
+            depth={1}
+            interactive="none"
+            onClick={() => {
+              soundEffects.press();
+              if (onNavigate) {
+                onNavigate(id);
+              } else if (onOpenDrill) {
+                onOpenDrill(drillKind);
+              }
+            }}
+            className="group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border p-3 shadow-xs backdrop-blur-md transition-all duration-150 select-none active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
+          >
+            {/* Subtle Radial-Masked Architectural Watermark */}
+            <Graphic />
 
-          {/* Left: Themed Icon Badge + Text */}
-          <div className="relative z-10 flex min-w-0 items-center gap-3">
-            <div
-              className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-transform duration-150 group-hover:scale-105",
-                badgeCls
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
+            {/* Left: Themed Icon Badge + Text */}
+            <div className="relative z-10 flex min-w-0 items-center gap-3">
+              <div
+                className={cn(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-transform duration-150 group-hover:scale-105",
+                  badgeCls
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+              </div>
+              <div className="flex min-w-0 flex-col gap-0.5 text-left">
+                <span className="text-foreground truncate text-[13px] leading-tight font-bold tracking-tight">
+                  {title}
+                </span>
+                <span className="text-muted-foreground truncate text-[11px] leading-tight font-medium tracking-tight">
+                  {getPeek(country)}
+                </span>
+              </div>
             </div>
-            <div className="flex min-w-0 flex-col gap-0.5 text-left">
-              <span className="text-foreground truncate text-[13px] leading-tight font-bold tracking-tight">
-                {title}
-              </span>
-              <span className="text-muted-foreground truncate text-[11px] leading-tight font-medium tracking-tight">
-                {getPeek(country)}
-              </span>
-            </div>
-          </div>
 
-          {/* Right: Arrow indicator */}
-          <ArrowUpRight className="text-muted-foreground group-hover:text-foreground relative z-10 h-3.5 w-3.5 shrink-0 opacity-60 transition-all duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
-        </FacetCard>
-      ))}
+            {/* Right: Arrow indicator */}
+            <ArrowUpRight className="text-muted-foreground group-hover:text-foreground relative z-10 h-3.5 w-3.5 shrink-0 opacity-60 transition-all duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+          </FacetCard>
+        )
+      )}
     </div>
   );
 });
@@ -699,7 +701,11 @@ export function ExecutiveHomeComponent({
           />
 
           {/* Main Feed */}
-          <FacetCard depth={1} interactive="none" className="bg-card/30 flex flex-col gap-3 p-4 backdrop-blur-md">
+          <FacetCard
+            depth={1}
+            interactive="none"
+            className="bg-card/30 flex flex-col gap-3 p-4 backdrop-blur-md"
+          >
             <h4 className="text-muted-foreground text-xs font-bold tracking-widest uppercase">
               Recent Activity - National log
             </h4>

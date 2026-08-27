@@ -17,7 +17,7 @@ describe("serializePlateToWikitext", () => {
   });
 
   it("emits atomic node wikitext verbatim and reports complete", () => {
-    const value = fromHtml('<p>Before</p>');
+    const value = fromHtml("<p>Before</p>");
     // simulate an inserted template node
     value.push({
       type: "raw-html",
@@ -38,8 +38,10 @@ describe("serializePlateToWikitext", () => {
   it("reports incomplete when an atomic node lacks wikitext", () => {
     const value = fromHtml("<p>x</p>");
     value.push({
-      type: "raw-html", id: "t2", kind: "generic",
-      html: "<div class=\"navbox\">old render</div>",
+      type: "raw-html",
+      id: "t2",
+      kind: "generic",
+      html: '<div class="navbox">old render</div>',
       children: [{ text: "" }],
     } as never);
     const { complete } = serializePlateToWikitext(value);

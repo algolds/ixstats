@@ -465,9 +465,12 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 const categoryLabel =
                   card.subcategory ||
                   (effectiveCategory ? getCategoryLabel(effectiveCategory) : null) ||
-                  (isLoreCard && card.cardType !== "NS_IMPORT" ? getCardTypeLabel(card.cardType) : null);
+                  (isLoreCard && card.cardType !== "NS_IMPORT"
+                    ? getCardTypeLabel(card.cardType)
+                    : null);
                 // For NS imports with badge, never show "NS Import" text — badge already signals it
-                const showLabel = categoryLabel && !(isNsImportLabel && categoryLabel === "NS Import");
+                const showLabel =
+                  categoryLabel && !(isNsImportLabel && categoryLabel === "NS Import");
                 const hideLabel = isNsImportLabel && !categoryLabel;
                 if (hideLabel) {
                   return (

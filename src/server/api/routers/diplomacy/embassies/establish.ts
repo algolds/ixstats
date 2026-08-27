@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 // oxlint-disable-next-line typescript/no-unused-vars
@@ -10,7 +7,6 @@ import { NPCPersonalitySystem, type ObservableData } from "~/lib/diplomacy/npc-p
 import { vaultService } from "~/lib/vault/vault-service";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "~/lib/activity";
-
 
 // Helper functions for cultural exchange <-> embassy mission integration
 

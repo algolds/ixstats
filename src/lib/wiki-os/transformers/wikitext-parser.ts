@@ -3,7 +3,11 @@ import { resolveImageUrl, getImageUrl } from "./image-url";
 import { parseInfoboxToHtml } from "./infobox-parser";
 
 function escapeHtmlLike(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 export interface ParseOptions {
@@ -29,23 +33,36 @@ function preserveUnknownTemplates(input: string): string {
   let i = 0;
   while (i < input.length) {
     const open = input.indexOf("{{", i);
-    if (open === -1) { out += input.slice(i); break; }
+    if (open === -1) {
+      out += input.slice(i);
+      break;
+    }
     // depth-scan for the matching close
     let depth = 0;
     let j = open;
     let end = -1;
     while (j < input.length - 1) {
       const two = input.slice(j, j + 2);
-      if (two === "{{") { depth++; j += 2; continue; }
+      if (two === "{{") {
+        depth++;
+        j += 2;
+        continue;
+      }
       if (two === "}}") {
         depth--;
         j += 2;
-        if (depth === 0) { end = j; break; }
+        if (depth === 0) {
+          end = j;
+          break;
+        }
         continue;
       }
       j++;
     }
-    if (end === -1) { out += input.slice(i); break; }
+    if (end === -1) {
+      out += input.slice(i);
+      break;
+    }
 
     const full = input.slice(open, end);
     const inner = full.slice(2, -2);
@@ -160,15 +177,15 @@ function stripWikitextTemplates(input: string, preserve = false): string {
       if (templateName === "lang" && parts.length >= 3) {
         return parts[2]?.trim() || "";
       }
-    if (templateName?.startsWith("formatnum:")) {
-      return templateName.replace("formatnum:", "").trim();
-    }
+      if (templateName?.startsWith("formatnum:")) {
+        return templateName.replace("formatnum:", "").trim();
+      }
 
-    if (!preserve) return "";
-    // Preserve unknown templates as visible, machine-detectable placeholders
-    const wt = `{{${inner.trim()}}}`;
-    return `<span class="wikios-template-placeholder" data-wikios-template="${encodeURIComponent(wt)}" contenteditable="false">🧩 ${escapeHtmlLike(parts[0]?.trim() ?? "Template")}</span>`;
-  });
+      if (!preserve) return "";
+      // Preserve unknown templates as visible, machine-detectable placeholders
+      const wt = `{{${inner.trim()}}}`;
+      return `<span class="wikios-template-placeholder" data-wikios-template="${encodeURIComponent(wt)}" contenteditable="false">🧩 ${escapeHtmlLike(parts[0]?.trim() ?? "Template")}</span>`;
+    });
 
     if (text === prev) break;
   }

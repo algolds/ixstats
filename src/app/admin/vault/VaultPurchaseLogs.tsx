@@ -57,7 +57,7 @@ export function VaultPurchaseLogs() {
           <div>
             <div className="flex items-center gap-1.5">
               <ShoppingCart className="text-muted-foreground h-3.5 w-3.5" />
-              <span className="font-medium text-foreground">
+              <span className="text-foreground font-medium">
                 {log.source.replace("Purchase item: ", "")}
               </span>
             </div>
@@ -69,7 +69,8 @@ export function VaultPurchaseLogs() {
         key: "category",
         header: "Category",
         mobileRole: "badge",
-        accessor: (log: PurchaseLog) => (log.type === "SPEND_BOOST" || log.itemId.includes("upgrade") ? "Upgrade" : "Cosmetic"),
+        accessor: (log: PurchaseLog) =>
+          log.type === "SPEND_BOOST" || log.itemId.includes("upgrade") ? "Upgrade" : "Cosmetic",
         render: (_val: unknown, log: PurchaseLog) => {
           const isUpgrade = log.type === "SPEND_BOOST" || log.itemId.includes("upgrade");
           return (

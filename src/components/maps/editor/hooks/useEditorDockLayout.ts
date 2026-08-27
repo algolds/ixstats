@@ -23,9 +23,7 @@ export function useEditorDockLayout(isWorldMode: boolean = false) {
     panelA: {
       placement: "left",
       collapsed: false,
-      tabs: isWorldMode
-        ? ["linkages", "sovereignty", "layers", "history"]
-        : ["layers", "history"],
+      tabs: isWorldMode ? ["linkages", "sovereignty", "layers", "history"] : ["layers", "history"],
     },
     panelB: {
       placement: "right",

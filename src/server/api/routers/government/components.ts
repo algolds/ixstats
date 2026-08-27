@@ -20,7 +20,6 @@ import { mapTaxComponentTypeToId } from "~/lib/enums";
 import { IxTime } from "~/lib/ixtime";
 import { getOrSetCatalogCache, invalidateCatalogCache } from "~/server/shared/layer-cache";
 
-
 // Input validation schemas
 const _governmentStructureInputSchema = z.object({
   governmentName: z.string().min(1, "Government name is required"),
@@ -256,7 +255,6 @@ export const governmentComponentsRouter = createTRPCRouter({
         60_000
       );
     }),
-
 
   // Civil service capacity + rollout queue for the country dashboard.
   // Aggregates government / economic / tax components: staff is consumed by both
@@ -566,7 +564,6 @@ export const governmentComponentsRouter = createTRPCRouter({
 
       // Apply component effects to game state after removal
       if (deleted.count > 0) {
-
         try {
           const result = await applyGovernmentComponentEffects(ctx.db, input.countryId);
           await notificationAPI.create({

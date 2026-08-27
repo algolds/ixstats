@@ -2,7 +2,22 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Xmark as X, SystemRestart as Loader2, Trophy, Group as Users, Shield, MapPin, Calendar, FireFlame as Flame, StatUp as TrendingUp, CheckCircle as BadgeCheck, UserPlus, Wallet, Settings, ArrowRight } from "iconoir-react";
+import {
+  Xmark as X,
+  SystemRestart as Loader2,
+  Trophy,
+  Group as Users,
+  Shield,
+  MapPin,
+  Calendar,
+  FireFlame as Flame,
+  StatUp as TrendingUp,
+  CheckCircle as BadgeCheck,
+  UserPlus,
+  Wallet,
+  Settings,
+  ArrowRight,
+} from "iconoir-react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -13,11 +28,7 @@ import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { TeamSettingsModal } from "./TeamSettingsModal";
 import { Label } from "~/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "~/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 import { SPORT_PRESETS, type SportPreset } from "~/lib/sports/presets";
 import PlayerStats from "~/components/sports/player-stats/PlayerStats1";
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";

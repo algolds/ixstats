@@ -305,8 +305,11 @@ describe("VaultService - Upgrades & Perks", () => {
   });
 });
 
-
-import { VAULT_BONUS_DEFAULTS as B, achievementBonus, nsImportBonus } from "~/lib/vault/vault-bonus";
+import {
+  VAULT_BONUS_DEFAULTS as B,
+  achievementBonus,
+  nsImportBonus,
+} from "~/lib/vault/vault-bonus";
 import { classifyLoreArticle } from "~/lib/cards/category-classifier";
 import { LoreCategory } from "~/lib/cards/category-enums";
 

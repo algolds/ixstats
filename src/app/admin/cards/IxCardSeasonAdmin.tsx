@@ -30,17 +30,17 @@ export function IxCardSeasonAdmin() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <RefreshCw className="h-6 w-6 animate-spin text-primary" />
+        <RefreshCw className="text-primary h-6 w-6 animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-border/30 bg-card/25 p-6 backdrop-blur-md">
+      <div className="border-border/30 bg-card/25 rounded-2xl border p-6 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl border border-primary/20 bg-primary/10 p-3">
-            <Layers className="h-6 w-6 text-primary" />
+          <div className="border-primary/20 bg-primary/10 rounded-xl border p-3">
+            <Layers className="text-primary h-6 w-6" />
           </div>
           <div>
             <h2 className="text-foreground text-lg font-semibold">IxCard Season Configuration</h2>
@@ -69,7 +69,7 @@ export function IxCardSeasonAdmin() {
             <Button
               onClick={() => setSeasonMutation.mutate({ season: selectedSeason })}
               disabled={setSeasonMutation.isPending || selectedSeason === currentSeason}
-              className="rounded-xl gap-2 active:scale-[0.98]"
+              className="gap-2 rounded-xl active:scale-[0.98]"
             >
               {setSeasonMutation.isPending ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
@@ -82,7 +82,7 @@ export function IxCardSeasonAdmin() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border/30 bg-card/25 p-6 backdrop-blur-md">
+      <div className="border-border/30 bg-card/25 rounded-2xl border p-6 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
             <Layers className="h-6 w-6 text-amber-400" />
@@ -93,15 +93,18 @@ export function IxCardSeasonAdmin() {
               <li>
                 <strong className="text-foreground">NS-imported cards</strong> set both{" "}
                 <code className="text-primary font-mono text-xs">season</code> and{" "}
-                <code className="text-primary font-mono text-xs">nsSeason</code> to the NS season number
+                <code className="text-primary font-mono text-xs">nsSeason</code> to the NS season
+                number
               </li>
               <li>
                 <strong className="text-foreground">Crafted cards</strong> and{" "}
                 <strong className="text-foreground">Lore cards</strong> set{" "}
-                <code className="text-primary font-mono text-xs">season</code> to the current IxCard season
+                <code className="text-primary font-mono text-xs">season</code> to the current IxCard
+                season
               </li>
               <li>
-                Season drops in the Vault store dynamically draw from the corresponding active season pack configurations.
+                Season drops in the Vault store dynamically draw from the corresponding active
+                season pack configurations.
               </li>
             </ul>
           </div>

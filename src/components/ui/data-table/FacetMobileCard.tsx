@@ -30,7 +30,8 @@ export function FacetMobileCard<T extends Record<string, any>>({
     const val = getVal(col);
     if (col.mobileRender) return col.mobileRender(val, row, index);
     if (col.render) return col.render(val, row, index);
-    if (val === null || val === undefined || val === "") return <span className="text-muted-foreground/50">—</span>;
+    if (val === null || val === undefined || val === "")
+      return <span className="text-muted-foreground/50">—</span>;
     return val;
   };
 
@@ -42,18 +43,12 @@ export function FacetMobileCard<T extends Record<string, any>>({
   const actionCols = visibleCols.filter((col) => col.mobileRole === "action");
   const subtitleCols = visibleCols.filter((col) => col.mobileRole === "subtitle");
   const footerCols = visibleCols.filter((col) => col.mobileRole === "footer");
-  const fieldCols = visibleCols.filter(
-    (col) =>
-      !col.mobileRole ||
-      col.mobileRole === "field"
-  );
+  const fieldCols = visibleCols.filter((col) => !col.mobileRole || col.mobileRole === "field");
 
   // If no explicit hero column was specified, fallback to the first visible column as hero
   const effectiveHeroCols = heroCols.length > 0 ? heroCols : [visibleCols[0]].filter(Boolean);
   const effectiveFieldCols =
-    heroCols.length > 0
-      ? fieldCols
-      : fieldCols.filter((c) => c !== effectiveHeroCols[0]);
+    heroCols.length > 0 ? fieldCols : fieldCols.filter((c) => c !== effectiveHeroCols[0]);
 
   return (
     <div
@@ -101,15 +96,16 @@ export function FacetMobileCard<T extends Record<string, any>>({
       {effectiveFieldCols.length > 0 && (
         <div className="border-border/30 grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-3 text-xs">
           {effectiveFieldCols.map((col) => {
-            const label = col.mobileLabel || (typeof col.header === "string" ? col.header : col.key);
+            const label =
+              col.mobileLabel || (typeof col.header === "string" ? col.header : col.key);
             return (
-              <div key={col.key} className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-muted-foreground/80 text-[10px] font-semibold tracking-wider uppercase truncate">
+              <div key={col.key} className="flex min-w-0 flex-col gap-0.5">
+                <span className="text-muted-foreground/80 truncate text-[10px] font-semibold tracking-wider uppercase">
                   {label}
                 </span>
                 <div
                   className={cn(
-                    "text-foreground font-medium text-xs truncate",
+                    "text-foreground truncate text-xs font-medium",
                     col.align === "right" && "text-right",
                     col.align === "center" && "text-center"
                   )}

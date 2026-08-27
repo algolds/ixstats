@@ -42,7 +42,11 @@ export function useFlag(countryName?: string): UseFlagResult {
   const cleanName = countryName?.replace(/ \(Demo\)$/, "").trim();
   const placeholderUrl = useMemo(() => withBasePath(DEFAULT_PLACEHOLDER), []);
 
-  const { data: batchResult, isLoading, isError } = api.countries.flags.resolveBatch.useQuery(
+  const {
+    data: batchResult,
+    isLoading,
+    isError,
+  } = api.countries.flags.resolveBatch.useQuery(
     { countryNames: cleanName ? [cleanName] : [] },
     {
       enabled: Boolean(cleanName),
@@ -85,15 +89,19 @@ export function useBulkFlags(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryNamesKey]);
 
-  const { data: batchResult, isLoading, error: trpcError, refetch: trpcRefetch } =
-    api.countries.flags.resolveBatch.useQuery(
-      { countryNames: memoizedCountryNames },
-      {
-        enabled: memoizedCountryNames.length > 0,
-        staleTime: 1000 * 60 * 60, // 1 hour
-        retry: 1,
-      }
-    );
+  const {
+    data: batchResult,
+    isLoading,
+    error: trpcError,
+    refetch: trpcRefetch,
+  } = api.countries.flags.resolveBatch.useQuery(
+    { countryNames: memoizedCountryNames },
+    {
+      enabled: memoizedCountryNames.length > 0,
+      staleTime: 1000 * 60 * 60, // 1 hour
+      retry: 1,
+    }
+  );
 
   const flagUrls = useMemo(() => {
     const result: Record<string, string | null> = {};
@@ -105,9 +113,7 @@ export function useBulkFlags(
   }, [memoizedCountryNames, batchResult]);
 
   const placeholderCount = useMemo(() => {
-    return Object.values(flagUrls).filter(
-      (url) => !url || url.includes("placeholder")
-    ).length;
+    return Object.values(flagUrls).filter((url) => !url || url.includes("placeholder")).length;
   }, [flagUrls]);
 
   const refetch = useCallback(async () => {

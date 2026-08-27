@@ -34,7 +34,7 @@ export const thinkpagesMessagingPresenceRouter = createTRPCRouter({
 
       const normalizedStatus = input.isOnline
         ? input.status
-          ? statusMap[input.status] ?? "online"
+          ? (statusMap[input.status] ?? "online")
           : "online"
         : "offline";
 

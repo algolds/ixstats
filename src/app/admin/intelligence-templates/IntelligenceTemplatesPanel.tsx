@@ -24,14 +24,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Plus,
-  EditPencil as Pencil,
-  Trash as Trash2,
-  Eye,
-  Shield,
-  Search,
-} from "iconoir-react";
+import { Plus, EditPencil as Pencil, Trash as Trash2, Eye, Shield, Search } from "iconoir-react";
 import { AdminHeader } from "../_components/AdminHeader";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -72,7 +65,8 @@ export function IntelligenceTemplatesPanel() {
 
   const filteredTemplates = (templates || []).filter((template: any) => {
     if (typeFilter !== "all" && template.reportType !== typeFilter) return false;
-    if (classificationFilter !== "all" && template.classification !== classificationFilter) return false;
+    if (classificationFilter !== "all" && template.classification !== classificationFilter)
+      return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const label = (REPORT_TYPE_LABELS[template.reportType] || template.reportType).toLowerCase();
@@ -149,7 +143,8 @@ export function IntelligenceTemplatesPanel() {
     setEditingTemplate(template);
     setFormData({
       reportType: template.reportType as "economic" | "political" | "security",
-      classification: (template.classification === "PUBLIC" ? "PUBLIC" : "RESTRICTED") as "PUBLIC" | "RESTRICTED",
+      classification: (template.classification === "PUBLIC" ? "PUBLIC" : "RESTRICTED") as
+        "PUBLIC" | "RESTRICTED",
       summaryTemplate: template.summaryTemplate,
       findingsTemplate: template.findingsTemplate || "[]",
       minimumLevel: template.minimumLevel,
@@ -185,25 +180,35 @@ export function IntelligenceTemplatesPanel() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Total Templates</p>
-          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">{templates?.length || 0}</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Total Templates
+          </p>
+          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+            {templates?.length || 0}
+          </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Restricted Clearance</p>
-          <p className="text-amber-400 mt-1 font-mono text-xl font-bold tracking-tight">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Restricted Clearance
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400">
             {templates?.filter((t: any) => t.classification === "RESTRICTED").length || 0}
           </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Public Briefings</p>
-          <p className="text-cyan-400 mt-1 font-mono text-xl font-bold tracking-tight">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Public Briefings
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
             {templates?.filter((t: any) => t.classification === "PUBLIC").length || 0}
           </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Active Registry</p>
-          <p className="text-emerald-400 mt-1 font-mono text-xl font-bold tracking-tight">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Active Registry
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
             {templates?.filter((t: any) => t.isActive).length || 0}
           </p>
         </div>
@@ -212,36 +217,50 @@ export function IntelligenceTemplatesPanel() {
       {/* Filter & Action Rail */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <div className="relative max-w-sm min-w-[200px] flex-1">
             <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search templates..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 rounded-xl border-border/30 bg-background/50 pl-8 text-xs backdrop-blur-md focus:border-border/60"
+              className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
             />
           </div>
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="h-8 w-44 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-44 rounded-xl text-xs backdrop-blur-md">
               <SelectValue placeholder="All Report Types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">All Report Types</SelectItem>
-              <SelectItem value="economic" className="text-xs">Economic Report</SelectItem>
-              <SelectItem value="political" className="text-xs">Political Report</SelectItem>
-              <SelectItem value="security" className="text-xs">Security Report</SelectItem>
+              <SelectItem value="all" className="text-xs">
+                All Report Types
+              </SelectItem>
+              <SelectItem value="economic" className="text-xs">
+                Economic Report
+              </SelectItem>
+              <SelectItem value="political" className="text-xs">
+                Political Report
+              </SelectItem>
+              <SelectItem value="security" className="text-xs">
+                Security Report
+              </SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={classificationFilter} onValueChange={setClassificationFilter}>
-            <SelectTrigger className="h-8 w-36 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-36 rounded-xl text-xs backdrop-blur-md">
               <SelectValue placeholder="All Clearances" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">All Clearances</SelectItem>
-              <SelectItem value="PUBLIC" className="text-xs">PUBLIC</SelectItem>
-              <SelectItem value="RESTRICTED" className="text-xs">RESTRICTED</SelectItem>
+              <SelectItem value="all" className="text-xs">
+                All Clearances
+              </SelectItem>
+              <SelectItem value="PUBLIC" className="text-xs">
+                PUBLIC
+              </SelectItem>
+              <SelectItem value="RESTRICTED" className="text-xs">
+                RESTRICTED
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -251,7 +270,7 @@ export function IntelligenceTemplatesPanel() {
             resetForm();
             setIsAddDialogOpen(true);
           }}
-          className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+          className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
         >
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           Add Template
@@ -266,14 +285,16 @@ export function IntelligenceTemplatesPanel() {
           ))}
         </div>
       ) : filteredTemplates.length === 0 ? (
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-12 text-center backdrop-blur-md">
-          <p className="text-muted-foreground text-xs">No intelligence templates matching filters.</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-12 text-center backdrop-blur-md">
+          <p className="text-muted-foreground text-xs">
+            No intelligence templates matching filters.
+          </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-border/30 bg-card/25 backdrop-blur-md shadow-xs">
+        <div className="border-border/30 bg-card/25 overflow-x-auto rounded-2xl border shadow-xs backdrop-blur-md">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border/30 bg-muted/20 text-muted-foreground font-semibold">
+              <tr className="border-border/30 bg-muted/20 text-muted-foreground border-b font-semibold">
                 <th className="px-4 py-2.5 text-left font-medium">Report Type & Summary</th>
                 <th className="px-4 py-2.5 text-left font-medium">Classification</th>
                 <th className="px-4 py-2.5 text-left font-medium">Clearance</th>
@@ -282,15 +303,15 @@ export function IntelligenceTemplatesPanel() {
                 <th className="px-4 py-2.5 text-right font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/15">
+            <tbody className="divide-border/15 divide-y">
               {filteredTemplates.map((template: any) => (
                 <tr key={template.id} className="hover:bg-foreground/[0.02] transition-colors">
                   <td className="px-4 py-2.5">
-                    <div className="font-semibold text-foreground">
+                    <div className="text-foreground font-semibold">
                       {REPORT_TYPE_LABELS[template.reportType] || template.reportType}
                     </div>
                     {template.summaryTemplate && (
-                      <div className="text-muted-foreground text-[11px] truncate max-w-sm">
+                      <div className="text-muted-foreground max-w-sm truncate text-[11px]">
                         {template.summaryTemplate}
                       </div>
                     )}
@@ -299,25 +320,25 @@ export function IntelligenceTemplatesPanel() {
                     <span
                       className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase ${
                         template.classification === "RESTRICTED"
-                          ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                          : "bg-cyan-500/10 text-cyan-400 border-cyan-500/30"
+                          ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                          : "border-cyan-500/30 bg-cyan-500/10 text-cyan-400"
                       }`}
                     >
                       {template.classification}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-muted-foreground">
+                  <td className="text-muted-foreground px-4 py-2.5 font-mono">
                     Level {template.minimumLevel}+
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-foreground font-medium">
+                  <td className="text-foreground px-4 py-2.5 font-mono font-medium">
                     {template.confidenceBase}%
                   </td>
                   <td className="px-4 py-2.5">
                     <span
                       className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-semibold ${
                         template.isActive
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                          : "bg-muted/50 text-muted-foreground border border-border"
+                          ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                          : "bg-muted/50 text-muted-foreground border-border border"
                       }`}
                     >
                       {template.isActive ? "Active" : "Inactive"}
@@ -327,21 +348,21 @@ export function IntelligenceTemplatesPanel() {
                     <div className="inline-flex items-center gap-1">
                       <button
                         onClick={() => setPreviewTemplate(template)}
-                        className="rounded-lg p-1 text-muted-foreground hover:bg-muted/50 hover:text-foreground active:scale-[0.98] transition-transform"
+                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 transition-transform active:scale-[0.98]"
                         title="Preview"
                       >
                         <Eye className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleEdit(template)}
-                        className="rounded-lg p-1 text-muted-foreground hover:bg-muted/50 hover:text-foreground active:scale-[0.98] transition-transform"
+                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 transition-transform active:scale-[0.98]"
                         title="Edit"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete(template.id)}
-                        className="rounded-lg p-1 text-red-400 hover:bg-red-500/10 hover:text-red-300 active:scale-[0.98] transition-transform"
+                        className="rounded-lg p-1 text-red-400 transition-transform hover:bg-red-500/10 hover:text-red-300 active:scale-[0.98]"
                         title="Delete"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -384,7 +405,9 @@ export function IntelligenceTemplatesPanel() {
                 </label>
                 <Select
                   value={formData.reportType}
-                  onValueChange={(val: any) => setFormData((prev) => ({ ...prev, reportType: val }))}
+                  onValueChange={(val: any) =>
+                    setFormData((prev) => ({ ...prev, reportType: val }))
+                  }
                 >
                   <SelectTrigger className="text-xs">
                     <SelectValue />
@@ -403,7 +426,9 @@ export function IntelligenceTemplatesPanel() {
                 </label>
                 <Select
                   value={formData.classification}
-                  onValueChange={(val: any) => setFormData((prev) => ({ ...prev, classification: val }))}
+                  onValueChange={(val: any) =>
+                    setFormData((prev) => ({ ...prev, classification: val }))
+                  }
                 >
                   <SelectTrigger className="text-xs">
                     <SelectValue />
@@ -457,7 +482,10 @@ export function IntelligenceTemplatesPanel() {
                   max={10}
                   value={formData.minimumLevel}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, minimumLevel: parseInt(e.target.value) || 1 }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      minimumLevel: parseInt(e.target.value) || 1,
+                    }))
                   }
                   className="text-xs"
                 />
@@ -521,17 +549,24 @@ export function IntelligenceTemplatesPanel() {
             <div className="space-y-4 text-xs">
               <div className="bg-card/40 border-border/40 rounded-xl border p-4">
                 <h4 className="text-foreground mb-1 font-semibold">Summary Structure</h4>
-                <p className="text-muted-foreground whitespace-pre-wrap">{previewTemplate.summaryTemplate}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap">
+                  {previewTemplate.summaryTemplate}
+                </p>
               </div>
 
               <div className="bg-card/40 border-border/40 rounded-xl border p-4">
                 <h4 className="text-foreground mb-1 font-semibold">Findings Structure</h4>
-                <p className="text-muted-foreground whitespace-pre-wrap">{previewTemplate.findingsTemplate}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap">
+                  {previewTemplate.findingsTemplate}
+                </p>
               </div>
             </div>
 
             <DialogFooter>
-              <Button onClick={() => setPreviewTemplate(null)} className="text-xs active:scale-[0.98]">
+              <Button
+                onClick={() => setPreviewTemplate(null)}
+                className="text-xs active:scale-[0.98]"
+              >
                 Close
               </Button>
             </DialogFooter>

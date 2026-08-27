@@ -3,11 +3,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 
 // Per-culture Kokoro voice assignments, stored as a JSON string in systemConfig.
 function parseVoiceMap(raw: string | undefined): Record<string, string> {
@@ -270,8 +266,7 @@ export const onomaSpeechRouter = createTRPCRouter({
     if (baseUrl && !/^https?:\/\//i.test(baseUrl)) baseUrl = `http://${baseUrl}`;
     if (fastApiUrl && !/^https?:\/\//i.test(fastApiUrl)) fastApiUrl = `http://${fastApiUrl}`;
 
-    const targetUrl =
-      engine === "kokoro-fastapi" ? fastApiUrl || baseUrl : baseUrl || fastApiUrl;
+    const targetUrl = engine === "kokoro-fastapi" ? fastApiUrl || baseUrl : baseUrl || fastApiUrl;
     if (!targetUrl) {
       return {
         status: "unconfigured" as const,

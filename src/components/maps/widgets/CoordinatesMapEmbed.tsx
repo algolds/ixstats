@@ -207,19 +207,19 @@ export function CoordinatesMapEmbed({
     });
     observer.observe(containerRef.current);
     return () => observer.disconnect();
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [mapReady]);
 
   return (
     <div
       ref={elementRef}
-      className="wikios-ixworld-embed facet-hierarchy-child relative overflow-hidden rounded-xl border border-white/10 bg-map-ocean/40 backdrop-blur-md"
+      className="wikios-ixworld-embed facet-hierarchy-child bg-map-ocean/40 relative overflow-hidden rounded-xl border border-white/10 backdrop-blur-md"
       style={{ height: heightVal }}
     >
       {isInViewport && <div ref={containerRef} className="absolute inset-0 h-full w-full" />}
 
       {!mapReady && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-map-ocean/60 backdrop-blur-sm">
+        <div className="bg-map-ocean/60 absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-sm">
           <Loader2 className="mb-2 h-6 w-6 animate-spin text-blue-400" />
           <span className="text-xs font-medium text-zinc-400">Loading map...</span>
         </div>

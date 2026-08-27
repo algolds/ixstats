@@ -14,7 +14,8 @@ const MobileEditorSheet = dynamic(
 );
 
 const KeyboardShortcutSheet = dynamic(
-  () => import("~/components/maps/editor/KeyboardShortcutSheet").then((m) => m.KeyboardShortcutSheet),
+  () =>
+    import("~/components/maps/editor/KeyboardShortcutSheet").then((m) => m.KeyboardShortcutSheet),
   { ssr: false }
 );
 

@@ -159,7 +159,7 @@ function useAutoScroll(entries: LogEntry[], enabled: boolean) {
     if (el) {
       el.scrollTop = el.scrollHeight;
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [entries.length, enabled, isAtBottom]);
 
   const handleScroll = React.useCallback(() => {

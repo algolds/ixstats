@@ -1,7 +1,15 @@
 "use client";
 
 import React from "react";
-import { Dollar as DollarSign, StatUp as TrendingUp, City as Building2, Group as Users, Crown, Globe, Bank as Landmark } from "iconoir-react";
+import {
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
+  City as Building2,
+  Group as Users,
+  Crown,
+  Globe,
+  Bank as Landmark,
+} from "iconoir-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { cn, toTitleCase } from "~/lib/utils";
 

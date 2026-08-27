@@ -2,7 +2,13 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { Component as Layers, Globe, MapPin, SystemRestart as Loader2, NavArrowDown as ChevronDown } from "iconoir-react";
+import {
+  Component as Layers,
+  Globe,
+  MapPin,
+  SystemRestart as Loader2,
+  NavArrowDown as ChevronDown,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -122,7 +128,7 @@ export function CardGalleryTab({
   useEffect(() => {
     // oxlint-disable-next-line
     handleFilterChange();
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [search, season, rarity, sortBy, source, handleFilterChange]);
 
   // Build display cards based on source

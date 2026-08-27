@@ -3,4 +3,7 @@
 "use client";
 
 export * from "~/components/maps/editor/panels/EditQueuePanel";
-export { EditQueuePanel as default, EditQueuePanel } from "~/components/maps/editor/panels/EditQueuePanel";
+export {
+  EditQueuePanel as default,
+  EditQueuePanel,
+} from "~/components/maps/editor/panels/EditQueuePanel";

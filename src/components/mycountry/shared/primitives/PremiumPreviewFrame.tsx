@@ -79,7 +79,7 @@ export function PremiumPreviewFrame({
             <Button
               variant="default"
               size="sm"
-              className="group shrink-0 bg-amber-500 hover:bg-amber-600 text-white shadow-xs font-semibold"
+              className="group shrink-0 bg-amber-500 font-semibold text-white shadow-xs hover:bg-amber-600"
               onClick={handleUpgrade}
             >
               <Crown className="mr-1.5 h-3.5 w-3.5" />

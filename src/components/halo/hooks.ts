@@ -190,7 +190,8 @@ export function useDynamicIslandState() {
 
     return ctx.map((c) => ({
       ...c,
-      _lower: `${c.name}\t${c.description}\t${c.category}\t${c.keywords?.join(" ") ?? ""}`.toLowerCase(),
+      _lower:
+        `${c.name}\t${c.description}\t${c.category}\t${c.keywords?.join(" ") ?? ""}`.toLowerCase(),
     }));
   }, [isSignedIn, user, pathname]);
 
@@ -198,7 +199,8 @@ export function useDynamicIslandState() {
     () =>
       CORE_FEATURES.map((f) => ({
         ...f,
-        _lower: `${f.name}\t${f.description}\t${f.category}\t${f.keywords?.join(" ") ?? ""}`.toLowerCase(),
+        _lower:
+          `${f.name}\t${f.description}\t${f.category}\t${f.keywords?.join(" ") ?? ""}`.toLowerCase(),
       })),
     []
   );
@@ -259,7 +261,9 @@ export function useDynamicIslandState() {
         }
       }
       if (targetPath === "#search") {
-        (document.querySelector('[data-command-palette-search="true"]') as HTMLInputElement)?.focus();
+        (
+          document.querySelector('[data-command-palette-search="true"]') as HTMLInputElement
+        )?.focus();
         return;
       }
       if (targetPath === "#notifications") {
@@ -374,12 +378,21 @@ export function useDynamicIslandState() {
     // Combine results
     if (searchFilter === "all") {
       if (isWikiActive) {
-        return [...matchedWiki, ...matchedCountries, ...matchedCommands, ...matchedFeatures].slice(0, 12);
+        return [...matchedWiki, ...matchedCountries, ...matchedCommands, ...matchedFeatures].slice(
+          0,
+          12
+        );
       }
-      return [...matchedCountries, ...matchedCommands, ...matchedFeatures, ...matchedWiki].slice(0, 12);
+      return [...matchedCountries, ...matchedCommands, ...matchedFeatures, ...matchedWiki].slice(
+        0,
+        12
+      );
     }
 
-    return [...matchedCountries, ...matchedCommands, ...matchedFeatures, ...matchedWiki].slice(0, 12);
+    return [...matchedCountries, ...matchedCommands, ...matchedFeatures, ...matchedWiki].slice(
+      0,
+      12
+    );
   }, [
     debouncedSearchQuery,
     searchFilter,

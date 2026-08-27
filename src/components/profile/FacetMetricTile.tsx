@@ -49,9 +49,9 @@ export function FacetMetricTile({
       }
       data-cuelume-press={isClickable ? "soft" : undefined}
       className={cn(
-        "facet-surface group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-black/8 dark:border-white/10 bg-white/60 dark:bg-stone-900/60 p-4 shadow-sm backdrop-blur-xl transition-all duration-150 ease-out select-none",
+        "facet-surface group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-black/8 bg-white/60 p-4 shadow-sm backdrop-blur-xl transition-all duration-150 ease-out select-none dark:border-white/10 dark:bg-stone-900/60",
         isClickable &&
-          "cursor-pointer hover:border-black/15 dark:hover:border-white/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
+          "cursor-pointer hover:border-black/15 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none active:scale-[0.97] dark:hover:border-white/20",
         className
       )}
       style={{
@@ -66,12 +66,12 @@ export function FacetMetricTile({
 
       {/* Header Row */}
       <div className="relative z-10 flex items-center justify-between gap-2">
-        <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+        <span className="text-[10px] font-extrabold tracking-wider text-stone-500 uppercase dark:text-stone-400">
           {label}
         </span>
         {icon && (
           <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-black/5 dark:bg-white/5 text-sm transition-transform duration-200 group-hover:scale-110"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-black/5 text-sm transition-transform duration-200 group-hover:scale-110 dark:bg-white/5"
             style={{ color: accentColor }}
           >
             {icon}
@@ -87,7 +87,7 @@ export function FacetMetricTile({
         {trendValue && (
           <span
             className={cn(
-              "text-[10px] font-extrabold font-mono",
+              "font-mono text-[10px] font-extrabold",
               trend === "up" && "text-emerald-500",
               trend === "down" && "text-rose-500",
               trend === "neutral" && "text-stone-400"
@@ -101,7 +101,7 @@ export function FacetMetricTile({
 
       {/* Subtext Footer */}
       {subtext && (
-        <p className="relative z-10 mt-1 text-[11px] font-medium text-stone-500 dark:text-stone-400 truncate">
+        <p className="relative z-10 mt-1 truncate text-[11px] font-medium text-stone-500 dark:text-stone-400">
           {subtext}
         </p>
       )}

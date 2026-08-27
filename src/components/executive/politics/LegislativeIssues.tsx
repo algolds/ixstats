@@ -4,7 +4,13 @@ import { useMemo, useState } from "react";
 import { WarningTriangle as AlertTriangle, CheckCircle as CheckCircle2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { IssueCard } from "~/components/executive/issues";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "~/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "~/components/ui/sheet";
 import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDetailBrief";
 
 interface LegislativeIssuesProps {
@@ -82,16 +88,13 @@ export function LegislativeIssues({ countryId, onSelectIssue }: LegislativeIssue
 
       {/* Slide-over sheet for issue resolution */}
       <Sheet open={!!selectedIssueId} onOpenChange={(open) => !open && setSelectedIssueId(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
           <SheetHeader className="sr-only">
             <SheetTitle>Governance Issue Resolution</SheetTitle>
             <SheetDescription>Deliberate and resolve national legislative issue</SheetDescription>
           </SheetHeader>
           {selectedIssueId && (
-            <IssueDetailBrief
-              issueId={selectedIssueId}
-              onClose={() => setSelectedIssueId(null)}
-            />
+            <IssueDetailBrief issueId={selectedIssueId} onClose={() => setSelectedIssueId(null)} />
           )}
         </SheetContent>
       </Sheet>

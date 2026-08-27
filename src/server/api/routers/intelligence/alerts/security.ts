@@ -243,7 +243,6 @@ export const intelAlertsSecurityRouter = createTRPCRouter({
             });
       }
     }),
-
 });
 
 // ===== HELPER FUNCTIONS =====

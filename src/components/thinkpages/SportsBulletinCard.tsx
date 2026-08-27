@@ -42,7 +42,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
   return (
     <div
       className={cn(
-        "group relative my-3.5 overflow-hidden rounded-3xl border border-black/10 bg-white/70 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-black/15 hover:shadow-2xl dark:border-border dark:bg-card/85 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] dark:hover:border-border-secondary",
+        "group dark:border-border dark:bg-card/85 dark:hover:border-border-secondary relative my-3.5 overflow-hidden rounded-3xl border border-black/10 bg-white/70 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-black/15 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
         className
       )}
     >
@@ -135,9 +135,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
               <span className="text-[10px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400/90">
                 League Champion
               </span>
-              <h3 className="text-foreground text-base font-bold tracking-tight">
-                {championName}
-              </h3>
+              <h3 className="text-foreground text-base font-bold tracking-tight">{championName}</h3>
             </div>
           </div>
           {championId && (

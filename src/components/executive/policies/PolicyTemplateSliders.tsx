@@ -26,9 +26,7 @@ export function PolicyTemplateSliders({
 
       {currentTemplate.sliders.map((slider: any) => (
         <div key={slider.key} className="space-y-2">
-          <Label className="text-muted-foreground text-xs font-medium">
-            {slider.label}
-          </Label>
+          <Label className="text-muted-foreground text-xs font-medium">{slider.label}</Label>
           <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
             {slider.options.map((opt: any) => {
               const isSelected = sliderSettings[slider.key] === opt.value;

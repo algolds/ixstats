@@ -1,7 +1,17 @@
 import React from "react";
 import { type Metadata } from "next";
 import Link from "next/link";
-import { ShieldCheck, Database, Lock, EyeClosed as EyeOff, UserXmark as UserX, Cookie, Mail, InfoCircle as Info, Server } from "iconoir-react";
+import {
+  ShieldCheck,
+  Database,
+  Lock,
+  EyeClosed as EyeOff,
+  UserXmark as UserX,
+  Cookie,
+  Mail,
+  InfoCircle as Info,
+  Server,
+} from "iconoir-react";
 import { LegalDocumentLayout, type LegalSectionItem } from "~/components/ui/LegalDocumentLayout";
 import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 

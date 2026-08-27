@@ -1,8 +1,5 @@
 import { withBasePath } from "~/lib/base-path";
-import {
-  isWikimediaCommonsUrl,
-  getCommonsProxyUrl,
-} from "~/lib/wiki-os/transformers/image-url";
+import { isWikimediaCommonsUrl, getCommonsProxyUrl } from "~/lib/wiki-os/transformers/image-url";
 
 export { isWikimediaCommonsUrl, getCommonsProxyUrl };
 

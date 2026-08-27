@@ -2,12 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import {
   Trophy,
   Medal as Award,
@@ -95,30 +90,30 @@ export function PassportLorewardsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-black/10 dark:border-white/15 bg-background/95 backdrop-blur-2xl p-6 sm:p-7 space-y-6 shadow-2xl">
-        <DialogHeader className="border-b border-black/8 dark:border-white/10 pb-4">
+      <DialogContent className="bg-background/95 max-h-[90vh] max-w-3xl space-y-6 overflow-y-auto rounded-3xl border border-black/10 p-6 shadow-2xl backdrop-blur-2xl sm:p-7 dark:border-white/15">
+        <DialogHeader className="border-b border-black/8 pb-4 dark:border-white/10">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-500 flex items-center justify-center shrink-0 shadow-xs">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-amber-500/25 bg-amber-500/10 text-amber-500 shadow-xs">
                 <Trophy className="h-6 w-6" />
               </div>
               <div>
-                <DialogTitle className="text-lg sm:text-xl font-bold text-foreground tracking-tight flex items-center gap-2">
+                <DialogTitle className="text-foreground flex items-center gap-2 text-lg font-bold tracking-tight sm:text-xl">
                   <span>Lorewards Civic Accolades</span>
                 </DialogTitle>
-                <p className="font-mono text-xs text-muted-foreground mt-0.5">
+                <p className="text-muted-foreground mt-0.5 font-mono text-xs">
                   Author Identity: <strong className="text-foreground">User:{wikiUsername}</strong>
                 </p>
               </div>
             </div>
 
             {stats?.rank ? (
-              <div className="rounded-xl bg-amber-500/10 border border-amber-500/25 px-3 py-1.5 font-mono text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-1.5 font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
                 <Trophy className="h-3.5 w-3.5" />
                 <span>Global Rank #{stats.rank}</span>
               </div>
             ) : (
-              <div className="rounded-xl bg-black/5 dark:bg-white/5 px-3 py-1.5 font-mono text-xs text-muted-foreground">
+              <div className="text-muted-foreground rounded-xl bg-black/5 px-3 py-1.5 font-mono text-xs dark:bg-white/5">
                 Unranked
               </div>
             )}
@@ -127,7 +122,7 @@ export function PassportLorewardsModal({
 
         {/* 1. 6-Cell Metric Matrix */}
         {stats ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
             <MetricCard
               label="Daily Laurels"
               value={stats.dailyWins}
@@ -166,23 +161,23 @@ export function PassportLorewardsModal({
             />
           </div>
         ) : (
-          <div className="py-4 text-center text-xs text-muted-foreground">
+          <div className="text-muted-foreground py-4 text-center text-xs">
             No Loreward stats recorded for this author.
           </div>
         )}
 
         {/* 2. Interactive Streak Calendar & Award History Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+        <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-12">
           {/* Left: Streak Calendar (5 Cols) */}
           <FacetCard
             depth={1}
             interactive="none"
-            className="md:col-span-5 rounded-2xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-4 space-y-3 shadow-sm"
+            className="space-y-3 rounded-2xl border border-black/8 bg-black/[0.015] p-4 shadow-sm md:col-span-5 dark:border-white/10 dark:bg-white/[0.02]"
           >
-            <div className="flex items-center justify-between border-b border-black/6 dark:border-white/8 pb-2.5">
+            <div className="flex items-center justify-between border-b border-black/6 pb-2.5 dark:border-white/8">
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5 text-blue-500" />
-                <span className="font-mono text-xs font-bold uppercase tracking-wider text-foreground">
+                <span className="text-foreground font-mono text-xs font-bold tracking-wider uppercase">
                   {MONTH_NAMES[calMonth - 1]} {calYear}
                 </span>
               </div>
@@ -192,7 +187,7 @@ export function PassportLorewardsModal({
                   type="button"
                   onClick={prevMonth}
                   data-cuelume-press="soft"
-                  className="h-6 w-6 rounded-lg border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] flex items-center justify-center text-stone-600 dark:text-stone-300 hover:text-foreground active:scale-[0.95] transition-all cursor-pointer"
+                  className="hover:text-foreground flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg border border-black/8 bg-black/[0.02] text-stone-600 transition-all active:scale-[0.95] dark:border-white/10 dark:bg-white/[0.03] dark:text-stone-300"
                   title="Previous Month"
                 >
                   <ChevronLeft className="h-3 w-3" />
@@ -203,10 +198,10 @@ export function PassportLorewardsModal({
                   disabled={isCurrentMonth}
                   data-cuelume-press="soft"
                   className={cn(
-                    "h-6 w-6 rounded-lg border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] flex items-center justify-center transition-all",
+                    "flex h-6 w-6 items-center justify-center rounded-lg border border-black/8 bg-black/[0.02] transition-all dark:border-white/10 dark:bg-white/[0.03]",
                     isCurrentMonth
-                      ? "opacity-30 cursor-not-allowed"
-                      : "text-stone-600 dark:text-stone-300 hover:text-foreground active:scale-[0.95] cursor-pointer"
+                      ? "cursor-not-allowed opacity-30"
+                      : "hover:text-foreground cursor-pointer text-stone-600 active:scale-[0.95] dark:text-stone-300"
                   )}
                   title="Next Month"
                 >
@@ -217,7 +212,7 @@ export function PassportLorewardsModal({
 
             {/* Calendar Grid */}
             <div className="space-y-1.5">
-              <div className="grid grid-cols-7 gap-1 text-center font-mono text-[9px] font-bold text-muted-foreground">
+              <div className="text-muted-foreground grid grid-cols-7 gap-1 text-center font-mono text-[9px] font-bold">
                 {DAY_LABELS.map((d, i) => (
                   <div key={i}>{d}</div>
                 ))}
@@ -225,7 +220,10 @@ export function PassportLorewardsModal({
 
               <div className="grid grid-cols-7 gap-1">
                 {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                  <div key={`empty-${i}`} className="h-6 rounded-md bg-black/[0.01] dark:bg-white/[0.01]" />
+                  <div
+                    key={`empty-${i}`}
+                    className="h-6 rounded-md bg-black/[0.01] dark:bg-white/[0.01]"
+                  />
                 ))}
 
                 {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -237,13 +235,14 @@ export function PassportLorewardsModal({
                     <div
                       key={day}
                       className={cn(
-                        "h-6 rounded-md font-mono text-[11px] flex items-center justify-center transition-all select-none",
+                        "flex h-6 items-center justify-center rounded-md font-mono text-[11px] transition-all select-none",
                         status === "winner" &&
-                          "bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/40",
+                          "border border-amber-500/40 bg-amber-500/20 font-bold text-amber-600 dark:text-amber-400",
                         status === "runner-up" &&
-                          "bg-stone-500/20 text-stone-700 dark:text-stone-300 font-medium border border-stone-500/30",
-                        !status && "text-muted-foreground/80 hover:bg-black/5 dark:hover:bg-white/5",
-                        isToday && "ring-1.5 ring-blue-500 ring-offset-1 ring-offset-background"
+                          "border border-stone-500/30 bg-stone-500/20 font-medium text-stone-700 dark:text-stone-300",
+                        !status &&
+                          "text-muted-foreground/80 hover:bg-black/5 dark:hover:bg-white/5",
+                        isToday && "ring-1.5 ring-offset-background ring-blue-500 ring-offset-1"
                       )}
                       title={
                         status === "winner"
@@ -261,13 +260,13 @@ export function PassportLorewardsModal({
             </div>
 
             {/* Legend */}
-            <div className="pt-2 border-t border-black/6 dark:border-white/8 flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+            <div className="text-muted-foreground flex items-center justify-between border-t border-black/6 pt-2 font-mono text-[10px] dark:border-white/8">
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-sm bg-amber-500/40 border border-amber-500" />
+                <span className="h-2 w-2 rounded-sm border border-amber-500 bg-amber-500/40" />
                 <span>Winner</span>
               </span>
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-sm bg-stone-500/40 border border-stone-500" />
+                <span className="h-2 w-2 rounded-sm border border-stone-500 bg-stone-500/40" />
                 <span>Runner-up</span>
               </span>
               <span className="flex items-center gap-1">
@@ -281,17 +280,17 @@ export function PassportLorewardsModal({
           <FacetCard
             depth={1}
             interactive="none"
-            className="md:col-span-7 rounded-2xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-4 space-y-3 shadow-sm"
+            className="space-y-3 rounded-2xl border border-black/8 bg-black/[0.015] p-4 shadow-sm md:col-span-7 dark:border-white/10 dark:bg-white/[0.02]"
           >
-            <div className="flex items-center justify-between border-b border-black/6 dark:border-white/8 pb-2.5">
-              <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <div className="flex items-center justify-between border-b border-black/6 pb-2.5 dark:border-white/8">
+              <h4 className="text-muted-foreground flex items-center gap-1.5 font-mono text-xs font-bold tracking-wider uppercase">
                 <Award className="h-3.5 w-3.5 text-amber-500" />
                 <span>LAURELS HISTORY ({awardHistory.length})</span>
               </h4>
               <Link
                 href="/wiki"
                 data-cuelume-press="soft"
-                className="font-mono text-[10px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+                className="flex items-center gap-0.5 font-mono text-[10px] text-blue-600 hover:underline dark:text-blue-400"
               >
                 <span>WikiOS</span>
                 <ArrowUpRight className="h-2.5 w-2.5" />
@@ -299,26 +298,26 @@ export function PassportLorewardsModal({
             </div>
 
             {awardHistory.length === 0 ? (
-              <div className="py-6 text-center text-xs text-muted-foreground">
+              <div className="text-muted-foreground py-6 text-center text-xs">
                 No previous laurels recorded yet.
               </div>
             ) : (
-              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+              <div className="max-h-[220px] scrollbar-thin space-y-2 overflow-y-auto pr-1">
                 {awardHistory.map((award, i) => (
                   <div
                     key={award.id || `${award.date}-${i}`}
-                    className="flex items-center justify-between gap-2.5 rounded-xl border border-black/6 dark:border-white/8 bg-black/[0.01] dark:bg-white/[0.015] p-2.5 text-xs hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors"
+                    className="flex items-center justify-between gap-2.5 rounded-xl border border-black/6 bg-black/[0.01] p-2.5 text-xs transition-colors hover:bg-black/[0.03] dark:border-white/8 dark:bg-white/[0.015] dark:hover:bg-white/[0.03]"
                   >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <span
                         className={cn(
-                          "rounded px-1.5 py-0.2 font-mono text-[9px] font-bold uppercase tracking-wider shrink-0 border",
+                          "py-0.2 shrink-0 rounded border px-1.5 font-mono text-[9px] font-bold tracking-wider uppercase",
                           award.type === "daily" &&
-                            "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400",
+                            "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
                           award.type === "weekly" &&
-                            "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
+                            "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400",
                           award.type === "monthly" &&
-                            "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400"
+                            "border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400"
                         )}
                       >
                         {award.type}
@@ -329,14 +328,14 @@ export function PassportLorewardsModal({
                           <Link
                             href={`/wiki/${encodeURIComponent(award.page)}`}
                             data-cuelume-press="soft"
-                            className="font-bold text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate block"
+                            className="text-foreground block truncate font-bold transition-colors hover:text-blue-600 dark:hover:text-blue-400"
                           >
                             {award.page}
                           </Link>
                         ) : (
-                          <span className="font-bold text-foreground">Lore Laureate</span>
+                          <span className="text-foreground font-bold">Lore Laureate</span>
                         )}
-                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
+                        <div className="text-muted-foreground flex items-center gap-1.5 font-mono text-[10px]">
                           <span>{award.date}</span>
                           <span>·</span>
                           <span
@@ -352,7 +351,7 @@ export function PassportLorewardsModal({
                     </div>
 
                     {award.score !== null && award.score !== undefined && (
-                      <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                      <span className="shrink-0 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
                         +{award.score.toLocaleString()} pts
                       </span>
                     )}
@@ -364,11 +363,11 @@ export function PassportLorewardsModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-black/8 dark:border-white/10 pt-4 flex items-center justify-between">
+        <div className="flex items-center justify-between border-t border-black/8 pt-4 dark:border-white/10">
           <Link
             href={`/wiki/user/${encodeURIComponent(wikiUsername)}`}
             data-cuelume-press="soft"
-            className="inline-flex items-center gap-1.5 font-mono text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+            className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-xs font-bold text-blue-600 hover:underline dark:text-blue-400"
           >
             <BookOpen className="h-3.5 w-3.5" />
             <span>Open Dedicated WikiOS Profile</span>
@@ -378,7 +377,7 @@ export function PassportLorewardsModal({
             type="button"
             onClick={() => onOpenChange(false)}
             data-cuelume-press="soft"
-            className="rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-950 px-4 py-2 text-xs font-semibold hover:opacity-90 active:scale-[0.97] transition-all cursor-pointer"
+            className="cursor-pointer rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-[0.97] dark:bg-white dark:text-stone-950"
           >
             Close
           </button>
@@ -403,17 +402,17 @@ function MetricCard({
     <FacetCard
       depth={1}
       interactive="hover"
-      className="rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-3 space-y-0.5 shadow-xs"
+      className="space-y-0.5 rounded-xl border border-black/8 bg-black/[0.015] p-3 shadow-xs dark:border-white/10 dark:bg-white/[0.02]"
     >
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+        <span className="text-muted-foreground font-mono text-[9px] tracking-wider uppercase">
           {label}
         </span>
         {icon}
       </div>
-      <div className="text-base font-bold text-foreground tracking-tight font-mono">{value}</div>
+      <div className="text-foreground font-mono text-base font-bold tracking-tight">{value}</div>
       {subtext && (
-        <div className="font-mono text-[9px] text-muted-foreground truncate">{subtext}</div>
+        <div className="text-muted-foreground truncate font-mono text-[9px]">{subtext}</div>
       )}
     </FacetCard>
   );

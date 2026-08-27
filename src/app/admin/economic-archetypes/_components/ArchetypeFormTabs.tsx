@@ -113,7 +113,9 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
       </div>
 
       <div>
-        <label className="text-foreground mb-1.5 block text-xs font-medium">Historical Context</label>
+        <label className="text-foreground mb-1.5 block text-xs font-medium">
+          Historical Context
+        </label>
         <Textarea
           value={formData.historicalContext}
           onChange={(e) => setFormData((prev) => ({ ...prev, historicalContext: e.target.value }))}
@@ -148,9 +150,7 @@ export function EconomicsTab({ formData, setFormData }: TabProps) {
             <div key={sector} className="space-y-1">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-foreground font-medium capitalize">{sector}</span>
-                <span className="text-muted-foreground">
-                  {formData.sectorFocus[sector] || 0}%
-                </span>
+                <span className="text-muted-foreground">{formData.sectorFocus[sector] || 0}%</span>
               </div>
               <Slider
                 value={[formData.sectorFocus[sector] || 0]}
@@ -316,7 +316,9 @@ export function EmploymentTab({ formData, setFormData }: TabProps) {
         </div>
 
         <div>
-          <label className="text-foreground mb-1.5 block text-xs font-medium">Wage Growth (%)</label>
+          <label className="text-foreground mb-1.5 block text-xs font-medium">
+            Wage Growth (%)
+          </label>
           <Input
             type="number"
             step="0.1"

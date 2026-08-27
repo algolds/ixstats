@@ -121,7 +121,9 @@ export function NarratorPanel() {
       <div className="flex h-[50vh] items-center justify-center">
         <div className="space-y-2 text-center">
           <Loader2 className="text-primary mx-auto h-8 w-8 animate-spin" />
-          <p className="text-muted-foreground text-xs font-semibold">Loading Narrator Settings...</p>
+          <p className="text-muted-foreground text-xs font-semibold">
+            Loading Narrator Settings...
+          </p>
         </div>
       </div>
     );
@@ -139,21 +141,21 @@ export function NarratorPanel() {
         <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full max-w-md justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
           <TabsTrigger
             value="config"
-            className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Settings className="h-4 w-4 text-cyan-400" />
             Configuration
           </TabsTrigger>
           <TabsTrigger
             value="playground"
-            className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Play className="h-4 w-4 text-amber-400" />
             Playground
           </TabsTrigger>
           <TabsTrigger
             value="cache"
-            className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Database className="h-4 w-4 text-emerald-400" />
             Cache Lab
@@ -162,22 +164,25 @@ export function NarratorPanel() {
 
         {/* Tab 1: Configuration */}
         <TabsContent value="config" className="mt-4 focus-visible:outline-none">
-          <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-5">
-            <div className="flex flex-col gap-3 border-b border-border/20 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+            <div className="border-border/20 flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="h-4 w-4 text-amber-400" />
-                  <h3 className="text-xs font-bold text-foreground">Global AI Narrator Configuration</h3>
+                  <h3 className="text-foreground text-xs font-bold">
+                    Global AI Narrator Configuration
+                  </h3>
                 </div>
-                <p className="text-muted-foreground text-[11px] mt-0.5">
-                  Manage LLM credentials and connection parameters. Falls back to SPORTS_LLM_API_KEY if left blank.
+                <p className="text-muted-foreground mt-0.5 text-[11px]">
+                  Manage LLM credentials and connection parameters. Falls back to SPORTS_LLM_API_KEY
+                  if left blank.
                 </p>
               </div>
               <Button
                 onClick={handleSaveSettings}
                 disabled={saveSettingsMutation.isPending}
                 size="sm"
-                className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+                className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
               >
                 <Save className="mr-1.5 h-3.5 w-3.5" />
                 {saveSettingsMutation.isPending ? "Saving..." : "Save Settings"}
@@ -186,9 +191,11 @@ export function NarratorPanel() {
 
             <div className="space-y-4">
               {/* Enable Switch */}
-              <div className="flex items-center justify-between rounded-xl border border-border/20 bg-background/30 p-3.5">
+              <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
                 <div>
-                  <Label className="text-foreground text-xs font-bold">Enable Flavor Cards Globally</Label>
+                  <Label className="text-foreground text-xs font-bold">
+                    Enable Flavor Cards Globally
+                  </Label>
                   <p className="text-muted-foreground text-[11px]">
                     Enable or disable AI flavorization cards globally across all events and issues.
                   </p>
@@ -199,9 +206,11 @@ export function NarratorPanel() {
               {/* Grid Configs */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">LLM Provider</Label>
+                  <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                    LLM Provider
+                  </Label>
                   <Select value={provider} onValueChange={setProvider}>
-                    <SelectTrigger className="h-8 rounded-xl border-border/30 bg-background/50 text-xs">
+                    <SelectTrigger className="border-border/30 bg-background/50 h-8 rounded-xl text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -215,8 +224,12 @@ export function NarratorPanel() {
 
                 <div className="space-y-1.5">
                   <div className="flex justify-between">
-                    <Label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Temperature</Label>
-                    <span className="font-mono text-xs text-amber-400 font-bold">{temperature}</span>
+                    <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                      Temperature
+                    </Label>
+                    <span className="font-mono text-xs font-bold text-amber-400">
+                      {temperature}
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -225,52 +238,68 @@ export function NarratorPanel() {
                     step={0.1}
                     value={temperature}
                     onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                    className="h-1.5 w-full cursor-pointer accent-amber-500 rounded-lg bg-muted/40"
+                    className="bg-muted/40 h-1.5 w-full cursor-pointer rounded-lg accent-amber-500"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">API Endpoint URL</Label>
+                  <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                    API Endpoint URL
+                  </Label>
                   <Input
                     type="text"
                     value={apiUrl}
                     onChange={(e) => setApiUrl(e.target.value)}
                     placeholder={placeholders.apiUrl}
-                    className="h-8 rounded-xl border-border/30 bg-background/50 font-mono text-xs"
+                    className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Model Name</Label>
+                  <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                    Model Name
+                  </Label>
                   <Input
                     type="text"
                     value={modelName}
                     onChange={(e) => setModelName(e.target.value)}
                     placeholder={placeholders.modelName}
-                    className="h-8 rounded-xl border-border/30 bg-background/50 font-mono text-xs"
+                    className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">API Key / Token</Label>
+                <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                  API Key / Token
+                </Label>
                 <Input
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder={settingsData?.apiKey ? "••••••••••••••••" : "Fallback to SPORTS_LLM_API_KEY if empty"}
-                  className="h-8 rounded-xl border-border/30 bg-background/50 text-xs"
+                  placeholder={
+                    settingsData?.apiKey
+                      ? "••••••••••••••••"
+                      : "Fallback to SPORTS_LLM_API_KEY if empty"
+                  }
+                  className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
                 />
               </div>
 
               {/* System Prompt Editor */}
               <div className="space-y-1.5 pt-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Global System Prompt</Label>
+                  <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                    Global System Prompt
+                  </Label>
                   <button
                     type="button"
                     onClick={() => {
-                      if (window.confirm("Revert system prompt to default Paradox designer configuration?")) {
+                      if (
+                        window.confirm(
+                          "Revert system prompt to default Paradox designer configuration?"
+                        )
+                      ) {
                         setSystemPrompt(DEFAULT_FLAVOR_SYSTEM_PROMPT);
                       }
                     }}
@@ -284,7 +313,7 @@ export function NarratorPanel() {
                   onChange={(e) => setSystemPrompt(e.target.value)}
                   placeholder={DEFAULT_FLAVOR_SYSTEM_PROMPT}
                   rows={5}
-                  className="rounded-xl border-border/30 bg-background/50 font-mono text-xs leading-relaxed"
+                  className="border-border/30 bg-background/50 rounded-xl font-mono text-xs leading-relaxed"
                 />
               </div>
             </div>

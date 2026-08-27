@@ -16,7 +16,21 @@
 
 import { useCallback, useMemo, useState, useRef } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { CursorPointer as MousePointer2, MapPin, Hexagon, Bank as Landmark, Navigator as Route, Bookmark as BookMarked, Type, HandBrake as Hand, SelectWindow as LassoSelect, Ruler, ColorPicker as PaintBucket, ColorPicker as Pipette, MagicWand as Wand2 } from "iconoir-react";
+import {
+  CursorPointer as MousePointer2,
+  MapPin,
+  Hexagon,
+  Bank as Landmark,
+  Navigator as Route,
+  Bookmark as BookMarked,
+  Type,
+  HandBrake as Hand,
+  SelectWindow as LassoSelect,
+  Ruler,
+  ColorPicker as PaintBucket,
+  ColorPicker as Pipette,
+  MagicWand as Wand2,
+} from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { getPlugins } from "~/components/maps/editor/plugins/registry";
 
@@ -238,7 +252,7 @@ export function MapEditorToolbar({
                     onMouseLeave={handleMouseUpOrLeave}
                     onContextMenu={(e) => handleContextMenu(e, item.id)}
                     disabled={isToolDisabled}
-                    className={`group relative flex items-center justify-center rounded-md transition-all active:scale-95 duration-100 ease-out select-none ${
+                    className={`group relative flex items-center justify-center rounded-md transition-all duration-100 ease-out select-none active:scale-95 ${
                       horizontal ? "h-8 w-8" : "h-9 w-9"
                     } ${
                       isActive
@@ -255,7 +269,7 @@ export function MapEditorToolbar({
 
                     {!isToolDisabled && activePopoverGroupId !== item.id && (
                       <div
-                        className={`bg-popover/90 backdrop-blur-md text-popover-foreground ring-border/50 pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 group-hover:block ${
+                        className={`bg-popover/90 text-popover-foreground ring-border/50 pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 backdrop-blur-md group-hover:block ${
                           horizontal
                             ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
                             : "top-1/2 left-full ml-1.5 -translate-y-1/2"
@@ -274,7 +288,7 @@ export function MapEditorToolbar({
                   align="center"
                   sideOffset={6}
                   style={{ transformOrigin: "var(--radix-popover-content-transform-origin)" }}
-                  className="bg-popover/90 border-border/60 text-foreground ring-border/50 z-[100] w-36 rounded-lg border p-1 shadow-xl backdrop-blur-xl ring-1"
+                  className="bg-popover/90 border-border/60 text-foreground ring-border/50 z-[100] w-36 rounded-lg border p-1 shadow-xl ring-1 backdrop-blur-xl"
                 >
                   <div className="flex flex-col gap-0.5">
                     {item.tools.map((subTool) => {
@@ -287,7 +301,7 @@ export function MapEditorToolbar({
                             onModeChange(subTool.mode);
                             setActivePopoverGroupId(null);
                           }}
-                          className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs transition-all active:scale-95 duration-100 ${
+                          className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs transition-all duration-100 active:scale-95 ${
                             isSubActive
                               ? "bg-primary text-primary-foreground font-semibold shadow-sm"
                               : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -334,7 +348,7 @@ export function MapEditorToolbar({
               <button
                 onClick={() => handleSingleClick(tool.mode)}
                 disabled={isToolDisabled}
-                className={`group relative flex items-center justify-center rounded-md transition-all active:scale-95 duration-100 ease-out ${
+                className={`group relative flex items-center justify-center rounded-md transition-all duration-100 ease-out active:scale-95 ${
                   horizontal ? "h-8 w-8" : "h-9 w-9"
                 } ${
                   isActive
@@ -347,7 +361,7 @@ export function MapEditorToolbar({
 
                 {!isToolDisabled && (
                   <div
-                    className={`bg-popover/90 backdrop-blur-md text-popover-foreground ring-border/50 pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 group-hover:block ${
+                    className={`bg-popover/90 text-popover-foreground ring-border/50 pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 backdrop-blur-md group-hover:block ${
                       horizontal
                         ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
                         : "top-1/2 left-full ml-1.5 -translate-y-1/2"

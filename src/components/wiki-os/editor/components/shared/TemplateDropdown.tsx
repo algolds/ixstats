@@ -4,11 +4,7 @@
 "use client";
 
 import React, { memo } from "react";
-import {
-  Puzzle,
-  Sparks as Sparkles,
-  Map as MapIcon,
-} from "iconoir-react";
+import { Puzzle, Sparks as Sparkles, Map as MapIcon } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { useEditorModalContext } from "../../context/EditorModalContext";
 
@@ -43,11 +39,7 @@ export const TemplateDropdown = memo(function TemplateDropdown({
 
   return (
     <Popover open={modal.templatesOpen} onOpenChange={modal.setTemplatesOpen}>
-      <PopoverTrigger
-        className={triggerClassName}
-        title="Insert Template"
-        onClick={onBeforeOpen}
-      >
+      <PopoverTrigger className={triggerClassName} title="Insert Template" onClick={onBeforeOpen}>
         {triggerContent ?? <Puzzle className="h-3.5 w-3.5" />}
       </PopoverTrigger>
       <PopoverContent
@@ -55,19 +47,35 @@ export const TemplateDropdown = memo(function TemplateDropdown({
         className="glass-none z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
       >
         <div className="flex flex-col gap-0.5 text-xs">
-          <button type="button" onClick={() => handleSelect(modal.setShowInfoboxModal)} className={itemClass}>
+          <button
+            type="button"
+            onClick={() => handleSelect(modal.setShowInfoboxModal)}
+            className={itemClass}
+          >
             <Puzzle className="h-3.5 w-3.5 text-blue-400" />
             <span>Infobox Country</span>
           </button>
-          <button type="button" onClick={() => handleSelect(modal.setShowCountryStatsModal)} className={itemClass}>
+          <button
+            type="button"
+            onClick={() => handleSelect(modal.setShowCountryStatsModal)}
+            className={itemClass}
+          >
             <Sparkles className="h-3.5 w-3.5 text-amber-400" />
             <span>Country Stats</span>
           </button>
-          <button type="button" onClick={() => handleSelect(modal.setShowBusinessStatsModal)} className={itemClass}>
+          <button
+            type="button"
+            onClick={() => handleSelect(modal.setShowBusinessStatsModal)}
+            className={itemClass}
+          >
             <Sparkles className="h-3.5 w-3.5 text-teal-400" />
             <span>Business Stats</span>
           </button>
-          <button type="button" onClick={() => handleSelect(modal.setShowMapCoordsModal)} className={itemClass}>
+          <button
+            type="button"
+            onClick={() => handleSelect(modal.setShowMapCoordsModal)}
+            className={itemClass}
+          >
             <MapIcon className="h-3.5 w-3.5 text-emerald-400" />
             <span>Map Coords &amp; Embeds</span>
           </button>

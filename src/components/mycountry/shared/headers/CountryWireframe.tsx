@@ -125,7 +125,9 @@ export const CountryWireframe = React.memo(function CountryWireframe({
   }
 
   return (
-    <div className={`border-border bg-card/60 relative h-full w-full overflow-hidden border ${className}`}>
+    <div
+      className={`border-border bg-card/60 relative h-full w-full overflow-hidden border ${className}`}
+    >
       <svg
         viewBox={`0 0 ${VIEW_W} ${model.viewH}`}
         preserveAspectRatio="xMidYMid meet"
@@ -159,7 +161,9 @@ export const CountryWireframe = React.memo(function CountryWireframe({
             stroke="currentColor"
             className="text-card"
             strokeWidth="1.5"
-            style={{ filter: `drop-shadow(0 0 4px ${d.capital ? "var(--color-warning-light)" : color})` }}
+            style={{
+              filter: `drop-shadow(0 0 4px ${d.capital ? "var(--color-warning-light)" : color})`,
+            }}
           />
         ))}
       </svg>

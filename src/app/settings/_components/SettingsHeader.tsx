@@ -9,17 +9,12 @@ interface SettingsHeaderProps {
   actions?: ReactNode;
 }
 
-export function SettingsHeader({
-  title,
-  description,
-  category,
-  actions,
-}: SettingsHeaderProps) {
+export function SettingsHeader({ title, description, category, actions }: SettingsHeaderProps) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-border/20 pb-5">
+    <div className="border-border/20 mb-6 flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between">
       <div className="space-y-1">
         {/* Breadcrumb Trail */}
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/70">
+        <div className="text-muted-foreground/70 flex items-center gap-1.5 text-xs font-semibold">
           <Link href="/settings" className="hover:text-foreground transition-colors">
             Settings
           </Link>
@@ -33,20 +28,14 @@ export function SettingsHeader({
           <span className="text-foreground">{title}</span>
         </div>
 
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          {title}
-        </h1>
+        <h1 className="text-foreground text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
         {description && (
-          <p className="text-xs font-medium text-muted-foreground max-w-2xl">
-            {description}
-          </p>
+          <p className="text-muted-foreground max-w-2xl text-xs font-medium">{description}</p>
         )}
       </div>
 
       {actions && (
-        <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-end">
-          {actions}
-        </div>
+        <div className="flex shrink-0 items-center gap-2.5 self-start sm:self-end">{actions}</div>
       )}
     </div>
   );

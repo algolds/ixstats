@@ -1,12 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  Settings,
-  SoundHigh,
-  ChatBubble,
-  User,
-} from "iconoir-react";
+import { Settings, SoundHigh, ChatBubble, User } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import {
   Popover,
@@ -79,7 +74,7 @@ export function MessagesFolderNav({
   return (
     <div
       className={cn(
-        "relative z-20 flex w-full shrink-0 items-center justify-between gap-1.5 px-3.5 py-3 border-b border-border/40 bg-emerald-500/[0.04] dark:bg-emerald-500/10 transition-colors duration-500"
+        "border-border/40 relative z-20 flex w-full shrink-0 items-center justify-between gap-1.5 border-b bg-emerald-500/[0.04] px-3.5 py-3 transition-colors duration-500 dark:bg-emerald-500/10"
       )}
     >
       <div className="relative z-10 flex items-center gap-2.5">
@@ -87,9 +82,9 @@ export function MessagesFolderNav({
           <ChatBubble className="h-4 w-4" />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-bold tracking-tight text-foreground">Messages</span>
+          <span className="text-foreground text-[13px] font-bold tracking-tight">Messages</span>
           {totalUnread > 0 && (
-            <span className="flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] leading-none font-bold text-white shadow-2xs tabular-nums">
+            <span className="flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] leading-none font-bold text-white tabular-nums shadow-2xs">
               {totalUnread > 99 ? "99+" : totalUnread}
             </span>
           )}
@@ -99,7 +94,7 @@ export function MessagesFolderNav({
       {/* Settings popover button */}
       <Popover>
         <PopoverTrigger
-          className="hover:bg-accent/15 text-muted-foreground hover:text-foreground relative z-10 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border/40 bg-card/50 transition-all active:scale-95"
+          className="hover:bg-accent/15 text-muted-foreground hover:text-foreground border-border/40 bg-card/50 relative z-10 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-all active:scale-95"
           aria-label="Message settings"
         >
           <Settings className="h-3.5 w-3.5" />
@@ -165,4 +160,3 @@ export function MessagesFolderNav({
     </div>
   );
 }
-

@@ -77,7 +77,6 @@ describe("computeForeignPolicyImpact — coercive tools", () => {
   });
 });
 
-
 import { ComponentType } from "@prisma/client";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
@@ -128,7 +127,6 @@ describe("Statecraft Power Brokers Derivation", () => {
     expect(generals?.satisfied).toBe(true);
   });
 });
-
 
 import { tallyVote, type VotingBloc } from "~/lib/statecraft/legislative-vote";
 import { fogVoteProjection } from "~/lib/statecraft/whip";
@@ -183,7 +181,6 @@ describe("fogVoteProjection — standing gates precision (S3.A)", () => {
   });
 });
 
-
 import { revealConsequences, classifyDomain } from "~/lib/statecraft/recon";
 
 const democratic = {
@@ -232,8 +229,11 @@ describe("revealConsequences — fog is the build's blind spots", () => {
   });
 });
 
-
-import { getUpcomingEvents, formatRelativeIxDays, formatIxCountdown } from "~/lib/statecraft/calendar";
+import {
+  getUpcomingEvents,
+  formatRelativeIxDays,
+  formatIxCountdown,
+} from "~/lib/statecraft/calendar";
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = 1_000_000_000_000;
@@ -283,7 +283,6 @@ describe("formatIxCountdown", () => {
   });
 });
 
-
 import { assessReach, fogNumber } from "~/lib/statecraft/diplo-intel";
 
 describe("assessReach — reach drives clarity", () => {
@@ -310,4 +309,3 @@ describe("fogNumber — never fabricates", () => {
     expect(fogNumber(87.6, "questioned")).toBe(88);
   });
 });
-

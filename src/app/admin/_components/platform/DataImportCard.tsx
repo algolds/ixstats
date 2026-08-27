@@ -1,6 +1,11 @@
 "use client";
 
-import { Database, WarningCircle as AlertCircle, CheckCircle as CheckCircle2, InfoCircle as Info } from "iconoir-react";
+import {
+  Database,
+  WarningCircle as AlertCircle,
+  CheckCircle as CheckCircle2,
+  InfoCircle as Info,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { FileUpload } from "../FileUpload";

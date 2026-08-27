@@ -4,7 +4,11 @@ global.TextEncoder = TextEncoder as any;
 
 import { NextRequest } from "next/server";
 import { GET as getFlag } from "~/app/api/flags/[country]/route";
-import { GET as getCache, POST as postCache, DELETE as deleteCache } from "~/app/api/flag-cache/route";
+import {
+  GET as getCache,
+  POST as postCache,
+  DELETE as deleteCache,
+} from "~/app/api/flag-cache/route";
 import { serverFlagResolver } from "~/lib/flags/server";
 
 // Mock auth
@@ -79,7 +83,9 @@ describe("Flag API Routes Contracts (Plan 164)", () => {
         ])
       );
 
-      const req = new NextRequest("http://localhost:3000/api/flag-cache?action=flags&countries=Finland");
+      const req = new NextRequest(
+        "http://localhost:3000/api/flag-cache?action=flags&countries=Finland"
+      );
       const res = await getCache(req);
       expect(res.status).toBe(200);
 

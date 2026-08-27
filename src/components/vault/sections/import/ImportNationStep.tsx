@@ -2,7 +2,15 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Globe, Sparks as Sparkles, OpenNewWindow as ExternalLink, ShieldCheck, Download, ArrowRight, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Globe,
+  Sparks as Sparkles,
+  OpenNewWindow as ExternalLink,
+  ShieldCheck,
+  Download,
+  ArrowRight,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

@@ -124,7 +124,6 @@ export const ONOMA_PILLAR_TABS = [
   },
 ];
 
-
 /**
  * Domain category tabs displayed in the CREATE pillar alongside the Quick Generator anchor.
  */

@@ -57,9 +57,8 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   useEffect(() => {
     // oxlint-disable-next-line
     setSelectedIndex(0);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [items.length]);
-
 
   const navigate = useCallback(
     (title: string) => {

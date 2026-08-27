@@ -1,7 +1,12 @@
 "use client";
 
 import React from "react";
-import { StatUp as TrendingUp, InfoCircle as Info, StatsReport as BarChart3, LightBulb } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  InfoCircle as Info,
+  StatsReport as BarChart3,
+  LightBulb,
+} from "iconoir-react";
 import { TaxEconomySyncDisplay } from "../TaxEconomySyncDisplay";
 import { UnifiedTaxEffectivenessDisplay } from "../UnifiedTaxEffectivenessDisplay";
 import type { TaxSystem } from "~/types/tax-system";

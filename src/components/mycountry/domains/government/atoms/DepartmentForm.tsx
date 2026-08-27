@@ -27,7 +27,31 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { Plus, Xmark as X, Shield, GraduationCap, Heart, Suitcase as Briefcase, DeliveryTruck as Truck, Leaf, Group as Users, Building, Globe, Flash as Zap, Wifi, Palette, Flask as Beaker, HomeSimple as Home, Medal, Eye, WarningTriangle as AlertTriangle, MoreHoriz as MoreHorizontal, InfoCircle as Info, CheckCircle, Upload } from "iconoir-react";
+import {
+  Plus,
+  Xmark as X,
+  Shield,
+  GraduationCap,
+  Heart,
+  Suitcase as Briefcase,
+  DeliveryTruck as Truck,
+  Leaf,
+  Group as Users,
+  Building,
+  Globe,
+  Flash as Zap,
+  Wifi,
+  Palette,
+  Flask as Beaker,
+  HomeSimple as Home,
+  Medal,
+  Eye,
+  WarningTriangle as AlertTriangle,
+  MoreHoriz as MoreHorizontal,
+  InfoCircle as Info,
+  CheckCircle,
+  Upload,
+} from "iconoir-react";
 import * as IconoirIcons from "iconoir-react";
 
 import { ComponentType } from "@prisma/client";
@@ -56,7 +80,9 @@ export function isImageIconSource(value: string | undefined): value is string {
   );
 }
 
-export function resolveNamedDepartmentIcon(iconName: string | undefined): React.ComponentType<{ className?: string }> | null {
+export function resolveNamedDepartmentIcon(
+  iconName: string | undefined
+): React.ComponentType<{ className?: string }> | null {
   if (!iconName || isImageIconSource(iconName)) return null;
   const icon = (IconoirIcons as Record<string, unknown>)[iconName];
   return typeof icon === "function" ? (icon as React.ComponentType<{ className?: string }>) : null;

@@ -2,10 +2,19 @@
 
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { Settings, Upload, SystemRestart as Loader2, Trash as Trash2, MediaImage as ImageIcon, Download, Refresh as RefreshCw } from "iconoir-react";
+import {
+  Settings,
+  Upload,
+  SystemRestart as Loader2,
+  Trash as Trash2,
+  MediaImage as ImageIcon,
+  Download,
+  Refresh as RefreshCw,
+} from "iconoir-react";
 
 const MediaSearchModal = dynamic(
-  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 import { api } from "~/trpc/react";
@@ -976,7 +985,7 @@ export function LeagueSettingsModal({
                       a.download = `${league.name.toLowerCase().replace(/[^a-z0-9]/g, "_")}_data.json`;
                       a.click();
                       notify.success("Export Successful", "League database records downloaded.");
-                    } catch  {
+                    } catch {
                       notify.error("Export Failed", "Could not retrieve league records.");
                     }
                   }}

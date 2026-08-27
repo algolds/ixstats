@@ -15,7 +15,11 @@ export const MEDIAWIKI_MAPPING: Record<string, MediaWikiAccountMapping> = {
   // --- Core Power Authors & Alt Mappings ---
   Kir: { primaryCountry: "Kiravia", notes: "Primary Kiravia lorebuilder" },
   Carthinova: { primaryCountry: "Kiravia", isAltFor: "Kir", notes: "Kiravia alt account" },
-  "ixnet>Drunk Uncle Kir": { primaryCountry: "Kiravia", isAltFor: "Kir", notes: "Kiravia legacy alt" },
+  "ixnet>Drunk Uncle Kir": {
+    primaryCountry: "Kiravia",
+    isAltFor: "Kir",
+    notes: "Kiravia legacy alt",
+  },
 
   Urcea: { primaryCountry: "Urcea", notes: "Primary Urcea lorebuilder & admin" },
   Burgundie: { primaryCountry: "Burgundie", notes: "Primary Burgundie lorebuilder & admin" },

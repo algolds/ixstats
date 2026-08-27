@@ -23,7 +23,11 @@ function extractTemplateNames(wikitext: string): Set<string> {
   while ((m = regex.exec(wikitext)) !== null) {
     const raw = m[1]?.trim();
     if (!raw || raw.startsWith("#") || raw.startsWith("$")) continue;
-    const clean = raw.replace(/^Template:/i, "").replace(/_/g, " ").trim().toLowerCase();
+    const clean = raw
+      .replace(/^Template:/i, "")
+      .replace(/_/g, " ")
+      .trim()
+      .toLowerCase();
     if (clean) matches.add(clean);
   }
 
@@ -52,7 +56,9 @@ async function main() {
     }
   }
 
-  console.log(`   Found ${activeNames.size.toLocaleString()} uniquely transcluded templates across ${articles.length.toLocaleString()} articles.`);
+  console.log(
+    `   Found ${activeNames.size.toLocaleString()} uniquely transcluded templates across ${articles.length.toLocaleString()} articles.`
+  );
 
   console.log("\n🔍 2. Evaluating wiki_templates registry rows...");
   const allTemplates = await (prisma as any).wikiTemplate.findMany({
@@ -105,8 +111,12 @@ async function main() {
     },
   });
 
-  console.log(`   ✓ Successfully deleted ${deleteResult.count.toLocaleString()} dead templates from wiki_templates.`);
-  console.log(`   ✓ Cleaned registry now contains ${toKeep.length.toLocaleString()} high-value, active templates.`);
+  console.log(
+    `   ✓ Successfully deleted ${deleteResult.count.toLocaleString()} dead templates from wiki_templates.`
+  );
+  console.log(
+    `   ✓ Cleaned registry now contains ${toKeep.length.toLocaleString()} high-value, active templates.`
+  );
 
   console.log("\n==================================================================");
   console.log("✅ WikiOS Template Registry Purge & Optimization Complete!");

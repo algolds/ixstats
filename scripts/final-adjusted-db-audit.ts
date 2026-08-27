@@ -49,14 +49,28 @@ async function main() {
 
   console.log("📊 1. INGESTED ENTITIES & NAMESPACE TOPOLOGY");
   console.log(`• Total Ingested Pages:        ${totalArticles.toLocaleString()}`);
-  console.log(`  ├─ Main Lore Articles (ns: 0):   ${ns0Articles.toLocaleString()}  [100% Ingested]`);
-  console.log(`  ├─ System Templates (ns: 10):    ${ns10Templates.toLocaleString()}  [For Parser & Infoboxes]`);
-  console.log(`  ├─ Categories (ns: 14):          ${ns14Categories.toLocaleString()}  [Taxonomy & Indexing]`);
-  console.log(`  ├─ Project Pages (ns: 4):        ${ns4Project.toLocaleString()}  [Policies & Documentation]`);
-  console.log(`  └─ User Pages (ns: 2):           ${ns2UserPages.toLocaleString()}  [User Profiles]`);
+  console.log(
+    `  ├─ Main Lore Articles (ns: 0):   ${ns0Articles.toLocaleString()}  [100% Ingested]`
+  );
+  console.log(
+    `  ├─ System Templates (ns: 10):    ${ns10Templates.toLocaleString()}  [For Parser & Infoboxes]`
+  );
+  console.log(
+    `  ├─ Categories (ns: 14):          ${ns14Categories.toLocaleString()}  [Taxonomy & Indexing]`
+  );
+  console.log(
+    `  ├─ Project Pages (ns: 4):        ${ns4Project.toLocaleString()}  [Policies & Documentation]`
+  );
+  console.log(
+    `  └─ User Pages (ns: 2):           ${ns2UserPages.toLocaleString()}  [User Profiles]`
+  );
   console.log(`• Total Historical Revisions:  ${totalRevisions.toLocaleString()}`);
-  console.log(`  ├─ Main Article Edits (ns: 0):   ${mainNsRevisions.toLocaleString()}  [Pure Lore Signal]`);
-  console.log(`  └─ Template / Tech Edits:        ${(totalRevisions - mainNsRevisions).toLocaleString()}  [Isolated from User Feeds]`);
+  console.log(
+    `  ├─ Main Article Edits (ns: 0):   ${mainNsRevisions.toLocaleString()}  [Pure Lore Signal]`
+  );
+  console.log(
+    `  └─ Template / Tech Edits:        ${(totalRevisions - mainNsRevisions).toLocaleString()}  [Isolated from User Feeds]`
+  );
 
   // 2. Pure Loreward Leaderboard (Top 12 Active Contributors)
   console.log("\n🏆 2. PURE LOREWARD LEADERBOARD (Top 12 Authors)");
@@ -78,8 +92,14 @@ async function main() {
 
   // 3. Performance & Read Latency Benchmarks
   console.log("\n⚡ 3. PERFORMANCE & READ BENCHMARKS");
-  const testArticles = ["Urcea", "Petalstone Music", "Burgundie", "Treaty of Oakhaven", "Main Page"];
-  
+  const testArticles = [
+    "Urcea",
+    "Petalstone Music",
+    "Burgundie",
+    "Treaty of Oakhaven",
+    "Main Page",
+  ];
+
   for (const title of testArticles) {
     const start = performance.now();
     const art = await prisma.wikiArticle.findFirst({
@@ -87,7 +107,9 @@ async function main() {
       select: { id: true, title: true, mwLatestRevId: true, wordCount: true, readingTime: true },
     });
     const dur = (performance.now() - start).toFixed(2);
-    const status = art ? `✅ Found (${art.wordCount} words, ~${art.readingTime}m read, rev: ${art.mwLatestRevId})` : "⚠️ Not found in ns:0";
+    const status = art
+      ? `✅ Found (${art.wordCount} words, ~${art.readingTime}m read, rev: ${art.mwLatestRevId})`
+      : "⚠️ Not found in ns:0";
     console.log(`  • "${title.padEnd(20)}": ${dur}ms -> ${status}`);
   }
 
@@ -96,7 +118,9 @@ async function main() {
   console.log("  • Passport & User Contribs:  ✅ Scoped to Namespace 0 (Zero template noise)");
   console.log("  • User Created Pages:        ✅ Scoped to Namespace 0 (Only authentic lore)");
   console.log("  • Live Headline Feeds:       ✅ Scoped to Namespace 0 & Bot scripts excluded");
-  console.log("  • Spotlight Autocomplete:    ✅ Prioritizes Namespace 0 (Templates on explicit prefix only)");
+  console.log(
+    "  • Spotlight Autocomplete:    ✅ Prioritizes Namespace 0 (Templates on explicit prefix only)"
+  );
   console.log("  • Upstream Daemon Sync:      ✅ Real-time Action API polling (rcdir: older)");
   console.log("  • Local MariaDB Sockets:     ✅ 100% Decoupled and Removed");
 

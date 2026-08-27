@@ -47,7 +47,9 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       thinkshareMessage: {
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({ id: "msg_1", content: "hello", createdAt: new Date() }),
+        create: jest
+          .fn()
+          .mockResolvedValue({ id: "msg_1", content: "hello", createdAt: new Date() }),
         update: jest.fn().mockResolvedValue({ id: "msg_1" }),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         count: jest.fn().mockResolvedValue(0),
@@ -156,9 +158,27 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
 
     test("6. getFolderCounts aggregates unread counts across all category folders", async () => {
       mockDb.conversationParticipant.findMany.mockResolvedValue([
-        { conversationId: "c_1", isArchived: false, isMuted: false, lastReadAt: new Date(0), conversation: { source: "thinkshare" } },
-        { conversationId: "c_2", isArchived: true, isMuted: false, lastReadAt: new Date(0), conversation: { source: "thinkshare" } },
-        { conversationId: "c_3", isArchived: false, isMuted: false, lastReadAt: new Date(0), conversation: { source: "diplomatic" } },
+        {
+          conversationId: "c_1",
+          isArchived: false,
+          isMuted: false,
+          lastReadAt: new Date(0),
+          conversation: { source: "thinkshare" },
+        },
+        {
+          conversationId: "c_2",
+          isArchived: true,
+          isMuted: false,
+          lastReadAt: new Date(0),
+          conversation: { source: "thinkshare" },
+        },
+        {
+          conversationId: "c_3",
+          isArchived: false,
+          isMuted: false,
+          lastReadAt: new Date(0),
+          conversation: { source: "diplomatic" },
+        },
       ]);
       mockDb.thinkshareMessage.findMany.mockResolvedValue([
         { conversationId: "c_1", ixTimeTimestamp: new Date(1000) },
@@ -213,9 +233,9 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
 
   describe("Write Operations & Atomic Transactions", () => {
     test("10. createConversation validates minimum participant count", async () => {
-      await expect(
-        service.createConversation("user_1", { participantIds: [] })
-      ).rejects.toThrow(MessagingValidationError);
+      await expect(service.createConversation("user_1", { participantIds: [] })).rejects.toThrow(
+        MessagingValidationError
+      );
     });
 
     test("11. createConversation executes transaction for conversation and initial message", async () => {
@@ -274,9 +294,7 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
         userId: "user_1",
         content: "Hello",
       });
-      mockDb.conversationParticipant.findMany.mockResolvedValue([
-        { userId: "user_2" },
-      ]);
+      mockDb.conversationParticipant.findMany.mockResolvedValue([{ userId: "user_2" }]);
 
       const msg = await service.sendMessage("user_1", {
         conversationId: "c_1",
@@ -359,7 +377,10 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       expect(mockDb.thinkshareMessage.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: "m_1" },
-          data: expect.objectContaining({ deletedAt: expect.any(Date), content: "This message was deleted" }),
+          data: expect.objectContaining({
+            deletedAt: expect.any(Date),
+            content: "This message was deleted",
+          }),
         })
       );
     });

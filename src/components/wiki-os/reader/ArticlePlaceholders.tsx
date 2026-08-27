@@ -167,7 +167,7 @@ export function CoordsPill({
         <span className="wikios-coords-pill inline-flex cursor-pointer items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold text-blue-400 transition-all select-none hover:border-white/20 hover:bg-white/10">
           <MapPin className="h-3 w-3 animate-pulse text-blue-400" />
           <span>{label}</span>
-          <span className="text-[10px] opacity-65 tabular-nums">
+          <span className="text-[10px] tabular-nums opacity-65">
             ({lat.toFixed(2)}, {lng.toFixed(2)})
           </span>
         </span>

@@ -91,7 +91,9 @@ export class WikiCacheService {
       countryName,
       infobox,
       sections,
-      flagUrl: infobox?.image_flag ? `/api/proxy-ns-image?url=${encodeURIComponent(infobox.image_flag)}` : null,
+      flagUrl: infobox?.image_flag
+        ? `/api/proxy-ns-image?url=${encodeURIComponent(infobox.image_flag)}`
+        : null,
       lastUpdated: Date.now(),
       confidence: infobox ? 0.95 : 0.6,
       wikiSource,
@@ -143,7 +145,10 @@ export class WikiCacheService {
   /**
    * Get template wikitext
    */
-  async getTemplate(templateName: string, wikiSource: WikiSource = "ixwiki"): Promise<string | null> {
+  async getTemplate(
+    templateName: string,
+    wikiSource: WikiSource = "ixwiki"
+  ): Promise<string | null> {
     const res = await getArticleWikitext(`Template:${templateName}`, wikiSource);
     return res?.wikitext ?? null;
   }

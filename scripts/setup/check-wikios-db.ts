@@ -46,11 +46,15 @@ async function checkAndHeal() {
     });
 
     if (articleCount >= 1000) {
-      console.log(`✅ WikiOS PostgreSQL database verified: ${articleCount.toLocaleString()} articles present.`);
+      console.log(
+        `✅ WikiOS PostgreSQL database verified: ${articleCount.toLocaleString()} articles present.`
+      );
       return;
     }
 
-    console.warn(`\n⚠️  WikiOS Database Integrity Guard: Detected unseeded/depleted state (${articleCount} articles < 1,000).`);
+    console.warn(
+      `\n⚠️  WikiOS Database Integrity Guard: Detected unseeded/depleted state (${articleCount} articles < 1,000).`
+    );
     console.log("🛠️  Initiating automatic self-healing ingestion pipeline...");
 
     // Try MariaDB full ingestion first
@@ -65,7 +69,9 @@ async function checkAndHeal() {
     await runScript("scripts/sync-wikios-categories.ts");
 
     const newCount = await prisma.wikiArticle.count({ where: { source: "ixwiki" } });
-    console.log(`\n🎉 WikiOS Database Auto-Heal Complete: ${newCount.toLocaleString()} articles indexed!\n`);
+    console.log(
+      `\n🎉 WikiOS Database Auto-Heal Complete: ${newCount.toLocaleString()} articles indexed!\n`
+    );
   } catch (err: any) {
     console.warn("⚠️ WikiOS Database Guard non-fatal check failure:", err.message);
   } finally {

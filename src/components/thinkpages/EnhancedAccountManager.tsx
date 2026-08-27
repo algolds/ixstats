@@ -3,7 +3,19 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
-import { Crown, Journal as Newspaper, Group as Users, Plus, Settings, Eye, EyeClosed as EyeOff, Star, MoreHoriz as MoreHorizontal, StatUp as TrendingUp, ChatBubble as MessageSquare } from "iconoir-react";
+import {
+  Crown,
+  Journal as Newspaper,
+  Group as Users,
+  Plus,
+  Settings,
+  Eye,
+  EyeClosed as EyeOff,
+  Star,
+  MoreHoriz as MoreHorizontal,
+  StatUp as TrendingUp,
+  ChatBubble as MessageSquare,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -246,7 +258,7 @@ export function EnhancedAccountManager({
               type="button"
               onClick={() => setFilterType(type)}
               className={cn(
-                "flex flex-1 items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-[10px] tracking-wide uppercase transition-all cursor-pointer",
+                "flex flex-1 cursor-pointer items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-[10px] tracking-wide uppercase transition-all",
                 isActive
                   ? "border-primary bg-primary/10 font-bold shadow-xs"
                   : "border-transparent opacity-75 hover:opacity-100",

@@ -158,7 +158,7 @@ export function useEconomyBuilderSync({
       }
       void economyIntegrationService.updateEconomyBuilder(economyBuilder);
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, []); // Run once on mount
 
   useEffect(() => {

@@ -80,38 +80,40 @@ export async function scoreDailyWikiOS(
   const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
 
   // 1. Fetch all revisions for the day from PostgreSQL
-  const revRows = await (db as any).wikiRevision.findMany({
-    where: {
-      createdAt: {
-        gte: startOfDay,
-        lte: endOfDay,
-      },
-      author: {
-        not: null,
-      },
-      article: {
-        namespace: 0,
-      },
-    },
-    select: {
-      id: true,
-      articleId: true,
-      author: true,
-      byteSize: true,
-      byteDelta: true,
-      minor: true,
-      createdAt: true,
-      wikitext: true,
-      article: {
-        select: {
-          id: true,
-          title: true,
-          slug: true,
+  const revRows = await (db as any).wikiRevision
+    .findMany({
+      where: {
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+        author: {
+          not: null,
+        },
+        article: {
+          namespace: 0,
         },
       },
-    },
-    orderBy: { createdAt: "asc" },
-  }).catch(() => []);
+      select: {
+        id: true,
+        articleId: true,
+        author: true,
+        byteSize: true,
+        byteDelta: true,
+        minor: true,
+        createdAt: true,
+        wikitext: true,
+        article: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    })
+    .catch(() => []);
 
   const editCount = revRows.length;
 
@@ -171,13 +173,17 @@ export async function scoreDailyWikiOS(
   const enriched: CandidateScore[] = [];
 
   for (const c of top) {
-    const inlinks = await (db as any).wikiLink.count({
-      where: { targetSlug: toArticleSlug(c.page) },
-    }).catch(() => 0);
+    const inlinks = await (db as any).wikiLink
+      .count({
+        where: { targetSlug: toArticleSlug(c.page) },
+      })
+      .catch(() => 0);
 
-    const depth = await (db as any).wikiRevision.count({
-      where: { articleId: c.articleId, author: c.user },
-    }).catch(() => 1);
+    const depth = await (db as any).wikiRevision
+      .count({
+        where: { articleId: c.articleId, author: c.user },
+      })
+      .catch(() => 1);
 
     const prose = 0.85; // Standard high prose heuristic for substantive edits
     const proseMultiplier = 1 - weights.proseWeight + prose * weights.proseWeight;
@@ -187,7 +193,13 @@ export async function scoreDailyWikiOS(
     const inlinksCap = Math.min(inlinks / 50, 1);
     const importanceMultiplier = 1 + inlinksCap * weights.importanceMaxBonus;
 
-    let score = c.bytesAdded * proseMultiplier * collaborativeMultiplier * depthMultiplier * noveltyMultiplier * importanceMultiplier;
+    let score =
+      c.bytesAdded *
+      proseMultiplier *
+      collaborativeMultiplier *
+      depthMultiplier *
+      noveltyMultiplier *
+      importanceMultiplier;
 
     const isList = /^Lists? of /i.test(c.page);
     if (isList) score *= weights.listPenalty;

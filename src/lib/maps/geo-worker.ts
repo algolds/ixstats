@@ -48,4 +48,4 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
   }
 };
 
- // Make it a module
+// Make it a module

@@ -139,7 +139,9 @@ describe("Card Designer Studio & Game-Icons Library", () => {
 
   it("should have IXWB preset and category / namespace 0 crawlers configured", () => {
     const { CATEGORY_PRESETS } = require("~/app/admin/cards/LoreCardBatchAdmin");
-    const { wikiLoreCardGenerator } = require("~/lib/wiki-os/adapters/ixstates/lore-card-generator");
+    const {
+      wikiLoreCardGenerator,
+    } = require("~/lib/wiki-os/adapters/ixstates/lore-card-generator");
 
     // Check IXWB preset
     const ixwbPreset = CATEGORY_PRESETS.find((p: any) => p.categoryName === "IXWB");

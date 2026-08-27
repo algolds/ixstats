@@ -9,7 +9,13 @@
 import React from "react";
 import { useAuth } from "@clerk/nextjs";
 import { motion } from "motion/react";
-import { CheckCircle, XmarkCircle as XCircle, Clock, ArrowSeparate as ArrowRightLeft, NavArrowRight as ChevronRight } from "iconoir-react";
+import {
+  CheckCircle,
+  XmarkCircle as XCircle,
+  Clock,
+  ArrowSeparate as ArrowRightLeft,
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";

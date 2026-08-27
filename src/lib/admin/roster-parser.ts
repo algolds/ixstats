@@ -34,14 +34,17 @@ export async function parseRosterFile(
           String(row["GDP PC"] || row.gdpPerCapita || row.gdp_pc || "0").replace(/[$,]/g, "")
         ) || 0;
       const maxGdpGrowth =
-        parseFloat(String(row["Max GDPPC Grow Rt"] || row.maxGdpGrowthRate || "0").replace(/%/g, "")) /
-          100 || 0.05;
+        parseFloat(
+          String(row["Max GDPPC Grow Rt"] || row.maxGdpGrowthRate || "0").replace(/%/g, "")
+        ) / 100 || 0.05;
       const popGrowth =
-        parseFloat(String(row["Pop Growth Rate"] || row.populationGrowthRate || "0").replace(/%/g, "")) /
-          100 || 0.01;
+        parseFloat(
+          String(row["Pop Growth Rate"] || row.populationGrowthRate || "0").replace(/%/g, "")
+        ) / 100 || 0.01;
       const adjGdpGrowth =
-        parseFloat(String(row["Adj GDPPC Growth"] || row.adjustedGdpGrowth || "0").replace(/%/g, "")) /
-          100 || maxGdpGrowth;
+        parseFloat(
+          String(row["Adj GDPPC Growth"] || row.adjustedGdpGrowth || "0").replace(/%/g, "")
+        ) / 100 || maxGdpGrowth;
       const localGrowth =
         parseFloat(String(row["Local Growth Factor"] || row.localGrowthFactor || "1.0")) || 1.0;
 

@@ -2,7 +2,23 @@
 
 import React, { useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { CursorPointer as MousePointer2, EditPencil as Pencil, Cut as Scissors, GitMerge as Merge, Undo as Undo2, Redo as Redo2, Wrench, GraphUp as Spline, SeaWaves as Waves, Compress as Minimize2, FloppyDisk as Save, Check, Xmark as X, ColorPicker as Paintbrush, Refresh as RefreshCw } from "iconoir-react";
+import {
+  CursorPointer as MousePointer2,
+  EditPencil as Pencil,
+  Cut as Scissors,
+  GitMerge as Merge,
+  Undo as Undo2,
+  Redo as Redo2,
+  Wrench,
+  GraphUp as Spline,
+  SeaWaves as Waves,
+  Compress as Minimize2,
+  FloppyDisk as Save,
+  Check,
+  Xmark as X,
+  ColorPicker as Paintbrush,
+  Refresh as RefreshCw,
+} from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 
 import { MapEditorToolbar } from "~/components/maps/editor/MapEditorToolbar";
@@ -323,14 +339,10 @@ export default function MapEditorOverlay({
                 }
               }}
               onSnapCityToSubdivisionBorder={
-                editor.selectedFeature
-                  ? () => editor.snapCityToSubdivisionBorder()
-                  : undefined
+                editor.selectedFeature ? () => editor.snapCityToSubdivisionBorder() : undefined
               }
               onSnapCityToCoastline={
-                editor.selectedFeature
-                  ? () => editor.snapCityToCoastline()
-                  : undefined
+                editor.selectedFeature ? () => editor.snapCityToCoastline() : undefined
               }
               cityCoordinates={editor.selectedFeature?.coordinates}
               onCityCoordinatesChange={
@@ -676,7 +688,7 @@ export default function MapEditorOverlay({
             panelB={renderPanel("panelB")}
           >
             {isWorldMode && activeEditorMode === "border_edit" && borderState.isLoading && (
-              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-map-ocean/80 backdrop-blur-sm">
+              <div className="bg-map-ocean/80 absolute inset-0 z-30 flex flex-col items-center justify-center backdrop-blur-sm">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.06)_0%,_transparent_70%)]" />
                 <div className="relative z-10 flex flex-col items-center gap-4 text-center">
                   <div className="relative h-16 w-16">
@@ -802,7 +814,8 @@ export default function MapEditorOverlay({
               <RegionHoverTooltip hoveredFeature={hoveredFeature} editorMode={editor.mode} />
 
               {/* Hypsometric Cross-Section Elevation HUD */}
-              {(editor.mode === "ruler" || (editor.rulerPoints && editor.rulerPoints.length > 0)) && (
+              {(editor.mode === "ruler" ||
+                (editor.rulerPoints && editor.rulerPoints.length > 0)) && (
                 <HypsometricElevationHUD
                   rulerPoints={editor.rulerPoints}
                   totalDistanceKm={rulerDistance}

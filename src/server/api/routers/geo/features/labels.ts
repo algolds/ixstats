@@ -61,7 +61,6 @@ export async function syncResourcePoolModifiers(db: any, countryId: string) {
     take: 500,
   });
 
-
   for (const resource of resources) {
     const resCoords = resource.coordinates as [number, number] | null;
     if (!resCoords || !Array.isArray(resCoords) || resCoords.length < 2) continue;

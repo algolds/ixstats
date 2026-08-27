@@ -74,19 +74,25 @@ export function MarginInspectTab({
         levelName: "Institutional Subpage",
         scopeName: "Systemic Overview",
         description: "Core subsystem page covering state governance, economy, defense, or history.",
-        guideline: "Anchor sections with links back to the parent nation hub and link forward to specific offices and treaties.",
+        guideline:
+          "Anchor sections with links back to the parent nation hub and link forward to specific offices and treaties.",
       };
     }
 
     // Check if Main Page Hub
-    if (matchedCountry || (!lower.includes("of ") && !lower.includes("battle") && !lower.includes("treaty"))) {
+    if (
+      matchedCountry ||
+      (!lower.includes("of ") && !lower.includes("battle") && !lower.includes("treaty"))
+    ) {
       return {
         tier: "HUB",
         title: "Primary Country Hub",
         levelName: "Sovereign Overview",
         scopeName: "Foundational Context",
-        description: "Central overview page answering the nation's core purpose, worldview, and general character.",
-        guideline: "Keep statistics synchronized with simulation data and branch out into dedicated category subpages.",
+        description:
+          "Central overview page answering the nation's core purpose, worldview, and general character.",
+        guideline:
+          "Keep statistics synchronized with simulation data and branch out into dedicated category subpages.",
       };
     }
 
@@ -96,8 +102,10 @@ export function MarginInspectTab({
       title: "Specialized Leaf",
       levelName: "Topic Article",
       scopeName: "Focused Depth",
-      description: "Dedicated entry for an individual artifact, battle, tradition, or historical office.",
-      guideline: "Clarify why this element matters to the broader universe and maintain links back to relevant sovereign hubs.",
+      description:
+        "Dedicated entry for an individual artifact, battle, tradition, or historical office.",
+      guideline:
+        "Clarify why this element matters to the broader universe and maintain links back to relevant sovereign hubs.",
     };
   }, [cleanTitle, matchedCountry]);
 
@@ -126,86 +134,84 @@ export function MarginInspectTab({
   };
 
   return (
-    <div className="space-y-3.5 animate-in fade-in duration-150">
+    <div className="animate-in fade-in space-y-3.5 duration-150">
       {/* 1. Article Topology & Lore Structure */}
-      <div className="rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-3.5 space-y-3 backdrop-blur-md shadow-xs">
+      <div className="space-y-3 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-3.5 shadow-xs backdrop-blur-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Compass className="w-4 h-4 text-margin-accent" />
-            <h4 className="text-xs font-bold text-[var(--wikios-text)] tracking-tight">
+            <Compass className="text-margin-accent h-4 w-4" />
+            <h4 className="text-xs font-bold tracking-tight text-[var(--wikios-text)]">
               Article Topology
             </h4>
           </div>
-          <span className="text-[10px] font-bold text-stone-950 bg-margin-accent px-2 py-0.5 rounded-full shadow-xs">
+          <span className="bg-margin-accent rounded-full px-2 py-0.5 text-[10px] font-bold text-stone-950 shadow-xs">
             {pageTierInfo.title}
           </span>
         </div>
 
         {/* Structural Spec Inset */}
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="p-2 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 space-y-0.5">
-            <span className="text-[9.5px] font-semibold text-[var(--wikios-text-dim)] uppercase tracking-wider">
+          <div className="space-y-0.5 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 p-2">
+            <span className="text-[9.5px] font-semibold tracking-wider text-[var(--wikios-text-dim)] uppercase">
               Hierarchy Tier
             </span>
-            <p className="text-[11.5px] font-bold text-[var(--wikios-text)] truncate">
+            <p className="truncate text-[11.5px] font-bold text-[var(--wikios-text)]">
               {pageTierInfo.levelName}
             </p>
           </div>
 
-          <div className="p-2 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 space-y-0.5">
-            <span className="text-[9.5px] font-semibold text-[var(--wikios-text-dim)] uppercase tracking-wider">
+          <div className="space-y-0.5 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 p-2">
+            <span className="text-[9.5px] font-semibold tracking-wider text-[var(--wikios-text-dim)] uppercase">
               Editorial Scope
             </span>
-            <p className="text-[11.5px] font-bold text-[var(--wikios-text)] truncate">
+            <p className="truncate text-[11.5px] font-bold text-[var(--wikios-text)]">
               {pageTierInfo.scopeName}
             </p>
           </div>
         </div>
 
-        <p className="text-[11px] text-[var(--wikios-text-muted)] leading-relaxed">
+        <p className="text-[11px] leading-relaxed text-[var(--wikios-text-muted)]">
           {pageTierInfo.description}
         </p>
 
-        <div className="p-2.5 rounded-xl bg-[var(--wikios-surface)]/70 border border-[var(--wikios-border)]/70 text-[11px] text-[var(--wikios-text-muted)] space-y-1">
-          <span className="text-[9.5px] font-bold text-margin-accent uppercase tracking-wider block">
+        <div className="space-y-1 rounded-xl border border-[var(--wikios-border)]/70 bg-[var(--wikios-surface)]/70 p-2.5 text-[11px] text-[var(--wikios-text-muted)]">
+          <span className="text-margin-accent block text-[9.5px] font-bold tracking-wider uppercase">
             Linkage Recommendation
           </span>
-          <p className="leading-snug text-[var(--wikios-text-dim)]">
-            {pageTierInfo.guideline}
-          </p>
+          <p className="leading-snug text-[var(--wikios-text-dim)]">{pageTierInfo.guideline}</p>
         </div>
       </div>
 
       {/* 2. Simulation Registry & Live Telemetry */}
       {isLoading && (
-        <div className="p-6 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 flex items-center justify-center gap-2 text-xs text-[var(--wikios-text-muted)] backdrop-blur-md">
-          <RefreshCw className="w-4 h-4 animate-spin text-margin-accent" />
+        <div className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-6 text-xs text-[var(--wikios-text-muted)] backdrop-blur-md">
+          <RefreshCw className="text-margin-accent h-4 w-4 animate-spin" />
           <span>Querying simulation registry...</span>
         </div>
       )}
 
       {!isLoading && matchedCountry && (
-        <div className="rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-3.5 space-y-3 backdrop-blur-md shadow-xs">
+        <div className="space-y-3 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-3.5 shadow-xs backdrop-blur-md">
           {/* Nation Dossier Header */}
           <div className="flex items-start justify-between gap-2 border-b border-[var(--wikios-border)]/60 pb-2.5">
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex min-w-0 items-center gap-2.5">
               {matchedCountry.flagUrl ? (
                 <img
                   src={matchedCountry.flagUrl}
                   alt={matchedCountry.name}
-                  className="w-8 h-6 object-cover rounded border border-[var(--wikios-border)] shadow-xs"
+                  className="h-6 w-8 rounded border border-[var(--wikios-border)] object-cover shadow-xs"
                 />
               ) : (
-                <div className="w-8 h-6 rounded bg-margin-accent/15 border border-margin-accent/30 flex items-center justify-center text-xs font-bold text-margin-accent">
+                <div className="bg-margin-accent/15 border-margin-accent/30 text-margin-accent flex h-6 w-8 items-center justify-center rounded border text-xs font-bold">
                   {matchedCountry.name.slice(0, 2).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0">
-                <h4 className="text-xs font-bold text-[var(--wikios-text)] truncate">
+                <h4 className="truncate text-xs font-bold text-[var(--wikios-text)]">
                   {matchedCountry.name}
                 </h4>
-                <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+                <div className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
                   <span>Simulation Active</span>
                 </div>
               </div>
@@ -213,19 +219,19 @@ export function MarginInspectTab({
 
             <Link
               href={`/countries/${matchedCountry.id}`}
-              className="flex items-center gap-1 text-[10.5px] font-bold text-margin-accent hover:text-margin-accent/90 transition-colors p-1"
+              className="text-margin-accent hover:text-margin-accent/90 flex items-center gap-1 p-1 text-[10.5px] font-bold transition-colors"
               title="Open sovereign dossier"
             >
               <span>Profile</span>
-              <ExternalLink className="w-3 h-3" />
+              <ExternalLink className="h-3 w-3" />
             </Link>
           </div>
 
           {/* Metric Comparison Grid */}
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2.5 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 space-y-1">
-              <div className="flex items-center gap-1 text-[10px] text-[var(--wikios-text-dim)] font-medium">
-                <Users className="w-3 h-3 text-cyan-400" />
+            <div className="space-y-1 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 p-2.5">
+              <div className="flex items-center gap-1 text-[10px] font-medium text-[var(--wikios-text-dim)]">
+                <Users className="h-3 w-3 text-cyan-400" />
                 <span>Population</span>
               </div>
               <div className="text-xs font-bold text-[var(--wikios-text)] tabular-nums">
@@ -233,9 +239,9 @@ export function MarginInspectTab({
               </div>
             </div>
 
-            <div className="p-2.5 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 space-y-1">
-              <div className="flex items-center gap-1 text-[10px] text-[var(--wikios-text-dim)] font-medium">
-                <DollarSign className="w-3 h-3 text-emerald-400" />
+            <div className="space-y-1 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 p-2.5">
+              <div className="flex items-center gap-1 text-[10px] font-medium text-[var(--wikios-text-dim)]">
+                <DollarSign className="h-3 w-3 text-emerald-400" />
                 <span>Gross Domestic Product</span>
               </div>
               <div className="text-xs font-bold text-[var(--wikios-text)] tabular-nums">
@@ -245,7 +251,7 @@ export function MarginInspectTab({
           </div>
 
           {/* Additional Registry Facts */}
-          <div className="space-y-1.5 text-[11px] pt-1 border-t border-[var(--wikios-border)]/60">
+          <div className="space-y-1.5 border-t border-[var(--wikios-border)]/60 pt-1 text-[11px]">
             {matchedCountry.continent && (
               <div className="flex items-center justify-between text-[var(--wikios-text-dim)]">
                 <span>Continental Region</span>
@@ -269,9 +275,9 @@ export function MarginInspectTab({
             <button
               type="button"
               onClick={handleGenerateFactDiff}
-              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-margin-accent hover:bg-margin-accent/90 text-stone-950 text-xs font-bold shadow-xs active:scale-[0.98] transition-transform cursor-pointer"
+              className="bg-margin-accent hover:bg-margin-accent/90 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl p-2.5 text-xs font-bold text-stone-950 shadow-xs transition-transform active:scale-[0.98]"
             >
-              <Edit3 className="w-3.5 h-3.5" />
+              <Edit3 className="h-3.5 w-3.5" />
               <span>Propose edit with live stats</span>
             </button>
           )}
@@ -279,19 +285,19 @@ export function MarginInspectTab({
       )}
 
       {!isLoading && !matchedCountry && (
-        <div className="p-4 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 text-center space-y-2 backdrop-blur-md">
-          <div className="w-8 h-8 rounded-full bg-[var(--wikios-surface)] border border-[var(--wikios-border)] flex items-center justify-center mx-auto text-[var(--wikios-text-dim)]">
-            <Globe className="w-4 h-4" />
+        <div className="space-y-2 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-4 text-center backdrop-blur-md">
+          <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)] text-[var(--wikios-text-dim)]">
+            <Globe className="h-4 w-4" />
           </div>
           <p className="text-xs font-bold text-[var(--wikios-text)]">
             Independent Encyclopedic Entry
           </p>
-          <p className="text-[11px] text-[var(--wikios-text-dim)] leading-relaxed max-w-xs mx-auto">
-            This entry represents an event, custom, or artifact rather than an active sovereign nation state.
+          <p className="mx-auto max-w-xs text-[11px] leading-relaxed text-[var(--wikios-text-dim)]">
+            This entry represents an event, custom, or artifact rather than an active sovereign
+            nation state.
           </p>
         </div>
       )}
     </div>
   );
 }
-

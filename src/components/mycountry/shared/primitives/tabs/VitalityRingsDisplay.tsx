@@ -5,7 +5,14 @@ import { motion } from "motion/react";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { Activity, Dollar as DollarSign, Group as Users, Globe, Building, Shield } from "iconoir-react";
+import {
+  Activity,
+  Dollar as DollarSign,
+  Group as Users,
+  Globe,
+  Building,
+  Shield,
+} from "iconoir-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { cn } from "~/lib/utils";
 
@@ -175,7 +182,10 @@ export function VitalityRingsDisplay({
                       }}
                     >
                       <IconComponent
-                        className={cn("opacity-60", size === "sm" ? "h-3.5 w-3.5" : size === "lg" ? "h-5 w-5" : "h-4 w-4")}
+                        className={cn(
+                          "opacity-60",
+                          size === "sm" ? "h-3.5 w-3.5" : size === "lg" ? "h-5 w-5" : "h-4 w-4"
+                        )}
                         style={{ color: ring.color }}
                       />
                     </div>

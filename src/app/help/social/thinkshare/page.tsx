@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { Send, ChatLines as MessagesSquare, Group as Users, Shield, MailIn as Inbox, Globe, ChatBubble as MessageCircle } from "iconoir-react";
+import {
+  Send,
+  ChatLines as MessagesSquare,
+  Group as Users,
+  Shield,
+  MailIn as Inbox,
+  Globe,
+  ChatBubble as MessageCircle,
+} from "iconoir-react";
 import {
   ArticleLayout,
   Section,

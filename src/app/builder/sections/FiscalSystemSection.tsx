@@ -1,7 +1,16 @@
 "use client";
 
 import React, { useState, useMemo, memo } from "react";
-import { StatDown as TrendingDown, Dollar as DollarSign, Building, City as Building2, CreditCard, Shield, Reports as PieChart, Flash as Zap } from "iconoir-react";
+import {
+  StatDown as TrendingDown,
+  Dollar as DollarSign,
+  Building,
+  City as Building2,
+  CreditCard,
+  Shield,
+  Reports as PieChart,
+  Flash as Zap,
+} from "iconoir-react";
 import { AtomicEconomicEffectivenessPanel } from "~/components/mycountry/domains/economy/atomic";
 import { api } from "~/trpc/react";
 import type { ComponentType } from "~/types/government";
@@ -222,7 +231,7 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
         color: "blue" as const,
       },
     ];
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [fiscalSystem]);
 
   // Calculate fiscal health score
@@ -248,7 +257,7 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
     else if (deficitPercent > 1) score -= 10;
 
     return Math.max(0, score);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [fiscalSystem, nominalGDP]);
 
   // Live tax rates from fiscal system
@@ -275,7 +284,7 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
       { name: "Sales Tax", rate: isNaN(salesRate) ? 0 : salesRate },
       { name: "Property Tax", rate: isNaN(propertyRate) ? 0 : propertyRate },
     ].filter((item) => item.rate > 0); // Only show taxes that have rates
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [fiscalSystem]);
 
   const taxBredownData = useMemo(() => {
@@ -332,7 +341,7 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
         value: actualRevenue * (propertyRate / totalRate),
       },
     ].filter((item) => item.value > 0);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [fiscalSystem, nominalGDP]);
 
   const spendingCategories = useMemo(() => {

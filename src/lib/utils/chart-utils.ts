@@ -1,7 +1,6 @@
 // src/lib/utils/chart-utils.ts
 // FIXED: Consistent percentage and number formatting
 
-
 /**
  * FIXED: Format growth rates from decimal to percentage
  * @param value The decimal growth rate (e.g., 0.005 for 0.5%)

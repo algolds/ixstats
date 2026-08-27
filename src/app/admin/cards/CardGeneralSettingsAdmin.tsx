@@ -3,7 +3,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Refresh as RefreshCw, FloppyDisk as Save, ShoppingBag, Gift, Sparks as Sparkles, Component as Layers } from "iconoir-react";
+import {
+  Refresh as RefreshCw,
+  FloppyDisk as Save,
+  ShoppingBag,
+  Gift,
+  Sparks as Sparkles,
+  Component as Layers,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
@@ -42,7 +49,8 @@ export function CardGeneralSettingsAdmin() {
         <div>
           <h2 className="text-foreground text-lg font-bold">General Card System Policies</h2>
           <p className="text-muted-foreground text-xs font-medium">
-            Configure global marketplace controls, free pack allowances, drop rates, and lore permissions.
+            Configure global marketplace controls, free pack allowances, drop rates, and lore
+            permissions.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -220,7 +228,9 @@ export function CardGeneralSettingsAdmin() {
               </div>
               <Switch
                 checked={(form.autoGenerateLoreThumbnails ?? 1) === 1}
-                onCheckedChange={(checked) => handleChange("autoGenerateLoreThumbnails", checked ? 1 : 0)}
+                onCheckedChange={(checked) =>
+                  handleChange("autoGenerateLoreThumbnails", checked ? 1 : 0)
+                }
               />
             </div>
           </div>

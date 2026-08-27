@@ -87,7 +87,7 @@ function StepPreview({ step, direction }: { step: Step; direction: 1 | -1 }) {
       y: 0,
       transition: { delay: 0.2, duration: 0.3 },
     });
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [controls, step]);
 
   return (
@@ -426,7 +426,7 @@ export function IntroDisclosure({
     if (open && stepRef.current) {
       stepRef.current.focus();
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [open, currentStep]);
 
   // Early return if feature should be hidden

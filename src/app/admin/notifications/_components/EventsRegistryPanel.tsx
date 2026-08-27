@@ -20,7 +20,18 @@ import {
   NOTIFICATION_TRIGGER_TYPES,
   CATEGORY_ORDER,
 } from "~/lib/notifications/events-registry";
-import { Search, Undo as RotateCcw, Filter, Activity, OffTag as Power, OffTag as PowerOff, Clock, StatsReport as BarChart3, Flash as Zap, Bell } from "iconoir-react";
+import {
+  Search,
+  Undo as RotateCcw,
+  Filter,
+  Activity,
+  OffTag as Power,
+  OffTag as PowerOff,
+  Clock,
+  StatsReport as BarChart3,
+  Flash as Zap,
+  Bell,
+} from "iconoir-react";
 import { formatDistanceToNow } from "date-fns";
 
 const CATEGORY_COLORS: Record<string, string> = {

@@ -8,13 +8,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
 
-export async function GET(
-  req: NextRequest,
-  context: { params: Promise<{ type: string }> }
-) {
+export async function GET(req: NextRequest, context: { params: Promise<{ type: string }> }) {
   const { type } = await context.params;
   const isJson = type.endsWith(".json") || req.nextUrl.searchParams.get("format") === "json";
-  const limit = Math.min(100, Math.max(1, parseInt(req.nextUrl.searchParams.get("limit") || "50", 10)));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(req.nextUrl.searchParams.get("limit") || "50", 10))
+  );
   const realm = req.nextUrl.searchParams.get("realm") || "ixwiki";
 
   const revisions = await (db as any).wikiRevision.findMany({

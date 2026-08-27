@@ -61,7 +61,7 @@ export function MembershipPanel() {
       />
 
       <div className="mx-auto max-w-xl">
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-5">
+        <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
           {user && (
             <div className="border-border/30 bg-background/40 flex items-center justify-between rounded-xl border p-3">
               <div className="flex items-center gap-3">
@@ -96,17 +96,18 @@ export function MembershipPanel() {
             </div>
 
             <div>
-              <label className="text-foreground mb-1.5 block text-xs font-medium">Target Membership Tier</label>
-              <Select
-                value={tier}
-                onValueChange={(val: any) => setTier(val)}
-              >
+              <label className="text-foreground mb-1.5 block text-xs font-medium">
+                Target Membership Tier
+              </label>
+              <Select value={tier} onValueChange={(val: any) => setTier(val)}>
                 <SelectTrigger className="text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="basic">Basic (Free Tier)</SelectItem>
-                  <SelectItem value="mycountry_premium">MyCountry Premium (Executive Suite)</SelectItem>
+                  <SelectItem value="mycountry_premium">
+                    MyCountry Premium (Executive Suite)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -115,8 +116,8 @@ export function MembershipPanel() {
               <div
                 className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${
                   message.type === "success"
-                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-                    : "bg-red-500/10 border-red-500/20 text-red-300"
+                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                    : "border-red-500/20 bg-red-500/10 text-red-300"
                 }`}
               >
                 {message.type === "success" ? (

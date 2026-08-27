@@ -118,9 +118,13 @@ export function PolicyCreatorSheet({
   const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>("custom");
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
-  const [formType, setFormType] = useState<"economic" | "social" | "diplomatic" | "infrastructure" | "governance">("economic");
+  const [formType, setFormType] = useState<
+    "economic" | "social" | "diplomatic" | "infrastructure" | "governance"
+  >("economic");
   const [formCategory, setFormCategory] = useState("fiscal");
-  const [formPriority, setFormPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
+  const [formPriority, setFormPriority] = useState<"low" | "medium" | "high" | "critical">(
+    "medium"
+  );
   const [formImplCost, setFormImplCost] = useState("500000");
   const [formMaintCost, setFormMaintCost] = useState("100000");
   const [formObjectives, setFormObjectives] = useState("");
@@ -235,11 +239,11 @@ export function PolicyCreatorSheet({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-[650px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader className="border-border/50 border-b px-6 pt-6 pb-4">
             <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-              <FileText className="text-indigo-400 h-5 w-5" />
+              <FileText className="h-5 w-5 text-indigo-400" />
               Declare New Executive Policy
             </DialogTitle>
             <DialogDescription className="text-muted-foreground text-xs">
@@ -376,9 +380,7 @@ export function PolicyCreatorSheet({
             <PolicyTemplateSliders
               currentTemplate={currentTemplate}
               sliderSettings={sliderSettings}
-              onSliderChange={(key, val) =>
-                setSliderSettings((prev) => ({ ...prev, [key]: val }))
-              }
+              onSliderChange={(key, val) => setSliderSettings((prev) => ({ ...prev, [key]: val }))}
             />
 
             {selectedTemplateKey !== "custom" && calculatedEffects && (
@@ -460,10 +462,7 @@ export function PolicyCreatorSheet({
                   </div>
                 </div>
 
-                <PolicyTargetMetrics
-                  metrics={targetMetrics}
-                  onChange={setTargetMetrics}
-                />
+                <PolicyTargetMetrics metrics={targetMetrics} onChange={setTargetMetrics} />
 
                 <CollapsibleSection title="Advanced Options" icon={Settings2} defaultOpen={false}>
                   <div className="space-y-3">

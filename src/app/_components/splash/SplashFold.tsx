@@ -3,7 +3,16 @@
 import React, { useMemo } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { ChatBubble as MessageSquare, Globe, Activity, StatUp as TrendingUp, Network, City as Building2, ChatBubble as MessageCircle, Component as Blocks } from "iconoir-react";
+import {
+  ChatBubble as MessageSquare,
+  Globe,
+  Activity,
+  StatUp as TrendingUp,
+  Network,
+  City as Building2,
+  ChatBubble as MessageCircle,
+  Component as Blocks,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";

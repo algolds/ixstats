@@ -31,9 +31,11 @@ export type IconComponent = React.ComponentType<{ className?: string }>;
 /**
  * Resolves the thematic Remix Icon for a dictionary or domain taxonomy subtype.
  */
-export function getDomainIconByFamily(
-  dict?: { id?: string; category?: string; title?: string }
-): IconComponent {
+export function getDomainIconByFamily(dict?: {
+  id?: string;
+  category?: string;
+  title?: string;
+}): IconComponent {
   if (!dict) return RiBook2Line;
 
   const id = (dict.id || "").toLowerCase();
@@ -306,4 +308,3 @@ export function getDomainIconByFamily(
 }
 
 export const getOnomaDomainIcon = getDomainIconByFamily;
-

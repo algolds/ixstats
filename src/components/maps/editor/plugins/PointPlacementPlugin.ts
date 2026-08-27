@@ -1,4 +1,10 @@
-import { MapPin, Bank as Landmark, Bookmark as BookMarked, Type, ModernTv as Mountain } from "iconoir-react";
+import {
+  MapPin,
+  Bank as Landmark,
+  Bookmark as BookMarked,
+  Type,
+  ModernTv as Mountain,
+} from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 
 export const PointPlacementPlugin: MapEditorPlugin = {

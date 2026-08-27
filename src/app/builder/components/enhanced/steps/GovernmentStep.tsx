@@ -6,7 +6,17 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 
 // oxlint-disable-next-line eslint/no-unused-vars
-import { InfoCircle as Info, HelpCircle, Settings, Crown, Coins, Eye, WarningTriangle as AlertTriangle, Group as Users, Dollar as DollarSign } from "iconoir-react";
+import {
+  InfoCircle as Info,
+  HelpCircle,
+  Settings,
+  Crown,
+  Coins,
+  Eye,
+  WarningTriangle as AlertTriangle,
+  Group as Users,
+  Dollar as DollarSign,
+} from "iconoir-react";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { Checkbox } from "~/components/ui/checkbox";
 import { GovernmentStructureForm } from "~/components/mycountry/domains/government/atoms/GovernmentStructureForm";

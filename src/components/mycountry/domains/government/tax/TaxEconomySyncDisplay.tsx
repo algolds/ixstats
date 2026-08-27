@@ -9,7 +9,22 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Progress } from "~/components/ui/progress";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { StatUp as TrendingUp, StatDown as TrendingDown, WarningTriangle as AlertTriangle, CheckCircle, InfoCircle as Info, Refresh as RefreshCw, Archery as Target, ScaleFrameEnlarge as Scale, Group as Users, City as Building2, Cart as ShoppingCart, LightBulb, WarningCircle as AlertCircle, Activity } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  WarningTriangle as AlertTriangle,
+  CheckCircle,
+  InfoCircle as Info,
+  Refresh as RefreshCw,
+  Archery as Target,
+  ScaleFrameEnlarge as Scale,
+  Group as Users,
+  City as Building2,
+  Cart as ShoppingCart,
+  LightBulb,
+  WarningCircle as AlertCircle,
+  Activity,
+} from "iconoir-react";
 
 import type { TaxSystem } from "~/types/tax-system";
 import type { CoreEconomicIndicatorsData, LaborEmploymentData } from "~/types/economics";

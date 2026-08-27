@@ -160,7 +160,9 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Error linking country:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to link country", { cause: error });
+        throw new Error(error instanceof Error ? error.message : "Failed to link country", {
+          cause: error,
+        });
       }
     }),
 
@@ -404,7 +406,9 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Error creating country:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to create country", { cause: error });
+        throw new Error(error instanceof Error ? error.message : "Failed to create country", {
+          cause: error,
+        });
       }
     }),
 
@@ -439,7 +443,9 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Error unlinking country:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to unlink country", { cause: error });
+        throw new Error(error instanceof Error ? error.message : "Failed to unlink country", {
+          cause: error,
+        });
       }
     }),
 

@@ -40,7 +40,8 @@ export const SETTINGS_SECTIONS: SettingSectionConfig[] = [
     id: "account",
     label: "IxnayID & Passport",
     category: "Profile & Identity",
-    description: "Public passport presentation, multi-tenant realms, and connected community accounts",
+    description:
+      "Public passport presentation, multi-tenant realms, and connected community accounts",
     icon: User,
     glyphClass: "bg-blue-500/15 text-blue-500 dark:text-blue-400",
     accentColor: "text-blue-500",
@@ -133,12 +134,15 @@ export function getSectionById(id: SettingSectionId): SettingSectionConfig | und
   return SETTINGS_SECTIONS.find((s) => s.id === id);
 }
 
-export function getSectionsByCategory(): Record<SettingSectionConfig["category"], SettingSectionConfig[]> {
+export function getSectionsByCategory(): Record<
+  SettingSectionConfig["category"],
+  SettingSectionConfig[]
+> {
   const groups: Record<SettingSectionConfig["category"], SettingSectionConfig[]> = {
     "Profile & Identity": [],
-    "MyCountry": [],
+    MyCountry: [],
     "Platform & Preferences": [],
-    "Vault": [],
+    Vault: [],
   };
 
   for (const section of SETTINGS_SECTIONS) {

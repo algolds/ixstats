@@ -37,21 +37,21 @@ export function CountriesAdminPanel() {
         <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
           <TabsTrigger
             value="grid"
-            className="flex items-center gap-2 rounded-lg text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 rounded-lg text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Globe className="h-4 w-4" />
             Live Country Grid
           </TabsTrigger>
           <TabsTrigger
             value="inspector"
-            className="flex items-center gap-2 rounded-lg text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 rounded-lg text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Search className="h-4 w-4" />
             Country Inspector & Formulas
           </TabsTrigger>
           <TabsTrigger
             value="import"
-            className="flex items-center gap-2 rounded-lg text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex items-center gap-2 rounded-lg text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <FileText className="h-4 w-4" />
             Roster Import & Sync
@@ -66,7 +66,7 @@ export function CountriesAdminPanel() {
           <CountryInspector />
         </TabsContent>
 
-        <TabsContent value="import" className="mt-4 focus-visible:outline-none space-y-6">
+        <TabsContent value="import" className="mt-4 space-y-6 focus-visible:outline-none">
           <DataImportCard
             onFileSelect={handleFileSelect}
             isUploading={importState.isUploading}

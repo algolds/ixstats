@@ -56,7 +56,9 @@ async function main() {
     },
   });
 
-  console.log(`✅ Normalized ${updatedCreated.count + updatedEdits.count + updatedMw.count} revision summaries.`);
+  console.log(
+    `✅ Normalized ${updatedCreated.count + updatedEdits.count + updatedMw.count} revision summaries.`
+  );
   console.log("==================================================================\n");
 
   await prisma.$disconnect();

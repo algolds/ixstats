@@ -563,7 +563,7 @@ export function AdminSidebarNavWidget({
           placeholder="Filter tools & applications..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="border-border/30 bg-background/50 placeholder:text-muted-foreground focus:border-border/60 text-foreground w-full rounded-xl border py-1.5 pr-3 pl-8 text-xs focus:outline-none backdrop-blur-md"
+          className="border-border/30 bg-background/50 placeholder:text-muted-foreground focus:border-border/60 text-foreground w-full rounded-xl border py-1.5 pr-3 pl-8 text-xs backdrop-blur-md focus:outline-none"
         />
         {searchQuery && (
           <button
@@ -583,14 +583,17 @@ export function AdminSidebarNavWidget({
             </h3>
 
             {/* Apple Inset-Grouped Surface */}
-            <div className="rounded-2xl border border-border/30 bg-card/25 p-1 backdrop-blur-md space-y-2.5">
+            <div className="border-border/30 bg-card/25 space-y-2.5 rounded-2xl border p-1 backdrop-blur-md">
               {group.subgroups.map((sub, sIdx) => (
-                <div key={sub.subtitle} className={sIdx > 0 ? "pt-2 border-t border-border/15" : ""}>
+                <div
+                  key={sub.subtitle}
+                  className={sIdx > 0 ? "border-border/15 border-t pt-2" : ""}
+                >
                   <div className="text-muted-foreground/50 px-2 py-0.5 text-[9px] font-semibold tracking-wider uppercase">
                     {sub.subtitle}
                   </div>
 
-                  <div className="space-y-0.5 mt-0.5">
+                  <div className="mt-0.5 space-y-0.5">
                     {sub.items.map((item) => {
                       const active = isActive(
                         pathname,

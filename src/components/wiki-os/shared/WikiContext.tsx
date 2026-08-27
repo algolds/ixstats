@@ -126,19 +126,22 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
   const [isMarginOpen, setIsMarginOpen] = useState(false);
   const [marginTab, setMarginTab] = useState<"threads" | "markup">("threads");
 
-  const toggleMargin = useCallback((tab?: "threads" | "markup") => {
-    setIsMarginOpen((prev) => {
-      if (!prev && tab) {
-        setMarginTab(tab);
-        return true;
-      }
-      if (prev && tab && tab !== marginTab) {
-        setMarginTab(tab);
-        return true;
-      }
-      return !prev;
-    });
-  }, [marginTab]);
+  const toggleMargin = useCallback(
+    (tab?: "threads" | "markup") => {
+      setIsMarginOpen((prev) => {
+        if (!prev && tab) {
+          setMarginTab(tab);
+          return true;
+        }
+        if (prev && tab && tab !== marginTab) {
+          setMarginTab(tab);
+          return true;
+        }
+        return !prev;
+      });
+    },
+    [marginTab]
+  );
 
   // Narrator state and action hooks
   const [narratorState, setNarratorStateInternal] = useState<WikiNarratorState>({

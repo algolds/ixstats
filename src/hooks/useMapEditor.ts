@@ -394,7 +394,14 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     } catch (e: any) {
       setMutationError(e.message || "Failed to update route");
     }
-  }, [countryId, editingRouteId, editingRouteVertices, updateRouteGeometry, invalidateAllMapData, debouncedRefetch]);
+  }, [
+    countryId,
+    editingRouteId,
+    editingRouteVertices,
+    updateRouteGeometry,
+    invalidateAllMapData,
+    debouncedRefetch,
+  ]);
 
   const cancelRouteEdit = useCallback(() => {
     setEditingRouteId(null);

@@ -95,13 +95,21 @@ export function isNoticeOrUtilityIcon(filenameOrPath: string | null | undefined)
   ];
 
   for (const term of blockedTerms) {
-    if (clean.startsWith(term) || clean.includes(`_${term}`) || clean.includes(`-${term}`) || clean === `${term}.svg` || clean === `${term}.png`) {
+    if (
+      clean.startsWith(term) ||
+      clean.includes(`_${term}`) ||
+      clean.includes(`-${term}`) ||
+      clean === `${term}.svg` ||
+      clean === `${term}.png`
+    ) {
       return true;
     }
   }
 
   // Generic 12-24px icon names
-  if (/(?:^|[_\-.])(icon|button|bullet|spacer|blank|pixel|trans|transparent)(?:[_\-.]|$)/i.test(clean)) {
+  if (
+    /(?:^|[_\-.])(icon|button|bullet|spacer|blank|pixel|trans|transparent)(?:[_\-.]|$)/i.test(clean)
+  ) {
     return true;
   }
 
@@ -119,7 +127,11 @@ function md5(input: string): string {
  * Calculate standard MediaWiki MD5 shard path
  * e.g. "Caphiria_flag.svg" -> shard "8/8c", path "8/8c/Caphiria_flag.svg"
  */
-export function getMd5ShardPath(filename: string): { shard: string; fullPath: string; cleanName: string } {
+export function getMd5ShardPath(filename: string): {
+  shard: string;
+  fullPath: string;
+  cleanName: string;
+} {
   let decoded = filename;
   try {
     decoded = decodeURIComponent(filename);
@@ -255,12 +267,20 @@ export function extractLeadImageFromHtml(html: string | null | undefined): strin
 
   // 1. Strip out all known maintenance / notice / ambox blocks
   const cleanHtml = html
-    .replace(/<table[^>]*class=["'][^"']*\b(?:ambox|tmbox|ombox|cmbox|fmbox|metadata|hatnote|dablink|stub|maint|wip)\b[^"']*["'][\s\S]*?<\/table>/gi, "")
-    .replace(/<div[^>]*class=["'][^"']*\b(?:ambox|metadata|hatnote|dablink|stub|wip|notice)\b[^"']*["'][\s\S]*?<\/div>/gi, "")
+    .replace(
+      /<table[^>]*class=["'][^"']*\b(?:ambox|tmbox|ombox|cmbox|fmbox|metadata|hatnote|dablink|stub|maint|wip)\b[^"']*["'][\s\S]*?<\/table>/gi,
+      ""
+    )
+    .replace(
+      /<div[^>]*class=["'][^"']*\b(?:ambox|metadata|hatnote|dablink|stub|wip|notice)\b[^"']*["'][\s\S]*?<\/div>/gi,
+      ""
+    )
     .replace(/<aside[^>]*class=["'][^"']*\b(?:notice|ambox)\b[^"']*["'][\s\S]*?<\/aside>/gi, "");
 
   // 2. First priority: Infobox image (<table class="infobox">, <aside class="portable-infobox">, .infobox-image)
-  const infoboxMatch = cleanHtml.match(/<(?:table|aside)[^>]*class=["'][^"']*\b(?:infobox|portable-infobox)\b[^"']*["'][\s\S]*?<\/(?:table|aside)>/i);
+  const infoboxMatch = cleanHtml.match(
+    /<(?:table|aside)[^>]*class=["'][^"']*\b(?:infobox|portable-infobox)\b[^"']*["'][\s\S]*?<\/(?:table|aside)>/i
+  );
   if (infoboxMatch) {
     const infoboxHtml = infoboxMatch[0];
     const infoboxImgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
@@ -278,7 +298,8 @@ export function extractLeadImageFromHtml(html: string | null | undefined): strin
   }
 
   // 3. Second priority: Figure or Thumbimage (<figure>, <div class="thumb">, <img class="thumbimage">)
-  const figureRegex = /<(?:figure|div)[^>]*class=["'][^"']*\b(?:thumb|mw-halign|mw-default-size|thumbinner)\b[^"']*["'][\s\S]*?<\/(?:figure|div)>/gi;
+  const figureRegex =
+    /<(?:figure|div)[^>]*class=["'][^"']*\b(?:thumb|mw-halign|mw-default-size|thumbinner)\b[^"']*["'][\s\S]*?<\/(?:figure|div)>/gi;
   let figMatch: RegExpExecArray | null;
   while ((figMatch = figureRegex.exec(cleanHtml)) !== null) {
     const figHtml = figMatch[0];

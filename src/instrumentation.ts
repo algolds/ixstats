@@ -55,10 +55,14 @@ export async function register() {
 
       // Initialize WikiOS continuous MediaWiki auto-sync daemon
       try {
-        const { startWikiAutoSyncDaemon } = await import("~/lib/wiki-os/services/auto-sync-service");
+        const { startWikiAutoSyncDaemon } =
+          await import("~/lib/wiki-os/services/auto-sync-service");
         startWikiAutoSyncDaemon(60000);
       } catch (syncError) {
-        console.warn("[Instrumentation] WikiOS auto-sync daemon setup failed (non-fatal):", syncError);
+        console.warn(
+          "[Instrumentation] WikiOS auto-sync daemon setup failed (non-fatal):",
+          syncError
+        );
       }
 
       // Signal PM2 that we are ready (for zero-downtime cluster reloads)
@@ -104,7 +108,10 @@ export async function register() {
       const { startWikiAutoSyncDaemon } = await import("~/lib/wiki-os/services/auto-sync-service");
       startWikiAutoSyncDaemon(45000);
     } catch (syncError) {
-      console.warn("[Instrumentation] WikiOS auto-sync daemon setup failed (non-fatal):", syncError);
+      console.warn(
+        "[Instrumentation] WikiOS auto-sync daemon setup failed (non-fatal):",
+        syncError
+      );
     }
   }
 }

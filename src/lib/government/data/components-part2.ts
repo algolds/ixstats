@@ -1,5 +1,22 @@
 import { ComponentType } from "@prisma/client";
-import { Group as Users, Shield, Dollar as DollarSign, Archery as Target, StatsReport as BarChart3, Heart, Leaf, ModernTv as Monitor, Globe, Network, Trophy as Award, CheckCircle, WarningTriangle as AlertTriangle, GraduationCap, OpenBook as BookOpen, Community as Handshake } from "iconoir-react";
+import {
+  Group as Users,
+  Shield,
+  Dollar as DollarSign,
+  Archery as Target,
+  StatsReport as BarChart3,
+  Heart,
+  Leaf,
+  ModernTv as Monitor,
+  Globe,
+  Network,
+  Trophy as Award,
+  CheckCircle,
+  WarningTriangle as AlertTriangle,
+  GraduationCap,
+  OpenBook as BookOpen,
+  Community as Handshake,
+} from "iconoir-react";
 import type { AtomicGovernmentComponent } from "./types";
 
 export const ATOMIC_COMPONENTS_PART_2: Partial<Record<ComponentType, AtomicGovernmentComponent>> = {
@@ -467,5 +484,5 @@ export const ATOMIC_COMPONENTS_PART_2: Partial<Record<ComponentType, AtomicGover
       staffRequired: 10,
       technologyRequired: true,
     },
-  }
+  },
 };

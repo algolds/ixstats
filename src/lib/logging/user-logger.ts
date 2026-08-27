@@ -553,7 +553,7 @@ export class UserLogger {
       output.on("finish", () => {
         fs.unlinkSync(filePath); // Remove original file
       });
-    } catch  {
+    } catch {
       // Silent fail for compression
     }
   }
@@ -562,7 +562,11 @@ export class UserLogger {
    * Persist log entry to database
    */
   private static async persistToDatabase(logEntry: any): Promise<void> {
-    if (process.env.NODE_ENV === "test" || !db || typeof (db as any).systemLog?.create !== "function") {
+    if (
+      process.env.NODE_ENV === "test" ||
+      !db ||
+      typeof (db as any).systemLog?.create !== "function"
+    ) {
       return;
     }
     try {
@@ -621,7 +625,7 @@ export class UserLogger {
           userAgent: context.userAgent,
         },
       });
-    } catch  {
+    } catch {
       // Silent fail for session updates
     }
   }

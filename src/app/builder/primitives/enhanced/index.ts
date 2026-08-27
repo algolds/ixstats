@@ -12,7 +12,10 @@ export { GlassSelectBox } from "./GlassSelectBox";
 export { GlassProgressIndicator } from "./GlassProgressIndicator";
 
 // Chart Primitives (Dynamically Code-Split)
-export { DynamicEnhancedBarChart as EnhancedBarChart, DynamicEnhancedPieChart as EnhancedPieChart } from "./DynamicCharts";
+export {
+  DynamicEnhancedBarChart as EnhancedBarChart,
+  DynamicEnhancedPieChart as EnhancedPieChart,
+} from "./DynamicCharts";
 
 // Future chart types (v1.1+): EnhancedLineChart, EnhancedAreaChart, EnhancedGaugeChart
 // Currently satisfied by existing bar and pie charts for economic visualizations

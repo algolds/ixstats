@@ -13,10 +13,14 @@ const mockUnifiedAtomicGetAll = jest.fn(() => {
   throw new Error("api.unifiedAtomic.getAll should not be called in MyCountryRouter shell");
 });
 const mockUnifiedAtomicDetectSynergies = jest.fn(() => {
-  throw new Error("api.unifiedAtomic.detectSynergies should not be called in MyCountryRouter shell");
+  throw new Error(
+    "api.unifiedAtomic.detectSynergies should not be called in MyCountryRouter shell"
+  );
 });
 const mockUnifiedAtomicCalculateCombined = jest.fn(() => {
-  throw new Error("api.unifiedAtomic.calculateCombinedEffectiveness should not be called in MyCountryRouter shell");
+  throw new Error(
+    "api.unifiedAtomic.calculateCombinedEffectiveness should not be called in MyCountryRouter shell"
+  );
 });
 
 jest.mock("~/trpc/react", () => ({
@@ -147,7 +151,9 @@ jest.mock("~/hooks/useNationalIssuesToast", () => ({
 jest.mock("~/components/mycountry/shell/CommandSurface", () => {
   return {
     CommandSurface: () => {
-      const { useCountryData } = jest.requireActual("~/components/mycountry/shared/primitives") as any;
+      const { useCountryData } = jest.requireActual(
+        "~/components/mycountry/shared/primitives"
+      ) as any;
       const { country } = useCountryData();
       return (
         <div data-testid="mock-command-surface">

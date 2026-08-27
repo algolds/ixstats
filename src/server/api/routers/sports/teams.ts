@@ -670,7 +670,7 @@ export const sportsTeamsRouter = createTRPCRouter({
           form: formByTeam.get(t.id) ?? [],
         };
       });
-    } catch  {
+    } catch {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to fetch my clubs",

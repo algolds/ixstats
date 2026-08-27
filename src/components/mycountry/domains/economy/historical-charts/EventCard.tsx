@@ -9,7 +9,15 @@ import React from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { WarningCircle as AlertCircle, Clock, EditPencil as Edit, Trash as Trash2, Flash as Zap, Page as FileText, StatUp as TrendingUp } from "iconoir-react";
+import {
+  WarningCircle as AlertCircle,
+  Clock,
+  EditPencil as Edit,
+  Trash as Trash2,
+  Flash as Zap,
+  Page as FileText,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { IxTime } from "~/lib/ixtime";
 import type { EconomicEvent } from "~/lib/economy/historical-transformers";
 

@@ -5,7 +5,16 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Check, Bookmark, ArrowUpRight, SystemRestart as Loader2, SoundHigh as Volume2, Translate as Languages, EditPencil as Pencil } from "iconoir-react";
+import {
+  Copy,
+  Check,
+  Bookmark,
+  ArrowUpRight,
+  SystemRestart as Loader2,
+  SoundHigh as Volume2,
+  Translate as Languages,
+  EditPencil as Pencil,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -221,7 +230,7 @@ export function NameResultCard({
       depth={showDetailsModal ? 2 : 1}
       onClick={expandOnCardClick ? () => setShowDetailsModal(!showDetailsModal) : undefined}
       className={cn(
-        "group relative flex flex-col justify-start gap-3.5 overflow-hidden border px-4 py-4 transition-all duration-300 ease-out rounded-2xl",
+        "group relative flex flex-col justify-start gap-3.5 overflow-hidden rounded-2xl border px-4 py-4 transition-all duration-300 ease-out",
         expandOnCardClick && "cursor-pointer select-none",
         // Default border/background colors matching the fit score
         fitColor === "emerald" && "border-emerald-500/20 bg-emerald-500/[0.015]",
@@ -248,7 +257,7 @@ export function NameResultCard({
               fitColor === "rose" &&
                 "hover:border-rose-500/35 hover:shadow-[0_0_14px_rgba(244,63,94,0.1)] dark:hover:border-rose-500/25 dark:hover:shadow-[0_0_18px_rgba(244,63,94,0.15)]",
               !fitColor &&
-                "hover:border-onoma-primary/45 hover:shadow-[0_0_12px_rgba(0,145,255,0.08)] dark:hover:border-onoma-primary/35 dark:hover:shadow-[0_0_16px_rgba(0,145,255,0.15)]"
+                "hover:border-onoma-primary/45 dark:hover:border-onoma-primary/35 hover:shadow-[0_0_12px_rgba(0,145,255,0.08)] dark:hover:shadow-[0_0_16px_rgba(0,145,255,0.15)]"
             )
       )}
     >
@@ -304,7 +313,7 @@ export function NameResultCard({
         {/* Name Display Stack */}
         <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
           <span
-            className="text-foreground w-full whitespace-nowrap font-bold tracking-tight leading-none transition-colors duration-300 group-hover:text-onoma-primary"
+            className="text-foreground group-hover:text-onoma-primary w-full leading-none font-bold tracking-tight whitespace-nowrap transition-colors duration-300"
             style={{ fontSize: dynamicFontSize }}
             title={name}
           >
@@ -319,13 +328,13 @@ export function NameResultCard({
                   onClick={handlePlayPronunciation}
                   title="Click to hear phonetic pronunciation"
                   className={cn(
-                    "text-muted-foreground border-border/40 bg-secondary/15 flex cursor-pointer items-center gap-1 border py-0.5 pr-2.5 pl-2 font-mono text-[11px] tracking-[0.02em] whitespace-nowrap transition-all duration-200 select-none hover:bg-onoma-primary/10 hover:text-onoma-primary active:scale-[0.94]",
+                    "text-muted-foreground border-border/40 bg-secondary/15 hover:bg-onoma-primary/10 hover:text-onoma-primary flex cursor-pointer items-center gap-1 border py-0.5 pr-2.5 pl-2 font-mono text-[11px] tracking-[0.02em] whitespace-nowrap transition-all duration-200 select-none active:scale-[0.94]",
                     allowCustomize ? "rounded-l-full" : "rounded-full",
                     hasOverride && "border-onoma-primary/40 text-onoma-primary"
                   )}
                   style={dynamicIpaFontSize ? { fontSize: dynamicIpaFontSize } : undefined}
                 >
-                  <Volume2 className="h-3 w-3 flex-shrink-0 text-onoma-primary" />
+                  <Volume2 className="text-onoma-primary h-3 w-3 flex-shrink-0" />
                   <span className="whitespace-nowrap">{ipa}</span>
                 </button>
                 {allowCustomize && (
@@ -334,7 +343,7 @@ export function NameResultCard({
                     onClick={openPronEditor}
                     title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
                     className={cn(
-                      "text-muted-foreground border-border/40 bg-secondary/15 flex flex-shrink-0 cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none hover:bg-onoma-primary/10 hover:text-onoma-primary active:scale-[0.94]"
+                      "text-muted-foreground border-border/40 bg-secondary/15 hover:bg-onoma-primary/10 hover:text-onoma-primary flex flex-shrink-0 cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none active:scale-[0.94]"
                     )}
                   >
                     <Pencil className="h-2.5 w-2.5" />
@@ -364,7 +373,7 @@ export function NameResultCard({
             className={cn(
               "cursor-pointer rounded-md p-1.5 transition-all duration-100 ease-out active:scale-[0.92]",
               showDetailsModal
-                ? "bg-onoma-primary/20 text-onoma-primary shadow-[0_0_12px_rgba(0,145,255,0.25)] ring-1 ring-onoma-primary/30"
+                ? "bg-onoma-primary/20 text-onoma-primary ring-onoma-primary/30 shadow-[0_0_12px_rgba(0,145,255,0.25)] ring-1"
                 : "text-muted-foreground hover:bg-onoma-primary/10 hover:text-onoma-primary"
             )}
           >
@@ -393,7 +402,7 @@ export function NameResultCard({
               className={cn(
                 "cursor-pointer rounded-md p-1.5 transition-all duration-100 ease-out active:scale-[0.92] disabled:opacity-50",
                 localSaved
-                  ? "scale-105 bg-onoma-primary/20 text-onoma-primary shadow-[0_0_12px_rgba(0,145,255,0.35)] ring-1 ring-onoma-primary/30"
+                  ? "bg-onoma-primary/20 text-onoma-primary ring-onoma-primary/30 scale-105 shadow-[0_0_12px_rgba(0,145,255,0.35)] ring-1"
                   : "text-muted-foreground hover:bg-onoma-primary/10 hover:text-onoma-primary"
               )}
             >

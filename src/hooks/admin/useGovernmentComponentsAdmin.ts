@@ -95,7 +95,7 @@ export function useGovernmentComponentsAdmin() {
   // Filtered components
   const filteredComponents = useMemo(() => {
     return filterGovernmentComponents(components, searchTerm, categoryFilter, complexityFilter);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [components, searchTerm, categoryFilter, complexityFilter]);
 
   const resetForm = () => {

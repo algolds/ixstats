@@ -2,7 +2,16 @@
 
 import { useState, useMemo } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { City as Building2, Group as Users, Community as Handshake, Page as FileText, Palette, Plus, NavArrowRight as ChevronRight, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  City as Building2,
+  Group as Users,
+  Community as Handshake,
+  Page as FileText,
+  Palette,
+  Plus,
+  NavArrowRight as ChevronRight,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { api } from "~/trpc/react";
@@ -15,10 +24,7 @@ import { useEmbassyNetworkData } from "~/hooks/useEmbassyNetworkData";
 import { useNetworkMetrics } from "~/hooks/useNetworkMetrics";
 
 // Sub-components (embassy network)
-import {
-  EmbassyGrid,
-  EmptyState,
-} from "./embassy-network";
+import { EmbassyGrid, EmptyState } from "./embassy-network";
 import { SharedDataModal } from "./SharedDataModal";
 import { DiplomaticRelationsList } from "./DiplomaticRelationsList";
 

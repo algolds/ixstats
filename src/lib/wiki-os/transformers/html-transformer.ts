@@ -244,10 +244,7 @@ function extractTocFromHeadings(html: string): TocEntry[] {
     const level = parseInt(match[1]!, 10);
     const id = match[2]!;
     // Strip HTML tags and [edit] links from heading text
-    const text = match[3]!
-      .replace(EDIT_SECTION_REGEX, "")
-      .replace(TAG_STRIP_REGEX, "")
-      .trim();
+    const text = match[3]!.replace(EDIT_SECTION_REGEX, "").replace(TAG_STRIP_REGEX, "").trim();
     if (text) {
       toc.push({ id, text, level });
     }
@@ -259,10 +256,7 @@ function extractTocFromHeadings(html: string): TocEntry[] {
     while ((match = HEADING_PLAIN_REGEX.exec(html)) !== null) {
       const level = parseInt(match[1]!, 10);
       const id = match[2]!;
-      const text = match[3]!
-        .replace(EDIT_SECTION_REGEX, "")
-        .replace(TAG_STRIP_REGEX, "")
-        .trim();
+      const text = match[3]!.replace(EDIT_SECTION_REGEX, "").replace(TAG_STRIP_REGEX, "").trim();
       if (text) {
         toc.push({ id, text, level });
       }
@@ -415,28 +409,25 @@ function extractImageUrls(html: string): string[] {
  * Strip MediaWiki skin-specific CSS while keeping page template styles.
  */
 export function stripConflictingStyles(html: string): string {
-  return html.replace(
-    STYLE_DEDUPLICATE_REGEX,
-    (fullMatch, content: string) => {
-      const isSkinSpecific =
-        content.includes(".skin-citizen") ||
-        content.includes(".skin-vector") ||
-        content.includes("skin-theme-clientpref") ||
-        content.includes(".mw-page-title") ||
-        content.includes(".mw-body-content parsoid-body");
+  return html.replace(STYLE_DEDUPLICATE_REGEX, (fullMatch, content: string) => {
+    const isSkinSpecific =
+      content.includes(".skin-citizen") ||
+      content.includes(".skin-vector") ||
+      content.includes("skin-theme-clientpref") ||
+      content.includes(".mw-page-title") ||
+      content.includes(".mw-body-content parsoid-body");
 
-      const hasTemplateStyles =
-        content.includes(".home-grid") ||
-        content.includes(".home-card") ||
-        content.includes("#featured_article") ||
-        content.includes(".home-header") ||
-        content.includes(".home-link") ||
-        content.includes(".infobox") ||
-        content.includes(".template-");
+    const hasTemplateStyles =
+      content.includes(".home-grid") ||
+      content.includes(".home-card") ||
+      content.includes("#featured_article") ||
+      content.includes(".home-header") ||
+      content.includes(".home-link") ||
+      content.includes(".infobox") ||
+      content.includes(".template-");
 
-      if (hasTemplateStyles) return fullMatch;
-      if (isSkinSpecific) return "";
-      return fullMatch;
-    }
-  );
+    if (hasTemplateStyles) return fullMatch;
+    if (isSkinSpecific) return "";
+    return fullMatch;
+  });
 }

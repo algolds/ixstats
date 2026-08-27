@@ -4,7 +4,15 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
-import { SystemRestart as Loader2, EditPencil as Pencil, Check, Xmark as X, Globe, Lock, Eye } from "iconoir-react";
+import {
+  SystemRestart as Loader2,
+  EditPencil as Pencil,
+  Check,
+  Xmark as X,
+  Globe,
+  Lock,
+  Eye,
+} from "iconoir-react";
 
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
@@ -84,7 +92,9 @@ export function RealmsTab() {
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Status</th>
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Visibility</th>
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Countries</th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">World Config</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">
+                World Config
+              </th>
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Owner</th>
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Updated</th>
               <th className="text-muted-foreground px-4 py-3 text-right font-medium">Actions</th>
@@ -96,7 +106,10 @@ export function RealmsTab() {
               const VisIcon = VISIBILITY_ICONS[realm.visibility] ?? Globe;
 
               return (
-                <tr key={realm.id} className="border-border/20 hover:bg-muted/20 border-b transition-colors">
+                <tr
+                  key={realm.id}
+                  className="border-border/20 hover:bg-muted/20 border-b transition-colors"
+                >
                   <td className="px-4 py-3">
                     {isEditing ? (
                       <input
@@ -152,7 +165,9 @@ export function RealmsTab() {
                   <td className="px-4 py-3 text-center font-medium">{realm._count.countries}</td>
                   <td className="px-4 py-3">
                     {realm.worldConfig ? (
-                      <span className="text-xs text-emerald-500 font-medium">{realm.worldConfig.name}</span>
+                      <span className="text-xs font-medium text-emerald-500">
+                        {realm.worldConfig.name}
+                      </span>
                     ) : (
                       <span className="text-muted-foreground/50 text-xs">None</span>
                     )}
@@ -169,7 +184,7 @@ export function RealmsTab() {
                         <button
                           onClick={() => saveEdit(realm.id)}
                           disabled={updateMutation.isPending}
-                          className="rounded-lg p-1 text-emerald-500 hover:bg-emerald-500/10 active:scale-[0.98] transition-transform"
+                          className="rounded-lg p-1 text-emerald-500 transition-transform hover:bg-emerald-500/10 active:scale-[0.98]"
                         >
                           {updateMutation.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -179,7 +194,7 @@ export function RealmsTab() {
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="text-muted-foreground hover:bg-muted/50 rounded-lg p-1 active:scale-[0.98] transition-transform"
+                          className="text-muted-foreground hover:bg-muted/50 rounded-lg p-1 transition-transform active:scale-[0.98]"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -187,7 +202,7 @@ export function RealmsTab() {
                     ) : (
                       <button
                         onClick={() => startEdit(realm)}
-                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 active:scale-[0.98] transition-transform"
+                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 transition-transform active:scale-[0.98]"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>

@@ -15,7 +15,10 @@ import {
   fullTextSearch,
   type WikiSource,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { searchShadowArticles, NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
+import {
+  searchShadowArticles,
+  NativeSearchService,
+} from "~/lib/wiki-os/core/native-search-service";
 import { db } from "~/server/db";
 import { getImageUrl } from "~/lib/wiki-os/transformers/image-url";
 
@@ -226,7 +229,10 @@ export const wikiosSearchRouter = createTRPCRouter({
       // 1. Primary: Direct PostgreSQL Prisma Asset Search
       if (input.wiki === "ixwiki") {
         const where: {
-          OR?: Array<{ title?: { contains: string; mode: "insensitive" }; filename?: { contains: string; mode: "insensitive" } }>;
+          OR?: Array<{
+            title?: { contains: string; mode: "insensitive" };
+            filename?: { contains: string; mode: "insensitive" };
+          }>;
           mimeType?: { in: string[] };
         } = {};
         if (input.query && input.query.trim().length > 0) {
@@ -279,8 +285,27 @@ export const wikiosSearchRouter = createTRPCRouter({
       if (!res.ok) return [];
       const data = (await res.json()) as {
         query?: {
-          allimages?: Array<{ name: string; url: string; size: number; width: number; height: number; mime: string }>;
-          pages?: Record<string, { title: string; imageinfo?: Array<{ url: string; size: number; width: number; height: number; mime: string }> }>;
+          allimages?: Array<{
+            name: string;
+            url: string;
+            size: number;
+            width: number;
+            height: number;
+            mime: string;
+          }>;
+          pages?: Record<
+            string,
+            {
+              title: string;
+              imageinfo?: Array<{
+                url: string;
+                size: number;
+                width: number;
+                height: number;
+                mime: string;
+              }>;
+            }
+          >;
         };
       };
 

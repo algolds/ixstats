@@ -69,7 +69,7 @@ export async function cloneGovernmentTree(
     where: { governmentStructureId: sourceGovId },
   });
   for (const off of sourceOfficials) {
-    const newDeptId = off.departmentId ? deptIdMap.get(off.departmentId) ?? null : null;
+    const newDeptId = off.departmentId ? (deptIdMap.get(off.departmentId) ?? null) : null;
     const data = stripRecord(off, demoGovId, {
       countryField: "governmentStructureId",
       transforms: { departmentId: () => newDeptId },
@@ -209,13 +209,9 @@ export async function cloneTaxTree(
     }
   }
 
-  const { count: synCount } = await cloneRecords(
-    prisma,
-    "taxSynergy",
-    sourceTax.id,
-    demoTax.id,
-    { countryField: "taxSystemId" }
-  );
+  const { count: synCount } = await cloneRecords(prisma, "taxSynergy", sourceTax.id, demoTax.id, {
+    countryField: "taxSystemId",
+  });
   count += synCount;
 
   const { count: histCount } = await cloneRecords(
@@ -258,16 +254,10 @@ export async function cloneOrSeedPolicies(
   demoCountryId: string,
   userId: string
 ): Promise<number> {
-  const { count } = await cloneParentChildren(
-    prisma,
-    "policy",
-    sourceCountryId,
-    demoCountryId,
-    [
-      { modelName: "policyEffectLog", parentField: "policyId" },
-      { modelName: "policyReview", parentField: "policyId" },
-    ]
-  );
+  const { count } = await cloneParentChildren(prisma, "policy", sourceCountryId, demoCountryId, [
+    { modelName: "policyEffectLog", parentField: "policyId" },
+    { modelName: "policyReview", parentField: "policyId" },
+  ]);
   if (count > 0) return count;
   return fallbacks.seedPolicies(prisma, demoCountryId, userId);
 }

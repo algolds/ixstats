@@ -24,7 +24,6 @@ import {
   syncEconomyBuilderState,
 } from "~/server/shared/country-mutation-helpers";
 
-
 export const managementUpdateProcedures = {
   updateCountry: protectedProcedure
     .input(
@@ -260,7 +259,13 @@ export const managementUpdateProcedures = {
 
           await syncNationalIdentity(tx, country.id, input.name, nationalIdentity);
           await syncDemographics(tx, country.id, demographics);
-          await syncIncomeAndSpending(tx, country.id, incomeWealth, governmentSpending, fiscalSystem);
+          await syncIncomeAndSpending(
+            tx,
+            country.id,
+            incomeWealth,
+            governmentSpending,
+            fiscalSystem
+          );
           await syncTaxSystem(tx, country.id, input.taxSystemData);
           await syncGovernmentStructure(tx, country.id, input.name, input.governmentStructure);
           await syncGovernmentComponents(tx, country.id, input.governmentComponents);
@@ -277,7 +282,8 @@ export const managementUpdateProcedures = {
       } catch (error) {
         console.error("[updateCountry] Transaction failed:", error);
         throw new Error(
-          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
+          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`,
+          { cause: error }
         );
       }
     }),

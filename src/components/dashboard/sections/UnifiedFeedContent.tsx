@@ -266,7 +266,7 @@ export function UnifiedFeedContent({
   if (filteredFeed.length === 0) {
     const label = activeTab === "community" ? "community updates" : "activity";
     return (
-      <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/75 p-8 text-center shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-border/80">
+      <div className="group border-border/50 bg-card/75 hover:border-border/80 relative overflow-hidden rounded-2xl border p-8 text-center shadow-xs backdrop-blur-xl transition-all duration-200">
         <Rss className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
         <h3 className="mb-1 text-sm font-semibold">No recent {label}</h3>
         <p className="text-muted-foreground text-xs">Check back later for updates.</p>
@@ -366,7 +366,7 @@ export function FollowingFeedContent({
 
   if (followingCount === 0) {
     return (
-      <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/75 p-8 text-center shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-border/80">
+      <div className="group border-border/50 bg-card/75 hover:border-border/80 relative overflow-hidden rounded-2xl border p-8 text-center shadow-xs backdrop-blur-xl transition-all duration-200">
         <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
         <h3 className="mb-1 text-sm font-semibold">Not following anyone yet</h3>
         <p className="text-muted-foreground text-xs">
@@ -383,7 +383,7 @@ export function FollowingFeedContent({
 
   if (processedActivities.length === 0) {
     return (
-      <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/75 p-8 text-center shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-border/80">
+      <div className="group border-border/50 bg-card/75 hover:border-border/80 relative overflow-hidden rounded-2xl border p-8 text-center shadow-xs backdrop-blur-xl transition-all duration-200">
         <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
         <h3 className="mb-1 text-sm font-semibold">No recent activity</h3>
         <p className="text-muted-foreground text-xs">Countries you follow haven't posted yet.</p>

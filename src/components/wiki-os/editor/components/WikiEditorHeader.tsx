@@ -91,7 +91,13 @@ export function WikiEditorHeader({
       </div>
 
       {/* Center: Dynamic Island mode switcher */}
-      <div className={isVisual ? "pointer-events-auto flex shrink-0 items-center justify-center" : "wikios-editor-titlebar-center"}>
+      <div
+        className={
+          isVisual
+            ? "pointer-events-auto flex shrink-0 items-center justify-center"
+            : "wikios-editor-titlebar-center"
+        }
+      >
         <motion.div
           layout
           className={cn(
@@ -122,7 +128,11 @@ export function WikiEditorHeader({
           style={DYNAMIC_ISLAND_STYLE}
           title="Toggle Editing Mode (Source / Canvas)"
         >
-          <DynamicIslandEffects glowOpacity={isVisual ? 0.5 : 0} showGlow={isVisual} showShimmer={isVisual} />
+          <DynamicIslandEffects
+            glowOpacity={isVisual ? 0.5 : 0}
+            showGlow={isVisual}
+            showShimmer={isVisual}
+          />
           <span
             style={{
               color: !isVisual ? "var(--wikios-text)" : "var(--wikios-text-dim)",
@@ -169,11 +179,7 @@ export function WikiEditorHeader({
         </button>
 
         <Popover open={saveDropdownOpen} onOpenChange={setSaveDropdownOpen}>
-          <PopoverTrigger
-            className="wikios-editor-btn-save"
-            disabled={saving}
-            title="Save options"
-          >
+          <PopoverTrigger className="wikios-editor-btn-save" disabled={saving} title="Save options">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           </PopoverTrigger>
           <PopoverContent

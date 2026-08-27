@@ -5,7 +5,15 @@ import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
-import { SystemRestart as Loader2, Navigator as Navigation, Eye, EyeClosed as EyeOff, FloppyDisk as Save, Check, Shield } from "iconoir-react";
+import {
+  SystemRestart as Loader2,
+  Navigator as Navigation,
+  Eye,
+  EyeClosed as EyeOff,
+  FloppyDisk as Save,
+  Check,
+  Shield,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 

@@ -2,7 +2,12 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, SystemRestart as Loader2, OpenNewWindow as ExternalLink } from "iconoir-react";
+import {
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  SystemRestart as Loader2,
+  OpenNewWindow as ExternalLink,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import {
@@ -35,11 +40,10 @@ export const WikiSectionRow = React.memo(function WikiSectionRow({
   const [expanded, setExpanded] = React.useState(false);
   const { label, icon: Icon, color } = classifyWikiSection(title);
 
-  const { data: sectionContent, isLoading: contentLoading } =
-    api.wikios.getSectionContent.useQuery(
-      { title: countryName, section: title, source: "ixwiki" },
-      { enabled: expanded, staleTime: 10 * 60_000 }
-    );
+  const { data: sectionContent, isLoading: contentLoading } = api.wikios.getSectionContent.useQuery(
+    { title: countryName, section: title, source: "ixwiki" },
+    { enabled: expanded, staleTime: 10 * 60_000 }
+  );
 
   const rawContent = extractWikiSectionRawContent(sectionContent);
   const cleanContent = cleanWikiSectionContent(rawContent);

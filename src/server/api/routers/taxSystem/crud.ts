@@ -86,7 +86,6 @@ export const taxSystemCrudRouter = createTRPCRouter({
         }),
       ]);
 
-
       if (!taxSystem) {
         return null;
       }
@@ -291,7 +290,6 @@ export const taxSystemCrudRouter = createTRPCRouter({
                   take: 5,
                   select: { id: true },
                 })
-
               ).map((ts) => ts.id),
             },
           },
@@ -466,7 +464,6 @@ export const taxSystemCrudRouter = createTRPCRouter({
                 take: 5,
                 select: { id: true },
               })
-
             ).map((ts) => ts.id),
           },
         },

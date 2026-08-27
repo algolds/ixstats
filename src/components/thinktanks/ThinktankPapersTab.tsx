@@ -69,14 +69,14 @@ export function ThinktankPapersTab({
         d.title.toLowerCase().includes(query) ||
         (d.content && d.content.toLowerCase().includes(query))
     );
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [docs, searchQuery]);
 
   // Selected doc
   const activeDoc = useMemo(() => {
     if (!selectedDocId && docs.length > 0) return docs[0];
     return docs.find((d) => d.id === selectedDocId) || null;
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [docs, selectedDocId]);
 
   // Mutations
@@ -168,10 +168,10 @@ export function ThinktankPapersTab({
   return (
     <div className="grid h-full w-full grid-cols-1 overflow-hidden bg-transparent md:grid-cols-12">
       {/* ── Left Sidebar: Document List ── */}
-      <div className="flex h-full flex-col border-r border-border/30 bg-muted/20 md:col-span-4 lg:col-span-3.5">
-        <div className="p-3.5 border-b border-border/30 space-y-2.5">
+      <div className="border-border/30 bg-muted/20 lg:col-span-3.5 flex h-full flex-col border-r md:col-span-4">
+        <div className="border-border/30 space-y-2.5 border-b p-3.5">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Docs ({docs.length})
             </h3>
             {isMember && (
@@ -186,26 +186,24 @@ export function ThinktankPapersTab({
           </div>
 
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search docs & notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 rounded-lg bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/60 border-border/40"
+              className="bg-background/50 placeholder:text-muted-foreground/60 border-border/40 h-8 rounded-lg pl-8 text-xs"
             />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 space-y-1 overflow-y-auto p-2">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center gap-2 py-12">
-              <span className="h-4 w-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
-              <p className="text-[11px] text-muted-foreground">Loading documents...</p>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+              <p className="text-muted-foreground text-[11px]">Loading documents...</p>
             </div>
           ) : filteredDocs.length === 0 ? (
-            <div className="p-6 text-center text-xs text-muted-foreground">
-              No docs found.
-            </div>
+            <div className="text-muted-foreground p-6 text-center text-xs">No docs found.</div>
           ) : (
             filteredDocs.map((doc: any) => {
               const isSelected = activeDoc?.id === doc.id && !isCreating;
@@ -233,7 +231,7 @@ export function ThinktankPapersTab({
                       <Lock className="h-3 w-3 shrink-0 text-amber-500/70" />
                     )}
                   </div>
-                  <div className="mt-1 flex w-full items-center justify-between text-[10px] text-muted-foreground">
+                  <div className="text-muted-foreground mt-1 flex w-full items-center justify-between text-[10px]">
                     <span>v{doc.version || 1}</span>
                     <span>{new Date(doc.updatedAt).toLocaleDateString()}</span>
                   </div>
@@ -245,12 +243,12 @@ export function ThinktankPapersTab({
       </div>
 
       {/* ── Right Canvas: Editor / Viewer ── */}
-      <div className="flex h-full flex-col overflow-y-auto md:col-span-8 lg:col-span-8.5">
+      <div className="lg:col-span-8.5 flex h-full flex-col overflow-y-auto md:col-span-8">
         {isCreating || isEditing ? (
           /* Editor View */
-          <div className="flex h-full flex-col p-4 md:p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-border/30 pb-3">
-              <h2 className="text-base font-bold text-foreground">
+          <div className="flex h-full flex-col space-y-4 p-4 md:p-6">
+            <div className="border-border/30 flex items-center justify-between border-b pb-3">
+              <h2 className="text-foreground text-base font-bold">
                 {isCreating ? "New Document" : `Edit: ${activeDoc?.title}`}
               </h2>
               <div className="flex items-center gap-2">
@@ -291,17 +289,19 @@ export function ThinktankPapersTab({
                 placeholder="Document Title..."
                 value={docTitle}
                 onChange={(e) => setDocTitle(e.target.value)}
-                className="h-10 rounded-xl bg-background/50 text-sm font-semibold border-border/40"
+                className="bg-background/50 border-border/40 h-10 rounded-xl text-sm font-semibold"
               />
 
-              <div className="flex items-center justify-between rounded-xl bg-muted/30 px-3.5 py-2 border border-border/30">
-                <span className="text-xs font-medium text-muted-foreground">Publicly visible to all group members</span>
+              <div className="bg-muted/30 border-border/30 flex items-center justify-between rounded-xl border px-3.5 py-2">
+                <span className="text-muted-foreground text-xs font-medium">
+                  Publicly visible to all group members
+                </span>
                 <Switch checked={docIsPublic} onCheckedChange={setDocIsPublic} />
               </div>
 
               {isPreviewMode ? (
                 <div
-                  className="min-h-[300px] rounded-xl border border-border/40 bg-background/40 p-4 text-xs leading-relaxed text-foreground"
+                  className="border-border/40 bg-background/40 text-foreground min-h-[300px] rounded-xl border p-4 text-xs leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: sanitizeUserContent(docContent) }}
                 />
               ) : (
@@ -309,7 +309,7 @@ export function ThinktankPapersTab({
                   placeholder="Draft your document content in markdown format..."
                   value={docContent}
                   onChange={(e) => setDocContent(e.target.value)}
-                  className="min-h-[360px] rounded-xl bg-background/40 font-mono text-xs border-border/40 leading-relaxed"
+                  className="bg-background/40 border-border/40 min-h-[360px] rounded-xl font-mono text-xs leading-relaxed"
                 />
               )}
             </div>
@@ -317,19 +317,23 @@ export function ThinktankPapersTab({
         ) : activeDoc ? (
           /* Reader View */
           <div className="flex h-full flex-col p-4 md:p-6">
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border/30 pb-4">
+            <div className="border-border/30 flex flex-wrap items-start justify-between gap-3 border-b pb-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-foreground md:text-xl">
+                  <h2 className="text-foreground text-lg font-bold md:text-xl">
                     {activeDoc.title}
                   </h2>
-                  <Badge variant="outline" className="text-[10px] uppercase text-emerald-600 dark:text-emerald-400">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] text-emerald-600 uppercase dark:text-emerald-400"
+                  >
                     v{activeDoc.version || 1}
                   </Badge>
                 </div>
-                <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
+                <div className="text-muted-foreground mt-1 flex items-center gap-3 text-[11px]">
                   <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> Updated {new Date(activeDoc.updatedAt).toLocaleDateString()}
+                    <Clock className="h-3 w-3" /> Updated{" "}
+                    {new Date(activeDoc.updatedAt).toLocaleDateString()}
                   </span>
                   <span>·</span>
                   <span>{activeDoc.content ? activeDoc.content.split(/\s+/).length : 0} words</span>
@@ -351,7 +355,10 @@ export function ThinktankPapersTab({
                     size="sm"
                     onClick={() => {
                       if (confirm("Are you sure you want to delete this doc?")) {
-                        deleteDocMutation.mutate({ documentId: activeDoc.id, userId: currentUserId });
+                        deleteDocMutation.mutate({
+                          documentId: activeDoc.id,
+                          userId: currentUserId,
+                        });
                       }
                     }}
                     className="h-8 rounded-lg text-xs text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
@@ -364,15 +371,17 @@ export function ThinktankPapersTab({
 
             <div className="prose prose-sm dark:prose-invert max-w-none pt-4 text-xs leading-relaxed">
               <div
-                className="whitespace-pre-wrap font-sans text-foreground/90 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: sanitizeUserContent(activeDoc.content || "*No content drafted yet.*") }}
+                className="text-foreground/90 font-sans leading-relaxed whitespace-pre-wrap"
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeUserContent(activeDoc.content || "*No content drafted yet.*"),
+                }}
               />
             </div>
           </div>
         ) : (
-          <div className="flex h-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
-            <Book className="h-10 w-10 text-muted-foreground/40" />
-            <h3 className="mt-3 text-sm font-semibold text-foreground">Select a Document</h3>
+          <div className="text-muted-foreground flex h-full flex-col items-center justify-center p-8 text-center">
+            <Book className="text-muted-foreground/40 h-10 w-10" />
+            <h3 className="text-foreground mt-3 text-sm font-semibold">Select a Document</h3>
             <p className="mt-1 max-w-sm text-xs">
               Choose a document from the list on the left to read or edit.
             </p>

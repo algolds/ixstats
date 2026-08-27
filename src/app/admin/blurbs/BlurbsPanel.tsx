@@ -61,14 +61,14 @@ export function BlurbsPanel() {
         <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full max-w-md justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
           <TabsTrigger
             value="prompts"
-            className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <FileText className="h-4 w-4 text-cyan-400" />
             Prompt Catalog
           </TabsTrigger>
           <TabsTrigger
             value="moderation"
-            className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <MessageCircle className="h-4 w-4 text-purple-400" />
             Response Moderation
@@ -100,10 +100,12 @@ function BlurbStatsSummary() {
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-        <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Total Responses</p>
+      <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+        <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          Total Responses
+        </p>
         {countLoading ? (
-          <Skeleton className="h-7 w-16 mt-1" />
+          <Skeleton className="mt-1 h-7 w-16" />
         ) : (
           <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
             {(blurbCount ?? 0).toLocaleString()}
@@ -111,23 +113,27 @@ function BlurbStatsSummary() {
         )}
       </div>
 
-      <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-        <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Active Prompts</p>
+      <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+        <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          Active Prompts
+        </p>
         {activeLoading ? (
-          <Skeleton className="h-7 w-16 mt-1" />
+          <Skeleton className="mt-1 h-7 w-16" />
         ) : (
-          <p className="text-emerald-400 mt-1 font-mono text-xl font-bold tracking-tight">
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
             {activePrompts?.length ?? 0}
           </p>
         )}
       </div>
 
-      <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-        <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">All Prompts Catalog</p>
+      <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+        <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          All Prompts Catalog
+        </p>
         {allLoading ? (
-          <Skeleton className="h-7 w-16 mt-1" />
+          <Skeleton className="mt-1 h-7 w-16" />
         ) : (
-          <p className="text-cyan-400 mt-1 font-mono text-xl font-bold tracking-tight">
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
             {allPrompts?.length ?? 0}
           </p>
         )}
@@ -218,7 +224,7 @@ function PromptManagementSection() {
               placeholder="Search prompts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 rounded-xl border-border/30 bg-background/50 pl-8 text-xs backdrop-blur-md"
+              className="border-border/30 bg-background/50 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
             />
           </div>
 
@@ -241,12 +247,15 @@ function PromptManagementSection() {
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform">
+            <Button
+              size="sm"
+              className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+            >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               New Prompt
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md rounded-2xl border-border/30 bg-card/95 backdrop-blur-md">
+          <DialogContent className="border-border/30 bg-card/95 max-w-md rounded-2xl backdrop-blur-md">
             <DialogHeader>
               <DialogTitle className="text-sm font-bold">Create Community Topic Prompt</DialogTitle>
             </DialogHeader>
@@ -260,23 +269,28 @@ function PromptManagementSection() {
                     setForm((prev) => ({
                       ...prev,
                       title,
-                      slug: !prev.slug || prev.slug === autoSlug(prev.title) ? autoSlug(title) : prev.slug,
+                      slug:
+                        !prev.slug || prev.slug === autoSlug(prev.title)
+                          ? autoSlug(title)
+                          : prev.slug,
                     }));
                   }}
                   placeholder="Topic Tuesday: National Cuisine"
-                  className="h-8 rounded-xl border-border/30 bg-background/50 text-xs"
+                  className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
                   maxLength={200}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-foreground text-xs font-medium">Question / Description</Label>
+                <Label className="text-foreground text-xs font-medium">
+                  Question / Description
+                </Label>
                 <Textarea
                   value={form.question}
                   onChange={(e) => setForm((prev) => ({ ...prev, question: e.target.value }))}
                   placeholder="What is your realm's national dish, and how is it prepared?"
                   rows={3}
-                  className="rounded-xl border-border/30 bg-background/50 text-xs"
+                  className="border-border/30 bg-background/50 rounded-xl text-xs"
                   maxLength={500}
                 />
               </div>
@@ -292,12 +306,12 @@ function PromptManagementSection() {
                     }))
                   }
                   placeholder="topic-tuesday-cuisine"
-                  className="h-8 rounded-xl border-border/30 bg-background/50 text-xs font-mono"
+                  className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
                   maxLength={100}
                 />
               </div>
 
-              <div className="flex items-center justify-between rounded-xl border border-border/20 bg-background/30 p-3">
+              <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3">
                 <Label className="text-xs font-medium">Publish Immediately</Label>
                 <Switch
                   checked={form.publishNow}
@@ -307,7 +321,12 @@ function PromptManagementSection() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" size="sm" onClick={() => setIsCreateOpen(false)} className="h-8 rounded-xl px-3 text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsCreateOpen(false)}
+                className="h-8 rounded-xl px-3 text-xs"
+              >
                 Cancel
               </Button>
               <Button
@@ -320,7 +339,12 @@ function PromptManagementSection() {
                     status: form.publishNow ? "ACTIVE" : "DRAFT",
                   })
                 }
-                disabled={!form.title.trim() || !form.question.trim() || !form.slug.trim() || createMutation.isPending}
+                disabled={
+                  !form.title.trim() ||
+                  !form.question.trim() ||
+                  !form.slug.trim() ||
+                  createMutation.isPending
+                }
                 className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98]"
               >
                 {createMutation.isPending ? "Creating..." : "Create Prompt"}
@@ -338,7 +362,7 @@ function PromptManagementSection() {
             ))}
           </div>
         ) : !filteredPrompts || filteredPrompts.length === 0 ? (
-          <div className="rounded-2xl border border-border/30 bg-card/25 p-8 text-center backdrop-blur-md">
+          <div className="border-border/30 bg-card/25 rounded-2xl border p-8 text-center backdrop-blur-md">
             <p className="text-muted-foreground text-xs">No prompts found matching query.</p>
           </div>
         ) : (
@@ -348,32 +372,36 @@ function PromptManagementSection() {
             return (
               <div
                 key={prompt.id}
-                className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs flex flex-col justify-between gap-3 sm:flex-row sm:items-center hover:border-border/50 transition-colors"
+                className="border-border/30 bg-card/25 hover:border-border/50 flex flex-col justify-between gap-3 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md transition-colors sm:flex-row sm:items-center"
               >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="rounded-xl bg-primary/10 p-2 text-primary">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <div className="bg-primary/10 text-primary rounded-xl p-2">
                     <StatusIcon className="h-4 w-4 shrink-0" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-foreground truncate text-xs font-bold">{prompt.title}</span>
+                      <span className="text-foreground truncate text-xs font-bold">
+                        {prompt.title}
+                      </span>
                       <Badge variant={config.variant} className="text-[10px]">
                         {config.label}
                       </Badge>
                       {prompt.featured && (
                         <Badge
                           variant="outline"
-                          className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-[10px]"
+                          className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-400"
                         >
                           Featured
                         </Badge>
                       )}
                     </div>
-                    <p className="text-muted-foreground truncate text-[11px] mt-0.5">{prompt.question}</p>
+                    <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                      {prompt.question}
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex shrink-0 items-center gap-3">
                   <span className="text-muted-foreground font-mono text-xs">
                     {prompt._count.responses} responses
                   </span>
@@ -383,7 +411,7 @@ function PromptManagementSection() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className={`h-7 w-7 p-0 rounded-lg ${prompt.featured ? "text-amber-400" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`h-7 w-7 rounded-lg p-0 ${prompt.featured ? "text-amber-400" : "text-muted-foreground hover:text-foreground"}`}
                         onClick={() =>
                           featureMutation.mutate({
                             promptId: prompt.id,
@@ -393,7 +421,11 @@ function PromptManagementSection() {
                         disabled={featureMutation.isPending}
                         title={prompt.featured ? "Unfeature" : "Feature"}
                       >
-                        {prompt.featured ? <StarOff className="h-3.5 w-3.5" /> : <Star className="h-3.5 w-3.5" />}
+                        {prompt.featured ? (
+                          <StarOff className="h-3.5 w-3.5" />
+                        ) : (
+                          <Star className="h-3.5 w-3.5" />
+                        )}
                       </Button>
                     )}
 
@@ -423,7 +455,7 @@ function PromptManagementSection() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 rounded-lg px-2.5 text-xs text-muted-foreground active:scale-[0.98]"
+                        className="text-muted-foreground h-7 rounded-lg px-2.5 text-xs active:scale-[0.98]"
                         onClick={() => updateMutation.mutate({ id: prompt.id, status: "ARCHIVED" })}
                       >
                         Archive
@@ -476,11 +508,13 @@ function ResponseModerationSection() {
   const responses = responsesData?.pages.flatMap((p) => p.responses) ?? [];
 
   return (
-    <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
-      <div className="max-w-md space-y-1.5 border-b border-border/20 pb-4">
-        <Label className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Select Discussion Prompt</Label>
+    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+      <div className="border-border/20 max-w-md space-y-1.5 border-b pb-4">
+        <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          Select Discussion Prompt
+        </Label>
         <Select value={selectedPromptId} onValueChange={setSelectedPromptId}>
-          <SelectTrigger className="h-8 rounded-xl border-border/30 bg-background/50 text-xs">
+          <SelectTrigger className="border-border/30 bg-background/50 h-8 rounded-xl text-xs">
             <SelectValue placeholder="Choose a prompt to view responses..." />
           </SelectTrigger>
           <SelectContent>
@@ -504,26 +538,32 @@ function ResponseModerationSection() {
           ))}
         </div>
       ) : responses.length === 0 ? (
-        <p className="text-muted-foreground p-8 text-center text-xs">No responses posted for this topic yet.</p>
+        <p className="text-muted-foreground p-8 text-center text-xs">
+          No responses posted for this topic yet.
+        </p>
       ) : (
         <div className="space-y-2.5">
           {responses.map((r) => (
             <div
               key={r.id}
               className={`rounded-xl border p-3.5 backdrop-blur-md ${
-                r.featured ? "border-amber-500/30 bg-amber-500/5" : "border-border/20 bg-background/30"
+                r.featured
+                  ? "border-amber-500/30 bg-amber-500/5"
+                  : "border-border/20 bg-background/30"
               }`}
             >
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="mb-1.5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-primary/10 p-1 text-primary">
+                  <div className="bg-primary/10 text-primary rounded-lg p-1">
                     <User className="h-3.5 w-3.5" />
                   </div>
-                  <span className="text-foreground text-xs font-bold">{r.country?.name ?? "Unknown Realm"}</span>
+                  <span className="text-foreground text-xs font-bold">
+                    {r.country?.name ?? "Unknown Realm"}
+                  </span>
                   {r.featured && (
                     <Badge
                       variant="outline"
-                      className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-[10px]"
+                      className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-400"
                     >
                       Featured
                     </Badge>
@@ -533,20 +573,24 @@ function ResponseModerationSection() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 w-7 p-0 rounded-lg"
-                  onClick={() => featureMutation.mutate({ responseId: r.id, featured: !r.featured })}
+                  className="h-7 w-7 rounded-lg p-0"
+                  onClick={() =>
+                    featureMutation.mutate({ responseId: r.id, featured: !r.featured })
+                  }
                   disabled={featureMutation.isPending}
                 >
                   {r.featured ? (
                     <StarOff className="h-3.5 w-3.5 text-amber-400" />
                   ) : (
-                    <Star className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Star className="text-muted-foreground h-3.5 w-3.5" />
                   )}
                 </Button>
               </div>
 
-              <p className="text-muted-foreground text-xs leading-relaxed whitespace-pre-wrap">{r.content}</p>
-              <span className="text-muted-foreground/60 font-mono text-[10px] block mt-2">
+              <p className="text-muted-foreground text-xs leading-relaxed whitespace-pre-wrap">
+                {r.content}
+              </p>
+              <span className="text-muted-foreground/60 mt-2 block font-mono text-[10px]">
                 {new Date(r.createdAt).toLocaleDateString()}
               </span>
             </div>

@@ -1,7 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import { Play, Refresh as RefreshCw, Component as Layers, ShieldCheck, MapPin, Check, Xmark as X, Compass } from "iconoir-react";
+import {
+  Play,
+  Refresh as RefreshCw,
+  Component as Layers,
+  ShieldCheck,
+  MapPin,
+  Check,
+  Xmark as X,
+  Compass,
+} from "iconoir-react";
 
 export interface MapGenConfig {
   seed: number;

@@ -147,7 +147,8 @@ function ExecutiveOpportunityHeroComponent({
         directiveGoal: `Resolve national policy issue: ${topIssue.title}`,
         icon: AlertCircle,
         glowCls: "from-rose-500/25 via-red-500/10 to-transparent",
-        badgeCls: "bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-500/40 font-extrabold",
+        badgeCls:
+          "bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-500/40 font-extrabold",
         borderCls: "border-rose-500/50 dark:border-rose-500/40",
         buttonCls:
           "bg-rose-500/25 hover:bg-rose-500/35 text-rose-950 dark:text-rose-100 border-rose-500/50 shadow-rose-500/10",
@@ -325,7 +326,7 @@ function ExecutiveOpportunityHeroComponent({
               e.stopPropagation();
               handleDismiss(opportunity.id);
             }}
-            className="text-muted-foreground/60 hover:text-foreground hover:bg-white/10 dark:hover:bg-white/10 absolute top-3.5 right-3.5 z-20 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-transparent transition-all duration-150 active:scale-[0.92] hover:border-white/10"
+            className="text-muted-foreground/60 hover:text-foreground absolute top-3.5 right-3.5 z-20 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-transparent transition-all duration-150 hover:border-white/10 hover:bg-white/10 active:scale-[0.92] dark:hover:bg-white/10"
             title="Dismiss this priority card"
             aria-label="Dismiss priority card"
           >
@@ -504,4 +505,3 @@ function ExecutiveOpportunityHeroComponent({
 }
 
 export const ExecutiveOpportunityHero = React.memo(ExecutiveOpportunityHeroComponent);
-

@@ -1,4 +1,14 @@
-import { Trophy, Star, Crown, Sparks as Sparkles, StatUp as TrendingUp, Shield, Bank as Landmark, OpenBook as BookOpen, Globe } from "iconoir-react";
+import {
+  Trophy,
+  Star,
+  Crown,
+  Sparks as Sparkles,
+  StatUp as TrendingUp,
+  Shield,
+  Bank as Landmark,
+  OpenBook as BookOpen,
+  Globe,
+} from "iconoir-react";
 
 export const QUEST_PATHS = [
   {
@@ -305,15 +315,18 @@ export const getTrophyTier = (rarity: string): TrophyTier => {
 export const ACHIEVEMENT_GAME_ICONS: Record<string, string> = {
   // Economic GDP Series
   "econ-first-million": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/coins.svg",
-  "econ-millionaire-nation": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/money-stack.svg",
+  "econ-millionaire-nation":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/money-stack.svg",
   "econ-economic-powerhouse": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/bank.svg",
   "econ-trillion-club": "/icons/game-icons/icons/ffffff/transparent/1x1/willdabeast/gold-bar.svg",
   "econ-global-titan": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/crown.svg",
 
   // Economic GDP Per Capita Series
   "econ-wealthy-citizens": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/buy-card.svg",
-  "econ-prosperity-nation": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/greek-temple.svg",
-  "econ-first-world-status": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/sparkles.svg",
+  "econ-prosperity-nation":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/greek-temple.svg",
+  "econ-first-world-status":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/sparkles.svg",
   "econ-ultra-prosperity": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/profit.svg",
 
   // Economic Growth & General
@@ -326,13 +339,16 @@ export const ACHIEVEMENT_GAME_ICONS: Record<string, string> = {
 
   // Military Branches
   "mil-first-branch": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/crossed-swords.svg",
-  "mil-armed-forces": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/spartan-helmet.svg",
+  "mil-armed-forces":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/spartan-helmet.svg",
   "mil-full-spectrum": "/icons/game-icons/icons/ffffff/transparent/1x1/sbed/shield.svg",
 
   // Military Defense Spending
-  "mil-defense-commitment": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/police-officer-head.svg",
+  "mil-defense-commitment":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/police-officer-head.svg",
   "mil-strong-defense": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/castle.svg",
-  "mil-military-superpower": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/lightning-branches.svg",
+  "mil-military-superpower":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/lightning-branches.svg",
 
   // Military Personnel
   "mil-standing-army": "/icons/game-icons/icons/ffffff/transparent/1x1/skoll/rank-3.svg",
@@ -344,7 +360,8 @@ export const ACHIEVEMENT_GAME_ICONS: Record<string, string> = {
   "dip-first-embassy": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/capitol.svg",
   "dip-diplomatic-network": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/globe.svg",
   "dip-global-presence": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/treasure-map.svg",
-  "dip-embassy-network": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/greek-temple.svg",
+  "dip-embassy-network":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/greek-temple.svg",
 
   // Diplomatic Treaties & Trade
   "dip-first-treaty": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/tied-scroll.svg",
@@ -358,12 +375,14 @@ export const ACHIEVEMENT_GAME_ICONS: Record<string, string> = {
   "gov-first-component": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/stone-block.svg",
   "gov-building-blocks": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/brick-wall.svg",
   "gov-sophisticated": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/capitol.svg",
-  "gov-complex-system": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/gear-stick-pattern.svg",
+  "gov-complex-system":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/gear-stick-pattern.svg",
 
   // Social & Thinkpages
   "social-first-thinkpage": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/quill.svg",
   "social-thinkpage-author": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/book-cover.svg",
-  "social-prolific-author": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/bookshelf.svg",
+  "social-prolific-author":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/bookshelf.svg",
   "social-popular": "/icons/game-icons/icons/ffffff/transparent/1x1/carl-olsen/flame.svg",
   "social-trending": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/lightning-storm.svg",
 
@@ -517,12 +536,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     category: "Government",
     description: "Configure modular atomic government branches and statecraft systems.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/brick-wall.svg",
-    keys: [
-      "gov-first-component",
-      "gov-building-blocks",
-      "gov-sophisticated",
-      "gov-complex-system",
-    ],
+    keys: ["gov-first-component", "gov-building-blocks", "gov-sophisticated", "gov-complex-system"],
   },
   {
     id: "series-social-thinkpages",
@@ -698,4 +712,3 @@ export const FORUM_RIBBONS: ForumRibbon[] = [
     badgeLabel: "CANON",
   },
 ];
-

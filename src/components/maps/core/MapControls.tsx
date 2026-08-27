@@ -10,7 +10,17 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Component as Layers, StatsReport as BarChart3, Label as Tag, Ruler, MapPin, EditPencil as PenTool, EyeClosed as EyeOff, Eye, Globe } from "iconoir-react";
+import {
+  Component as Layers,
+  StatsReport as BarChart3,
+  Label as Tag,
+  Ruler,
+  MapPin,
+  EditPencil as PenTool,
+  EyeClosed as EyeOff,
+  Eye,
+  Globe,
+} from "iconoir-react";
 import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/maps/map-config";
 import { overlaysByCategory } from "~/lib/maps/overlay-registry";
 import type { OverlayVisibility } from "./IxWorldMap";

@@ -16,7 +16,10 @@ import {
   getInfobox,
   getImageMeta,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
+import {
+  transformArticleHtml,
+  stripConflictingStyles,
+} from "~/lib/wiki-os/transformers/html-transformer";
 import { parseWikitextToHtml, cleanExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 import {
   extractTemplateKeys,
@@ -36,7 +39,6 @@ import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-se
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
-
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -147,7 +149,10 @@ export const wikiosPageContentRouter = createTRPCRouter({
         "specialpages",
       ]);
 
-      if (RESERVED_SYSTEM_ROUTES.has(rawTitleLower) || RESERVED_SYSTEM_ROUTES.has(rawTitle.toLowerCase())) {
+      if (
+        RESERVED_SYSTEM_ROUTES.has(rawTitleLower) ||
+        RESERVED_SYSTEM_ROUTES.has(rawTitle.toLowerCase())
+      ) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: `"${input.title}" is a system tool route.`,
@@ -157,15 +162,19 @@ export const wikiosPageContentRouter = createTRPCRouter({
       const resolvedTitle = await resolveRedirect(rawTitle);
 
       // Fast-path: Check PostgreSQL Native Article Repository (<2ms)
-      const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, "ixwiki").catch(() => null);
+      const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, "ixwiki").catch(
+        () => null
+      );
       if (nativeArticle && (nativeArticle.contentHtml || nativeArticle.wikitext)) {
         let rawHtml =
           nativeArticle.contentHtml && nativeArticle.contentHtml.trim() !== ""
             ? nativeArticle.contentHtml
             : "";
 
-        const wikitextHasInfobox = nativeArticle.wikitext && /\{\{[Ii]nfobox/i.test(nativeArticle.wikitext);
-        const htmlHasInfobox = rawHtml && (rawHtml.includes("infobox") || rawHtml.includes("aside"));
+        const wikitextHasInfobox =
+          nativeArticle.wikitext && /\{\{[Ii]nfobox/i.test(nativeArticle.wikitext);
+        const htmlHasInfobox =
+          rawHtml && (rawHtml.includes("infobox") || rawHtml.includes("aside"));
 
         if (!rawHtml || (wikitextHasInfobox && !htmlHasInfobox)) {
           try {
@@ -244,7 +253,11 @@ export const wikiosPageContentRouter = createTRPCRouter({
         getArticleAuthors(resolvedTitle, "ixwiki"),
       ]);
       if (shadowHtml) {
-        const transformed = transformArticleHtml(stripConflictingStyles(shadowHtml.html), "", "ixwiki");
+        const transformed = transformArticleHtml(
+          stripConflictingStyles(shadowHtml.html),
+          "",
+          "ixwiki"
+        );
 
         // Pre-resolve custom templates (CountryData, BusinessData) server-side
         const templateKeys = extractTemplateKeys(transformed.contentHtml);
@@ -289,12 +302,13 @@ export const wikiosPageContentRouter = createTRPCRouter({
       let article: any;
       try {
         article = await getArticleHtml(resolvedTitle);
-      } catch  {
+      } catch {
         // Direct shadow and bridge fallback
         const shadowRes = await getArticleWikitextShadow(resolvedTitle, "ixwiki");
         if (shadowRes?.wikitext) {
           // oxlint-disable-next-line eslint/no-shadow -- shadowed 'parseWikitextToHtml' is intentional in this scope
-          const { parseWikitextToHtml } = await import("~/lib/wiki-os/transformers/wikitext-parser");
+          const { parseWikitextToHtml } =
+            await import("~/lib/wiki-os/transformers/wikitext-parser");
           article = {
             html: parseWikitextToHtml(shadowRes.wikitext, "ixwiki"),
             title: resolvedTitle,
@@ -307,7 +321,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
           const wikiRes = await getArticleWikitext(resolvedTitle, "ixwiki");
           if (wikiRes?.wikitext) {
             // oxlint-disable-next-line eslint/no-shadow -- shadowed 'parseWikitextToHtml' is intentional in this scope
-            const { parseWikitextToHtml } = await import("~/lib/wiki-os/transformers/wikitext-parser");
+            const { parseWikitextToHtml } =
+              await import("~/lib/wiki-os/transformers/wikitext-parser");
             article = {
               html: parseWikitextToHtml(wikiRes.wikitext, "ixwiki"),
               title: wikiRes.title || resolvedTitle,
@@ -549,7 +564,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
         };
       }
 
-      const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, input.wiki).catch(() => null);
+      const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, input.wiki).catch(
+        () => null
+      );
       const introText =
         nativeArticle?.summary ||
         (nativeArticle?.wikitext ? cleanExcerpt(nativeArticle.wikitext, 300) : "");

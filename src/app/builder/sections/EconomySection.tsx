@@ -1,7 +1,18 @@
 "use client";
 
 import React, { useMemo, type ElementType } from "react";
-import { StatUp as TrendingUp, Dollar as DollarSign, StatsReport as BarChart3, City as Building2, Dashboard as Gauge, Archery as Target, WarningTriangle as AlertTriangle, CheckCircle, StatDown as TrendingDown, Settings } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  Dollar as DollarSign,
+  StatsReport as BarChart3,
+  City as Building2,
+  Dashboard as Gauge,
+  Archery as Target,
+  WarningTriangle as AlertTriangle,
+  CheckCircle,
+  StatDown as TrendingDown,
+  Settings,
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 import { api } from "~/trpc/react";

@@ -2,7 +2,16 @@
  * Pure transforms, constants, and utilities for Diplomatic Scenarios admin
  */
 
-import { WarningTriangle as AlertTriangle, StatUp as TrendingUp, Globe, Shield, Archery as Target, Dollar as DollarSign, Flash as Zap, Page as FileText } from "iconoir-react";
+import {
+  WarningTriangle as AlertTriangle,
+  StatUp as TrendingUp,
+  Globe,
+  Shield,
+  Archery as Target,
+  Dollar as DollarSign,
+  Flash as Zap,
+  Page as FileText,
+} from "iconoir-react";
 
 export const SCENARIO_TYPES = [
   { value: "border_dispute", label: "Border Dispute", icon: AlertTriangle },
@@ -121,9 +130,8 @@ export function extractTagsFromScenario(scenario: any): { difficulty: string; ti
       ["trivial", "moderate", "challenging", "critical", "legendary"].includes(t)
     ) || "moderate";
   const timeFrame =
-    tags.find((t: string) =>
-      ["urgent", "time_sensitive", "strategic", "long_term"].includes(t)
-    ) || "strategic";
+    tags.find((t: string) => ["urgent", "time_sensitive", "strategic", "long_term"].includes(t)) ||
+    "strategic";
 
   return { difficulty, timeFrame };
 }
@@ -186,10 +194,7 @@ export function filterDiplomaticScenarios(
 
   return scenarios.filter((scenario) => {
     // Relationship filter
-    if (
-      relationshipFilter.length > 0 &&
-      !relationshipFilter.includes(scenario.relationshipState)
-    ) {
+    if (relationshipFilter.length > 0 && !relationshipFilter.includes(scenario.relationshipState)) {
       return false;
     }
 

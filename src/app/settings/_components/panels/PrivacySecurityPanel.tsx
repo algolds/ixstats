@@ -237,9 +237,9 @@ export function PrivacySecurityPanel() {
         title="Blocking & Content Filtering"
         description="Prevent unwanted accounts from messaging, tagging, or appearing in your Thinkpages feeds."
       >
-        <div className="p-4 space-y-4">
+        <div className="space-y-4 p-4">
           {/* Segmented Sub-Tab Switcher */}
-          <div className="flex items-center gap-1 rounded-xl border border-border/60 bg-muted/40 p-1">
+          <div className="border-border/60 bg-muted/40 flex items-center gap-1 rounded-xl border p-1">
             <button
               type="button"
               onClick={() => {
@@ -249,7 +249,7 @@ export function PrivacySecurityPanel() {
               className={cn(
                 "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all duration-150 active:scale-[0.98]",
                 activeFilterTab === "blocked"
-                  ? "bg-card text-foreground shadow-xs font-bold"
+                  ? "bg-card text-foreground font-bold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -264,7 +264,7 @@ export function PrivacySecurityPanel() {
               className={cn(
                 "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all duration-150 active:scale-[0.98]",
                 activeFilterTab === "muted"
-                  ? "bg-card text-foreground shadow-xs font-bold"
+                  ? "bg-card text-foreground font-bold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -279,7 +279,7 @@ export function PrivacySecurityPanel() {
               className={cn(
                 "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all duration-150 active:scale-[0.98]",
                 activeFilterTab === "keywords"
-                  ? "bg-card text-foreground shadow-xs font-bold"
+                  ? "bg-card text-foreground font-bold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -302,19 +302,19 @@ export function PrivacySecurityPanel() {
                 className="flex items-center gap-2"
               >
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
                   <Input
                     value={blockInput}
                     onChange={(e) => setBlockInput(e.target.value)}
                     placeholder="Enter username or country name to block..."
-                    className="h-8 pl-8 text-xs bg-muted/20 border-border/60"
+                    className="bg-muted/20 border-border/60 h-8 pl-8 text-xs"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={!blockInput.trim() || blockMutation.isPending}
                   data-cuelume-press="soft"
-                  className="facet-interactive flex items-center gap-1 rounded-xl border border-border/60 bg-secondary/80 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary active:scale-[0.98] disabled:opacity-50"
+                  className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-semibold active:scale-[0.98] disabled:opacity-50"
                 >
                   {blockMutation.isPending ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -327,22 +327,23 @@ export function PrivacySecurityPanel() {
 
               {/* Blocked List */}
               {blockedAccounts.length === 0 ? (
-                <div className="rounded-xl border border-border/40 bg-card/20 p-6 text-center">
-                  <UserXmark className="mx-auto h-6 w-6 text-muted-foreground/40 mb-1.5" />
-                  <p className="text-xs font-semibold text-muted-foreground">No blocked accounts</p>
-                  <p className="text-[11px] text-muted-foreground/70 mt-0.5 max-w-sm mx-auto">
-                    Blocked accounts cannot send you direct messages, invite you to thinktanks, or tag you in Thinkpages.
+                <div className="border-border/40 bg-card/20 rounded-xl border p-6 text-center">
+                  <UserXmark className="text-muted-foreground/40 mx-auto mb-1.5 h-6 w-6" />
+                  <p className="text-muted-foreground text-xs font-semibold">No blocked accounts</p>
+                  <p className="text-muted-foreground/70 mx-auto mt-0.5 max-w-sm text-[11px]">
+                    Blocked accounts cannot send you direct messages, invite you to thinktanks, or
+                    tag you in Thinkpages.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                <div className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
                   {blockedAccounts.map((account) => (
                     <div
                       key={account.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-border/40 bg-card/40 p-2.5 shadow-2xs"
+                      className="border-border/40 bg-card/40 flex items-center justify-between gap-3 rounded-xl border p-2.5 shadow-2xs"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0 border border-border/60 overflow-hidden">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <div className="bg-muted text-muted-foreground border-border/60 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg border text-xs font-bold">
                           {account.avatarUrl ? (
                             <img
                               src={account.avatarUrl}
@@ -354,10 +355,10 @@ export function PrivacySecurityPanel() {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-bold text-foreground">
+                          <p className="text-foreground truncate text-xs font-bold">
                             {account.label}
                           </p>
-                          <p className="text-[10px] text-muted-foreground">{account.subtitle}</p>
+                          <p className="text-muted-foreground text-[10px]">{account.subtitle}</p>
                         </div>
                       </div>
 
@@ -369,7 +370,7 @@ export function PrivacySecurityPanel() {
                         }}
                         disabled={unblockMutation.isPending}
                         data-cuelume-press="soft"
-                        className="facet-interactive rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:bg-muted/70 hover:text-foreground active:scale-[0.98]"
+                        className="facet-interactive border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground rounded-lg border px-2.5 py-1 text-xs font-semibold active:scale-[0.98]"
                       >
                         Unblock
                       </button>
@@ -394,49 +395,50 @@ export function PrivacySecurityPanel() {
                 className="flex items-center gap-2"
               >
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
                   <Input
                     value={muteInput}
                     onChange={(e) => setMuteInput(e.target.value)}
                     placeholder="Enter username to mute..."
-                    className="h-8 pl-8 text-xs bg-muted/20 border-border/60"
+                    className="bg-muted/20 border-border/60 h-8 pl-8 text-xs"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={!muteInput.trim() || muteMutation.isPending}
                   data-cuelume-press="soft"
-                  className="facet-interactive flex items-center gap-1 rounded-xl border border-border/60 bg-secondary/80 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary active:scale-[0.98] disabled:opacity-50"
+                  className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-semibold active:scale-[0.98] disabled:opacity-50"
                 >
                   {muteMutation.isPending ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                    <EyeOff className="text-muted-foreground h-3.5 w-3.5" />
                   )}
                   <span>Mute</span>
                 </button>
               </form>
 
               {mutedAccounts.length === 0 ? (
-                <div className="rounded-xl border border-border/40 bg-card/20 p-6 text-center">
-                  <EyeOff className="mx-auto h-6 w-6 text-muted-foreground/40 mb-1.5" />
-                  <p className="text-xs font-semibold text-muted-foreground">No muted accounts</p>
-                  <p className="text-[11px] text-muted-foreground/70 mt-0.5 max-w-sm mx-auto">
-                    Muted accounts will not appear in your feeds or notification streams without them knowing.
+                <div className="border-border/40 bg-card/20 rounded-xl border p-6 text-center">
+                  <EyeOff className="text-muted-foreground/40 mx-auto mb-1.5 h-6 w-6" />
+                  <p className="text-muted-foreground text-xs font-semibold">No muted accounts</p>
+                  <p className="text-muted-foreground/70 mx-auto mt-0.5 max-w-sm text-[11px]">
+                    Muted accounts will not appear in your feeds or notification streams without
+                    them knowing.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                <div className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
                   {mutedAccounts.map((account) => (
                     <div
                       key={account.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-border/40 bg-card/40 p-2.5 shadow-2xs"
+                      className="border-border/40 bg-card/40 flex items-center justify-between gap-3 rounded-xl border p-2.5 shadow-2xs"
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-bold text-foreground">
+                        <p className="text-foreground truncate text-xs font-bold">
                           {account.label}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">{account.subtitle}</p>
+                        <p className="text-muted-foreground text-[10px]">{account.subtitle}</p>
                       </div>
 
                       <button
@@ -447,7 +449,7 @@ export function PrivacySecurityPanel() {
                         }}
                         disabled={unmuteMutation.isPending}
                         data-cuelume-press="soft"
-                        className="facet-interactive rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:bg-muted/70 hover:text-foreground active:scale-[0.98]"
+                        className="facet-interactive border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground rounded-lg border px-2.5 py-1 text-xs font-semibold active:scale-[0.98]"
                       >
                         Unmute
                       </button>
@@ -472,19 +474,19 @@ export function PrivacySecurityPanel() {
                 className="flex items-center gap-2"
               >
                 <div className="relative flex-1">
-                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Filter className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
                   <Input
                     value={keywordInput}
                     onChange={(e) => setKeywordInput(e.target.value)}
                     placeholder="Enter word, phrase, or hashtag to filter..."
-                    className="h-8 pl-8 text-xs bg-muted/20 border-border/60"
+                    className="bg-muted/20 border-border/60 h-8 pl-8 text-xs"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={!keywordInput.trim() || addKeywordMutation.isPending}
                   data-cuelume-press="soft"
-                  className="facet-interactive flex items-center gap-1 rounded-xl border border-border/60 bg-secondary/80 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary active:scale-[0.98] disabled:opacity-50"
+                  className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-semibold active:scale-[0.98] disabled:opacity-50"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>Add Word</span>
@@ -492,11 +494,12 @@ export function PrivacySecurityPanel() {
               </form>
 
               {mutedKeywords.length === 0 ? (
-                <div className="rounded-xl border border-border/40 bg-card/20 p-6 text-center">
-                  <Filter className="mx-auto h-6 w-6 text-muted-foreground/40 mb-1.5" />
-                  <p className="text-xs font-semibold text-muted-foreground">No muted keywords</p>
-                  <p className="text-[11px] text-muted-foreground/70 mt-0.5 max-w-sm mx-auto">
-                    Posts and notifications containing these keywords will be filtered from your feed.
+                <div className="border-border/40 bg-card/20 rounded-xl border p-6 text-center">
+                  <Filter className="text-muted-foreground/40 mx-auto mb-1.5 h-6 w-6" />
+                  <p className="text-muted-foreground text-xs font-semibold">No muted keywords</p>
+                  <p className="text-muted-foreground/70 mx-auto mt-0.5 max-w-sm text-[11px]">
+                    Posts and notifications containing these keywords will be filtered from your
+                    feed.
                   </p>
                 </div>
               ) : (
@@ -504,7 +507,7 @@ export function PrivacySecurityPanel() {
                   {mutedKeywords.map((item) => (
                     <span
                       key={item.id}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-card/60 px-2.5 py-1 text-xs font-medium text-foreground shadow-2xs"
+                      className="border-border/60 bg-card/60 text-foreground inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium shadow-2xs"
                     >
                       <span>{item.keyword}</span>
                       <button
@@ -549,7 +552,7 @@ export function PrivacySecurityPanel() {
           >
             <SelectTrigger
               size="sm"
-              className="w-[180px] rounded-xl border-border/60 bg-muted/40 text-xs font-semibold text-foreground"
+              className="border-border/60 bg-muted/40 text-foreground w-[180px] rounded-xl text-xs font-semibold"
             >
               <SelectValue />
             </SelectTrigger>
@@ -591,7 +594,7 @@ export function PrivacySecurityPanel() {
           >
             <SelectTrigger
               size="sm"
-              className="w-[180px] rounded-xl border-border/60 bg-muted/40 text-xs font-semibold text-foreground"
+              className="border-border/60 bg-muted/40 text-foreground w-[180px] rounded-xl text-xs font-semibold"
             >
               <SelectValue />
             </SelectTrigger>
@@ -620,7 +623,7 @@ export function PrivacySecurityPanel() {
           >
             <SelectTrigger
               size="sm"
-              className="w-[180px] rounded-xl border-border/60 bg-muted/40 text-xs font-semibold text-foreground"
+              className="border-border/60 bg-muted/40 text-foreground w-[180px] rounded-xl text-xs font-semibold"
             >
               <SelectValue />
             </SelectTrigger>
@@ -649,7 +652,7 @@ export function PrivacySecurityPanel() {
           >
             <SelectTrigger
               size="sm"
-              className="w-[180px] rounded-xl border-border/60 bg-muted/40 text-xs font-semibold text-foreground"
+              className="border-border/60 bg-muted/40 text-foreground w-[180px] rounded-xl text-xs font-semibold"
             >
               <SelectValue />
             </SelectTrigger>
@@ -731,7 +734,7 @@ export function PrivacySecurityPanel() {
             <Link
               href="/settings?tab=cards"
               data-cuelume-press="soft"
-              className="facet-interactive rounded-xl border border-border/60 bg-muted/30 px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
             >
               Manage Deck
             </Link>
@@ -742,7 +745,7 @@ export function PrivacySecurityPanel() {
                 setShowTakedownModal(true);
               }}
               data-cuelume-press="soft"
-              className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/30 px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-all hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-500 active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-500 active:scale-[0.98]"
             >
               <ShieldAlert className="h-3.5 w-3.5" />
               <span>Takedown / Opt-Out</span>
@@ -818,7 +821,7 @@ export function PrivacySecurityPanel() {
             }}
             disabled={clearHistoryMutation.isPending}
             data-cuelume-press="soft"
-            className="facet-interactive rounded-xl border border-border/60 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/70 hover:text-foreground active:scale-[0.98]"
+            className="facet-interactive border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground rounded-xl border px-3 py-1.5 text-xs font-semibold active:scale-[0.98]"
           >
             Clear History
           </button>
@@ -841,7 +844,7 @@ export function PrivacySecurityPanel() {
             onClick={handleExportData}
             disabled={isExporting}
             data-cuelume-press="soft"
-            className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/60 bg-secondary/80 px-3.5 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-secondary active:scale-[0.98] disabled:opacity-50"
+            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all active:scale-[0.98] disabled:opacity-50"
           >
             {isExporting ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -865,9 +868,9 @@ export function PrivacySecurityPanel() {
               clerk.openUserProfile();
             }}
             data-cuelume-press="soft"
-            className="facet-interactive flex items-center gap-1.5 rounded-xl border border-border/60 bg-secondary/80 px-3.5 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-secondary active:scale-[0.98]"
+            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
           >
-            <KeyIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            <KeyIcon className="text-muted-foreground h-3.5 w-3.5" />
             <span>Security Profile</span>
             <ExternalLink className="h-3 w-3 opacity-60" />
           </button>

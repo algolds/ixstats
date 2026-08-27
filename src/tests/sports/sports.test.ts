@@ -260,7 +260,6 @@ describe("MyLeague Sports Engine", () => {
   });
 });
 
-
 import { playerWage, teamWageBill } from "~/lib/sports/team-rating";
 import { matchIntervalMs, raceIntervalMs } from "~/lib/sports/scheduler";
 

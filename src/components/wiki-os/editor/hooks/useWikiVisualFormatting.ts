@@ -59,7 +59,7 @@ export function useWikiVisualFormatting({
   const previewMutation = api.wikios.previewWikitext.useMutation();
 
   const withEditor = useCallback(
-    <T,>(fn: (editor: PlateEditorLike) => T): T | undefined => {
+    <T>(fn: (editor: PlateEditorLike) => T): T | undefined => {
       const editor = editorRef.current;
       if (!editor) return undefined;
       return fn(editor);
@@ -89,14 +89,16 @@ export function useWikiVisualFormatting({
   const refreshActiveFormats = useCallback(() => {
     withEditor((editor) => {
       const fmt = new Set<string>();
-      const marks = Editor.marks(editor) as any ?? {};
+      const marks = (Editor.marks(editor) as any) ?? {};
       for (const m of ["bold", "italic", "underline", "strike", "sup", "sub"]) {
         if (marks[m]) fmt.add(m === "strike" ? "strikethrough" : m);
       }
       const [entry] = Editor.nodes(editor, {
-        match: (n) => SlateElement.isElement(n) && ["ul", "ol"].includes((n as unknown as { type?: string }).type ?? ""),
+        match: (n) =>
+          SlateElement.isElement(n) &&
+          ["ul", "ol"].includes((n as unknown as { type?: string }).type ?? ""),
       });
-      if (entry) fmt.add(((entry[0] as unknown as { type?: string }).type) ?? "");
+      if (entry) fmt.add((entry[0] as unknown as { type?: string }).type ?? "");
       setActiveFormats(fmt);
     });
   }, [withEditor]);
@@ -106,11 +108,11 @@ export function useWikiVisualFormatting({
   const setType = useCallback(
     (type: string) => {
       withEditor((editor) => {
-        Transforms.setNodes(
-          editor,
-          { type } as Partial<Descendant>,
-          { match: (n) => SlateElement.isElement(n) && !editor.isVoid(n as unknown as import("slate").Element), mode: "lowest" }
-        );
+        Transforms.setNodes(editor, { type } as Partial<Descendant>, {
+          match: (n) =>
+            SlateElement.isElement(n) && !editor.isVoid(n as unknown as import("slate").Element),
+          mode: "lowest",
+        });
         setIsDirty(true);
       });
     },
@@ -136,7 +138,7 @@ export function useWikiVisualFormatting({
           setType("ul");
           break;
         case "insertOrderedList":
-         setType("ol");
+          setType("ol");
           break;
         case "removeFormat":
           withEditor((editor) => {
@@ -172,7 +174,10 @@ export function useWikiVisualFormatting({
   const insertLink = useCallback(() => {
     withEditor((editor) => {
       const selectedText = Editor.string(editor, editor.selection ?? []);
-      const url = window.prompt("Enter URL or wiki page name:", selectedText.startsWith("http") ? selectedText : "");
+      const url = window.prompt(
+        "Enter URL or wiki page name:",
+        selectedText.startsWith("http") ? selectedText : ""
+      );
       if (!url) return;
       const internal = !/^https?:/i.test(url);
       const href = internal ? `/wiki/${encodeURIComponent(url.replace(/ /g, "_"))}` : url;
@@ -189,7 +194,10 @@ export function useWikiVisualFormatting({
 
   const removeLink = useCallback(() => {
     withEditor((editor) => {
-      Transforms.unwrapNodes(editor, { match: (n) => SlateElement.isElement(n) && (n as unknown as { type?: string }).type === "link" });
+      Transforms.unwrapNodes(editor, {
+        match: (n) =>
+          SlateElement.isElement(n) && (n as unknown as { type?: string }).type === "link",
+      });
       setIsDirty(true);
     });
     editorRef.current?.focus?.();
@@ -223,7 +231,11 @@ export function useWikiVisualFormatting({
 
   const insertRef = useCallback(() => {
     withEditor((editor) => {
-      Transforms.insertNodes(editor, { type: "ref", label: "Citation needed", children: [{ text: "" }] } as Descendant);
+      Transforms.insertNodes(editor, {
+        type: "ref",
+        label: "Citation needed",
+        children: [{ text: "" }],
+      } as Descendant);
       setIsDirty(true);
     });
   }, [withEditor, setIsDirty]);
@@ -353,11 +365,19 @@ export function useWikiVisualFormatting({
       const { id, name } = editingTemplate;
 
       withEditor((editor) => {
-        const entries = Array.from(Editor.nodes(editor, { at: [], match: (n) => (n as unknown as { id?: string }).id === id }));
+        const entries = Array.from(
+          Editor.nodes(editor, {
+            at: [],
+            match: (n) => (n as unknown as { id?: string }).id === id,
+          })
+        );
         if (entries.length === 0) return;
         const [node, path] = entries[0]! as [Node, import("slate").Path];
         const dataMw = buildDataMw(name, newParams);
-        const rebuiltWikitext = `{{${name}${Object.entries(newParams).filter(([, v]) => v.trim()).map(([k, v]) => `|${k}=${v}`).join("")}}}`;
+        const rebuiltWikitext = `{{${name}${Object.entries(newParams)
+          .filter(([, v]) => v.trim())
+          .map(([k, v]) => `|${k}=${v}`)
+          .join("")}}}`;
 
         if ((node as unknown as { type?: string }).type === "chip-engine") {
           Transforms.setNodes(
@@ -393,7 +413,9 @@ export function useWikiVisualFormatting({
     if (!editingTemplate) return;
     const { id } = editingTemplate;
     withEditor((editor) => {
-      const entries = Array.from(Editor.nodes(editor, { at: [], match: (n) => (n as unknown as { id?: string }).id === id }));
+      const entries = Array.from(
+        Editor.nodes(editor, { at: [], match: (n) => (n as unknown as { id?: string }).id === id })
+      );
       if (entries.length > 0) {
         Transforms.removeNodes(editor, { at: entries[0]![1] });
         setIsDirty(true);

@@ -24,13 +24,10 @@ export default function IdAccountHubPage() {
   });
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-5xl flex-col items-center justify-center py-6 px-4 md:py-10 md:px-8">
+    <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-5xl flex-col items-center justify-center px-4 py-6 md:px-8 md:py-10">
       <SignedIn>
-        <div className="w-full flex justify-center">
-          <UserProfile
-            routing="hash"
-            appearance={facetClerkAppearance}
-          >
+        <div className="flex w-full justify-center">
+          <UserProfile routing="hash" appearance={facetClerkAppearance}>
             <UserProfile.Page
               label="IxnayID & Passport"
               url="ixnayid"
@@ -49,16 +46,19 @@ export default function IdAccountHubPage() {
         </div>
       </SignedIn>
       <SignedOut>
-        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-card p-8 text-center backdrop-blur-xl">
-          <Crown className="h-10 w-10 text-foreground" />
-          <h2 className="text-xl font-bold tracking-tight text-foreground">Sign in to Access IxnayID</h2>
-          <p className="max-w-md text-xs text-muted-foreground">
-            Manage your persistent digital passport, security credentials, and multi-tenant realm memberships.
+        <div className="border-border bg-card flex flex-col items-center justify-center gap-4 rounded-2xl border p-8 text-center backdrop-blur-xl">
+          <Crown className="text-foreground h-10 w-10" />
+          <h2 className="text-foreground text-xl font-bold tracking-tight">
+            Sign in to Access IxnayID
+          </h2>
+          <p className="text-muted-foreground max-w-md text-xs">
+            Manage your persistent digital passport, security credentials, and multi-tenant realm
+            memberships.
           </p>
           <SignInButton mode="modal">
             <button
               type="button"
-              className="facet-interactive rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-md hover:opacity-90 active:scale-[0.98]"
+              className="facet-interactive bg-primary text-primary-foreground rounded-xl px-5 py-2.5 text-xs font-bold shadow-md hover:opacity-90 active:scale-[0.98]"
             >
               Sign In to IxStates
             </button>

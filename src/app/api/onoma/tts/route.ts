@@ -128,10 +128,10 @@ async function handleTts(request: NextRequest) {
     const allowedAdminRoles = ["admin", "owner", "staff"];
     const allowedBetaRoles = ["beta_tester", "beta-tester", "beta"];
 
-    let isAdmin = isOwner || (typeof clerkRole === "string" && allowedAdminRoles.includes(clerkRole));
+    let isAdmin =
+      isOwner || (typeof clerkRole === "string" && allowedAdminRoles.includes(clerkRole));
     let hasAccess =
-      isAdmin ||
-      (typeof clerkRole === "string" && allowedBetaRoles.includes(clerkRole));
+      isAdmin || (typeof clerkRole === "string" && allowedBetaRoles.includes(clerkRole));
 
     if (!hasAccess || !isAdmin) {
       const dbUser = await db.user.findUnique({
@@ -225,7 +225,7 @@ async function handleTts(request: NextRequest) {
           // In test mode we bypass the "enabled" switch
           enabled = true;
         }
-      } catch  {
+      } catch {
         return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
       }
     } else {

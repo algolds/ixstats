@@ -80,7 +80,10 @@ class MockPrismaTxState {
             throw new Error("Simulated budgetScenarioCategory write failure");
           }
           for (const item of data) {
-            self.budgetScenarioCategories.push({ id: `cat_${self.budgetScenarioCategories.length + 1}`, ...item });
+            self.budgetScenarioCategories.push({
+              id: `cat_${self.budgetScenarioCategories.length + 1}`,
+              ...item,
+            });
           }
           return { count: data.length };
         },

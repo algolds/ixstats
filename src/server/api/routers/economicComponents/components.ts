@@ -21,10 +21,7 @@ import { TRPCError } from "@trpc/server";
 import { EconomicComponentType } from "@prisma/client";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
-import {
-  type ParsedEconomicComponent,
-  transformDatabaseComponent,
-} from "./serializer";
+import { type ParsedEconomicComponent, transformDatabaseComponent } from "./serializer";
 
 // ============================================================================
 // Input Validation Schemas
@@ -50,7 +47,6 @@ const _incrementUsageSchema = z.object({
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
 
 /**
  * Get fallback component data from ATOMIC_ECONOMIC_COMPONENTS library

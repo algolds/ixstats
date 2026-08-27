@@ -188,26 +188,36 @@ export function economicComponentToFormData(component: any): ComponentFormData {
     requiredCapacity: component.requiredCapacity ?? 75,
     synergies: Array.isArray(component.synergies) ? [...component.synergies] : [],
     conflicts: Array.isArray(component.conflicts) ? [...component.conflicts] : [],
-    governmentSynergies: Array.isArray(component.governmentSynergies) ? [...component.governmentSynergies] : [],
-    governmentConflicts: Array.isArray(component.governmentConflicts) ? [...component.governmentConflicts] : [],
-    taxImpact: component.taxImpact ? { ...component.taxImpact } : {
-      optimalCorporateRate: 20,
-      optimalIncomeRate: 25,
-      revenueEfficiency: 75,
-    },
-    sectorImpact: component.sectorImpact ? { ...component.sectorImpact } : {
-      services: 1.0,
-      finance: 1.0,
-      technology: 1.0,
-      manufacturing: 1.0,
-      agriculture: 1.0,
-      government: 1.0,
-    },
-    employmentImpact: component.employmentImpact ? { ...component.employmentImpact } : {
-      unemploymentModifier: 0,
-      participationModifier: 1.0,
-      wageGrowthModifier: 1.0,
-    },
+    governmentSynergies: Array.isArray(component.governmentSynergies)
+      ? [...component.governmentSynergies]
+      : [],
+    governmentConflicts: Array.isArray(component.governmentConflicts)
+      ? [...component.governmentConflicts]
+      : [],
+    taxImpact: component.taxImpact
+      ? { ...component.taxImpact }
+      : {
+          optimalCorporateRate: 20,
+          optimalIncomeRate: 25,
+          revenueEfficiency: 75,
+        },
+    sectorImpact: component.sectorImpact
+      ? { ...component.sectorImpact }
+      : {
+          services: 1.0,
+          finance: 1.0,
+          technology: 1.0,
+          manufacturing: 1.0,
+          agriculture: 1.0,
+          government: 1.0,
+        },
+    employmentImpact: component.employmentImpact
+      ? { ...component.employmentImpact }
+      : {
+          unemploymentModifier: 0,
+          participationModifier: 1.0,
+          wageGrowthModifier: 1.0,
+        },
     complexity: component.metadata?.complexity || "Medium",
     timeToImplement: component.metadata?.timeToImplement || "12 months",
     staffRequired: component.metadata?.staffRequired ?? 25,

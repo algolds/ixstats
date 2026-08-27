@@ -158,7 +158,9 @@ export function SettingsSection() {
       handleUpdateAdvancedSetting("onoma-personal-strip-stress", p.stripStress);
       handleUpdateAdvancedSetting("onoma-personal-prosody", p.prosody);
       handleUpdateAdvancedSetting("onoma-personal-voice-blend-active", p.blendActive);
-      notify.success(`Applied ${presetName.charAt(0).toUpperCase() + presetName.slice(1)} voice preset.`);
+      notify.success(
+        `Applied ${presetName.charAt(0).toUpperCase() + presetName.slice(1)} voice preset.`
+      );
     }
   };
 

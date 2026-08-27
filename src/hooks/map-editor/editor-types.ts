@@ -2,17 +2,8 @@
  * editor-types.ts — Shared forms and domain types for the Map Editor slices.
  */
 
-
 export type FeatureType =
-  | "city"
-  | "subdivision"
-  | "poi"
-  | "storyPin"
-  | "mapLabel"
-  | "route"
-  | "peak"
-  | "river"
-  | "lake";
+  "city" | "subdivision" | "poi" | "storyPin" | "mapLabel" | "route" | "peak" | "river" | "lake";
 
 export type EditorMode =
   | "view"

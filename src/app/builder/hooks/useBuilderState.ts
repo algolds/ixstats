@@ -18,7 +18,11 @@ import type { RealCountryData, EconomicInputs } from "../lib/economy-data-servic
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { ComponentType } from "~/lib/enums";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
-import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/system/local-storage-mutex";
+import {
+  safeGetItemSync,
+  safeSetItemSync,
+  safeRemoveItemSync,
+} from "~/lib/system/local-storage-mutex";
 import { useNotify } from "~/hooks/useNotify";
 import type {
   GovernmentDepartment,
@@ -544,7 +548,7 @@ export function useBuilderState(
                       : typeof dept.functions === "string"
                         ? JSON.parse(dept.functions)
                         : [];
-                  } catch  {
+                  } catch {
                     return [];
                   }
                 })(),
@@ -555,7 +559,7 @@ export function useBuilderState(
                       : typeof dept.kpis === "string"
                         ? JSON.parse(dept.kpis)
                         : [];
-                  } catch  {
+                  } catch {
                     return [];
                   }
                 })(),
@@ -1186,7 +1190,7 @@ export function useBuilderState(
             setLastSaved(new Date(savedLastSaved));
           }
         }
-      } catch  {
+      } catch {
         // Failed to load saved state, continue with default
       }
     }
@@ -1273,7 +1277,7 @@ export function useBuilderState(
 
         safeSetItemSync(stateKey, JSON.stringify(builderStateRef.current));
         safeSetItemSync(savedKey, new Date().toISOString());
-      } catch  {
+      } catch {
         // Failed to save state on unload
       }
     };
@@ -1415,7 +1419,7 @@ export function useBuilderState(
       try {
         lastSyncedStateRef.current = currentSyncPayload;
         await updateMutation.mutateAsync(currentSyncPayload);
-      } catch  {
+      } catch {
         // Handled by mutation onError
       }
     };
@@ -1833,7 +1837,7 @@ export function useBuilderState(
       }
       setLastSaved(null);
       setBuilderState(getInitialState(mode));
-    } catch  {
+    } catch {
       // Failed to clear draft
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

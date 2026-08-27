@@ -6,7 +6,19 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Separator } from "~/components/ui/separator";
-import { StatUp as TrendingUp, StatDown as TrendingDown, WarningTriangle as AlertTriangle, CheckCircle, Archery as Target, StatsReport as BarChart3, Dollar as DollarSign, Activity, Flash as Zap, InfoCircle as Info, LightBulb } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  WarningTriangle as AlertTriangle,
+  CheckCircle,
+  Archery as Target,
+  StatsReport as BarChart3,
+  Dollar as DollarSign,
+  Activity,
+  Flash as Zap,
+  InfoCircle as Info,
+  LightBulb,
+} from "iconoir-react";
 import type { ComponentType } from "~/types/government";
 import {
   calculateAtomicEconomicEffectiveness,

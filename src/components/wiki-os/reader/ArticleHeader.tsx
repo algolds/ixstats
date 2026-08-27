@@ -292,21 +292,24 @@ export function WikiOSHeader({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={handleMouseLeave}
       style={containerStyle}
-      className="wikios-header facet-surface facet-refraction relative z-10 mb-6 flex w-full cursor-default flex-col justify-end rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 select-none overflow-hidden"
+      className="wikios-header facet-surface facet-refraction relative z-10 mb-6 flex w-full cursor-default flex-col justify-end overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 select-none"
     >
-
       {/* Backdrop: Centered & Contained Vector Artwork for SVGs / Full-Bleed for Photos */}
       {backdropUrl ? (
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden rounded-2xl select-none"
-          style={heroMediaStyle.backgroundColor ? { backgroundColor: heroMediaStyle.backgroundColor } : undefined}
+          style={
+            heroMediaStyle.backgroundColor
+              ? { backgroundColor: heroMediaStyle.backgroundColor }
+              : undefined
+          }
         >
           {isSvg ? (
             <>
               {/* Subtle Chromatic Radial Underglow */}
               <div
-                className="absolute inset-0 opacity-25 dark:opacity-15 blur-3xl pointer-events-none -z-10"
+                className="pointer-events-none absolute inset-0 -z-10 opacity-25 blur-3xl dark:opacity-15"
                 style={{
                   background: `radial-gradient(circle at 60% 50%, ${themeColors?.primary ?? "#3b82f6"} 0%, transparent 65%)`,
                 }}
@@ -314,11 +317,15 @@ export function WikiOSHeader({
               <img
                 src={backdropUrl}
                 alt=""
-                className="h-full w-full max-h-[85%] max-w-[92%] object-contain object-center p-3 sm:p-5 md:p-6 drop-shadow-md transition-all duration-300"
+                className="h-full max-h-[85%] w-full max-w-[92%] object-contain object-center p-3 drop-shadow-md transition-all duration-300 sm:p-5 md:p-6"
                 style={{
                   ...(heroMediaStyle.filter ? { filter: heroMediaStyle.filter } : {}),
-                  ...(heroMediaStyle.backgroundColor ? { backgroundColor: heroMediaStyle.backgroundColor } : {}),
-                  ...(heroMediaStyle.borderRadius ? { borderRadius: heroMediaStyle.borderRadius } : {}),
+                  ...(heroMediaStyle.backgroundColor
+                    ? { backgroundColor: heroMediaStyle.backgroundColor }
+                    : {}),
+                  ...(heroMediaStyle.borderRadius
+                    ? { borderRadius: heroMediaStyle.borderRadius }
+                    : {}),
                   ...(heroMediaStyle.padding ? { padding: heroMediaStyle.padding } : {}),
                 }}
                 loading="eager"
@@ -405,7 +412,7 @@ export function WikiOSHeader({
                     <span>{badgeConfig.text}</span>
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-72 p-3 font-ui" align="start">
+                <PopoverContent className="font-ui w-72 p-3" align="start">
                   <div className="mb-2 flex items-center justify-between border-b border-zinc-100 pb-2 dark:border-white/5">
                     <span className="text-foreground text-xs font-bold">Lorewards & Accolades</span>
                     <span className="text-muted-foreground text-[10px] font-medium">

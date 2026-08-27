@@ -20,15 +20,18 @@ interface PassportHistoryTabProps {
   cleanUsername: string;
 }
 
-export const PassportHistoryTab = React.memo(function PassportHistoryTab({ history, cleanUsername }: PassportHistoryTabProps) {
+export const PassportHistoryTab = React.memo(function PassportHistoryTab({
+  history,
+  cleanUsername,
+}: PassportHistoryTabProps) {
   if (!history || history.length === 0) {
     return (
-      <div className="rounded-3xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-12 text-center space-y-3">
-        <div className="mx-auto h-12 w-12 rounded-2xl bg-stone-500/10 text-stone-400 flex items-center justify-center">
+      <div className="space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-12 text-center dark:border-white/10 dark:bg-white/[0.02]">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-500/10 text-stone-400">
           <Clock className="h-6 w-6" />
         </div>
-        <h3 className="text-base font-bold text-foreground">No Activity Yet</h3>
-        <p className="text-xs text-muted-foreground max-w-md mx-auto">
+        <h3 className="text-foreground text-base font-bold">No Activity Yet</h3>
+        <p className="text-muted-foreground mx-auto max-w-md text-xs">
           @{cleanUsername} does not have any recorded activity yet.
         </p>
       </div>
@@ -65,13 +68,15 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({ histo
         return {
           label: "ThinkPages",
           icon: Sparkles,
-          className: "bg-fuchsia-500/10 border-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400",
+          className:
+            "bg-fuchsia-500/10 border-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400",
         };
       case "vault":
         return {
           label: "Vault",
           icon: Crown,
-          className: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+          className:
+            "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400",
         };
       default:
         return {
@@ -85,12 +90,12 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({ histo
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-stone-400 font-mono">
+        <h2 className="font-mono text-sm font-bold tracking-wider text-stone-400 uppercase">
           Activity History ({history.length})
         </h2>
       </div>
 
-      <div className="relative border-l border-black/8 dark:border-white/10 ml-4 space-y-6 pl-6">
+      <div className="relative ml-4 space-y-6 border-l border-black/8 pl-6 dark:border-white/10">
         {history.map((event) => {
           const badge = getSystemBadge(event.system);
           const Icon = badge.icon;
@@ -101,16 +106,16 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({ histo
           });
 
           return (
-            <div key={event.id} className="relative group">
+            <div key={event.id} className="group relative">
               {/* Dot on timeline */}
-              <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-background bg-stone-400 group-hover:bg-blue-500 transition-colors" />
+              <div className="border-background absolute top-1.5 -left-[31px] h-3.5 w-3.5 rounded-full border-2 bg-stone-400 transition-colors group-hover:bg-blue-500" />
 
-              <div className="rounded-2xl border border-black/6 dark:border-white/8 bg-black/[0.015] dark:bg-white/[0.02] p-4 space-y-2 hover:border-black/15 dark:hover:border-white/20 transition-all">
+              <div className="space-y-2 rounded-2xl border border-black/6 bg-black/[0.015] p-4 transition-all hover:border-black/15 dark:border-white/8 dark:bg-white/[0.02] dark:hover:border-white/20">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider",
+                        "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold tracking-wider uppercase",
                         badge.className
                       )}
                     >
@@ -118,14 +123,14 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({ histo
                       {badge.label}
                     </span>
 
-                    <span className="font-mono text-xs text-muted-foreground">{formattedDate}</span>
+                    <span className="text-muted-foreground font-mono text-xs">{formattedDate}</span>
                   </div>
 
                   {event.objectUrl && (
                     <Link
                       href={event.objectUrl}
                       data-cuelume-press="soft"
-                      className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-blue-500 hover:text-blue-600 cursor-pointer"
+                      className="inline-flex cursor-pointer items-center gap-1 font-mono text-xs font-semibold text-blue-500 hover:text-blue-600"
                     >
                       <span>View</span>
                       <ExternalLink className="h-3 w-3" />
@@ -133,12 +138,12 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({ histo
                   )}
                 </div>
 
-                <h4 className="text-sm font-semibold text-foreground tracking-tight">
+                <h4 className="text-foreground text-sm font-semibold tracking-tight">
                   {event.title}
                 </h4>
 
                 {event.description && (
-                  <p className="font-mono text-xs text-muted-foreground">{event.description}</p>
+                  <p className="text-muted-foreground font-mono text-xs">{event.description}</p>
                 )}
               </div>
             </div>
@@ -148,4 +153,3 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({ histo
     </div>
   );
 });
-

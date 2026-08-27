@@ -4,7 +4,6 @@
 
 import { Airplane as Plane, DeliveryTruck as Ship, Car, Rocket, Wrench } from "iconoir-react";
 
-
 // Equipment categories (must match tRPC router and seed script)
 export const CATEGORIES = {
   all: "All Equipment",

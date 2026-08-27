@@ -4,7 +4,15 @@
 // Onoma Lab — Etymology Web Section
 
 import { useState, useMemo } from "react";
-import { GitFork, Network, Plus, Trash as Trash2, CornerBottomRight as CornerDownRight, NavArrowRight as ChevronRight, NavArrowDown as ChevronDown } from "iconoir-react";
+import {
+  GitFork,
+  Network,
+  Plus,
+  Trash as Trash2,
+  CornerBottomRight as CornerDownRight,
+  NavArrowRight as ChevronRight,
+  NavArrowDown as ChevronDown,
+} from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -259,12 +267,12 @@ export default function EtymologySection() {
             {rootsLoading ? (
               <div className="text-muted-foreground py-8 text-center text-xs">Loading roots...</div>
             ) : roots?.length === 0 ? (
-              <div className="border border-dashed border-border/40 bg-secondary/5 rounded-xl p-5 text-center text-xs space-y-2">
+              <div className="border-border/40 bg-secondary/5 space-y-2 rounded-xl border border-dashed p-5 text-center text-xs">
                 <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-violet-500/10 text-violet-400">
                   <GitFork className="h-4 w-4" />
                 </div>
                 <div className="space-y-0.5">
-                  <p className="font-semibold text-foreground">No Proto-Roots Yet</p>
+                  <p className="text-foreground font-semibold">No Proto-Roots Yet</p>
                   <p className="text-muted-foreground text-[11px] leading-normal">
                     Create your first root word below to start branching derivations.
                   </p>
@@ -580,23 +588,27 @@ export default function EtymologySection() {
           ) : (
             <FacetMaterial
               material="satin"
-              className="border-border/20 border min-h-[460px] h-full"
+              className="border-border/20 h-full min-h-[460px] border"
             >
-              <div className="flex h-full min-h-[460px] w-full flex-col items-center justify-center p-8 text-center space-y-3">
+              <div className="flex h-full min-h-[460px] w-full flex-col items-center justify-center space-y-3 p-8 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 shadow-lg shadow-violet-500/5">
                   <Network className="h-7 w-7 text-violet-400" />
                 </div>
-                <div className="space-y-1 max-w-sm">
-                  <h4 className="text-foreground text-sm font-bold tracking-tight">Select or Create a Root</h4>
+                <div className="max-w-sm space-y-1">
+                  <h4 className="text-foreground text-sm font-bold tracking-tight">
+                    Select or Create a Root
+                  </h4>
                   <p className="text-muted-foreground text-xs leading-relaxed">
-                    Pick an etymology root word from the directory on the left to inspect its morphological family tree, or create a new proto-root to begin branching derivations.
+                    Pick an etymology root word from the directory on the left to inspect its
+                    morphological family tree, or create a new proto-root to begin branching
+                    derivations.
                   </p>
                 </div>
                 {roots && roots.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setSelectedRootId(roots[0].id)}
-                    className="mt-2 flex cursor-pointer items-center gap-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3.5 py-1.5 text-xs font-semibold text-violet-400 hover:bg-violet-500/20 active:scale-95 transition-all"
+                    className="mt-2 flex cursor-pointer items-center gap-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3.5 py-1.5 text-xs font-semibold text-violet-400 transition-all hover:bg-violet-500/20 active:scale-95"
                   >
                     <span>Open &quot;{roots[0].root}&quot; Tree</span>
                   </button>

@@ -28,7 +28,19 @@ import { LeagueCreator } from "~/components/sports/league/LeagueCreator";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { useRouter } from "next/navigation";
-import { Trophy, Plus, Trash as Trash2, Eye, SystemRestart as Loader2, WarningTriangle as AlertTriangle, Shield, ArrowLeft, Sparks as Sparkles, Settings, Star } from "iconoir-react";
+import {
+  Trophy,
+  Plus,
+  Trash as Trash2,
+  Eye,
+  SystemRestart as Loader2,
+  WarningTriangle as AlertTriangle,
+  Shield,
+  ArrowLeft,
+  Sparks as Sparkles,
+  Settings,
+  Star,
+} from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { getAllPresets } from "~/lib/sports";
 
@@ -190,7 +202,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
               <select
                 value={selectedMatchId}
                 onChange={(e) => setSelectedMatchId(e.target.value)}
-                className="text-foreground w-full rounded-xl border border-border/40 bg-background p-2 text-xs focus:outline-none"
+                className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2 text-xs focus:outline-none"
                 required
               >
                 <option value="">-- Choose Match --</option>
@@ -212,7 +224,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
                   min="0"
                   value={homeScore}
                   onChange={(e) => setHomeScore(Number(e.target.value))}
-                  className="text-foreground w-full rounded-xl border border-border/40 bg-background p-2 font-mono text-xs focus:outline-none"
+                  className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2 font-mono text-xs focus:outline-none"
                   required
                 />
               </div>
@@ -225,7 +237,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
                   min="0"
                   value={awayScore}
                   onChange={(e) => setAwayScore(Number(e.target.value))}
-                  className="text-foreground w-full rounded-xl border border-border/40 bg-background p-2 font-mono text-xs focus:outline-none"
+                  className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2 font-mono text-xs focus:outline-none"
                   required
                 />
               </div>
@@ -482,7 +494,7 @@ function AINarratorLab() {
               <select
                 value={sport}
                 onChange={(e) => handleLoadTemplate(e.target.value)}
-                className="text-foreground w-full rounded-xl border border-border/40 bg-background p-2.5 text-xs font-semibold focus:outline-none"
+                className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2.5 text-xs font-semibold focus:outline-none"
               >
                 <option value="soccer">Soccer ⚽</option>
                 <option value="f1">Formula 1 🏎️</option>
@@ -508,8 +520,8 @@ function AINarratorLab() {
 
             {/* Config Fields */}
             {showConfig && (
-              <div className="space-y-3.5 rounded-2xl border border-border/30 bg-card/25 p-4 backdrop-blur-md">
-                <div className="flex items-center gap-2 border-b border-border/20 pb-2.5 select-none">
+              <div className="border-border/30 bg-card/25 space-y-3.5 rounded-2xl border p-4 backdrop-blur-md">
+                <div className="border-border/20 flex items-center gap-2 border-b pb-2.5 select-none">
                   <input
                     type="checkbox"
                     id="applyGlobally"
@@ -519,11 +531,11 @@ function AINarratorLab() {
                       setApplyGlobally(v);
                       saveConfig("applyGlobally", v);
                     }}
-                    className="h-3.5 w-3.5 cursor-pointer rounded border-border/40 bg-background text-primary accent-primary"
+                    className="border-border/40 bg-background text-primary accent-primary h-3.5 w-3.5 cursor-pointer rounded"
                   />
                   <label
                     htmlFor="applyGlobally"
-                    className="cursor-pointer text-[10px] font-bold tracking-wider text-foreground uppercase"
+                    className="text-foreground cursor-pointer text-[10px] font-bold tracking-wider uppercase"
                   >
                     Apply settings globally (Write to DB)
                   </label>
@@ -540,7 +552,7 @@ function AINarratorLab() {
                         setProvider(e.target.value);
                         saveConfig("provider", e.target.value);
                       }}
-                      className="text-foreground w-full rounded-xl border border-border/40 bg-background p-2 text-xs font-semibold focus:outline-none"
+                      className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2 text-xs font-semibold focus:outline-none"
                     >
                       <option value="nvidia">Nvidia</option>
                       <option value="openrouter">OpenRouter</option>
@@ -716,7 +728,7 @@ function AINarratorLab() {
                       value={event}
                       onChange={(e) => handleEventChange(idx, e.target.value)}
                       placeholder="e.g. Referee blows whistle / Goal scored..."
-                      className="text-foreground flex-1 rounded-xl border border-border/40 bg-background p-2 text-xs focus:outline-none"
+                      className="text-foreground border-border/40 bg-background flex-1 rounded-xl border p-2 text-xs focus:outline-none"
                     />
                     <Button
                       type="button"

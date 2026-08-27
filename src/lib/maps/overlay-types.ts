@@ -8,7 +8,6 @@
  * See `docs/systems/map-overlay-framework.md` for the design rationale.
  */
 
-
 import type { ComponentType, LazyExoticComponent } from "react";
 
 type MapLibreMap = import("maplibre-gl").Map;

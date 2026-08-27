@@ -61,9 +61,7 @@ describe("Plan 161: Domain Contract Boundary", () => {
       expect(archetypeCategories.length).toBe(5);
 
       // Valid selection
-      expect(
-        validateArchetypeSelection(["economic-powerhouse", "democratic-stable"])
-      ).toBe(true);
+      expect(validateArchetypeSelection(["economic-powerhouse", "democratic-stable"])).toBe(true);
 
       // Exceeds total selections (limit is 5)
       expect(
@@ -79,11 +77,7 @@ describe("Plan 161: Domain Contract Boundary", () => {
 
       // Exceeds category limit (economic category limit is 2)
       expect(
-        validateArchetypeSelection([
-          "economic-powerhouse",
-          "developing-giant",
-          "resource-rich",
-        ])
+        validateArchetypeSelection(["economic-powerhouse", "developing-giant", "resource-rich"])
       ).toBe(false);
     });
   });

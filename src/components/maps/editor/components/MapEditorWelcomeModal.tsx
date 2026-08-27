@@ -2,7 +2,19 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Xmark as X, Map, Component as Layers, Keyframe as Keyboard, NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft, Check, Flash as Zap, MapPin, Hexagon, Sparks as Sparkles } from "iconoir-react";
+import {
+  Xmark as X,
+  Map,
+  Component as Layers,
+  Keyframe as Keyboard,
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
+  Check,
+  Flash as Zap,
+  MapPin,
+  Hexagon,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { MAP_EDITOR_WELCOME_VERSION } from "~/lib/buildVersion";
 
 const STORAGE_KEY = "ixworld-editor-welcome-seen";

@@ -378,7 +378,8 @@ export class IntelligenceWebSocketServer {
    * Start periodic health checks
    */
   private startHealthChecks(): void {
-    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") return;
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined")
+      return;
     const timer = setInterval(() => {
       const now = Date.now();
       const staleConnections: string[] = [];
@@ -415,7 +416,8 @@ export class IntelligenceWebSocketServer {
    * Start intelligence processing loop
    */
   private startIntelligenceProcessing(): void {
-    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") return;
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined")
+      return;
     // Process intelligence updates every 30 seconds
     const timer = setInterval(async () => {
       try {

@@ -34,12 +34,12 @@ export default function HistoryPage() {
 
   return (
     <WikiOSLayout title={`History: ${title}`}>
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 space-y-4">
+      <div className="mx-auto max-w-5xl space-y-4 px-4 py-6 sm:px-6">
         {/* Back Navigation Bar */}
         <div>
           <Link
             href={withBasePath(`/wiki/${encodeURIComponent(rawSlug)}`)}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-wiki transition-colors"
+            className="text-muted-foreground hover:text-wiki inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to {title}

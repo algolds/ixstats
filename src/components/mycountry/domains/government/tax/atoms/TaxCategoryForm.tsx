@@ -17,7 +17,30 @@ import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
-import { Page as Receipt, Building, Dollar as DollarSign, HomeSimple as Home, StatUp as TrendingUp, Trash as Trash2, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, Plus, Settings, WarningCircle as AlertCircle, CheckCircle as CheckCircle2, Flash as Zap, Calculator, CreditCard, Shield, Page as FileText, PageSearch as FileCheck, WarningTriangle as AlertTriangle, ModernTv as Mountain, Link as Link2, Sparks as Sparkles } from "iconoir-react";
+import {
+  Page as Receipt,
+  Building,
+  Dollar as DollarSign,
+  HomeSimple as Home,
+  StatUp as TrendingUp,
+  Trash as Trash2,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  Plus,
+  Settings,
+  WarningCircle as AlertCircle,
+  CheckCircle as CheckCircle2,
+  Flash as Zap,
+  Calculator,
+  CreditCard,
+  Shield,
+  Page as FileText,
+  PageSearch as FileCheck,
+  WarningTriangle as AlertTriangle,
+  ModernTv as Mountain,
+  Link as Link2,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import type { TaxCategoryInput, TaxBracketInput } from "~/types/tax-system";
 import { TAX_CATEGORIES, TAX_TYPES } from "~/types/tax-system";
 

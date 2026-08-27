@@ -17,7 +17,11 @@ import {
 } from "react";
 import { useControllableState } from "~/hooks/useControllableState";
 import { cva } from "class-variance-authority";
-import { StatsReport as BarChart3Icon, Check as CheckIcon, CheckSquare as Vote } from "iconoir-react";
+import {
+  StatsReport as BarChart3Icon,
+  Check as CheckIcon,
+  CheckSquare as Vote,
+} from "iconoir-react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { cn } from "~/lib/utils";
@@ -176,10 +180,7 @@ const optionVariants = cva(
     variants: {
       state: {
         idle: ["border-border bg-background hover:border-poll/50 hover:bg-poll/5"],
-        selected: [
-          "border-poll/55 bg-poll/5 shadow-xs",
-          "hover:border-poll hover:bg-poll/10",
-        ],
+        selected: ["border-poll/55 bg-poll/5 shadow-xs", "hover:border-poll hover:bg-poll/10"],
         voted: ["cursor-default border-border bg-muted/30"],
       },
     },
@@ -358,7 +359,7 @@ export function PollWidgetRoot({
         }, autoCollapseDelay);
       }, 400);
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [selected, onVote, animationPhase, autoCollapseDelay, successDuration, mode, setOpen]);
 
   // Reset animation phase when opening
@@ -797,7 +798,8 @@ export function PollWidgetOptions({ className, children, ...props }: PollWidgetO
   }, []);
 
   return (
-    <div tabIndex={0}
+    <div
+      tabIndex={0}
       className={cn("flex flex-col gap-2", className)}
       data-slot="poll-widget-options"
       onKeyDown={handleKeyDown}

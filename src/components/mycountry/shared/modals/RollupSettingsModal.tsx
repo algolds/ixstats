@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { StatsReport as BarChart3, SystemRestart as Loader2, Refresh as RefreshCw, Settings } from "iconoir-react";
+import {
+  StatsReport as BarChart3,
+  SystemRestart as Loader2,
+  Refresh as RefreshCw,
+  Settings,
+} from "iconoir-react";
 import {
   Dialog,
   DialogContent,

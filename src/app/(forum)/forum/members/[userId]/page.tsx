@@ -5,7 +5,14 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, ChatBubble as MessageSquare, Heart, Trophy, MapPin, ArrowUpRight } from "iconoir-react";
+import {
+  Calendar,
+  ChatBubble as MessageSquare,
+  Heart,
+  Trophy,
+  MapPin,
+  ArrowUpRight,
+} from "iconoir-react";
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumBreadcrumbs } from "~/components/forum/reader/Breadcrumbs";
 import { api } from "~/trpc/react";

@@ -138,7 +138,7 @@ export function HaloTourProvider({
     return () => {
       if (timer) clearTimeout(timer);
     };
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [autoStartDelay]);
 
   // Broadcast step updates to trigger state transitions in the Halo component

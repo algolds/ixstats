@@ -43,15 +43,18 @@ function parseChambersClient(
   if (chamberType && chamberType.includes("|")) {
     const [, serialized] = chamberType.split("|");
     if (serialized) {
-      return serialized.split(";").filter(Boolean).map((part) => {
-        const [name, seatsStr, system, selection] = part.split(":");
-        return {
-          name: name || "Chamber",
-          seats: Number(seatsStr) || 100,
-          electoralSystem: (system || globalElectoralSystem || "proportional") as any,
-          selectionMethod: (selection as SelectionMethod) || "elected",
-        };
-      });
+      return serialized
+        .split(";")
+        .filter(Boolean)
+        .map((part) => {
+          const [name, seatsStr, system, selection] = part.split(":");
+          return {
+            name: name || "Chamber",
+            seats: Number(seatsStr) || 100,
+            electoralSystem: (system || globalElectoralSystem || "proportional") as any,
+            selectionMethod: (selection as SelectionMethod) || "elected",
+          };
+        });
     }
   }
 

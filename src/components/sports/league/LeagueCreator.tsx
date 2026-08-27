@@ -3,7 +3,16 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import { SystemRestart as Loader2, ArrowLeft, ArrowRight, Check, Trophy, Undo as RotateCcw, MediaImage as ImageIcon, Trash as Trash2 } from "iconoir-react";
+import {
+  SystemRestart as Loader2,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Trophy,
+  Undo as RotateCcw,
+  MediaImage as ImageIcon,
+  Trash as Trash2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -22,7 +31,8 @@ import { withBasePath } from "~/lib/base-path";
 import type { ArchetypeType } from "~/lib/sports";
 
 const MediaSearchModal = dynamic(
-  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 

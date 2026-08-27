@@ -3,7 +3,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Cpu as Bot, Pause, Play, Undo as RotateCcw, WarningTriangle as AlertTriangle, Refresh as RefreshCw, SystemRestart as Loader2, Terminal, ControlSlider as Sliders, Shield, Activity, Cpu, Component as Layers, NavArrowRight as ChevronRight, InfoCircle as Info, CheckCircle as CheckCircle2, XmarkCircle as XCircle, Code as FileCode } from "iconoir-react";
+import {
+  Cpu as Bot,
+  Pause,
+  Play,
+  Undo as RotateCcw,
+  WarningTriangle as AlertTriangle,
+  Refresh as RefreshCw,
+  SystemRestart as Loader2,
+  Terminal,
+  ControlSlider as Sliders,
+  Shield,
+  Activity,
+  Cpu,
+  Component as Layers,
+  NavArrowRight as ChevronRight,
+  InfoCircle as Info,
+  CheckCircle as CheckCircle2,
+  XmarkCircle as XCircle,
+  Code as FileCode,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -103,7 +122,7 @@ export function BotControlCard({
   useEffect(() => {
     setOptionValues({});
     setSimulationResult(null);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [selectedCommandName]);
 
   const handleSimulate = async () => {
@@ -773,7 +792,7 @@ export function BotControlCard({
                           ) : (
                             <div className="space-y-2">
                               {simulationResult.success === false ? (
-<div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs font-semibold text-red-500">
+                                <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs font-semibold text-red-500">
                                   <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
                                   <span>{simulationResult.error || "Simulation error"}</span>
                                 </div>
@@ -791,7 +810,7 @@ export function BotControlCard({
                                           <span className="cursor-pointer font-bold text-zinc-100 hover:underline">
                                             IxTimeBot
                                           </span>
-                                          <span className="ml-1.5 rounded bg-discord px-1 py-0.5 text-[8px] leading-none font-bold text-white uppercase select-none">
+                                          <span className="bg-discord ml-1.5 rounded px-1 py-0.5 text-[8px] leading-none font-bold text-white uppercase select-none">
                                             BOT
                                           </span>
                                           <span className="ml-2 text-[10px] text-zinc-400 select-none">
@@ -1101,7 +1120,7 @@ export function BotControlCard({
                 <FileCode className="h-3 w-3" />
                 <span>50 lines</span>
               </div>
-              <div className="max-h-[450px] min-h-[280px] w-full overflow-x-auto rounded-lg border border-border/60 bg-zinc-950 p-4 font-mono text-[10px] leading-relaxed text-zinc-300 md:text-[11px]">
+              <div className="border-border/60 max-h-[450px] min-h-[280px] w-full overflow-x-auto rounded-lg border bg-zinc-950 p-4 font-mono text-[10px] leading-relaxed text-zinc-300 md:text-[11px]">
                 {logs && logs.length > 0 ? (
                   <pre className="flex flex-col gap-0.5 whitespace-pre select-text">
                     {logs.map((line, idx) => (

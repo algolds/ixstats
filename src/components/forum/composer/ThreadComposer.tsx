@@ -87,7 +87,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
         <select
           value={selectedForumId ?? ""}
           onChange={(e) => setSelectedForumId(e.target.value ? Number(e.target.value) : null)}
-          className="w-full rounded-xl border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2.5 text-sm text-[var(--forum-text)] outline-none transition-colors focus:border-[var(--forum-accent)]"
+          className="w-full rounded-xl border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2.5 text-sm text-[var(--forum-text)] transition-colors outline-none focus:border-[var(--forum-accent)]"
         >
           <option value="">Select a forum...</option>
           {forumNodes.map((forum) => (
@@ -108,7 +108,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Enter thread title..."
-          className="w-full rounded-xl border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2.5 text-sm text-[var(--forum-text)] outline-none transition-colors placeholder:text-[var(--forum-text-dim)] focus:border-[var(--forum-accent)]"
+          className="w-full rounded-xl border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2.5 text-sm text-[var(--forum-text)] transition-colors outline-none placeholder:text-[var(--forum-text-dim)] focus:border-[var(--forum-accent)]"
           maxLength={200}
         />
       </div>
@@ -133,7 +133,9 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
 
       {/* Submit */}
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-[var(--forum-text-dim)]">⌘+Enter / Ctrl+Enter to submit</span>
+        <span className="text-[11px] text-[var(--forum-text-dim)]">
+          ⌘+Enter / Ctrl+Enter to submit
+        </span>
         <Button
           onClick={handleSubmit}
           disabled={!canSubmit}

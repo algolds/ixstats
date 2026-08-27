@@ -4,7 +4,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
 import { cn } from "~/lib/utils";
-import { InfoCircle as Info, StatUp as TrendingUp, StatDown as TrendingDown, WarningTriangle as AlertTriangle, HelpCircle } from "iconoir-react";
+import {
+  InfoCircle as Info,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  WarningTriangle as AlertTriangle,
+  HelpCircle,
+} from "iconoir-react";
 
 interface GlassTooltipProps {
   children: React.ReactNode;

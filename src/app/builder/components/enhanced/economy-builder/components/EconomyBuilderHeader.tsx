@@ -4,7 +4,15 @@ import React from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { HelpCircle, WarningTriangle as AlertTriangle, InfoCircle as Info, SystemRestart as Loader2, Atom, Group as Users, Dollar as DollarSign } from "iconoir-react";
+import {
+  HelpCircle,
+  WarningTriangle as AlertTriangle,
+  InfoCircle as Info,
+  SystemRestart as Loader2,
+  Atom,
+  Group as Users,
+  Dollar as DollarSign,
+} from "iconoir-react";
 
 interface EconomyBuilderHeaderProps {
   isLoadingConfig: boolean;

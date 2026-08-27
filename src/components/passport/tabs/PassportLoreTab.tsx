@@ -42,19 +42,22 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
   const conlangs = work?.conlangs ?? [];
   const sportTeams = work?.sportTeams ?? [];
   const directives = work?.directives ?? [];
-  const total = (articles.length + conlangs.length + sportTeams.length + directives.length + feed.length) || (work?.totalCreations ?? 0);
+  const total =
+    articles.length + conlangs.length + sportTeams.length + directives.length + feed.length ||
+    (work?.totalCreations ?? 0);
 
   const hasAnyWork = total > 0 || feed.length > 0 || wiki?.linked;
 
   if (!hasAnyWork) {
     return (
-      <div className="rounded-3xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-12 text-center space-y-3">
-        <div className="mx-auto h-12 w-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+      <div className="space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-12 text-center dark:border-white/10 dark:bg-white/[0.02]">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-500">
           <BookOpen className="h-6 w-6" />
         </div>
-        <h3 className="text-base font-bold text-foreground">No Published Lore or Activity Found</h3>
-        <p className="text-xs text-muted-foreground max-w-md mx-auto">
-          @{cleanUsername} has not yet published any WikiOS articles, revisions, language packs, or simulation directives.
+        <h3 className="text-foreground text-base font-bold">No Published Lore or Activity Found</h3>
+        <p className="text-muted-foreground mx-auto max-w-md text-xs">
+          @{cleanUsername} has not yet published any WikiOS articles, revisions, language packs, or
+          simulation directives.
         </p>
       </div>
     );
@@ -84,18 +87,18 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
   return (
     <div className="space-y-6">
       {/* 1. Category Filter Pills & Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl border border-black/6 dark:border-white/8 bg-black/[0.02] dark:bg-white/[0.02] max-w-fit">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <div className="flex max-w-fit flex-wrap items-center gap-1.5 rounded-2xl border border-black/6 bg-black/[0.02] p-1 dark:border-white/8 dark:bg-white/[0.02]">
           <button
             type="button"
             onClick={() => setSelectedCategory((c) => (c === "all" ? null : "all"))}
             aria-pressed={selectedCategory === "all"}
             data-cuelume-press="soft"
             className={cn(
-              "rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97] cursor-pointer",
+              "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97]",
               selectedCategory === "all"
-                ? "bg-stone-900 text-white dark:bg-white dark:text-stone-950 shadow-sm"
-                : "text-stone-600 dark:text-stone-400 hover:text-foreground"
+                ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
+                : "hover:text-foreground text-stone-600 dark:text-stone-400"
             )}
           >
             All Overview ({total})
@@ -107,10 +110,10 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
               onClick={() => setSelectedCategory("articles")}
               data-cuelume-press="soft"
               className={cn(
-                "rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97] cursor-pointer",
+                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97]",
                 selectedCategory === "articles"
-                  ? "bg-stone-900 text-white dark:bg-white dark:text-stone-950 shadow-sm"
-                  : "text-stone-600 dark:text-stone-400 hover:text-foreground"
+                  ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
+                  : "hover:text-foreground text-stone-600 dark:text-stone-400"
               )}
             >
               Authored Pages ({articles.length})
@@ -123,10 +126,10 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
               onClick={() => setSelectedCategory("languages")}
               data-cuelume-press="soft"
               className={cn(
-                "rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97] cursor-pointer",
+                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97]",
                 selectedCategory === "languages"
-                  ? "bg-stone-900 text-white dark:bg-white dark:text-stone-950 shadow-sm"
-                  : "text-stone-600 dark:text-stone-400 hover:text-foreground"
+                  ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
+                  : "hover:text-foreground text-stone-600 dark:text-stone-400"
               )}
             >
               Languages ({conlangs.length})
@@ -139,10 +142,10 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
               onClick={() => setSelectedCategory("directives")}
               data-cuelume-press="soft"
               className={cn(
-                "rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97] cursor-pointer",
+                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97]",
                 selectedCategory === "directives"
-                  ? "bg-stone-900 text-white dark:bg-white dark:text-stone-950 shadow-sm"
-                  : "text-stone-600 dark:text-stone-400 hover:text-foreground"
+                  ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
+                  : "hover:text-foreground text-stone-600 dark:text-stone-400"
               )}
             >
               Directives ({directives.length})
@@ -155,10 +158,10 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
               onClick={() => setSelectedCategory("sports")}
               data-cuelume-press="soft"
               className={cn(
-                "rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97] cursor-pointer",
+                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97]",
                 selectedCategory === "sports"
-                  ? "bg-stone-900 text-white dark:bg-white dark:text-stone-950 shadow-sm"
-                  : "text-stone-600 dark:text-stone-400 hover:text-foreground"
+                  ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
+                  : "hover:text-foreground text-stone-600 dark:text-stone-400"
               )}
             >
               Clubs ({sportTeams.length})
@@ -171,10 +174,10 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
               onClick={() => setSelectedCategory("feed")}
               data-cuelume-press="soft"
               className={cn(
-                "rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97] cursor-pointer",
+                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97]",
                 selectedCategory === "feed"
-                  ? "bg-stone-900 text-white dark:bg-white dark:text-stone-950 shadow-sm"
-                  : "text-stone-600 dark:text-stone-400 hover:text-foreground"
+                  ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
+                  : "hover:text-foreground text-stone-600 dark:text-stone-400"
               )}
             >
               Activity Stream ({feed.length})
@@ -190,7 +193,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search lore & articles..."
-              className="w-full rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] px-3 py-1.5 text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-blue-500/40"
+              className="text-foreground placeholder:text-muted-foreground w-full rounded-xl border border-black/8 bg-black/[0.02] px-3 py-1.5 font-mono text-xs focus:ring-1 focus:ring-blue-500/40 focus:outline-none dark:border-white/10 dark:bg-white/[0.03]"
             />
           </div>
         )}
@@ -200,35 +203,35 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
       {showArticles && filteredArticles.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <h4 className="text-muted-foreground flex items-center gap-1.5 font-mono text-xs font-bold tracking-wider uppercase">
               <BookOpen className="h-3.5 w-3.5 text-blue-500" />
               <span>AUTHORED WIKI PAGES ({filteredArticles.length})</span>
             </h4>
             <Link
               href="/wiki"
               data-cuelume-press="soft"
-              className="font-mono text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+              className="flex items-center gap-0.5 font-mono text-[11px] text-blue-600 hover:underline dark:text-blue-400"
             >
               <span>Explore WikiOS</span>
               <ArrowUpRight className="h-3 w-3" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
             {filteredArticles.map((item) => (
               <FacetCard
                 key={item.id}
                 depth={1}
                 interactive="hover"
-                className="rounded-3xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-5 space-y-3 shadow-sm hover:border-black/15 dark:hover:border-white/20 transition-all flex flex-col justify-between"
+                className="flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-all hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="rounded-md bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                    <span className="flex items-center gap-1 rounded-md border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-blue-600 dark:text-blue-400">
                       <FileText className="h-3 w-3" />
                       Authored Page
                     </span>
-                    <span className="font-mono text-[10px] text-muted-foreground">
+                    <span className="text-muted-foreground font-mono text-[10px]">
                       {new Date(item.updatedAt || item.createdAt).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -238,19 +241,25 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                   </div>
 
                   <div>
-                    <h3 className="text-base font-bold text-foreground tracking-tight line-clamp-1">{item.title}</h3>
+                    <h3 className="text-foreground line-clamp-1 text-base font-bold tracking-tight">
+                      {item.title}
+                    </h3>
                     {item.summary && (
-                      <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{item.summary}</p>
+                      <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
+                        {item.summary}
+                      </p>
                     )}
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-black/6 dark:border-white/8 flex items-center justify-between">
-                  <span className="font-mono text-[11px] text-muted-foreground uppercase">WikiOS</span>
+                <div className="flex items-center justify-between border-t border-black/6 pt-3 dark:border-white/8">
+                  <span className="text-muted-foreground font-mono text-[11px] uppercase">
+                    WikiOS
+                  </span>
                   <Link
                     href={`/wiki/${encodeURIComponent(item.title)}`}
                     data-cuelume-press="soft"
-                    className="inline-flex items-center gap-1 font-mono text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                    className="inline-flex cursor-pointer items-center gap-1 font-mono text-xs font-bold text-blue-600 hover:underline dark:text-blue-400"
                   >
                     <span>Read Article</span>
                     <ArrowRight className="h-3 w-3" />
@@ -266,12 +275,12 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
       {(showLangs || showDirectives || showSports) && (
         <div className="space-y-3 pt-2">
           {isAll && (
-            <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <h4 className="text-muted-foreground font-mono text-xs font-bold tracking-wider uppercase">
               CANONICAL REALM & SYSTEM CREATIONS
             </h4>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
             {/* Onoma Conlangs */}
             {showLangs &&
               conlangs.map((item) => (
@@ -279,37 +288,41 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                   key={item.id}
                   depth={1}
                   interactive="hover"
-                  className="rounded-3xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-5 space-y-3 shadow-sm hover:border-black/15 dark:hover:border-white/20 transition-all flex flex-col justify-between"
+                  className="flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-all hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="rounded-md bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1">
+                      <span className="flex items-center gap-1 rounded-md border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-purple-600 dark:text-purple-400">
                         <Globe className="h-3 w-3" />
                         Language Pack
                       </span>
                       {item.culturalFamily && (
-                        <span className="font-mono text-[10px] text-muted-foreground">
+                        <span className="text-muted-foreground font-mono text-[10px]">
                           {item.culturalFamily}
                         </span>
                       )}
                     </div>
 
                     <div>
-                      <h3 className="text-base font-bold text-foreground tracking-tight">{item.name}</h3>
+                      <h3 className="text-foreground text-base font-bold tracking-tight">
+                        {item.name}
+                      </h3>
                       {item.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                        <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
                           {item.description}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-black/6 dark:border-white/8 flex items-center justify-between">
-                    <span className="font-mono text-[11px] text-muted-foreground uppercase">Onoma</span>
+                  <div className="flex items-center justify-between border-t border-black/6 pt-3 dark:border-white/8">
+                    <span className="text-muted-foreground font-mono text-[11px] uppercase">
+                      Onoma
+                    </span>
                     <Link
                       href={`/onoma/pack/${item.slug || item.id}`}
                       data-cuelume-press="soft"
-                      className="inline-flex items-center gap-1 font-mono text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+                      className="inline-flex cursor-pointer items-center gap-1 font-mono text-xs font-bold text-purple-600 hover:underline dark:text-purple-400"
                     >
                       <span>View Pack</span>
                       <ArrowRight className="h-3 w-3" />
@@ -325,32 +338,36 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                   key={item.id}
                   depth={1}
                   interactive="hover"
-                  className="rounded-3xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-5 space-y-3 shadow-sm hover:border-black/15 dark:hover:border-white/20 transition-all flex flex-col justify-between"
+                  className="flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-all hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="rounded-md bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <span className="flex items-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-600 dark:text-amber-400">
                         <Flash className="h-3 w-3" />
                         Directive
                       </span>
-                      <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                      <span className="text-muted-foreground font-mono text-[10px] uppercase">
                         {item.tier} Tier
                       </span>
                     </div>
 
                     <div>
-                      <h3 className="text-sm font-bold text-foreground tracking-tight">{item.goal}</h3>
+                      <h3 className="text-foreground text-sm font-bold tracking-tight">
+                        {item.goal}
+                      </h3>
                       {item.summary && (
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{item.summary}</p>
+                        <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
+                          {item.summary}
+                        </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-black/6 dark:border-white/8 flex items-center justify-between">
-                    <span className="font-mono text-[11px] text-muted-foreground capitalize">
+                  <div className="flex items-center justify-between border-t border-black/6 pt-3 dark:border-white/8">
+                    <span className="text-muted-foreground font-mono text-[11px] capitalize">
                       {item.category || "Governance"}
                     </span>
-                    <span className="rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 font-mono text-[10px] font-semibold">
+                    <span className="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                       {item.status}
                     </span>
                   </div>
@@ -364,35 +381,41 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                   key={item.id}
                   depth={1}
                   interactive="hover"
-                  className="rounded-3xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-5 space-y-3 shadow-sm hover:border-black/15 dark:hover:border-white/20 transition-all flex flex-col justify-between"
+                  className="flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-all hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <span className="flex items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                         <Trophy className="h-3 w-3" />
                         Athletic Club
                       </span>
                       {item.city && (
-                        <span className="font-mono text-[10px] text-muted-foreground">{item.city}</span>
+                        <span className="text-muted-foreground font-mono text-[10px]">
+                          {item.city}
+                        </span>
                       )}
                     </div>
 
                     <div>
-                      <h3 className="text-base font-bold text-foreground tracking-tight">{item.name}</h3>
+                      <h3 className="text-foreground text-base font-bold tracking-tight">
+                        {item.name}
+                      </h3>
                       {item.shortName && (
-                        <p className="font-mono text-xs text-muted-foreground mt-0.5">
+                        <p className="text-muted-foreground mt-0.5 font-mono text-xs">
                           Abbreviation: {item.shortName}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-black/6 dark:border-white/8 flex items-center justify-between">
-                    <span className="font-mono text-[11px] text-muted-foreground uppercase">MyLeague</span>
+                  <div className="flex items-center justify-between border-t border-black/6 pt-3 dark:border-white/8">
+                    <span className="text-muted-foreground font-mono text-[11px] uppercase">
+                      MyLeague
+                    </span>
                     <Link
                       href="/sports"
                       data-cuelume-press="soft"
-                      className="inline-flex items-center gap-1 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                      className="inline-flex cursor-pointer items-center gap-1 font-mono text-xs font-bold text-emerald-600 hover:underline dark:text-emerald-400"
                     >
                       <span>View Club</span>
                       <ArrowRight className="h-3 w-3" />
@@ -408,14 +431,14 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
       {showFeed && filteredFeed.length > 0 && (
         <div className="space-y-3 pt-2">
           <div className="flex items-center justify-between">
-            <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <h4 className="text-muted-foreground flex items-center gap-1.5 font-mono text-xs font-bold tracking-wider uppercase">
               <EditPencil className="h-3.5 w-3.5 text-blue-500" />
               <span>FULL WIKIOS & DATABASE ACTIVITY STREAM ({filteredFeed.length})</span>
             </h4>
             <Link
               href={`/wiki/contributions/${encodeURIComponent(wiki?.username || cleanUsername)}`}
               data-cuelume-press="soft"
-              className="font-mono text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+              className="flex items-center gap-0.5 font-mono text-[11px] text-blue-600 hover:underline dark:text-blue-400"
             >
               <span>View All</span>
               <ArrowUpRight className="h-3 w-3" />
@@ -428,41 +451,46 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                 key={`${item.id}-${idx}`}
                 depth={1}
                 interactive="hover"
-                className="rounded-2xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-4 sm:p-4.5 shadow-xs hover:border-black/15 dark:hover:border-white/20 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3.5"
+                className="flex flex-col justify-between gap-3.5 rounded-2xl border border-black/8 bg-black/[0.015] p-4 shadow-xs transition-all hover:border-black/15 sm:flex-row sm:items-center sm:p-4.5 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
               >
-                <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                <div className="flex min-w-0 flex-1 items-start gap-3.5">
                   <div
                     className={cn(
-                      "h-9 w-9 shrink-0 rounded-xl flex items-center justify-center border shadow-2xs",
-                      item.type === "publish" && "bg-blue-500/10 border-blue-500/20 text-blue-500",
-                      item.type === "revision" && "bg-purple-500/10 border-purple-500/20 text-purple-500",
-                      item.type === "minor_edit" && "bg-stone-500/10 border-stone-500/20 text-stone-500",
-                      item.type === "discussion" && "bg-cyan-500/10 border-cyan-500/20 text-cyan-500",
-                      item.type === "laurel" && "bg-amber-500/10 border-amber-500/20 text-amber-500"
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-2xs",
+                      item.type === "publish" && "border-blue-500/20 bg-blue-500/10 text-blue-500",
+                      item.type === "revision" &&
+                        "border-purple-500/20 bg-purple-500/10 text-purple-500",
+                      item.type === "minor_edit" &&
+                        "border-stone-500/20 bg-stone-500/10 text-stone-500",
+                      item.type === "discussion" &&
+                        "border-cyan-500/20 bg-cyan-500/10 text-cyan-500",
+                      item.type === "laurel" && "border-amber-500/20 bg-amber-500/10 text-amber-500"
                     )}
                   >
                     {item.type === "publish" && <BookOpen className="h-4.5 w-4.5" />}
                     {item.type === "revision" && <EditPencil className="h-4.5 w-4.5" />}
-                    {item.type === "minor_edit" && <EditPencil className="h-4.5 w-4.5 opacity-75" />}
+                    {item.type === "minor_edit" && (
+                      <EditPencil className="h-4.5 w-4.5 opacity-75" />
+                    )}
                     {item.type === "discussion" && <ChatBubble className="h-4.5 w-4.5" />}
                     {item.type === "laurel" && <Medal className="h-4.5 w-4.5" />}
                   </div>
 
-                  <div className="space-y-1 min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={cn(
-                          "rounded px-1.5 py-0.2 font-mono text-[9px] font-bold uppercase tracking-wider border",
+                          "py-0.2 rounded border px-1.5 font-mono text-[9px] font-bold tracking-wider uppercase",
                           item.type === "publish" &&
-                            "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
+                            "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400",
                           item.type === "revision" &&
-                            "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400",
+                            "border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400",
                           item.type === "minor_edit" &&
-                            "bg-stone-500/10 border-stone-500/20 text-stone-600 dark:text-stone-400",
+                            "border-stone-500/20 bg-stone-500/10 text-stone-600 dark:text-stone-400",
                           item.type === "discussion" &&
-                            "bg-cyan-500/10 border-cyan-500/20 text-cyan-600 dark:text-cyan-400",
+                            "border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
                           item.type === "laurel" &&
-                            "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400"
+                            "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400"
                         )}
                       >
                         {item.type === "publish" && "CREATED PAGE"}
@@ -472,8 +500,8 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                         {item.type === "laurel" && "LAUREL"}
                       </span>
 
-                      <span className="font-mono text-[10px] text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-2.5 w-2.5 inline" />
+                      <span className="text-muted-foreground flex items-center gap-1 font-mono text-[10px]">
+                        <Clock className="inline h-2.5 w-2.5" />
                         {new Date(item.timestamp).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -484,7 +512,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                       {item.byteDiff !== null && item.byteDiff !== undefined && (
                         <span
                           className={cn(
-                            "font-mono text-[10px] font-bold px-1.5 py-0.2 rounded flex items-center gap-0.5",
+                            "py-0.2 flex items-center gap-0.5 rounded px-1.5 font-mono text-[10px] font-bold",
                             item.byteDiff > 0
                               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                               : item.byteDiff < 0
@@ -493,32 +521,32 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                           )}
                         >
                           {item.byteDiff > 0 ? (
-                            <ArrowUpRight className="h-2.5 w-2.5 inline" />
+                            <ArrowUpRight className="inline h-2.5 w-2.5" />
                           ) : item.byteDiff < 0 ? (
-                            <ArrowDownRight className="h-2.5 w-2.5 inline" />
+                            <ArrowDownRight className="inline h-2.5 w-2.5" />
                           ) : null}
                           {item.byteDiff > 0 ? `+${item.byteDiff}B` : `${item.byteDiff}B`}
                         </span>
                       )}
                     </div>
 
-                    <h4 className="text-sm font-bold text-foreground tracking-tight truncate">
+                    <h4 className="text-foreground truncate text-sm font-bold tracking-tight">
                       {item.title}
                     </h4>
 
                     {item.summary && (
-                      <p className="text-xs text-muted-foreground line-clamp-1 italic">
+                      <p className="text-muted-foreground line-clamp-1 text-xs italic">
                         &ldquo;{item.summary}&rdquo;
                       </p>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end shrink-0 pt-1 sm:pt-0">
+                <div className="flex shrink-0 items-center justify-end pt-1 sm:pt-0">
                   <Link
                     href={item.url}
                     data-cuelume-press="soft"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-950 px-3 py-1.5 text-xs font-semibold shadow-2xs hover:opacity-90 active:scale-[0.97] transition-all cursor-pointer"
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white shadow-2xs transition-all hover:opacity-90 active:scale-[0.97] dark:bg-white dark:text-stone-950"
                   >
                     <span>View in WikiOS</span>
                     <ArrowRight className="h-3 w-3" />

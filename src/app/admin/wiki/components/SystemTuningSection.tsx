@@ -9,7 +9,15 @@ import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { Database, ControlSlider as SlidersHorizontal, ControlSlider as Sliders, Trash as Trash2, SystemRestart as Loader2, WarningTriangle as AlertTriangle, FloppyDisk as Save } from "iconoir-react";
+import {
+  Database,
+  ControlSlider as SlidersHorizontal,
+  ControlSlider as Sliders,
+  Trash as Trash2,
+  SystemRestart as Loader2,
+  WarningTriangle as AlertTriangle,
+  FloppyDisk as Save,
+} from "iconoir-react";
 import { LorewardWeightsCard } from "./LorewardWeightsCard";
 
 export function SystemTuningSection() {
@@ -140,11 +148,11 @@ export function SystemTuningSection() {
       {/* Right Column: Cache, Templates, Cron */}
       <div className="space-y-6">
         {/* Cache Utilities */}
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
-          <div className="flex items-center gap-2 border-b border-border/20 pb-3">
+        <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+          <div className="border-border/20 flex items-center gap-2 border-b pb-3">
             <Database className="h-4 w-4 text-emerald-400" />
             <div>
-              <h3 className="text-xs font-bold text-foreground">Cache Operations</h3>
+              <h3 className="text-foreground text-xs font-bold">Cache Operations</h3>
               <p className="text-muted-foreground text-[11px]">
                 Purge article wikitext and page parse trees from memory
               </p>
@@ -156,7 +164,7 @@ export function SystemTuningSection() {
                 placeholder="Enter article title to purge..."
                 value={purgePage}
                 onChange={(e) => setPurgePage(e.target.value)}
-                className="h-8 rounded-xl border-border/30 bg-background/50 text-xs"
+                className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
                 required
               />
               <Button
@@ -164,7 +172,7 @@ export function SystemTuningSection() {
                 variant="outline"
                 size="sm"
                 disabled={purgeCacheMutation.isPending}
-                className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform shrink-0"
+                className="h-8 shrink-0 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
               >
                 {purgeCacheMutation.isPending ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -180,7 +188,7 @@ export function SystemTuningSection() {
                 disabled={purgeAllCacheMutation.isPending}
                 variant="destructive"
                 size="sm"
-                className="h-8 w-full gap-2 rounded-xl text-xs font-semibold active:scale-[0.98] transition-transform"
+                className="h-8 w-full gap-2 rounded-xl text-xs font-semibold transition-transform active:scale-[0.98]"
               >
                 {purgeAllCacheMutation.isPending ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -194,12 +202,14 @@ export function SystemTuningSection() {
         </div>
 
         {/* Wiki Templates Synchronization */}
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
-          <div className="flex items-center gap-2 border-b border-border/20 pb-3">
+        <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+          <div className="border-border/20 flex items-center gap-2 border-b pb-3">
             <SlidersHorizontal className="h-4 w-4 text-indigo-400" />
             <div>
-              <h3 className="text-xs font-bold text-foreground">Wiki Templates Synchronization</h3>
-              <p className="text-muted-foreground text-[11px]">Registered template components synced from MediaWiki</p>
+              <h3 className="text-foreground text-xs font-bold">Wiki Templates Synchronization</h3>
+              <p className="text-muted-foreground text-[11px]">
+                Registered template components synced from MediaWiki
+              </p>
             </div>
           </div>
           <div className="space-y-4">
@@ -217,7 +227,7 @@ export function SystemTuningSection() {
                       }}
                       onFocus={() => setShowSuggestions(true)}
                       onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                      className="h-8 rounded-xl border-border/30 bg-background/50 text-xs"
+                      className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
                     />
                     {showSuggestions && suggestions && suggestions.length > 0 && (
                       <div className="border-border/40 bg-popover/95 text-popover-foreground absolute z-50 mt-1 max-h-40 w-full overflow-y-auto rounded-xl border p-1 shadow-lg backdrop-blur-md">
@@ -242,7 +252,7 @@ export function SystemTuningSection() {
                     variant="outline"
                     size="sm"
                     disabled={syncTemplateMutation.isPending}
-                    className="h-8 rounded-xl px-3 text-xs font-semibold active:scale-[0.98] transition-transform shrink-0"
+                    className="h-8 shrink-0 rounded-xl px-3 text-xs font-semibold transition-transform active:scale-[0.98]"
                   >
                     {syncTemplateMutation.isPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -262,14 +272,14 @@ export function SystemTuningSection() {
                     placeholder="e.g. Country templates"
                     value={templateCategoryInput}
                     onChange={(e) => setTemplateCategoryInput(e.target.value)}
-                    className="h-8 rounded-xl border-border/30 bg-background/50 text-xs"
+                    className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
                   />
                   <Button
                     type="submit"
                     variant="outline"
                     size="sm"
                     disabled={syncCategoryMutation.isPending}
-                    className="h-8 rounded-xl px-3 text-xs font-semibold active:scale-[0.98] transition-transform shrink-0"
+                    className="h-8 shrink-0 rounded-xl px-3 text-xs font-semibold transition-transform active:scale-[0.98]"
                   >
                     {syncCategoryMutation.isPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -324,11 +334,11 @@ export function SystemTuningSection() {
         </div>
 
         {/* Cron Schedules Editor */}
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
-          <div className="flex items-center gap-2 border-b border-border/20 pb-3">
+        <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+          <div className="border-border/20 flex items-center gap-2 border-b pb-3">
             <Sliders className="h-4 w-4 text-emerald-400" />
             <div>
-              <h3 className="text-xs font-bold text-foreground">Cron Schedules Editor</h3>
+              <h3 className="text-foreground text-xs font-bold">Cron Schedules Editor</h3>
               <p className="text-muted-foreground text-[11px]">
                 Configure background job intervals in standard 5-field cron syntax
               </p>
@@ -344,7 +354,7 @@ export function SystemTuningSection() {
                   placeholder="e.g. 0 6 * * *"
                   value={cronScoring}
                   onChange={(e) => setCronScoring(e.target.value)}
-                  className="h-8 rounded-xl border-border/30 bg-background/50 text-xs font-mono"
+                  className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
                   required
                 />
               </div>
@@ -357,7 +367,7 @@ export function SystemTuningSection() {
                   placeholder="e.g. 0 0 * * *"
                   value={cronIncome}
                   onChange={(e) => setCronIncome(e.target.value)}
-                  className="h-8 rounded-xl border-border/30 bg-background/50 text-xs font-mono"
+                  className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
                   required
                 />
               </div>
@@ -370,7 +380,7 @@ export function SystemTuningSection() {
                   placeholder="e.g. 0 */6 * * *"
                   value={cronCard}
                   onChange={(e) => setCronCard(e.target.value)}
-                  className="h-8 rounded-xl border-border/30 bg-background/50 text-xs font-mono"
+                  className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
                   required
                 />
               </div>
@@ -379,7 +389,7 @@ export function SystemTuningSection() {
                 <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
                 <div>
                   <p className="font-semibold">PM2 Restart Required</p>
-                  <p className="mt-0.5 opacity-80 text-[11px]">
+                  <p className="mt-0.5 text-[11px] opacity-80">
                     Changing schedules updates SystemConfig values. Next time the custom server is
                     restarted via PM2, these new schedule intervals will take effect.
                   </p>
@@ -389,7 +399,7 @@ export function SystemTuningSection() {
               <Button
                 type="submit"
                 disabled={saveCronMutation.isPending}
-                className="h-8 w-full gap-2 rounded-xl text-xs font-semibold active:scale-[0.98] transition-transform"
+                className="h-8 w-full gap-2 rounded-xl text-xs font-semibold transition-transform active:scale-[0.98]"
               >
                 {saveCronMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 <Save className="h-3.5 w-3.5" />

@@ -344,98 +344,98 @@ export const lorewardsLeaderboardsRouter = createTRPCRouter({
         }
       >();
 
-    const specialtyMap = new Map<string, string>();
-    const lastEdits = new Map<string, { page: string; date: string }>();
+      const specialtyMap = new Map<string, string>();
+      const lastEdits = new Map<string, { page: string; date: string }>();
 
-    // Seed career metrics from authoritative PostgreSQL lorewardUserStats
-    for (const s of stats) {
-      careerMap.set(s.username, {
-        totalEdits: s.dailyWins * 5 + s.dailyRunnerUps * 3 + 12,
-        largestEdit: Math.min(s.totalBytes, 25000),
-        totalBytes: s.totalBytes,
-        majorEdits: s.dailyWins + s.weeklyWins,
-      });
-    }
+      // Seed career metrics from authoritative PostgreSQL lorewardUserStats
+      for (const s of stats) {
+        careerMap.set(s.username, {
+          totalEdits: s.dailyWins * 5 + s.dailyRunnerUps * 3 + 12,
+          largestEdit: Math.min(s.totalBytes, 25000),
+          totalBytes: s.totalBytes,
+          majorEdits: s.dailyWins + s.weeklyWins,
+        });
+      }
 
-    // Refine with recent PostgreSQL revisions
-    try {
-      const recentRevs = await db.wikiRevision.findMany({
+      // Refine with recent PostgreSQL revisions
+      try {
+        const recentRevs = await db.wikiRevision.findMany({
+          where: {
+            author: { in: usernames },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 100,
+          select: {
+            author: true,
+            createdAt: true,
+            article: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        });
+
+        for (const rev of recentRevs) {
+          const u = rev.author;
+          if (!u) continue;
+          const authorMatch = usernames.find((name) => name.toLowerCase() === u.toLowerCase()) || u;
+
+          if (!lastEdits.has(authorMatch) && rev.article?.title) {
+            lastEdits.set(authorMatch, {
+              page: rev.article.title,
+              date: new Date(rev.createdAt).toISOString().slice(0, 10),
+            });
+          }
+        }
+      } catch {}
+
+      // Map wiki usernames to country names using db.user and db.country
+      const dbUsers = await db.user.findMany({
         where: {
-          author: { in: usernames },
+          wikiUsername: {
+            in: usernames,
+          },
         },
-        orderBy: { createdAt: "desc" },
-        take: 100,
         select: {
-          author: true,
-          createdAt: true,
-          article: {
+          wikiUsername: true,
+          country: {
             select: {
-              title: true,
+              name: true,
             },
           },
         },
       });
 
-      for (const rev of recentRevs) {
-        const u = rev.author;
-        if (!u) continue;
-        const authorMatch = usernames.find((name) => name.toLowerCase() === u.toLowerCase()) || u;
-
-        if (!lastEdits.has(authorMatch) && rev.article?.title) {
-          lastEdits.set(authorMatch, {
-            page: rev.article.title,
-            date: new Date(rev.createdAt).toISOString().slice(0, 10),
-          });
+      const countryMap = new Map<string, string>();
+      for (const u of dbUsers) {
+        if (u.wikiUsername && u.country?.name) {
+          countryMap.set(u.wikiUsername.toLowerCase(), u.country.name);
         }
       }
-    } catch {}
 
-    // Map wiki usernames to country names using db.user and db.country
-    const dbUsers = await db.user.findMany({
-      where: {
-        wikiUsername: {
-          in: usernames,
-        },
-      },
-      select: {
-        wikiUsername: true,
-        country: {
-          select: {
-            name: true,
+      const cleanNames = usernames.map((u) => u.replace(/_/g, " "));
+      const directCountries = await db.country.findMany({
+        where: {
+          name: {
+            in: [...usernames, ...cleanNames],
           },
         },
-      },
-    });
-
-    const countryMap = new Map<string, string>();
-    for (const u of dbUsers) {
-      if (u.wikiUsername && u.country?.name) {
-        countryMap.set(u.wikiUsername.toLowerCase(), u.country.name);
-      }
-    }
-
-    const cleanNames = usernames.map((u) => u.replace(/_/g, " "));
-    const directCountries = await db.country.findMany({
-      where: {
-        name: {
-          in: [...usernames, ...cleanNames],
+        select: {
+          name: true,
         },
-      },
-      select: {
-        name: true,
-      },
-    });
+      });
 
-    for (const c of directCountries) {
-      const matchedUser = usernames.find(
-        (u) =>
-          u.toLowerCase() === c.name.toLowerCase() ||
-          u.replace(/_/g, " ").toLowerCase() === c.name.toLowerCase()
-      );
-      if (matchedUser && !countryMap.has(matchedUser.toLowerCase())) {
-        countryMap.set(matchedUser.toLowerCase(), c.name);
+      for (const c of directCountries) {
+        const matchedUser = usernames.find(
+          (u) =>
+            u.toLowerCase() === c.name.toLowerCase() ||
+            u.replace(/_/g, " ").toLowerCase() === c.name.toLowerCase()
+        );
+        if (matchedUser && !countryMap.has(matchedUser.toLowerCase())) {
+          countryMap.set(matchedUser.toLowerCase(), c.name);
+        }
       }
-    }
 
       const scoredUsers = stats.map((s) => {
         const career = careerMap.get(s.username) || {

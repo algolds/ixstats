@@ -53,7 +53,7 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
 
   // Authoritatively sync Display Name & Avatar exclusively from Clerk
   const displayName =
-    (isOwner && currentClerkUser ? (currentClerkUser.fullName || currentClerkUser.username) : null) ||
+    (isOwner && currentClerkUser ? currentClerkUser.fullName || currentClerkUser.username : null) ||
     data?.account?.clerkDisplayName ||
     data?.account?.clerkUsername ||
     cleanUsername;
@@ -87,10 +87,10 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
   if (isLoading) {
     return (
       <DashboardSidebarLayout disableCollapse={true}>
-        <div className="mx-auto w-full max-w-5xl space-y-8 py-6 px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 sm:px-6">
           <div className="flex items-start gap-6">
-            <Skeleton className="h-24 w-24 rounded-3xl shrink-0" />
-            <div className="space-y-3 flex-1">
+            <Skeleton className="h-24 w-24 shrink-0 rounded-3xl" />
+            <div className="flex-1 space-y-3">
               <Skeleton className="h-8 w-64 rounded-xl" />
               <Skeleton className="h-4 w-40 rounded-lg" />
               <Skeleton className="h-16 w-full max-w-xl rounded-2xl" />
@@ -109,11 +109,11 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
   if (error || !data) {
     return (
       <DashboardSidebarLayout disableCollapse={true}>
-        <div className="mx-auto w-full max-w-5xl py-12 px-4 sm:px-6">
-          <div className="rounded-3xl border border-black/8 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-8 text-center space-y-4">
+        <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
+          <div className="space-y-4 rounded-3xl border border-black/8 bg-black/[0.015] p-8 text-center dark:border-white/10 dark:bg-white/[0.02]">
             <AlertTriangle className="mx-auto h-10 w-10 text-amber-500" />
-            <h2 className="text-xl font-bold text-foreground">Identity Not Found</h2>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            <h2 className="text-foreground text-xl font-bold">Identity Not Found</h2>
+            <p className="text-muted-foreground mx-auto max-w-md text-sm">
               Could not resolve a public passport or registered identity for @{cleanUsername}.
             </p>
           </div>
@@ -124,7 +124,7 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
 
   return (
     <DashboardSidebarLayout disableCollapse={true}>
-      <div className="mx-auto w-full max-w-5xl py-6 px-4 sm:px-6">
+      <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
         {/* Mid-Ribbon Integrated Polycarbonate Passport Document */}
         <MidRibbonPassportDocument
           cleanUsername={cleanUsername}

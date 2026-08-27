@@ -475,28 +475,30 @@ export function transformApiIntelligenceToAlerts(
 export function transformApiIntelligenceToInsights(
   intelligenceItems: ApiIntelligenceItem[]
 ): TrendingInsight[] {
-  return intelligenceItems
-    .filter((item) => item.type === "opportunity" || item.type === "update")
-    .slice(0, 6) // Limit to top 6 insights
-    // oxlint-disable-next-line eslint/no-unused-vars
-    .map((item, index) => ({
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      category: item.type === "opportunity" ? "opportunity" : "performance",
-      icon: getIconForCategory(item.category),
-      trend: item.type === "opportunity" ? "up" : "stable",
-      significance:
-        item.severity === "high" ? "major" : item.severity === "medium" ? "moderate" : "minor",
-      metrics: [], // TODO: Transform relatedMetrics to IntelligenceMetric[]
-      context: {
-        comparison: "peer",
-        timeframe: "recent developments",
-        confidence: Math.round(item.confidence * 100),
-      },
-      actionable: item.actionable,
-      nextReview: item.timestamp + 7 * 24 * 60 * 60 * 1000, // 1 week
-    }));
+  return (
+    intelligenceItems
+      .filter((item) => item.type === "opportunity" || item.type === "update")
+      .slice(0, 6) // Limit to top 6 insights
+      // oxlint-disable-next-line eslint/no-unused-vars
+      .map((item, index) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        category: item.type === "opportunity" ? "opportunity" : "performance",
+        icon: getIconForCategory(item.category),
+        trend: item.type === "opportunity" ? "up" : "stable",
+        significance:
+          item.severity === "high" ? "major" : item.severity === "medium" ? "moderate" : "minor",
+        metrics: [], // TODO: Transform relatedMetrics to IntelligenceMetric[]
+        context: {
+          comparison: "peer",
+          timeframe: "recent developments",
+          confidence: Math.round(item.confidence * 100),
+        },
+        actionable: item.actionable,
+        nextReview: item.timestamp + 7 * 24 * 60 * 60 * 1000, // 1 week
+      }))
+  );
 }
 
 /**
@@ -520,27 +522,29 @@ function mapRecommendationCategory(
 export function transformApiIntelligenceToRecommendations(
   intelligenceItems: ApiIntelligenceItem[]
 ): ActionableRecommendation[] {
-  return intelligenceItems
-    .filter((item) => item.actionable && item.actions && item.actions.length > 0)
-    .slice(0, 4) // Limit to top 4 recommendations
-    // oxlint-disable-next-line eslint/no-unused-vars
-    .map((item, index) => ({
-      id: item.id,
-      title: `Address ${item.title}`,
-      description: item.actions?.[0] || item.description,
-      category: mapRecommendationCategory(item.category),
-      urgency: mapSeverityToUrgency(item.severity),
-      difficulty: "moderate",
-      estimatedDuration: item.severity === "critical" ? "1-2 days" : "1-2 weeks",
-      estimatedCost: "Medium",
-      estimatedBenefit: item.severity === "high" ? "High" : "Medium",
-      prerequisites: ["Administrative approval", "Resource allocation"],
-      risks: ["Implementation complexity", "Resource constraints"],
-      successProbability: Math.round(item.confidence * 100),
-      impact: {
-        [item.category]: item.severity === "critical" ? 15 : item.severity === "high" ? 10 : 5,
-      },
-    }));
+  return (
+    intelligenceItems
+      .filter((item) => item.actionable && item.actions && item.actions.length > 0)
+      .slice(0, 4) // Limit to top 4 recommendations
+      // oxlint-disable-next-line eslint/no-unused-vars
+      .map((item, index) => ({
+        id: item.id,
+        title: `Address ${item.title}`,
+        description: item.actions?.[0] || item.description,
+        category: mapRecommendationCategory(item.category),
+        urgency: mapSeverityToUrgency(item.severity),
+        difficulty: "moderate",
+        estimatedDuration: item.severity === "critical" ? "1-2 days" : "1-2 weeks",
+        estimatedCost: "Medium",
+        estimatedBenefit: item.severity === "high" ? "High" : "Medium",
+        prerequisites: ["Administrative approval", "Resource allocation"],
+        risks: ["Implementation complexity", "Resource constraints"],
+        successProbability: Math.round(item.confidence * 100),
+        impact: {
+          [item.category]: item.severity === "critical" ? 15 : item.severity === "high" ? 10 : 5,
+        },
+      }))
+  );
 }
 
 /**

@@ -90,7 +90,8 @@ export function generateGovernmentBuilderFromAtomicComponents(
 
         // Find corresponding budget allocation
         const allocation = mapping.budgetAllocations.find(
-          (a: AtomicGovernmentMapping["budgetAllocations"][number]) => a.departmentId === departmentIndex.toString()
+          (a: AtomicGovernmentMapping["budgetAllocations"][number]) =>
+            a.departmentId === departmentIndex.toString()
         );
         if (allocation) {
           const allocatedAmount = (baseBudget * allocation.allocatedPercent) / 100;
@@ -317,7 +318,10 @@ function isGovernmentBuilderInSync(
 ): boolean {
   // Check if departments match expected departments from components
   const expectedDepartments = components.flatMap(
-    (comp) => ATOMIC_TO_GOVERNMENT_MAPPING[comp]?.departments.map((d: AtomicGovernmentMapping["departments"][number]) => d.name) || []
+    (comp) =>
+      ATOMIC_TO_GOVERNMENT_MAPPING[comp]?.departments.map(
+        (d: AtomicGovernmentMapping["departments"][number]) => d.name
+      ) || []
   );
 
   const actualDepartments = governmentBuilder.departments.map((d) => d.name);

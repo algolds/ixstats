@@ -10,7 +10,22 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Calculator, Dollar as DollarSign, StatUp as TrendingUp, StatDown as TrendingDown, Reports as PieChart, StatsReport as BarChart3, LightBulb, WarningCircle as AlertCircle, CheckCircle as CheckCircle2, Minus, Building, InfoCircle as Info, SystemRestart as Loader2, Flash as Zap } from "iconoir-react";
+import {
+  Calculator,
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Reports as PieChart,
+  StatsReport as BarChart3,
+  LightBulb,
+  WarningCircle as AlertCircle,
+  CheckCircle as CheckCircle2,
+  Minus,
+  Building,
+  InfoCircle as Info,
+  SystemRestart as Loader2,
+  Flash as Zap,
+} from "iconoir-react";
 
 import type {
   TaxSystem,

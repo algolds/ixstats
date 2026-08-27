@@ -19,10 +19,12 @@ export function GrammarRootsSection() {
   return (
     <div className="space-y-6">
       {/* Header & Mode Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
+      <div className="border-border/40 flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-foreground text-base font-bold tracking-tight">
-            {mode === "roots" ? "Etymological Web & Root Derivations" : "Syntactic Sandbox & Sentence Grammar"}
+            {mode === "roots"
+              ? "Etymological Web & Root Derivations"
+              : "Syntactic Sandbox & Sentence Grammar"}
           </h2>
           <p className="text-muted-foreground text-xs leading-normal">
             {mode === "roots"
@@ -32,14 +34,14 @@ export function GrammarRootsSection() {
         </div>
 
         {/* Apple Segmented Switcher */}
-        <div className="flex items-center gap-1 rounded-xl border border-border/60 bg-secondary/20 p-1 select-none shadow-2xs shrink-0 self-start sm:self-center">
+        <div className="border-border/60 bg-secondary/20 flex shrink-0 items-center gap-1 self-start rounded-xl border p-1 shadow-2xs select-none sm:self-center">
           <button
             type="button"
             onClick={() => setMode("roots")}
             className={cn(
               "flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all active:scale-95",
               mode === "roots"
-                ? "bg-background text-foreground shadow-2xs font-bold"
+                ? "bg-background text-foreground font-bold shadow-2xs"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -53,7 +55,7 @@ export function GrammarRootsSection() {
             className={cn(
               "flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all active:scale-95",
               mode === "syntax"
-                ? "bg-background text-foreground shadow-2xs font-bold"
+                ? "bg-background text-foreground font-bold shadow-2xs"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >

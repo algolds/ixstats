@@ -2,7 +2,15 @@
 
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Settings, WarningTriangle as AlertTriangle, Flash as Zap, FloppyDisk as Save, SystemRestart as Loader2, ClockRotateRight as History } from "iconoir-react";
+import {
+  ArrowLeft,
+  Settings,
+  WarningTriangle as AlertTriangle,
+  Flash as Zap,
+  FloppyDisk as Save,
+  SystemRestart as Loader2,
+  ClockRotateRight as History,
+} from "iconoir-react";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";

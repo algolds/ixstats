@@ -8,7 +8,14 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { Globe, SystemRestart as Loader2, CheckCircle, XmarkCircle as XCircle, OpenNewWindow as ExternalLink, FloppyDisk as Save } from "iconoir-react";
+import {
+  Globe,
+  SystemRestart as Loader2,
+  CheckCircle,
+  XmarkCircle as XCircle,
+  OpenNewWindow as ExternalLink,
+  FloppyDisk as Save,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export function ManualLinkEditorSection({ countriesData }: { countriesData: any }) {
@@ -76,10 +83,10 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
   }, [selectedCountryId, wikiPageTitle, wikiSource, setWikiLinkMutation]);
 
   return (
-    <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
-      <div className="flex items-center gap-2 border-b border-border/20 pb-3">
+    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+      <div className="border-border/20 flex items-center gap-2 border-b pb-3">
         <Globe className="h-4 w-4 text-blue-400" />
-        <h3 className="text-xs font-bold text-foreground">Manual Link Editor</h3>
+        <h3 className="text-foreground text-xs font-bold">Manual Link Editor</h3>
       </div>
       <div className="space-y-4">
         {/* Country Selector */}
@@ -95,7 +102,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
                 setShowDropdown(true);
               }}
               onFocus={() => setShowDropdown(true)}
-              className="h-8 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md"
+              className="border-border/30 bg-background/50 h-8 rounded-xl text-xs backdrop-blur-md"
             />
             {showDropdown && filteredCountries.length > 0 && !selectedCountry && (
               <div className="border-border/40 bg-popover/95 text-popover-foreground absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border p-1 shadow-lg backdrop-blur-md">
@@ -110,7 +117,9 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
                     className="hover:bg-muted/50 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-xs font-medium"
                   >
                     <span>{c.name}</span>
-                    <span className="text-muted-foreground font-mono text-[10px]">{c.id.slice(0, 8)}...</span>
+                    <span className="text-muted-foreground font-mono text-[10px]">
+                      {c.id.slice(0, 8)}...
+                    </span>
                   </button>
                 ))}
               </div>
@@ -127,7 +136,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
                 type="button"
                 onClick={() => setWikiSource("ixwiki")}
                 className={cn(
-                  "flex-1 rounded-lg py-1 text-xs font-semibold active:scale-[0.98] transition-all",
+                  "flex-1 rounded-lg py-1 text-xs font-semibold transition-all active:scale-[0.98]",
                   wikiSource === "ixwiki"
                     ? "bg-primary text-primary-foreground shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
@@ -139,7 +148,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
                 type="button"
                 onClick={() => setWikiSource("iiwiki")}
                 className={cn(
-                  "flex-1 rounded-lg py-1 text-xs font-semibold active:scale-[0.98] transition-all",
+                  "flex-1 rounded-lg py-1 text-xs font-semibold transition-all active:scale-[0.98]",
                   wikiSource === "iiwiki"
                     ? "bg-primary text-primary-foreground shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
@@ -156,7 +165,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
               placeholder="e.g. United_States or Grand_Duchy_of_..."
               value={wikiPageTitle}
               onChange={(e) => setWikiPageTitle(e.target.value)}
-              className="h-8 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md font-mono"
+              className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs backdrop-blur-md"
             />
           </div>
         </div>
@@ -169,7 +178,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
             size="sm"
             onClick={handleTestLink}
             disabled={isTesting || !wikiPageTitle.trim()}
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             {isTesting ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -184,7 +193,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
             size="sm"
             onClick={handleSave}
             disabled={!selectedCountryId || !wikiPageTitle.trim()}
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             <Save className="mr-1.5 h-3.5 w-3.5" />
             Save Link
@@ -208,7 +217,9 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
                   Article found
                 </div>
                 {testResult.intro && (
-                  <p className="text-muted-foreground line-clamp-3 text-[11px]">{testResult.intro}</p>
+                  <p className="text-muted-foreground line-clamp-3 text-[11px]">
+                    {testResult.intro}
+                  </p>
                 )}
               </div>
             ) : (

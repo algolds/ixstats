@@ -5,7 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
-import { Group as Users, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, CheckCircle, WarningTriangle as AlertTriangle, InfoCircle as Info } from "iconoir-react";
+import {
+  Group as Users,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  CheckCircle,
+  WarningTriangle as AlertTriangle,
+  InfoCircle as Info,
+} from "iconoir-react";
 import { motion } from "motion/react";
 import type { GovernmentDepartment } from "~/types/government";
 import { formatCurrency, formatNumber } from "~/lib/utils";

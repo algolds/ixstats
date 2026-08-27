@@ -48,9 +48,12 @@ export const adminStashRouter = createTRPCRouter({
 
       return {
         maxStashCount: parseInt(m.stash_maxCount || "100") || 100,
-        offlineCacheEnabled: m.stash_offlineCacheEnabled !== undefined ? m.stash_offlineCacheEnabled === "true" : true,
-        autoCategorization: m.stash_autoCategorization !== undefined ? m.stash_autoCategorization === "true" : true,
-        highlightTracking: m.stash_highlightTracking !== undefined ? m.stash_highlightTracking === "true" : true,
+        offlineCacheEnabled:
+          m.stash_offlineCacheEnabled !== undefined ? m.stash_offlineCacheEnabled === "true" : true,
+        autoCategorization:
+          m.stash_autoCategorization !== undefined ? m.stash_autoCategorization === "true" : true,
+        highlightTracking:
+          m.stash_highlightTracking !== undefined ? m.stash_highlightTracking === "true" : true,
         welcomeVersion: m.stash_welcomeVersion || "1.0",
       };
     } catch (error) {

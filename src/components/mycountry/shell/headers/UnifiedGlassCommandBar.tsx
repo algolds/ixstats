@@ -53,7 +53,7 @@ export function UnifiedGlassCommandBar({
       depth={2}
       interactive="none"
       enableRefraction={false}
-      className="relative flex w-full flex-col gap-3.5 rounded-2xl border border-border/80 bg-card/80 p-3.5 shadow-xl backdrop-blur-xl transition-all duration-200 dark:border-white/15 dark:bg-card/40"
+      className="border-border/80 bg-card/80 dark:bg-card/40 relative flex w-full flex-col gap-3.5 rounded-2xl border p-3.5 shadow-xl backdrop-blur-xl transition-all duration-200 dark:border-white/15"
     >
       {/* Top Executive Navigation Row */}
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
@@ -105,7 +105,7 @@ export function UnifiedGlassCommandBar({
             className={cn(
               "flex cursor-pointer items-center gap-2 rounded-xl border px-3.5 py-1.5 text-xs font-bold shadow-sm transition-all duration-200 select-none active:scale-[0.98]",
               isExecutiveMode
-                ? "border-amber-500/50 bg-amber-500 text-black shadow-md font-extrabold"
+                ? "border-amber-500/50 bg-amber-500 font-extrabold text-black shadow-md"
                 : "border-amber-500/40 bg-amber-500/15 text-amber-900 hover:bg-amber-500/25 dark:text-amber-300 dark:hover:bg-amber-500/20"
             )}
           >
@@ -127,7 +127,7 @@ export function UnifiedGlassCommandBar({
                 soundEffects.press();
                 onNavigate?.(id);
               }}
-              className="group relative flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border border-border/70 bg-card/60 p-2.5 shadow-xs backdrop-blur-md transition-all duration-150 select-none hover:border-border hover:bg-card/90 active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
+              className="group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border p-2.5 shadow-xs backdrop-blur-md transition-all duration-150 select-none active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
             >
               {/* Subtle Natural Architectural Watermark */}
               <Graphic />
@@ -173,9 +173,7 @@ export function UnifiedGlassCommandBar({
               <LayoutGrid className="h-3.5 w-3.5" />
               <span>Overview</span>
             </button>
-
             <span className="text-muted-foreground/40 text-xs">/</span>
-
             // oxlint-disable-next-line eslint/no-unused-vars
             {DOMAIN_TILES.map(({ id, title, icon: Icon, badgeCls }) => {
               const isActive = activeSection === id;
@@ -193,7 +191,7 @@ export function UnifiedGlassCommandBar({
                   className={cn(
                     "flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.25 text-xs font-semibold transition-all select-none active:scale-[0.98]",
                     isActive
-                      ? "bg-card text-foreground border border-border/70 shadow-xs font-bold dark:border-white/15 dark:bg-white/10"
+                      ? "bg-card text-foreground border-border/70 border font-bold shadow-xs dark:border-white/15 dark:bg-white/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                   )}
                 >

@@ -4,7 +4,12 @@
 "use client";
 
 import Link from "next/link";
-import { Bookmark, ChatBubble as MessageSquare, Clock, OpenNewWindow as ExternalLink } from "iconoir-react";
+import {
+  Bookmark,
+  ChatBubble as MessageSquare,
+  Clock,
+  OpenNewWindow as ExternalLink,
+} from "iconoir-react";
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";

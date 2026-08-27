@@ -13,12 +13,7 @@ export function GuillochePattern({ className, opacity = 0.05 }: GuillochePattern
       style={{ opacity }}
       aria-hidden="true"
     >
-      <svg
-        className="h-full w-full"
-        xmlns="http://www.w3.org/2000/svg"
-        width="100%"
-        height="100%"
-      >
+      <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
         <defs>
           <pattern
             id="guilloche-waves"
@@ -43,12 +38,7 @@ export function GuillochePattern({ className, opacity = 0.05 }: GuillochePattern
               className="text-foreground"
             />
           </pattern>
-          <pattern
-            id="guilloche-rosette"
-            width="240"
-            height="240"
-            patternUnits="userSpaceOnUse"
-          >
+          <pattern id="guilloche-rosette" width="240" height="240" patternUnits="userSpaceOnUse">
             <circle
               cx="120"
               cy="120"

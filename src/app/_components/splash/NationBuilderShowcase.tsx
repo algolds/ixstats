@@ -2,7 +2,17 @@
 
 import { motion } from "motion/react";
 import Link from "next/link";
-import { Crown, WhiteFlag as Flag, City as Building2, StatUp as TrendingUp, CheckCircle, Sparks as Sparkles, Lock, ArrowRight, Download } from "iconoir-react";
+import {
+  Crown,
+  WhiteFlag as Flag,
+  City as Building2,
+  StatUp as TrendingUp,
+  CheckCircle,
+  Sparks as Sparkles,
+  Lock,
+  ArrowRight,
+  Download,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { BUILD_STEPS, BUILDER_THEME, type BuilderSection } from "~/app/builder/lib/builder-theme";

@@ -39,7 +39,7 @@ export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
     const tabObj = config?.tabs.find((t) => t.id === activeTab);
     const defSubType = tabObj?.subTypes?.[0]?.value || "generic";
     gen.setSubType(defSubType);
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [activeTab, config]);
 
   if (!config) return null;
@@ -98,7 +98,7 @@ export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
   return (
     <div className="space-y-5">
       {/* 30% Controls + 70% Results Layout */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-10 items-start">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-10">
         {/* 30% Control Column */}
         <div className="lg:col-span-3">
           <DomainControlBar

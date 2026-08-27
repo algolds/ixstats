@@ -335,83 +335,91 @@ export function extractCoordsFromFields(fields: InfoboxField[]): [number, number
   let lat = (isNaN(latm) ? 0 : latm) / 60 + (isNaN(lats) ? 0 : lats) / 3600 + latd;
   let lng = (isNaN(longm) ? 0 : longm) / 60 + (isNaN(longs) ? 0 : longs) / 3600 + longd;
 
-    if (getStr("latns") === "S") lat = -lat;
-    if (getStr("longew") === "W") lng = -lng;
+  if (getStr("latns") === "S") lat = -lat;
+  if (getStr("longew") === "W") lng = -lng;
 
-    return [lng, lat];
-  }
+  return [lng, lat];
+}
 
-  /**
-   * Renders a parsed infobox into a clean, styled MediaWiki-compatible HTML table.
-   */
-  export function renderInfoboxHtml(parsed: ParsedInfobox): string {
-    if (!parsed || parsed.fields.length === 0) return "";
+/**
+ * Renders a parsed infobox into a clean, styled MediaWiki-compatible HTML table.
+ */
+export function renderInfoboxHtml(parsed: ParsedInfobox): string {
+  if (!parsed || parsed.fields.length === 0) return "";
 
-    const titleField = parsed.fields.find(
-      (f) =>
-        f.key.toLowerCase() === "name" ||
-        f.key.toLowerCase() === "common_name" ||
-        f.key.toLowerCase() === "conventional_long_name" ||
-        f.key.toLowerCase() === "title"
-    );
+  const titleField = parsed.fields.find(
+    (f) =>
+      f.key.toLowerCase() === "name" ||
+      f.key.toLowerCase() === "common_name" ||
+      f.key.toLowerCase() === "conventional_long_name" ||
+      f.key.toLowerCase() === "title"
+  );
 
-    const imageField = parsed.fields.find((f) =>
-      ["image", "image_flag", "image_coat", "photo", "flag", "logo", "coa"].includes(f.key.toLowerCase())
-    );
+  const imageField = parsed.fields.find((f) =>
+    ["image", "image_flag", "image_coat", "photo", "flag", "logo", "coa"].includes(
+      f.key.toLowerCase()
+    )
+  );
 
-    const headerTitle = titleField ? titleField.cleanValue : parsed.templateName.replace(/^Infobox\s*/i, "");
+  const headerTitle = titleField
+    ? titleField.cleanValue
+    : parsed.templateName.replace(/^Infobox\s*/i, "");
 
-    let rows = "";
+  let rows = "";
 
-    // If there is an image field, render lead image
-    if (imageField && imageField.cleanValue) {
-      const cleanImgName = imageField.cleanValue
-        .replace(/^\[\[(?:File|Image):/i, "")
-        .replace(/\|.*$/i, "")
-        .replace(/\]\]$/, "")
-        .trim();
-      if (cleanImgName) {
-        const imgSrc = cleanImgName.startsWith("http")
-          ? cleanImgName
-          : `/api/mediawiki/ixwiki/${cleanImgName.replace(/ /g, "_")}`;
-        rows += `
+  // If there is an image field, render lead image
+  if (imageField && imageField.cleanValue) {
+    const cleanImgName = imageField.cleanValue
+      .replace(/^\[\[(?:File|Image):/i, "")
+      .replace(/\|.*$/i, "")
+      .replace(/\]\]$/, "")
+      .trim();
+    if (cleanImgName) {
+      const imgSrc = cleanImgName.startsWith("http")
+        ? cleanImgName
+        : `/api/mediawiki/ixwiki/${cleanImgName.replace(/ /g, "_")}`;
+      rows += `
           <tr class="infobox-image-row">
             <td colspan="2" class="p-3 text-center">
               <img src="${imgSrc}" alt="${cleanImgName}" class="mx-auto max-h-48 rounded-xl object-contain shadow-xs border border-border/30" loading="lazy" />
             </td>
           </tr>`;
-      }
     }
+  }
 
-    for (const f of parsed.fields) {
-      if (!f.cleanValue || f === titleField || f === imageField) continue;
-      const label = f.key
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase());
+  for (const f of parsed.fields) {
+    if (!f.cleanValue || f === titleField || f === imageField) continue;
+    const label = f.key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-      // Format wiki links inside clean value: [[Target|Label]] -> <a href="/wiki/Target">Label</a>
-      const formattedVal = f.cleanValue
-        .replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g, '<a href="/wiki/$1" class="text-wiki hover:underline font-medium">$2</a>')
-        .replace(/\[\[([^\]]+)\]\]/g, '<a href="/wiki/$1" class="text-wiki hover:underline font-medium">$1</a>');
+    // Format wiki links inside clean value: [[Target|Label]] -> <a href="/wiki/Target">Label</a>
+    const formattedVal = f.cleanValue
+      .replace(
+        /\[\[([^|\]]+)\|([^\]]+)\]\]/g,
+        '<a href="/wiki/$1" class="text-wiki hover:underline font-medium">$2</a>'
+      )
+      .replace(
+        /\[\[([^\]]+)\]\]/g,
+        '<a href="/wiki/$1" class="text-wiki hover:underline font-medium">$1</a>'
+      );
 
-      rows += `
+    rows += `
         <tr class="infobox-row border-b border-border/20 last:border-b-0 hover:bg-muted/15 transition-colors">
           <th scope="row" class="infobox-label py-1.5 px-2.5 text-left text-xs font-semibold text-muted-foreground align-top w-2/5">${label}</th>
           <td class="infobox-data py-1.5 px-2.5 text-left text-xs text-foreground align-top leading-relaxed">${formattedVal}</td>
         </tr>`;
-    }
+  }
 
-    return `
+  return `
   <table class="infobox wikios-infobox ib-${parsed.templateName.toLowerCase().replace(/[\s_]+/g, "-")} my-4 w-full max-w-sm rounded-2xl border border-border/40 bg-card/80 shadow-md backdrop-blur-md p-3 text-sm">
     <caption class="infobox-title text-base font-bold text-foreground py-2.5 px-3 border-b border-border/40 text-center tracking-tight font-brand">${headerTitle}</caption>
     <tbody>${rows}</tbody>
   </table>\n`;
-  }
+}
 
-  /**
-   * Helper that extracts the infobox from wikitext and converts it directly to HTML.
-   */
-  export function parseInfoboxToHtml(wikitext: string): string {
-    const parsed = parseInfobox(wikitext);
-    return parsed ? renderInfoboxHtml(parsed) : "";
-  }
+/**
+ * Helper that extracts the infobox from wikitext and converts it directly to HTML.
+ */
+export function parseInfoboxToHtml(wikitext: string): string {
+  const parsed = parseInfobox(wikitext);
+  return parsed ? renderInfoboxHtml(parsed) : "";
+}

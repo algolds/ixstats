@@ -93,7 +93,8 @@ export function resolveHighResWikiImage(
     fileUrl = `/wiki/File:${encodeURIComponent(filename.replace(/ /g, "_"))}`;
   }
 
-  const isSvg = highResSrc.toLowerCase().includes(".svg") || filename.toLowerCase().endsWith(".svg");
+  const isSvg =
+    highResSrc.toLowerCase().includes(".svg") || filename.toLowerCase().endsWith(".svg");
 
   return {
     highResSrc,

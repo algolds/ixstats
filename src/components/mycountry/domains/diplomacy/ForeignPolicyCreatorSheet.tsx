@@ -23,7 +23,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { ScaleFrameEnlarge as Scale, Prohibition as Ban, WarningTriangle as AlertTriangle, Community as HandshakeIcon, Shield, Navigator as ShipWheel, ArrowDownRight, ArrowUpRight, SystemRestart as Loader2, Eye } from "iconoir-react";
+import {
+  ScaleFrameEnlarge as Scale,
+  Prohibition as Ban,
+  WarningTriangle as AlertTriangle,
+  Community as HandshakeIcon,
+  Shield,
+  Navigator as ShipWheel,
+  ArrowDownRight,
+  ArrowUpRight,
+  SystemRestart as Loader2,
+  Eye,
+} from "iconoir-react";
 
 // Statecraft S2.B: one fogged intel stat. null → "—" (unknown), questioned → "~" estimate.
 function IntelStat({

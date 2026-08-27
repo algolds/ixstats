@@ -123,7 +123,8 @@ function isIrlOrMaintenanceCategory(name: string): boolean {
   }
 
   // 6. Real-World IRL Country / Political Entities (excluding IxWorld lore)
-  const irlRegex = /\b(?:iran|iranian|portugal|portuguese|north america|south america|united states|u\.s\.|usa|russia|russian|china|chinese|germany|german|france|french|spain|spanish|italy|italian|japan|japanese|india|indian|brazil|brazilian|mexico|mexican|turkey|turkish|egypt|egyptian|israel|israeli|saudi|syria|syrian|iraq|iraqi|korea|korean|vietnam|vietnamese|netherlands|dutch|belgium|belgian|sweden|swedish|norway|norwegian|denmark|danish|finland|finnish|poland|polish|ukraine|ukrainian|canada|canadian|australia|australian|new zealand|argentina|chile|colombia|venezuela|peru|cuba|south africa|nigeria|kenya|ghana|morocco|algeria|tunisia|ethiopia|philippines|indonesia|malaysia|thailand|singapore|pakistan|bangladesh|ireland|irish|scotland|scottish|wales|welsh|england|english|united kingdom|british|austria|austrian|switzerland|swiss|greece|greek|hungary|hungarian|romania|romanian|bulgaria|serbia|croatia|czech|slovakia|albania|iceland|estonia|latvia|lithuania|taiwan|hong kong|latter day saint)\b/i;
+  const irlRegex =
+    /\b(?:iran|iranian|portugal|portuguese|north america|south america|united states|u\.s\.|usa|russia|russian|china|chinese|germany|german|france|french|spain|spanish|italy|italian|japan|japanese|india|indian|brazil|brazilian|mexico|mexican|turkey|turkish|egypt|egyptian|israel|israeli|saudi|syria|syrian|iraq|iraqi|korea|korean|vietnam|vietnamese|netherlands|dutch|belgium|belgian|sweden|swedish|norway|norwegian|denmark|danish|finland|finnish|poland|polish|ukraine|ukrainian|canada|canadian|australia|australian|new zealand|argentina|chile|colombia|venezuela|peru|cuba|south africa|nigeria|kenya|ghana|morocco|algeria|tunisia|ethiopia|philippines|indonesia|malaysia|thailand|singapore|pakistan|bangladesh|ireland|irish|scotland|scottish|wales|welsh|england|english|united kingdom|british|austria|austrian|switzerland|swiss|greece|greek|hungary|hungarian|romania|romanian|bulgaria|serbia|croatia|czech|slovakia|albania|iceland|estonia|latvia|lithuania|taiwan|hong kong|latter day saint)\b/i;
   if (irlRegex.test(lower)) {
     return true;
   }
@@ -150,7 +151,9 @@ async function main() {
     select: { id: true, name: true, slug: true },
   });
 
-  console.log(`📦 Auditing ${categories.length.toLocaleString()} total categories in PostgreSQL...`);
+  console.log(
+    `📦 Auditing ${categories.length.toLocaleString()} total categories in PostgreSQL...`
+  );
 
   const toDeleteIds: string[] = [];
   const samples: string[] = [];
@@ -164,7 +167,9 @@ async function main() {
     }
   }
 
-  console.log(`   Found ${toDeleteIds.length.toLocaleString()} IRL / maintenance categories to prune.`);
+  console.log(
+    `   Found ${toDeleteIds.length.toLocaleString()} IRL / maintenance categories to prune.`
+  );
   if (samples.length > 0) {
     console.log("   Sample pruned categories:", samples.join(", "));
   }
@@ -184,7 +189,9 @@ async function main() {
         id: { in: toDeleteIds },
       },
     });
-    console.log(`   ✨ Successfully purged ${deletedCats.count.toLocaleString()} categories from database.`);
+    console.log(
+      `   ✨ Successfully purged ${deletedCats.count.toLocaleString()} categories from database.`
+    );
   }
 
   const remainingCats = await (prisma as any).wikiCategory.count();

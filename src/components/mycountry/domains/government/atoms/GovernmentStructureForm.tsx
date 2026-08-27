@@ -11,7 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { City as Building2, Crown, ScaleFrameEnlarge as Scale, Group as Users, Suitcase as Briefcase, Link as Link2, LinkSlash as Link2Off } from "iconoir-react";
+import {
+  City as Building2,
+  Crown,
+  ScaleFrameEnlarge as Scale,
+  Group as Users,
+  Suitcase as Briefcase,
+  Link as Link2,
+  LinkSlash as Link2Off,
+} from "iconoir-react";
 import type { GovernmentStructureInput, GovernmentType } from "~/types/government";
 import { safeFormatCurrency } from "~/lib/utils";
 import { cn } from "~/lib/utils";

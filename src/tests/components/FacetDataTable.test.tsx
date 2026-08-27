@@ -15,10 +15,38 @@ interface TestPerson {
 }
 
 const mockData: TestPerson[] = [
-  { id: "1", name: "Alice Wonderland", role: "Chancellor", department: "Executive", salary: 120000, status: "Active" },
-  { id: "2", name: "Bob Builder", role: "Minister of Labor", department: "Infrastructure", salary: 95000, status: "Active" },
-  { id: "3", name: "Charlie Chaplin", role: "Cultural Envoy", department: "Diplomacy", salary: 80000, status: "Inactive" },
-  { id: "4", name: "Diana Prince", role: "Defense Strategist", department: "Security", salary: 110000, status: "Active" },
+  {
+    id: "1",
+    name: "Alice Wonderland",
+    role: "Chancellor",
+    department: "Executive",
+    salary: 120000,
+    status: "Active",
+  },
+  {
+    id: "2",
+    name: "Bob Builder",
+    role: "Minister of Labor",
+    department: "Infrastructure",
+    salary: 95000,
+    status: "Active",
+  },
+  {
+    id: "3",
+    name: "Charlie Chaplin",
+    role: "Cultural Envoy",
+    department: "Diplomacy",
+    salary: 80000,
+    status: "Inactive",
+  },
+  {
+    id: "4",
+    name: "Diana Prince",
+    role: "Defense Strategist",
+    department: "Security",
+    salary: 110000,
+    status: "Active",
+  },
 ];
 
 const mockColumns: FacetColumn<TestPerson>[] = [
@@ -80,16 +108,12 @@ describe("FacetDataTable Component", () => {
 
   it("renders mobile cards with mobileRole hierarchy in cards mode", () => {
     const { getByText, getAllByText, queryByText } = render(
-      <FacetDataTable
-        data={mockData}
-        columns={mockColumns}
-        layoutMode="cards"
-      />
+      <FacetDataTable data={mockData} columns={mockColumns} layoutMode="cards" />
     );
 
     expect(getByText("Alice Wonderland")).toBeTruthy();
     expect(getByText("Chancellor")).toBeTruthy();
-    
+
     // mobileRender overrides compensation format
     expect(getByText("$120k")).toBeTruthy();
     // mobileLabel overrides department label
@@ -121,15 +145,11 @@ describe("FacetDataTable Component", () => {
 
   it("sorts data when clicking sortable column headers", () => {
     const { getByText, getAllByRole } = render(
-      <FacetDataTable
-        data={mockData}
-        columns={mockColumns}
-        layoutMode="table"
-      />
+      <FacetDataTable data={mockData} columns={mockColumns} layoutMode="table" />
     );
 
     const nameHeader = getByText("Full Name");
-    
+
     // First click: Sort Ascending (Alice, Bob, Charlie, Diana)
     fireEvent.click(nameHeader);
     const rowsAsc = getAllByRole("row");

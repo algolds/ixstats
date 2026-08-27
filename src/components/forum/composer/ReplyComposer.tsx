@@ -62,7 +62,8 @@ export function ReplyComposer({
     setBbcode(code);
   }, []);
 
-  const canSubmit = (plainText.trim().length > 0 || bbcode.trim().length > 0) && !createPost.isPending;
+  const canSubmit =
+    (plainText.trim().length > 0 || bbcode.trim().length > 0) && !createPost.isPending;
 
   return (
     <div className="forum-composer rounded-2xl border border-white/10 bg-black/20 p-2 backdrop-blur-xl transition-all">
@@ -88,7 +89,9 @@ export function ReplyComposer({
 
         <div className="flex items-center justify-between border-t border-white/5 pt-2">
           <span className="text-[11px] text-[var(--forum-text-dim)]">
-            Press <kbd className="rounded bg-white/10 px-1 py-0.5 text-[10px] text-zinc-300">Enter</kbd> to reply
+            Press{" "}
+            <kbd className="rounded bg-white/10 px-1 py-0.5 text-[10px] text-zinc-300">Enter</kbd>{" "}
+            to reply
           </span>
 
           <Button

@@ -21,11 +21,11 @@ export function SettingsRow({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between transition-colors",
+        "flex flex-col gap-3 p-4 transition-colors sm:flex-row sm:items-center sm:justify-between",
         className
       )}
     >
-      <div className="flex items-start gap-3 min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 items-start gap-3">
         {Icon && (
           <div
             className={cn(
@@ -37,11 +37,9 @@ export function SettingsRow({
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-foreground tracking-tight">
-            {label}
-          </div>
+          <div className="text-foreground text-sm font-semibold tracking-tight">{label}</div>
           {description && (
-            <div className="text-xs font-medium text-muted-foreground mt-0.5 leading-relaxed">
+            <div className="text-muted-foreground mt-0.5 text-xs leading-relaxed font-medium">
               {description}
             </div>
           )}
@@ -49,9 +47,7 @@ export function SettingsRow({
       </div>
 
       {children && (
-        <div className="flex shrink-0 items-center gap-2 sm:self-center">
-          {children}
-        </div>
+        <div className="flex shrink-0 items-center gap-2 sm:self-center">{children}</div>
       )}
     </div>
   );

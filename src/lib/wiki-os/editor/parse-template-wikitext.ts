@@ -19,7 +19,7 @@ export interface ParsedTemplate {
 export function parseTemplateWikitext(
   wikitext: string,
   defaultName = "Template",
-  brackets: "curly" | "square" = "curly",
+  brackets: "curly" | "square" = "curly"
 ): ParsedTemplate {
   const open = brackets === "curly" ? /^\{\{/ : /^\[\[/;
   const close = brackets === "curly" ? /\}\}$/ : /\]\]$/;

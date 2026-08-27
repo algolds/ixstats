@@ -2,14 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import {
-  EditPencil,
-  ViewGrid,
-  GitCommit,
-  Download,
-  PageSearch,
-  ArrowRight,
-} from "iconoir-react";
+import { EditPencil, ViewGrid, GitCommit, Download, PageSearch, ArrowRight } from "iconoir-react";
 
 import { withBasePath } from "~/lib/base-path";
 
@@ -24,7 +17,8 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
     {
       id: "templates",
       title: "Template Palette & Custom Infobox Designer",
-      description: "Interactive palette with canonical schemas, on-the-fly fields, and custom infobox builder.",
+      description:
+        "Interactive palette with canonical schemas, on-the-fly fields, and custom infobox builder.",
       legacyAlias: "Special:Templates",
       icon: ViewGrid,
       href: "/util/templates",
@@ -54,7 +48,8 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
     {
       id: "export",
       title: "Portable MDX & JSON Snapshot Exporter",
-      description: "Download portable Markdown files with YAML frontmatter or structured JSON AST dumps.",
+      description:
+        "Download portable Markdown files with YAML frontmatter or structured JSON AST dumps.",
       legacyAlias: "Special:Export",
       icon: Download,
       href: "/api/wiki/export?format=json",
@@ -65,7 +60,8 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
     {
       id: "search",
       title: "Full-Text Spotlight Search Engine",
-      description: "Ranked full-text search with title weighting, wikitext extracts, and BlurHash thumbnails.",
+      description:
+        "Ranked full-text search with title weighting, wikitext extracts, and BlurHash thumbnails.",
       legacyAlias: "Special:Search",
       icon: PageSearch,
       href: "/util/search",
@@ -88,7 +84,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
     <div className="space-y-3">
       <div className="flex items-center gap-2 px-1">
         <EditPencil className="h-4 w-4 text-purple-400" />
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Editorial & Tooling ({filtered.length})
         </h3>
       </div>
@@ -103,7 +99,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
               target={(tool as any).isExternal ? "_blank" : undefined}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
-              className="group relative flex flex-col justify-between rounded-xl border border-border/40 bg-card/60 p-4 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-wiki/40 hover:bg-card/90 hover:shadow-lg active:scale-[0.98]"
+              className="group border-border/40 bg-card/60 hover:border-wiki/40 hover:bg-card/90 relative flex flex-col justify-between rounded-xl border p-4 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]"
             >
               <div>
                 <div className="mb-3 flex items-center justify-between">
@@ -112,22 +108,22 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
                   >
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className="rounded-full border border-border/40 bg-secondary/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  <span className="border-border/40 bg-secondary/50 text-muted-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
                     {tool.badge}
                   </span>
                 </div>
 
-                <h4 className="text-sm font-semibold text-foreground group-hover:text-wiki">
+                <h4 className="text-foreground group-hover:text-wiki text-sm font-semibold">
                   {tool.title}
                 </h4>
-                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
                   {tool.description}
                 </p>
               </div>
 
-              <div className="mt-4 flex items-center justify-between border-t border-border/30 pt-3 text-[11px] text-muted-foreground">
+              <div className="border-border/30 text-muted-foreground mt-4 flex items-center justify-between border-t pt-3 text-[11px]">
                 <span className="font-mono text-[10px] opacity-70">{tool.legacyAlias}</span>
-                <ArrowRight className="h-3 w-3 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-wiki" />
+                <ArrowRight className="text-muted-foreground group-hover:text-wiki h-3 w-3 transition-transform duration-200 group-hover:translate-x-1" />
               </div>
             </Link>
           );

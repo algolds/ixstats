@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { EditPencil as Pencil, ViewGrid as Grid3X3, ColorPicker as Paintbrush } from "iconoir-react";
+import {
+  EditPencil as Pencil,
+  ViewGrid as Grid3X3,
+  ColorPicker as Paintbrush,
+} from "iconoir-react";
 import { useRouter } from "next/navigation";
 import { BorderEditorPanel } from "~/components/maps/editor/BorderEditorPanel";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
@@ -350,7 +354,9 @@ export function PropertiesPanelContent({
                 <span className="flex items-center gap-1">
                   <span
                     className="border-border inline-block h-3 w-3 rounded border"
-                    style={{ backgroundColor: mapSelectedCountry.fillColor || "var(--color-bg-secondary)" }}
+                    style={{
+                      backgroundColor: mapSelectedCountry.fillColor || "var(--color-bg-secondary)",
+                    }}
                   />
                   <span className="text-foreground/80 font-mono text-[10px]">
                     {mapSelectedCountry.fillColor || "—"}

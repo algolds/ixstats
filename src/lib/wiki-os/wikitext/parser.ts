@@ -21,10 +21,7 @@ import type {
   DividerBlock,
 } from "./types";
 
-export function parse(
-  input: string,
-  options?: { title?: string; slug?: string }
-): ParseResult {
+export function parse(input: string, options?: { title?: string; slug?: string }): ParseResult {
   const title = options?.title || "";
   const slug = options?.slug || "";
   const diagnostics: Diagnostic[] = [];

@@ -1,6 +1,10 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { db } from "~/server/db";
-import { NativeSearchService, searchWiki, searchShadowArticles } from "~/lib/wiki-os/core/native-search-service";
+import {
+  NativeSearchService,
+  searchWiki,
+  searchShadowArticles,
+} from "~/lib/wiki-os/core/native-search-service";
 
 describe("NativeSearchService & searchWiki contract", () => {
   let findManySpy: any;

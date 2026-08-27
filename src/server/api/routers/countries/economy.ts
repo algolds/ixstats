@@ -69,7 +69,7 @@ export const economyProcedures = {
           },
           include: includeObject,
         });
-      } catch  {
+      } catch {
         const slugLower = input.id.toLowerCase();
         country = await ctx.db.country.findFirst({
           where: {
@@ -212,15 +212,8 @@ export const economyProcedures = {
       const sovereignUser = rawUser
         ? {
             id: rawUser.id,
-            username:
-              rawUser.forumUsername ||
-              rawUser.wikiUsername ||
-              rawUser.clerkUserId ||
-              null,
-            roleName:
-              rawUser.role?.displayName ||
-              rawUser.role?.name ||
-              "Sovereign Regent",
+            username: rawUser.forumUsername || rawUser.wikiUsername || rawUser.clerkUserId || null,
+            roleName: rawUser.role?.displayName || rawUser.role?.name || "Sovereign Regent",
             membershipTier: rawUser.membershipTier || "citizen",
           }
         : null;

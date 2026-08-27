@@ -4,7 +4,14 @@
 // Results data table with sorting, search filtering, audio synthesis, and bulk stash actions
 
 import React, { useState } from "react";
-import { SoundHigh as Volume2, Bookmark, Download as FileDown, Copy, Check, HelpCircle } from "iconoir-react";
+import {
+  SoundHigh as Volume2,
+  Bookmark,
+  Download as FileDown,
+  Copy,
+  Check,
+  HelpCircle,
+} from "iconoir-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import type { BatchNameResult } from "./batch-constants";
 
@@ -57,7 +64,7 @@ export function BatchResultsTable({
   return (
     <div className="space-y-4">
       {/* Control bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-3">
+      <div className="border-border/40 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
         <div className="flex items-center gap-3">
           <input
             type="text"
@@ -66,7 +73,7 @@ export function BatchResultsTable({
             onChange={(e) => onSearchChange(e.target.value)}
             className="border-border/60 bg-background text-foreground rounded-md border px-2.5 py-1 text-xs focus:outline-none"
           />
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
             <div className="flex items-center gap-1">
               <span>Max Perplexity:</span>
               <Tooltip>
@@ -86,7 +93,9 @@ export function BatchResultsTable({
                     to the training phonology model.
                   </p>
                   <div className="border-border/40 grid grid-cols-2 gap-1.5 border-t pt-1 font-mono text-[10px]">
-                    <span className="font-medium text-emerald-500">&lt; 25: Natural & familiar</span>
+                    <span className="font-medium text-emerald-500">
+                      &lt; 25: Natural & familiar
+                    </span>
                     <span className="font-medium text-amber-500">25–50: Balanced</span>
                     <span className="col-span-2 font-medium text-rose-500">
                       &gt; 50: Exotic & unusual transitions
@@ -101,9 +110,9 @@ export function BatchResultsTable({
               max={100}
               value={perplexityFilter}
               onChange={(e) => onPerplexityChange(Number(e.target.value))}
-              className="w-20 accent-onoma-primary"
+              className="accent-onoma-primary w-20"
             />
-            <span className="font-mono text-[11px] font-semibold text-onoma-primary">
+            <span className="text-onoma-primary font-mono text-[11px] font-semibold">
               {perplexityFilter > 0 ? `< ${perplexityFilter}` : "All"}
             </span>
           </div>
@@ -113,20 +122,20 @@ export function BatchResultsTable({
           {selectedNames.size > 0 && (
             <button
               onClick={onBulkSave}
-              className="flex items-center gap-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-500/20 dark:text-indigo-400 cursor-pointer"
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-500/20 dark:text-indigo-400"
             >
               <Bookmark className="h-3.5 w-3.5" /> Save Selected ({selectedNames.size})
             </button>
           )}
           <button
             onClick={onExportCSV}
-            className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-secondary/40 cursor-pointer"
+            className="border-border/60 bg-background text-foreground hover:bg-secondary/40 flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold"
           >
             <FileDown className="h-3.5 w-3.5" /> CSV
           </button>
           <button
             onClick={onExportJSON}
-            className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-secondary/40 cursor-pointer"
+            className="border-border/60 bg-background text-foreground hover:bg-secondary/40 flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold"
           >
             <FileDown className="h-3.5 w-3.5" /> JSON
           </button>
@@ -134,37 +143,37 @@ export function BatchResultsTable({
       </div>
 
       {/* Results table */}
-      <div className="max-h-[500px] overflow-y-auto rounded-lg border border-border/40">
+      <div className="border-border/40 max-h-[500px] overflow-y-auto rounded-lg border">
         <table className="w-full text-left text-xs">
-          <thead className="sticky top-0 bg-background/95 backdrop-blur-sm border-b border-border/40">
+          <thead className="bg-background/95 border-border/40 sticky top-0 border-b backdrop-blur-sm">
             <tr>
-              <th className="p-2 w-8 text-center">
+              <th className="w-8 p-2 text-center">
                 <input
                   type="checkbox"
                   checked={results.length > 0 && selectedNames.size === results.length}
                   onChange={onSelectAll}
-                  className="rounded border-border/60 accent-onoma-primary cursor-pointer"
+                  className="border-border/60 accent-onoma-primary cursor-pointer rounded"
                 />
               </th>
               <th
                 onClick={() => onSort("name")}
-                className="p-2 font-bold text-foreground cursor-pointer hover:text-onoma-primary"
+                className="text-foreground hover:text-onoma-primary cursor-pointer p-2 font-bold"
               >
                 Name {sorting.column === "name" && (sorting.direction === "asc" ? "↑" : "↓")}
               </th>
-              <th className="p-2 font-bold text-foreground">IPA Transcription</th>
+              <th className="text-foreground p-2 font-bold">IPA Transcription</th>
               <th
                 onClick={() => onSort("syllables")}
-                className="p-2 font-bold text-foreground cursor-pointer hover:text-onoma-primary"
+                className="text-foreground hover:text-onoma-primary cursor-pointer p-2 font-bold"
               >
                 Syllables{" "}
                 {sorting.column === "syllables" && (sorting.direction === "asc" ? "↑" : "↓")}
               </th>
-              <th className="p-2 font-bold text-foreground">
+              <th className="text-foreground p-2 font-bold">
                 <div className="flex items-center gap-1">
                   <span
                     onClick={() => onSort("perplexity")}
-                    className="cursor-pointer hover:text-onoma-primary"
+                    className="hover:text-onoma-primary cursor-pointer"
                   >
                     Perplexity{" "}
                     {sorting.column === "perplexity" && (sorting.direction === "asc" ? "↑" : "↓")}
@@ -180,13 +189,17 @@ export function BatchResultsTable({
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs space-y-1.5 p-3 text-xs">
-                      <p className="text-foreground font-semibold">Perplexity (Linguistic Surprise)</p>
+                      <p className="text-foreground font-semibold">
+                        Perplexity (Linguistic Surprise)
+                      </p>
                       <p className="text-muted-foreground text-[11px] leading-relaxed">
-                        Measures how unexpected or unusual a word&apos;s letter transitions are relative
-                        to the training phonology model.
+                        Measures how unexpected or unusual a word&apos;s letter transitions are
+                        relative to the training phonology model.
                       </p>
                       <div className="border-border/40 grid grid-cols-2 gap-1.5 border-t pt-1 font-mono text-[10px]">
-                        <span className="font-medium text-emerald-500">&lt; 25: Natural & familiar</span>
+                        <span className="font-medium text-emerald-500">
+                          &lt; 25: Natural & familiar
+                        </span>
                         <span className="font-medium text-amber-500">25–50: Balanced</span>
                         <span className="col-span-2 font-medium text-rose-500">
                           &gt; 50: Exotic & unusual transitions
@@ -199,7 +212,7 @@ export function BatchResultsTable({
               <th className="p-2 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/20">
+          <tbody className="divide-border/20 divide-y">
             {results.map((r, i) => {
               const isSelected = selectedNames.has(r.name);
               return (
@@ -214,12 +227,12 @@ export function BatchResultsTable({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => onSelectName(r.name)}
-                      className="rounded border-border/60 accent-onoma-primary cursor-pointer"
+                      className="border-border/60 accent-onoma-primary cursor-pointer rounded"
                     />
                   </td>
-                  <td className="p-2 font-semibold text-foreground">{r.name}</td>
-                  <td className="p-2 font-mono text-muted-foreground">{r.ipa || "—"}</td>
-                  <td className="p-2 text-muted-foreground">{r.syllables}</td>
+                  <td className="text-foreground p-2 font-semibold">{r.name}</td>
+                  <td className="text-muted-foreground p-2 font-mono">{r.ipa || "—"}</td>
+                  <td className="text-muted-foreground p-2">{r.syllables}</td>
                   <td className="p-2">
                     <span
                       className={`font-mono text-[11px] font-semibold ${
@@ -238,14 +251,14 @@ export function BatchResultsTable({
                       <button
                         onClick={() => onPlayName(r.name, r.ipa)}
                         title="Listen to pronunciation"
-                        className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-onoma-primary transition-colors cursor-pointer"
+                        className="text-muted-foreground hover:bg-secondary hover:text-onoma-primary cursor-pointer rounded p-1 transition-colors"
                       >
                         <Volume2 className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleCopy(r.name)}
                         title="Copy to clipboard"
-                        className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
+                        className="text-muted-foreground hover:bg-secondary hover:text-foreground cursor-pointer rounded p-1 transition-colors"
                       >
                         {copiedName === r.name ? (
                           <Check className="h-3.5 w-3.5 text-emerald-500" />

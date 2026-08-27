@@ -31,7 +31,7 @@ async function fetchMW(params: Record<string, string>): Promise<any> {
 
   try {
     const res = await fetch(url.toString(), {
-      headers: { "User-Agent": DEFAULT_USER_AGENT, "Accept": "application/json" },
+      headers: { "User-Agent": DEFAULT_USER_AGENT, Accept: "application/json" },
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
@@ -92,7 +92,12 @@ async function runAudit() {
   console.log("\n--- [2/5] Top Contributor Revision Parity ---");
   const testUsers = ["Urcea", "Burgundie", "Kir", "Bobbo", "Heku"];
   for (const u of testUsers) {
-    const ucData = await fetchMW({ action: "query", list: "users", ususers: u, usprop: "editcount|registration" });
+    const ucData = await fetchMW({
+      action: "query",
+      list: "users",
+      ususers: u,
+      usprop: "editcount|registration",
+    });
     const mwUser = ucData?.query?.users?.[0];
     const mwEdits = mwUser?.editcount ?? 0;
 
@@ -105,33 +110,58 @@ async function runAudit() {
     });
 
     const coverage = mwEdits > 0 ? ((pgEdits / mwEdits) * 100).toFixed(1) : "100.0";
-    console.log(`User: ${u.padEnd(12)} | MW Edits: ${String(mwEdits).padStart(6)} | PG Revs: ${String(pgEdits).padStart(6)} | Coverage: ${coverage}% | LoreScore: ${loreStats?.totalScore ?? 0}`);
+    console.log(
+      `User: ${u.padEnd(12)} | MW Edits: ${String(mwEdits).padStart(6)} | PG Revs: ${String(pgEdits).padStart(6)} | Coverage: ${coverage}% | LoreScore: ${loreStats?.totalScore ?? 0}`
+    );
   }
 
   // 3. Random Sample Article Wikitext & Freshness Parity
   console.log("\n--- [3/5] Sample Article Freshness & Wikitext Verification ---");
-  const sampleTitles = ["Petalstone Music", "Urcea", "Burgundie", "Treaty of Oakhaven", "Main Page"];
+  const sampleTitles = [
+    "Petalstone Music",
+    "Urcea",
+    "Burgundie",
+    "Treaty of Oakhaven",
+    "Main Page",
+  ];
   for (const title of sampleTitles) {
     const startPg = performance.now();
     const pgArt = await prisma.wikiArticle.findFirst({
       where: { source: "ixwiki", title },
-      select: { title: true, mwLatestRevId: true, wordCount: true, wikitext: true, updatedAt: true },
+      select: {
+        title: true,
+        mwLatestRevId: true,
+        wordCount: true,
+        wikitext: true,
+        updatedAt: true,
+      },
     });
     const pgDuration = (performance.now() - startPg).toFixed(2);
 
     const startMw = performance.now();
-    const mwData = await fetchMW({ action: "query", prop: "revisions", titles: title, rvprop: "ids|timestamp|size" });
+    const mwData = await fetchMW({
+      action: "query",
+      prop: "revisions",
+      titles: title,
+      rvprop: "ids|timestamp|size",
+    });
     const mwDuration = (performance.now() - startMw).toFixed(2);
 
-    const pageObj = mwData?.query?.pages ? Object.values(mwData.query.pages)[0] as any : null;
+    const pageObj = mwData?.query?.pages ? (Object.values(mwData.query.pages)[0] as any) : null;
     const mwRevId = pageObj?.revisions?.[0]?.revid ?? 0;
     const mwSize = pageObj?.revisions?.[0]?.size ?? 0;
 
     const match = pgArt && pgArt.mwLatestRevId === mwRevId ? "✅ MATCH" : "⚠️ DIFF";
     console.log(`Page: "${title}"`);
-    console.log(`  ├─ Status:      ${match} (PG Rev: ${pgArt?.mwLatestRevId ?? 0} vs MW Rev: ${mwRevId})`);
-    console.log(`  ├─ Wikitext:    ${pgArt?.wikitext?.length ?? 0} chars (~${pgArt?.wordCount ?? 0} words) vs MW Size: ${mwSize} bytes`);
-    console.log(`  └─ Read Speed:  PostgreSQL ${pgDuration}ms vs MediaWiki Action API ${mwDuration}ms (~${(Number(mwDuration) / Math.max(0.1, Number(pgDuration))).toFixed(0)}x faster)`);
+    console.log(
+      `  ├─ Status:      ${match} (PG Rev: ${pgArt?.mwLatestRevId ?? 0} vs MW Rev: ${mwRevId})`
+    );
+    console.log(
+      `  ├─ Wikitext:    ${pgArt?.wikitext?.length ?? 0} chars (~${pgArt?.wordCount ?? 0} words) vs MW Size: ${mwSize} bytes`
+    );
+    console.log(
+      `  └─ Read Speed:  PostgreSQL ${pgDuration}ms vs MediaWiki Action API ${mwDuration}ms (~${(Number(mwDuration) / Math.max(0.1, Number(pgDuration))).toFixed(0)}x faster)`
+    );
   }
 
   // 4. Category & Taxonomy System Integrity
@@ -140,7 +170,12 @@ async function runAudit() {
   for (const cat of sampleCategories) {
     const rawCat = cat.replace(/^Category:/i, "");
     const cleanCat = rawCat.replace(/_/g, " ");
-    const mwCat = await fetchMW({ action: "query", list: "categorymembers", cmtitle: `Category:${cleanCat}`, cmlimit: "500" });
+    const mwCat = await fetchMW({
+      action: "query",
+      list: "categorymembers",
+      cmtitle: `Category:${cleanCat}`,
+      cmlimit: "500",
+    });
     const mwMemberCount = mwCat?.query?.categorymembers?.length ?? 0;
 
     const pgCat = await prisma.wikiArticle.findFirst({
@@ -148,14 +183,22 @@ async function runAudit() {
       select: { id: true, title: true },
     });
 
-    console.log(`Category: "${cat}" | Exists in PG: ${pgArtExists(Boolean(pgCat))} | Upstream Members: ${mwMemberCount}`);
+    console.log(
+      `Category: "${cat}" | Exists in PG: ${pgArtExists(Boolean(pgCat))} | Upstream Members: ${mwMemberCount}`
+    );
   }
 
   // 5. Database Health Summary
   console.log("\n--- [5/5] Final Audit Assessment ---");
-  console.log(`• Total Ingested Entities:  ${pgTotalArticles + pgRevisions + pgUsersWithStats} records`);
-  console.log(`• Main Article Catalog:     ${((pgMainArticles / Math.max(1, mwStats.articles || 4688)) * 100).toFixed(1)}% complete`);
-  console.log(`• Latency Optimization:     Sub-1.5ms local relational queries vs ~450ms network HTTP roundtrips`);
+  console.log(
+    `• Total Ingested Entities:  ${pgTotalArticles + pgRevisions + pgUsersWithStats} records`
+  );
+  console.log(
+    `• Main Article Catalog:     ${((pgMainArticles / Math.max(1, mwStats.articles || 4688)) * 100).toFixed(1)}% complete`
+  );
+  console.log(
+    `• Latency Optimization:     Sub-1.5ms local relational queries vs ~450ms network HTTP roundtrips`
+  );
   console.log(`• Upstream Decoupling:      100% independent from local MariaDB sockets`);
   console.log("==================================================================");
 

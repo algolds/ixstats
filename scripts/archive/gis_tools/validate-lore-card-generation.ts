@@ -158,7 +158,10 @@ function validateCandidate(candidate: Record<string, unknown>): {
   }
 
   // 9. Category
-  if (!candidate.category || !(VALID_CATEGORIES as string[]).includes(candidate.category as string)) {
+  if (
+    !candidate.category ||
+    !(VALID_CATEGORIES as string[]).includes(candidate.category as string)
+  ) {
     errors.push(`Invalid category: ${String(candidate.category)}`);
   }
 

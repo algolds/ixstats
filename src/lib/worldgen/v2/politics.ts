@@ -10,12 +10,7 @@
  * 6. Markov naming: names states and cultures using language families
  */
 
-import type {
-  WorldGraph,
-  WorldGenParams,
-  PoliticalState,
-  Settlement,
-} from "./types";
+import type { WorldGraph, WorldGenParams, PoliticalState, Settlement } from "./types";
 import { QUALITY_THRESHOLDS } from "./config";
 import { makeRng, hslToHex } from "./helpers/rng";
 import { cellLat, cellLng, cellAreaKm2 } from "./mesh";

@@ -155,7 +155,9 @@ export default function MatchDetailModal({
                   ) : (
                     <div
                       className="flex h-full w-full items-center justify-center rounded-full text-xs font-bold text-white"
-                      style={{ backgroundColor: match.awayTeam.color ?? "var(--color-destructive)" }}
+                      style={{
+                        backgroundColor: match.awayTeam.color ?? "var(--color-destructive)",
+                      }}
                     >
                       {match.awayTeam.shortName || match.awayTeam.name.slice(0, 2).toUpperCase()}
                     </div>

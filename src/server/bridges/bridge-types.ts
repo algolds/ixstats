@@ -3,8 +3,4 @@
  * Retained as temporary compatibility re-export for Plan 158.
  */
 
-export type {
-  BridgeMessage,
-  BridgeSyncResult,
-  BridgeAdapter,
-} from "~/server/shared/bridge-types";
+export type { BridgeMessage, BridgeSyncResult, BridgeAdapter } from "~/server/shared/bridge-types";

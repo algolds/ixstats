@@ -271,7 +271,14 @@ export function useMapEditorTransforms({
       invalidateAllMapData();
       debouncedRefetch();
     },
-    [countryId, allFeatures, updateSubdivision, createSubdivision, invalidateAllMapData, debouncedRefetch]
+    [
+      countryId,
+      allFeatures,
+      updateSubdivision,
+      createSubdivision,
+      invalidateAllMapData,
+      debouncedRefetch,
+    ]
   );
 
   const applyGeometryTransformation = useCallback(

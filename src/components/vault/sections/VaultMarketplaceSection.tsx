@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Shop as Store, Cart as ShoppingCart, ArrowSeparate as ArrowRightLeft } from "iconoir-react";
+import {
+  Shop as Store,
+  Cart as ShoppingCart,
+  ArrowSeparate as ArrowRightLeft,
+} from "iconoir-react";
 import { VaultSubTabNav } from "~/components/vault/VaultSubTabNav";
 import { VaultStoreTab } from "./marketplace/VaultStoreTab";
 import { VaultAuctionsTab } from "./marketplace/VaultAuctionsTab";

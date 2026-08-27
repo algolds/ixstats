@@ -4,7 +4,17 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { Undo as Undo2, Redo as Redo2, Undo as RotateCcw, Component as Shapes, Plus, ViewGrid as Grid3X3, Check, EditPencil as PenTool, Sparks as Sparkle } from "iconoir-react";
+import {
+  Undo as Undo2,
+  Redo as Redo2,
+  Undo as RotateCcw,
+  Component as Shapes,
+  Plus,
+  ViewGrid as Grid3X3,
+  Check,
+  EditPencil as PenTool,
+  Sparks as Sparkle,
+} from "iconoir-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { FacetMaterial } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
@@ -157,7 +167,10 @@ export function GlyphForgeCanvas({
       setGrapheme(editingGlyph.phoneme);
       setUnicodeSymbol(editingGlyph.unicode || "");
       if (editingGlyph.svgPath) {
-        const parts = editingGlyph.svgPath.trim().split(/(?=M\s*)/i).filter(Boolean);
+        const parts = editingGlyph.svgPath
+          .trim()
+          .split(/(?=M\s*)/i)
+          .filter(Boolean);
         setStrokes(parts.length > 0 ? parts : [editingGlyph.svgPath]);
       } else {
         setStrokes([]);
@@ -332,9 +345,9 @@ export function GlyphForgeCanvas({
       className="border-border/30 relative flex flex-col space-y-3 rounded-2xl border p-4 shadow-sm"
     >
       {/* 1. Apple-Style Header: Studio Badge & History Tools */}
-      <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2.5">
+      <div className="border-border/40 flex items-center justify-between gap-2 border-b pb-2.5">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-onoma-primary/10 text-onoma-primary">
+          <div className="bg-onoma-primary/10 text-onoma-primary flex h-6 w-6 items-center justify-center rounded-lg">
             <PenTool className="h-3.5 w-3.5" />
           </div>
           <div>
@@ -343,7 +356,7 @@ export function GlyphForgeCanvas({
                 {editingGlyph ? `Refining ⟨${editingGlyph.phoneme}⟩` : "Glyph Designer"}
               </h4>
               {strokes.length > 0 && (
-                <span className="text-muted-foreground bg-secondary/50 rounded-full px-1.5 py-0.2 text-[9px] font-mono">
+                <span className="text-muted-foreground bg-secondary/50 py-0.2 rounded-full px-1.5 font-mono text-[9px]">
                   {strokes.length}
                 </span>
               )}
@@ -357,20 +370,20 @@ export function GlyphForgeCanvas({
             <button
               type="button"
               onClick={onCancelEdit}
-              className="text-muted-foreground hover:text-foreground text-[10px] font-medium px-2 py-0.5 rounded-md hover:bg-secondary/40 transition-colors cursor-pointer active:scale-95"
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary/40 cursor-pointer rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors active:scale-95"
             >
               Cancel
             </button>
           )}
 
           {/* History Group */}
-          <div className="flex items-center gap-0.5 rounded-lg border border-border/40 bg-secondary/20 p-0.5">
+          <div className="border-border/40 bg-secondary/20 flex items-center gap-0.5 rounded-lg border p-0.5">
             <button
               type="button"
               onClick={handleUndo}
               disabled={strokes.length === 0}
               title="Undo (Cmd+Z)"
-              className="text-muted-foreground hover:text-foreground hover:bg-background/80 disabled:opacity-25 flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-md transition-all active:scale-90"
+              className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-md transition-all active:scale-90 disabled:opacity-25"
             >
               <Undo2 className="h-3 w-3" />
             </button>
@@ -379,7 +392,7 @@ export function GlyphForgeCanvas({
               onClick={handleRedo}
               disabled={redoStack.length === 0}
               title="Redo (Cmd+Shift+Z)"
-              className="text-muted-foreground hover:text-foreground hover:bg-background/80 disabled:opacity-25 flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-md transition-all active:scale-90"
+              className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-md transition-all active:scale-90 disabled:opacity-25"
             >
               <Redo2 className="h-3 w-3" />
             </button>
@@ -388,7 +401,7 @@ export function GlyphForgeCanvas({
               onClick={handleClear}
               disabled={strokes.length === 0 && !currentStroke}
               title="Clear Canvas"
-              className="text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 disabled:opacity-25 flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-md transition-all active:scale-90"
+              className="text-muted-foreground flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-md transition-all hover:bg-rose-500/10 hover:text-rose-500 active:scale-90 disabled:opacity-25"
             >
               <RotateCcw className="h-3 w-3" />
             </button>
@@ -404,20 +417,22 @@ export function GlyphForgeCanvas({
                   g.guideLevel === "all"
                     ? "baseline"
                     : g.guideLevel === "baseline"
-                    ? "none"
-                    : "all",
+                      ? "none"
+                      : "all",
               }))
             }
             title={`Guide View: ${guides.guideLevel}`}
             className={cn(
-              "flex h-6.5 items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-all cursor-pointer active:scale-95",
+              "flex h-6.5 cursor-pointer items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-all active:scale-95",
               guides.guideLevel !== "none"
                 ? "border-onoma-primary/30 bg-onoma-primary/10 text-onoma-primary"
                 : "border-border/40 bg-secondary/20 text-muted-foreground hover:text-foreground"
             )}
           >
             <Grid3X3 className="h-3 w-3" />
-            <span className="capitalize">{guides.guideLevel === "all" ? "Guides" : guides.guideLevel}</span>
+            <span className="capitalize">
+              {guides.guideLevel === "all" ? "Guides" : guides.guideLevel}
+            </span>
           </button>
         </div>
       </div>
@@ -464,7 +479,12 @@ export function GlyphForgeCanvas({
                 strokeWidth="0.75"
                 strokeDasharray="2 3"
               />
-              <text x="3" y="18" fill="currentColor" className="text-foreground/25 text-[6px] font-mono font-medium select-none">
+              <text
+                x="3"
+                y="18"
+                fill="currentColor"
+                className="text-foreground/25 font-mono text-[6px] font-medium select-none"
+              >
                 asc
               </text>
 
@@ -479,7 +499,12 @@ export function GlyphForgeCanvas({
                 strokeWidth="0.75"
                 strokeDasharray="2 3"
               />
-              <text x="3" y="34" fill="currentColor" className="text-foreground/25 text-[6px] font-mono font-medium select-none">
+              <text
+                x="3"
+                y="34"
+                fill="currentColor"
+                className="text-foreground/25 font-mono text-[6px] font-medium select-none"
+              >
                 cap
               </text>
 
@@ -494,7 +519,12 @@ export function GlyphForgeCanvas({
                 strokeWidth="0.75"
                 strokeDasharray="2 3"
               />
-              <text x="3" y="54" fill="currentColor" className="text-foreground/25 text-[6px] font-mono font-medium select-none">
+              <text
+                x="3"
+                y="54"
+                fill="currentColor"
+                className="text-foreground/25 font-mono text-[6px] font-medium select-none"
+              >
                 x
               </text>
 
@@ -509,7 +539,12 @@ export function GlyphForgeCanvas({
                 strokeWidth="0.75"
                 strokeDasharray="2 3"
               />
-              <text x="3" y="110" fill="currentColor" className="text-foreground/25 text-[6px] font-mono font-medium select-none">
+              <text
+                x="3"
+                y="110"
+                fill="currentColor"
+                className="text-foreground/25 font-mono text-[6px] font-medium select-none"
+              >
                 desc
               </text>
             </>
@@ -528,7 +563,12 @@ export function GlyphForgeCanvas({
                 strokeWidth="1"
                 strokeDasharray="3 3"
               />
-              <text x="3" y="90" fill="#0091ff" className="opacity-60 text-[6.5px] font-mono font-semibold select-none">
+              <text
+                x="3"
+                y="90"
+                fill="#0091ff"
+                className="font-mono text-[6.5px] font-semibold opacity-60 select-none"
+              >
                 base 92
               </text>
             </>
@@ -601,7 +641,7 @@ export function GlyphForgeCanvas({
       </div>
 
       {/* 3. Docked Apple-Style Unified Tool Inspector */}
-      <div className="flex items-center justify-between gap-1.5 rounded-xl border border-border/40 bg-secondary/15 p-1">
+      <div className="border-border/40 bg-secondary/15 flex items-center justify-between gap-1.5 rounded-xl border p-1">
         {/* Stroke Weight Stepper */}
         <div className="flex items-center gap-0.5">
           {STROKE_WIDTH_OPTIONS.map((opt) => (
@@ -611,9 +651,9 @@ export function GlyphForgeCanvas({
               onClick={() => setStrokeWidth(opt.value)}
               title={`${opt.label} Stroke (${opt.value}px)`}
               className={cn(
-                "flex h-6 items-center justify-center rounded-lg px-2 transition-all cursor-pointer active:scale-90",
+                "flex h-6 cursor-pointer items-center justify-center rounded-lg px-2 transition-all active:scale-90",
                 strokeWidth === opt.value
-                  ? "bg-background text-foreground shadow-2xs font-semibold"
+                  ? "bg-background text-foreground font-semibold shadow-2xs"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/40"
               )}
             >
@@ -625,7 +665,7 @@ export function GlyphForgeCanvas({
           ))}
         </div>
 
-        <div className="h-4 w-px bg-border/40" />
+        <div className="bg-border/40 h-4 w-px" />
 
         {/* Ink Color Palette */}
         <div className="flex items-center gap-1 px-1">
@@ -642,24 +682,24 @@ export function GlyphForgeCanvas({
                   "relative flex h-4.5 w-4.5 cursor-pointer items-center justify-center rounded-full transition-all active:scale-85",
                   preset.bg,
                   isSelected
-                    ? "ring-2 ring-onoma-primary ring-offset-2 ring-offset-background scale-110 shadow-2xs"
-                    : "opacity-60 hover:opacity-100 hover:scale-105"
+                    ? "ring-onoma-primary ring-offset-background scale-110 shadow-2xs ring-2 ring-offset-2"
+                    : "opacity-60 hover:scale-105 hover:opacity-100"
                 )}
               />
             );
           })}
         </div>
 
-        <div className="h-4 w-px bg-border/40" />
+        <div className="bg-border/40 h-4 w-px" />
 
         {/* Stamps Drawer Button */}
         <button
           type="button"
           onClick={() => setShowStampDrawer(!showStampDrawer)}
           className={cn(
-            "flex h-6 items-center gap-1 rounded-lg px-2 text-[10px] font-medium transition-all cursor-pointer active:scale-95 shrink-0",
+            "flex h-6 shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2 text-[10px] font-medium transition-all active:scale-95",
             showStampDrawer
-              ? "border border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary"
+              ? "border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary border"
               : "text-muted-foreground hover:text-foreground hover:bg-background/40"
           )}
         >
@@ -679,7 +719,7 @@ export function GlyphForgeCanvas({
             className="border-border/30 bg-secondary/15 overflow-hidden rounded-xl border p-2.5"
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-muted-foreground text-[9px] font-semibold uppercase tracking-wider">
+              <span className="text-muted-foreground text-[9px] font-semibold tracking-wider uppercase">
                 Geometric Shapes
               </span>
               <button
@@ -697,7 +737,7 @@ export function GlyphForgeCanvas({
                   type="button"
                   onClick={() => handleApplyStamp(stamp)}
                   title={stamp.description}
-                  className="border-border/30 bg-background/60 hover:border-onoma-primary/50 hover:bg-onoma-primary/5 group flex flex-col items-center justify-center rounded-lg border p-1.5 text-center transition-all cursor-pointer active:scale-95"
+                  className="border-border/30 bg-background/60 hover:border-onoma-primary/50 hover:bg-onoma-primary/5 group flex cursor-pointer flex-col items-center justify-center rounded-lg border p-1.5 text-center transition-all active:scale-95"
                 >
                   <svg
                     viewBox="0 0 128 128"
@@ -731,14 +771,14 @@ export function GlyphForgeCanvas({
               value={grapheme}
               onChange={(e) => setGrapheme(e.target.value)}
               placeholder="Grapheme (e.g. sh, a)"
-              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-onoma-primary/60 focus:ring-2 focus:ring-onoma-primary/15 h-8.5 w-full rounded-xl border pr-9 pl-3 text-xs font-mono transition-all outline-none"
+              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-onoma-primary/60 focus:ring-onoma-primary/15 h-8.5 w-full rounded-xl border pr-9 pl-3 font-mono text-xs transition-all outline-none focus:ring-2"
             />
             <button
               type="button"
               onClick={() => setShowIpaDrawer(!showIpaDrawer)}
               title="Insert IPA symbol"
               className={cn(
-                "absolute top-1/2 right-1.5 -translate-y-1/2 rounded px-1.5 py-0.5 text-[9px] font-bold transition-all cursor-pointer",
+                "absolute top-1/2 right-1.5 -translate-y-1/2 cursor-pointer rounded px-1.5 py-0.5 text-[9px] font-bold transition-all",
                 showIpaDrawer
                   ? "bg-onoma-primary/15 text-onoma-primary"
                   : "text-muted-foreground hover:text-onoma-primary"
@@ -755,7 +795,7 @@ export function GlyphForgeCanvas({
               value={unicodeSymbol}
               onChange={(e) => setUnicodeSymbol(e.target.value)}
               placeholder="U+Code"
-              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-onoma-primary/60 h-8.5 w-full rounded-xl border px-2 text-center text-xs font-mono transition-all outline-none"
+              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-onoma-primary/60 h-8.5 w-full rounded-xl border px-2 text-center font-mono text-xs transition-all outline-none"
             />
           </div>
 
@@ -764,7 +804,7 @@ export function GlyphForgeCanvas({
             type="submit"
             disabled={!grapheme.trim() || strokes.length === 0}
             className={cn(
-              "flex h-8.5 cursor-pointer items-center justify-center gap-1 rounded-xl px-3.5 text-xs font-medium text-white transition-all active:scale-[0.97] disabled:opacity-35 disabled:pointer-events-none shrink-0 shadow-xs",
+              "flex h-8.5 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-xl px-3.5 text-xs font-medium text-white shadow-xs transition-all active:scale-[0.97] disabled:pointer-events-none disabled:opacity-35",
               isExisting
                 ? "bg-onoma-primary/90 hover:bg-onoma-primary"
                 : "bg-onoma-primary hover:bg-onoma-primary-hover"
@@ -804,7 +844,7 @@ export function GlyphForgeCanvas({
                     setUnicodeSymbol(item.symbol);
                   }}
                   title={item.name}
-                  className="hover:border-onoma-primary/40 hover:bg-onoma-primary/10 border-border/30 bg-background/60 rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold transition-colors cursor-pointer active:scale-95"
+                  className="hover:border-onoma-primary/40 hover:bg-onoma-primary/10 border-border/30 bg-background/60 cursor-pointer rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold transition-colors active:scale-95"
                 >
                   {item.symbol}
                 </button>

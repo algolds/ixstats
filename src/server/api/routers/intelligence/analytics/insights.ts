@@ -407,7 +407,6 @@ export const intelAnalyticsInsightsRouter = createTRPCRouter({
 
       return briefing;
     }),
-
 });
 
 // ===== HELPER FUNCTIONS =====

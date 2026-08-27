@@ -64,12 +64,7 @@ export function traceDownhillRiver(
   sampleElevation?: (lng: number, lat: number) => number,
   options: HydroTraceOptions = {}
 ): HydroTraceResult {
-  const {
-    maxSteps = 120,
-    stepDeg = 0.08,
-    meanderFactor = 1.0,
-    initialOrder = 1,
-  } = options;
+  const { maxSteps = 120, stepDeg = 0.08, meanderFactor = 1.0, initialOrder = 1 } = options;
 
   const points: Position[] = [[startCoords[0], startCoords[1]]];
   const profile: Array<{ coord: Position; elevationM: number; distanceKm: number }> = [];
@@ -87,7 +82,8 @@ export function traceDownhillRiver(
   });
 
   // Default flow direction: away from continental interior / toward lower latitude/coast
-  let currentHeading = Math.atan2(-currentLat, -currentLng) + (pseudoNoise(currentLng, currentLat) - 0.5) * 0.5;
+  let currentHeading =
+    Math.atan2(-currentLat, -currentLng) + (pseudoNoise(currentLng, currentLat) - 0.5) * 0.5;
 
   for (let step = 0; step < maxSteps; step++) {
     // If we've reached sea level, stop
@@ -116,8 +112,12 @@ export function traceDownhillRiver(
 
       if (lowestElev < currentElev) {
         // Natural meandering perturbation based on terrain gradient
-        const slope = (currentElev - lowestElev) / Math.max(1, haversineKm([currentLng, currentLat], [bestLng, bestLat]));
-        const meanderAngle = (pseudoNoise(currentLng * 10, currentLat * 10, step) - 0.5) * Math.max(0.2, (1 / (slope + 0.1)) * 0.4 * meanderFactor);
+        const slope =
+          (currentElev - lowestElev) /
+          Math.max(1, haversineKm([currentLng, currentLat], [bestLng, bestLat]));
+        const meanderAngle =
+          (pseudoNoise(currentLng * 10, currentLat * 10, step) - 0.5) *
+          Math.max(0.2, (1 / (slope + 0.1)) * 0.4 * meanderFactor);
 
         const dx = bestLng - currentLng;
         const dy = bestLat - currentLat;
@@ -134,11 +134,15 @@ export function traceDownhillRiver(
       }
     } else {
       // Organic synthetic descent model
-      const meander = (pseudoNoise(currentLng * 15, currentLat * 15, step) - 0.5) * 0.6 * meanderFactor;
+      const meander =
+        (pseudoNoise(currentLng * 15, currentLat * 15, step) - 0.5) * 0.6 * meanderFactor;
       currentHeading += meander;
       currentLng += Math.cos(currentHeading) * stepDeg;
       currentLat += Math.sin(currentHeading) * stepDeg;
-      currentElev = Math.max(0, currentElev - (initialElev / maxSteps) * (1 + (pseudoNoise(step, 0) - 0.5) * 0.3));
+      currentElev = Math.max(
+        0,
+        currentElev - (initialElev / maxSteps) * (1 + (pseudoNoise(step, 0) - 0.5) * 0.3)
+      );
     }
 
     const prevPoint = points[points.length - 1]!;

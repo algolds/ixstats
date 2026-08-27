@@ -182,9 +182,9 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
         {/* Backup / Export */}
         <button
           onClick={handleExportData}
-          className="border-border/60 bg-background text-foreground hover:bg-secondary/40 flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer"
+          className="border-border/60 bg-background text-foreground hover:bg-secondary/40 flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors"
         >
-          <Download className="h-3.5 w-3.5 text-onoma-primary" /> Export Backup File
+          <Download className="text-onoma-primary h-3.5 w-3.5" /> Export Backup File
         </button>
 
         {/* Restore / Import */}
@@ -204,7 +204,7 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
               handleClearData("all");
             }
           }}
-          className="flex items-center justify-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-500/10 cursor-pointer"
+          className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-500/10"
         >
           <Trash2 className="h-3.5 w-3.5" /> Clear All Data
         </button>

@@ -1,7 +1,12 @@
 "use client";
 
 import React, { memo, useCallback, useState, useRef } from "react";
-import { Upload, MediaImage as FileImage, Page as FileText, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Upload,
+  MediaImage as FileImage,
+  Page as FileText,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 
 interface UploadStepProps {

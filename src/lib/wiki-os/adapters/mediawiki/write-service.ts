@@ -1,6 +1,9 @@
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
-import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
+import {
+  getUserSessionAndToken,
+  invalidateCsrfToken,
+} from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
 import { invalidateCache } from "./parsoid";
 import { invalidateArticleShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import type { Prisma } from "@prisma/client";
@@ -119,14 +122,17 @@ export async function saveToMediaWiki(
   ctx?: any,
   basetimestamp?: string
 ): Promise<MediaWikiWriteResult> {
-  const result = await executeMediaWikiWrite({
-    action: "edit",
-    title: title.replace(/_/g, " "),
-    text: wikitext,
-    summary: summary || "Edited via WikiOS",
-    minor: minor ? 1 : 0,
-    ...(basetimestamp ? { basetimestamp } : {}),
-  }, ctx);
+  const result = await executeMediaWikiWrite(
+    {
+      action: "edit",
+      title: title.replace(/_/g, " "),
+      text: wikitext,
+      summary: summary || "Edited via WikiOS",
+      minor: minor ? 1 : 0,
+      ...(basetimestamp ? { basetimestamp } : {}),
+    },
+    ctx
+  );
 
   invalidateCache(title);
   invalidateArticleShadow(title);

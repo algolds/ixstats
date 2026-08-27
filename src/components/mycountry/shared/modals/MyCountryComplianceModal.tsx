@@ -9,7 +9,11 @@ import {
 } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { CheckCircle as CheckCircle2, WarningTriangle as AlertTriangle, TaskList as ClipboardList } from "iconoir-react";
+import {
+  CheckCircle as CheckCircle2,
+  WarningTriangle as AlertTriangle,
+  TaskList as ClipboardList,
+} from "iconoir-react";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import type { ComplianceSectionStatus } from "~/hooks/useMyCountryCompliance";
 

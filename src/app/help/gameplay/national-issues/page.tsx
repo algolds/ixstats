@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { Bell, WarningTriangle as AlertTriangle, CheckCircle, Settings as Cog } from "iconoir-react";
+import {
+  Bell,
+  WarningTriangle as AlertTriangle,
+  CheckCircle,
+  Settings as Cog,
+} from "iconoir-react";
 import {
   ArticleLayout,
   Section,

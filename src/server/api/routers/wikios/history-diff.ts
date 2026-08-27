@@ -95,7 +95,8 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
         newWikitext: toWikitext,
         from: {
           revid: resolvedFromRevId || 0,
-          user: fromRev?.user ?? (resolvedFromRevId === 0 ? "Initial Document" : "Previous Revision"),
+          user:
+            fromRev?.user ?? (resolvedFromRevId === 0 ? "Initial Document" : "Previous Revision"),
           timestamp: fromData?.timestamp ?? "",
           comment: fromRev?.comment ?? "",
         },

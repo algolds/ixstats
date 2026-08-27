@@ -6,7 +6,15 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { Heart, Quote, Reply, Bookmark, EditPencil as Pencil, Trash as Trash2, Check } from "iconoir-react";
+import {
+  Heart,
+  Quote,
+  Reply,
+  Bookmark,
+  EditPencil as Pencil,
+  Trash as Trash2,
+  Check,
+} from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";

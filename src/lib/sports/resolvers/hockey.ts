@@ -8,15 +8,7 @@ import {
 } from "./helpers";
 
 export function runHockeyMatch(ctx: SportResolverContext): SportMatchOutcome {
-  const {
-    rng,
-    homeOffense,
-    awayOffense,
-    homeTactical,
-    awayTactical,
-    homeRoster,
-    awayRoster,
-  } = ctx;
+  const { rng, homeOffense, awayOffense, homeTactical, awayTactical, homeRoster, awayRoster } = ctx;
 
   const trace: EventTraceStep[] = [];
   let homeScore = 0;

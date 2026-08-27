@@ -184,7 +184,7 @@ export function WikiSourceToolbar({
                 <button
                   type="button"
                   onClick={() => insertAtLine("= ", " =")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left font-bold text-base hover:bg-[var(--wikios-border)]"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-base font-bold hover:bg-[var(--wikios-border)]"
                 >
                   <Hash className="h-3.5 w-3.5 text-blue-400" />
                   <span>Heading 1</span>
@@ -192,7 +192,7 @@ export function WikiSourceToolbar({
                 <button
                   type="button"
                   onClick={() => insertAtLine("== ", " ==")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left font-semibold text-sm hover:bg-[var(--wikios-border)]"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-semibold hover:bg-[var(--wikios-border)]"
                 >
                   <Hash className="h-3.5 w-3.5 text-purple-400" />
                   <span>Heading 2</span>
@@ -200,7 +200,7 @@ export function WikiSourceToolbar({
                 <button
                   type="button"
                   onClick={() => insertAtLine("=== ", " ===")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left font-medium text-xs hover:bg-[var(--wikios-border)]"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium hover:bg-[var(--wikios-border)]"
                 >
                   <Hash className="h-3.5 w-3.5 text-amber-400" />
                   <span>Heading 3</span>
@@ -229,11 +229,7 @@ export function WikiSourceToolbar({
 
         {/* Lists & Quotes */}
         <div className="wikios-editor-format-group">
-          <FmtBtn
-            icon={List}
-            title="Bullet list (* item)"
-            onClick={() => insertAtLine("* ", "")}
-          />
+          <FmtBtn icon={List} title="Bullet list (* item)" onClick={() => insertAtLine("* ", "")} />
           <FmtBtn
             icon={ListOrdered}
             title="Numbered list (# item)"
@@ -266,9 +262,7 @@ export function WikiSourceToolbar({
           />
 
           {/* Stashed Images Popover */}
-          <StashDropdown
-            onInsertImage={(filename) => handleInsertStashedImage(filename)}
-          />
+          <StashDropdown onInsertImage={(filename) => handleInsertStashedImage(filename)} />
 
           <FmtBtn
             icon={FileCode}
@@ -283,13 +277,13 @@ export function WikiSourceToolbar({
           <TemplateDropdown
             triggerClassName="wikios-editor-format-btn wikios-editor-format-select"
             align="start"
-            triggerContent={(
+            triggerContent={
               <>
                 <Puzzle className="h-3.5 w-3.5 shrink-0 text-blue-400" />
                 <span className="text-[11px] font-semibold tracking-tight">Templates</span>
                 <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
               </>
-            )}
+            }
           />
 
           <FmtBtn

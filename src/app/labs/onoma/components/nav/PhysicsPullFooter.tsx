@@ -94,15 +94,15 @@ export function PhysicsPullFooter({ children }: PhysicsPullFooterProps) {
     /* Unified DOM Grid-Fraction Expansion: 0fr at rest -> 1fr on reveal */
     <div
       className={cn(
-        "relative mx-auto w-full max-w-[1720px] px-1 sm:px-3 lg:px-5 grid transition-[grid-template-rows,margin-top,opacity] duration-450 will-change-[grid-template-rows,margin-top,opacity]",
+        "relative mx-auto grid w-full max-w-[1720px] px-1 transition-[grid-template-rows,margin-top,opacity] duration-450 will-change-[grid-template-rows,margin-top,opacity] sm:px-3 lg:px-5",
         isRevealed
-          ? "grid-rows-[1fr] mt-14 opacity-100 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto"
-          : "grid-rows-[0fr] mt-0 opacity-0 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-none"
+          ? "pointer-events-auto mt-14 grid-rows-[1fr] opacity-100 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          : "pointer-events-none mt-0 grid-rows-[0fr] opacity-0 ease-[cubic-bezier(0.23,1,0.32,1)]"
       )}
     >
       <div className="min-h-0 overflow-hidden">
         {/* Subtle feathered gradient transition from canvas */}
-        <div className="pointer-events-none absolute -top-12 inset-x-0 h-16 bg-gradient-to-b from-transparent via-background/40 to-background/90" />
+        <div className="via-background/40 to-background/90 pointer-events-none absolute inset-x-0 -top-12 h-16 bg-gradient-to-b from-transparent" />
 
         <motion.div
           animate={

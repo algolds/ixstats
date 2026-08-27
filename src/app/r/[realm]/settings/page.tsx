@@ -7,11 +7,7 @@ import { Globe, NavArrowLeft } from "iconoir-react";
 import { facetClerkAppearance } from "~/lib/clerk/theme";
 import { usePageTitle } from "~/hooks/usePageTitle";
 
-export default function RealmSettingsPage({
-  params,
-}: {
-  params: Promise<{ realm: string }>;
-}) {
+export default function RealmSettingsPage({ params }: { params: Promise<{ realm: string }> }) {
   const { realm } = use(params);
 
   const { organization: currentOrg } = useOrganization();
@@ -39,18 +35,14 @@ export default function RealmSettingsPage({
       <div className="mb-6 flex w-full max-w-4xl items-center justify-between">
         <Link
           href={`/r/${realm}`}
-          className="facet-interactive flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground active:scale-[0.98]"
+          className="facet-interactive text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs font-bold active:scale-[0.98]"
         >
           <NavArrowLeft className="h-4 w-4" />
           <span>Back to Realm</span>
         </Link>
-        <div className="flex items-center gap-1.5 rounded-md border border-border bg-accent px-2 py-0.5 text-[10px] font-bold text-foreground">
+        <div className="border-border bg-accent text-foreground flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold">
           {realmLogo ? (
-            <img
-              src={realmLogo}
-              alt={realm}
-              className="h-3.5 w-3.5 rounded object-cover"
-            />
+            <img src={realmLogo} alt={realm} className="h-3.5 w-3.5 rounded object-cover" />
           ) : (
             <Globe className="h-3 w-3" />
           )}
@@ -58,7 +50,7 @@ export default function RealmSettingsPage({
         </div>
       </div>
 
-      <div className="w-full flex justify-center">
+      <div className="flex w-full justify-center">
         <OrganizationProfile
           routing="hash"
           afterLeaveOrganizationUrl="/dashboard"

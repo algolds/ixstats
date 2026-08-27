@@ -215,7 +215,6 @@ export const intelAlertsThresholdsRouter = createTRPCRouter({
             });
       }
     }),
-
 });
 
 // ===== HELPER FUNCTIONS =====

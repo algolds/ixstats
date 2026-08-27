@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, Search, MailIn as Inbox } from "iconoir-react";
+import {
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  Search,
+  MailIn as Inbox,
+} from "iconoir-react";
 
 export interface SearchableListProps<T> {
   /** Section title shown in the header (e.g. "Cities"). */

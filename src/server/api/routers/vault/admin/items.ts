@@ -164,7 +164,9 @@ export const vaultAdminItemsRouter = createTRPCRouter({
         return { success: true, message: `Successfully granted ${item.name} to user.` };
       } catch (error) {
         console.error("[Vault Admin Router] Error granting item:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to grant item", { cause: error });
+        throw new Error(error instanceof Error ? error.message : "Failed to grant item", {
+          cause: error,
+        });
       }
     }),
 
@@ -211,7 +213,9 @@ export const vaultAdminItemsRouter = createTRPCRouter({
         return { success: true, message: "Successfully revoked item from user." };
       } catch (error) {
         console.error("[Vault Admin Router] Error revoking item:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to revoke item", { cause: error });
+        throw new Error(error instanceof Error ? error.message : "Failed to revoke item", {
+          cause: error,
+        });
       }
     }),
 
@@ -300,7 +304,8 @@ export const vaultAdminItemsRouter = createTRPCRouter({
       } catch (error) {
         console.error("[Vault Admin Router] adminToggleEquipCosmetic error:", error);
         throw new Error(
-          error instanceof Error ? error.message : "Failed to toggle user equipped cosmetic", { cause: error }
+          error instanceof Error ? error.message : "Failed to toggle user equipped cosmetic",
+          { cause: error }
         );
       }
     }),

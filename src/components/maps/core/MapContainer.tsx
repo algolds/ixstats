@@ -42,7 +42,7 @@ import { TourHUD } from "./components/TourHUD";
 
 const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
   ssr: false,
-  loading: () => <div className="absolute inset-0 bg-map-ocean" />,
+  loading: () => <div className="bg-map-ocean absolute inset-0" />,
 });
 
 const MapEditorOverlay = dynamic(() => import("~/components/maps/editor/MapEditorOverlay"), {
@@ -564,7 +564,7 @@ export function MapContainer({
 
       {/* WebGL/Loading Error Fallback Overlay */}
       {(webglError || mapLoadTimeout) && (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-map-ocean p-6 text-center">
+        <div className="bg-map-ocean absolute inset-0 z-[60] flex items-center justify-center p-6 text-center">
           <div className="facet-hierarchy-child max-w-md space-y-6 rounded-2xl border border-red-500/20 bg-black/60 p-8 shadow-2xl backdrop-blur-xl">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-500">
               <svg

@@ -5,7 +5,11 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { SoundHigh as AudioWaveform, InfoCircle as Info, AntennaSignal as Radio } from "iconoir-react";
+import {
+  SoundHigh as AudioWaveform,
+  InfoCircle as Info,
+  AntennaSignal as Radio,
+} from "iconoir-react";
 import {
   CARDINAL_VOWEL_GRID,
   extractVowelsFromIpa,
@@ -84,9 +88,10 @@ export function AcousticFormantVisualizer({
       }
 
       // Draw Formant Peaks based on active vowels
-      const baseFreqs = activeVowels.length > 0
-        ? activeVowels.map((v) => ({ f1: v.f1, f2: v.f2 }))
-        : [{ f1: 500, f2: 1500 }];
+      const baseFreqs =
+        activeVowels.length > 0
+          ? activeVowels.map((v) => ({ f1: v.f1, f2: v.f2 }))
+          : [{ f1: 500, f2: 1500 }];
 
       // Animated Waveform Layer
       ctx.beginPath();
@@ -105,7 +110,7 @@ export function AcousticFormantVisualizer({
         baseFreqs.forEach((freq, idx) => {
           const wave1 = Math.sin(t * (freq.f1 / 40) + phase + idx);
           const wave2 = Math.cos(t * (freq.f2 / 100) + phase * 1.5 + idx);
-          amp += (wave1 * 0.5 + wave2 * 0.3);
+          amp += wave1 * 0.5 + wave2 * 0.3;
         });
 
         amp = (amp / Math.max(1, baseFreqs.length)) * (height * 0.28);
@@ -208,7 +213,7 @@ export function AcousticFormantVisualizer({
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div className="space-y-0.5 text-left">
           <div className="flex items-center gap-2">
-            <Radio className="h-4 w-4 text-onoma-primary" />
+            <Radio className="text-onoma-primary h-4 w-4" />
             <h4 className="text-foreground text-sm font-bold tracking-tight">
               Acoustic Phonetics & Formant Space
             </h4>
@@ -261,14 +266,14 @@ export function AcousticFormantVisualizer({
             <div className="text-muted-foreground absolute bottom-2 left-3 font-mono text-[9px] font-bold tracking-wider uppercase">
               Close / High ($F_1$ Low) ↑
             </div>
-            <div className="text-muted-foreground absolute bottom-2 right-3 font-mono text-[9px] font-bold tracking-wider uppercase">
+            <div className="text-muted-foreground absolute right-3 bottom-2 font-mono text-[9px] font-bold tracking-wider uppercase">
               ↓ Open / Low ($F_1$ High)
             </div>
 
             {/* SVG IPA Quadrilateral */}
             <svg
               viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-              className="h-auto w-full max-w-[500px] mx-auto select-none"
+              className="mx-auto h-auto w-full max-w-[500px] select-none"
             >
               {/* Background IPA Trapezoid */}
               <path
@@ -325,10 +330,7 @@ export function AcousticFormantVisualizer({
                       cy={cy}
                       r={isActive ? 6 : 3.5}
                       fill={isActive ? accentColor : "rgba(255, 255, 255, 0.2)"}
-                      className={cn(
-                        "transition-all",
-                        isActive && "shadow-lg animate-pulse"
-                      )}
+                      className={cn("transition-all", isActive && "animate-pulse shadow-lg")}
                     />
                     <text
                       x={cx + 8}
@@ -367,18 +369,13 @@ export function AcousticFormantVisualizer({
                     fill="none"
                     stroke={accentColor}
                     strokeWidth="1.5"
-                    className="opacity-70 animate-pulse"
+                    className="animate-pulse opacity-70"
                     style={{
                       transformBox: "fill-box",
                       transformOrigin: "center",
                     }}
                   />
-                  <circle
-                    cx={pt.x}
-                    cy={pt.y}
-                    r="4"
-                    fill="#ffffff"
-                  />
+                  <circle cx={pt.x} cy={pt.y} r="4" fill="#ffffff" />
                 </g>
               ))}
 
@@ -409,7 +406,7 @@ export function AcousticFormantVisualizer({
           {/* Metrics Summary Strip */}
           <div className="grid grid-cols-2 gap-2 text-left sm:grid-cols-4">
             <div className="border-border/30 bg-secondary/10 rounded-lg border p-2">
-              <div className="text-muted-foreground text-[10px] uppercase font-bold">
+              <div className="text-muted-foreground text-[10px] font-bold uppercase">
                 Active Vowels
               </div>
               <div className="text-foreground font-mono text-xs font-bold">
@@ -420,7 +417,7 @@ export function AcousticFormantVisualizer({
             </div>
 
             <div className="border-border/30 bg-secondary/10 rounded-lg border p-2">
-              <div className="text-muted-foreground text-[10px] uppercase font-bold">
+              <div className="text-muted-foreground text-[10px] font-bold uppercase">
                 Acoustic Center
               </div>
               <div className="text-onoma-primary font-mono text-xs font-bold">
@@ -429,7 +426,7 @@ export function AcousticFormantVisualizer({
             </div>
 
             <div className="border-border/30 bg-secondary/10 rounded-lg border p-2">
-              <div className="text-muted-foreground text-[10px] uppercase font-bold">
+              <div className="text-muted-foreground text-[10px] font-bold uppercase">
                 Front / Back Ratio
               </div>
               <div className="text-foreground font-mono text-xs font-bold">
@@ -438,10 +435,10 @@ export function AcousticFormantVisualizer({
             </div>
 
             <div className="border-border/30 bg-secondary/10 rounded-lg border p-2">
-              <div className="text-muted-foreground text-[10px] uppercase font-bold">
+              <div className="text-muted-foreground text-[10px] font-bold uppercase">
                 Hovered Formant
               </div>
-              <div className="text-emerald-500 font-mono text-xs font-bold">
+              <div className="font-mono text-xs font-bold text-emerald-500">
                 {hoveredVowel
                   ? `/${hoveredVowel.ipa}/ (${hoveredVowel.f1}Hz, ${hoveredVowel.f2}Hz)`
                   : "Hover point"}
@@ -461,7 +458,7 @@ export function AcousticFormantVisualizer({
             />
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1 font-mono">
+          <div className="text-muted-foreground flex items-center justify-between px-1 font-mono text-[11px]">
             <span>0 Hz (Fundamental $F_0$)</span>
             <span>1500 Hz (Vowel Formant Resonance Band)</span>
             <span>3000 Hz (Fricative / Sibilant Treble)</span>

@@ -27,7 +27,9 @@ Burgundie was founded in the medieval era.
 `;
 
     const intro = extractIntroFromWikitext(rawWikitext);
-    expect(intro).toContain("Burgundie, officially the Kingdom of Burgundie, is a sovereign state located in western Levantia.");
+    expect(intro).toContain(
+      "Burgundie, officially the Kingdom of Burgundie, is a sovereign state located in western Levantia."
+    );
     expect(intro).not.toContain("Infobox");
     expect(intro).not.toContain("<!--");
     expect(intro).not.toContain("== History ==");
@@ -46,10 +48,11 @@ The '''Vandover Republic''' is a coastal federation<ref>Official Gazette, 2024.<
 == Geography ==
 `;
     const intro = extractIntroFromWikitext(raw);
-    expect(intro).toBe("The Vandover Republic is a coastal federation known for maritime commerce.");
+    expect(intro).toBe(
+      "The Vandover Republic is a coastal federation known for maritime commerce."
+    );
   });
 });
-
 
 /**
  * advanced-search.test.ts — Unit tests for WikiOS Advanced Search Engine
@@ -82,4 +85,3 @@ The [[Treaty of Oakhaven]] was signed in 1904 between the {{Flag|Oakhaven}} King
     expect(cleanSnippet).toContain("Treaty of Oakhaven");
   });
 });
-

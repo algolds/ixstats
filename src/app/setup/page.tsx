@@ -9,7 +9,21 @@ import { api } from "~/trpc/react";
 import { navigateTo } from "~/lib/utils";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, Link as LinkIcon, ArrowRight, City as Building2, Group as Users, StatUp as TrendingUp, CheckCircle, WarningCircle as AlertCircle, Crown, ArrowLeft, Search, MapPin, Star } from "iconoir-react";
+import {
+  Plus,
+  Link as LinkIcon,
+  ArrowRight,
+  City as Building2,
+  Group as Users,
+  StatUp as TrendingUp,
+  CheckCircle,
+  WarningCircle as AlertCircle,
+  Crown,
+  ArrowLeft,
+  Search,
+  MapPin,
+  Star,
+} from "iconoir-react";
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

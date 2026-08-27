@@ -7,7 +7,12 @@ import { Progress } from "~/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 
-import { StatUp as TrendingUp, StatDown as TrendingDown, Minus, InfoCircle as Info } from "iconoir-react";
+import {
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Minus,
+  InfoCircle as Info,
+} from "iconoir-react";
 
 export interface StatGaugeProps {
   label: string;

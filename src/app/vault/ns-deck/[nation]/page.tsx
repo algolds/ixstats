@@ -5,7 +5,12 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
-import { SystemRestart as Loader2, OpenNewWindow as ExternalLink, StatUp as TrendingUp, MediaImage as ImageOff } from "iconoir-react";
+import {
+  SystemRestart as Loader2,
+  OpenNewWindow as ExternalLink,
+  StatUp as TrendingUp,
+  MediaImage as ImageOff,
+} from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import Image from "next/image";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";

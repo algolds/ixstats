@@ -98,7 +98,10 @@ export function getVertices(geometry: Polygon | MultiPolygon): VertexRef[] {
 }
 
 /** Helper to shallow-clone rings array and copy only the target ring for mutation (Copy-on-Write) */
-function cloneRingsWithTarget(geometry: Polygon | MultiPolygon, targetRingIndex: number): Position[][] | null {
+function cloneRingsWithTarget(
+  geometry: Polygon | MultiPolygon,
+  targetRingIndex: number
+): Position[][] | null {
   const allRings = getAllRings(geometry);
   if (targetRingIndex < 0 || targetRingIndex >= allRings.length) return null;
   const rings = [...allRings];

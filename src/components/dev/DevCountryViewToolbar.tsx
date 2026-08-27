@@ -2,7 +2,13 @@
 
 import React, { useState, useMemo } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { Globe, Undo as RotateCcw, Eye, NavArrowDown as ChevronDown, WarningTriangle as AlertTriangle } from "iconoir-react";
+import {
+  Globe,
+  Undo as RotateCcw,
+  Eye,
+  NavArrowDown as ChevronDown,
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import { useDevCountryView } from "~/context/DevCountryViewContext";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
@@ -47,7 +53,9 @@ export function DevCountryViewToolbar() {
 
   const countries = useMemo<{ id: string; name: string }[]>(() => {
     if (!countriesData) return [];
-    const list = Array.isArray(countriesData) ? countriesData : (countriesData as any).items ?? [];
+    const list = Array.isArray(countriesData)
+      ? countriesData
+      : ((countriesData as any).items ?? []);
     return list.map((c: any) => ({
       id: c.id,
       name: c.name,
@@ -149,9 +157,7 @@ export function DevCountryViewToolbar() {
       {/* Country selector */}
       <div className="space-y-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-300">
-            Switch to:
-          </label>
+          <label className="mb-1 block text-xs font-medium text-slate-300">Switch to:</label>
           <Select
             value={selectedCountryId}
             onValueChange={setSelectedCountryId}

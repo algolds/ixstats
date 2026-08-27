@@ -17,7 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Flask as FlaskConical, Play, SystemRestart as Loader2, StatDown as TrendingDown, StatUp as TrendingUp, ArrowRight } from "iconoir-react";
+import {
+  Flask as FlaskConical,
+  Play,
+  SystemRestart as Loader2,
+  StatDown as TrendingDown,
+  StatUp as TrendingUp,
+  ArrowRight,
+} from "iconoir-react";
 
 const EVENT_TYPES = [
   { value: "economic_crisis", label: "Economic Crisis" },

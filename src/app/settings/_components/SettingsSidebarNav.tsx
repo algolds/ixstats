@@ -5,7 +5,11 @@ import { Search, Xmark, User as UserIcon, Crown } from "iconoir-react";
 import type { UserResource } from "@clerk/types";
 import { cn } from "~/lib/utils";
 import { formatMembershipTier } from "~/lib/tier-utils";
-import { SETTINGS_SECTIONS, type SettingSectionId, type SettingSectionConfig } from "../_lib/sections";
+import {
+  SETTINGS_SECTIONS,
+  type SettingSectionId,
+  type SettingSectionConfig,
+} from "../_lib/sections";
 
 export interface SettingsSidebarNavProps {
   activeSection: SettingSectionId;
@@ -56,9 +60,9 @@ export function SettingsSidebarNav({
     <aside className="w-full space-y-4 lg:sticky lg:top-20" aria-label="Settings Navigation">
       {/* Profile Card Pill */}
       {user && (
-        <div className="rounded-2xl border border-border/40 bg-card/40 p-3.5 backdrop-blur-md shadow-xs">
+        <div className="border-border/40 bg-card/40 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-muted">
+            <div className="border-border/60 bg-muted relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border">
               {user.imageUrl ? (
                 <img
                   src={user.imageUrl}
@@ -66,32 +70,33 @@ export function SettingsSidebarNav({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                <div className="text-muted-foreground flex h-full w-full items-center justify-center">
                   <UserIcon className="h-5 w-5" />
                 </div>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-bold text-foreground">
+              <div className="text-foreground truncate text-xs font-bold">
                 {user.username || user.firstName || "Diplomat"}
               </div>
               <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                {membershipTier && (() => {
-                  const tierInfo = formatMembershipTier(membershipTier);
-                  return (
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.2 text-[8px] font-bold tracking-tight",
-                        tierInfo.badgeClass
-                      )}
-                    >
-                      {tierInfo.isPremium && <Crown className="h-2.5 w-2.5 shrink-0" />}
-                      {tierInfo.label}
-                    </span>
-                  );
-                })()}
+                {membershipTier &&
+                  (() => {
+                    const tierInfo = formatMembershipTier(membershipTier);
+                    return (
+                      <span
+                        className={cn(
+                          "py-0.2 inline-flex items-center gap-1 rounded-md border px-1.5 text-[8px] font-bold tracking-tight",
+                          tierInfo.badgeClass
+                        )}
+                      >
+                        {tierInfo.isPremium && <Crown className="h-2.5 w-2.5 shrink-0" />}
+                        {tierInfo.label}
+                      </span>
+                    );
+                  })()}
                 {roleDisplayName && (
-                  <span className="inline-flex items-center gap-1 rounded-md border border-purple-500/20 bg-purple-500/10 px-1.5 py-0.2 text-[8px] font-bold text-purple-600 dark:text-purple-400">
+                  <span className="py-0.2 inline-flex items-center gap-1 rounded-md border border-purple-500/20 bg-purple-500/10 px-1.5 text-[8px] font-bold text-purple-600 dark:text-purple-400">
                     <Crown className="h-2.5 w-2.5 shrink-0" />
                     {roleDisplayName}
                   </span>
@@ -104,13 +109,13 @@ export function SettingsSidebarNav({
 
       {/* Live Search Input */}
       <div className="relative">
-        <Search className="text-muted-foreground absolute top-2.5 left-3 h-3.5 w-3.5 pointer-events-none" />
+        <Search className="text-muted-foreground pointer-events-none absolute top-2.5 left-3 h-3.5 w-3.5" />
         <input
           type="text"
           placeholder="Search settings..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-xl border border-border/40 bg-card/40 py-1.5 pr-8 pl-8.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus:border-border/80 focus:outline-none backdrop-blur-md shadow-2xs"
+          className="border-border/40 bg-card/40 text-foreground placeholder:text-muted-foreground/70 focus:border-border/80 w-full rounded-xl border py-1.5 pr-8 pl-8.5 text-xs shadow-2xs backdrop-blur-md focus:outline-none"
         />
         {searchQuery && (
           <button
@@ -127,11 +132,11 @@ export function SettingsSidebarNav({
       <nav className="space-y-4">
         {categories.map(([category, items]) => (
           <div key={category} className="space-y-1.5">
-            <h3 className="px-2 text-[10px] font-bold tracking-wider text-muted-foreground/80 uppercase">
+            <h3 className="text-muted-foreground/80 px-2 text-[10px] font-bold tracking-wider uppercase">
               {category}
             </h3>
 
-            <div className="rounded-2xl border border-border/40 bg-card/30 p-1 backdrop-blur-md shadow-xs space-y-0.5">
+            <div className="border-border/40 bg-card/30 space-y-0.5 rounded-2xl border p-1 shadow-xs backdrop-blur-md">
               {items.map((item) => {
                 const isActive = activeSection === item.id;
                 const Icon = item.icon;
@@ -146,11 +151,11 @@ export function SettingsSidebarNav({
                     className={cn(
                       "group flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-left text-xs transition-all duration-150 outline-none active:scale-[0.98]",
                       isActive
-                        ? "bg-foreground/[0.08] dark:bg-foreground/[0.12] font-bold text-foreground shadow-2xs"
-                        : "font-medium text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground"
+                        ? "bg-foreground/[0.08] dark:bg-foreground/[0.12] text-foreground font-bold shadow-2xs"
+                        : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground font-medium"
                     )}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
                       <div
                         className={cn(
                           "flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] transition-transform",
@@ -165,10 +170,10 @@ export function SettingsSidebarNav({
 
                     <div
                       className={cn(
-                        "h-1.5 w-1.5 rounded-full shrink-0 transition-all duration-200",
+                        "h-1.5 w-1.5 shrink-0 rounded-full transition-all duration-200",
                         isActive
                           ? "bg-primary scale-125 shadow-xs"
-                          : "bg-transparent group-hover:bg-muted-foreground/30"
+                          : "group-hover:bg-muted-foreground/30 bg-transparent"
                       )}
                     />
                   </button>

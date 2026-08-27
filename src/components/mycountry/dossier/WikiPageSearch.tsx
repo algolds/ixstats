@@ -4,7 +4,13 @@ import React, { useState, useCallback } from "react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { SystemRestart as Loader2, Search, Plus, Xmark as X, OpenNewWindow as ExternalLink } from "iconoir-react";
+import {
+  SystemRestart as Loader2,
+  Search,
+  Plus,
+  Xmark as X,
+  OpenNewWindow as ExternalLink,
+} from "iconoir-react";
 import { cn, debounce } from "~/lib/utils";
 import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";

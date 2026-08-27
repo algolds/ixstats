@@ -17,14 +17,14 @@ export function useTemplateSchema(templateName: string | null) {
     { enabled: Boolean(templateName), staleTime: 5 * 60_000 }
   );
 
-  const td = (query.data?.templateData ?? null) as
-    | { params?: Record<string, TemplateParamMeta>; paramOrder?: string[]; description?: string }
-    | null;
+  const td = (query.data?.templateData ?? null) as {
+    params?: Record<string, TemplateParamMeta>;
+    paramOrder?: string[];
+    description?: string;
+  } | null;
 
   const params = td?.params ?? {};
-  const order =
-    td?.paramOrder?.filter((k) => k in params) ??
-    Object.keys(params);
+  const order = td?.paramOrder?.filter((k) => k in params) ?? Object.keys(params);
 
   return {
     schema: query.data ?? null,

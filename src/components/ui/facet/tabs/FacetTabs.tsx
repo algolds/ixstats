@@ -15,7 +15,6 @@ import {
 } from "./constants";
 import { SPRING_PRESETS } from "../shared/constants";
 
-
 function blendColors(c1: string, c2: string, progress: number): string {
   const hex = (h: string) => {
     let clean = h.replace("#", "");
@@ -79,7 +78,7 @@ function FacetTabTrigger({
       onPointerUp={handlers.onPointerUp}
       onPointerCancel={handlers.onPointerCancel}
       className={cn(
-        "relative z-20 flex cursor-pointer items-center justify-center outline-none select-none whitespace-nowrap transition-colors duration-150",
+        "relative z-20 flex cursor-pointer items-center justify-center whitespace-nowrap transition-colors duration-150 outline-none select-none",
         tab.className ?? "flex-1",
         "focus-visible:ring-2 focus-visible:ring-indigo-500/50",
         metrics.item,
@@ -103,18 +102,18 @@ function FacetTabTrigger({
         <div
           className={cn(
             metrics.icon,
-            "mr-1.5 flex items-center justify-center shrink-0 transition-colors duration-150",
+            "mr-1.5 flex shrink-0 items-center justify-center transition-colors duration-150",
             isActive
               ? tab.activeIconClassName ||
-                (tone === "neutral"
-                  ? "text-slate-950 dark:text-white"
-                  : tone === "accent"
-                    ? "text-indigo-500 dark:text-indigo-400"
-                    : tone === "mycountry"
-                      ? "text-amber-500 dark:text-amber-400"
-                      : tone === "forum"
-                        ? "text-orange-500 dark:text-orange-400"
-                        : "text-red-500 dark:text-red-400")
+                  (tone === "neutral"
+                    ? "text-slate-950 dark:text-white"
+                    : tone === "accent"
+                      ? "text-indigo-500 dark:text-indigo-400"
+                      : tone === "mycountry"
+                        ? "text-amber-500 dark:text-amber-400"
+                        : tone === "forum"
+                          ? "text-orange-500 dark:text-orange-400"
+                          : "text-red-500 dark:text-red-400")
               : "text-slate-400 dark:text-slate-500"
           )}
         >
@@ -130,7 +129,6 @@ function FacetTabTrigger({
       >
         {tab.label}
       </span>
-
 
       {tab.badge !== undefined && (
         <span
@@ -160,7 +158,6 @@ export function FacetTabs({
   className,
   indicatorClassName,
 }: FacetTabsProps) {
-
   const metrics = sizeClasses[size];
   const { bounds, containerRef } = useTabBounds(tabs);
   const activeBounds = bounds[activeTab];
@@ -272,7 +269,7 @@ export function FacetTabs({
       ref={containerRef}
       className={cn(
         "group/tabs relative flex items-center overflow-hidden transition-all duration-200 select-none",
-        "border border-border/60 bg-secondary/40 dark:bg-muted/30",
+        "border-border/60 bg-secondary/40 dark:bg-muted/30 border",
         "shadow-xs",
         metrics.container,
         className
@@ -327,5 +324,3 @@ export function FacetTabs({
     </div>
   );
 }
-
-

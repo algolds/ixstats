@@ -433,7 +433,10 @@ export function useStudioState({
       id: existingStashItem?.id,
       type: (existingStashItem?.type as "dictionary" | "saved-name") || "saved-name",
       title: selectedTerm,
-      values: existingStashItem?.values && existingStashItem.values.length > 0 ? existingStashItem.values : [selectedTerm],
+      values:
+        existingStashItem?.values && existingStashItem.values.length > 0
+          ? existingStashItem.values
+          : [selectedTerm],
       category: (existingStashItem?.category as NameCategory) || null,
       lexiconDefinition: newDef,
     });

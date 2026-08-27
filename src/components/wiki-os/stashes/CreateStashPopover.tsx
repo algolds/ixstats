@@ -100,8 +100,8 @@ export function CreateStashPopover({
           type="button"
           onClick={handleToggle}
           className={cn(
-            "flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-rose-500 hover:bg-rose-600 active:scale-95 transition-all shadow-xs cursor-pointer select-none",
-            isOpen && "ring-2 ring-rose-500/40 bg-rose-600",
+            "flex cursor-pointer items-center gap-1.5 rounded-xl bg-rose-500 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-all select-none hover:bg-rose-600 active:scale-95",
+            isOpen && "bg-rose-600 ring-2 ring-rose-500/40",
             triggerClassName
           )}
           title="Create a new collection"
@@ -130,23 +130,23 @@ export function CreateStashPopover({
             transition={{ type: "spring", stiffness: 500, damping: 32 }}
             style={{ transformOrigin: "top right" }}
             className={cn(
-              "absolute right-0 top-full mt-2 w-80 z-50 rounded-2xl p-3.5 space-y-3 text-xs select-none",
-              "bg-white dark:bg-zinc-900 text-stone-900 dark:text-stone-100",
-              "border border-black/10 dark:border-white/12 ring-1 ring-black/5 dark:ring-white/5",
+              "absolute top-full right-0 z-50 mt-2 w-80 space-y-3 rounded-2xl p-3.5 text-xs select-none",
+              "bg-white text-stone-900 dark:bg-zinc-900 dark:text-stone-100",
+              "border border-black/10 ring-1 ring-black/5 dark:border-white/12 dark:ring-white/5",
               "shadow-[0_20px_50px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_60px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.12)]",
               "overflow-hidden"
             )}
           >
             {/* Header */}
-            <div className="flex items-center justify-between gap-2 pb-2 border-b border-black/8 dark:border-white/10">
+            <div className="flex items-center justify-between gap-2 border-b border-black/8 pb-2 dark:border-white/10">
               <div className="flex items-center gap-2">
                 <div
-                  className="w-5 h-5 rounded-lg flex items-center justify-center text-white shadow-2xs"
+                  className="flex h-5 w-5 items-center justify-center rounded-lg text-white shadow-2xs"
                   style={{ backgroundColor: color }}
                 >
-                  <FolderIcon className="w-3 h-3" />
+                  <FolderIcon className="h-3 w-3" />
                 </div>
-                <h4 className="font-bold text-sm text-stone-950 dark:text-white tracking-tight">
+                <h4 className="text-sm font-bold tracking-tight text-stone-950 dark:text-white">
                   New Collection
                 </h4>
               </div>
@@ -154,7 +154,7 @@ export function CreateStashPopover({
               <button
                 type="button"
                 onClick={handleClose}
-                className="h-6 w-6 flex items-center justify-center rounded-full bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-zinc-700 active:scale-90 transition-all cursor-pointer"
+                className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-stone-100 text-stone-500 transition-all hover:bg-stone-200 hover:text-stone-900 active:scale-90 dark:bg-zinc-800 dark:text-stone-400 dark:hover:bg-zinc-700 dark:hover:text-white"
                 title="Cancel"
               >
                 <X className="h-3.5 w-3.5" />
@@ -163,7 +163,7 @@ export function CreateStashPopover({
 
             {/* Error Message */}
             {error && (
-              <div className="flex items-center gap-1.5 p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-500/30 text-[11px] text-rose-700 dark:text-rose-300 font-semibold animate-in fade-in">
+              <div className="animate-in fade-in flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-50 p-2 text-[11px] font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -172,7 +172,7 @@ export function CreateStashPopover({
             {/* Name Input */}
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider block">
+                <label className="block text-[10px] font-bold tracking-wider text-stone-500 uppercase dark:text-stone-400">
                   Collection Name
                 </label>
                 <input
@@ -185,7 +185,7 @@ export function CreateStashPopover({
                   }}
                   placeholder="e.g. Treaties, Prime Ministers, Atlas..."
                   maxLength={100}
-                  className="w-full px-3 py-2 rounded-xl border border-black/10 dark:border-white/15 bg-stone-50 dark:bg-zinc-900 text-xs text-stone-900 dark:text-white font-medium outline-none focus:border-rose-500 shadow-2xs transition-colors"
+                  className="w-full rounded-xl border border-black/10 bg-stone-50 px-3 py-2 text-xs font-medium text-stone-900 shadow-2xs transition-colors outline-none focus:border-rose-500 dark:border-white/15 dark:bg-zinc-900 dark:text-white"
                   onKeyDown={(e) => {
                     if (e.key === "Escape") handleClose();
                   }}
@@ -193,8 +193,8 @@ export function CreateStashPopover({
               </div>
 
               {/* Color Swatch Picker */}
-              <div className="p-2.5 rounded-xl bg-stone-100/90 dark:bg-zinc-800/80 border border-black/5 dark:border-white/8 space-y-2">
-                <span className="text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider block">
+              <div className="space-y-2 rounded-xl border border-black/5 bg-stone-100/90 p-2.5 dark:border-white/8 dark:bg-zinc-800/80">
+                <span className="block text-[10px] font-bold tracking-wider text-stone-500 uppercase dark:text-stone-400">
                   Color Tag
                 </span>
                 <div className="flex items-center justify-between gap-1">
@@ -204,15 +204,15 @@ export function CreateStashPopover({
                       type="button"
                       onClick={() => setColor(c)}
                       className={cn(
-                        "w-6 h-6 rounded-full transition-transform active:scale-90 cursor-pointer shadow-xs relative flex items-center justify-center",
+                        "relative flex h-6 w-6 cursor-pointer items-center justify-center rounded-full shadow-xs transition-transform active:scale-90",
                         color === c
-                          ? "scale-115 ring-2 ring-stone-900 dark:ring-white shadow-md"
-                          : "hover:scale-105 opacity-85 hover:opacity-100"
+                          ? "scale-115 shadow-md ring-2 ring-stone-900 dark:ring-white"
+                          : "opacity-85 hover:scale-105 hover:opacity-100"
                       )}
                       style={{ backgroundColor: c }}
                       title={c}
                     >
-                      {color === c && <Check className="w-3 h-3 text-white stroke-[2.5]" />}
+                      {color === c && <Check className="h-3 w-3 stroke-[2.5] text-white" />}
                     </button>
                   ))}
                 </div>
@@ -223,14 +223,14 @@ export function CreateStashPopover({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+                  className="cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold text-stone-500 transition-all hover:bg-black/5 hover:text-stone-900 active:scale-95 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!name.trim() || isCreating}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-rose-500 hover:bg-rose-600 active:scale-95 transition-all shadow-xs cursor-pointer disabled:opacity-40"
+                  className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-rose-500 px-4 py-1.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-rose-600 active:scale-95 disabled:opacity-40"
                 >
                   {isCreating ? (
                     <>

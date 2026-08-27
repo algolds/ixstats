@@ -55,7 +55,7 @@ export default function StashesPage() {
   useEffect(() => {
     setStashTab("articles");
     setSearchQuery("");
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [selectedStashId]);
 
   const utils = api.useUtils();
@@ -132,7 +132,7 @@ export default function StashesPage() {
     return items
       .filter((item) => item.contentType === "image" || item.pageTitle.startsWith("commons:"))
       .map((item) => item.pageTitle.replace(/^commons:/, ""));
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [items]);
 
   const { data: resolvedCommonsImages } = api.commons.getImageInfoByTitles.useQuery(
@@ -154,9 +154,7 @@ export default function StashesPage() {
 
   const allImages = useMemo(
     () =>
-      items.filter(
-        (item) => item.contentType === "image" || item.pageTitle.startsWith("commons:")
-      ),
+      items.filter((item) => item.contentType === "image" || item.pageTitle.startsWith("commons:")),
     // oxlint-disable-next-line
     [items]
   );
@@ -289,7 +287,11 @@ export default function StashesPage() {
       })),
       quotes: allQuotes,
       images: allImages.map((img) => ({ title: img.pageTitle, id: img.id })),
-      threads: allThreads.map((t) => ({ title: t.pageTitle, slug: t.pageSlug, savedAt: t.savedAt })),
+      threads: allThreads.map((t) => ({
+        title: t.pageTitle,
+        slug: t.pageSlug,
+        savedAt: t.savedAt,
+      })),
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -303,7 +305,12 @@ export default function StashesPage() {
     notify.success("Exported collection to JSON");
   };
 
-  const tabs: Array<{ id: StashTab; label: string; count: number; icon: React.ComponentType<{ className?: string }> }> = [
+  const tabs: Array<{
+    id: StashTab;
+    label: string;
+    count: number;
+    icon: React.ComponentType<{ className?: string }>;
+  }> = [
     { id: "articles", label: "Articles", count: allArticles.length, icon: WikiOSLogomark },
     { id: "quotes", label: "Quotes", count: allQuotes.length, icon: Highlighter },
     { id: "images", label: "Media", count: allImages.length, icon: ImageIcon },
@@ -314,9 +321,9 @@ export default function StashesPage() {
     <>
       <SignedIn>
         <WikiOSLayout sidebarVariant="dashboard">
-          <div className="min-h-screen p-3 sm:p-6 max-w-7xl mx-auto space-y-6">
+          <div className="mx-auto min-h-screen max-w-7xl space-y-6 p-3 sm:p-6">
             {/* Top Page Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[var(--wikios-border)]">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--wikios-border)] pb-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/15 text-rose-400 shadow-md">
                   <Bookmark className="h-5 w-5" />
@@ -329,7 +336,7 @@ export default function StashesPage() {
                     <button
                       type="button"
                       onClick={() => setWelcomeOpen(true)}
-                      className="text-[var(--wikios-text-dim)] hover:text-rose-400 p-1 rounded-lg hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+                      className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-all hover:bg-white/5 hover:text-rose-400 active:scale-95"
                       title="Stash Guide"
                     >
                       <HelpCircle className="h-4 w-4" />
@@ -356,7 +363,7 @@ export default function StashesPage() {
 
             {/* Error Banner */}
             {error && (
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 shadow-xs animate-in fade-in">
+              <div className="animate-in fade-in flex items-center justify-between rounded-2xl border border-rose-500/30 bg-rose-500/15 p-3 text-xs text-rose-300 shadow-xs">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0" />
                   <span>{error}</span>
@@ -364,7 +371,7 @@ export default function StashesPage() {
                 <button
                   type="button"
                   onClick={() => setError(null)}
-                  className="p-1 text-rose-300 hover:text-white rounded-lg hover:bg-rose-500/20 active:scale-95 transition-all cursor-pointer"
+                  className="cursor-pointer rounded-lg p-1 text-rose-300 transition-all hover:bg-rose-500/20 hover:text-white active:scale-95"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -373,7 +380,7 @@ export default function StashesPage() {
 
             {/* Main Content Layout: Sidebar + Canvas */}
             {stashes.length > 0 && (
-              <div className="flex flex-col md:flex-row gap-6 items-start">
+              <div className="flex flex-col items-start gap-6 md:flex-row">
                 {/* Left Collections Rail */}
                 <StashSidebar
                   stashes={stashes}
@@ -394,23 +401,23 @@ export default function StashesPage() {
                 />
 
                 {/* Right Content Canvas */}
-                <main className="flex-1 min-w-0 w-full space-y-4">
+                <main className="w-full min-w-0 flex-1 space-y-4">
                   {activeStash && (
-                    <div className="p-4 rounded-3xl bg-[var(--wikios-card-bg)]/80 border border-[var(--wikios-border)] shadow-xs backdrop-blur-xl space-y-4">
+                    <div className="space-y-4 rounded-3xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-4 shadow-xs backdrop-blur-xl">
                       {/* Active Stash Header Banner */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--wikios-border)]">
-                        <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--wikios-border)] pb-3">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <span
-                            className="w-3.5 h-3.5 rounded-full shrink-0 shadow-sm"
+                            className="h-3.5 w-3.5 shrink-0 rounded-full shadow-sm"
                             style={{
                               backgroundColor: activeStash.color,
                               boxShadow: `0 0 12px ${activeStash.color}80`,
                             }}
                           />
-                          <h2 className="text-base font-bold text-[var(--wikios-text)] tracking-tight truncate">
+                          <h2 className="truncate text-base font-bold tracking-tight text-[var(--wikios-text)]">
                             {activeStash.name}
                           </h2>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--wikios-surface)] border border-[var(--wikios-border)] text-[var(--wikios-text-dim)] shrink-0">
+                          <span className="shrink-0 rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-2 py-0.5 text-[10px] font-bold text-[var(--wikios-text-dim)]">
                             {activeStash.itemCount} item{activeStash.itemCount === 1 ? "" : "s"}
                           </span>
                         </div>
@@ -432,21 +439,21 @@ export default function StashesPage() {
                       </div>
 
                       {/* Search Bar + Floating Segmented Tab Bar */}
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                      <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
                         {/* Instant Filter Search */}
-                        <div className="relative flex-1 max-w-xs">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--wikios-text-dim)]" />
+                        <div className="relative max-w-xs flex-1">
+                          <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[var(--wikios-text-dim)]" />
                           <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Filter in this stash..."
-                            className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] text-xs text-[var(--wikios-text)] placeholder:text-[var(--wikios-text-dim)] outline-none focus:border-[var(--wikios-accent)] transition-colors shadow-2xs"
+                            className="w-full rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-1.5 pr-3 pl-8 text-xs text-[var(--wikios-text)] shadow-2xs transition-colors outline-none placeholder:text-[var(--wikios-text-dim)] focus:border-[var(--wikios-accent)]"
                           />
                         </div>
 
                         {/* Segmented Tab Control */}
-                        <div className="flex items-center gap-1 p-1 rounded-2xl bg-white/5 border border-[var(--wikios-border)] relative shadow-2xs self-start sm:self-auto">
+                        <div className="relative flex items-center gap-1 self-start rounded-2xl border border-[var(--wikios-border)] bg-white/5 p-1 shadow-2xs sm:self-auto">
                           {tabs.map((tab) => {
                             const Icon = tab.icon;
                             const isActive = stashTab === tab.id;
@@ -459,9 +466,9 @@ export default function StashesPage() {
                                   setStashTab(tab.id);
                                 }}
                                 className={cn(
-                                  "relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none",
+                                  "relative flex cursor-pointer items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all select-none",
                                   isActive
-                                    ? "text-[var(--wikios-text)] font-bold shadow-xs"
+                                    ? "font-bold text-[var(--wikios-text)] shadow-xs"
                                     : "text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
                                 )}
                               >
@@ -469,16 +476,16 @@ export default function StashesPage() {
                                   <motion.div
                                     layoutId="stash-active-tab-pill"
                                     transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                                    className="absolute inset-0 rounded-xl bg-[var(--wikios-surface)] border border-[var(--wikios-border)] shadow-xs"
+                                    className="absolute inset-0 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] shadow-xs"
                                   />
                                 )}
-                                <Icon className="w-3.5 h-3.5 relative z-10" />
+                                <Icon className="relative z-10 h-3.5 w-3.5" />
                                 <span className="relative z-10">{tab.label}</span>
                                 <span
                                   className={cn(
-                                    "relative z-10 ml-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold leading-none",
+                                    "py-0.2 relative z-10 ml-0.5 rounded-full px-1.5 text-[9px] leading-none font-bold",
                                     isActive
-                                      ? "bg-rose-500/15 text-rose-400 border border-rose-500/25"
+                                      ? "border border-rose-500/25 bg-rose-500/15 text-rose-400"
                                       : "bg-white/5 text-[var(--wikios-text-dim)]"
                                   )}
                                 >
@@ -492,8 +499,8 @@ export default function StashesPage() {
 
                       {/* Loading State */}
                       {itemsQuery.isLoading && (
-                        <div className="py-16 flex flex-col items-center justify-center gap-2 text-[var(--wikios-text-muted)]">
-                          <Loader2 className="h-6 w-6 animate-spin opacity-40 text-rose-500" />
+                        <div className="flex flex-col items-center justify-center gap-2 py-16 text-[var(--wikios-text-muted)]">
+                          <Loader2 className="h-6 w-6 animate-spin text-rose-500 opacity-40" />
                           <span className="text-xs">Loading stash items...</span>
                         </div>
                       )}
@@ -502,94 +509,102 @@ export default function StashesPage() {
                       {!itemsQuery.isLoading && (
                         <div>
                           {/* Tab 1: Articles */}
-                          {stashTab === "articles" && (
-                            filteredArticles.length > 0 ? (
+                          {stashTab === "articles" &&
+                            (filteredArticles.length > 0 ? (
                               <StashPagesList
                                 items={filteredArticles}
                                 onUnstash={handleUnstash}
                                 thumbnailsMap={thumbnailsMap ?? {}}
                               />
                             ) : (
-                              <div className="py-16 text-center space-y-2 text-[var(--wikios-text-muted)]">
-                                <WikiOSLogomark className="h-10 w-10 mx-auto opacity-20 text-[var(--wikios-accent)]" />
+                              <div className="space-y-2 py-16 text-center text-[var(--wikios-text-muted)]">
+                                <WikiOSLogomark className="mx-auto h-10 w-10 text-[var(--wikios-accent)] opacity-20" />
                                 <p className="text-xs font-bold text-[var(--wikios-text)]">
-                                  {query ? "No articles match your search" : "No articles in this collection"}
+                                  {query
+                                    ? "No articles match your search"
+                                    : "No articles in this collection"}
                                 </p>
-                                <p className="text-[11px] text-[var(--wikios-text-dim)] max-w-sm mx-auto">
-                                  Browse wiki articles and click the <Bookmark className="h-3 w-3 inline text-rose-400" /> <strong>Stash</strong> button in the toolbar to save them here.
+                                <p className="mx-auto max-w-sm text-[11px] text-[var(--wikios-text-dim)]">
+                                  Browse wiki articles and click the{" "}
+                                  <Bookmark className="inline h-3 w-3 text-rose-400" />{" "}
+                                  <strong>Stash</strong> button in the toolbar to save them here.
                                 </p>
                               </div>
-                            )
-                          )}
+                            ))}
 
                           {/* Tab 2: Quotes & Highlights */}
-                          {stashTab === "quotes" && (
-                            filteredQuotes.length > 0 ? (
+                          {stashTab === "quotes" &&
+                            (filteredQuotes.length > 0 ? (
                               <StashQuotesList quotes={filteredQuotes} />
                             ) : (
-                              <div className="py-16 text-center space-y-2 text-[var(--wikios-text-muted)]">
-                                <Highlighter className="h-10 w-10 mx-auto opacity-20" />
+                              <div className="space-y-2 py-16 text-center text-[var(--wikios-text-muted)]">
+                                <Highlighter className="mx-auto h-10 w-10 opacity-20" />
                                 <p className="text-xs font-bold text-[var(--wikios-text)]">
-                                  {query ? "No quotes match your search" : "No saved quotes in this collection"}
+                                  {query
+                                    ? "No quotes match your search"
+                                    : "No saved quotes in this collection"}
                                 </p>
-                                <p className="text-[11px] text-[var(--wikios-text-dim)] max-w-sm mx-auto">
-                                  Highlight text while reading an article and click <strong>Save Quote</strong> in the Margin capsule to curate excerpts here.
+                                <p className="mx-auto max-w-sm text-[11px] text-[var(--wikios-text-dim)]">
+                                  Highlight text while reading an article and click{" "}
+                                  <strong>Save Quote</strong> in the Margin capsule to curate
+                                  excerpts here.
                                 </p>
                               </div>
-                            )
-                          )}
+                            ))}
 
                           {/* Tab 3: Media & Images */}
-                          {stashTab === "images" && (
-                            filteredImages.length > 0 ? (
+                          {stashTab === "images" &&
+                            (filteredImages.length > 0 ? (
                               <StashImagesGrid
                                 items={filteredImages}
                                 resolvedImagesMap={resolvedImagesMap}
                                 onUnstash={handleUnstash}
                               />
                             ) : (
-                              <div className="py-16 text-center space-y-2 text-[var(--wikios-text-muted)]">
-                                <ImageIcon className="h-10 w-10 mx-auto opacity-20" />
+                              <div className="space-y-2 py-16 text-center text-[var(--wikios-text-muted)]">
+                                <ImageIcon className="mx-auto h-10 w-10 opacity-20" />
                                 <p className="text-xs font-bold text-[var(--wikios-text)]">
-                                  {query ? "No media matches your search" : "No media in this collection"}
+                                  {query
+                                    ? "No media matches your search"
+                                    : "No media in this collection"}
                                 </p>
-                                <p className="text-[11px] text-[var(--wikios-text-dim)] max-w-sm mx-auto">
+                                <p className="mx-auto max-w-sm text-[11px] text-[var(--wikios-text-dim)]">
                                   Browse the{" "}
                                   <Link
                                     href={withBasePath("/wiki/repository")}
-                                    className="text-[var(--wikios-accent)] font-semibold hover:underline"
+                                    className="font-semibold text-[var(--wikios-accent)] hover:underline"
                                   >
                                     Media Repository
                                   </Link>{" "}
                                   and click Stash to curate visual assets.
                                 </p>
                               </div>
-                            )
-                          )}
+                            ))}
 
                           {/* Tab 4: Forum Threads */}
-                          {stashTab === "threads" && (
-                            filteredThreads.length > 0 ? (
+                          {stashTab === "threads" &&
+                            (filteredThreads.length > 0 ? (
                               <StashThreadsList items={filteredThreads} onUnstash={handleUnstash} />
                             ) : (
-                              <div className="py-16 text-center space-y-2 text-[var(--wikios-text-muted)]">
-                                <MessageSquare className="h-10 w-10 mx-auto opacity-20" />
+                              <div className="space-y-2 py-16 text-center text-[var(--wikios-text-muted)]">
+                                <MessageSquare className="mx-auto h-10 w-10 opacity-20" />
                                 <p className="text-xs font-bold text-[var(--wikios-text)]">
-                                  {query ? "No threads match your search" : "No forum threads in this collection"}
+                                  {query
+                                    ? "No threads match your search"
+                                    : "No forum threads in this collection"}
                                 </p>
-                                <p className="text-[11px] text-[var(--wikios-text-dim)] max-w-sm mx-auto">
+                                <p className="mx-auto max-w-sm text-[11px] text-[var(--wikios-text-dim)]">
                                   Browse the{" "}
                                   <Link
                                     href={withBasePath("/forum")}
-                                    className="text-orange-400 font-semibold hover:underline"
+                                    className="font-semibold text-orange-400 hover:underline"
                                   >
                                     Forum
                                   </Link>{" "}
                                   and bookmark threads to save them here.
                                 </p>
                               </div>
-                            )
-                          )}
+                            ))}
                         </div>
                       )}
                     </div>
@@ -605,14 +620,15 @@ export default function StashesPage() {
 
       <SignedOut>
         <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--wikios-bg)] p-4 text-[var(--wikios-text)]">
-          <div className="mx-auto max-w-sm text-center space-y-4 p-8 rounded-3xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 backdrop-blur-2xl shadow-xl">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 mx-auto shadow-md">
+          <div className="mx-auto max-w-sm space-y-4 rounded-3xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-8 text-center shadow-xl backdrop-blur-2xl">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/15 text-rose-400 shadow-md">
               <Bookmark className="h-7 w-7" />
             </div>
             <div>
               <h2 className="text-lg font-bold tracking-tight">Access Stash</h2>
-              <p className="mt-1 text-xs text-[var(--wikios-text-muted)] leading-relaxed">
-                Sign in to manage your saved lore collections, highlights, media assets, and forum bookmarks.
+              <p className="mt-1 text-xs leading-relaxed text-[var(--wikios-text-muted)]">
+                Sign in to manage your saved lore collections, highlights, media assets, and forum
+                bookmarks.
               </p>
             </div>
             <SignInButton mode="modal" />

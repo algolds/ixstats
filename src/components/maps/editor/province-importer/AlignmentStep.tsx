@@ -1,7 +1,17 @@
 "use client";
 
 import React, { memo } from "react";
-import { Archery as Crosshair, MagicWand as Wand2, ArrowSeparate as Move, Refresh as RotateCw, ZoomIn, SystemRestart as Loader2, Trash as Trash2, Check, Magnet } from "iconoir-react";
+import {
+  Archery as Crosshair,
+  MagicWand as Wand2,
+  ArrowSeparate as Move,
+  Refresh as RotateCw,
+  ZoomIn,
+  SystemRestart as Loader2,
+  Trash as Trash2,
+  Check,
+  Magnet,
+} from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import type { AlignmentMode } from "~/lib/maps/province-importer/types";
 

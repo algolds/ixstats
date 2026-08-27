@@ -122,7 +122,8 @@ export function isIrlOrMaintenanceCategory(name: string): boolean {
   }
 
   // 6. Real-World IRL Country / Political Entities (excluding IxWorld lore)
-  const irlRegex = /\b(?:iran|iranian|portugal|portuguese|north america|south america|united states|u\.s\.|usa|russia|russian|china|chinese|germany|german|france|french|spain|spanish|italy|italian|japan|japanese|india|indian|brazil|brazilian|mexico|mexican|turkey|turkish|egypt|egyptian|israel|israeli|saudi|syria|syrian|iraq|iraqi|korea|korean|vietnam|vietnamese|netherlands|dutch|belgium|belgian|sweden|swedish|norway|norwegian|denmark|danish|finland|finnish|poland|polish|ukraine|ukrainian|canada|canadian|australia|australian|new zealand|argentina|chile|colombia|venezuela|peru|cuba|south africa|nigeria|kenya|ghana|morocco|algeria|tunisia|ethiopia|philippines|indonesia|malaysia|thailand|singapore|pakistan|bangladesh|ireland|irish|scotland|scottish|wales|welsh|england|english|united kingdom|british|austria|austrian|switzerland|swiss|greece|greek|hungary|hungarian|romania|romanian|bulgaria|serbia|croatia|czech|slovakia|albania|iceland|estonia|latvia|lithuania|taiwan|hong kong|latter day saint)\b/i;
+  const irlRegex =
+    /\b(?:iran|iranian|portugal|portuguese|north america|south america|united states|u\.s\.|usa|russia|russian|china|chinese|germany|german|france|french|spain|spanish|italy|italian|japan|japanese|india|indian|brazil|brazilian|mexico|mexican|turkey|turkish|egypt|egyptian|israel|israeli|saudi|syria|syrian|iraq|iraqi|korea|korean|vietnam|vietnamese|netherlands|dutch|belgium|belgian|sweden|swedish|norway|norwegian|denmark|danish|finland|finnish|poland|polish|ukraine|ukrainian|canada|canadian|australia|australian|new zealand|argentina|chile|colombia|venezuela|peru|cuba|south africa|nigeria|kenya|ghana|morocco|algeria|tunisia|ethiopia|philippines|indonesia|malaysia|thailand|singapore|pakistan|bangladesh|ireland|irish|scotland|scottish|wales|welsh|england|english|united kingdom|british|austria|austrian|switzerland|swiss|greece|greek|hungary|hungarian|romania|romanian|bulgaria|serbia|croatia|czech|slovakia|albania|iceland|estonia|latvia|lithuania|taiwan|hong kong|latter day saint)\b/i;
   if (irlRegex.test(lower)) {
     return true;
   }
@@ -171,7 +172,7 @@ export async function syncSinglePage(title: string): Promise<boolean> {
     url.searchParams.set("format", "json");
 
     const res = await fetch(url.toString(), {
-      headers: { "User-Agent": DEFAULT_USER_AGENT, "Accept": "application/json" },
+      headers: { "User-Agent": DEFAULT_USER_AGENT, Accept: "application/json" },
       signal: AbortSignal.timeout(10000),
     });
 
@@ -246,7 +247,7 @@ export async function syncSinglePage(title: string): Promise<boolean> {
           select: { byteSize: true },
         });
 
-        const byteDelta = prevRev ? (rawByteSize - (prevRev.byteSize || 0)) : rawByteSize;
+        const byteDelta = prevRev ? rawByteSize - (prevRev.byteSize || 0) : rawByteSize;
 
         await (db as any).wikiRevision.create({
           data: {
@@ -269,7 +270,11 @@ export async function syncSinglePage(title: string): Promise<boolean> {
     // Parse category tags and sync memberships
     const catMatches = wikitext.match(/\[\[Category:([^\]|]+)(?:\|[^\]]*)?\]\]/gi) || [];
     for (const match of catMatches) {
-      const catName = match.replace(/\[\[Category:/i, "").replace(/\]\]$/, "").split("|")[0]?.trim();
+      const catName = match
+        .replace(/\[\[Category:/i, "")
+        .replace(/\]\]$/, "")
+        .split("|")[0]
+        ?.trim();
       if (!catName || isIrlOrMaintenanceCategory(catName)) continue;
 
       const catSlug = toArticleSlug(catName);
@@ -319,7 +324,7 @@ export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
     rcUrl.searchParams.set("format", "json");
 
     const res = await fetch(rcUrl.toString(), {
-      headers: { "User-Agent": DEFAULT_USER_AGENT, "Accept": "application/json" },
+      headers: { "User-Agent": DEFAULT_USER_AGENT, Accept: "application/json" },
       signal: AbortSignal.timeout(12000),
     });
 
@@ -335,7 +340,11 @@ export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
     let updated = 0;
     for (const rc of changes) {
       const revId = Number(rc.revid || 0);
-      const rawTitle = sanitize(String(rc.title || "").replace(/_/g, " ").trim());
+      const rawTitle = sanitize(
+        String(rc.title || "")
+          .replace(/_/g, " ")
+          .trim()
+      );
       if (!rawTitle) continue;
 
       if (revId > 0) {
@@ -354,9 +363,11 @@ export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
     lastStats.pagesUpdated = updated;
     lastStats.lastRunAt = new Date();
     if (updated > 0) {
-      console.log(`[WikiAutoSync] 🔄 Auto-synced ${updated} new edits from MediaWiki into PostgreSQL.`);
+      console.log(
+        `[WikiAutoSync] 🔄 Auto-synced ${updated} new edits from MediaWiki into PostgreSQL.`
+      );
     }
-  } catch  {
+  } catch {
     // Non-fatal background polling error
   } finally {
     isSyncing = false;
@@ -370,8 +381,10 @@ export function startWikiAutoSyncDaemon(intervalMs = 45000): void {
   if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") {
     return;
   }
-  console.log(`[WikiAutoSync] 🚀 MediaWiki auto-sync daemon initialized (Interval: ${intervalMs / 1000}s).`);
-  
+  console.log(
+    `[WikiAutoSync] 🚀 MediaWiki auto-sync daemon initialized (Interval: ${intervalMs / 1000}s).`
+  );
+
   // Run first cycle immediately in background
   const initialTimer = setTimeout(() => {
     runAutoSyncCycle().catch(() => {});

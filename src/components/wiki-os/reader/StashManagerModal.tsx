@@ -170,7 +170,7 @@ export function StashManagerModal({
               </div>
               {error && (
                 <div className="wikios-stash-error">
-                  <AlertCircle className="h-3 w-3 inline mr-1" /> {error}
+                  <AlertCircle className="mr-1 inline h-3 w-3" /> {error}
                 </div>
               )}
               <div className="wikios-stash-create-actions">

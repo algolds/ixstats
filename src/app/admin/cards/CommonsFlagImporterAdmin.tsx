@@ -7,7 +7,20 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";
 import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
-import { Globe, Download, SystemRestart as Loader2, CheckCircle as CheckCircle2, Search, OpenNewWindow as ExternalLink, CheckSquare, Square, ArrowRight, WarningCircle as AlertCircle, Refresh as RefreshCw, Check } from "iconoir-react";
+import {
+  Globe,
+  Download,
+  SystemRestart as Loader2,
+  CheckCircle as CheckCircle2,
+  Search,
+  OpenNewWindow as ExternalLink,
+  CheckSquare,
+  Square,
+  ArrowRight,
+  WarningCircle as AlertCircle,
+  Refresh as RefreshCw,
+  Check,
+} from "iconoir-react";
 import type { CardRarity } from "@prisma/client";
 
 function cleanCategoryTitle(input: string): string {

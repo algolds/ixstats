@@ -146,19 +146,19 @@ export function MarginShareModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 8 }}
           transition={{ type: "spring", stiffness: 420, damping: 36, mass: 0.7 }}
-          className="relative w-full max-w-md rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-2xl text-[var(--wikios-text)] space-y-4"
+          className="relative w-full max-w-md space-y-4 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 p-5 text-[var(--wikios-text)] shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[var(--wikios-border)] pb-3">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-margin-bg border border-margin-border text-margin-accent shadow-[0_0_10px_var(--margin-accent-glow)]">
+              <div className="bg-margin-bg border-margin-border text-margin-accent flex h-8 w-8 items-center justify-center rounded-xl border shadow-[0_0_10px_var(--margin-accent-glow)]">
                 <Share2 className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold leading-none text-[var(--wikios-text)]">
+                <h3 className="text-sm leading-none font-bold text-[var(--wikios-text)]">
                   Share and export
                 </h3>
-                <p className="text-[11px] text-[var(--wikios-text-dim)] truncate max-w-[260px] mt-0.5">
+                <p className="mt-0.5 max-w-[260px] truncate text-[11px] text-[var(--wikios-text-dim)]">
                   {articleTitle}
                 </p>
               </div>
@@ -170,14 +170,14 @@ export function MarginShareModal({
                 soundEffects.release();
                 onClose();
               }}
-              className="rounded-lg p-1 text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-95 transition-all cursor-pointer"
+              className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-all hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
           {/* Quote Snippet Preview */}
-          <div className="rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-3 text-xs italic text-[var(--wikios-text-muted)] line-clamp-3 leading-relaxed border-l-3 border-margin-accent">
+          <div className="border-margin-accent line-clamp-3 rounded-xl border border-l-3 border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-3 text-xs leading-relaxed text-[var(--wikios-text-muted)] italic">
             &ldquo;{cleanQuote}&rdquo;
           </div>
 
@@ -186,13 +186,14 @@ export function MarginShareModal({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-[11px] font-bold text-[var(--wikios-text-muted)]">
                 <span>Send to conversation</span>
-                <span className="text-[10px] text-margin-accent font-semibold">Recent chats</span>
+                <span className="text-margin-accent text-[10px] font-semibold">Recent chats</span>
               </div>
-              <div className="max-h-36 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+              <div className="custom-scrollbar max-h-36 space-y-1 overflow-y-auto pr-1">
                 {conversationsData?.conversations.slice(0, 4).map((c: any) => {
                   const participantName =
-                    c.participants?.map((p: any) => p.user?.wikiUsername || p.user?.discordUsername || "User").join(", ") ||
-                    "Conversation";
+                    c.participants
+                      ?.map((p: any) => p.user?.wikiUsername || p.user?.discordUsername || "User")
+                      .join(", ") || "Conversation";
 
                   return (
                     <button
@@ -200,15 +201,15 @@ export function MarginShareModal({
                       type="button"
                       disabled={isSending}
                       onClick={() => handleDispatchToChat(c.id)}
-                      className="w-full flex items-center justify-between p-2 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 hover:bg-margin-bg hover:border-margin-border text-left active:scale-[0.98] transition-all cursor-pointer text-xs group"
+                      className="hover:bg-margin-bg hover:border-margin-border group flex w-full cursor-pointer items-center justify-between rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 p-2 text-left text-xs transition-all active:scale-[0.98]"
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <MessageSquare className="h-3.5 w-3.5 text-margin-accent shrink-0" />
-                        <span className="font-semibold text-[var(--wikios-text)] group-hover:text-margin-accent truncate">
+                        <MessageSquare className="text-margin-accent h-3.5 w-3.5 shrink-0" />
+                        <span className="group-hover:text-margin-accent truncate font-semibold text-[var(--wikios-text)]">
                           {participantName}
                         </span>
                       </div>
-                      <span className="flex items-center gap-1 text-[10.5px] font-bold text-margin-accent group-hover:translate-x-0.5 transition-transform shrink-0">
+                      <span className="text-margin-accent flex shrink-0 items-center gap-1 text-[10.5px] font-bold transition-transform group-hover:translate-x-0.5">
                         <Send className="h-3 w-3" />
                         <span>Send</span>
                       </span>
@@ -233,14 +234,14 @@ export function MarginShareModal({
                     key={fmt.id}
                     type="button"
                     onClick={() => handleCopy(fmt.id, fmt.getContent())}
-                    className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 hover:bg-margin-bg hover:border-margin-border active:scale-[0.98] transition-all cursor-pointer text-left group"
+                    className="hover:bg-margin-bg hover:border-margin-border group flex cursor-pointer items-center justify-between rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 p-2.5 text-left transition-all active:scale-[0.98]"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--wikios-surface)] border border-[var(--wikios-border)] text-margin-accent group-hover:border-margin-border">
+                      <div className="text-margin-accent group-hover:border-margin-border flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)]">
                         <Icon className="h-3.5 w-3.5" />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-[var(--wikios-text)] group-hover:text-margin-accent">
+                        <div className="group-hover:text-margin-accent text-xs font-bold text-[var(--wikios-text)]">
                           {fmt.name}
                         </div>
                         <div className="text-[10px] text-[var(--wikios-text-dim)]">
@@ -249,7 +250,7 @@ export function MarginShareModal({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 text-xs text-[var(--wikios-text-dim)] group-hover:text-margin-accent">
+                    <div className="group-hover:text-margin-accent flex items-center gap-1 text-xs text-[var(--wikios-text-dim)]">
                       {isCopied ? (
                         <>
                           <Check className="h-3.5 w-3.5 text-emerald-400" />

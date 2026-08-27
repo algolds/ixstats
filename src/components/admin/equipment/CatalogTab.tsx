@@ -89,7 +89,7 @@ export function CatalogTab({
               <TabsTrigger
                 key={key}
                 value={key}
-                className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+                className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-transform active:scale-[0.98]"
               >
                 <Icon className="h-3.5 w-3.5" />
                 {label}
@@ -101,22 +101,24 @@ export function CatalogTab({
 
       {/* Advanced Filters */}
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+        <div className="relative max-w-sm min-w-[200px] flex-1">
           <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             placeholder="Search equipment..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-8 rounded-xl border-border/30 bg-background/50 pl-8 text-xs backdrop-blur-md focus:border-border/60"
+            className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
           />
         </div>
 
         <Select value={eraFilter} onValueChange={setEraFilter}>
-          <SelectTrigger className="h-8 w-36 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+          <SelectTrigger className="border-border/30 bg-background/50 h-8 w-36 rounded-xl text-xs backdrop-blur-md">
             <SelectValue placeholder="All Eras" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-xs">All Eras</SelectItem>
+            <SelectItem value="all" className="text-xs">
+              All Eras
+            </SelectItem>
             {ERAS.map((era) => (
               <SelectItem key={era.value} value={era.value} className="text-xs">
                 {era.label}
@@ -126,11 +128,13 @@ export function CatalogTab({
         </Select>
 
         <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
-          <SelectTrigger className="h-8 w-40 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+          <SelectTrigger className="border-border/30 bg-background/50 h-8 w-40 rounded-xl text-xs backdrop-blur-md">
             <SelectValue placeholder="All Subcategories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-xs">All Subcategories</SelectItem>
+            <SelectItem value="all" className="text-xs">
+              All Subcategories
+            </SelectItem>
             {selectedCategory !== "all" &&
               SUBCATEGORIES[selectedCategory as keyof typeof SUBCATEGORIES]?.map((sub) => (
                 <SelectItem key={sub} value={sub} className="text-xs capitalize">
@@ -140,7 +144,7 @@ export function CatalogTab({
           </SelectContent>
         </Select>
 
-        <label className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground cursor-pointer select-none">
+        <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 px-2 text-xs select-none">
           <Checkbox
             id="showInactive"
             checked={showInactive}
@@ -151,91 +155,126 @@ export function CatalogTab({
         </label>
       </div>
 
-        {/* Advanced Filters Row 2 */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Tech Level Range */}
-          <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">
-              Tech Level: {techLevelRange[0]} - {techLevelRange[1]}
-            </label>
-            <Slider
-              value={techLevelRange}
-              onValueChange={(value) => setTechLevelRange(value as [number, number])}
-              min={60}
-              max={100}
-              step={1}
-              className="w-full"
-            />
-          </div>
-
-          {/* Cost Range */}
-          <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">
-              Acquisition Cost: ${(costRange[0] / 1000000).toFixed(1)}M - $
-              {(costRange[1] / 1000000).toFixed(1)}M
-            </label>
-            <Slider
-              value={costRange}
-              onValueChange={(value) => setCostRange(value as [number, number])}
-              min={0}
-              max={10000000}
-              step={100000}
-              className="w-full"
-            />
-          </div>
+      {/* Advanced Filters Row 2 */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Tech Level Range */}
+        <div>
+          <label className="text-foreground mb-2 block text-sm font-medium">
+            Tech Level: {techLevelRange[0]} - {techLevelRange[1]}
+          </label>
+          <Slider
+            value={techLevelRange}
+            onValueChange={(value) => setTechLevelRange(value as [number, number])}
+            min={60}
+            max={100}
+            step={1}
+            className="w-full"
+          />
         </div>
 
-        {/* Bulk Actions */}
-        {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-xs">
-            <span className="text-foreground font-medium">{selectedIds.size} selected</span>
-            <Button size="sm" variant="outline" onClick={() => handleBulkToggle(true)} className="h-7 px-2 text-xs active:scale-[0.98]">
-              <Check className="mr-1 h-3.5 w-3.5" />
-              Activate
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => handleBulkToggle(false)} className="h-7 px-2 text-xs active:scale-[0.98]">
-              <X className="mr-1 h-3.5 w-3.5" />
-              Deactivate
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="h-7 px-2 text-xs active:scale-[0.98]">
-              Clear Selection
-            </Button>
-          </div>
-        )}
+        {/* Cost Range */}
+        <div>
+          <label className="text-foreground mb-2 block text-sm font-medium">
+            Acquisition Cost: ${(costRange[0] / 1000000).toFixed(1)}M - $
+            {(costRange[1] / 1000000).toFixed(1)}M
+          </label>
+          <Slider
+            value={costRange}
+            onValueChange={(value) => setCostRange(value as [number, number])}
+            min={0}
+            max={10000000}
+            step={100000}
+            className="w-full"
+          />
+        </div>
+      </div>
+
+      {/* Bulk Actions */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-xs">
+          <span className="text-foreground font-medium">{selectedIds.size} selected</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleBulkToggle(true)}
+            className="h-7 px-2 text-xs active:scale-[0.98]"
+          >
+            <Check className="mr-1 h-3.5 w-3.5" />
+            Activate
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleBulkToggle(false)}
+            className="h-7 px-2 text-xs active:scale-[0.98]"
+          >
+            <X className="mr-1 h-3.5 w-3.5" />
+            Deactivate
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSelectedIds(new Set())}
+            className="h-7 px-2 text-xs active:scale-[0.98]"
+          >
+            Clear Selection
+          </Button>
+        </div>
+      )}
 
       {/* Stats Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Total Systems</p>
-          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">{equipmentData?.length || 0}</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Total Systems
+          </p>
+          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+            {equipmentData?.length || 0}
+          </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Active Registry</p>
-          <p className="text-emerald-400 mt-1 font-mono text-xl font-bold tracking-tight">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Active Registry
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
             {equipmentData?.filter((e: { isActive: boolean }) => e.isActive).length || 0}
           </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Filtered Results</p>
-          <p className="text-cyan-400 mt-1 font-mono text-xl font-bold tracking-tight">{filteredEquipment.length}</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Filtered Results
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
+            {filteredEquipment.length}
+          </p>
         </div>
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Manufacturers</p>
-          <p className="text-purple-400 mt-1 font-mono text-xl font-bold tracking-tight">{manufacturers?.length || 0}</p>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Manufacturers
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
+            {manufacturers?.length || 0}
+          </p>
         </div>
       </div>
 
       {/* Equipment Grid */}
       {isLoading ? (
         <div className="py-12 text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
           <p className="text-muted-foreground text-xs">Loading equipment catalog...</p>
         </div>
       ) : filteredEquipment.length === 0 ? (
-        <div className="rounded-2xl border border-border/30 bg-card/25 p-12 text-center backdrop-blur-md">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-12 text-center backdrop-blur-md">
           <Filter className="text-muted-foreground mx-auto mb-3 h-8 w-8" />
-          <p className="text-muted-foreground text-xs">No defense equipment matching current filters.</p>
-          <Button size="sm" className="mt-4 h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98]" onClick={() => setIsAddDialogOpen(true)}>
+          <p className="text-muted-foreground text-xs">
+            No defense equipment matching current filters.
+          </p>
+          <Button
+            size="sm"
+            className="mt-4 h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98]"
+            onClick={() => setIsAddDialogOpen(true)}
+          >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Add First Equipment
           </Button>

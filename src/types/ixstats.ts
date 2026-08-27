@@ -786,4 +786,3 @@ export interface IxTimeDate {
   minute?: number;
   second?: number;
 }
-

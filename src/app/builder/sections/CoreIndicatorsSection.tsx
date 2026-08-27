@@ -1,7 +1,12 @@
 "use client";
 
 import React from "react";
-import { Group as Users, Dollar as DollarSign, Activity, Percentage as Percent } from "iconoir-react";
+import {
+  Group as Users,
+  Dollar as DollarSign,
+  Activity,
+  Percentage as Percent,
+} from "iconoir-react";
 import { SliderWithDirectInput } from "../primitives/enhanced";
 import { Badge } from "~/components/ui/badge";
 import type { EconomicInputs, RealCountryData } from "../lib/economy-data-service";

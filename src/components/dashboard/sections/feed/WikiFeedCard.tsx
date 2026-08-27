@@ -243,12 +243,15 @@ export function WikiFeedCard({ activity }: { activity: any }) {
     }
   }, [hasLiked]);
 
-  const handleSelectReactionEmoji = useCallback((emoji: string) => {
-    setSelectedEmoji(emoji);
-    setHasLiked(true);
-    setLocalLikes((prev) => (hasLiked ? prev : prev + 1));
-    setIsReactionOpen(false);
-  }, [hasLiked]);
+  const handleSelectReactionEmoji = useCallback(
+    (emoji: string) => {
+      setSelectedEmoji(emoji);
+      setHasLiked(true);
+      setLocalLikes((prev) => (hasLiked ? prev : prev + 1));
+      setIsReactionOpen(false);
+    },
+    [hasLiked]
+  );
 
   const formattedIntroHtml = useMemo(() => {
     const raw = intro?.text || intro?.intro || activity.content?.metadata?.blurb || "";
@@ -306,10 +309,10 @@ export function WikiFeedCard({ activity }: { activity: any }) {
   const descHtml = descText ? formatThinkpagesContentForDisplay(descText) : "";
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-teal-500/20 bg-card/85 p-4 sm:p-5 shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-teal-500/35 hover:bg-card/95 hover:shadow-md dark:bg-card/75 dark:hover:bg-card/90">
+    <div className="group bg-card/85 hover:bg-card/95 dark:bg-card/75 dark:hover:bg-card/90 relative overflow-hidden rounded-2xl border border-teal-500/20 p-4 shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-teal-500/35 hover:shadow-md sm:p-5">
       {/* ── 1. Cohesive Header Row ── */}
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
           {/* Wiki Logomark Badge */}
           <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-teal-500/25 bg-teal-500/10 text-teal-500 shadow-xs transition-transform duration-200 group-hover:scale-105">
             <WikiOSLogomark className="h-4.5 w-4.5" />
@@ -320,12 +323,12 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             <div className="flex items-center gap-2">
               <Link
                 href={wikiHref}
-                className="text-foreground truncate text-sm sm:text-base font-semibold tracking-tight transition-colors hover:text-teal-400"
+                className="text-foreground truncate text-sm font-semibold tracking-tight transition-colors hover:text-teal-400 sm:text-base"
               >
                 {cleanTitle}
               </Link>
               {activity._isNew && (
-                <span className="shrink-0 rounded-full border border-teal-500/30 bg-teal-500/15 px-2 py-0.2 text-[9px] font-semibold tracking-wider text-teal-400 uppercase">
+                <span className="py-0.2 shrink-0 rounded-full border border-teal-500/30 bg-teal-500/15 px-2 text-[9px] font-semibold tracking-wider text-teal-400 uppercase">
                   New
                 </span>
               )}
@@ -335,7 +338,8 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             <div className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-xs font-medium tracking-tight">
               {isGrouped ? (
                 <span>
-                  <span className="text-foreground font-semibold">{activity._editCount}</span> edits by{" "}
+                  <span className="text-foreground font-semibold">{activity._editCount}</span> edits
+                  by{" "}
                   {activity._editors?.map((editor: string, idx: number) => (
                     <span key={editor}>
                       {idx > 0 && ", "}
@@ -367,7 +371,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
         </div>
 
         {/* Top Right: Timestamp & Open Button */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           <span className="text-muted-foreground/80 text-xs font-medium tabular-nums">
             {formatTimeAgo(new Date(activity.timestamp))}
           </span>
@@ -388,7 +392,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             {formattedIntroHtml && (
               <WikiHtmlContent
                 html={formattedIntroHtml}
-                className="text-foreground/85 line-clamp-3 text-xs sm:text-[13px] leading-relaxed font-normal tracking-tight [&_a]:transition-colors"
+                className="text-foreground/85 line-clamp-3 text-xs leading-relaxed font-normal tracking-tight sm:text-[13px] [&_a]:transition-colors"
               />
             )}
           </div>
@@ -397,7 +401,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           {leadImage && (
             <Link
               href={wikiHref}
-              className="relative h-20 w-28 sm:h-24 sm:w-34 shrink-0 overflow-hidden rounded-xl border border-border/40 bg-black/5 shadow-xs transition-transform duration-200 group-hover:scale-[1.02] active:scale-95 dark:border-white/10 dark:bg-white/5"
+              className="border-border/40 relative h-20 w-28 shrink-0 overflow-hidden rounded-xl border bg-black/5 shadow-xs transition-transform duration-200 group-hover:scale-[1.02] active:scale-95 sm:h-24 sm:w-34 dark:border-white/10 dark:bg-white/5"
               title={`View ${cleanTitle}`}
             >
               <img
@@ -419,7 +423,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           <button
             type="button"
             onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
-            className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border/50 bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-accent/20 active:scale-95"
+            className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 active:scale-95"
           >
             <ChevronDown
               className={cn(
@@ -433,7 +437,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           </button>
 
           {isHistoryExpanded && (
-            <div className="animate-in fade-in mt-2 space-y-1.5 rounded-xl border border-border/40 bg-muted/30 p-2.5 shadow-2xs backdrop-blur-md duration-150 dark:bg-black/20">
+            <div className="animate-in fade-in border-border/40 bg-muted/30 mt-2 space-y-1.5 rounded-xl border p-2.5 shadow-2xs backdrop-blur-md duration-150 dark:bg-black/20">
               {activity._subEdits.map((sub: any, i: number) => {
                 const subDesc = sub.content?.description ?? "";
                 return (
@@ -446,9 +450,9 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                         {sub.user?.name ?? "?"}
                       </span>
                       <span className="text-muted-foreground/40">·</span>
-                      <span className="truncate text-foreground/80">{subDesc}</span>
+                      <span className="text-foreground/80 truncate">{subDesc}</span>
                     </div>
-                    <span className="text-muted-foreground/70 ml-2 shrink-0 font-medium tabular-nums text-[10px]">
+                    <span className="text-muted-foreground/70 ml-2 shrink-0 text-[10px] font-medium tabular-nums">
                       {formatTimeAgo(new Date(sub.timestamp))}
                     </span>
                   </div>
@@ -460,7 +464,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
       )}
 
       {/* ── 4. Unified Action Toolbar ── */}
-      <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2.5">
+      <div className="border-border/40 mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t pt-2.5">
         <div className="flex flex-wrap items-center gap-1.5">
           {/* 1. Margin Note / Comment Button */}
           <button
@@ -469,7 +473,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             className={cn(
               "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none active:scale-95",
               isMarginOpen
-                ? "bg-yellow-400/20 font-semibold text-yellow-600 dark:text-yellow-400 ring-1 ring-yellow-400/40"
+                ? "bg-yellow-400/20 font-semibold text-yellow-600 ring-1 ring-yellow-400/40 dark:text-yellow-400"
                 : "text-muted-foreground hover:bg-yellow-400/15 hover:text-yellow-600 dark:hover:text-yellow-400"
             )}
             title="Leave a note or comment on Margin"
@@ -477,7 +481,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             <Edit className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
             <span>Margin</span>
             {marginThreadsCount > 0 && (
-              <span className="rounded-full bg-yellow-400/25 px-1.5 py-0.2 text-[10px] font-bold text-yellow-700 dark:text-yellow-300">
+              <span className="py-0.2 rounded-full bg-yellow-400/25 px-1.5 text-[10px] font-bold text-yellow-700 dark:text-yellow-300">
                 {marginThreadsCount}
               </span>
             )}
@@ -487,7 +491,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           <button
             type="button"
             onClick={() => setIsRepostOpen(true)}
-            className="group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all duration-150 select-none hover:bg-emerald-500/10 hover:text-emerald-500 active:scale-95"
+            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none hover:bg-emerald-500/10 hover:text-emerald-500 active:scale-95"
             title="Repost to ThinkPages feed"
           >
             <Repeat2 className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
@@ -509,7 +513,9 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                 title="React or like this article"
               >
                 {selectedEmoji ? (
-                  <span className="text-xs transition-transform group-hover:scale-125">{selectedEmoji}</span>
+                  <span className="text-xs transition-transform group-hover:scale-125">
+                    {selectedEmoji}
+                  </span>
                 ) : (
                   <Heart
                     className={cn(
@@ -524,7 +530,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             <PopoverContent
               side="top"
               align="start"
-              className="z-[200000] w-auto rounded-full border border-border/80 bg-popover/95 p-1.5 shadow-2xl backdrop-blur-xl"
+              className="border-border/80 bg-popover/95 z-[200000] w-auto rounded-full border p-1.5 shadow-2xl backdrop-blur-xl"
             >
               <div className="flex items-center gap-1 px-1">
                 {QUICK_REACTIONS.map((emoji) => (
@@ -532,7 +538,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                     key={emoji}
                     type="button"
                     onClick={() => handleSelectReactionEmoji(emoji)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-sm hover:bg-accent/50 hover:scale-125 transition-all duration-150 cursor-pointer select-none active:scale-95"
+                    className="hover:bg-accent/50 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-sm transition-all duration-150 select-none hover:scale-125 active:scale-95"
                   >
                     {emoji}
                   </button>
@@ -568,7 +574,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                 ) : isStashed ? (
                   <BookmarkCheck className="h-3.5 w-3.5 text-amber-500 transition-transform group-hover:scale-110" />
                 ) : (
-                  <Bookmark className="h-3.5 w-3.5 transition-hover group-hover:scale-110" />
+                  <Bookmark className="transition-hover h-3.5 w-3.5 group-hover:scale-110" />
                 )}
                 <span>{isStashed ? "Saved" : "Save to Stash"}</span>
               </button>
@@ -576,24 +582,24 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             <PopoverContent
               side="top"
               align="start"
-              className="z-[200000] w-64 rounded-2xl border border-border/80 bg-popover/95 p-3 shadow-2xl backdrop-blur-xl"
+              className="border-border/80 bg-popover/95 z-[200000] w-64 rounded-2xl border p-3 shadow-2xl backdrop-blur-xl"
             >
               <div className="space-y-2.5 text-xs">
-                <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                  <span className="font-semibold text-foreground flex items-center gap-1.5">
+                <div className="border-border/50 flex items-center justify-between border-b pb-2">
+                  <span className="text-foreground flex items-center gap-1.5 font-semibold">
                     <Bookmark className="h-3.5 w-3.5 text-amber-500" />
                     Lore Stash
                   </span>
                   <Link
                     href="/stashes"
-                    className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground text-[10px] transition-colors"
                   >
                     View all →
                   </Link>
                 </div>
 
                 {userStashes.length === 0 ? (
-                  <p className="text-[11px] text-muted-foreground py-1">
+                  <p className="text-muted-foreground py-1 text-[11px]">
                     No custom stashes found. Click Save to Stash to create your default stash.
                   </p>
                 ) : (
@@ -606,20 +612,20 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                           type="button"
                           onClick={() => handleToggleSpecificStash(stash.id)}
                           className={cn(
-                            "flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-left transition-colors cursor-pointer",
+                            "flex w-full cursor-pointer items-center justify-between rounded-xl px-2 py-1.5 text-left transition-colors",
                             active
-                              ? "bg-amber-500/15 text-amber-600 dark:text-amber-300 font-medium"
+                              ? "bg-amber-500/15 font-medium text-amber-600 dark:text-amber-300"
                               : "hover:bg-accent/40 text-foreground"
                           )}
                         >
-                          <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex min-w-0 items-center gap-2">
                             <span
-                              className="h-2.5 w-2.5 rounded-full shrink-0"
+                              className="h-2.5 w-2.5 shrink-0 rounded-full"
                               style={{ backgroundColor: stash.color || "var(--color-info)" }}
                             />
                             <span className="truncate text-xs">{stash.name}</span>
                           </div>
-                          {active && <Check className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+                          {active && <Check className="h-3.5 w-3.5 shrink-0 text-amber-500" />}
                         </button>
                       );
                     })}
@@ -633,7 +639,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                       unstashMutation.mutate({ pageTitle: cleanTitle });
                       setIsStashPopoverOpen(false);
                     }}
-                    className="flex w-full items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/5 px-2 py-1.5 text-[11px] font-medium text-destructive hover:bg-destructive/15 transition-colors cursor-pointer"
+                    className="border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/15 flex w-full cursor-pointer items-center gap-1.5 rounded-xl border px-2 py-1.5 text-[11px] font-medium transition-colors"
                   >
                     <Trash className="h-3 w-3" />
                     <span>Remove from all stashes</span>
@@ -647,7 +653,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           <button
             type="button"
             onClick={handleShare}
-            className="group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all duration-150 select-none hover:bg-cyan-500/10 hover:text-cyan-500 active:scale-95"
+            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none hover:bg-cyan-500/10 hover:text-cyan-500 active:scale-95"
             title="Share article link"
           >
             {copied ? (
@@ -670,7 +676,10 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             transition={{ duration: 0.2 }}
             className="mt-3 overflow-hidden border-t border-yellow-400/20 pt-3"
           >
-            <form onSubmit={handleSubmitMarginNote} className="space-y-2 rounded-xl bg-yellow-400/[0.04] p-3 border border-yellow-400/20">
+            <form
+              onSubmit={handleSubmitMarginNote}
+              className="space-y-2 rounded-xl border border-yellow-400/20 bg-yellow-400/[0.04] p-3"
+            >
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-xs font-semibold text-yellow-600 dark:text-yellow-400">
                   <Edit className="h-3.5 w-3.5" />
@@ -679,14 +688,14 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                 <div className="flex items-center gap-2">
                   <Link
                     href={marginHref}
-                    className="text-[10px] text-muted-foreground hover:text-yellow-500 transition-colors"
+                    className="text-muted-foreground text-[10px] transition-colors hover:text-yellow-500"
                   >
                     Open Margin reader →
                   </Link>
                   <button
                     type="button"
                     onClick={() => setIsMarginOpen(false)}
-                    className="rounded-md p-0.5 text-muted-foreground hover:bg-accent/40 hover:text-foreground cursor-pointer"
+                    className="text-muted-foreground hover:bg-accent/40 hover:text-foreground cursor-pointer rounded-md p-0.5"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -699,21 +708,21 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                 placeholder={`Leave a note or start a discussion on ${cleanTitle}...`}
                 rows={2}
                 autoFocus
-                className="w-full resize-none rounded-lg border border-border/50 bg-background/80 p-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-yellow-400/50 focus:outline-hidden focus:ring-1 focus:ring-yellow-400/30"
+                className="border-border/50 bg-background/80 text-foreground placeholder:text-muted-foreground/60 w-full resize-none rounded-lg border p-2 text-xs focus:border-yellow-400/50 focus:ring-1 focus:ring-yellow-400/30 focus:outline-hidden"
               />
 
               <div className="flex items-center justify-end gap-1.5 pt-1">
                 <button
                   type="button"
                   onClick={() => setIsMarginOpen(false)}
-                  className="rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-accent/40 transition-colors cursor-pointer"
+                  className="text-muted-foreground hover:bg-accent/40 cursor-pointer rounded-full px-2.5 py-1 text-xs font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!marginNote.trim() || isSubmittingNote}
-                  className="inline-flex items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-semibold text-stone-950 transition-all hover:bg-yellow-400 disabled:opacity-50 active:scale-95 shadow-xs cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-semibold text-stone-950 shadow-xs transition-all hover:bg-yellow-400 active:scale-95 disabled:opacity-50"
                 >
                   {isSubmittingNote ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
                   <span>Post Note</span>
@@ -735,7 +744,9 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             author: { name: "WikiOS", username: "wikios" },
             title: cleanTitle,
           }}
-          countryId={((user as any)?.publicMetadata?.countryId as string) || (user as any)?.countryId || ""}
+          countryId={
+            ((user as any)?.publicMetadata?.countryId as string) || (user as any)?.countryId || ""
+          }
           selectedAccount={accounts[0] || null}
           accounts={accounts}
           isOwner={true}

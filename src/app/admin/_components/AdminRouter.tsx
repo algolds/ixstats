@@ -33,17 +33,15 @@ const PlatformSettingsPanel = dynamic(
   { loading: Loader, ssr: false }
 );
 
-
-
 const StorytellerPanel = dynamic(
   () => import("../storyteller/StorytellerPanel").then((m) => m.default),
   { loading: Loader, ssr: false }
 );
 
-const RealmsPanel = dynamic(
-  () => import("../realms/RealmsPanel").then((m) => m.RealmsPanel),
-  { loading: Loader, ssr: false }
-);
+const RealmsPanel = dynamic(() => import("../realms/RealmsPanel").then((m) => m.RealmsPanel), {
+  loading: Loader,
+  ssr: false,
+});
 
 const CardsPanel = dynamic(() => import("../cards/CardsPanel").then((m) => m.default), {
   loading: Loader,
@@ -141,27 +139,36 @@ const CountriesAdminPanel = dynamic(
 );
 
 const DiplomaticOptionsPanel = dynamic(
-  () => import("../diplomatic-options/DiplomaticOptionsPanel").then((m) => m.DiplomaticOptionsPanel),
+  () =>
+    import("../diplomatic-options/DiplomaticOptionsPanel").then((m) => m.DiplomaticOptionsPanel),
   { loading: Loader, ssr: false }
 );
 
 const DiplomaticScenariosPanel = dynamic(
-  () => import("../diplomatic-scenarios/DiplomaticScenariosPanel").then((m) => m.DiplomaticScenariosPanel),
+  () =>
+    import("../diplomatic-scenarios/DiplomaticScenariosPanel").then(
+      (m) => m.DiplomaticScenariosPanel
+    ),
   { loading: Loader, ssr: false }
 );
 
 const MilitaryEquipmentPanel = dynamic(
-  () => import("../military-equipment/MilitaryEquipmentPanel").then((m) => m.MilitaryEquipmentPanel),
+  () =>
+    import("../military-equipment/MilitaryEquipmentPanel").then((m) => m.MilitaryEquipmentPanel),
   { loading: Loader, ssr: false }
 );
 
 const EconomicArchetypesPanel = dynamic(
-  () => import("../economic-archetypes/EconomicArchetypesPanel").then((m) => m.EconomicArchetypesPanel),
+  () =>
+    import("../economic-archetypes/EconomicArchetypesPanel").then((m) => m.EconomicArchetypesPanel),
   { loading: Loader, ssr: false }
 );
 
 const IntelligenceTemplatesPanel = dynamic(
-  () => import("../intelligence-templates/IntelligenceTemplatesPanel").then((m) => m.IntelligenceTemplatesPanel),
+  () =>
+    import("../intelligence-templates/IntelligenceTemplatesPanel").then(
+      (m) => m.IntelligenceTemplatesPanel
+    ),
   { loading: Loader, ssr: false }
 );
 
@@ -176,12 +183,16 @@ const MembershipPanel = dynamic(
 );
 
 const EconomicComponentsPanel = dynamic(
-  () => import("../economic-components/EconomicComponentsPanel").then((m) => m.EconomicComponentsPanel),
+  () =>
+    import("../economic-components/EconomicComponentsPanel").then((m) => m.EconomicComponentsPanel),
   { loading: Loader, ssr: false }
 );
 
 const GovernmentComponentsPanel = dynamic(
-  () => import("../government-components/GovernmentComponentsPanel").then((m) => m.GovernmentComponentsPanel),
+  () =>
+    import("../government-components/GovernmentComponentsPanel").then(
+      (m) => m.GovernmentComponentsPanel
+    ),
   { loading: Loader, ssr: false }
 );
 

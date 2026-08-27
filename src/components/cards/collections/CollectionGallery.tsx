@@ -8,7 +8,16 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { ViewGrid as Grid3x3, Trophy, Heart, Eye, Lock, Globe, Search, Filter } from "iconoir-react";
+import {
+  ViewGrid as Grid3x3,
+  Trophy,
+  Heart,
+  Eye,
+  Lock,
+  Globe,
+  Search,
+  Filter,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";

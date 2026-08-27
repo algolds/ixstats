@@ -4,10 +4,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  NavArrowLeft as ChevronLeft,
-  NavArrowRight as ChevronRight,
-} from "iconoir-react";
+import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 

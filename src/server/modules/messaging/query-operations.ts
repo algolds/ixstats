@@ -13,10 +13,7 @@ import {
   type MessagingDependencies,
 } from "./contracts";
 import { MessagingForbiddenError } from "./errors";
-import {
-  formatMessagesConversation,
-  formatThinkpagesConversation,
-} from "./formatters";
+import { formatMessagesConversation, formatThinkpagesConversation } from "./formatters";
 import { recordMessagingTelemetry } from "./telemetry";
 import { batchResolveMessagingAccounts } from "./account-resolver";
 
@@ -123,29 +120,31 @@ export class MessagingQueryOperations {
 
       const unreadMap = new Map<string, number>();
       if (conversationIds.length > 0) {
-        const myParticipants = (await this.db.conversationParticipant.findMany({
-          where: {
-            conversationId: { in: conversationIds },
-            userId: actorId,
-          },
-        })) ?? [];
+        const myParticipants =
+          (await this.db.conversationParticipant.findMany({
+            where: {
+              conversationId: { in: conversationIds },
+              userId: actorId,
+            },
+          })) ?? [];
 
         for (const mp of myParticipants) {
           unreadMap.set(mp.conversationId, 0);
         }
 
         if (myParticipants.length > 0) {
-          const unreadMessages = (await this.db.thinkshareMessage.findMany({
-            where: {
-              OR: myParticipants.map((mp: any) => ({
-                conversationId: mp.conversationId,
-                ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
-              })),
-              userId: { not: actorId },
-              deletedAt: null,
-            },
-            select: { conversationId: true },
-          })) ?? [];
+          const unreadMessages =
+            (await this.db.thinkshareMessage.findMany({
+              where: {
+                OR: myParticipants.map((mp: any) => ({
+                  conversationId: mp.conversationId,
+                  ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
+                })),
+                userId: { not: actorId },
+                deletedAt: null,
+              },
+              select: { conversationId: true },
+            })) ?? [];
 
           for (const msg of unreadMessages) {
             unreadMap.set(msg.conversationId, (unreadMap.get(msg.conversationId) ?? 0) + 1);
@@ -231,7 +230,10 @@ export class MessagingQueryOperations {
     for (const msg of unreadMessages) {
       const p = participantMap.get(msg.conversationId);
       if (p && (!p.lastReadAt || msg.ixTimeTimestamp > p.lastReadAt)) {
-        convUnreadCounts.set(msg.conversationId, (convUnreadCounts.get(msg.conversationId) || 0) + 1);
+        convUnreadCounts.set(
+          msg.conversationId,
+          (convUnreadCounts.get(msg.conversationId) || 0) + 1
+        );
       }
     }
 
@@ -284,10 +286,7 @@ export class MessagingQueryOperations {
     if (!conv) {
       const group = await this.db.thinktankGroup.findFirst({
         where: {
-          OR: [
-            { id: conversationId },
-            { conversationId: conversationId },
-          ],
+          OR: [{ id: conversationId }, { conversationId: conversationId }],
         },
         include: {
           members: { where: { isActive: true } },
@@ -512,7 +511,8 @@ export class MessagingQueryOperations {
     const where: any = { conversationId: targetConvId };
 
     if (cursor) {
-      where.ixTimeTimestamp = direction === "after" ? { gt: new Date(cursor) } : { lt: new Date(cursor) };
+      where.ixTimeTimestamp =
+        direction === "after" ? { gt: new Date(cursor) } : { lt: new Date(cursor) };
     }
 
     const messages = await this.db.thinkshareMessage.findMany({

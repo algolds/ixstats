@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { WarningTriangle as AlertTriangle, SeaWaves as Waves, StatDown as TrendingDown, Group as Users } from "iconoir-react";
+import {
+  WarningTriangle as AlertTriangle,
+  SeaWaves as Waves,
+  StatDown as TrendingDown,
+  Group as Users,
+} from "iconoir-react";
 import {
   ArticleLayout,
   Section,

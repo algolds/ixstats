@@ -17,12 +17,7 @@ import {
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 import { cleanExcerpt, calculateRawTextBytes } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { fetchMediaWikiPageAuthorsAndRevisions } from "./http-reader";
-import type {
-  WikiArticle,
-  WikiSearchResult,
-  WikiRecentChange,
-  WikiCategoryMembers,
-} from "./types";
+import type { WikiArticle, WikiSearchResult, WikiRecentChange, WikiCategoryMembers } from "./types";
 
 // ---------------------------------------------------------------------------
 // Article & Wikitext
@@ -73,7 +68,9 @@ export async function ixwikiGetWikitext(title: string): Promise<WikiArticle | nu
         };
       }
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
 
   return null;
 }
@@ -85,11 +82,15 @@ export async function ixwikiGetRevisionWikitext(revid: number): Promise<string |
       select: { wikitext: true },
     });
     if (rev?.wikitext) return rev.wikitext;
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
   return null;
 }
 
-export async function ixwikiGetCurrentRevMeta(title: string): Promise<{ revid: number; timestamp: string } | null> {
+export async function ixwikiGetCurrentRevMeta(
+  title: string
+): Promise<{ revid: number; timestamp: string } | null> {
   try {
     const art: any = await (db as any).wikiArticle.findFirst({
       where: { source: "ixwiki", title },
@@ -101,7 +102,9 @@ export async function ixwikiGetCurrentRevMeta(title: string): Promise<{ revid: n
         timestamp: (art.syncedAt || art.updatedAt || new Date()).toISOString(),
       };
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
   return null;
 }
 
@@ -130,13 +133,16 @@ export async function ixwikiGetNamespacedWikitext(
         namespace: art.namespace,
       };
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
 
   // Live HTTP Fallback
   try {
     const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
     const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-    const fullTitle = namespace === 3 ? `User talk:${title}` : namespace === 2 ? `User:${title}` : title;
+    const fullTitle =
+      namespace === 3 ? `User talk:${title}` : namespace === 2 ? `User:${title}` : title;
     const params = new URLSearchParams({
       action: "query",
       prop: "revisions",
@@ -167,7 +173,9 @@ export async function ixwikiGetNamespacedWikitext(
         };
       }
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
 
   return null;
 }
@@ -312,7 +320,9 @@ export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecen
           };
         });
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
 
   // Live HTTP Fallback
   try {
@@ -345,7 +355,9 @@ export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecen
         newLen: rc.newlen || 0,
       }));
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
 
   return [];
 }
@@ -354,15 +366,17 @@ export async function ixwikiGetHistory(
   title: string,
   limit: number = 50,
   _offset?: number
-): Promise<Array<{
-  rev_id: number;
-  rev_timestamp: string;
-  rev_user_text: string;
-  rev_comment: string;
-  rev_len: number;
-  rev_minor_edit: number;
-  diff: number;
-}>> {
+): Promise<
+  Array<{
+    rev_id: number;
+    rev_timestamp: string;
+    rev_user_text: string;
+    rev_comment: string;
+    rev_len: number;
+    rev_minor_edit: number;
+    diff: number;
+  }>
+> {
   try {
     const revs: any[] = await (db as any).wikiRevision.findMany({
       where: {
@@ -425,7 +439,9 @@ export async function ixwikiGetHistory(
         },
       ];
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
 
   return [];
 }
@@ -435,17 +451,19 @@ export async function ixwikiGetUserContribs(
   limit: number = 50,
   _offset?: number,
   namespace: number = 0
-): Promise<Array<{
-  rev_id: number;
-  page_title: string;
-  page_namespace: number;
-  rev_timestamp: string;
-  rev_len: number;
-  diff: number;
-  rev_comment: string;
-  rev_minor_edit: number;
-  is_new: boolean;
-}>> {
+): Promise<
+  Array<{
+    rev_id: number;
+    page_title: string;
+    page_namespace: number;
+    rev_timestamp: string;
+    rev_len: number;
+    diff: number;
+    rev_comment: string;
+    rev_minor_edit: number;
+    is_new: boolean;
+  }>
+> {
   const results: Array<{
     rev_id: number;
     page_title: string;
@@ -494,7 +512,9 @@ export async function ixwikiGetUserContribs(
         });
       }
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
 
   // 2. Merge PostgreSQL revisions
   try {
@@ -529,7 +549,9 @@ export async function ixwikiGetUserContribs(
         });
       }
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
 
   results.sort((a, b) => new Date(b.rev_timestamp).getTime() - new Date(a.rev_timestamp).getTime());
   return results.slice(0, limit);
@@ -538,13 +560,18 @@ export async function ixwikiGetUserContribs(
 export async function ixwikiGetUserCreatedPages(
   username: string,
   limit: number = 100
-): Promise<Array<{
-  title: string;
-  namespace: number;
-  createdAt: string;
-  byteSize: number;
-}>> {
-  const pagesMap = new Map<string, { title: string; namespace: number; createdAt: string; byteSize: number }>();
+): Promise<
+  Array<{
+    title: string;
+    namespace: number;
+    createdAt: string;
+    byteSize: number;
+  }>
+> {
+  const pagesMap = new Map<
+    string,
+    { title: string; namespace: number; createdAt: string; byteSize: number }
+  >();
 
   // 1. Live MediaWiki Action API HTTP (new creations)
   try {
@@ -579,7 +606,9 @@ export async function ixwikiGetUserCreatedPages(
         });
       }
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
 
   // 2. Merge PostgreSQL created articles
   try {
@@ -612,7 +641,9 @@ export async function ixwikiGetUserCreatedPages(
         });
       }
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
 
   return Array.from(pagesMap.values()).slice(0, limit);
 }
@@ -651,8 +682,13 @@ export async function ixwikiGetUserInfo(username: string): Promise<{
 
     if (revCount > 0 || stats) {
       const canonicalName = firstRev?.author || stats?.username || cleanUser;
-      const totalEdits = Math.max(revCount, stats?.totalScore ? Math.round(stats.totalScore / 50) : 0);
-      const regDate = firstRev?.createdAt ? firstRev.createdAt.toISOString() : new Date().toISOString();
+      const totalEdits = Math.max(
+        revCount,
+        stats?.totalScore ? Math.round(stats.totalScore / 50) : 0
+      );
+      const regDate = firstRev?.createdAt
+        ? firstRev.createdAt.toISOString()
+        : new Date().toISOString();
 
       return {
         exists: true,
@@ -737,13 +773,15 @@ export async function ixwikiGetBacklinks(
   title: string,
   limit: number = 50,
   _offset?: number
-): Promise<Array<{
-  page_title: string;
-  page_namespace: number;
-  page_is_redirect: number;
-  page_len: number;
-  page_latest: number;
-}>> {
+): Promise<
+  Array<{
+    page_title: string;
+    page_namespace: number;
+    page_is_redirect: number;
+    page_len: number;
+    page_latest: number;
+  }>
+> {
   try {
     const backlinks = await LinkGraphService.getBacklinks(title, "ixwiki", limit);
     return backlinks.map((l) => ({
@@ -783,7 +821,9 @@ export async function ixwikiGetCategoryMembers(
         result.pages.push({ title: m.title, ns: 0 });
       }
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
 
   return result;
 }
@@ -851,7 +891,9 @@ export async function batchFetchThumbnails(titles: string[]): Promise<Map<string
         map.set(key, asset.thumbnailUrl || asset.url);
       }
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
   return map;
 }
 
@@ -898,7 +940,9 @@ export async function ixwikiGetSiteStats(): Promise<{
 
 export async function ixwikiGetRandomPage(): Promise<string> {
   try {
-    const count = await (db as any).wikiArticle.count({ where: { source: "ixwiki", namespace: 0, status: "PUBLISHED" } });
+    const count = await (db as any).wikiArticle.count({
+      where: { source: "ixwiki", namespace: 0, status: "PUBLISHED" },
+    });
     const skip = Math.floor(Math.random() * Math.max(1, count));
     const randomArt: any = await (db as any).wikiArticle.findFirst({
       where: { source: "ixwiki", namespace: 0, status: "PUBLISHED" },
@@ -906,7 +950,9 @@ export async function ixwikiGetRandomPage(): Promise<string> {
       select: { title: true },
     });
     if (randomArt?.title) return randomArt.title;
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
   return "Ixnay";
 }
 
@@ -914,7 +960,9 @@ export async function ixwikiGetPageProps(_pageId: number): Promise<Record<string
   return {};
 }
 
-export async function ixwikiGetPageProtection(_title: string): Promise<{ edit: string; move: string }> {
+export async function ixwikiGetPageProtection(
+  _title: string
+): Promise<{ edit: string; move: string }> {
   return { edit: "all", move: "all" };
 }
 
@@ -942,7 +990,9 @@ export async function ixwikiGetImageMeta(filename: string): Promise<{
         thumbUrl: asset.thumbnailUrl || asset.url,
       };
     }
-  } catch (err) { if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err); }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
   return null;
 }
 

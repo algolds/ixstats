@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { MapPin, City as Building2, Pin, FloppyDisk as Save, SystemRestart as Loader2, Label as Tag } from "iconoir-react";
+import {
+  MapPin,
+  City as Building2,
+  Pin,
+  FloppyDisk as Save,
+  SystemRestart as Loader2,
+  Label as Tag,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { SearchableList } from "~/components/mycountry/shared/primitives";

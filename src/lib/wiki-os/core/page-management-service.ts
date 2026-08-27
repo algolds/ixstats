@@ -263,7 +263,10 @@ export class PageManagementService {
   /**
    * Maintenance Diagnostic: Orphan Pages (0 Incoming Links)
    */
-  static async getOrphanPages(limit = 50, realm = "ixwiki"): Promise<Array<{ id: string; title: string; slug: string; length: number }>> {
+  static async getOrphanPages(
+    limit = 50,
+    realm = "ixwiki"
+  ): Promise<Array<{ id: string; title: string; slug: string; length: number }>> {
     try {
       const orphans = await db.wikiArticle.findMany({
         where: {
@@ -299,7 +302,10 @@ export class PageManagementService {
   /**
    * Maintenance Diagnostic: Dead-End Pages (0 Outgoing Links)
    */
-  static async getDeadEndPages(limit = 50, realm = "ixwiki"): Promise<Array<{ id: string; title: string; slug: string; length: number }>> {
+  static async getDeadEndPages(
+    limit = 50,
+    realm = "ixwiki"
+  ): Promise<Array<{ id: string; title: string; slug: string; length: number }>> {
     try {
       const deadEnds = await db.wikiArticle.findMany({
         where: {
@@ -335,7 +341,10 @@ export class PageManagementService {
   /**
    * Maintenance Diagnostic: Broken Redirects
    */
-  static async getBrokenRedirects(limit = 50, realm = "ixwiki"): Promise<Array<{ id: string; title: string; slug: string; targetSlug: string }>> {
+  static async getBrokenRedirects(
+    limit = 50,
+    realm = "ixwiki"
+  ): Promise<Array<{ id: string; title: string; slug: string; targetSlug: string }>> {
     try {
       const redirects = await db.wikiArticle.findMany({
         where: {

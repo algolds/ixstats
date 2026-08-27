@@ -47,11 +47,7 @@ export function OnomaRouter() {
   const shouldReduceMotion = useReducedMotion();
 
   const activePillar: OnomaProductPillar =
-    activeSection === "studio"
-      ? "studio"
-      : activeSection === "explore"
-        ? "explore"
-        : "create";
+    activeSection === "studio" ? "studio" : activeSection === "explore" ? "explore" : "create";
 
   // Dynamic canvas styling per pillar
   const pillarBorderColor =
@@ -92,28 +88,18 @@ export function OnomaRouter() {
         {/* Workspace Canvas (Frosted glass with dynamic themed borders and shadow transitions) */}
         <FacetMaterial
           material="satin"
-          className="relative overflow-hidden border p-4.5 shadow-xl transition-all duration-300 sm:p-6 rounded-2xl"
+          className="relative overflow-hidden rounded-2xl border p-4.5 shadow-xl transition-all duration-300 sm:p-6"
           style={{
             borderColor: pillarBorderColor,
             boxShadow: pillarGlow,
           }}
         >
           <AnimatePresence mode="wait" initial={false}>
-
-
             <motion.div
               key={`${activeSection}-${activeSection === "studio" ? activeSubTab : activeSection === "explore" ? activeExploreSubTab : ""}`}
-              initial={
-                shouldReduceMotion
-                  ? { opacity: 0 }
-                  : { opacity: 0, y: 6, scale: 0.995 }
-              }
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.995 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={
-                shouldReduceMotion
-                  ? { opacity: 0 }
-                  : { opacity: 0, y: -4, scale: 0.995 }
-              }
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.995 }}
               transition={{
                 duration: 0.2,
                 ease: [0.23, 1, 0.32, 1], // Emil Kowalski strong ease-out

@@ -240,12 +240,15 @@ export function InlineWikiArticlePreview({
     }
   }, [hasLiked]);
 
-  const handleSelectReactionEmoji = useCallback((emoji: string) => {
-    setSelectedEmoji(emoji);
-    setHasLiked(true);
-    setLocalLikes((prev) => (hasLiked ? prev : prev + 1));
-    setIsReactionOpen(false);
-  }, [hasLiked]);
+  const handleSelectReactionEmoji = useCallback(
+    (emoji: string) => {
+      setSelectedEmoji(emoji);
+      setHasLiked(true);
+      setLocalLikes((prev) => (hasLiked ? prev : prev + 1));
+      setIsReactionOpen(false);
+    },
+    [hasLiked]
+  );
 
   const formattedHtml = useMemo(() => {
     const raw = intro?.text || intro?.intro || "";
@@ -305,14 +308,14 @@ export function InlineWikiArticlePreview({
   const marginHref = `${titleToWikiOSRoute(cleanTitle)}?modal=margin`;
 
   return (
-    <div className="group/preview mt-2.5 overflow-hidden rounded-2xl border border-teal-500/20 bg-teal-500/[0.04] p-3.5 sm:p-4 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-teal-500/35 hover:bg-teal-500/[0.07] dark:bg-teal-500/[0.04] dark:hover:bg-teal-500/[0.08]">
+    <div className="group/preview mt-2.5 overflow-hidden rounded-2xl border border-teal-500/20 bg-teal-500/[0.04] p-3.5 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-teal-500/35 hover:bg-teal-500/[0.07] sm:p-4 dark:bg-teal-500/[0.04] dark:hover:bg-teal-500/[0.08]">
       {/* Content & Lead Image Row */}
       <div className="flex items-start gap-3.5">
         <div className="min-w-0 flex-1 space-y-1">
           {formattedHtml && (
             <WikiHtmlContent
               html={formattedHtml}
-              className="text-foreground/85 group-hover/preview:text-foreground line-clamp-3 text-xs sm:text-[13px] leading-relaxed font-normal tracking-tight [&_a]:transition-colors"
+              className="text-foreground/85 group-hover/preview:text-foreground line-clamp-3 text-xs leading-relaxed font-normal tracking-tight sm:text-[13px] [&_a]:transition-colors"
             />
           )}
         </div>
@@ -321,7 +324,7 @@ export function InlineWikiArticlePreview({
         {leadImage && (
           <Link
             href={wikiHref}
-            className="relative h-20 w-28 sm:h-22 sm:w-32 shrink-0 overflow-hidden rounded-xl border border-border/40 bg-black/5 shadow-xs transition-transform duration-200 group-hover/preview:scale-[1.02] active:scale-95 dark:border-white/10 dark:bg-white/5"
+            className="border-border/40 relative h-20 w-28 shrink-0 overflow-hidden rounded-xl border bg-black/5 shadow-xs transition-transform duration-200 group-hover/preview:scale-[1.02] active:scale-95 sm:h-22 sm:w-32 dark:border-white/10 dark:bg-white/5"
             title={`View ${cleanTitle}`}
           >
             <img
@@ -346,7 +349,7 @@ export function InlineWikiArticlePreview({
             className={cn(
               "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none active:scale-95",
               isMarginOpen
-                ? "bg-yellow-400/20 font-semibold text-yellow-600 dark:text-yellow-400 ring-1 ring-yellow-400/40"
+                ? "bg-yellow-400/20 font-semibold text-yellow-600 ring-1 ring-yellow-400/40 dark:text-yellow-400"
                 : "text-muted-foreground hover:bg-yellow-400/15 hover:text-yellow-600 dark:hover:text-yellow-400"
             )}
             title="Leave a note or comment on Margin"
@@ -354,7 +357,7 @@ export function InlineWikiArticlePreview({
             <Edit className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
             <span>Margin</span>
             {marginThreadsCount > 0 && (
-              <span className="rounded-full bg-yellow-400/25 px-1.5 py-0.2 text-[10px] font-bold text-yellow-700 dark:text-yellow-300">
+              <span className="py-0.2 rounded-full bg-yellow-400/25 px-1.5 text-[10px] font-bold text-yellow-700 dark:text-yellow-300">
                 {marginThreadsCount}
               </span>
             )}
@@ -364,7 +367,7 @@ export function InlineWikiArticlePreview({
           <button
             type="button"
             onClick={() => setIsRepostOpen(true)}
-            className="group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all duration-150 select-none hover:bg-emerald-500/10 hover:text-emerald-500 active:scale-95"
+            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none hover:bg-emerald-500/10 hover:text-emerald-500 active:scale-95"
             title="Repost to ThinkPages feed"
           >
             <Repeat2 className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
@@ -386,7 +389,9 @@ export function InlineWikiArticlePreview({
                 title="React or like this article"
               >
                 {selectedEmoji ? (
-                  <span className="text-xs transition-transform group-hover:scale-125">{selectedEmoji}</span>
+                  <span className="text-xs transition-transform group-hover:scale-125">
+                    {selectedEmoji}
+                  </span>
                 ) : (
                   <Heart
                     className={cn(
@@ -401,7 +406,7 @@ export function InlineWikiArticlePreview({
             <PopoverContent
               side="top"
               align="start"
-              className="z-[200000] w-auto rounded-full border border-border/80 bg-popover/95 p-1.5 shadow-2xl backdrop-blur-xl"
+              className="border-border/80 bg-popover/95 z-[200000] w-auto rounded-full border p-1.5 shadow-2xl backdrop-blur-xl"
             >
               <div className="flex items-center gap-1 px-1">
                 {QUICK_REACTIONS.map((emoji) => (
@@ -409,7 +414,7 @@ export function InlineWikiArticlePreview({
                     key={emoji}
                     type="button"
                     onClick={() => handleSelectReactionEmoji(emoji)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-sm hover:bg-accent/50 hover:scale-125 transition-all duration-150 cursor-pointer select-none active:scale-95"
+                    className="hover:bg-accent/50 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-sm transition-all duration-150 select-none hover:scale-125 active:scale-95"
                   >
                     {emoji}
                   </button>
@@ -445,7 +450,7 @@ export function InlineWikiArticlePreview({
                 ) : isStashed ? (
                   <BookmarkCheck className="h-3.5 w-3.5 text-amber-500 transition-transform group-hover:scale-110" />
                 ) : (
-                  <Bookmark className="h-3.5 w-3.5 transition-hover group-hover:scale-110" />
+                  <Bookmark className="transition-hover h-3.5 w-3.5 group-hover:scale-110" />
                 )}
                 <span>{isStashed ? "Saved" : "Save to Stash"}</span>
               </button>
@@ -453,24 +458,24 @@ export function InlineWikiArticlePreview({
             <PopoverContent
               side="top"
               align="start"
-              className="z-[200000] w-64 rounded-2xl border border-border/80 bg-popover/95 p-3 shadow-2xl backdrop-blur-xl"
+              className="border-border/80 bg-popover/95 z-[200000] w-64 rounded-2xl border p-3 shadow-2xl backdrop-blur-xl"
             >
               <div className="space-y-2.5 text-xs">
-                <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                  <span className="font-semibold text-foreground flex items-center gap-1.5">
+                <div className="border-border/50 flex items-center justify-between border-b pb-2">
+                  <span className="text-foreground flex items-center gap-1.5 font-semibold">
                     <Bookmark className="h-3.5 w-3.5 text-amber-500" />
                     Lore Stash
                   </span>
                   <Link
                     href="/stashes"
-                    className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground text-[10px] transition-colors"
                   >
                     View all →
                   </Link>
                 </div>
 
                 {userStashes.length === 0 ? (
-                  <p className="text-[11px] text-muted-foreground py-1">
+                  <p className="text-muted-foreground py-1 text-[11px]">
                     No custom stashes found. Click Save to Stash to create your default stash.
                   </p>
                 ) : (
@@ -483,20 +488,20 @@ export function InlineWikiArticlePreview({
                           type="button"
                           onClick={() => handleToggleSpecificStash(stash.id)}
                           className={cn(
-                            "flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-left transition-colors cursor-pointer",
+                            "flex w-full cursor-pointer items-center justify-between rounded-xl px-2 py-1.5 text-left transition-colors",
                             active
-                              ? "bg-amber-500/15 text-amber-600 dark:text-amber-300 font-medium"
+                              ? "bg-amber-500/15 font-medium text-amber-600 dark:text-amber-300"
                               : "hover:bg-accent/40 text-foreground"
                           )}
                         >
-                          <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex min-w-0 items-center gap-2">
                             <span
-                              className="h-2.5 w-2.5 rounded-full shrink-0"
+                              className="h-2.5 w-2.5 shrink-0 rounded-full"
                               style={{ backgroundColor: stash.color || "var(--color-info)" }}
                             />
                             <span className="truncate text-xs">{stash.name}</span>
                           </div>
-                          {active && <Check className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+                          {active && <Check className="h-3.5 w-3.5 shrink-0 text-amber-500" />}
                         </button>
                       );
                     })}
@@ -510,7 +515,7 @@ export function InlineWikiArticlePreview({
                       unstashMutation.mutate({ pageTitle: cleanTitle });
                       setIsStashPopoverOpen(false);
                     }}
-                    className="flex w-full items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/5 px-2 py-1.5 text-[11px] font-medium text-destructive hover:bg-destructive/15 transition-colors cursor-pointer"
+                    className="border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/15 flex w-full cursor-pointer items-center gap-1.5 rounded-xl border px-2 py-1.5 text-[11px] font-medium transition-colors"
                   >
                     <Trash className="h-3 w-3" />
                     <span>Remove from all stashes</span>
@@ -524,7 +529,7 @@ export function InlineWikiArticlePreview({
           <button
             type="button"
             onClick={handleShare}
-            className="group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all duration-150 select-none hover:bg-cyan-500/10 hover:text-cyan-500 active:scale-95"
+            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none hover:bg-cyan-500/10 hover:text-cyan-500 active:scale-95"
             title="Share article link"
           >
             {copied ? (
@@ -556,7 +561,10 @@ export function InlineWikiArticlePreview({
             transition={{ duration: 0.2 }}
             className="mt-3 overflow-hidden border-t border-yellow-400/20 pt-3"
           >
-            <form onSubmit={handleSubmitMarginNote} className="space-y-2 rounded-xl bg-yellow-400/[0.04] p-3 border border-yellow-400/20">
+            <form
+              onSubmit={handleSubmitMarginNote}
+              className="space-y-2 rounded-xl border border-yellow-400/20 bg-yellow-400/[0.04] p-3"
+            >
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-xs font-semibold text-yellow-600 dark:text-yellow-400">
                   <Edit className="h-3.5 w-3.5" />
@@ -565,14 +573,14 @@ export function InlineWikiArticlePreview({
                 <div className="flex items-center gap-2">
                   <Link
                     href={marginHref}
-                    className="text-[10px] text-muted-foreground hover:text-yellow-500 transition-colors"
+                    className="text-muted-foreground text-[10px] transition-colors hover:text-yellow-500"
                   >
                     Open Margin reader →
                   </Link>
                   <button
                     type="button"
                     onClick={() => setIsMarginOpen(false)}
-                    className="rounded-md p-0.5 text-muted-foreground hover:bg-accent/40 hover:text-foreground cursor-pointer"
+                    className="text-muted-foreground hover:bg-accent/40 hover:text-foreground cursor-pointer rounded-md p-0.5"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -585,21 +593,21 @@ export function InlineWikiArticlePreview({
                 placeholder={`Leave a note or start a discussion on ${cleanTitle}...`}
                 rows={2}
                 autoFocus
-                className="w-full resize-none rounded-lg border border-border/50 bg-background/80 p-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-yellow-400/50 focus:outline-hidden focus:ring-1 focus:ring-yellow-400/30"
+                className="border-border/50 bg-background/80 text-foreground placeholder:text-muted-foreground/60 w-full resize-none rounded-lg border p-2 text-xs focus:border-yellow-400/50 focus:ring-1 focus:ring-yellow-400/30 focus:outline-hidden"
               />
 
               <div className="flex items-center justify-end gap-1.5 pt-1">
                 <button
                   type="button"
                   onClick={() => setIsMarginOpen(false)}
-                  className="rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-accent/40 transition-colors cursor-pointer"
+                  className="text-muted-foreground hover:bg-accent/40 cursor-pointer rounded-full px-2.5 py-1 text-xs font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!marginNote.trim() || isSubmittingNote}
-                  className="inline-flex items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-semibold text-stone-950 transition-all hover:bg-yellow-400 disabled:opacity-50 active:scale-95 shadow-xs cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-semibold text-stone-950 shadow-xs transition-all hover:bg-yellow-400 active:scale-95 disabled:opacity-50"
                 >
                   {isSubmittingNote ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
                   <span>Post Note</span>
@@ -621,7 +629,9 @@ export function InlineWikiArticlePreview({
             author: { name: "WikiOS", username: "wikios" },
             title: cleanTitle,
           }}
-          countryId={((user as any)?.publicMetadata?.countryId as string) || (user as any)?.countryId || ""}
+          countryId={
+            ((user as any)?.publicMetadata?.countryId as string) || (user as any)?.countryId || ""
+          }
           selectedAccount={accounts[0] || null}
           accounts={accounts}
           isOwner={true}

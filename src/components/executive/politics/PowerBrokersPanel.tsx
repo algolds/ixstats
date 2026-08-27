@@ -3,7 +3,14 @@
 import React from "react";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
-import { Shield, Bank as Landmark, City as Building2, Group as Users2, Compass, WarningCircle as AlertCircle } from "iconoir-react";
+import {
+  Shield,
+  Bank as Landmark,
+  City as Building2,
+  Group as Users2,
+  Compass,
+  WarningCircle as AlertCircle,
+} from "iconoir-react";
 
 interface PowerBrokersPanelProps {
   countryId: string;

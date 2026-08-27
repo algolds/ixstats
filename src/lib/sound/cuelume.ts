@@ -95,7 +95,9 @@ export function setSoundEnabled(enabled: boolean): void {
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(SOUND_STORAGE_KEYS.ENABLED, String(enabled));
-      window.dispatchEvent(new CustomEvent("ixstates-sound-settings-changed", { detail: { enabled } }));
+      window.dispatchEvent(
+        new CustomEvent("ixstates-sound-settings-changed", { detail: { enabled } })
+      );
     } catch {
       /* ignore */
     }
@@ -111,7 +113,9 @@ export function setSoundVolume(volume: number): void {
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(SOUND_STORAGE_KEYS.VOLUME, String(clamped));
-      window.dispatchEvent(new CustomEvent("ixstates-sound-settings-changed", { detail: { volume: clamped } }));
+      window.dispatchEvent(
+        new CustomEvent("ixstates-sound-settings-changed", { detail: { volume: clamped } })
+      );
     } catch {
       /* ignore */
     }
@@ -138,7 +142,7 @@ export const soundEffects = {
   // Tactile Chrome
   press: (vol?: number) => playSound("press", { volume: vol ?? 0.18 }),
   release: (vol?: number) => playSound("release", { volume: vol ?? 0.18 }),
-  toggle: (vol?: number) => playSound("toggle", { volume: vol ?? 0.20 }),
+  toggle: (vol?: number) => playSound("toggle", { volume: vol ?? 0.2 }),
   tick: (vol?: number) => playSound("tick", { volume: vol ?? 0.12 }),
   chime: (vol?: number) => playSound("chime", { volume: vol ?? 0.16 }),
   whisper: (vol?: number) => playSound("whisper", { volume: vol ?? 0.12 }),
@@ -156,7 +160,7 @@ export const soundEffects = {
 
   // Status & Outcomes
   pulse: (vol?: number) => playSound("pulse", { volume: vol ?? 0.16 }),
-  sparkle: (vol?: number) => playSound("sparkle", { volume: vol ?? 0.20 }),
-  success: (vol?: number) => playSound("success", { volume: vol ?? 0.20 }),
-  error: (vol?: number) => playSound("error", { volume: vol ?? 0.20 }),
+  sparkle: (vol?: number) => playSound("sparkle", { volume: vol ?? 0.2 }),
+  success: (vol?: number) => playSound("success", { volume: vol ?? 0.2 }),
+  error: (vol?: number) => playSound("error", { volume: vol ?? 0.2 }),
 };

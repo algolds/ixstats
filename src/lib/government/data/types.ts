@@ -34,4 +34,3 @@ export interface AtomicGovernmentComponent {
     technologyRequired: boolean;
   };
 }
-

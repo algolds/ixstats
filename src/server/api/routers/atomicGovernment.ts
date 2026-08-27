@@ -153,7 +153,12 @@ export const atomicGovernmentRouter = createTRPCRouter({
         where: { id: input.secondaryComponentId },
         select: { countryId: true },
       });
-      if (!comp1 || !comp2 || comp1.countryId !== input.countryId || comp2.countryId !== input.countryId) {
+      if (
+        !comp1 ||
+        !comp2 ||
+        comp1.countryId !== input.countryId ||
+        comp2.countryId !== input.countryId
+      ) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Both components must belong to the specified country",

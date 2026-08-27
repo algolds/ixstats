@@ -3,7 +3,20 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Globe, ArrowLeft, Shield, Sparks as Sparkles, Check, Cpu, Bank as Landmark, FireFlame as Flame, UserBadgeCheck as UserCheck, Coins, Trophy as Award, HelpCircle as CircleHelp } from "iconoir-react";
+import {
+  Globe,
+  ArrowLeft,
+  Shield,
+  Sparks as Sparkles,
+  Check,
+  Cpu,
+  Bank as Landmark,
+  FireFlame as Flame,
+  UserBadgeCheck as UserCheck,
+  Coins,
+  Trophy as Award,
+  HelpCircle as CircleHelp,
+} from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { CountrySelector } from "../CountrySelector";
@@ -130,7 +143,7 @@ export function FoundationStep({
         hasRestoredArchetypeRef.current = true;
       }
     }
-  // oxlint-disable-next-line
+    // oxlint-disable-next-line
   }, [builderState.selectedArchetypeId, archetypes]);
 
   // Reset visibleCount when activeEra changes

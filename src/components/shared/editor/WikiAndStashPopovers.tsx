@@ -234,7 +234,7 @@ export function WikiAndStashPopovers({
                               setSelectedWikiImageUrl(img === selectedWikiImageUrl ? "" : img)
                             }
                             className={cn(
-                              "h-10 w-10 cursor-pointer rounded object-cover border transition-all",
+                              "h-10 w-10 cursor-pointer rounded border object-cover transition-all",
                               selectedWikiImageUrl === img
                                 ? "border-purple-500 ring-2 ring-purple-500/50"
                                 : "border-transparent opacity-60 hover:opacity-100"
@@ -256,7 +256,8 @@ export function WikiAndStashPopovers({
               disabled={!wikiTarget.trim()}
               className="h-7 w-full bg-purple-600 text-xs font-semibold text-white hover:bg-purple-500"
             >
-              <Plus className="mr-1 h-3 w-3" /> Insert {wikiInsertMode === "embed" ? "Embed Card" : "Link"}
+              <Plus className="mr-1 h-3 w-3" /> Insert{" "}
+              {wikiInsertMode === "embed" ? "Embed Card" : "Link"}
             </Button>
           </div>
         </PopoverContent>
@@ -272,7 +273,7 @@ export function WikiAndStashPopovers({
             className={cn(
               "h-7 w-7 rounded-xl p-0 transition-all duration-150 active:scale-95",
               isStashesOpen
-                ? "bg-amber-500/15 text-amber-500 ring-amber-500/30 ring-1"
+                ? "bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30"
                 : "text-muted-foreground hover:bg-muted hover:text-amber-500"
             )}
             title="Attach Lore Stash Media"

@@ -5,7 +5,15 @@ import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
-import { Globe, Calendar, Bank as Landmark, Activity, Community as Handshake, WarningCircle as AlertCircle, Sparks as Sparkles } from "iconoir-react";
+import {
+  Globe,
+  Calendar,
+  Bank as Landmark,
+  Activity,
+  Community as Handshake,
+  WarningCircle as AlertCircle,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { useScrollToFocus } from "~/hooks/useScrollToFocus";
 import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 import { useUser } from "~/context/auth-context";

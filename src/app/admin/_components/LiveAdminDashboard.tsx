@@ -11,7 +11,21 @@ import { SystemLogs } from "./SystemLogs";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
-import { Dashboard as LayoutDashboard, Settings, Gamepad as Gamepad2, Group as Users, Package, Component as Layers, Coins, OpenBook as BookOpen, Database, Activity, CheckSquare as Vote, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp } from "iconoir-react";
+import {
+  Dashboard as LayoutDashboard,
+  Settings,
+  Gamepad as Gamepad2,
+  Group as Users,
+  Package,
+  Component as Layers,
+  Coins,
+  OpenBook as BookOpen,
+  Database,
+  Activity,
+  CheckSquare as Vote,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+} from "iconoir-react";
 
 interface LiveAdminDashboardProps {
   onNavigate?: (section: string) => void;
@@ -161,7 +175,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
 
         <TooltipProvider delayDuration={150}>
           {quickActionsCollapsed ? (
-            <div className="rounded-2xl border border-border/30 bg-card/25 flex flex-wrap items-center gap-2.5 p-3 backdrop-blur-md shadow-xs">
+            <div className="border-border/30 bg-card/25 flex flex-wrap items-center gap-2.5 rounded-2xl border p-3 shadow-xs backdrop-blur-md">
               {QUICK_ACTIONS.map((action) => (
                 <Tooltip key={action.label}>
                   <TooltipTrigger asChild>
@@ -190,17 +204,19 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
                   key={action.label}
                   href={action.href}
                   onClick={(e) => handleActionClick(e, action.href, action.section)}
-                  className="rounded-2xl border border-border/30 bg-card/25 hover:border-primary/40 group flex items-center justify-between p-3.5 backdrop-blur-md shadow-xs transition-all active:scale-[0.98]"
+                  className="border-border/30 bg-card/25 hover:border-primary/40 group flex items-center justify-between rounded-2xl border p-3.5 shadow-xs backdrop-blur-md transition-all active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 border-border/20 group-hover:bg-primary/20 rounded-xl border p-2 text-primary transition-colors">
+                    <div className="bg-primary/10 border-border/20 group-hover:bg-primary/20 text-primary rounded-xl border p-2 transition-colors">
                       <action.icon className="h-4 w-4" />
                     </div>
                     <div>
                       <h3 className="text-foreground group-hover:text-primary text-xs font-bold transition-colors">
                         {action.label}
                       </h3>
-                      <p className="text-muted-foreground mt-0.5 text-[11px]">{action.description}</p>
+                      <p className="text-muted-foreground mt-0.5 text-[11px]">
+                        {action.description}
+                      </p>
                     </div>
                   </div>
                 </Link>

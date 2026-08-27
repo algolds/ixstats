@@ -2,7 +2,21 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { Book, Search, Group as Users, StatUp as TrendingUp, Shield, Settings, Flash as Zap, NavArrowRight as ChevronRight, Page as FileText, Sparks as Sparkles, Crown, Coins, Gamepad as Gamepad2 } from "iconoir-react";
+import {
+  Book,
+  Search,
+  Group as Users,
+  StatUp as TrendingUp,
+  Shield,
+  Settings,
+  Flash as Zap,
+  NavArrowRight as ChevronRight,
+  Page as FileText,
+  Sparks as Sparkles,
+  Crown,
+  Coins,
+  Gamepad as Gamepad2,
+} from "iconoir-react";
 
 export interface HelpArticle {
   id: string;
@@ -276,7 +290,8 @@ export const helpSections: HelpSection[] = [
       {
         id: "metrics",
         title: "Strategic Metrics",
-        description: "The indices and scores that measure your nation's health across every domain.",
+        description:
+          "The indices and scores that measure your nation's health across every domain.",
         path: "/help/intelligence/metrics",
         tags: ["intelligence", "metrics", "analytics", "scores"],
       },
@@ -306,15 +321,15 @@ export const helpSections: HelpSection[] = [
       {
         id: "cultural",
         title: "Cultural Exchanges",
-        description: "Share art, sports, and culture to deepen goodwill with neighboring countries.",
+        description:
+          "Share art, sports, and culture to deepen goodwill with neighboring countries.",
         path: "/help/diplomacy/cultural",
         tags: ["diplomacy", "cultural", "exchanges", "soft power"],
       },
       {
         id: "npc-personalities",
         title: "NPC Personalities",
-        description:
-          "How computer-run nations think, react, and decide who to trust or challenge.",
+        description: "How computer-run nations think, react, and decide who to trust or challenge.",
         path: "/help/diplomacy/npc-personalities",
         tags: ["diplomacy", "npc", "ai", "personalities"],
       },
@@ -481,7 +496,7 @@ export function HelpExplorer({ sections = helpSections }: { sections?: HelpSecti
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`flex items-center gap-2 rounded-lg border px-4 py-2 transition-all cursor-pointer ${
+                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-2 transition-all ${
                   selectedCategory === category.id
                     ? "border-blue-500/50 bg-blue-500/20 text-blue-600 dark:text-blue-300"
                     : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:hover:bg-white/10"
@@ -502,9 +517,7 @@ export function HelpExplorer({ sections = helpSections }: { sections?: HelpSecti
           <h3 className="mb-2 text-xl font-semibold text-slate-700 dark:text-slate-300">
             No results found
           </h3>
-          <p className="text-slate-500 dark:text-slate-400">
-            Try adjusting your search or filters
-          </p>
+          <p className="text-slate-500 dark:text-slate-400">Try adjusting your search or filters</p>
         </div>
       ) : (
         <div className="grid gap-6">

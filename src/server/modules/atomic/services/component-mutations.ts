@@ -1,4 +1,8 @@
-import { type PrismaClient, type EconomicComponentType, type TaxComponentType } from "@prisma/client";
+import {
+  type PrismaClient,
+  type EconomicComponentType,
+  type TaxComponentType,
+} from "@prisma/client";
 
 export interface CreateEconomicComponentInput {
   countryId: string;
