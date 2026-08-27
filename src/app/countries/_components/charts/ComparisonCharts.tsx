@@ -69,9 +69,7 @@ type ComparisonChartType = "population" | "gdp" | "growth" | "scatter" | "radar"
 export function ComparisonCharts({
   countries,
   onCountriesChangeAction,
-  // oxlint-disable-next-line eslint/no-unused-vars
   availableCountries,
-  // oxlint-disable-next-line eslint/no-unused-vars
   currentIxTime,
   isLoading = false,
 }: ComparisonChartsProps) {

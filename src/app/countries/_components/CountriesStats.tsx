@@ -28,9 +28,7 @@ interface CountriesStatsProps {
 export const CountriesStats: React.FC<CountriesStatsProps> = ({
   countries,
   allCountries,
-  // oxlint-disable-next-line eslint/no-unused-vars
   searchQuery,
-  // oxlint-disable-next-line eslint/no-unused-vars
   filterBy,
   continentFilter,
   onContinentFilter,

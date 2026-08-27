@@ -52,7 +52,6 @@ export default function ModelingPage({ params }: ModelingPageProps) {
   }
 
   // Create a country object with the required economicYears property
-  // oxlint-disable-next-line eslint/no-unused-vars
   const countryWithEconomicYears = {
     ...country,
     economicYears: [], // Empty array for now, can be populated later if needed
