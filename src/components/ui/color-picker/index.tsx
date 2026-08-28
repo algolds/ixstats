@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 // ─── Color Math Helpers (Zero External Dependency) ───────────────────────────
 

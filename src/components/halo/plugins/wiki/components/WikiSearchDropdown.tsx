@@ -1,7 +1,6 @@
+"use client";
 // src/components/halo/plugins/wiki/components/WikiSearchDropdown.tsx
 // Full-text wiki article search input & results dropdown with snippet highlights.
-
-"use client";
 
 import { useRef, useEffect } from "react";
 import { Search, Xmark as X } from "iconoir-react";

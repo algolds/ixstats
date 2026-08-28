@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/_components/OnomaAdminPanel.tsx
 // Onoma Voice & Phonology Admin Panel
-"use client";
 
 import { useEffect, useState } from "react";
 import {

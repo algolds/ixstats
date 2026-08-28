@@ -1,7 +1,6 @@
+"use client";
 // src/components/shared/editor/MentionMenuPortal.tsx
 // Floating portal menu for account and entity @mentions in PlateJS editors.
-
-"use client";
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";

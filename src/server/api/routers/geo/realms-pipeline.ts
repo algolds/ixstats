@@ -45,12 +45,11 @@ export const realmsPipelineRouter = createTRPCRouter({
         });
       }
 
-      // 1. Run Azgaar procedural engine
+      // 1. Run UPG v2 procedural engine (100,000-cell Voronoi mesh + Catmull-Rom splines)
       const world = generateWorld({
         seed: input.seed,
-        cellCount: input.cellCount,
+        cellCount: 100000,
         countryCountRange: [input.countryCount, input.countryCount],
-        useV2Engine: false,
       });
 
       // 2. Normalize graph into GeoJSON & nation/city/river structures

@@ -1,0 +1,661 @@
+{
+  "modern_democracy": {
+    "name": "Modern Democracy",
+    "description": "Representative democracy with strong institutions and rule of law",
+    "components": [
+      "DEMOCRATIC_PROCESS",
+      "ELECTORAL_LEGITIMACY",
+      "INDEPENDENT_JUDICIARY",
+      "RULE_OF_LAW",
+      "PROFESSIONAL_BUREAUCRACY"
+    ]
+  },
+  "technocracy": {
+    "name": "Technocracy",
+    "description": "Expert-driven governance focused on efficiency and performance",
+    "components": [
+      "TECHNOCRATIC_PROCESS",
+      "PERFORMANCE_LEGITIMACY",
+      "TECHNOCRATIC_AGENCIES",
+      "MERIT_BASED_SYSTEM",
+      "STRATEGIC_PLANNING",
+      "DIGITAL_GOVERNMENT"
+    ]
+  },
+  "authoritarian_state": {
+    "name": "Authoritarian State",
+    "description": "Centralized power with strong control mechanisms",
+    "components": [
+      "AUTOCRATIC_PROCESS",
+      "CENTRALIZED_POWER",
+      "MILITARY_ADMINISTRATION",
+      "SURVEILLANCE_SYSTEM",
+      "MILITARY_ENFORCEMENT",
+      "CYBERSECURITY"
+    ]
+  },
+  "welfare_state": {
+    "name": "Welfare State",
+    "description": "Strong social safety net with public services",
+    "components": [
+      "DEMOCRATIC_PROCESS",
+      "WELFARE_STATE",
+      "UNIVERSAL_HEALTHCARE",
+      "PUBLIC_EDUCATION",
+      "SOCIAL_SAFETY_NET",
+      "WORKER_PROTECTION"
+    ]
+  },
+  "innovation_hub": {
+    "name": "Innovation Hub",
+    "description": "Knowledge economy focused on technology and innovation",
+    "components": [
+      "STARTUP_INCUBATION",
+      "INNOVATION_ECOSYSTEM",
+      "RESEARCH_AND_DEVELOPMENT",
+      "DIGITAL_INFRASTRUCTURE",
+      "ENTREPRENEURSHIP_SUPPORT",
+      "TECHNOCRATIC_PROCESS"
+    ]
+  },
+  "parliamentary_federal_democracy": {
+    "name": "Parliamentary Federal Democracy",
+    "description": "Distributed democratic governance with coalition-oriented institutions",
+    "components": [
+      "DEMOCRATIC_PROCESS",
+      "FEDERAL_SYSTEM",
+      "ELECTORAL_LEGITIMACY",
+      "PROFESSIONAL_BUREAUCRACY",
+      "RULE_OF_LAW",
+      "MULTILATERAL_DIPLOMACY"
+    ]
+  },
+  "constitutional_monarchy_model": {
+    "name": "Constitutional Monarchy Model",
+    "description": "Traditional legitimacy balanced by strong legal and democratic institutions",
+    "components": [
+      "TRADITIONAL_LEGITIMACY",
+      "DEMOCRATIC_PROCESS",
+      "INSTITUTIONAL_LEGITIMACY",
+      "INDEPENDENT_JUDICIARY",
+      "RULE_OF_LAW",
+      "PROFESSIONAL_BUREAUCRACY"
+    ]
+  },
+  "civic_republic": {
+    "name": "Civic Republic",
+    "description": "Institution-first republic focused on citizenship and legal accountability",
+    "components": [
+      "DEMOCRATIC_PROCESS",
+      "INSTITUTIONAL_LEGITIMACY",
+      "INDEPENDENT_JUDICIARY",
+      "PUBLIC_EDUCATION",
+      "MINORITY_RIGHTS",
+      "RULE_OF_LAW"
+    ]
+  },
+  "consensus_coalition_state": {
+    "name": "Consensus Coalition State",
+    "description": "Coalition governance emphasizing negotiated policy and social compromise",
+    "components": [
+      "CONSENSUS_PROCESS",
+      "RULE_OF_LAW",
+      "SOCIAL_SAFETY_NET",
+      "ADMINISTRATIVE_DECENTRALIZATION",
+      "WORKER_PROTECTION",
+      "INSTITUTIONAL_LEGITIMACY"
+    ]
+  },
+  "decentralized_democracy": {
+    "name": "Decentralized Democracy",
+    "description": "Localized democratic governance with broad administrative devolution",
+    "components": [
+      "DEMOCRATIC_PROCESS",
+      "FEDERAL_SYSTEM",
+      "ADMINISTRATIVE_DECENTRALIZATION",
+      "E_GOVERNANCE",
+      "PUBLIC_EDUCATION",
+      "INSTITUTIONAL_LEGITIMACY"
+    ]
+  },
+  "legalist_republic": {
+    "name": "Legalist Republic",
+    "description": "Rule-centric republic anchored by independent courts and formal institutions",
+    "components": [
+      "RULE_OF_LAW",
+      "INDEPENDENT_JUDICIARY",
+      "INSTITUTIONAL_LEGITIMACY",
+      "PROFESSIONAL_BUREAUCRACY",
+      "QUALITY_ASSURANCE",
+      "DEMOCRATIC_PROCESS"
+    ]
+  },
+  "civic_rights_democracy": {
+    "name": "Civic Rights Democracy",
+    "description": "Rights-protective democratic model focused on social inclusion",
+    "components": [
+      "DEMOCRATIC_PROCESS",
+      "ELECTORAL_LEGITIMACY",
+      "MINORITY_RIGHTS",
+      "WORKER_PROTECTION",
+      "PUBLIC_EDUCATION",
+      "INDEPENDENT_JUDICIARY"
+    ]
+  },
+  "resilient_democracy": {
+    "name": "Resilient Democracy",
+    "description": "Democratic institutions designed for crisis readiness and recovery",
+    "components": [
+      "DEMOCRATIC_PROCESS",
+      "RISK_MANAGEMENT",
+      "EMERGENCY_RESPONSE",
+      "RECOVERY_PLANNING",
+      "RESILIENCE_BUILDING",
+      "RULE_OF_LAW"
+    ]
+  },
+  "high_trust_welfare_democracy": {
+    "name": "High Trust Welfare Democracy",
+    "description": "High-legitimacy democratic model with broad universal social protections",
+    "components": [
+      "DEMOCRATIC_PROCESS",
+      "INSTITUTIONAL_LEGITIMACY",
+      "WELFARE_STATE",
+      "UNIVERSAL_HEALTHCARE",
+      "SOCIAL_SAFETY_NET",
+      "PUBLIC_EDUCATION"
+    ]
+  },
+  "digital_democracy": {
+    "name": "Digital Democracy",
+    "description": "Citizen-responsive democratic governance with digital public infrastructure",
+    "components": [
+      "DEMOCRATIC_PROCESS",
+      "E_GOVERNANCE",
+      "DIGITAL_GOVERNMENT",
+      "DIGITAL_INFRASTRUCTURE",
+      "PERFORMANCE_MANAGEMENT",
+      "RULE_OF_LAW"
+    ]
+  },
+  "data_driven_technocracy": {
+    "name": "Data-Driven Technocracy",
+    "description": "Expert institutions using analytics, performance data, and digital systems",
+    "components": [
+      "TECHNOCRATIC_PROCESS",
+      "TECHNOCRATIC_AGENCIES",
+      "PERFORMANCE_LEGITIMACY",
+      "PERFORMANCE_MANAGEMENT",
+      "DIGITAL_GOVERNMENT",
+      "RISK_MANAGEMENT"
+    ]
+  },
+  "innovation_bureaucracy": {
+    "name": "Innovation Bureaucracy",
+    "description": "Professional civil service model optimized for innovation throughput",
+    "components": [
+      "PROFESSIONAL_BUREAUCRACY",
+      "TECHNOCRATIC_AGENCIES",
+      "RESEARCH_AND_DEVELOPMENT",
+      "INNOVATION_ECOSYSTEM",
+      "TECHNOLOGY_TRANSFER",
+      "QUALITY_ASSURANCE"
+    ]
+  },
+  "strategic_planning_state": {
+    "name": "Strategic Planning State",
+    "description": "Long-horizon statecraft centered on planning, execution, and resilience",
+    "components": [
+      "TECHNOCRATIC_PROCESS",
+      "STRATEGIC_PLANNING",
+      "PERFORMANCE_MANAGEMENT",
+      "RISK_MANAGEMENT",
+      "RECOVERY_PLANNING",
+      "PERFORMANCE_LEGITIMACY"
+    ]
+  },
+  "quality_governance_model": {
+    "name": "Quality Governance Model",
+    "description": "Administrative model emphasizing standards, service quality, and merit",
+    "components": [
+      "MERIT_BASED_SYSTEM",
+      "QUALITY_ASSURANCE",
+      "PERFORMANCE_MANAGEMENT",
+      "TECHNOCRATIC_AGENCIES",
+      "PROFESSIONAL_BUREAUCRACY",
+      "PERFORMANCE_LEGITIMACY"
+    ]
+  },
+  "smart_city_state": {
+    "name": "Smart City State",
+    "description": "Urban-first governance built on digital services and advanced infrastructure",
+    "components": [
+      "TECHNOCRATIC_PROCESS",
+      "SMART_CITIES",
+      "DIGITAL_INFRASTRUCTURE",
+      "E_GOVERNANCE",
+      "DIGITAL_GOVERNMENT",
+      "INNOVATION_ECOSYSTEM"
+    ]
+  },
+  "performance_state": {
+    "name": "Performance State",
+    "description": "Outcome-driven governance with strong delivery institutions",
+    "components": [
+      "PERFORMANCE_LEGITIMACY",
+      "PERFORMANCE_MANAGEMENT",
+      "MERIT_BASED_SYSTEM",
+      "PROFESSIONAL_BUREAUCRACY",
+      "QUALITY_ASSURANCE",
+      "STRATEGIC_PLANNING"
+    ]
+  },
+  "digital_service_state": {
+    "name": "Digital Service State",
+    "description": "Digitally integrated government focused on fast, reliable public services",
+    "components": [
+      "DIGITAL_GOVERNMENT",
+      "E_GOVERNANCE",
+      "DIGITAL_INFRASTRUCTURE",
+      "PROFESSIONAL_BUREAUCRACY",
+      "PERFORMANCE_MANAGEMENT",
+      "RISK_MANAGEMENT"
+    ]
+  },
+  "risk_managed_technocracy": {
+    "name": "Risk-Managed Technocracy",
+    "description": "Technocratic model tuned for uncertainty, security, and continuity",
+    "components": [
+      "TECHNOCRATIC_PROCESS",
+      "RISK_MANAGEMENT",
+      "CYBERSECURITY",
+      "EMERGENCY_RESPONSE",
+      "RECOVERY_PLANNING",
+      "PERFORMANCE_LEGITIMACY"
+    ]
+  },
+  "security_state": {
+    "name": "Security State",
+    "description": "Control-heavy model prioritizing domestic stability and threat prevention",
+    "components": [
+      "AUTOCRATIC_PROCESS",
+      "SURVEILLANCE_SYSTEM",
+      "MILITARY_ENFORCEMENT",
+      "COUNTER_TERRORISM",
+      "CYBERSECURITY",
+      "CENTRALIZED_POWER"
+    ]
+  },
+  "command_economy_regime": {
+    "name": "Command Economy Regime",
+    "description": "Centralized authority paired with top-down economic control",
+    "components": [
+      "AUTOCRATIC_PROCESS",
+      "CENTRALIZED_POWER",
+      "PLANNED_ECONOMY",
+      "MILITARY_ADMINISTRATION",
+      "SURVEILLANCE_SYSTEM",
+      "MILITARY_ENFORCEMENT"
+    ]
+  },
+  "surveillance_regime": {
+    "name": "Surveillance Regime",
+    "description": "Information-control model with extensive monitoring infrastructure",
+    "components": [
+      "AUTOCRATIC_PROCESS",
+      "SURVEILLANCE_SYSTEM",
+      "CYBERSECURITY",
+      "DIGITAL_INFRASTRUCTURE",
+      "SOCIAL_PRESSURE",
+      "CENTRALIZED_POWER"
+    ]
+  },
+  "militarized_state": {
+    "name": "Militarized State",
+    "description": "State model centered on military institutions and coercive enforcement",
+    "components": [
+      "CENTRALIZED_POWER",
+      "MILITARY_ADMINISTRATION",
+      "MILITARY_ENFORCEMENT",
+      "SECURITY_ALLIANCES",
+      "COUNTER_TERRORISM",
+      "AUTOCRATIC_PROCESS"
+    ]
+  },
+  "crisis_command_state": {
+    "name": "Crisis Command State",
+    "description": "Rapid-response command model for high-threat environments",
+    "components": [
+      "CENTRALIZED_POWER",
+      "EMERGENCY_RESPONSE",
+      "DISASTER_PREPAREDNESS",
+      "CRISIS_COMMUNICATION",
+      "COUNTER_TERRORISM",
+      "MILITARY_ADMINISTRATION"
+    ]
+  },
+  "autocratic_stability_model": {
+    "name": "Autocratic Stability Model",
+    "description": "Legitimacy-through-order framework with centralized policy execution",
+    "components": [
+      "AUTOCRATIC_PROCESS",
+      "PERFORMANCE_LEGITIMACY",
+      "CENTRALIZED_POWER",
+      "PROFESSIONAL_BUREAUCRACY",
+      "ECONOMIC_INCENTIVES",
+      "SURVEILLANCE_SYSTEM"
+    ]
+  },
+  "centralized_emergency_state": {
+    "name": "Centralized Emergency State",
+    "description": "Central command model designed for prolonged instability periods",
+    "components": [
+      "CENTRALIZED_POWER",
+      "MILITARY_ADMINISTRATION",
+      "EMERGENCY_RESPONSE",
+      "DISASTER_PREPAREDNESS",
+      "PANDEMIC_MANAGEMENT",
+      "RECOVERY_PLANNING"
+    ]
+  },
+  "social_democracy_plus": {
+    "name": "Social Democracy Plus",
+    "description": "Broad social guarantees with democratic accountability and labor protections",
+    "components": [
+      "DEMOCRATIC_PROCESS",
+      "WELFARE_STATE",
+      "SOCIAL_SAFETY_NET",
+      "WORKER_PROTECTION",
+      "UNIVERSAL_HEALTHCARE",
+      "PUBLIC_EDUCATION"
+    ]
+  },
+  "green_welfare_state": {
+    "name": "Green Welfare State",
+    "description": "Social protection state with explicit environmental stewardship",
+    "components": [
+      "WELFARE_STATE",
+      "ENVIRONMENTAL_PROTECTION",
+      "UNIVERSAL_HEALTHCARE",
+      "PUBLIC_EDUCATION",
+      "SOCIAL_SAFETY_NET",
+      "RULE_OF_LAW"
+    ]
+  },
+  "worker_protection_model": {
+    "name": "Worker Protection Model",
+    "description": "Labor-centered governance balancing rights, growth, and social stability",
+    "components": [
+      "WORKER_PROTECTION",
+      "MINORITY_RIGHTS",
+      "SOCIAL_SAFETY_NET",
+      "PUBLIC_EDUCATION",
+      "WELFARE_STATE",
+      "RULE_OF_LAW"
+    ]
+  },
+  "public_service_commonwealth": {
+    "name": "Public Service Commonwealth",
+    "description": "Institutional model prioritizing universal service delivery at scale",
+    "components": [
+      "PROFESSIONAL_BUREAUCRACY",
+      "UNIVERSAL_HEALTHCARE",
+      "PUBLIC_EDUCATION",
+      "WELFARE_STATE",
+      "QUALITY_ASSURANCE",
+      "E_GOVERNANCE"
+    ]
+  },
+  "inclusive_development_state": {
+    "name": "Inclusive Development State",
+    "description": "Growth and innovation strategy combined with inclusive social outcomes",
+    "components": [
+      "MINORITY_RIGHTS",
+      "PUBLIC_EDUCATION",
+      "ENTREPRENEURSHIP_SUPPORT",
+      "SOCIAL_SAFETY_NET",
+      "INNOVATION_ECOSYSTEM",
+      "DEVELOPMENT_AID"
+    ]
+  },
+  "community_resilience_model": {
+    "name": "Community Resilience Model",
+    "description": "Local-first social model for cohesion, preparedness, and recovery",
+    "components": [
+      "ADMINISTRATIVE_DECENTRALIZATION",
+      "SOCIAL_SAFETY_NET",
+      "DISASTER_PREPAREDNESS",
+      "RESILIENCE_BUILDING",
+      "CRISIS_COMMUNICATION",
+      "PUBLIC_EDUCATION"
+    ]
+  },
+  "market_liberal_state": {
+    "name": "Market Liberal State",
+    "description": "Competitive market governance with legal guarantees and trade openness",
+    "components": [
+      "E_GOVERNANCE",
+      "ECONOMIC_INCENTIVES",
+      "TRADE_AGREEMENTS",
+      "RULE_OF_LAW",
+      "PROFESSIONAL_BUREAUCRACY",
+      "BILATERAL_RELATIONS"
+    ]
+  },
+  "mixed_economy_balancer": {
+    "name": "Mixed Economy Balancer",
+    "description": "Balanced public-private economy with active institutional management",
+    "components": [
+      "RULE_OF_LAW",
+      "SOCIAL_SAFETY_NET",
+      "STRATEGIC_PLANNING",
+      "ECONOMIC_INCENTIVES",
+      "PUBLIC_EDUCATION",
+      "PROFESSIONAL_BUREAUCRACY"
+    ]
+  },
+  "corporatist_compact": {
+    "name": "Corporatist Compact",
+    "description": "Tripartite state-industry-labor governance focused on coordination",
+    "components": [
+      "RULE_OF_LAW",
+      "WORKER_PROTECTION",
+      "PERFORMANCE_MANAGEMENT",
+      "PROFESSIONAL_BUREAUCRACY",
+      "QUALITY_ASSURANCE",
+      "INSTITUTIONAL_LEGITIMACY"
+    ]
+  },
+  "resource_management_state": {
+    "name": "Resource Management State",
+    "description": "Resource-driven model with planning, safeguards, and controlled growth",
+    "components": [
+      "RULE_OF_LAW",
+      "STRATEGIC_PLANNING",
+      "RISK_MANAGEMENT",
+      "ENVIRONMENTAL_PROTECTION",
+      "PROFESSIONAL_BUREAUCRACY",
+      "INSTITUTIONAL_LEGITIMACY"
+    ]
+  },
+  "startup_nation": {
+    "name": "Startup Nation",
+    "description": "Entrepreneurial state optimized for innovation and venture formation",
+    "components": [
+      "DIGITAL_INFRASTRUCTURE",
+      "STARTUP_INCUBATION",
+      "ENTREPRENEURSHIP_SUPPORT",
+      "INNOVATION_ECOSYSTEM",
+      "INTELLECTUAL_PROPERTY",
+      "TECHNOLOGY_TRANSFER"
+    ]
+  },
+  "knowledge_city_state": {
+    "name": "Knowledge City State",
+    "description": "Compact advanced economy driven by research and digital excellence",
+    "components": [
+      "INNOVATION_ECOSYSTEM",
+      "SMART_CITIES",
+      "DIGITAL_INFRASTRUCTURE",
+      "RESEARCH_AND_DEVELOPMENT",
+      "DIGITAL_GOVERNMENT",
+      "INTERNATIONAL_LAW"
+    ]
+  },
+  "trade_growth_state": {
+    "name": "Trade Growth State",
+    "description": "Open-economy model centered on agreements, integration, and competitiveness",
+    "components": [
+      "TRADE_AGREEMENTS",
+      "BILATERAL_RELATIONS",
+      "REGIONAL_INTEGRATION",
+      "RULE_OF_LAW",
+      "ECONOMIC_INCENTIVES",
+      "DIGITAL_INFRASTRUCTURE"
+    ]
+  },
+  "industrial_transition_state": {
+    "name": "Industrial Transition State",
+    "description": "Managed transformation model for upgrading sectors and capabilities",
+    "components": [
+      "RULE_OF_LAW",
+      "STRATEGIC_PLANNING",
+      "TECHNOLOGY_TRANSFER",
+      "WORKER_PROTECTION",
+      "PUBLIC_EDUCATION",
+      "INNOVATION_ECOSYSTEM"
+    ]
+  },
+  "multilateral_bridge_state": {
+    "name": "Multilateral Bridge State",
+    "description": "Diplomacy-centric model that brokers cooperation across regions",
+    "components": [
+      "MULTILATERAL_DIPLOMACY",
+      "INTERNATIONAL_LAW",
+      "DEVELOPMENT_AID",
+      "HUMANITARIAN_INTERVENTION",
+      "TRADE_AGREEMENTS",
+      "BILATERAL_RELATIONS"
+    ]
+  },
+  "regional_integration_model": {
+    "name": "Regional Integration Model",
+    "description": "Region-first strategy for economic and security interdependence",
+    "components": [
+      "REGIONAL_INTEGRATION",
+      "TRADE_AGREEMENTS",
+      "SECURITY_ALLIANCES",
+      "MULTILATERAL_DIPLOMACY",
+      "INTERNATIONAL_LAW",
+      "DEVELOPMENT_AID"
+    ]
+  },
+  "humanitarian_diplomacy_state": {
+    "name": "Humanitarian Diplomacy State",
+    "description": "Soft-power model focused on aid, rights, and international cooperation",
+    "components": [
+      "HUMANITARIAN_INTERVENTION",
+      "DEVELOPMENT_AID",
+      "MULTILATERAL_DIPLOMACY",
+      "INTERNATIONAL_LAW",
+      "MINORITY_RIGHTS",
+      "PUBLIC_EDUCATION"
+    ]
+  },
+  "alliance_trade_hub": {
+    "name": "Alliance Trade Hub",
+    "description": "Strategic node model combining trade connectivity with allied security",
+    "components": [
+      "SECURITY_ALLIANCES",
+      "TRADE_AGREEMENTS",
+      "BILATERAL_RELATIONS",
+      "REGIONAL_INTEGRATION",
+      "RULE_OF_LAW",
+      "CYBERSECURITY"
+    ]
+  },
+  "global_rule_of_law_state": {
+    "name": "Global Rule of Law State",
+    "description": "Normative model grounded in legal institutions and treaty compliance",
+    "components": [
+      "RULE_OF_LAW",
+      "INDEPENDENT_JUDICIARY",
+      "INTERNATIONAL_LAW",
+      "MULTILATERAL_DIPLOMACY",
+      "INSTITUTIONAL_LEGITIMACY",
+      "MINORITY_RIGHTS"
+    ]
+  },
+  "development_partner_state": {
+    "name": "Development Partner State",
+    "description": "Outward-facing model for cooperative growth and capability sharing",
+    "components": [
+      "DEVELOPMENT_AID",
+      "TECHNOLOGY_TRANSFER",
+      "MULTILATERAL_DIPLOMACY",
+      "REGIONAL_INTEGRATION",
+      "PUBLIC_EDUCATION",
+      "TRADE_AGREEMENTS"
+    ]
+  },
+  "civil_protection_state": {
+    "name": "Civil Protection State",
+    "description": "Preparedness-first model for disaster prevention and public safety",
+    "components": [
+      "EMERGENCY_RESPONSE",
+      "DISASTER_PREPAREDNESS",
+      "CRISIS_COMMUNICATION",
+      "RECOVERY_PLANNING",
+      "RESILIENCE_BUILDING",
+      "PROFESSIONAL_BUREAUCRACY"
+    ]
+  },
+  "health_security_model": {
+    "name": "Health Security Model",
+    "description": "Health-focused governance combining prevention, response, and service access",
+    "components": [
+      "PANDEMIC_MANAGEMENT",
+      "UNIVERSAL_HEALTHCARE",
+      "EMERGENCY_RESPONSE",
+      "CRISIS_COMMUNICATION",
+      "DIGITAL_GOVERNMENT",
+      "RISK_MANAGEMENT"
+    ]
+  },
+  "cyber_resilience_state": {
+    "name": "Cyber Resilience State",
+    "description": "Digital continuity model emphasizing cyber defense and recovery planning",
+    "components": [
+      "CYBERSECURITY",
+      "DIGITAL_INFRASTRUCTURE",
+      "RISK_MANAGEMENT",
+      "CRISIS_COMMUNICATION",
+      "RECOVERY_PLANNING",
+      "PERFORMANCE_MANAGEMENT"
+    ]
+  },
+  "recovery_transition_model": {
+    "name": "Recovery Transition Model",
+    "description": "Post-crisis transition framework for stabilization and long-term renewal",
+    "components": [
+      "RECOVERY_PLANNING",
+      "RESILIENCE_BUILDING",
+      "STRATEGIC_PLANNING",
+      "SOCIAL_SAFETY_NET",
+      "PUBLIC_EDUCATION",
+      "RULE_OF_LAW"
+    ]
+  },
+  "climate_resilience_governance": {
+    "name": "Climate Resilience Governance",
+    "description": "Adaptation-focused state model with strong environmental safeguards",
+    "components": [
+      "ENVIRONMENTAL_PROTECTION",
+      "RESILIENCE_BUILDING",
+      "DISASTER_PREPAREDNESS",
+      "STRATEGIC_PLANNING",
+      "PUBLIC_EDUCATION",
+      "INTERNATIONAL_LAW"
+    ]
+  }
+}

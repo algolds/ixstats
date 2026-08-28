@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/reader/ArticleCompanionHUD.tsx
 // Apple-inspired companion rail widget positioned at the top of the outset gutter rail (above the TOC).
 // Features reading metrics, audio narration toggle, Margin discussion count, and quick actions.
-
-"use client";
 
 import React, { useMemo } from "react";
 import Link from "next/link";

@@ -1,11 +1,10 @@
+"use client";
 /**
  * Component Search
  *
  * Search input for filtering economic components by name or description.
  * Optimized with React.memo for performance.
  */
-
-"use client";
 
 import React from "react";
 import { Input } from "~/components/ui/input";

@@ -1,6 +1,6 @@
+"use client";
 // src/app/(wiki-os)/wiki/diff/page.tsx
 // WikiOS Native Revision Diff Comparator with DiffViewer
-"use client";
 
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";

@@ -1,11 +1,10 @@
+"use client";
 /**
  * Component Card
  *
  * Individual economic component card with icon, details, and selection state.
  * Optimized with React.memo for performance.
  */
-
-"use client";
 
 import React from "react";
 import { Card, CardContent } from "~/components/ui/card";

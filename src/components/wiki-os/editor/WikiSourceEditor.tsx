@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/editor/WikiSourceEditor.tsx
 // Wikitext source editor — CodeMirror 6 with wikitext toolbar, syntax decorations, and live preview.
-
-"use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";

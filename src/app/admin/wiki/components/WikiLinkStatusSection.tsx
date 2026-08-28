@@ -1,7 +1,6 @@
+"use client";
 // src/app/admin/wiki/components/WikiLinkStatusSection.tsx
 // Wiki Link Status table & filtering overview.
-
-"use client";
 
 import { useState, useMemo } from "react";
 import { Badge } from "~/components/ui/badge";

@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/cards/CardGeneralSettingsAdmin.tsx
 // General Card System Settings & Global Policy Admin
-"use client";
 
 import { useEffect, useState } from "react";
 import {

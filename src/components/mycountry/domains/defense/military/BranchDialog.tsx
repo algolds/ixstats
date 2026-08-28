@@ -1,5 +1,5 @@
-// src/components/defense/military/BranchDialog.tsx
 "use client";
+// src/components/defense/military/BranchDialog.tsx
 
 import React, { useState, useEffect } from "react";
 import { CheckCircle as CheckCircle2, MediaImage as Image, Shield } from "iconoir-react";

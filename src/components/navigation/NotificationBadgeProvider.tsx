@@ -1,9 +1,8 @@
+"use client";
 /**
  * Notification Badge Provider
  * Manages page title badge with unread notification count
  */
-
-"use client";
 
 import React from "react";
 import { useNotificationBadge } from "~/hooks/useLiveNotifications";

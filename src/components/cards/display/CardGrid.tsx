@@ -1,10 +1,9 @@
+"use client";
 /**
  * CardGrid Component
  * Responsive grid layout with infinite scroll pagination
  * Phase 1: Card Display Components
  */
-
-"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";

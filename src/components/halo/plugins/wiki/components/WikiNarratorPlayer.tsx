@@ -1,8 +1,7 @@
+"use client";
 // src/components/halo/plugins/wiki/components/WikiNarratorPlayer.tsx
 // Unified narrator audio player built with audio-ui.xyz components (ghost variant, Transport, Fader).
 // Theme compliant with WikiOS accents, ambient animated background waveform, and inline Apple Design controls.
-
-"use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {

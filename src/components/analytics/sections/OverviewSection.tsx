@@ -11,7 +11,7 @@ import { SummaryMetricsCard } from "../metrics/SummaryMetricsCard";
 import { EconomicOverviewChart } from "../charts/EconomicOverviewChart";
 import { EconomicHealthRadar } from "../charts/EconomicHealthRadar";
 import { GlassTooltip } from "../charts/GlassTooltip";
-import { DataTable } from "~/components/ui/shared/data-display/DataTable";
+import { FacetDataTable as DataTable } from "~/components/ui/data-table";
 import type { SummaryMetric, EconomicChartDataPoint, EconomicHealthIndicator } from "~/lib/utils";
 
 interface OverviewSectionProps {
@@ -76,11 +76,11 @@ export const OverviewSection = React.memo<OverviewSectionProps>(
             <DataTable
               data={economicTableData}
               columns={[
-                { key: "date", label: "Date", align: "left" },
-                { key: "totalGdp", label: "Total GDP", align: "right" },
-                { key: "gdpPerCapita", label: "GDP Per Capita", align: "right" },
-                { key: "population", label: "Population", align: "right" },
-                { key: "growth", label: "Growth Rate", align: "right" },
+                { key: "date", header: "Date", align: "left" },
+                { key: "totalGdp", header: "Total GDP", align: "right" },
+                { key: "gdpPerCapita", header: "GDP Per Capita", align: "right" },
+                { key: "population", header: "Population", align: "right" },
+                { key: "growth", header: "Growth Rate", align: "right" },
               ]}
               title="Economic Data"
               description="Historical economic performance data"
@@ -93,10 +93,10 @@ export const OverviewSection = React.memo<OverviewSectionProps>(
             <DataTable
               data={healthTableData}
               columns={[
-                { key: "indicator", label: "Indicator", align: "left" },
-                { key: "score", label: "Score", align: "right" },
-                { key: "trend", label: "Trend", align: "center" },
-                { key: "status", label: "Status", align: "center" },
+                { key: "indicator", header: "Indicator", align: "left" },
+                { key: "score", header: "Score", align: "right" },
+                { key: "trend", header: "Trend", align: "center" },
+                { key: "status", header: "Status", align: "center" },
               ]}
               title="Economic Health Indicators"
               description="Multi-dimensional health metrics"

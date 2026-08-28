@@ -32,7 +32,6 @@ import type {
 } from "~/types/government";
 import { createDefaultEconomicInputs } from "../lib/economy-data-service";
 import type { CountryWithEditorFields } from "~/types/country-editor";
-import { unifiedBuilderService } from "../services/UnifiedBuilderIntegrationService";
 import { api } from "~/trpc/react";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { modernArchetypes } from "~/app/builder/data/archetypes/modern";
@@ -1302,68 +1301,7 @@ export function useBuilderState(
     taxSystemData: builderState.taxSystemData,
   };
 
-  // Track last sent values to prevent redundant updates
-  // Phase 2 optimization: Store actual values instead of JSON strings for isEqual comparison
-  const lastSentNationalIdentityRef = useRef<EconomicInputs["nationalIdentity"] | null>(null);
-  const lastSentGovernmentComponentsRef = useRef<ComponentType[]>([]);
-  const lastSentGovernmentStructureRef = useRef<GovernmentBuilderState | null>(null);
-  const lastSentTaxSystemDataRef = useRef<TaxBuilderState | null>(null);
 
-  // Phase 2 optimization: Replaced JSON.stringify with isEqual for performance
-  useEffect(() => {
-    // Update national identity if changed
-    if (latestRefs.current.economicInputs?.nationalIdentity) {
-      const currentIdentity = latestRefs.current.economicInputs.nationalIdentity;
-      if (!isEqual(currentIdentity, lastSentNationalIdentityRef.current)) {
-        lastSentNationalIdentityRef.current = currentIdentity;
-        unifiedBuilderService.updateNationalIdentity({
-          countryName: currentIdentity.countryName,
-          capital: currentIdentity.capitalCity,
-          currency: currentIdentity.currency,
-          language: currentIdentity.officialLanguages || "",
-          flag: undefined,
-          anthem: currentIdentity.nationalAnthem,
-          motto: currentIdentity.motto,
-        });
-      }
-    }
-
-    // Update government components if changed
-    if (latestRefs.current.governmentComponents.length > 0) {
-      if (
-        !isEqual(latestRefs.current.governmentComponents, lastSentGovernmentComponentsRef.current)
-      ) {
-        lastSentGovernmentComponentsRef.current = [...latestRefs.current.governmentComponents];
-        unifiedBuilderService.updateGovernmentComponents(latestRefs.current.governmentComponents);
-        const suggested = unifiedBuilderService.getSuggestedEconomicComponents();
-        console.log(`[UnifiedBuilder] Auto-selected ${suggested.length} economic components`);
-      }
-    }
-
-    // Update government structure if changed
-    if (latestRefs.current.governmentStructure) {
-      if (
-        !isEqual(latestRefs.current.governmentStructure, lastSentGovernmentStructureRef.current)
-      ) {
-        lastSentGovernmentStructureRef.current = latestRefs.current.governmentStructure;
-        unifiedBuilderService.updateGovernmentBuilder(latestRefs.current.governmentStructure);
-      }
-    }
-
-    // Update tax system data if changed
-    if (latestRefs.current.taxSystemData) {
-      if (!isEqual(latestRefs.current.taxSystemData, lastSentTaxSystemDataRef.current)) {
-        lastSentTaxSystemDataRef.current = latestRefs.current.taxSystemData;
-        unifiedBuilderService.updateTaxBuilder(latestRefs.current.taxSystemData);
-      }
-    }
-  }, [
-    // Use stable references instead of nested properties
-    builderState.economicInputs,
-    builderState.governmentComponents,
-    builderState.governmentStructure,
-    builderState.taxSystemData,
-  ]);
 
   // DB Sync for Edit Mode
   const updateMutation = api.countries.updateCountry.useMutation({

@@ -1,3 +1,4 @@
+"use client";
 /**
  * DesignerStage3D Component
  *
@@ -6,8 +7,6 @@
  *
  * ponytail: simplified single-source card rendering wrapper
  */
-
-"use client";
 
 import React, { useState, useMemo } from "react";
 import {

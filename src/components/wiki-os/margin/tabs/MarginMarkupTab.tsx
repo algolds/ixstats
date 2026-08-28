@@ -1,9 +1,8 @@
+"use client";
 // src/components/wiki-os/margin/tabs/MarginMarkupTab.tsx
 // Displays active text annotations and stashed quotes with jump-to-text scrolling,
 // child page creation, export notes, and message sharing.
 // Signature Highlighter Yellow / Warm Amber branding for Margin.
-
-"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";

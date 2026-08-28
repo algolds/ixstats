@@ -1,11 +1,10 @@
+"use client";
 /**
  * Category Filter
  *
  * Filter economic components by category with visual category selector.
  * Optimized with React.memo for performance.
  */
-
-"use client";
 
 import React from "react";
 import { Button } from "~/components/ui/button";

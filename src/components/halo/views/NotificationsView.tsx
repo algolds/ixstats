@@ -24,7 +24,7 @@ import type { NotificationsViewProps } from "../types";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { useDynamicIslandSize, SIZE_PRESETS } from "../HaloPrimitives";
-import { SwipeableGroup } from "~/components/ui/facet/swipeable";
+import { SwipeableGroup } from "~/components/ui/facet/swipeable/SwipeableRow";
 import { MessageTrayItem, type MessageTrayConversation } from "./tray/MessageTrayItem";
 import { NotificationRow } from "./tray/NotificationRow";
 import {

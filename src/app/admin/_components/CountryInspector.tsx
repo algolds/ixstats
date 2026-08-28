@@ -1,5 +1,5 @@
-// src/app/admin/storyteller/_components/CountryInspector.tsx
 "use client";
+// src/app/admin/storyteller/_components/CountryInspector.tsx
 
 import React, { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";

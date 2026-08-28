@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * CategoryIcon Component
  *
@@ -19,8 +21,6 @@
  * <CategoryIcon category="SCIENCE" treatment="seal" size="xs" />
  * ```
  */
-
-"use client";
 
 import React from "react";
 import { cn } from "~/lib/utils";

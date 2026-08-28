@@ -1,10 +1,9 @@
+"use client";
 /**
  * LoreWikiExcerpt — Shows first few paragraphs of a wiki article for lore cards.
  * Checks metadata.fullExcerpt first, then fetches on-demand via tRPC.
  * Used inside the Lore tab of CardDetailsModal.
  */
-
-"use client";
 
 import React, { useMemo } from "react";
 import Link from "next/link";

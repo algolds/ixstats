@@ -1,10 +1,9 @@
+"use client";
 /**
  * Budget Allocation List Component (Refactored)
  *
  * List of budget allocations with soft warnings for underfunded vital services.
  */
-
-"use client";
 
 import React, { useMemo } from "react";
 import { Alert, AlertDescription } from "~/components/ui/alert";

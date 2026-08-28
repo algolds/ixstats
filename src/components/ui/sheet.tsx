@@ -5,7 +5,7 @@ import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Xmark as X } from "iconoir-react";
 
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { soundEffects } from "~/lib/sound/cuelume";
 
 const Sheet = SheetPrimitive.Root;

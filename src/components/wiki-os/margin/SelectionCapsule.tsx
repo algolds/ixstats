@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/margin/SelectionCapsule.tsx
 // Origin-aware floating selection capsule for inline markup, stash, suggested edits, and discussions.
 // Full Apple Design & Emil Kowalski motion compliance.
-
-"use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";

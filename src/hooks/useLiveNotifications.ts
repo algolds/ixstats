@@ -1,9 +1,8 @@
+"use client";
 /**
  * Live Notifications Hook
  * Provides real-time notification updates with page title badge
  */
-
-"use client";
 
 import { useEffect, useCallback } from "react";
 import { api } from "~/trpc/react";

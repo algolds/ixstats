@@ -1,5 +1,5 @@
-// src/app/admin/national-issues/page.tsx
 "use client";
+// src/app/admin/national-issues/page.tsx
 
 import { AdminRouter } from "../_components/AdminRouter";
 

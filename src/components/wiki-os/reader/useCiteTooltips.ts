@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/reader/useCiteTooltips.ts
 // Hover tooltips for inline citations — shows footnote content on hover
 // without needing to scroll to the references section.
-
-"use client";
 
 import { useEffect, useState, useCallback, useRef, type RefObject } from "react";
 import { createPortal } from "react-dom";

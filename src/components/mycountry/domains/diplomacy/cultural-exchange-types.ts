@@ -1,22 +1,21 @@
-import { easeInOut, easeOut } from "motion/react";
-import type { IconType } from "react-icons";
 import {
-  RiGlobalLine,
-  RiStarLine,
-  RiBookLine,
-  RiPaletteLine,
-  RiBuildingLine,
-  RiCameraLine,
-  RiMusicLine,
-  RiGamepadLine,
-  RiRestaurantLine,
-  RiUserLine,
-  RiTrophyLine,
-  RiFlashlightLine,
-  RiLightbulbLine,
-  RiArrowRightLine,
-  RiThumbUpLine,
-} from "react-icons/ri";
+  ArrowRight,
+  Book,
+  Building,
+  Camera,
+  Cutlery,
+  Flash,
+  Gamepad,
+  Globe,
+  LightBulb,
+  MusicNote,
+  Palette,
+  Star,
+  ThumbsUp,
+  Trophy,
+  User,
+} from "iconoir-react";
+import { easeInOut, easeOut } from "motion/react";
 
 const linearEasing = (t: number) => t;
 
@@ -121,7 +120,7 @@ export type ExchangeType =
 export type ExchangeStatus = "planning" | "active" | "completed" | "cancelled";
 
 export interface ExchangeTypeConfig {
-  icon: IconType;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
   bgColor: string;
   borderColor: string;
@@ -141,7 +140,7 @@ export interface StatusConfig {
 // Cultural exchange type configurations
 export const EXCHANGE_TYPES = {
   festival: {
-    icon: RiStarLine,
+    icon: Star,
     color: "text-purple-600 dark:text-purple-400",
     bgColor:
       "bg-gradient-to-br from-purple-400/40 to-pink-500/40 dark:from-purple-500/20 dark:to-pink-500/20",
@@ -152,7 +151,7 @@ export const EXCHANGE_TYPES = {
     emoji: "🎭",
   },
   exhibition: {
-    icon: RiBuildingLine,
+    icon: Building,
     color: "text-blue-600 dark:text-blue-400",
     bgColor:
       "bg-gradient-to-br from-blue-400/40 to-indigo-500/40 dark:from-blue-500/20 dark:to-indigo-500/20",
@@ -163,7 +162,7 @@ export const EXCHANGE_TYPES = {
     emoji: "🏛️",
   },
   education: {
-    icon: RiBookLine,
+    icon: Book,
     color: "text-green-600 dark:text-green-400",
     bgColor:
       "bg-gradient-to-br from-green-400/40 to-emerald-500/40 dark:from-green-500/20 dark:to-emerald-500/20",
@@ -174,7 +173,7 @@ export const EXCHANGE_TYPES = {
     emoji: "📚",
   },
   cuisine: {
-    icon: RiRestaurantLine,
+    icon: Cutlery,
     color: "text-orange-600 dark:text-orange-400",
     bgColor:
       "bg-gradient-to-br from-orange-400/40 to-red-500/40 dark:from-orange-500/20 dark:to-red-500/20",
@@ -185,7 +184,7 @@ export const EXCHANGE_TYPES = {
     emoji: "🍜",
   },
   arts: {
-    icon: RiPaletteLine,
+    icon: Palette,
     color: "text-pink-600 dark:text-pink-400",
     bgColor:
       "bg-gradient-to-br from-pink-400/40 to-rose-500/40 dark:from-pink-500/20 dark:to-rose-500/20",
@@ -196,7 +195,7 @@ export const EXCHANGE_TYPES = {
     emoji: "🎨",
   },
   sports: {
-    icon: RiTrophyLine,
+    icon: Trophy,
     color: "text-red-600 dark:text-red-400",
     bgColor:
       "bg-gradient-to-br from-red-400/40 to-orange-500/40 dark:from-red-500/20 dark:to-orange-500/20",
@@ -207,7 +206,7 @@ export const EXCHANGE_TYPES = {
     emoji: "⚽",
   },
   technology: {
-    icon: RiGamepadLine,
+    icon: Gamepad,
     color: "text-cyan-600 dark:text-cyan-400",
     bgColor:
       "bg-gradient-to-br from-cyan-400/40 to-blue-500/40 dark:from-cyan-500/20 dark:to-blue-500/20",
@@ -218,7 +217,7 @@ export const EXCHANGE_TYPES = {
     emoji: "💻",
   },
   diplomacy: {
-    icon: RiGlobalLine,
+    icon: Globe,
     color: "text-amber-600 dark:text-[--intel-gold]",
     bgColor:
       "bg-gradient-to-br from-amber-400/40 to-yellow-500/40 dark:from-[--intel-gold]/20 dark:to-yellow-500/20",
@@ -229,7 +228,7 @@ export const EXCHANGE_TYPES = {
     emoji: "🤝",
   },
   music: {
-    icon: RiMusicLine,
+    icon: MusicNote,
     color: "text-violet-600 dark:text-violet-400",
     bgColor:
       "bg-gradient-to-br from-violet-400/40 to-purple-500/40 dark:from-violet-500/20 dark:to-purple-500/20",
@@ -240,7 +239,7 @@ export const EXCHANGE_TYPES = {
     emoji: "🎵",
   },
   film: {
-    icon: RiCameraLine,
+    icon: Camera,
     color: "text-indigo-600 dark:text-indigo-400",
     bgColor:
       "bg-gradient-to-br from-indigo-400/40 to-purple-500/40 dark:from-indigo-500/20 dark:to-purple-500/20",
@@ -251,7 +250,7 @@ export const EXCHANGE_TYPES = {
     emoji: "🎬",
   },
   environmental: {
-    icon: RiFlashlightLine,
+    icon: Flash,
     color: "text-teal-600 dark:text-teal-400",
     bgColor:
       "bg-gradient-to-br from-teal-400/40 to-green-500/40 dark:from-teal-500/20 dark:to-green-500/20",
@@ -262,7 +261,7 @@ export const EXCHANGE_TYPES = {
     emoji: "🌍",
   },
   science: {
-    icon: RiLightbulbLine,
+    icon: LightBulb,
     color: "text-sky-600 dark:text-sky-400",
     bgColor:
       "bg-gradient-to-br from-sky-400/40 to-blue-500/40 dark:from-sky-500/20 dark:to-blue-500/20",
@@ -273,7 +272,7 @@ export const EXCHANGE_TYPES = {
     emoji: "🔬",
   },
   trade: {
-    icon: RiArrowRightLine,
+    icon: ArrowRight,
     color: "text-emerald-600 dark:text-emerald-400",
     bgColor:
       "bg-gradient-to-br from-emerald-400/40 to-teal-500/40 dark:from-emerald-500/20 dark:to-teal-500/20",
@@ -284,7 +283,7 @@ export const EXCHANGE_TYPES = {
     emoji: "💼",
   },
   humanitarian: {
-    icon: RiThumbUpLine,
+    icon: ThumbsUp,
     color: "text-rose-600 dark:text-rose-400",
     bgColor:
       "bg-gradient-to-br from-rose-400/40 to-pink-500/40 dark:from-rose-500/20 dark:to-pink-500/20",
@@ -295,7 +294,7 @@ export const EXCHANGE_TYPES = {
     emoji: "❤️",
   },
   agriculture: {
-    icon: RiStarLine,
+    icon: Star,
     color: "text-lime-600 dark:text-lime-400",
     bgColor:
       "bg-gradient-to-br from-lime-400/40 to-green-500/40 dark:from-lime-500/20 dark:to-green-500/20",
@@ -306,7 +305,7 @@ export const EXCHANGE_TYPES = {
     emoji: "🌾",
   },
   heritage: {
-    icon: RiBuildingLine,
+    icon: Building,
     color: "text-stone-600 dark:text-stone-400",
     bgColor:
       "bg-gradient-to-br from-stone-400/40 to-amber-500/40 dark:from-stone-500/20 dark:to-amber-500/20",
@@ -317,7 +316,7 @@ export const EXCHANGE_TYPES = {
     emoji: "🏺",
   },
   youth: {
-    icon: RiUserLine,
+    icon: User,
     color: "text-fuchsia-600 dark:text-fuchsia-400",
     bgColor:
       "bg-gradient-to-br from-fuchsia-400/40 to-pink-500/40 dark:from-fuchsia-500/20 dark:to-pink-500/20",

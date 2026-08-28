@@ -1,7 +1,6 @@
+"use client";
 // src/components/thinkpages/post/PostComposers.tsx
 // Inline edit and reply composer components matching the main GlassCanvasComposer aesthetic with Apple Design physics.
-
-"use client";
 
 import { useRef, useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
@@ -19,11 +18,19 @@ import { Badge } from "~/components/ui/badge";
 import { Textarea } from "~/components/ui/textarea";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { GlassPlateEditor, type GlassPlateEditorRef } from "~/components/shared/editor";
+import type { GlassPlateEditorRef } from "~/components/shared/editor";
+
+const GlassPlateEditor = dynamic(
+  () => import("~/components/shared/editor/GlassPlateEditor").then((m) => m.GlassPlateEditor),
+  {
+    loading: () => <div className="h-16 animate-pulse rounded-lg bg-white/5" />,
+    ssr: false,
+  }
+);
 import { ComposerAccountSwitcher } from "../composer/ComposerAccountSwitcher";
 import { GifPicker } from "../GifPicker";
 import { useUser } from "~/context/auth-context";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 const MediaSearchModal = dynamic(
   () =>

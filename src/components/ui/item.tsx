@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 const itemVariants = cva(
   "group relative flex items-center justify-between gap-3 rounded-lg border transition-colors",

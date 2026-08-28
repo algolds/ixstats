@@ -1,7 +1,6 @@
+"use client";
 // src/app/admin/wiki/components/LorewardWeightsCard.tsx
 // Scoring parameter weights tuning & simulation preview.
-
-"use client";
 
 import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";

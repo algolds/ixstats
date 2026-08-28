@@ -5,7 +5,7 @@ import Image from "next/image";
 import { AnimatePresence, motion, useAnimation, type PanInfo } from "motion/react";
 import { Check as CheckIcon, OpenNewWindow as ExternalLinkIcon } from "iconoir-react";
 
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 // AspectRatio removed - using CSS aspect-video class instead
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";

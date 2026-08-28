@@ -1,5 +1,5 @@
-// src/components/media-search/UploadTab.tsx
 "use client";
+// src/components/media-search/UploadTab.tsx
 
 import React, { useState, useEffect, useCallback } from "react";
 import { cn } from "~/lib/utils";

@@ -1,8 +1,7 @@
+"use client";
 // src/hooks/useNavigationScroll.ts
 // Tracks scroll position with RAF-smoothed updates, directional hysteresis,
 // universal dynamic repulsion progress, and Apple-grade fluid navigation visibility & auto-hide.
-
-"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 

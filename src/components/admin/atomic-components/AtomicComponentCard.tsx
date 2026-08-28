@@ -1,6 +1,6 @@
+"use client";
 // src/components/admin/atomic-components/AtomicComponentCard.tsx
 // Universal Card renderer for Atomic Simulation Components (Economic & Government)
-"use client";
 
 import { Button } from "~/components/ui/button";
 import {

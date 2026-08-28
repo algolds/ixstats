@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/wikios-settings/WikiOSSettingsPanel.tsx
 // WikiOS Base Settings Admin Panel
-"use client";
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";

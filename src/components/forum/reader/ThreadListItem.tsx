@@ -1,7 +1,6 @@
+"use client";
 // src/components/forum/reader/ThreadListItem.tsx
 // Single row in a thread list view.
-
-"use client";
 
 import Link from "next/link";
 import { Pin, Lock, Eye, ChatBubble as MessageSquare } from "iconoir-react";

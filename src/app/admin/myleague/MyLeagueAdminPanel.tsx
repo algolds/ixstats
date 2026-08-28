@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/myleague/MyLeagueAdminPanel.tsx
 // Unified MyLeague Sports Management Admin Panel
-"use client";
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";

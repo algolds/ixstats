@@ -32,7 +32,7 @@ import {
   CompressLines as FoldHorizontal,
   Xmark as X,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { jsonThemes, type JsonColorTheme, type ShikiThemeName } from "~/lib/themes";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };

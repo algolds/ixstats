@@ -1,7 +1,6 @@
+"use client";
 // src/app/(wiki-os)/wiki/[slug]/edit/page.tsx
 // WikiOS Article Editor Entrypoint — delegates to WikiEditBridge with instant mode support.
-
-"use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";

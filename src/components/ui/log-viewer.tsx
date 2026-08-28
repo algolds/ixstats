@@ -33,7 +33,7 @@ import {
   Trash as Trash2,
   Xmark as X,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 // Types
 

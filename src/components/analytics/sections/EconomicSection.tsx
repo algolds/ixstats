@@ -12,7 +12,7 @@ import { SectorGrowthChart } from "../charts/SectorGrowthChart";
 import { VolatilityMetricsCard } from "../metrics/VolatilityMetricsCard";
 import { ComparativeBenchmarkingCard } from "../metrics/ComparativeBenchmarkingCard";
 import { GlassTooltip } from "../charts/GlassTooltip";
-import { DataTable } from "~/components/ui/shared/data-display/DataTable";
+import { FacetDataTable as DataTable } from "~/components/ui/data-table";
 import type { SectorPerformance, VolatilityMetric, ComparativeBenchmark } from "~/lib/utils";
 
 interface EconomicSectionProps {
@@ -60,11 +60,11 @@ export const EconomicSection = React.memo<EconomicSectionProps>(
           <DataTable
             data={sectorTableData}
             columns={[
-              { key: "sector", label: "Sector", align: "left" },
-              { key: "performance", label: "Performance", align: "right" },
-              { key: "growth", label: "Growth Rate", align: "right" },
-              { key: "contribution", label: "GDP Contribution", align: "right" },
-              { key: "trend", label: "Trend", align: "center" },
+              { key: "sector", header: "Sector", align: "left" },
+              { key: "performance", header: "Performance", align: "right" },
+              { key: "growth", header: "Growth Rate", align: "right" },
+              { key: "contribution", header: "GDP Contribution", align: "right" },
+              { key: "trend", header: "Trend", align: "center" },
             ]}
             title="Sector Performance"
             description="Economic sector performance metrics"
@@ -77,11 +77,11 @@ export const EconomicSection = React.memo<EconomicSectionProps>(
           <DataTable
             data={volatilityTableData}
             columns={[
-              { key: "metric", label: "Metric", align: "left" },
-              { key: "value", label: "Value", align: "right" },
-              { key: "volatility", label: "Volatility", align: "right" },
-              { key: "risk", label: "Risk Level", align: "center" },
-              { key: "trend", label: "Trend", align: "center" },
+              { key: "metric", header: "Metric", align: "left" },
+              { key: "value", header: "Value", align: "right" },
+              { key: "volatility", header: "Volatility", align: "right" },
+              { key: "risk", header: "Risk Level", align: "center" },
+              { key: "trend", header: "Trend", align: "center" },
             ]}
             title="Volatility Metrics"
             description="Economic volatility and risk indicators"

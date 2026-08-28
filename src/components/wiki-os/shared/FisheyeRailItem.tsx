@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/shared/FisheyeRailItem.tsx
 // Fisheye magnification icon wrapper with physics-based spring glow.
-
-"use client";
 
 import { useRef } from "react";
 import { motion, useTransform, useSpring, type MotionValue } from "motion/react";

@@ -1,3 +1,4 @@
+"use client";
 /**
  * CardDesignerStudio Component
  *
@@ -5,8 +6,6 @@
  * Clean Facet design system architecture with live 3D physics,
  * vector icon library, multi-archive lore import, and direct DB publishing.
  */
-
-"use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useNotify } from "~/hooks/useNotify";

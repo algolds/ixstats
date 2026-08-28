@@ -1,9 +1,8 @@
+"use client";
 // src/components/wiki-os/margin/MarginGutterPins.tsx
 // Renders margin gutter pin indicators precisely aligned with article text highlights and headings.
 // Features debounced rAF layout batching, stable hitboxes, and frictionless hover physics.
 // Apple Design & WikiOS Standard.
-
-"use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { ChatBubble as MessageSquare, DesignPencil as Highlighter } from "iconoir-react";

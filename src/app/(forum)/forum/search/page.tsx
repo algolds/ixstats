@@ -1,7 +1,6 @@
+"use client";
 // src/app/(forum)/forum/search/page.tsx
 // Forum search results page.
-
-"use client";
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";

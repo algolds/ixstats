@@ -1,7 +1,6 @@
+"use client";
 // src/components/cards/pack-opening/Stage4_QuickActions.tsx
 // Stage 4: Post-reveal quick actions for cards
-
-"use client";
 
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";

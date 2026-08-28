@@ -1,5 +1,5 @@
-// src/components/defense/stability/StabilityHelpDialog.tsx
 "use client";
+// src/components/defense/stability/StabilityHelpDialog.tsx
 
 import React from "react";
 import {

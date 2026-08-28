@@ -1,7 +1,6 @@
+"use client";
 // src/components/shared/editor/EditorToolbar.tsx
 // Formatting toolbar for GlassPlateEditor with Facet glass physics styling.
-
-"use client";
 
 import { useState } from "react";
 import {

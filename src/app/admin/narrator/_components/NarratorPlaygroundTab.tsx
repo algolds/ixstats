@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/narrator/_components/NarratorPlaygroundTab.tsx
 // AI Narrator Live Simulation & Playground Testing Tab
-"use client";
 
 import React, { useState, useEffect } from "react";
 import { api } from "~/trpc/react";

@@ -1,9 +1,8 @@
+"use client";
 /**
  * CollectionGallery Component
  * Public collection browser with filtering, sorting, and leaderboards
  */
-
-"use client";
 
 import React, { useState } from "react";
 import { motion } from "motion/react";

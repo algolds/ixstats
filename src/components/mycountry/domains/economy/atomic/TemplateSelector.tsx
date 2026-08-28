@@ -1,11 +1,10 @@
+"use client";
 /**
  * Template Selector
  *
  * Quick selection of preset economic configurations.
  * Optimized with React.memo for performance.
  */
-
-"use client";
 
 import React from "react";
 import { Button } from "~/components/ui/button";

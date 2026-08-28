@@ -1,7 +1,7 @@
 "use client";
 import React, { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform, useMotionTemplate } from "motion/react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 /**
  * CometCard component props

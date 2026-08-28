@@ -1,5 +1,5 @@
-// src/app/admin/economic-archetypes/_components/EconomicArchetypeFormDialog.tsx
 "use client";
+// src/app/admin/economic-archetypes/_components/EconomicArchetypeFormDialog.tsx
 
 import React from "react";
 import {

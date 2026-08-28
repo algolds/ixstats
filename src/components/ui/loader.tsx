@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { usePathname } from "next/navigation";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 // IOSActivityIndicator: Premium theme-compliant iOS-inspired loading spinner
 export function IOSActivityIndicator({

@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/cards/CardSettingsAdmin.tsx
 // Unified Settings Studio for Card System Policies, Packs, Seasons, Valuation, Economy, and Takedowns
-"use client";
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";

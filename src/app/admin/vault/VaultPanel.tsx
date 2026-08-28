@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/vault/VaultPanel.tsx
 // Vault Store & Economy Command Suite
-"use client";
 
 import { useState } from "react";
 import {

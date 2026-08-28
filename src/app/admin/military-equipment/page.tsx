@@ -1,5 +1,5 @@
-// src/app/admin/military-equipment/page.tsx
 "use client";
+// src/app/admin/military-equipment/page.tsx
 
 import { AdminRouter } from "../_components/AdminRouter";
 

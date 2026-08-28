@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion, useTransform } from "motion/react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import type { FacetTabsProps } from "./types";
 import { useTabBounds } from "./useTabBounds";
 import { useSliderPhysics } from "../hooks/useSliderPhysics";

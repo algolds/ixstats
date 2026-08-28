@@ -1,10 +1,9 @@
+"use client";
 /**
  * RarityBadge Component
  * Animated rarity indicator for trading cards
  * Phase 1: Card Display Components
  */
-
-"use client";
 
 import React from "react";
 import { motion } from "motion/react";

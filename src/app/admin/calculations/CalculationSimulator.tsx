@@ -1,5 +1,5 @@
-// src/app/admin/calculations/CalculationSimulator.tsx
 "use client";
+// src/app/admin/calculations/CalculationSimulator.tsx
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

@@ -1,5 +1,5 @@
-// src/components/defense/command/BudgetManagementCard.tsx
 "use client";
+// src/components/defense/command/BudgetManagementCard.tsx
 
 import React from "react";
 import {

@@ -1,6 +1,6 @@
+"use client";
 // src/app/(wiki-os)/util/templates/page.tsx
 // WikiOS Master Template Registry & Interactive Visual Infobox Suite
-"use client";
 
 import React, { useState, useMemo } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars

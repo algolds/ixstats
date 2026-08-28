@@ -1,7 +1,6 @@
+"use client";
 // src/hooks/marketplace/useAuctionBid.ts
 // Hook for placing bids and buyouts on auctions via tRPC
-
-"use client";
 
 import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";

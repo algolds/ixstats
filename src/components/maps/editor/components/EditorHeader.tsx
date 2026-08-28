@@ -21,10 +21,18 @@ import {
   Magnet,
   Eye,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
+import dynamic from "next/dynamic";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "~/components/ui/dialog";
-import { RouteNetworkView } from "~/components/maps/RouteNetworkView";
+
+const RouteNetworkView = dynamic(
+  () => import("~/components/maps/RouteNetworkView").then((m) => m.RouteNetworkView),
+  {
+    loading: () => <div className="h-96 animate-pulse rounded-xl bg-white/5" />,
+    ssr: false,
+  }
+);
 
 interface EditorHeaderProps {
   countryInfo: { name: string } | null | undefined;

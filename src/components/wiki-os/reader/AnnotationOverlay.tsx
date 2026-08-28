@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/reader/AnnotationOverlay.tsx
 // High-performance DOM highlighter for WikiOS article text annotations.
 // Full Apple Design & Facet compliance.
-
-"use client";
 
 import { useEffect, useCallback, type RefObject } from "react";
 import { soundEffects } from "~/lib/sound/cuelume";

@@ -1,10 +1,9 @@
+"use client";
 /**
  * CardDisplay Component - PREMIUM EDITION
  * Yu-Gi-Oh style digital trading card with holographic effects
  * Phase 1.5: Premium UI/UX Refactor with Glass Physics
  */
-
-"use client";
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";

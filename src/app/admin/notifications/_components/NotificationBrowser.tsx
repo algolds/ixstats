@@ -34,7 +34,11 @@ import {
 } from "iconoir-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "~/lib/utils";
-import { SwipeableRow, SwipeableGroup, SwipeActionButton } from "~/components/ui/facet/swipeable";
+import {
+  SwipeableRow,
+  SwipeableGroup,
+  SwipeActionButton,
+} from "~/components/ui/facet/swipeable/SwipeableRow";
 import { motion } from "motion/react";
 
 const TYPE_OPTIONS = [

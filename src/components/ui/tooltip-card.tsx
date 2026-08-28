@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 export const Tooltip = ({
   content,

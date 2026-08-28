@@ -1,6 +1,6 @@
+"use client";
 // src/components/wiki-os/history/ScrubbableRevisionTimeline.tsx
 // Interactive Scrubbable Revision Timeline & Diff Inspection Suite
-"use client";
 
 import * as React from "react";
 import {

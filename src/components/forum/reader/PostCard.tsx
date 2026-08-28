@@ -1,7 +1,6 @@
+"use client";
 // src/components/forum/reader/PostCard.tsx
 // Renders a single forum post within a thread view.
-
-"use client";
 
 import { useState, useCallback } from "react";
 import Link from "next/link";

@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/npc-personalities/NPCPersonalitiesPanel.tsx
 // Unified NPC Personality Archetypes Admin Panel with standard iconoir icons
-"use client";
 
 import { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";

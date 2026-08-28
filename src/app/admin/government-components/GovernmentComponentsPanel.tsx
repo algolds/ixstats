@@ -1,5 +1,5 @@
-// src/app/admin/government-components/GovernmentComponentsPanel.tsx
 "use client";
+// src/app/admin/government-components/GovernmentComponentsPanel.tsx
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AtomicComponentManager } from "~/components/admin/atomic-components/AtomicComponentManager";

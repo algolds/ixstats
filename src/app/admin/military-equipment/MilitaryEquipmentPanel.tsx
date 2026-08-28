@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/military-equipment/MilitaryEquipmentPanel.tsx
 // Unified tabbed Military Equipment Catalog Admin Panel
-"use client";
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";

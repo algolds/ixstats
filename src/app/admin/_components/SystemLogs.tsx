@@ -1,5 +1,5 @@
-// src/app/admin/_components/SystemLogs.tsx
 "use client";
+// src/app/admin/_components/SystemLogs.tsx
 
 import { useState } from "react";
 import Link from "next/link";

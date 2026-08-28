@@ -1,5 +1,5 @@
-// src/app/admin/economic-archetypes/page.tsx
 "use client";
+// src/app/admin/economic-archetypes/page.tsx
 
 import { AdminRouter } from "../_components/AdminRouter";
 

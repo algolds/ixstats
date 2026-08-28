@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/margin/modals/MarginCategoryHelpModal.tsx
 // Interactive Category Guide modal for the 5 Ws Thread Categories in WikiOS Margin.
 // Apple Design & Lore Theory Standard.
-
-"use client";
 
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";

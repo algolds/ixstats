@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/shared/ActiveCountryUnifiedWidget.tsx
 // Active Country context widget displaying flag, status, and detail popovers.
-
-"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { cn } from "~/lib/utils";

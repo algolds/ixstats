@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/calculations/CalculationEditor.tsx
 // Formula & Macro Simulation Engine Editor
-"use client";
 
 import { useState, useEffect } from "react";
 import {

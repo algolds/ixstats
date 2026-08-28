@@ -1,9 +1,8 @@
+"use client";
 /**
  * Collection Detail Page - Enhanced
  * View collection with 3D carousel, social features, and interactive card display
  */
-
-"use client";
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";

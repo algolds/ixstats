@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/intelligence-templates/IntelligenceTemplatesPanel.tsx
 // Admin interface for managing intelligence report templates
-"use client";
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";

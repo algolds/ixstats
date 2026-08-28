@@ -1,7 +1,7 @@
+"use client";
 /**
  * SettingsDropdown.tsx — Reusable Popover dropdown for editor preferences (autocomplete, word wrap, line numbers).
  */
-"use client";
 
 import React, { memo } from "react";
 import { Settings } from "iconoir-react";

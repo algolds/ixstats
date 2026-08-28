@@ -1,11 +1,10 @@
+"use client";
 /**
  * Department List Component (Refactored)
  *
  * Renders departments in a premium glassmorphic grid layout.
  * Clicking a card opens a Radix/shadcn centered Dialog modal to edit details and link atomic components.
  */
-
-"use client";
 
 import React, { useState } from "react";
 import { Button } from "~/components/ui/button";

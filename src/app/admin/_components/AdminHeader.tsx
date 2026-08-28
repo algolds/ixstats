@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/_components/AdminHeader.tsx
 // Shared admin page header with title, description, and optional actions
-"use client";
 
 interface AdminHeaderProps {
   icon: React.ComponentType<{ className?: string }>;

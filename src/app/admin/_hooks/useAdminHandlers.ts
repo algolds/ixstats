@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/_hooks/useAdminHandlers.ts
 // Handler functions for admin panel actions
-"use client";
 
 import { useCallback } from "react";
 import { IxTime } from "~/lib/ixtime";

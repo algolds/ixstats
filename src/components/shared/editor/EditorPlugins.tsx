@@ -1,7 +1,6 @@
+"use client";
 // src/components/shared/editor/EditorPlugins.tsx
 // Core PlateJS plugin definitions for shared text editors.
-
-"use client";
 
 import React from "react";
 import { createPlatePlugin, ParagraphPlugin } from "platejs/react";

@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/editor/components/WikiEditorSavePanel.tsx
 // Unified save bar containing summary input, minor checkbox, and publish/session button.
-
-"use client";
 
 import React from "react";
 import { SystemRestart as Loader2 } from "iconoir-react";

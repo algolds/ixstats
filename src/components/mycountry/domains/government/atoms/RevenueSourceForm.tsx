@@ -33,11 +33,12 @@ import {
   ModernTv as Mountain,
   Coins,
 } from "iconoir-react";
-import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
 import {
-  revenueTaxIntegrationService,
+  type RevenueSourceInput,
+  type RevenueCategory,
   type CollectionMethod,
-} from "~/lib/builder/services/RevenueTaxIntegrationService";
+  COLLECTION_METHODS,
+} from "~/types/government";
 
 interface RevenueSourceFormProps {
   data: RevenueSourceInput[];
@@ -125,7 +126,7 @@ const getCollectionMethodIcon = (iconName: string) => {
 
 // Get relevant collection methods for a revenue category
 const getCollectionMethodsForCategory = (category: RevenueCategory): CollectionMethod[] => {
-  const allMethods = revenueTaxIntegrationService.COLLECTION_METHODS;
+  const allMethods = COLLECTION_METHODS;
 
   if (category === "Direct Tax") {
     return allMethods.filter((m) => m.isTaxRelated && m.taxCategoryType === "Direct Tax");

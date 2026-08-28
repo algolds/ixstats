@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/stashes/StashImagesGrid.tsx
 // Saved Wikimedia Commons media grid with interactive lightbox modal.
-
-"use client";
 
 import { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";

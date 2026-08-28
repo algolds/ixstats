@@ -1,8 +1,7 @@
+"use client";
 // src/app/labs/onoma/components/nav/OnomaFooter.tsx
 // ⟨ONOMA⟩ Unified Minimalist Footer Component with Cinematic Watermark Wash
 // Philosophy: Apple SF Symbols × IxStates National Flag Wash × Linguistic Notation
-
-"use client";
 
 import React from "react";
 import Link from "next/link";

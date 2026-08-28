@@ -1,5 +1,5 @@
-// src/app/admin/_components/DatabaseExplorer.tsx
 "use client";
+// src/app/admin/_components/DatabaseExplorer.tsx
 
 import React from "react";
 import { Database, CheckCircle, Server, HardDrive } from "iconoir-react";

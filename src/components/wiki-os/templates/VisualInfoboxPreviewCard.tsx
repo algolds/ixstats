@@ -1,6 +1,6 @@
+"use client";
 // src/components/wiki-os/templates/VisualInfoboxPreviewCard.tsx
 // Authentic High-Fidelity WikiOS Live Infobox Preview Component
-"use client";
 
 import React, { useMemo } from "react";
 import { motion } from "motion/react";

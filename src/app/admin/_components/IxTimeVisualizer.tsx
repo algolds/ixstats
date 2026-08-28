@@ -1,8 +1,7 @@
+"use client";
 /**
  * IxTime Visualizer - Unified time visualization with IRL comparison tools
  */
-
-"use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {

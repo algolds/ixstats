@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/margin/WikiMarginDrawer.tsx
 // Compact Right Sidebar Inspector for WikiOS (Threads, Markup, Live Sim Fact Inspect)
 // Signature Highlighter Yellow / Warm Amber branding for Margin.
-
-"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";

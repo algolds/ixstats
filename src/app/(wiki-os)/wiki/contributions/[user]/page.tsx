@@ -1,6 +1,6 @@
+"use client";
 // src/app/(wiki-os)/wiki/contributions/[user]/page.tsx
 // WikiOS User Contributions — shows edit history for a specific user
-"use client";
 
 import { useParams } from "next/navigation";
 import { useState } from "react";

@@ -1,5 +1,5 @@
-// src/hooks/useInternalStability.ts
 "use client";
+// src/hooks/useInternalStability.ts
 
 import React from "react";
 import { StatUp as TrendingUp, StatDown as TrendingDown, Minus } from "iconoir-react";

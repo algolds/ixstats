@@ -1,8 +1,8 @@
 "use client";
 
 import NumberFlow from "@number-flow/react";
-import { cn } from "~/lib/utils";
-import { getCurrencyInfo, safeFormatCurrency } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
+import { getCurrencyInfo, safeFormatCurrency } from "~/lib/utils/format-utils";
 
 interface NumberFlowDisplayProps {
   value: number;

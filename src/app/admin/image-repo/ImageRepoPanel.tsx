@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/image-repo/ImageRepoPanel.tsx
 // WikiOS Commons Repository Cache Admin Panel
-"use client";
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";

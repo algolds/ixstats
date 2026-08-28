@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/blurbs/BlurbsPanel.tsx
 // Blurbs Topic & Community Prompt Management Suite
-"use client";
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";

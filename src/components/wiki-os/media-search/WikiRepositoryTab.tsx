@@ -1,5 +1,5 @@
-// src/components/media-search/WikiRepositoryTab.tsx
 "use client";
+// src/components/media-search/WikiRepositoryTab.tsx
 
 import React, { useState, useEffect, useMemo } from "react";
 import { withBasePath } from "~/lib/base-path";

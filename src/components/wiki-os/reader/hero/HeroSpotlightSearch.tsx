@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/reader/hero/HeroSpotlightSearch.tsx
 // Inline Apple Spotlight Search Bar for WikiOS Hero with featured thumbnail images, direct DB queries, page creation, and keyboard navigation.
-
-"use client";
 
 import React, { useState, useEffect, useRef, useDeferredValue, useCallback } from "react";
 import { useRouter } from "next/navigation";

@@ -7,9 +7,8 @@
 
 import type { FeatureCollection } from "geojson";
 import type { PackedGraph } from "~/lib/worldgen/types";
-import { exportToGeoJSON } from "~/lib/worldgen/export-geojson";
-import { exportToGeoJSON as exportToGeoJSONV2 } from "~/lib/worldgen/v2/export";
-import { cellLng, cellLat } from "~/lib/worldgen/voronoi-mesh";
+import { exportToGeoJSON } from "~/lib/worldgen/v2/export";
+import { cellLng, cellLat } from "~/lib/worldgen/v2/mesh";
 
 export interface NormalizedCountryPayload {
   featureId: string;
@@ -57,11 +56,7 @@ export interface NormalizedMapData {
  */
 export function normalizeAzgaarGraph(graph: PackedGraph, seed = 42): NormalizedMapData {
   // 1. Export 7 GeoJSON layers sharing 100% identical cell topology & boundary alignment
-  const isV2Graph =
-    graph &&
-    graph.cells &&
-    ((graph.cells as any).isLand !== undefined || (graph.cells as any).plate !== undefined);
-  const rawLayers = isV2Graph ? exportToGeoJSONV2(graph as any) : exportToGeoJSON(graph);
+  const rawLayers = exportToGeoJSON(graph as any);
 
   // 2. Extract country metadata from states and political layer
   const countries: NormalizedCountryPayload[] = [];
@@ -134,7 +129,9 @@ export function normalizeAzgaarGraph(graph: PackedGraph, seed = 42): NormalizedM
       if (!river || !river.name || !river.cells) continue;
       const coordinates = Array.isArray(river.cells)
         ? river.cells.map((ci: any) =>
-            typeof ci === "number" ? [cellLng(graph, ci), cellLat(graph, ci)] : ci
+            typeof ci === "number"
+              ? [cellLng(graph as any, ci), cellLat(graph as any, ci)]
+              : ci
           )
         : [];
       rivers.push({

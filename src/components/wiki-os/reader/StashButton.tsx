@@ -1,13 +1,12 @@
+"use client";
 // src/components/wiki-os/reader/StashButton.tsx
 // Lore Stash button — one-click save with color-coded stash popover.
 // Glass physics animated with shine, pulse, ripple, and color-shift.
 
-"use client";
-
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   Bookmark,
-  BookmarkSolid as BookmarkCheck,
+  Bookmark as BookmarkCheck,
   Check,
   Plus,
   Xmark as X,

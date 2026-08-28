@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/editor/components/WikiEditorModalHost.tsx
 // Centralized modal host for WikiOS Visual and Source editors.
-
-"use client";
 
 import React, { useState } from "react";
 import { Puzzle, Xmark as X } from "iconoir-react";

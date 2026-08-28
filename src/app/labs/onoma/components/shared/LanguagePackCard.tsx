@@ -1,11 +1,12 @@
 "use client";
 
+import { BookmarkBook, GitFork, Star, Translate } from "iconoir-react";
+
 // src/app/labs/onoma/components/shared/LanguagePackCard.tsx
 // Onoma Lab — Tactile 3D Language Pack Card (Vault-Style Spatial Physics & Facet Material)
 
 import React, { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { RiBookMarkedLine, RiGitForkLine, RiStarFill, RiTranslate2 } from "react-icons/ri";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -181,7 +182,7 @@ export function LanguagePackCard({
           </Badge>
 
           <div className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-500">
-            <RiStarFill className="h-3 w-3 fill-amber-400 text-amber-400" />
+            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
             <span>{pack.ratingAvg > 0 ? pack.ratingAvg.toFixed(1) : "New"}</span>
             {pack.ratingCount > 0 && (
               <span className="text-muted-foreground text-[9px] font-normal">
@@ -199,7 +200,7 @@ export function LanguagePackCard({
               theme.border
             )}
           >
-            <RiBookMarkedLine className={cn("h-7 w-7", theme.text)} />
+            <BookmarkBook className={cn("h-7 w-7", theme.text)} />
           </div>
 
           <h3 className="text-foreground line-clamp-1 text-sm font-bold tracking-tight">
@@ -244,7 +245,7 @@ export function LanguagePackCard({
             }}
             className="border-border/60 bg-background/80 hover:bg-background text-foreground h-8 flex-1 rounded-xl text-xs font-semibold"
           >
-            <RiTranslate2 className="text-muted-foreground mr-1 h-3.5 w-3.5" />
+            <Translate className="text-muted-foreground mr-1 h-3.5 w-3.5" />
             <span>Inspect</span>
           </Button>
 
@@ -258,7 +259,7 @@ export function LanguagePackCard({
             }}
             className="bg-onoma-primary hover:bg-onoma-primary-light h-8 flex-1 rounded-xl text-xs font-bold text-white shadow-sm transition-all active:scale-95"
           >
-            <RiGitForkLine className="mr-1 h-3.5 w-3.5" />
+            <GitFork className="mr-1 h-3.5 w-3.5" />
             <span>Fork Pack</span>
           </Button>
         </div>

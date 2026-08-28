@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/storyteller/_components/CountrySelector.tsx
 // Shared country multi-select for world events
-"use client";
 
 import { useState, useMemo } from "react";
 import { api } from "~/trpc/react";

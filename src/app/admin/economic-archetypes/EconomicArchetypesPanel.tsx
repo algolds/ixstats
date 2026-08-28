@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/economic-archetypes/EconomicArchetypesPanel.tsx
 // Admin interface for managing economic archetypes
-"use client";
 
 import { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";

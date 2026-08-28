@@ -1,9 +1,9 @@
+"use client";
 // src/app/admin/_components/SystemCronScheduleWidget.tsx
 // Visualizes and diagnoses the system cron jobs / background tasks
-"use client";
 
 import React, { useState } from "react";
-import { CronSchedule } from "~/components/ui/cron-schedule";
+import { CronSchedule } from "./CronSchedule";
 import { cn } from "~/lib/utils";
 import {
   Hammer as Gavel,

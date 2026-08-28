@@ -18,7 +18,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Skeleton } from "~/components/ui/skeleton";
-import { CardDisplay } from "~/components/cards/display";
+import { CardDisplay } from "~/components/cards/display/CardDisplay";
 import type { CardInstance } from "~/types/cards-display";
 import type { FilterState, ViewMode } from "./types";
 

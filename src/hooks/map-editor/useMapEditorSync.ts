@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useCallback, useRef } from "react";
+import { useMemo, useCallback } from "react";
 import { api } from "~/trpc/react";
+import { debounce } from "~/lib/utils";
 import type { EditorFeature } from "./editor-types";
 
 interface UseMapEditorSyncProps {
@@ -11,7 +12,6 @@ interface UseMapEditorSyncProps {
 
 export function useMapEditorSync({ countryId, skipLinkageGate = false }: UseMapEditorSyncProps) {
   const utils = api.useUtils();
-  const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Queries
   const {
@@ -57,14 +57,7 @@ export function useMapEditorSync({ countryId, skipLinkageGate = false }: UseMapE
     void refetchCountryLinkage();
   }, [refetchGeoFeatures, refetchRoutes, refetchCountryGeo, refetchCountryLinkage]);
 
-  const debouncedRefetch = useCallback(() => {
-    if (refetchTimerRef.current) {
-      clearTimeout(refetchTimerRef.current);
-    }
-    refetchTimerRef.current = setTimeout(() => {
-      refetchFeatures();
-    }, 200);
-  }, [refetchFeatures]);
+  const debouncedRefetch = useMemo(() => debounce(refetchFeatures, 200), [refetchFeatures]);
 
   // Aggregate All Features
   const allFeatures: EditorFeature[] = useMemo(() => {

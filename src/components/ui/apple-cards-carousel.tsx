@@ -6,7 +6,7 @@ import {
   ArrowRight as IconArrowNarrowRight,
   Xmark as IconX,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { AnimatePresence, motion } from "motion/react";
 import Image, { type ImageProps } from "next/image";
 import { useOutsideClick } from "~/hooks/use-outside-click";

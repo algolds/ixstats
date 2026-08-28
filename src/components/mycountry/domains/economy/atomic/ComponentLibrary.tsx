@@ -1,11 +1,10 @@
+"use client";
 /**
  * Component Library
  *
  * Grid display of available economic components with selection functionality.
  * Optimized with React.memo for performance.
  */
-
-"use client";
 
 import React from "react";
 import { ComponentCard } from "./ComponentCard";

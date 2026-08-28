@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/users/UsersPanel.tsx
 // Master User Identity, MediaWiki Reconciliation, and Discord Bot Sync Control Center
-"use client";
 
 import { useState } from "react";
 import { api } from "~/trpc/react";

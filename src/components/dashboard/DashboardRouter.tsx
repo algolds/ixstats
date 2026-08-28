@@ -29,10 +29,10 @@ export function DashboardRouter({ discordBadge }: DashboardRouterProps) {
     enabled: !!user?.id,
     staleTime: 60_000,
   });
-  const countryId = userProfile?.countryId || "";
+  const countryId = userProfile?.countryId || (user as any)?.countryId || "";
   const { data: mapStatus } = api.countries.getMapLinkStatus.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 60_000 }
+    { enabled: !!countryId && countryId.trim() !== "", staleTime: 60_000 }
   );
 
   const appliedDefaultCollapse = useRef(false);

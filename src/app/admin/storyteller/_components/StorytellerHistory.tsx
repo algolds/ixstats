@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/storyteller/_components/StorytellerHistory.tsx
 // Audit log of admin storyteller actions
-"use client";
 
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";

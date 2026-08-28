@@ -1,7 +1,6 @@
+"use client";
 // src/app/(wiki-os)/wiki/user/[username]/page.tsx
 // WikiOS User Profile — contributions, Loreward stats, streak calendar.
-
-"use client";
 
 import { useParams } from "next/navigation";
 import Link from "next/link";

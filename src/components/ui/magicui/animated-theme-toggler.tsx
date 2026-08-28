@@ -3,7 +3,7 @@
 import { HalfMoon as Moon, SunLight as SunDim } from "iconoir-react";
 import { useRef } from "react";
 import { flushSync } from "react-dom";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { useTheme } from "~/context/theme-context";
 
 type props = {

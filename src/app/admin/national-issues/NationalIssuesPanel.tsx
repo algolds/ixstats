@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/national-issues/NationalIssuesPanel.tsx
 // National Issues Admin Panel with Facet styling and single-page routing
-"use client";
 
 import { useState, useEffect } from "react";
 import {

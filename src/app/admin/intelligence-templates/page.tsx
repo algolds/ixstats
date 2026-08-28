@@ -1,5 +1,5 @@
-// src/app/admin/intelligence-templates/page.tsx
 "use client";
+// src/app/admin/intelligence-templates/page.tsx
 
 import { AdminRouter } from "../_components/AdminRouter";
 

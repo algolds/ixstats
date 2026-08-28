@@ -1,9 +1,8 @@
+"use client";
 /**
  * useSlashMenuState.ts — Tracks the `/` trigger and search query for the
  * WikiOS slash command menu, driven by Plate onKeyDown events.
  */
-
-"use client";
 
 import { useCallback, useRef, useState } from "react";
 

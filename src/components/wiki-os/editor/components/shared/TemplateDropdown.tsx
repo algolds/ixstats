@@ -1,7 +1,7 @@
+"use client";
 /**
  * TemplateDropdown.tsx — Reusable Popover dropdown for quick template triggers.
  */
-"use client";
 
 import React, { memo } from "react";
 import { Puzzle, Sparks as Sparkles, Map as MapIcon } from "iconoir-react";

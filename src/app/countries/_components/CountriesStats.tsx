@@ -1,17 +1,10 @@
 "use client";
 
+import { NavArrowDown, Check, Globe, Group, MapPin, StatsReport, Trophy } from "iconoir-react";
+
 import React, { useMemo } from "react";
 import { motion } from "motion/react";
 import { type CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
-import {
-  RiGlobalLine,
-  RiGroupLine,
-  RiBarChartLine,
-  RiTrophyLine,
-  RiArrowDownSLine,
-  RiCheckLine,
-  RiMapPinLine,
-} from "react-icons/ri";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 
@@ -110,7 +103,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-blue-500/10 p-2">
-                  <RiGlobalLine className="h-5 w-5 text-blue-400" />
+                  <Globe className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>
                   <p className="text-muted-foreground text-sm">{continentFilter || "Countries"}</p>
@@ -137,7 +130,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                 )}
               >
                 <span>All Continents</span>
-                {!continentFilter && <RiCheckLine className="h-3.5 w-3.5" />}
+                {!continentFilter && <Check className="h-3.5 w-3.5" />}
               </button>
               <div className="border-border my-1.5 border-t" />
               <div className="max-h-48 space-y-0.5 overflow-y-auto">
@@ -232,7 +225,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-purple-500/10 p-2">
-                  <RiBarChartLine className="h-5 w-5 text-purple-400" />
+                  <StatsReport className="h-5 w-5 text-purple-400" />
                 </div>
                 <div>
                   <p className="text-muted-foreground text-sm">Combined GDP</p>
@@ -284,7 +277,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-orange-500/10 p-2">
-                  <RiTrophyLine className="h-5 w-5 text-orange-400" />
+                  <Trophy className="h-5 w-5 text-orange-400" />
                 </div>
                 <div>
                   <p className="text-muted-foreground text-sm">Avg GDP/Capita</p>

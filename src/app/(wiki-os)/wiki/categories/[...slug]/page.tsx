@@ -1,7 +1,7 @@
+"use client";
 // src/app/(wiki-os)/wiki/categories/[...slug]/page.tsx
 // WikiOS Category Portal — auto-detects country/domain/standard categories
 // and renders enriched views with IxStats data integration.
-"use client";
 
 import { useMemo } from "react";
 import { useParams } from "next/navigation";

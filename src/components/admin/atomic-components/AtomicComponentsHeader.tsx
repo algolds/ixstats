@@ -1,6 +1,6 @@
+"use client";
 // src/components/admin/atomic-components/AtomicComponentsHeader.tsx
 // Universal Header & Filter Toolbar for Atomic Simulation Components
-"use client";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

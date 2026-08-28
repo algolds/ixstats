@@ -5,7 +5,7 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { PollWidget } from "~/components/ui/poll-widget";
 import { FeatureVoting } from "~/components/ui/feature-voting";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { ArrowUp } from "iconoir-react";
 import { toast } from "sonner";
 

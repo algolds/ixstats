@@ -1,6 +1,6 @@
+"use client";
 // src/components/wiki-os/shared/WikiUtilitiesRibbon.tsx
 // Universal macOS-inspired Utilities & Special Navigation Ribbon for non-article wiki pages.
-"use client";
 
 import React from "react";
 import Link from "next/link";

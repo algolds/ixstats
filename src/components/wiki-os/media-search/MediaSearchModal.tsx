@@ -1,5 +1,5 @@
-// src/components/MediaSearchModal.tsx
 "use client";
+// src/components/MediaSearchModal.tsx
 
 import React, { useState, useEffect } from "react";
 import { SystemRestart as Loader2, Download } from "iconoir-react";

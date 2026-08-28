@@ -1,7 +1,6 @@
+"use client";
 // src/components/halo/plugins/wiki/views/WikiView.tsx
 // Wiki mode for the Dynamic Island / Halo — search, collapsible TOC, narrator player, quick actions.
-
-"use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";

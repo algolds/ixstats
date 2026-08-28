@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Headless Atomic Selector State Hook (Plan 166)
  *
@@ -9,8 +11,6 @@
  *
  * Strictly domain-agnostic: imports NO economic, government, or tax data or formulas.
  */
-
-"use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 

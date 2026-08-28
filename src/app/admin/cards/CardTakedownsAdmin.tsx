@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/cards/CardTakedownsAdmin.tsx
 // NS Card Takedown & Compliance Management
-"use client";
 
 import { useState } from "react";
 import { ShieldAlert, Refresh as RefreshCw, Undo as RotateCcw } from "iconoir-react";

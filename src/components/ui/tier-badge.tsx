@@ -11,7 +11,7 @@ import {
   Bank as Landmark,
 } from "iconoir-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { cn, toTitleCase } from "~/lib/utils";
+import { cn, toTitleCase } from "~/lib/utils/cn";
 
 // ── Economic Tier Config — solid colors, no gradients ──
 

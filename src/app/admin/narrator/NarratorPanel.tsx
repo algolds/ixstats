@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/narrator/NarratorPanel.tsx
 // AI Narrator Global Configuration & Testing Suite
-"use client";
 
 import React, { useState, useEffect } from "react";
 import { api } from "~/trpc/react";

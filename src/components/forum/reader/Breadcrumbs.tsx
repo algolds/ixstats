@@ -1,7 +1,6 @@
+"use client";
 // src/components/forum/reader/Breadcrumbs.tsx
 // Forum breadcrumb navigation.
-
-"use client";
 
 import Link from "next/link";
 import { NavArrowRight as ChevronRight } from "iconoir-react";

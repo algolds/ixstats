@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/_components/AdminRouter.tsx
 // Central pushState single-page router for all 47 Admin interfaces
-"use client";
 
 import React from "react";
 import dynamic from "next/dynamic";

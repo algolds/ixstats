@@ -1,7 +1,6 @@
+"use client";
 // src/app/admin/wiki/components/ManualLinkEditorSection.tsx
 // Manual wiki article link editor with live test preview.
-
-"use client";
 
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "~/components/ui/button";

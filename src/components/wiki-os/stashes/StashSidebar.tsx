@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/stashes/StashSidebar.tsx
 // Modern Apple Design collection navigator for the Stash system.
 // Features Facet glassmorphism, responsive spring animations, inline rename & color curation.
-
-"use client";
 
 import { useState } from "react";
 import {

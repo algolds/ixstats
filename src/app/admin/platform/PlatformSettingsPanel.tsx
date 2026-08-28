@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/platform/PlatformSettingsPanel.tsx
 // Unified General Settings & Platform Control Panel
-"use client";
 
 import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";

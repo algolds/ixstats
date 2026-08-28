@@ -1,7 +1,6 @@
+"use client";
 // src/app/(forum)/forum/bookmarks/page.tsx
 // Forum stashes — shows threads saved via the LoreStash system.
-
-"use client";
 
 import Link from "next/link";
 import {

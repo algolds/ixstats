@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/editor/hooks/useWikiVisualFormatting.ts
 // Visual editing via Plate/Slate transforms. Preserves the original hook's
 // public interface so toolbars and modal hosts need no changes.
-
-"use client";
 
 import { useState, useCallback } from "react";
 import { api } from "~/trpc/react";

@@ -1,7 +1,6 @@
+"use client";
 // src/components/forum/reader/ForumCategoryCard.tsx
 // Renders a forum category/sub-forum card on the forum index page.
-
-"use client";
 
 import Link from "next/link";
 import { ChatBubble as MessageSquare, Clock } from "iconoir-react";

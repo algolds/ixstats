@@ -4,11 +4,20 @@ import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { createUrl } from "~/lib/utils";
-import { LoadingState } from "~/components/ui/shared/feedback/LoadingState";
+import { IOSActivityIndicator } from "~/components/ui/loader";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { BuilderRouter } from "~/app/builder/components/BuilderRouter";
 
 export const dynamic = "force-dynamic";
+
+function LoadingFallback({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 py-16">
+      <IOSActivityIndicator size="md" />
+      <p className="text-muted-foreground text-sm">{message}</p>
+    </div>
+  );
+}
 
 export default function MyCountryEditor() {
   usePageTitle({ title: "Country Editor" });
@@ -18,21 +27,21 @@ export default function MyCountryEditor() {
   const { country, profileLoading, countryLoading, userProfile } = useUserCountry();
 
   if (!isLoaded || profileLoading) {
-    return <LoadingState message="Loading profile..." />;
+    return <LoadingFallback message="Loading profile..." />;
   }
 
   if (!user) {
     router.push(createUrl("/sign-in"));
-    return <LoadingState message="Redirecting to sign in..." />;
+    return <LoadingFallback message="Redirecting to sign in..." />;
   }
 
   if (!userProfile?.countryId) {
     router.push(createUrl("/builder"));
-    return <LoadingState message="No country found. Redirecting to builder..." />;
+    return <LoadingFallback message="No country found. Redirecting to builder..." />;
   }
 
   if (countryLoading || !country) {
-    return <LoadingState message="Loading country data..." />;
+    return <LoadingFallback message="Loading country data..." />;
   }
 
   return <BuilderRouter mode="edit" countryId={country.id} />;

@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/cards/CardImportStudio.tsx
 // Unified Import Studio for Wiki Lore, NationStates Sync, and Commons Flags
-"use client";
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";

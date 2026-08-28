@@ -1,5 +1,5 @@
-// src/app/admin/_components/platform/NotificationTestCard.tsx
 "use client";
+// src/app/admin/_components/platform/NotificationTestCard.tsx
 
 import { useState } from "react";
 import {

@@ -1,5 +1,25 @@
 "use client";
 
+import {
+  Brain,
+  Calendar,
+  Camera,
+  CheckCircle,
+  EditPencil,
+  Eye,
+  EyeClosed,
+  WhiteFlag,
+  Flash,
+  Globe,
+  LightBulb,
+  Settings,
+  ShareAndroid,
+  StatsReport,
+  User,
+  MicrophoneSpeaking,
+  Xmark,
+} from "iconoir-react";
+
 import React from "react";
 import { cn } from "~/lib/utils";
 import {
@@ -9,26 +29,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import {
-  RiGlobalLine,
-  RiQuillPenLine,
-  RiFlagLine,
-  RiCheckboxCircleLine,
-  RiBrainLine,
-  RiSettings4Line,
-  RiCalendarLine,
-  RiEyeLine,
-  RiEyeOffLine,
-  RiUserVoiceLine,
-  RiFlashlightLine,
-  RiLightbulbLine,
-  RiCameraLine,
-  RiUserLine,
-  RiEditLine,
-  RiShareLine,
-  RiCloseLine,
-  RiBarChartLine,
-} from "react-icons/ri";
 
 interface CulturalExchange {
   id: string;
@@ -143,7 +143,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
-              <RiGlobalLine className="h-6 w-6 text-[--intel-gold]" />
+              <Globe className="h-6 w-6 text-[--intel-gold]" />
               Exchange Details
             </DialogTitle>
             <DialogDescription>Comprehensive view of cultural exchange program</DialogDescription>
@@ -182,7 +182,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                   JSON.parse((exchange as any).objectives || "[]").length > 0 && (
                     <div className="facet-hierarchy-child rounded-lg border border-white/10 p-4">
                       <div className="mb-3 flex items-center gap-2">
-                        <RiFlagLine className="h-4 w-4 text-green-400" />
+                        <WhiteFlag className="h-4 w-4 text-green-400" />
                         <h6 className="text-foreground font-medium">Program Objectives</h6>
                       </div>
                       <div className="space-y-2">
@@ -282,7 +282,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                       <span className="text-foreground flex items-center gap-1">
                         {(exchange as any).isPublic !== false ? (
                           <>
-                            <RiEyeLine className="h-3.5 w-3.5 text-green-400" />
+                            <Eye className="h-3.5 w-3.5 text-green-400" />
                             Public
                           </>
                         ) : (
@@ -457,7 +457,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                 {exchange.status === "active" && (
                   <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4">
                     <div className="flex items-start gap-3">
-                      <RiFlashlightLine className="mt-0.5 h-5 w-5 shrink-0 text-cyan-400" />
+                      <Flash className="mt-0.5 h-5 w-5 shrink-0 text-cyan-400" />
                       <div className="flex-1">
                         <h6 className="text-foreground mb-1 font-medium">Generate Scenario</h6>
                         <p className="mb-3 text-xs text-[--intel-silver]">
@@ -476,7 +476,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                             </>
                           ) : (
                             <>
-                              <RiLightbulbLine className="h-4 w-4" />
+                              <LightBulb className="h-4 w-4" />
                               Generate Scenario
                             </>
                           )}
@@ -490,7 +490,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                 {exchange.culturalArtifacts.length > 0 && (
                   <div className="space-y-3">
                     <h6 className="text-foreground flex items-center gap-2 font-medium">
-                      <RiCameraLine className="h-4 w-4" />
+                      <Camera className="h-4 w-4" />
                       Cultural Artifacts ({exchange.culturalArtifacts.length})
                     </h6>
                     <div className="grid grid-cols-2 gap-2">
@@ -507,7 +507,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                               className="h-full w-full rounded-lg object-cover"
                             />
                           ) : (
-                            <RiCameraLine className="h-6 w-6 text-[--intel-silver]" />
+                            <Camera className="h-6 w-6 text-[--intel-silver]" />
                           )}
                         </div>
                       ))}
@@ -524,21 +524,21 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                       onClick={() => onJoin(exchange.id, "participant")}
                       className="flex w-full items-center justify-center gap-2 rounded-lg bg-[--intel-gold]/20 px-4 py-3 font-medium text-[--intel-gold] transition-colors hover:bg-[--intel-gold]/30"
                     >
-                      <RiUserLine className="h-4 w-4" />
+                      <User className="h-4 w-4" />
                       Join as Participant
                     </button>
                     <button
                       onClick={() => onJoin(exchange.id, "observer")}
                       className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-500/20 px-4 py-3 font-medium text-blue-400 transition-colors hover:bg-blue-500/30"
                     >
-                      <RiEyeLine className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                       Observe Exchange
                     </button>
                     <button
                       onClick={onUploadArtifact}
                       className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-500/20 px-4 py-3 font-medium text-green-400 transition-colors hover:bg-green-500/30"
                     >
-                      <RiCameraLine className="h-4 w-4" />
+                      <Camera className="h-4 w-4" />
                       Upload Artifact
                     </button>
                   </>
@@ -557,7 +557,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                       </>
                     ) : (
                       <>
-                        <RiBarChartLine className="h-4 w-4" />
+                        <StatsReport className="h-4 w-4" />
                         Calculate Impact
                       </>
                     )}
@@ -573,7 +573,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                     onClick={onEdit}
                     className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[--intel-gold]/20 px-4 py-3 font-medium text-[--intel-gold] transition-colors hover:bg-[--intel-gold]/30"
                   >
-                    <RiEditLine className="h-4 w-4" />
+                    <EditPencil className="h-4 w-4" />
                     Edit
                   </button>
                   <button
@@ -589,7 +589,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                     ) : (
                       <>
                         <RiShareLine className="h-4 w-4" />
-                        Share
+                        ShareAndroid
                       </>
                     )}
                   </button>
@@ -606,7 +606,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                         </>
                       ) : (
                         <>
-                          <RiCloseLine className="h-4 w-4" />
+                          <Xmark className="h-4 w-4" />
                           Cancel
                         </>
                       )}
@@ -627,7 +627,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                   ) : (
                     <>
                       <RiShareLine className="h-4 w-4" />
-                      Share
+                      ShareAndroid
                     </>
                   )}
                 </button>

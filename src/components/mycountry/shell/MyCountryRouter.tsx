@@ -15,7 +15,7 @@ import {
 } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
 import { MyCountryComplianceModal } from "~/components/mycountry/shared/modals/MyCountryComplianceModal";
-import { DashboardErrorBoundary } from "~/components/ui/shared/feedback/DashboardErrorBoundary";
+import { DashboardErrorBoundary } from "~/components/dashboard/DashboardErrorBoundary";
 import { withBasePath } from "~/lib/base-path";
 import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
 import { createUrl } from "~/lib/utils";

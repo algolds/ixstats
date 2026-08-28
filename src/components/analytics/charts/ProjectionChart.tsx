@@ -22,7 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Button } from "~/components/ui/button";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
 import type { ProjectionDataPoint } from "~/lib/utils";
-import type { Scenario, DateRange } from "~/hooks/useAnalyticsDashboard";
+import type { Scenario, DateRange } from "~/types/analytics-dashboard";
 
 interface ProjectionChartProps {
   data: ProjectionDataPoint[];

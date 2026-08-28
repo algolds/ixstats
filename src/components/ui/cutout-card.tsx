@@ -13,7 +13,7 @@ import Image from "next/image";
 import { useControllableState } from "~/hooks/useControllableState";
 import { motion, useReducedMotion } from "motion/react";
 
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { TextureOverlay, type TextureType } from "~/components/ui/texture-overlay";
 
 // ============================================================================

@@ -5,13 +5,13 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Bookmark,
-  BookmarkSolid as BookmarkCheck,
+  Bookmark as BookmarkCheck,
   EditPencil as Edit,
   OpenNewWindow as ExternalLink,
   SystemRestart as Loader2,
   Heart,
   Refresh as Repeat2,
-  ShareAndroid as Share,
+  ShareAndroid as ShareAndroid,
   Check,
   Trash,
   Xmark as X,
@@ -196,7 +196,7 @@ export function InlineWikiArticlePreview({
     [user, marginNote, isSubmittingNote, cleanTitle, createThreadMutation, notify]
   );
 
-  // ─── Post Actions (Share / Like / Reaction) ──────────────────────────────────
+  // ─── Post Actions (ShareAndroid / Like / Reaction) ──────────────────────────────────
   const handleShare = useCallback(
     async (e: React.MouseEvent) => {
       e.preventDefault();
@@ -525,19 +525,19 @@ export function InlineWikiArticlePreview({
             </PopoverContent>
           </Popover>
 
-          {/* 5. Share Button */}
+          {/* 5. ShareAndroid Button */}
           <button
             type="button"
             onClick={handleShare}
             className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none hover:bg-cyan-500/10 hover:text-cyan-500 active:scale-95"
-            title="Share article link"
+            title="ShareAndroid article link"
           >
             {copied ? (
               <Check className="h-3.5 w-3.5 text-cyan-500" />
             ) : (
-              <Share className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
+              <ShareAndroid className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
             )}
-            <span>{copied ? "Copied!" : "Share"}</span>
+            <span>{copied ? "Copied!" : "ShareAndroid"}</span>
           </button>
         </div>
 

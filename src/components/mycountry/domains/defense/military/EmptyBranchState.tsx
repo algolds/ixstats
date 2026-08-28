@@ -1,5 +1,5 @@
-// src/components/defense/military/EmptyBranchState.tsx
 "use client";
+// src/components/defense/military/EmptyBranchState.tsx
 
 import React from "react";
 import { Shield, Plus } from "iconoir-react";

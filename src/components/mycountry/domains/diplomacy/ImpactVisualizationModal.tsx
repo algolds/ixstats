@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowRight, ArrowUp, StatsReport, Check, LightBulb } from "iconoir-react";
+
 import React from "react";
 import {
   Dialog,
@@ -8,13 +10,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import {
-  RiLineChartLine,
-  RiArrowRightLine,
-  RiCheckLine,
-  RiArrowUpLine,
-  RiLightbulbLine,
-} from "react-icons/ri";
 
 interface LongTermEffects {
   culturalTiesStrength?: number;
@@ -71,7 +66,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                   </div>
                   <div className="text-xs text-[--intel-silver]">Before</div>
                 </div>
-                <RiArrowRightLine className="h-8 w-8 text-[--intel-silver]" />
+                <ArrowRight className="h-8 w-8 text-[--intel-silver]" />
                 <div className="text-center">
                   <div className="mb-1 text-3xl font-bold text-green-400">
                     {impact.newState || "Friendly"}
@@ -81,7 +76,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
               </div>
               {impact.stateChanged && (
                 <div className="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-center">
-                  <RiCheckLine className="mx-auto mb-1 h-5 w-5 text-green-400" />
+                  <Check className="mx-auto mb-1 h-5 w-5 text-green-400" />
                   <p className="text-sm font-medium text-green-400">
                     Relationship state improved! (
                     {Math.round((impact.transitionProbability || 0) * 100)}% probability)
@@ -94,7 +89,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
             <div className="grid grid-cols-2 gap-4">
               <div className="facet-hierarchy-child rounded-lg p-4">
                 <div className="mb-2 flex items-center gap-2">
-                  <RiArrowUpLine className="h-4 w-4 text-[--intel-gold]" />
+                  <ArrowUp className="h-4 w-4 text-[--intel-gold]" />
                   <span className="text-foreground text-sm font-medium">Cultural Bonus</span>
                 </div>
                 <div className="text-2xl font-bold text-[--intel-gold]">
@@ -103,7 +98,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
               </div>
               <div className="facet-hierarchy-child rounded-lg p-4">
                 <div className="mb-2 flex items-center gap-2">
-                  <RiArrowUpLine className="h-4 w-4 text-blue-400" />
+                  <ArrowUp className="h-4 w-4 text-blue-400" />
                   <span className="text-foreground text-sm font-medium">Diplomatic Bonus</span>
                 </div>
                 <div className="text-2xl font-bold text-blue-400">
@@ -175,13 +170,13 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
             {impact.reasoning && Array.isArray(impact.reasoning) && impact.reasoning.length > 0 && (
               <div className="rounded-lg bg-white/5 p-4">
                 <h5 className="text-foreground mb-3 flex items-center gap-2 font-semibold">
-                  <RiLightbulbLine className="h-4 w-4 text-yellow-400" />
+                  <LightBulb className="h-4 w-4 text-yellow-400" />
                   Analysis Factors
                 </h5>
                 <ul className="space-y-2">
                   {impact.reasoning.map((reason: string, idx: number) => (
                     <li key={idx} className="flex items-start gap-2 text-sm text-[--intel-silver]">
-                      <RiCheckLine className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
                       <span>{reason}</span>
                     </li>
                   ))}

@@ -5,7 +5,7 @@ import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
 import { cva } from "class-variance-authority";
 import { NavArrowDown as ChevronDownIcon } from "iconoir-react";
 
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 interface NavigationMenuProps extends React.ComponentProps<typeof NavigationMenuPrimitive.Root> {
   /** Legacy prop from the prior Base UI implementation; accepted for compatibility. */

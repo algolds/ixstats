@@ -1,5 +1,5 @@
-// src/components/wiki-os/reader/AppleBooksTocDrawer.tsx
 "use client";
+// src/components/wiki-os/reader/AppleBooksTocDrawer.tsx
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";

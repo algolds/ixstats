@@ -1,8 +1,9 @@
 "use client";
 
+import { Globe } from "iconoir-react";
+
 import React, { useRef, useState, useCallback } from "react";
 import { CountryFocusCardBuilder, type CountryCardData } from "./CountryFocusCardBuilder";
-import { RiGlobalLine } from "react-icons/ri";
 import { motion, useAnimation } from "motion/react";
 import { BlurFade } from "~/components/ui/magicui/blur-fade";
 import { ProgressiveBlur } from "~/components/ui/magicui/progressive-blur";
@@ -231,7 +232,7 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
       {countries.length === 0 && !isLoading && (
         <div className="mt-12 text-center">
           <div className="facet-floating facet-refraction mx-auto max-w-md p-12">
-            <RiGlobalLine className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
+            <Globe className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
             <h3 className="mb-2 text-xl font-semibold">No Countries Found</h3>
             <p className="text-muted-foreground mb-4">
               Try adjusting your search or filter criteria

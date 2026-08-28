@@ -1,3 +1,4 @@
+"use client";
 /**
  * PlateWikiEditor.tsx — Unified Plate editor wrapper for WikiOS visual mode.
  *
@@ -5,8 +6,6 @@
  * Invariant 3: Plate is not a second source of truth.
  * Invariant 7: HTML is never used as serialization intermediary.
  */
-
-"use client";
 
 import React, { useEffect, useMemo, useRef } from "react";
 import { usePlateEditor, Plate, PlateContent, useValueVersion } from "platejs/react";

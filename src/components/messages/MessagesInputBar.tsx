@@ -1,10 +1,16 @@
 "use client";
 
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import {
-  GlassPlateEditor,
-  type GlassPlateEditorRef,
-} from "~/components/thinkpages/GlassPlateEditor";
+import dynamic from "next/dynamic";
+import type { GlassPlateEditorRef } from "~/components/thinkpages/GlassPlateEditor";
+
+const GlassPlateEditor = dynamic(
+  () => import("~/components/thinkpages/GlassPlateEditor").then((m) => m.GlassPlateEditor),
+  {
+    loading: () => <div className="h-12 animate-pulse rounded-lg bg-white/5" />,
+    ssr: false,
+  }
+);
 import {
   Reply,
   Xmark as X,
@@ -14,7 +20,7 @@ import {
 } from "iconoir-react";
 import { MessagesStashAttachmentModal } from "./MessagesStashAttachmentModal";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 interface ReplyMessage {
   id: string;

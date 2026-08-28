@@ -1,3 +1,4 @@
+"use client";
 /**
  * Atomic Economic Builder - State Management Hook (Plan 166)
  *
@@ -5,8 +6,6 @@
  * for the atomic economic component builder system.
  * Composes headless useAtomicSelectorState while retaining all economic domain logic.
  */
-
-"use client";
 
 import { useMemo, useCallback } from "react";
 import {

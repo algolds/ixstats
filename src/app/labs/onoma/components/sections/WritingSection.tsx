@@ -1,8 +1,7 @@
+"use client";
 // src/app/labs/onoma/components/sections/WritingSection.tsx
 // Onoma Lab — Writing System Studio (Glyph Designer & Orthography Typesetting)
 // Philosophy: Apple SF Symbols × IPA × Linguistic Notation × Scientific Precision
-
-"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";

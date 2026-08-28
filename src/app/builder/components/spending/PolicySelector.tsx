@@ -1,8 +1,7 @@
+"use client";
 // PolicySelector Component
 // Refactored from GovernmentSpendingSectionEnhanced.tsx
 // Handles policy selection interface with filtering and categorization
-
-"use client";
 
 import React from "react";
 import { Badge } from "~/components/ui/badge";

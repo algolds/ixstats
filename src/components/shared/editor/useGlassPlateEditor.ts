@@ -1,7 +1,6 @@
+"use client";
 // src/components/shared/editor/useGlassPlateEditor.ts
 // Hook managing PlateJS editor state, mention autocompletion, popovers, and keyboard submission.
-
-"use client";
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { createPlateEditor, ParagraphPlugin } from "platejs/react";

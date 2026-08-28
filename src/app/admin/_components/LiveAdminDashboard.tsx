@@ -1,5 +1,5 @@
-// src/app/admin/_components/LiveAdminDashboard.tsx
 "use client";
+// src/app/admin/_components/LiveAdminDashboard.tsx
 
 import { useState, useMemo } from "react";
 import Link from "next/link";

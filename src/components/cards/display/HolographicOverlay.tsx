@@ -1,10 +1,9 @@
+"use client";
 /**
  * HolographicOverlay Component
  * Provides premium holographic effects for IxCards
  * Features rainbow shimmer, light rays, foil stamps, and rarity-specific patterns
  */
-
-"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";

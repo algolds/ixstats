@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/countries/CountriesAdminPanel.tsx
 // Dedicated Country Administration Suite with live editing, formula inspector, and roster import
-"use client";
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";

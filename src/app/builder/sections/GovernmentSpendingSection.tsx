@@ -1,7 +1,6 @@
+"use client";
 // GovernmentSpendingSection - Simplified policy selection section
 // Renders only the core PolicySelector component inside the parent step wrapper
-
-"use client";
 
 import React from "react";
 import type { EconomicInputs } from "../lib/economy-data-service";

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Tax Builder Data Synchronization Hook
  *
@@ -8,16 +10,17 @@
  * - Intelligence-based suggestions
  */
 
-"use client";
-
 import { useEffect, useState } from "react";
 import { useNotify } from "~/hooks/useNotify";
 import type { TaxBuilderState } from "./useTaxBuilderState";
 import type { TaxBracketInput } from "~/types/tax-system";
 import type { SuggestionItem } from "~/components/mycountry/domains/government/builder/SuggestionsPanel";
 import { parseEconomicDataForTaxSystem } from "~/lib/economy/tax-data-parser";
-import { revenueTaxIntegrationService } from "~/lib/builder/services/RevenueTaxIntegrationService";
-import { bidirectionalTaxSyncService } from "~/lib/builder/services/BidirectionalTaxSyncService";
+import {
+  mapRevenueSourceToTaxCategory,
+  revenueSourcesToTaxCategories,
+  getTaxBracketsForRevenueSource,
+} from "~/lib/builder/tax-revenue-mapping";
 import type { TaxSystem } from "~/types/tax-system";
 
 // Dev-only logger to avoid noisy logs in production
@@ -109,7 +112,7 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
       devLog("Auto-populating tax categories from government revenue sources...");
 
       // Convert revenue sources to tax categories
-      const taxCategories = revenueTaxIntegrationService.revenueSourcesToTaxCategories(
+      const taxCategories = revenueSourcesToTaxCategories(
         governmentData.revenueSources
       );
 
@@ -126,8 +129,7 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
           (rs: any) => rs.name === category.categoryName
         );
         if (matchingRevenue) {
-          const defaultBrackets =
-            revenueTaxIntegrationService.getTaxBracketsForRevenueSource(matchingRevenue);
+          const defaultBrackets = getTaxBracketsForRevenueSource(matchingRevenue);
           if (defaultBrackets.length > 0) {
             bracketsMapping[index.toString()] = defaultBrackets;
           }
@@ -184,119 +186,7 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
     countryId,
   ]);
 
-  /**
-   * Subscribe to bidirectional tax sync service for recommendations
-   */
-  useEffect(() => {
-    const unsubscribe = bidirectionalTaxSyncService.subscribe((state) => {
-      if (state.taxRecommendations.length > 0 && !revenueAutoPopulated) {
-        // Convert tax recommendations to suggestions
-        const newSuggestions: SuggestionItem[] = state.taxRecommendations.map((rec) => ({
-          id: `tax-rec-${rec.taxType}`,
-          type: "tax_recommendation",
-          title: `Optimize ${rec.taxType} tax rate`,
-          description: rec.rationale,
-          severity: rec.implementationPriority === "high" ? "warning" : "info",
-          impact: rec.implementationPriority,
-          action: () => {
-            // Find matching category and update rate
-            const categoryIndex = builderState.categories.findIndex((c) =>
-              c.categoryName.toLowerCase().includes(rec.taxType.toLowerCase())
-            );
-            if (categoryIndex >= 0) {
-              const updatedCategories = [...builderState.categories];
-              updatedCategories[categoryIndex] = {
-                ...updatedCategories[categoryIndex],
-                baseRate: rec.recommendedRate,
-              };
-              setBuilderState((prev) => ({
-                ...prev,
-                categories: updatedCategories,
-              }));
-              notify.success(`Applied ${rec.taxType} tax recommendation: ${rec.recommendedRate}%`);
-            }
-          },
-        }));
 
-        if (onSuggestionsUpdate) {
-          onSuggestionsUpdate(newSuggestions);
-        }
-      }
-
-      if (state.economicImpacts.length > 0) {
-        devLog("Economic impacts from tax changes:", state.economicImpacts);
-      }
-
-      if (state.errors.length > 0) {
-        notify.error(`Tax sync error: ${state.errors[state.errors.length - 1]}`);
-      }
-    });
-
-    return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [builderState.categories, setBuilderState, revenueAutoPopulated, onSuggestionsUpdate]);
-
-  /**
-   * Update bidirectional sync service when tax system changes
-   */
-  useEffect(() => {
-    if (builderState.categories.length > 0) {
-      const taxSystemData = {
-        id: countryId || "draft",
-        countryId: countryId || "draft",
-        taxSystemName: builderState.taxSystem.taxSystemName,
-        fiscalYear: builderState.taxSystem.fiscalYear,
-        progressiveTax: builderState.taxSystem.progressiveTax,
-        alternativeMinTax: builderState.taxSystem.alternativeMinTax,
-        collectionEfficiency: builderState.taxSystem.collectionEfficiency,
-        complianceRate: builderState.taxSystem.complianceRate,
-        taxCategories: builderState.categories.map((cat, idx) => ({
-          id: `cat-${idx}`,
-          taxSystemId: countryId || "draft",
-          categoryId: `cat-${idx}`,
-          categoryName: cat.categoryName,
-          categoryType: cat.categoryType,
-          description: cat.description,
-          baseRate: cat.baseRate,
-          calculationMethod: cat.calculationMethod,
-          minimumAmount: cat.minimumAmount,
-          maximumAmount: cat.maximumAmount,
-          exemptionAmount: cat.exemptionAmount,
-          deductionAllowed: cat.deductionAllowed,
-          standardDeduction: cat.standardDeduction,
-          priority: cat.priority || idx + 1,
-          color: cat.color,
-          icon: cat.icon,
-          isActive: cat.isActive,
-          taxBrackets: (builderState.brackets[idx] || []).map((bracket, bIdx) => ({
-            id: `bracket-${idx}-${bIdx}`,
-            taxSystemId: countryId || "draft",
-            categoryId: `cat-${idx}`,
-            bracketName: bracket.bracketName,
-            minIncome: bracket.minIncome,
-            maxIncome: bracket.maxIncome,
-            rate: bracket.rate,
-            flatAmount: bracket.flatAmount,
-            marginalRate: bracket.marginalRate,
-            isActive: bracket.isActive,
-            priority: bracket.priority,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          })),
-          taxExemptions: [],
-          taxDeductions: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as TaxSystem;
-
-      bidirectionalTaxSyncService.updateTaxSystem(taxSystemData).catch((err) => {
-        devLog("Failed to update bidirectional tax sync:", err);
-      });
-    }
-  }, [builderState.categories, builderState.brackets, builderState.taxSystem, countryId]);
 
   return {
     parsedDataApplied,

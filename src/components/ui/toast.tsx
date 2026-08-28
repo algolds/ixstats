@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Toast System - Backward-Compatible Facade
  *
@@ -11,8 +13,6 @@
  * - Existing useToast() calls continue to work (delegates to DI toast queue)
  * - New code should use useNotify() from ~/hooks/useNotify instead
  */
-
-"use client";
 
 import * as React from "react";
 import { createContext, useContext } from "react";

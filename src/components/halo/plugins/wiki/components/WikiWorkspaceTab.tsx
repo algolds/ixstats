@@ -1,7 +1,6 @@
+"use client";
 // src/components/halo/plugins/wiki/components/WikiWorkspaceTab.tsx
 // Quick actions, drafts manager, paused reading sessions, and recent changes feed for Halo Wiki mode.
-
-"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";

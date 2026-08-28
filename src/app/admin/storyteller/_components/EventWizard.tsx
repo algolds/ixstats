@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/storyteller/_components/EventWizard.tsx
 // 5-step wizard for creating world events
-"use client";
 
 import { useState } from "react";
 import { api } from "~/trpc/react";

@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/reader/StashManagerModal.tsx
 // Quick modal for managing multi-stash assignments on an article page.
-
-"use client";
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";

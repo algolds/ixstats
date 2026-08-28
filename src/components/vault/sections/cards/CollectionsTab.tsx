@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "~/components/ui/dialog";
-import { CardDisplay } from "~/components/cards/display";
+import { CardDisplay } from "~/components/cards/display/CardDisplay";
 import type { CardInstance } from "~/types/cards-display";
 
 export function CollectionsTab({

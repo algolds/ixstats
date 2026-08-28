@@ -1,8 +1,7 @@
+"use client";
 // src/components/halo/plugins/wiki/views/WikiNarratorView.tsx
 // Dedicated Now Playing Narrator expanded view for the Dynamic Island / Halo.
 // Provides a focused, distraction-free audio player experience with Apple Design motion.
-
-"use client";
 
 import React from "react";
 import {

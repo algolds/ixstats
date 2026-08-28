@@ -9,7 +9,7 @@ import {
 } from "iconoir-react";
 import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 export interface HeroHelpStep {
   title: string;

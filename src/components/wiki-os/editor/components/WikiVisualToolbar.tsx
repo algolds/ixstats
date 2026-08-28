@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/editor/components/WikiVisualToolbar.tsx
 // Top bar and full formatting toolbar for WikiOS Visual Editor.
-
-"use client";
 
 import React from "react";
 import {
@@ -13,7 +12,7 @@ import {
   ArrowDown as Subscript,
   List,
   NumberedListLeft as ListOrdered,
-  QuoteSolid as Quote,
+  Quote as Quote,
   Link as Link2,
   LinkSlash as Unlink,
   MediaImage as ImageIcon,

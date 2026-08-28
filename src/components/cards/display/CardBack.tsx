@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * CardBack Component - Premium Physical Card Back Design
  * Unified Rarity-Driven Card Back with 3 Selectable Visual Layouts:
@@ -13,8 +15,6 @@
  * All holographic diffraction waves, background shimmer, and glare sweeps are 100% reactive
  * to pointer movement (no continuous automatic looping animations).
  */
-
-"use client";
 
 import React, { useState, useMemo, useCallback } from "react";
 import { motion } from "motion/react";

@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/profile/StreakCalendar.tsx
 // GitHub-style heatmap for Loreward wins — gold=winner, silver=runner-up.
-
-"use client";
 
 import { useState } from "react";
 import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from "iconoir-react";

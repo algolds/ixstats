@@ -7,14 +7,16 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft,
-  Search,
-  Check,
-  Copy,
   // oxlint-disable-next-line eslint/no-unused-vars
   Settings,
+  ArrowLeft,
+  Check,
+  Component,
+  ControlSlider,
+  Copy,
+  Search,
+  ViewGrid,
 } from "iconoir-react";
-import { RiEqualizerLine, RiStackLine, RiGridLine } from "react-icons/ri";
 import {
   OnomaGlyph,
   type OnomaGlyphSize,
@@ -347,7 +349,7 @@ export default function OnomaGlyphsDevPage() {
         <div className="border-border/50 bg-secondary/20 space-y-4 rounded-2xl border p-4 shadow-xs backdrop-blur-xl sm:p-6">
           <div className="border-border/40 flex items-center justify-between gap-2 border-b pb-3">
             <div className="text-muted-foreground flex items-center gap-2 font-mono text-xs font-bold tracking-wider uppercase">
-              <RiEqualizerLine className="text-onoma-primary h-4 w-4" />
+              <ControlSlider className="text-onoma-primary h-4 w-4" />
               <span>Live Testing Controls</span>
             </div>
             <span className="text-muted-foreground font-mono text-xs">
@@ -559,7 +561,7 @@ export default function OnomaGlyphsDevPage() {
         <div className="border-border/50 bg-secondary/20 space-y-6 rounded-2xl border p-6">
           <div className="border-border/40 border-b pb-3">
             <h2 className="flex items-center gap-2 font-mono text-lg font-bold tracking-tight">
-              <RiStackLine className="text-onoma-primary h-4 w-4" />
+              <Component className="text-onoma-primary h-4 w-4" />
               <span>Special Linguistic Notation Variants</span>
             </h2>
             <p className="text-muted-foreground text-xs">
@@ -637,7 +639,7 @@ export default function OnomaGlyphsDevPage() {
         <div className="border-border/50 bg-secondary/20 space-y-4 rounded-2xl border p-6">
           <div className="border-border/40 border-b pb-3">
             <h2 className="flex items-center gap-2 font-mono text-lg font-bold tracking-tight">
-              <RiGridLine className="text-onoma-primary h-4 w-4" />
+              <ViewGrid className="text-onoma-primary h-4 w-4" />
               <span>Optical Scale Verification Matrix</span>
             </h2>
             <p className="text-muted-foreground text-xs">

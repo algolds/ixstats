@@ -1,5 +1,5 @@
-// src/app/admin/_components/NotificationsAdmin.tsx
 "use client";
+// src/app/admin/_components/NotificationsAdmin.tsx
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";

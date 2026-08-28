@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/_components/StashSettingsContent.tsx
 // Stash and WikiOS Article Caching Administration Panel
-"use client";
 
 import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";

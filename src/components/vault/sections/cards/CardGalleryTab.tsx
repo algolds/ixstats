@@ -13,7 +13,7 @@ import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { CardDisplay } from "~/components/cards/display";
+import { CardDisplay } from "~/components/cards/display/CardDisplay";
 import NumberFlow from "~/components/ui/number-flow";
 import type { CardInstance } from "~/types/cards-display";
 import type { CardRarity } from "@prisma/client";

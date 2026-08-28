@@ -3,7 +3,7 @@
 import React from "react";
 import { motion, type Easing } from "motion/react";
 import { Crown, Globe } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { BUILDER_VERSION } from "~/lib/buildVersion";
 
 interface MyCountryLogoProps {

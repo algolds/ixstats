@@ -1,7 +1,6 @@
+"use client";
 // Government Step - Atomic components and structure for Atomic Builder
 // Refactored to align with macOS/iOS design language and contextual Atomic Components
-
-"use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 

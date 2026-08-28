@@ -33,10 +33,10 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { formatPopulation } from "~/lib/utils";
+import { formatPopulation } from "~/lib/utils/format-utils";
 import { IxTime } from "~/lib/ixtime";
 import { getIxCutoff } from "~/lib/ixtime/range";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
 import type { TimeRange, ChartType } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";

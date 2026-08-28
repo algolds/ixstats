@@ -1,5 +1,34 @@
 "use client";
 
+import {
+  Building,
+  NavArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  NavArrowUp,
+  Book,
+  Calendar,
+  Check,
+  Cutlery,
+  Eye,
+  EyeClosed,
+  MediaVideo,
+  Flask,
+  Gamepad,
+  Globe,
+  Group,
+  Heart,
+  Leaf,
+  Medal,
+  MusicNote,
+  Palette,
+  Search,
+  DeliveryTruck,
+  Star,
+  Trophy,
+  Xmark,
+} from "iconoir-react";
+
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
@@ -11,41 +40,11 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { IxTime } from "~/lib/ixtime";
-import {
-  RiArrowLeftLine,
-  RiArrowRightLine,
-  RiCheckLine,
-  RiCloseLine,
-  RiStarLine,
-  RiBuildingLine,
-  RiBookLine,
-  RiRestaurantLine,
-  RiPaletteLine,
-  RiTrophyLine,
-  RiGamepadLine,
-  RiGlobalLine,
-  RiCalendarLine,
-  RiGroupLine,
-  RiEyeLine,
-  RiEyeOffLine,
-  RiSearchLine,
-  RiMusicLine,
-  RiFilmLine,
-  RiLeafLine,
-  RiFlaskLine,
-  RiShipLine,
-  RiHandHeartLine,
-  RiPlantLine,
-  RiAncientGateLine,
-  RiMedalLine,
-  RiArrowDownSLine,
-  RiArrowUpSLine,
-} from "react-icons/ri";
 
 // Exchange type configurations
 const EXCHANGE_TYPES = {
   festival: {
-    icon: RiStarLine,
+    icon: Star,
     color: "text-purple-400",
     bgColor: "bg-purple-500/20",
     borderColor: "border-purple-500/40",
@@ -54,7 +53,7 @@ const EXCHANGE_TYPES = {
     primary: true,
   },
   exhibition: {
-    icon: RiBuildingLine,
+    icon: Building,
     color: "text-blue-400",
     bgColor: "bg-blue-500/20",
     borderColor: "border-blue-500/40",
@@ -63,7 +62,7 @@ const EXCHANGE_TYPES = {
     primary: true,
   },
   education: {
-    icon: RiBookLine,
+    icon: Book,
     color: "text-green-400",
     bgColor: "bg-green-500/20",
     borderColor: "border-green-500/40",
@@ -72,7 +71,7 @@ const EXCHANGE_TYPES = {
     primary: true,
   },
   cuisine: {
-    icon: RiRestaurantLine,
+    icon: Cutlery,
     color: "text-orange-400",
     bgColor: "bg-orange-500/20",
     borderColor: "border-orange-500/40",
@@ -81,7 +80,7 @@ const EXCHANGE_TYPES = {
     primary: true,
   },
   arts: {
-    icon: RiPaletteLine,
+    icon: Palette,
     color: "text-pink-400",
     bgColor: "bg-pink-500/20",
     borderColor: "border-pink-500/40",
@@ -90,7 +89,7 @@ const EXCHANGE_TYPES = {
     primary: true,
   },
   sports: {
-    icon: RiTrophyLine,
+    icon: Trophy,
     color: "text-red-400",
     bgColor: "bg-red-500/20",
     borderColor: "border-red-500/40",
@@ -99,7 +98,7 @@ const EXCHANGE_TYPES = {
     primary: true,
   },
   technology: {
-    icon: RiGamepadLine,
+    icon: Gamepad,
     color: "text-cyan-400",
     bgColor: "bg-cyan-500/20",
     borderColor: "border-cyan-500/40",
@@ -108,7 +107,7 @@ const EXCHANGE_TYPES = {
     primary: true,
   },
   diplomacy: {
-    icon: RiGlobalLine,
+    icon: Globe,
     color: "text-[--intel-gold]",
     bgColor: "bg-[--intel-gold]/20",
     borderColor: "border-[--intel-gold]/40",
@@ -118,7 +117,7 @@ const EXCHANGE_TYPES = {
   },
   // More options (hidden by default)
   music: {
-    icon: RiMusicLine,
+    icon: MusicNote,
     color: "text-violet-400",
     bgColor: "bg-violet-500/20",
     borderColor: "border-violet-500/40",
@@ -131,7 +130,7 @@ const EXCHANGE_TYPES = {
     color: "text-indigo-400",
     bgColor: "bg-indigo-500/20",
     borderColor: "border-indigo-500/40",
-    label: "Film & Media",
+    label: "MediaVideo & Media",
     description: "Cinema and media culture",
     primary: false,
   },
@@ -207,7 +206,7 @@ const COMMON_OBJECTIVES = [
   "Enhance educational ties",
   "Foster economic partnerships",
   "Build diplomatic goodwill",
-  "Share technological innovations",
+  "ShareAndroid technological innovations",
   "Preserve cultural heritage",
   "Develop youth programs",
 ];
@@ -520,7 +519,7 @@ export function CulturalExchangeWizard({
 
             {/* Search */}
             <div className="relative">
-              <RiSearchLine className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2" />
               <Input
                 type="text"
                 placeholder="Search countries..."
@@ -576,9 +575,7 @@ export function CulturalExchangeWizard({
                             {country.economicTier} Economy
                           </p>
                         </div>
-                        {isSelected && (
-                          <RiCheckLine className="h-4 w-4 shrink-0 text-[--intel-gold]" />
-                        )}
+                        {isSelected && <Check className="h-4 w-4 shrink-0 text-[--intel-gold]" />}
                       </div>
                     </div>
                   );
@@ -732,7 +729,7 @@ export function CulturalExchangeWizard({
                   <div className="text-left">
                     <p className="text-foreground flex items-center gap-2 font-medium">
                       {isPublic ? (
-                        <RiEyeLine className="h-4 w-4" />
+                        <Eye className="h-4 w-4" />
                       ) : (
                         <RiEyeOffLine className="h-4 w-4" />
                       )}
@@ -877,7 +874,7 @@ export function CulturalExchangeWizard({
           <p className="text-muted-foreground mt-1 text-xs">Step {currentStep} of 5</p>
         </div>
         <button onClick={onCancel} className="hover:bg-accent rounded-lg p-2 transition-colors">
-          <RiCloseLine className="text-foreground h-5 w-5" />
+          <Xmark className="text-foreground h-5 w-5" />
         </button>
       </div>
 
@@ -919,11 +916,11 @@ export function CulturalExchangeWizard({
             }
           >
             Next
-            <RiArrowRightLine className="ml-2" />
+            <ArrowRight className="ml-2" />
           </Button>
         ) : (
           <Button onClick={handleSubmit}>
-            <RiCheckLine className="mr-2" />
+            <Check className="mr-2" />
             Create Exchange
           </Button>
         )}

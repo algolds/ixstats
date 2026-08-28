@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { StatUp as TrendingUp, StatDown as TrendingDown } from "iconoir-react";
 
 interface GrowthArrowProps {

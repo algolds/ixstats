@@ -1,5 +1,5 @@
-// src/app/admin/npc-personalities/page.tsx
 "use client";
+// src/app/admin/npc-personalities/page.tsx
 
 import { AdminRouter } from "../_components/AdminRouter";
 

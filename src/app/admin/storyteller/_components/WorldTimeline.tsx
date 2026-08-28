@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/storyteller/_components/WorldTimeline.tsx
 // Visual timeline of all world events
-"use client";
 
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";

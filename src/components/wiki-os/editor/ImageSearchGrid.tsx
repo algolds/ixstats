@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/editor/ImageSearchGrid.tsx
 // Visual image search with glass-physics cards — IxWiki + Wikimedia Commons.
-
-"use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import {

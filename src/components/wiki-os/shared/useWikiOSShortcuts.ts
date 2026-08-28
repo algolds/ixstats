@@ -1,9 +1,8 @@
+"use client";
 // src/components/wiki-os/shared/useWikiOSShortcuts.ts
 // Keyboard shortcuts for WikiOS.
 // Listens for the "wikios:edit" custom event (dispatched by Dynamic Island on double-Tab)
 // to navigate to editor mode.
-
-"use client";
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";

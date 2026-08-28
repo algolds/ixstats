@@ -1,14 +1,22 @@
+"use client";
 // src/components/forum/composer/ReplyComposer.tsx
 // Inline reply composer at the bottom of a thread view using unified GlassPlateEditor.
 
-"use client";
-
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, SystemRestart as Loader2 } from "iconoir-react";
+import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
-import { GlassPlateEditor, type GlassPlateEditorRef } from "~/components/shared/editor";
+import type { GlassPlateEditorRef } from "~/components/shared/editor";
+
+const GlassPlateEditor = dynamic(
+  () => import("~/components/shared/editor/GlassPlateEditor").then((m) => m.GlassPlateEditor),
+  {
+    loading: () => <div className="h-20 animate-pulse rounded-lg bg-white/5" />,
+    ssr: false,
+  }
+);
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 interface ReplyComposerProps {
   threadId: number;

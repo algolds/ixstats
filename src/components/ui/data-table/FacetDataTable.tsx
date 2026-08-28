@@ -11,7 +11,7 @@ import {
   TableCell,
 } from "~/components/ui/table";
 import { Skeleton } from "~/components/ui/skeleton";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { FacetMobileCard } from "./FacetMobileCard";
 import { FacetTableToolbar } from "./FacetTableToolbar";
 import { FacetTablePagination } from "./FacetTablePagination";

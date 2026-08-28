@@ -3,7 +3,7 @@
 import React from "react";
 import { motion, type Easing } from "motion/react";
 import { StatUp as TrendingUp, Crown, Globe } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 interface IxStatsLogoProps {
   size?: "sm" | "md" | "lg" | "xl" | "xxl";

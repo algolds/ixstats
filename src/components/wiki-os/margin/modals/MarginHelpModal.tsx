@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/margin/modals/MarginHelpModal.tsx
 // Interactive help modal for WikiOS Margin suite.
 // Signature Highlighter Yellow / Warm Amber branding for Margin.
-
-"use client";
 
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";

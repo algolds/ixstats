@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/_components/platform/BotControlCard.tsx
 // Redesigned with PM2 process grid, role permits, live logs, and command testing console.
-"use client";
 
 import { useState, useEffect } from "react";
 import {

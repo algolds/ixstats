@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/stashes/StashThreadsList.tsx
 // Saved forum threads view with rich metadata and direct link to native forum.
 // Apple Design & Facet compliance.
-
-"use client";
 
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";

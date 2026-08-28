@@ -1,5 +1,5 @@
-// src/components/defense/command/ReadinessOverviewCard.tsx
 "use client";
+// src/components/defense/command/ReadinessOverviewCard.tsx
 
 import React from "react";
 import {

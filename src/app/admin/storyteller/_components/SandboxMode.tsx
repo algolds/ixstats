@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/storyteller/_components/SandboxMode.tsx
 // Simulate world events without applying them to the database
-"use client";
 
 import { useState } from "react";
 import { api } from "~/trpc/react";

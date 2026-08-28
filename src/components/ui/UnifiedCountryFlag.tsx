@@ -1,10 +1,9 @@
+"use client";
 // Unified Country Flag Component - Uses the new unified flag system
 // This will replace the existing CountryFlag component
 
-"use client";
-
 import React, { useState, useEffect } from "react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { Skeleton } from "~/components/ui/skeleton";
 import { WhiteFlag as Flag } from "iconoir-react";

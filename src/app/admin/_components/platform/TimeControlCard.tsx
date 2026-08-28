@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/_components/platform/TimeControlCard.tsx
 // Refactored with premium glassmorphism styles and visual updates
-"use client";
 
 import { useState, useEffect } from "react";
 import {

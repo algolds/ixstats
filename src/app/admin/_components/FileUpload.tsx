@@ -1,5 +1,5 @@
-// src/app/admin/_components/FileUpload.tsx
 "use client";
+// src/app/admin/_components/FileUpload.tsx
 
 import { Upload, SystemRestart as Loader2 } from "iconoir-react";
 

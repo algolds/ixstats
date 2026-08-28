@@ -1,5 +1,5 @@
-// src/app/admin/_components/BotIntegrationCenter.tsx
 "use client";
+// src/app/admin/_components/BotIntegrationCenter.tsx
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "./AdminHeader";

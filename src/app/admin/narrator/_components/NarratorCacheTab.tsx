@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/narrator/_components/NarratorCacheTab.tsx
 // AI Narrator Generation Cache Metrics & Maintenance Tab
-"use client";
 
 import React from "react";
 import { api } from "~/trpc/react";

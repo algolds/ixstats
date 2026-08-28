@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/vault/VaultBonusAdmin.tsx
 // Metagame Economy Bonuses Configuration Suite for Vault Admin
-"use client";
 
 import React, { useEffect, useState } from "react";
 import {

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * CardHolographicCover — Universal procedural holographic fallback for ALL card types
  *
@@ -14,8 +16,6 @@
  *  5. Foil shine sweep
  *  6. Center label
  */
-
-"use client";
 
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { cn } from "~/lib/utils";

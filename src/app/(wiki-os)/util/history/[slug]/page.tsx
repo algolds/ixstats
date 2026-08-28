@@ -1,6 +1,6 @@
+"use client";
 // src/app/(wiki-os)/wiki/history/[slug]/page.tsx
 // WikiOS Page History Hub with Scrubbable Timeline
-"use client";
 
 import { useParams } from "next/navigation";
 import Link from "next/link";

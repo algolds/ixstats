@@ -1,10 +1,9 @@
+"use client";
 /**
  * Card3DViewer Component
  * Interactive 3D card rotation viewer with flip animation
  * Shows both CardDisplay (front) and CardBack (back)
  */
-
-"use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";

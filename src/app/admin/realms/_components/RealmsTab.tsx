@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/realms/_components/RealmsTab.tsx
 // Realms Management Tab with Facet Glass & Apple Tactile Physics
-"use client";
 
 import { useState } from "react";
 import { api } from "~/trpc/react";

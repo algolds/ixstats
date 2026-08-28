@@ -1,5 +1,5 @@
-// src/hooks/useDefenseBudget.ts
 "use client";
+// src/hooks/useDefenseBudget.ts
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { api } from "~/trpc/react";

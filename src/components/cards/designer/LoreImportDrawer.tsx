@@ -1,11 +1,10 @@
+"use client";
 /**
  * LoreImportDrawer Component
  *
  * Standard Facet Dialog for searching, previewing, and importing lore
  * from IxWiki, IIWiki, WikiOS, and LoreStash into the Card Designer.
  */
-
-"use client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import {

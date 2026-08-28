@@ -1,6 +1,6 @@
+"use client";
 // src/app/(wiki-os)/wiki/[slug]/page.tsx
 // WikiOS Article Reader & In-Place Editor with Instant Caching
-"use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useCallback } from "react";

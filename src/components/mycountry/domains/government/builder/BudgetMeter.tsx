@@ -1,10 +1,9 @@
+"use client";
 /**
  * Budget Meter Component
  *
  * Visual meter showing budget allocation progress with premium glassmorphic styling
  */
-
-"use client";
 
 import React from "react";
 import type { BudgetSummary } from "~/lib/government/builder-validation";

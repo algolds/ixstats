@@ -1,7 +1,6 @@
+"use client";
 // src/components/shared/editor/GlassPlateEditor.tsx
 // Unified PlateJS Glass Editor supporting full mode, compact mode, and BBCode serialization.
-
-"use client";
 
 import React, { useCallback, useImperativeHandle, forwardRef } from "react";
 import { Plate, PlateContent } from "platejs/react";

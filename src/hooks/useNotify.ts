@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * useNotify - Unified Notification Hook
  *
@@ -19,8 +21,6 @@
  * notify.notify({ title, message, type, priority, category, persistent, actions, href });
  * ```
  */
-
-"use client";
 
 import { useCallback, useMemo } from "react";
 import {

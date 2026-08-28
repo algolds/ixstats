@@ -6,8 +6,7 @@ import { cn } from "~/lib/utils";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
 import { formatPopulation } from "~/lib/utils";
-import { StatUp as TrendingUp, Group as UsersIcon } from "iconoir-react";
-import { RiEyeLine, RiGlobalLine, RiStarLine, RiMoneyDollarCircleLine } from "react-icons/ri";
+import { Coins, Eye, Globe, Group as UsersIcon, Star, StatUp as TrendingUp } from "iconoir-react";
 import { ExpandedCardContent } from "./ExpandedCardContent";
 import { withBasePath } from "~/lib/base-path";
 
@@ -208,7 +207,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                 delay={0.2}
                 className="flex items-center gap-2 text-sm font-medium text-white/90 antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]"
               >
-                <RiGlobalLine className="h-4 w-4 drop-shadow-sm" />
+                <Globe className="h-4 w-4 drop-shadow-sm" />
                 <span>{country.economicTier}</span>
                 <span>•</span>
                 <span>{formatPopulation(country.currentPopulation)}</span>
@@ -248,7 +247,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                       className="flex items-center justify-between text-sm text-white/90"
                     >
                       <div className="flex items-center gap-2">
-                        <RiMoneyDollarCircleLine className="h-4 w-4 text-green-400 drop-shadow-sm" />
+                        <Coins className="h-4 w-4 text-green-400 drop-shadow-sm" />
                         <span className="font-medium antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
                           GDP per Capita
                         </span>
@@ -266,7 +265,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                       className="flex items-center justify-between text-sm text-white/90"
                     >
                       <div className="flex items-center gap-2">
-                        <RiGlobalLine className="h-4 w-4 text-purple-400 drop-shadow-sm" />
+                        <Globe className="h-4 w-4 text-purple-400 drop-shadow-sm" />
                         <span className="font-medium antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
                           Total GDP
                         </span>
@@ -317,11 +316,11 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                       onClick={handleCountryVisit}
                       className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-white/20 px-4 py-2 text-white backdrop-blur-sm transition-colors hover:bg-white/30"
                     >
-                      <RiEyeLine className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                       <span className="text-sm font-medium">View</span>
                     </button>
                     <button className="flex items-center justify-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-white backdrop-blur-sm transition-colors hover:bg-white/20">
-                      <RiStarLine className="h-4 w-4" />
+                      <Star className="h-4 w-4" />
                     </button>
                   </motion.div>
                 )}

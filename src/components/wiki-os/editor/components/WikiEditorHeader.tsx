@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/editor/components/WikiEditorHeader.tsx
 // Top titlebar with Dynamic Island mode switcher and Save/Cancel actions.
-
-"use client";
 
 import React from "react";
 import { motion } from "motion/react";

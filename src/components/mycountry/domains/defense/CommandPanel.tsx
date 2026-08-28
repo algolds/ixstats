@@ -1,5 +1,5 @@
-// src/components/defense/CommandPanel.tsx
 "use client";
+// src/components/defense/CommandPanel.tsx
 
 import { useDefenseBudget } from "~/hooks/useDefenseBudget";
 import { BudgetManagementCard } from "~/components/mycountry/domains/defense/command";

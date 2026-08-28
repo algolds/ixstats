@@ -1,9 +1,8 @@
+"use client";
 // src/components/wiki-os/reader/ImageLightbox.tsx
 // Immersive Apple Quick Look & Repository UI/UX Lightbox Modal for WikiOS.
 // Features a unified frame where the Repository Inspector is physically bolted directly to the image,
 // bottom-docked Facet glass controls, high-resolution original asset resolution, Wikitext generator, and fluid spring physics.
-
-"use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";

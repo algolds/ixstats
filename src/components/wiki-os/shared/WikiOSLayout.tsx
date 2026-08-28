@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/shared/WikiOSLayout.tsx
 // WikiOS content wrapper with standard DashboardSidebarLayout.
-
-"use client";
 
 import { type ReactNode, useState, useEffect } from "react";
 import Link from "next/link";

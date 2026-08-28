@@ -1,5 +1,7 @@
 "use client";
 
+import { EditPencil, FloppyDisk, WarningTriangle } from "iconoir-react";
+
 import React from "react";
 import { useNotify } from "~/hooks/useNotify";
 import {
@@ -9,7 +11,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import { RiEditLine, RiAlertLine, RiSave3Line } from "react-icons/ri";
 
 interface CulturalExchange {
   id: string;
@@ -58,7 +59,7 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
-              <RiEditLine className="h-6 w-6 text-[--intel-gold]" />
+              <EditPencil className="h-6 w-6 text-[--intel-gold]" />
               Edit Cultural Exchange
             </DialogTitle>
             <DialogDescription>
@@ -69,7 +70,7 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
           <div className="space-y-6">
             {/* Warning Message */}
             <div className="flex items-start gap-3 rounded-lg border border-orange-500/30 bg-orange-500/10 p-4">
-              <RiAlertLine className="mt-0.5 h-5 w-5 shrink-0 text-orange-400" />
+              <WarningTriangle className="mt-0.5 h-5 w-5 shrink-0 text-orange-400" />
               <div className="text-sm text-[--intel-silver]">
                 <p className="mb-1 font-medium text-orange-400">Limited Editing</p>
                 <p>
@@ -135,7 +136,7 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
                   </>
                 ) : (
                   <>
-                    <RiSave3Line className="h-4 w-4" />
+                    <FloppyDisk className="h-4 w-4" />
                     Save Changes
                   </>
                 )}

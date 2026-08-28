@@ -1,10 +1,9 @@
+"use client";
 /**
  * CraftingAnimation Component
  * Crafting success/failure animation with glass fusion effects
  * Phase 3: Crafting System
  */
-
-"use client";
 
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";

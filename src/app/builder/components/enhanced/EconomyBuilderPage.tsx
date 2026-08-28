@@ -29,7 +29,6 @@ import { EconomicWelcomeModal } from "~/components/mycountry/domains/economy/ato
 import type { EconomyBuilderState, EconomicHealthMetrics } from "~/types/economy-builder";
 import type { EconomicInputs } from "../../lib/economy-data-service";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
-import { economyIntegrationService } from "../../services/EconomyIntegrationService";
 import { useEconomyBuilderSync } from "../../hooks/useEconomyBuilderSync";
 
 // Tab Components (lazy-loaded)
@@ -42,7 +41,7 @@ import { TabLoadingFallback } from "../../components/LoadingFallback";
 // Step Components
 import { GlassCard, GlassCardContent } from "../glass/GlassCard";
 import { FiscalTab, TaxTab } from "./tabs";
-import { ComponentErrorBoundary } from "~/components/ui/comprehensive-error-boundary";
+import { BuilderErrorBoundary } from "../../components/BuilderErrorBoundary";
 
 // Tab Card Primitive
 import { BuilderTabCard, type TabDefinition } from "../../primitives/BuilderTabCard";
@@ -642,13 +641,6 @@ export function EconomyBuilderPage({
   // NOTE: Integration service subscription and cross-builder sync effects have been
   // moved to useEconomyBuilderSync hook (Phase 2 optimization)
 
-  // Update integration service when governmentBuilderData changes
-  useEffect(() => {
-    if (governmentBuilderData) {
-      economyIntegrationService.updateGovernmentBuilder(governmentBuilderData);
-    }
-  }, [governmentBuilderData]);
-
   // Economy Builder Change Handler - Memoized
   const handleEconomyBuilderChange = useCallback(
     (builder: EconomyBuilderState) => {
@@ -656,7 +648,6 @@ export function EconomyBuilderPage({
       economyBuilderRef.current = builder;
 
       setEconomyBuilder(builder);
-      economyIntegrationService.updateEconomyBuilder(builder);
       onPersistEconomyBuilder?.(builder);
 
       if (economicInputs) {
@@ -678,7 +669,6 @@ export function EconomyBuilderPage({
   const handleComponentChange = useCallback(
     (components: EconomicComponentType[]) => {
       setSelectedComponents(components);
-      economyIntegrationService.updateEconomicComponents(components);
 
       // Update economyBuilder state and persist it
       const updatedBuilder = {
@@ -915,9 +905,7 @@ export function EconomyBuilderPage({
         },
       });
 
-      // Update integration service state
-      economyIntegrationService.updateEconomyBuilder(economyBuilder);
-      economyIntegrationService.updateEconomicComponents(selectedComponents);
+
     } catch (error) {
       console.error("Error saving economy configuration:", error);
       // Error toast handled by mutation onError
@@ -1082,7 +1070,7 @@ export function EconomyBuilderPage({
         >
           {currentTab === "components" && (
             <div className="space-y-6">
-              <ComponentErrorBoundary context="Components Tab">
+              <BuilderErrorBoundary>
                 <GlassCard
                   depth="base"
                   theme="emerald"
@@ -1117,7 +1105,7 @@ export function EconomyBuilderPage({
                     />
                   </GlassCardContent>
                 </GlassCard>
-              </ComponentErrorBoundary>
+              </BuilderErrorBoundary>
             </div>
           )}
 
@@ -1194,19 +1182,19 @@ export function EconomyBuilderPage({
 
           {currentTab === "fiscal" && (
             <Suspense fallback={<TabLoadingFallback />}>
-              <ComponentErrorBoundary context="Fiscal Tab">
+              <BuilderErrorBoundary>
                 <FiscalTab
                   revenueIntegration={revenueIntegration}
                   economicInputs={economicInputs}
                 />
-              </ComponentErrorBoundary>
+              </BuilderErrorBoundary>
             </Suspense>
           )}
 
           {currentTab === "tax" && (
             <div className="space-y-6">
               <Suspense fallback={<TabLoadingFallback />}>
-                <ComponentErrorBoundary context="Tax Tab">
+                <BuilderErrorBoundary>
                   <GlassCard
                     depth="base"
                     theme="emerald"
@@ -1228,7 +1216,7 @@ export function EconomyBuilderPage({
                       />
                     </GlassCardContent>
                   </GlassCard>
-                </ComponentErrorBoundary>
+                </BuilderErrorBoundary>
               </Suspense>
             </div>
           )}

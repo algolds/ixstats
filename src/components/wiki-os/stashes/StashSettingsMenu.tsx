@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/stashes/StashSettingsMenu.tsx
 // Apple Design Settings & Management Popover for Stash collections.
 // Features opaque elevated surface, zero-bleed depth shadow, crisp typography, and fluid spring physics.
-
-"use client";
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";

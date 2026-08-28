@@ -33,7 +33,7 @@ import React, {
   useState,
 } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "motion/react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { useSwipePhysics } from "./useSwipePhysics";
 import { GULP_SCALE, SPRING_PRESETS } from "./constants";
 

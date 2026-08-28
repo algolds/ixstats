@@ -1,9 +1,8 @@
+"use client";
 /**
  * Unified Notification Store
  * Global state management for the enhanced notification system
  */
-
-"use client";
 
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";

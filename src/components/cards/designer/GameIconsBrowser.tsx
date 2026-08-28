@@ -1,11 +1,10 @@
+"use client";
 /**
  * GameIconsBrowser Component
  *
  * Fast, filterable Facet Dialog to search and browse 4,100+ Game-Icons.net SVGs.
  * Uses standard Facet design tokens, theme compliance, and clean accessible controls.
  */
-
-"use client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import {

@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/realms/_components/WorldConfigsTab.tsx
 // World Configuration Editor Tab with Facet Glass & Apple Tactile Physics
-"use client";
 
 import { useState } from "react";
 import { api } from "~/trpc/react";

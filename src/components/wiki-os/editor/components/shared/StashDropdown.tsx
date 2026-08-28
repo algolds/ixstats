@@ -1,7 +1,7 @@
+"use client";
 /**
  * StashDropdown.tsx — Reusable Popover dropdown for exploring stashes and inserting Commons images.
  */
-"use client";
 
 import React, { memo } from "react";
 import { Bookmark, MediaImage as ImageIcon } from "iconoir-react";

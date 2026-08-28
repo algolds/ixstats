@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/diplomatic-options/DiplomaticOptionsPanel.tsx
 // Admin interface for managing diplomatic options (strategic priorities, partnership goals, key achievements)
-"use client";
 
 import { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";

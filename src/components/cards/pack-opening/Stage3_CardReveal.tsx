@@ -1,7 +1,6 @@
+"use client";
 // src/components/cards/pack-opening/Stage3_CardReveal.tsx
 // Stage 3: Sequential card flip reveals with rarity effects
-
-"use client";
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";

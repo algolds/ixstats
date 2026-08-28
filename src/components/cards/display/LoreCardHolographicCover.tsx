@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * LoreCardHolographicCover — Procedural holographic fallback for lore cards
  *
@@ -14,8 +16,6 @@
  * Keyframes from src/styles/animations.css:
  *  holo-drift, foil-sweep, geo-spin, lore-ink-flow
  */
-
-"use client";
 
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { cn } from "~/lib/utils";

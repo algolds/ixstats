@@ -1,10 +1,9 @@
+"use client";
 /**
  * CraftingWorkbench Component
  * Main crafting interface for IxCards fusion and evolution
  * Phase 3: Crafting System
  */
-
-"use client";
 
 import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";

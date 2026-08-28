@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/layout.tsx
 // Shared admin layout with auth guard, sidebar, and error boundary
-"use client";
 
 import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 import { AdminSidebarLayout } from "./_components/AdminSidebarLayout";

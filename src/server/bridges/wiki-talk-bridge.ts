@@ -6,7 +6,7 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import type { BridgeAdapter, BridgeSyncResult } from "./bridge-types";
+import type { BridgeAdapter, BridgeSyncResult } from "~/server/shared/bridge-types";
 
 import { getArticleWikitext, getRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 

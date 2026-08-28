@@ -1,7 +1,6 @@
+"use client";
 // src/app/(forum)/forum/page.tsx
 // Forum index — categories view by default, thread feed for Trending/New.
-
-"use client";
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";

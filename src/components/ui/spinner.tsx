@@ -1,6 +1,6 @@
 import * as React from "react";
 import { SystemRestart as Loader2 } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 export interface SpinnerProps extends React.SVGAttributes<SVGSVGElement> {
   className?: string;

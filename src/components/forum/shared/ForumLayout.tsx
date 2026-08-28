@@ -1,8 +1,7 @@
+"use client";
 // src/components/forum/shared/ForumLayout.tsx
 // Forum content wrapper with icon rail sidebar on desktop, horizontal pills on mobile.
 // Mirrors WikiOSLayout.tsx pattern with orange forum accent color.
-
-"use client";
 
 import { type ReactNode, useState, useEffect, useRef } from "react";
 import Link from "next/link";

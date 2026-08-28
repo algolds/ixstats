@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/shared/WikiOSArticleToolbarWidget.tsx
 // Page tools card with quick access to editing, talk pages, history, stashing, and media theme switching (Auto, Plinth, Raw).
-
-"use client";
 
 import Link from "next/link";
 import {

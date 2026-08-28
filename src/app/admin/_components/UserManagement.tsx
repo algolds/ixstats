@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/_components/UserManagement.tsx
 // Dispatcher for User Directory and System Roles
-"use client";
 
 import { UsersPanel } from "../users/UsersPanel";
 import { UserRolesPanel } from "../user-roles/UserRolesPanel";

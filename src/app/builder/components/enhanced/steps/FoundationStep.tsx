@@ -1,5 +1,5 @@
-// Foundation Step - Country and Faction selection for Atomic Builder
 "use client";
+// Foundation Step - Country and Faction selection for Atomic Builder
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";

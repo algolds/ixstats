@@ -14,7 +14,7 @@ import { historicalArchetypes } from "@/app/builder/data/archetypes/historical";
 import type { EconomicArchetype } from "@/app/builder/data/archetype-types";
 import { ComponentType } from "~/lib/enums";
 
-export const GOVERNMENT_COMPONENT_LEGACY_MAP: Record<string, ComponentType[]> = {
+const GOVERNMENT_COMPONENT_LEGACY_MAP: Record<string, ComponentType[]> = {
   PRIVATE_SECTOR_LEADERSHIP: [ComponentType.ENTREPRENEURSHIP_SUPPORT],
   SOCIAL_DEMOCRACY: [ComponentType.WELFARE_STATE, ComponentType.WORKER_PROTECTION],
   COMPREHENSIVE_WELFARE: [ComponentType.SOCIAL_SAFETY_NET, ComponentType.UNIVERSAL_HEALTHCARE],

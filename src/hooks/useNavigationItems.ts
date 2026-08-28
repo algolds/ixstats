@@ -9,10 +9,10 @@ import {
   Globe,
   ChatBubble as MessageSquare,
   Trophy,
+  MultiplePages as CardsIcon,
+  Flask as LabsIcon,
 } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
-import { GiCardRandom } from "react-icons/gi";
-import { GiSoapExperiment } from "react-icons/gi";
 import { OnomaNavIcon } from "~/components/onoma/OnomaBrandLogo";
 import type { NavigationItem } from "~/lib/navigation-config";
 
@@ -97,14 +97,14 @@ export function useNavigationItems({
       {
         name: "Cards",
         href: "/vault",
-        icon: GiCardRandom,
+        icon: CardsIcon,
         requiresAuth: true,
         description: "IxCards trading card system",
       },
       {
         name: "Labs",
         href: "",
-        icon: GiSoapExperiment,
+        icon: LabsIcon,
         requiresAuth: true,
         isDropdown: true,
         // Only labs with live routes. Vexel/Strata/Dynas/Nomora are not built yet

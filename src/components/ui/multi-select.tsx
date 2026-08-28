@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Xmark as X, NavArrowDown as ChevronDown, Check } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { Badge } from "~/components/ui/badge";
 import {
   Command,

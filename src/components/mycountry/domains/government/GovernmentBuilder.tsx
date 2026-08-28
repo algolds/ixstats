@@ -1,11 +1,10 @@
+"use client";
 /**
  * Government Builder - Refactored Orchestrator
  *
  * Clean orchestration layer using modular components and hooks.
  * Reduced from 1,015 lines to ~250 lines (75% reduction).
  */
-
-"use client";
 
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "~/components/ui/button";

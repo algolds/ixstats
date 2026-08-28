@@ -1,7 +1,6 @@
+"use client";
 // src/app/admin/wiki/components/SystemTuningSection.tsx
 // System tuning, cache management, template synchronization, and cron schedule configuration.
-
-"use client";
 
 import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";

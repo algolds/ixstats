@@ -19,7 +19,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { motion } from "motion/react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { GlassChart, chartTheme } from "./GlassChart";
 import { generateChartColors } from "~/lib/builder";
 

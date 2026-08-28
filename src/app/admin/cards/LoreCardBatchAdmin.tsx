@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/cards/LoreCardBatchAdmin.tsx
 // Unified Theme-Compliant Apple Design Lore Card Batch Generator & User Request Queue
-"use client";
 
 import { useState, useRef, useMemo } from "react";
 import { api } from "~/trpc/react";
@@ -47,7 +47,7 @@ import {
 } from "iconoir-react";
 import type { CardRarity } from "@prisma/client";
 import type { CardAuthorInfo } from "~/types/cards-display";
-import { IIWikiBadge } from "~/components/cards/display";
+import { IIWikiBadge } from "~/components/cards/display/IIWikiLogo";
 
 import { CATEGORY_PRESETS } from "./lore-batch/category-presets";
 

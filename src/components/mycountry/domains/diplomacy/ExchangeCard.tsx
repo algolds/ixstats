@@ -1,19 +1,12 @@
 "use client";
 
+import { ArrowRight, Calendar, EditPencil, Globe, Star, ThumbsUp, User } from "iconoir-react";
+
 import React from "react";
 import { motion, easeInOut } from "motion/react";
 import { cn } from "~/lib/utils";
 import type { CulturalExchange } from "./cultural-exchange-types";
 import { EXCHANGE_TYPES, STATUS_STYLES, getIconAnimation } from "./cultural-exchange-types";
-import {
-  RiArrowRightLine,
-  RiUserLine,
-  RiStarLine,
-  RiCalendarLine,
-  RiGlobalLine,
-  RiThumbUpLine,
-  RiEditLine,
-} from "react-icons/ri";
 
 interface ExchangeCardProps {
   exchange: CulturalExchange;
@@ -210,7 +203,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
               }}
               transition={{ duration: 2, repeat: Infinity, ease: easeInOut }}
             >
-              <RiArrowRightLine className={cn("h-4 w-4", typeConfig.color)} />
+              <ArrowRight className={cn("h-4 w-4", typeConfig.color)} />
             </motion.div>
 
             {/* Icon with Emoji */}
@@ -236,7 +229,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
               }}
               transition={{ duration: 2, repeat: Infinity, ease: easeInOut, delay: 1 }}
             >
-              <RiArrowRightLine className={cn("h-4 w-4", typeConfig.color)} />
+              <ArrowRight className={cn("h-4 w-4", typeConfig.color)} />
             </motion.div>
           </div>
 
@@ -357,7 +350,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
                 className="rounded-lg border border-[--intel-gold]/30 bg-[--intel-gold]/10 p-1.5 text-[--intel-gold] transition-colors hover:bg-[--intel-gold]/20"
                 title="Edit Exchange"
               >
-                <RiEditLine className="h-3.5 w-3.5" />
+                <EditPencil className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
@@ -369,11 +362,11 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 text-xs text-[--intel-silver]">
                 <div className="flex items-center gap-1">
-                  <RiUserLine className="h-3 w-3" />
+                  <User className="h-3 w-3" />
                   <span>{exchange.metrics.participants}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <RiStarLine className="h-3 w-3" />
+                  <Star className="h-3 w-3" />
                   <span>{exchange.metrics.culturalImpact}% impact</span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -397,7 +390,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
                       : "text-green-400 hover:bg-green-500/20"
                   )}
                 >
-                  <RiThumbUpLine className="h-3 w-3" />
+                  <ThumbsUp className="h-3 w-3" />
                 </button>
                 <button
                   onClick={(e) => {
@@ -412,14 +405,14 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
                       : "text-red-400 hover:bg-red-500/20"
                   )}
                 >
-                  <RiThumbUpLine className="h-3 w-3" />
+                  <ThumbsUp className="h-3 w-3" />
                 </button>
               </div>
             </div>
 
             {/* Participating Countries */}
             <div className="mt-2 flex items-center gap-2">
-              <RiGlobalLine className="h-3 w-3 text-[--intel-silver]" />
+              <Globe className="h-3 w-3 text-[--intel-silver]" />
               <div className="flex items-center gap-1">
                 {exchange.participatingCountries.slice(0, 3).map((country) => (
                   <div

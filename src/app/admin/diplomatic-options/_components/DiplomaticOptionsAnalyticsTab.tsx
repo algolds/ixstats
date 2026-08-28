@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/diplomatic-options/_components/DiplomaticOptionsAnalyticsTab.tsx
 // Diplomatic Options Usage & Popularity Analytics Tab
-"use client";
 
 import React from "react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";

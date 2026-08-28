@@ -1,5 +1,5 @@
-// src/app/admin/_components/platform/CalculationLogsCard.tsx
 "use client";
+// src/app/admin/_components/platform/CalculationLogsCard.tsx
 
 import { Database, WarningCircle as AlertCircle, Clock, Flash as Zap } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";

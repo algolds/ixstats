@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/cards/NSImportSuiteAdmin.tsx
 // Dedicated NationStates Import Suite Admin Module
-"use client";
 
 import { useState, useMemo } from "react";
 import {

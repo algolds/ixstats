@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/editor/WikiVisualEditor.tsx
 // Visual editor on Plate (Slate).
 // Operates on native WikiAST blocks and lossless wikitext serialization.
-
-"use client";
 
 import React, { useRef, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";

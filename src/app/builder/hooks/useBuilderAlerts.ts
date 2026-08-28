@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * useBuilderAlerts — unified alert derivation hook.
  *
@@ -11,8 +13,6 @@
  *   - Tax: `validateTaxBuilderState()` → tax-specific validation
  *   - Foundation/Identity: coarse step validation via builder state checks
  */
-
-"use client";
 
 import { useMemo } from "react";
 import type { BuilderSection } from "~/app/builder/lib/builder-theme";

@@ -1,5 +1,5 @@
-// src/components/defense/stability/StabilityMetricsCard.tsx
 "use client";
+// src/components/defense/stability/StabilityMetricsCard.tsx
 
 import React from "react";
 import type { ReactNode } from "react";

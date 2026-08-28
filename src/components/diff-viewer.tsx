@@ -1,5 +1,4 @@
 import * as React from "react";
-import { structuredPatch, parsePatch } from "diff";
 import { cn } from "~/lib/utils";
 import { DiffViewerCopyButton } from "~/components/diff-viewer-client";
 
@@ -36,57 +35,96 @@ type DiffViewerProps = DiffInput &
   };
 
 function computeLines(input: DiffInput): DiffLine[] {
-  let hunks: ReturnType<typeof structuredPatch>["hunks"];
-
   if ("patch" in input && input.patch) {
-    const parsed = parsePatch(input.patch);
-    hunks = parsed[0]?.hunks ?? [];
-  } else {
-    const result = structuredPatch(
-      "",
-      "",
-      input.oldCode ?? "",
-      input.newCode ?? "",
-      undefined,
-      undefined,
-      { context: 3 }
-    );
-    hunks = result.hunks;
-  }
-
-  const lines: DiffLine[] = [];
-
-  for (const hunk of hunks) {
-    let oldNum = hunk.oldStart;
-    let newNum = hunk.newStart;
-
-    for (const line of hunk.lines) {
-      if (line.startsWith("+")) {
+    const lines: DiffLine[] = [];
+    let oldNum = 1;
+    let newNum = 1;
+    const rawLines = input.patch.split("\n");
+    for (const raw of rawLines) {
+      if (raw.startsWith("@@")) {
+        const match = /@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(raw);
+        if (match && match[1] && match[2]) {
+          oldNum = parseInt(match[1], 10);
+          newNum = parseInt(match[2], 10);
+        }
+        continue;
+      }
+      if (raw.startsWith("+")) {
         lines.push({
           type: "added",
-          content: line.slice(1),
+          content: raw.slice(1),
           oldNumber: null,
           newNumber: newNum++,
         });
-      } else if (line.startsWith("-")) {
+      } else if (raw.startsWith("-")) {
         lines.push({
           type: "removed",
-          content: line.slice(1),
+          content: raw.slice(1),
           oldNumber: oldNum++,
           newNumber: null,
         });
-      } else {
+      } else if (raw.startsWith(" ")) {
         lines.push({
           type: "context",
-          content: line.startsWith(" ") ? line.slice(1) : line,
+          content: raw.slice(1),
           oldNumber: oldNum++,
           newNumber: newNum++,
         });
       }
     }
+    return lines;
   }
 
-  return lines;
+  const oldLines = (input.oldCode ?? "").split("\n");
+  const newLines = (input.newCode ?? "").split("\n");
+  const m = oldLines.length;
+  const n = newLines.length;
+
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+
+  for (let i = 0; i < m; i++) {
+    for (let j = 0; j < n; j++) {
+      if (oldLines[i] === newLines[j]) {
+        dp[i + 1]![j + 1] = (dp[i]![j] ?? 0) + 1;
+      } else {
+        dp[i + 1]![j + 1] = Math.max(dp[i + 1]![j] ?? 0, dp[i]![j + 1] ?? 0);
+      }
+    }
+  }
+
+  const result: DiffLine[] = [];
+  let i = m;
+  let j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && oldLines[i - 1] === newLines[j - 1]) {
+      result.unshift({
+        type: "context",
+        content: oldLines[i - 1] ?? "",
+        oldNumber: i,
+        newNumber: j,
+      });
+      i--;
+      j--;
+    } else if (j > 0 && (i === 0 || (dp[i]![j - 1] ?? 0) >= (dp[i - 1]![j] ?? 0))) {
+      result.unshift({
+        type: "added",
+        content: newLines[j - 1] ?? "",
+        oldNumber: null,
+        newNumber: j,
+      });
+      j--;
+    } else if (i > 0 && (j === 0 || (dp[i]![j - 1] ?? 0) < (dp[i - 1]![j] ?? 0))) {
+      result.unshift({
+        type: "removed",
+        content: oldLines[i - 1] ?? "",
+        oldNumber: i,
+        newNumber: null,
+      });
+      i--;
+    }
+  }
+
+  return result;
 }
 
 function lineNumberWidth(lines: DiffLine[]): number {

@@ -1,9 +1,8 @@
+"use client";
 /**
  * CardDetailsModal Component
  * Enhanced expanded card view with 3D viewer, tabs, market history, and social features
  */
-
-"use client";
 
 import React, { useMemo, useState } from "react";
 import {

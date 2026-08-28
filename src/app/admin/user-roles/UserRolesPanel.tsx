@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/user-roles/UserRolesPanel.tsx
 // Role Definitions & VIP Invitation Management
-"use client";
 
 import { useState } from "react";
 import { api } from "~/trpc/react";

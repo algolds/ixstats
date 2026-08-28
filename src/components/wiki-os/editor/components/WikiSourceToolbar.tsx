@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/editor/components/WikiSourceToolbar.tsx
 // Top bar and Wikitext formatting toolbar for WikiOS Source Editor (CodeMirror).
-
-"use client";
 
 import React from "react";
 import {
@@ -13,7 +12,7 @@ import {
   ArrowDown as Subscript,
   List,
   NumberedListLeft as ListOrdered,
-  QuoteSolid as Quote,
+  Quote as Quote,
   Link as Link2,
   MediaImage as ImageIcon,
   Puzzle,
@@ -25,7 +24,7 @@ import {
   Table,
   NavArrowDown as ChevronDown,
   Eye,
-  EyeClosed as EyeOff,
+  EyeClosed as EyeClosed,
   Hashtag as Hash,
   OpenNewWindow as ExternalLink,
   Code as FileCode,
@@ -115,7 +114,7 @@ export function WikiSourceToolbar({
             type="button"
             title={showPreview ? "Hide preview" : "Show preview"}
           >
-            {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showPreview ? <EyeClosed className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         }
       />

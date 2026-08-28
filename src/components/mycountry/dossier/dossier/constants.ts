@@ -1,3 +1,15 @@
+import {
+  Book,
+  Building,
+  ClockRotateRight,
+  Coins,
+  Globe,
+  Group,
+  Heart,
+  Map,
+  Shield,
+} from "iconoir-react";
+
 /**
  * Wiki Intelligence Tab - Constants
  *
@@ -7,18 +19,6 @@
  * - Valid infobox fields for display
  * - Field name mappings for human-readable display
  */
-
-import {
-  RiBookOpenLine,
-  RiGlobalLine,
-  RiMapLine,
-  RiBuildingLine,
-  RiMoneyDollarCircleLine,
-  RiTeamLine,
-  RiHeartLine,
-  RiShieldLine,
-  RiHistoryLine,
-} from "react-icons/ri";
 
 /**
  * Visual styling for classification levels
@@ -38,10 +38,16 @@ export const CLASSIFICATION_STYLES = {
     label: "RESTRICTED",
   },
   CONFIDENTIAL: {
+    color: "text-orange-600 dark:text-orange-400",
+    bg: "bg-orange-500/10",
+    border: "border-orange-500/30",
+    label: "CONFIDENTIAL",
+  },
+  TOP_SECRET: {
     color: "text-red-600 dark:text-red-400",
     bg: "bg-red-500/10",
     border: "border-red-500/30",
-    label: "CONFIDENTIAL",
+    label: "TOP SECRET",
   },
 } as const;
 
@@ -50,17 +56,17 @@ export const CLASSIFICATION_STYLES = {
  * Provides contextual visual indicators for section categories
  */
 export const SECTION_ICONS = {
-  overview: RiGlobalLine,
-  geography: RiMapLine,
-  government: RiBuildingLine,
-  economy: RiMoneyDollarCircleLine,
-  demographics: RiTeamLine,
-  history: RiHistoryLine,
-  culture: RiHeartLine,
-  foreign_relations: RiGlobalLine,
-  military: RiShieldLine,
-  education: RiBookOpenLine,
-  default: RiBookOpenLine,
+  overview: Globe,
+  geography: Map,
+  government: Building,
+  economy: Coins,
+  demographics: Group,
+  history: ClockRotateRight,
+  culture: Heart,
+  foreign_relations: Globe,
+  military: Shield,
+  education: Book,
+  default: Book,
 } as const;
 
 /**

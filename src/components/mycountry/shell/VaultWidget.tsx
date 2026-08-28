@@ -1,3 +1,4 @@
+"use client";
 /**
  * VaultWidget Component
  *
@@ -6,8 +7,6 @@
  * - Today's earnings breakdown
  * - Link to full vault page
  */
-
-"use client";
 
 import React, { useState } from "react";
 import { api } from "~/trpc/react";

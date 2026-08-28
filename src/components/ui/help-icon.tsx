@@ -3,7 +3,7 @@
 import React from "react";
 import { HelpCircle, InfoCircle as Info } from "iconoir-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 interface HelpIconProps {
   content: React.ReactNode;

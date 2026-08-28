@@ -1,5 +1,5 @@
-// src/components/defense/military/BranchCard.tsx
 "use client";
+// src/components/defense/military/BranchCard.tsx
 
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";

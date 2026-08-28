@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { NavArrowRight as ChevronRight, Xmark as X } from "iconoir-react";
-import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable";
+import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable/SwipeableRow";
 import { cn } from "~/lib/utils";
 import type { NotificationItem } from "./types";
 import { soundEffects } from "~/lib/sound/cuelume";

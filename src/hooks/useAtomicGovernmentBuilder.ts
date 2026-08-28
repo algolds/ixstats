@@ -1,3 +1,4 @@
+"use client";
 /**
  * Atomic Government Builder Hook (Plan 166)
  *
@@ -6,8 +7,6 @@
  *
  * @module useAtomicGovernmentBuilder
  */
-
-"use client";
 
 import { useMemo } from "react";
 import { ComponentType } from "@prisma/client";

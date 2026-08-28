@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * PackHolographicCover — Procedural holographic pack cover
  *
@@ -14,8 +16,6 @@
  *  5. Specular glare (cursor tracking, mix-blend-mode: overlay)
  *  6. Text overlay (pack name + rarity stamp)
  */
-
-"use client";
 
 import React, { useMemo, useRef } from "react";
 import { cn } from "~/lib/utils";

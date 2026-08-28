@@ -11,7 +11,7 @@ import {
 import { HealthRing } from "~/components/ui/health-ring";
 import { Badge } from "~/components/ui/badge";
 import { FacetCard } from "~/components/ui/facet-container";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import {
   Activity,
   Dollar as DollarSign,

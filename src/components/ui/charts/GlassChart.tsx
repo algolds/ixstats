@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { motion } from "motion/react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { chartColorPalette } from "~/lib/builder";
 
 interface GlassChartProps {

@@ -1,12 +1,13 @@
 "use client";
 
+import { Flash } from "iconoir-react";
+
 // src/app/labs/onoma/components/nav/onoma-tabs.tsx
 // Tab definitions, color schemas, feature descriptions, and Onoma Glyphs for Onoma navigation
 // Product Model: CREATE · STUDIO · EXPLORE (Apple SF Symbols × IPA × Linguistic Notation)
 
 import React from "react";
 import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
-import { RiFlashlightLine } from "react-icons/ri";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import type { OnomaGlyphName } from "../glyphs/onoma-glyphs-catalog";
 
@@ -74,7 +75,7 @@ const createGlyphAdapter = (name: OnomaGlyphName) => {
 };
 
 // Linguistic Glyph Adapters for backward-compatibility with downstream components
-export const ScienceGameIcon = (props: { className?: string }) => <RiFlashlightLine {...props} />;
+export const ScienceGameIcon = (props: { className?: string }) => <Flash {...props} />;
 export const GeographyGameIcon = createGlyphAdapter("sound-vowel-quad");
 export const PeopleGameIcon = createGlyphAdapter("sound-articulation");
 export const GovernmentGameIcon = createGlyphAdapter("struct-syntax");

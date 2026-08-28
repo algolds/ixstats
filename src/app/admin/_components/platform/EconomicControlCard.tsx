@@ -1,5 +1,5 @@
-// src/app/admin/_components/platform/EconomicControlCard.tsx
 "use client";
+// src/app/admin/_components/platform/EconomicControlCard.tsx
 
 import { useState } from "react";
 import {

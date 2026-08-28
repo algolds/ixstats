@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/_components/ThinkPagesSettingsContent.tsx
 // ThinkPages Social Feed & Moderation Admin Panel
-"use client";
 
 import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";

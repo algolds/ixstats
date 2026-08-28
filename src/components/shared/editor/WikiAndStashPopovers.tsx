@@ -1,7 +1,6 @@
+"use client";
 // src/components/shared/editor/WikiAndStashPopovers.tsx
 // Search and insertion popovers for MediaWiki articles and Lore Stash assets.
-
-"use client";
 
 import { Sparks as Sparkles, Bookmark, SystemRestart as Loader2, Plus } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";

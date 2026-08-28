@@ -1,8 +1,7 @@
+"use client";
 // src/app/labs/onoma/components/shared/OnomaBrandLogo.tsx
 // Onoma Lab — Unified Brand Logo & App Icon Component
 // Features: Apple Spring Hover Physics with Signature "Eye-Wink" Micro-Interaction
-
-"use client";
 
 import React, { useState } from "react";
 import { cn } from "~/lib/utils";

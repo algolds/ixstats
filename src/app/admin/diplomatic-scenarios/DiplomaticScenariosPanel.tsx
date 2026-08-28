@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/diplomatic-scenarios/DiplomaticScenariosPanel.tsx
 // Admin interface for managing diplomatic scenarios - dynamic scenario templates with player choices
-"use client";
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";

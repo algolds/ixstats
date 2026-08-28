@@ -1,9 +1,8 @@
+"use client";
 /**
  * WikiSlashMenu.tsx — Notion-style floating slash-command menu for the WikiOS
  * Plate editor. cmdk-backed with full keyboard navigation.
  */
-
-"use client";
 
 import React, { useMemo } from "react";
 import {

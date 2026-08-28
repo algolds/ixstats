@@ -28,13 +28,37 @@ import { cn } from "~/lib/utils";
 
 type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
 
-import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
-import { AccountSettingsModal } from "~/components/thinkpages/AccountSettingsModal";
-import { AccountManagerModal } from "~/components/thinkpages/AccountManagerModal";
-import { RepostModal } from "~/components/thinkpages/RepostModal";
-import { GlassCanvasComposer } from "~/components/thinkpages/GlassCanvasComposer";
+import dynamic from "next/dynamic";
 import { useNotify } from "~/hooks/useNotify";
 import { soundEffects } from "~/lib/sound/cuelume";
+
+const GlassCanvasComposer = dynamic(
+  () => import("~/components/thinkpages/GlassCanvasComposer").then((m) => m.GlassCanvasComposer),
+  {
+    loading: () => <div className="h-36 animate-pulse rounded-2xl bg-white/5" />,
+    ssr: false,
+  }
+);
+
+const AccountCreationModal = dynamic(
+  () => import("~/components/thinkpages/AccountCreationModal").then((m) => m.AccountCreationModal),
+  { ssr: false }
+);
+
+const AccountSettingsModal = dynamic(
+  () => import("~/components/thinkpages/AccountSettingsModal").then((m) => m.AccountSettingsModal),
+  { ssr: false }
+);
+
+const AccountManagerModal = dynamic(
+  () => import("~/components/thinkpages/AccountManagerModal").then((m) => m.AccountManagerModal),
+  { ssr: false }
+);
+
+const RepostModal = dynamic(
+  () => import("~/components/thinkpages/RepostModal").then((m) => m.RepostModal),
+  { ssr: false }
+);
 
 import { UnifiedFeedContent, FollowingFeedContent } from "./UnifiedFeedContent";
 import { TrendingSectionWidget } from "./TrendingSectionWidget";

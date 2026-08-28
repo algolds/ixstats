@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/reader/CategoryBreadcrumb.tsx
 // Shows parent category hierarchy above an article for navigation context.
-
-"use client";
 
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";

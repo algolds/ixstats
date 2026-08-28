@@ -1,5 +1,7 @@
 "use client";
 
+import { Flash } from "iconoir-react";
+
 import React from "react";
 import {
   Dialog,
@@ -8,7 +10,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import { RiFlashlightLine } from "react-icons/ri";
 
 interface ResponseOption {
   id?: string;
@@ -49,7 +50,7 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
-              <RiFlashlightLine className="h-6 w-6 text-cyan-400" />
+              <Flash className="h-6 w-6 text-cyan-400" />
               Cultural Exchange Scenario
             </DialogTitle>
             <DialogDescription>

@@ -15,7 +15,6 @@ import { isEqual } from "~/lib/utils";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
-import { economyIntegrationService } from "../services/EconomyIntegrationService";
 import { buildTaxSyncPayload } from "../components/enhanced/utils/taxSync";
 import { api } from "~/trpc/react";
 
@@ -126,46 +125,7 @@ export function useEconomyBuilderSync({
     enabledRef.current = enabled;
   }, [enabled]);
 
-  useEffect(() => {
-    const unsubscribe = economyIntegrationService.subscribe((state) => {
-      if (!enabledRef.current) return;
 
-      // Use refs for comparison to avoid stale closures
-      if (state.economyBuilder && !isEqual(state.economyBuilder, economyBuilderRef.current)) {
-        setEconomyBuilder(state.economyBuilder);
-        persistEconomyBuilderRef.current?.(state.economyBuilder);
-      }
-
-      // Use isEqual instead of JSON.stringify for performance
-      if (state.economicInputs && !isEqual(state.economicInputs, economicInputsRef.current)) {
-        onEconomicInputsChangeRef.current(state.economicInputs);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [setEconomyBuilder]); // Only setEconomyBuilder needed - refs handle the rest
-
-  // ============================================================
-  // INTEGRATION SERVICE UPDATES (push changes to service)
-  // ============================================================
-  useEffect(() => {
-    // oxlint-disable-next-line
-    if (economyBuilder) {
-      if (economyBuilder.selectedAtomicComponents) {
-        void economyIntegrationService.updateEconomicComponents(
-          economyBuilder.selectedAtomicComponents
-        );
-      }
-      void economyIntegrationService.updateEconomyBuilder(economyBuilder);
-    }
-    // oxlint-disable-next-line
-  }, []); // Run once on mount
-
-  useEffect(() => {
-    if (economicInputs) {
-      economyIntegrationService.updateEconomicInputs(economicInputs);
-    }
-  }, [economicInputs]);
 
   // ============================================================
   // CROSS-BUILDER SYNCHRONIZATION

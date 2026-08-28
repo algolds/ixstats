@@ -1,7 +1,6 @@
+"use client";
 // src/app/(forum)/forum/[forumId]/page.tsx
 // Thread list for a specific forum.
-
-"use client";
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";

@@ -1,5 +1,5 @@
-// Route-aware country flag hook (Plan 164)
 "use client";
+// Route-aware country flag hook (Plan 164)
 
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";

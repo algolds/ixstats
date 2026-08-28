@@ -1,5 +1,5 @@
-// src/app/(wiki-os)/wiki/contributions/page.tsx
 "use client";
+// src/app/(wiki-os)/wiki/contributions/page.tsx
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect } from "react";

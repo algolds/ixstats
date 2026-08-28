@@ -1,17 +1,25 @@
+"use client";
 // src/components/forum/composer/ThreadComposer.tsx
 // Full-page new thread composer with title, forum selector, and unified GlassPlateEditor.
-
-"use client";
 
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Send, ArrowLeft, SystemRestart as Loader2 } from "iconoir-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { GlassPlateEditor, type GlassPlateEditorRef } from "~/components/shared/editor";
+import type { GlassPlateEditorRef } from "~/components/shared/editor";
+
+const GlassPlateEditor = dynamic(
+  () => import("~/components/shared/editor/GlassPlateEditor").then((m) => m.GlassPlateEditor),
+  {
+    loading: () => <div className="h-48 animate-pulse rounded-lg bg-white/5" />,
+    ssr: false,
+  }
+);
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 interface ThreadComposerProps {
   /** Pre-select a forum if navigated from a specific forum */

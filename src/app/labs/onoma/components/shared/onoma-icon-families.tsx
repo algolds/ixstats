@@ -1,30 +1,29 @@
 "use client";
 
+import {
+  Building,
+  Book,
+  Suitcase,
+  Cutlery,
+  Gamepad,
+  Trophy,
+  MediaImage,
+  MagicWand,
+  GitFork,
+  Planet,
+  Compass,
+  Shield,
+  WarningTriangle,
+  Brightness,
+  User,
+  Crown,
+} from "iconoir-react";
+
 // src/app/labs/onoma/components/shared/onoma-icon-families.tsx
 // Onoma Lab — Remix Icons Domain Iconography Architecture
 // High-precision vector mapping for dictionary taxonomies, categories, and subtypes
 
 import React from "react";
-import {
-  RiPlanetLine,
-  RiVipCrownLine,
-  RiNodeTree,
-  RiSunLine,
-  RiSkull2Line,
-  RiAncientGateLine,
-  RiBuilding4Line,
-  RiLandscapeLine,
-  RiShieldStarLine,
-  RiBriefcase4Line,
-  RiUser3Line,
-  RiSwordLine,
-  RiSailboatLine,
-  RiGobletLine,
-  RiRestaurantLine,
-  RiGamepadLine,
-  RiMagicLine,
-  RiBook2Line,
-} from "react-icons/ri";
 
 export type IconComponent = React.ComponentType<{ className?: string }>;
 
@@ -192,7 +191,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("cuisine") ||
     title.includes("food")
   ) {
-    return RiRestaurantLine;
+    return Cutlery;
   }
 
   // 11. Sports, Games, Contests
@@ -203,10 +202,10 @@ export function getDomainIconByFamily(dict?: {
     title.includes("sport") ||
     title.includes("game")
   ) {
-    return RiGamepadLine;
+    return Gamepad;
   }
 
-  // 12. Magic, Arcane Orders, Mystics
+  // 12. MagicWand, Arcane Orders, Mystics
   if (
     cat.includes("magic") ||
     cat.includes("arcane") ||

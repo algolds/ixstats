@@ -1,7 +1,6 @@
+"use client";
 // src/components/cards/pack-opening/Stage2_PackExplosion.tsx
 // Stage 2: Enhanced explosion effect with premium glass physics and rarity-aware particles
-
-"use client";
 
 import React, { useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";

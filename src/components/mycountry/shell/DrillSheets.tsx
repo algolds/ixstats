@@ -34,10 +34,18 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
-import { PoliticsDrillDown } from "./PoliticsDrillDown";
-import { EconomyDrillDown } from "./EconomyDrillDown";
 import { ThinkPagesShareModal } from "~/components/mycountry/shared/modals/ThinkPagesShareModal";
 import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDetailBrief";
+
+const PoliticsDrillDown = dynamic(
+  () => import("./PoliticsDrillDown").then((m) => ({ default: m.PoliticsDrillDown })),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" />, ssr: false }
+);
+
+const EconomyDrillDown = dynamic(
+  () => import("./EconomyDrillDown").then((m) => ({ default: m.EconomyDrillDown })),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" />, ssr: false }
+);
 
 const EmbassiesAndRelationsPanel = dynamic(
   () =>

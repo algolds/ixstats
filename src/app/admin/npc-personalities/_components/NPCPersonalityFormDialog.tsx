@@ -1,5 +1,5 @@
-// src/app/admin/npc-personalities/_components/NPCPersonalityFormDialog.tsx
 "use client";
+// src/app/admin/npc-personalities/_components/NPCPersonalityFormDialog.tsx
 
 import {
   Dialog,

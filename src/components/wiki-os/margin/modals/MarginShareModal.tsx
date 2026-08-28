@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/margin/modals/MarginShareModal.tsx
 // Share modal for WikiOS Margin: Send quotes to direct messages or copy in Markdown, Wikitext, or BBCode.
 // Signature Highlighter Yellow / Warm Amber branding for Margin.
-
-"use client";
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";

@@ -1,7 +1,6 @@
+"use client";
 // src/app/(forum)/forum/members/[userId]/page.tsx
 // Forum member profile page.
-
-"use client";
 
 import { useParams } from "next/navigation";
 import Link from "next/link";

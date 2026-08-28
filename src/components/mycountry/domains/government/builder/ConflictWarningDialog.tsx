@@ -1,3 +1,4 @@
+"use client";
 // src/components/builders/ConflictWarningDialog.tsx
 /**
  * Conflict Warning Dialog
@@ -5,8 +6,6 @@
  * Displays intelligent conflict warnings when builder data would overwrite existing data.
  * Shows affected systems, severity levels, and allows users to confirm or cancel changes.
  */
-
-"use client";
 
 import React from "react";
 import {

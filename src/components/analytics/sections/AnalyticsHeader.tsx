@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import type { DateRange } from "~/hooks/useAnalyticsDashboard";
+import type { DateRange } from "~/types/analytics-dashboard";
 
 interface AnalyticsHeaderProps {
   dateRange: DateRange;

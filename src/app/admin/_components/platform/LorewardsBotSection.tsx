@@ -1,5 +1,5 @@
-// src/app/admin/_components/platform/LorewardsBotSection.tsx
 "use client";
+// src/app/admin/_components/platform/LorewardsBotSection.tsx
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";

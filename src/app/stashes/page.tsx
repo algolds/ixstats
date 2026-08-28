@@ -1,8 +1,7 @@
+"use client";
 // src/app/stashes/page.tsx
 // Stash manager — browse, organize, search, and annotate saved wiki pages, quotes, images, and forum threads.
 // Apple Design & WikiOS standard.
-
-"use client";
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";

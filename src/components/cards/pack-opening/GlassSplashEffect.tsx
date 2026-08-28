@@ -1,7 +1,6 @@
+"use client";
 // src/components/cards/pack-opening/GlassSplashEffect.tsx
 // Premium glass splash effect for card reveals with rarity-specific particles
-
-"use client";
 
 import React, { useMemo } from "react";
 import { motion } from "motion/react";

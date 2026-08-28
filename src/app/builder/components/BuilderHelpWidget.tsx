@@ -1,5 +1,5 @@
-// Builder Help Widget for Atomic Builder
 "use client";
+// Builder Help Widget for Atomic Builder
 
 import React from "react";
 import { OpenBook as BookOpen } from "iconoir-react";

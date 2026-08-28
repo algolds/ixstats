@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/storyteller/page.tsx
 // Storyteller hub - tabbed interface for world events, timeline, sandbox
-"use client";
 export const dynamic = "force-dynamic";
 
 import { useState } from "react";

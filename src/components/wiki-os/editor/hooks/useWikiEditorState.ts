@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/editor/hooks/useWikiEditorState.ts
 // Shared state management for WikiOS Visual and Source editors.
-
-"use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";

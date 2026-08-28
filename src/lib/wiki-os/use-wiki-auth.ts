@@ -1,5 +1,5 @@
-// src/lib/wiki-os/use-wiki-auth.ts
 "use client";
+// src/lib/wiki-os/use-wiki-auth.ts
 // WikiOS CLIENT auth seam (Workstream C2).
 //
 // The ONLY place WikiOS client code touches the auth provider (Clerk today).

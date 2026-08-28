@@ -1,16 +1,10 @@
 "use client";
 
+import { Camera, Cutlery, Page as FileText, MusicNote, Palette, Xmark } from "iconoir-react";
+
 import React, { useState } from "react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
-import {
-  RiCameraLine,
-  RiCloseLine,
-  RiMusicLine,
-  RiFileTextLine,
-  RiPaletteLine,
-  RiRestaurantLine,
-} from "react-icons/ri";
 
 interface ArtifactUploadFormProps {
   onSubmit: (data: {
@@ -57,19 +51,19 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
     };
 
     const artifactTypes = [
-      { value: "photo", label: "Photo", icon: RiCameraLine },
-      { value: "video", label: "Video", icon: RiMusicLine },
+      { value: "photo", label: "Photo", icon: Camera },
+      { value: "video", label: "Video", icon: MusicNote },
       { value: "document", label: "Document", icon: RiFileTextLine },
-      { value: "artwork", label: "Artwork", icon: RiPaletteLine },
-      { value: "recipe", label: "Recipe", icon: RiRestaurantLine },
-      { value: "music", label: "Music", icon: RiMusicLine },
+      { value: "artwork", label: "Artwork", icon: Palette },
+      { value: "recipe", label: "Recipe", icon: Cutlery },
+      { value: "music", label: "Music", icon: MusicNote },
     ] as const;
 
     return (
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="flex items-center gap-2 text-xl font-bold text-green-400">
-            <RiCameraLine className="h-6 w-6" />
+            <Camera className="h-6 w-6" />
             Upload Cultural Artifact
           </h3>
           <button
@@ -77,7 +71,7 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
             onClick={onCancel}
             className="hover:text-foreground rounded-lg p-2 text-[--intel-silver] transition-colors hover:bg-white/10"
           >
-            <RiCloseLine className="h-5 w-5" />
+            <Xmark className="h-5 w-5" />
           </button>
         </div>
 
@@ -135,7 +129,7 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
           <label className="text-foreground mb-2 block text-sm font-medium">Upload File *</label>
           <label className="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-white/20 bg-white/5 transition-colors hover:border-green-500/50 hover:bg-white/10">
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <RiCameraLine className="mb-2 h-8 w-8 text-[--intel-silver]" />
+              <Camera className="mb-2 h-8 w-8 text-[--intel-silver]" />
               <p className="text-sm text-[--intel-silver]">
                 {formData.file ? formData.file.name : "Click to upload file"}
               </p>
@@ -168,7 +162,7 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
               type="submit"
               className="flex items-center gap-2 rounded-lg bg-green-500/20 px-6 py-2 font-medium text-green-400 transition-colors hover:bg-green-500/30"
             >
-              <RiCameraLine className="h-4 w-4" />
+              <Camera className="h-4 w-4" />
               Upload Artifact
             </button>
           </div>

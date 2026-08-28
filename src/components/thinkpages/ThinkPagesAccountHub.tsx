@@ -25,10 +25,12 @@ function ThinkPagesAccountHubInner() {
     staleTime: 5 * 60_000,
   });
 
+  const effectiveCountryId = userProfile?.countryId || (user as any)?.countryId || "";
+
   const { data: countryData } = api.countries.getMapSummary.useQuery(
-    { countryId: userProfile?.countryId || "" },
+    { countryId: effectiveCountryId },
     {
-      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "",
+      enabled: !!effectiveCountryId && effectiveCountryId.trim() !== "",
       staleTime: 5 * 60_000,
       retry: false,
     }

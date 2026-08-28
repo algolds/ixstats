@@ -1,6 +1,6 @@
+"use client";
 // src/components/admin/atomic-components/AtomicComponentStats.tsx
 // Universal Telemetry & Usage Statistics Grid for Atomic Components
-"use client";
 
 import { Component as Layers, CheckCircle, Network, Folder } from "iconoir-react";
 

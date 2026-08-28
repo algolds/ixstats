@@ -1,5 +1,5 @@
-// src/components/wiki-os/editor/WikiTemplateModals.tsx
 "use client";
+// src/components/wiki-os/editor/WikiTemplateModals.tsx
 
 /**
  * WikiTemplateModals — Re-exports modularized template insertion modals

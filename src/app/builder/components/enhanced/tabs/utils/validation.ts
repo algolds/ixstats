@@ -2,7 +2,14 @@
 
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
-import type { ValidationMessage } from "~/components/ui/shared/feedback/ValidationFeedback";
+export interface ValidationMessage {
+  id?: string;
+  field?: string;
+  message: string;
+  severity: "error" | "warning" | "info" | "success";
+  type?: "error" | "warning" | "info" | "success";
+  tab?: string;
+}
 
 export interface SectorContribution {
   id: string;

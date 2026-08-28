@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { motion } from "motion/react";
 
-import { MetricCard } from "~/components/ui/shared/data-display/MetricCard";
+import { MetricCard } from "./MetricCard";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { GlassPanel, PanelCard } from "~/components/mycountry/cards";

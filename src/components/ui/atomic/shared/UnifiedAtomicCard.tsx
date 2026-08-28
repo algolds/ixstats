@@ -12,7 +12,7 @@ import {
   Flash as Zap,
   InfoCircle as Info,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import type { UnifiedAtomicCardProps } from "./types";
 import {
   getThemeColorClasses,

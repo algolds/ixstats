@@ -1,8 +1,7 @@
+"use client";
 // src/app/labs/onoma/components/sections/LoanwordsSection.tsx
 // Onoma Lab — Loanword & Contact Registry Section
 // Philosophy: Historical Linguistics × Apple Design × Emil Design Engineering
-
-"use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {

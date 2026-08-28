@@ -1,10 +1,9 @@
+"use client";
 // src/components/wiki-os/shared/WikiOSProfileWidget.tsx
 // Sidebar profile widget — pipes the signed-in user's linked wiki profile
 // (username, join date, edits, rank, lorescore/lorewards) into the WikiOS rail.
 // Renders as a glass card when expanded, and as an avatar + rank badge when the
 // rail is collapsed. Nothing renders when signed out.
-
-"use client";
 
 import { useState } from "react";
 import Link from "next/link";

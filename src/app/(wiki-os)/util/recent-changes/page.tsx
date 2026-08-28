@@ -1,6 +1,6 @@
+"use client";
 // src/app/(wiki-os)/wiki/recent-changes/page.tsx
 // WikiOS Recent Changes — grouped by page, with byte diffs, filters, and collapsible edits.
-"use client";
 
 import { useState, useMemo } from "react";
 import { api } from "~/trpc/react";

@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/membership/MembershipPanel.tsx
 // Membership Tier Management Panel with Facet design tokens
-"use client";
 
 import { useState } from "react";
 import { api } from "~/trpc/react";

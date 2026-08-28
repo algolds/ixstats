@@ -1,5 +1,5 @@
-// src/components/defense/stability/SecurityEventsCard.tsx
 "use client";
+// src/components/defense/stability/SecurityEventsCard.tsx
 
 import React from "react";
 import { motion } from "motion/react";

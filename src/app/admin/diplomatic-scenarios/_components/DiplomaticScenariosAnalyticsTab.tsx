@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/diplomatic-scenarios/_components/DiplomaticScenariosAnalyticsTab.tsx
 // Diplomatic Scenarios Usage & Completion Analytics Tab
-"use client";
 
 import React from "react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";

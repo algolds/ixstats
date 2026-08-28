@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Progress } from "~/components/ui/progress";
 import { CheckCircle, InfoCircle as Info, Minus, Search } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import type { UnifiedAtomicComponentSelectorProps } from "./types";
 import { UnifiedAtomicCard } from "./UnifiedAtomicCard";
 import { getThemeColorClasses } from "./themes";

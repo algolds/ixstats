@@ -1,7 +1,6 @@
+"use client";
 // src/app/admin/wiki/components/AwardsManagerSection.tsx
 // Lorewards & custom wiki awards manager.
-
-"use client";
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";

@@ -1,6 +1,6 @@
+"use client";
 // src/app/(wiki-os)/wiki/contributions/page.tsx
 // WikiOS User Contributions Ledger — Hub & Editor History Search
-"use client";
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";

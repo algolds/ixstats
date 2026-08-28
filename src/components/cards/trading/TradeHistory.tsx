@@ -1,10 +1,9 @@
+"use client";
 /**
  * TradeHistory Component
  * Display completed trade history with filtering
  * Phase 3: P2P Trading System
  */
-
-"use client";
 
 import React from "react";
 import { useAuth } from "@clerk/nextjs";

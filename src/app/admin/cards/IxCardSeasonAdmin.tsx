@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/cards/IxCardSeasonAdmin.tsx
 // IxCard Season Configuration with Facet Glass & Apple Tactile Physics
-"use client";
 
 import { useState, useEffect } from "react";
 import { Component as Layers, Refresh as RefreshCw, FloppyDisk as Save } from "iconoir-react";

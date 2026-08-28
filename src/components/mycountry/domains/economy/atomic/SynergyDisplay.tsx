@@ -1,11 +1,10 @@
+"use client";
 /**
  * Synergy Display
  *
  * Visualization of synergies and conflicts between selected components.
  * Optimized with React.memo for performance.
  */
-
-"use client";
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";

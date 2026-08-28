@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/reader/ArticleRenderer.tsx
 // Renders pre-transformed WikiOS article data in reader mode.
 // Composes modular ArticleHeader, ArticleCategories, ArticleFooter, ArticleModals, and ArticlePlaceholders.
-
-"use client";
 
 import React, { useRef, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";

@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/stashes/CreateStashPopover.tsx
 // Apple Design Popover for creating new Lore Stash collections.
 // Anchored directly to the trigger button with spring physics, 8-color swatch picker, live preview, and keyboard shortcuts.
-
-"use client";
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";

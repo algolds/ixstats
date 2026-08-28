@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/reader/WikiOSMainPage.tsx
 // Custom WikiOS main page
-
-"use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";

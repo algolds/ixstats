@@ -1,6 +1,6 @@
+"use client";
 // src/app/(wiki-os)/wiki/search/page.tsx
 // WikiOS Search Page — full search results
-"use client";
 
 import { useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";

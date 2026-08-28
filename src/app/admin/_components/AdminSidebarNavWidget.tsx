@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/_components/AdminSidebarNavWidget.tsx
 // Apple Settings Inspired Hierarchical Inset-Grouped Navigation
-"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";

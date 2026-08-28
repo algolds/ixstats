@@ -1,7 +1,8 @@
 "use client";
 
+import { Clock, Palette } from "iconoir-react";
+
 import React from "react";
-import { RiPaletteLine, RiTimeLine } from "react-icons/ri";
 import type {
   ExchangeType,
   ExchangeStatus,
@@ -23,7 +24,7 @@ export const ExchangeFilters = React.memo<ExchangeFiltersProps>(
     return (
       <div className="flex flex-col gap-4 rounded-lg border border-[--intel-gold]/20 bg-white/5 p-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-2">
-          <RiPaletteLine className="h-4 w-4 text-[--intel-silver]" />
+          <Palette className="h-4 w-4 text-[--intel-silver]" />
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
@@ -50,7 +51,7 @@ export const ExchangeFilters = React.memo<ExchangeFiltersProps>(
         </div>
 
         <div className="flex items-center gap-2">
-          <RiTimeLine className="h-4 w-4 text-[--intel-silver]" />
+          <Clock className="h-4 w-4 text-[--intel-silver]" />
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}

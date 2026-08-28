@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/shared/WikiOSUnifiedSidebar.tsx
 // Unified, single-column collapsible sidebar layout with hover handle and keyboard shortcuts.
-
-"use client";
 
 import { useEffect, useState, useRef, type ReactNode } from "react";
 import Link from "next/link";
@@ -16,7 +15,7 @@ import {
   Home,
   Shuffle,
   Bookmark,
-  BookmarkSolid as BookmarkCheck,
+  Bookmark as BookmarkCheck,
   Check,
   Plus,
   SidebarCollapse as PanelLeftClose,
@@ -618,7 +617,7 @@ export function WikiOSUnifiedSidebar({
           </>
         )}
 
-        {/* Active Country Flag */}
+        {/* Active Country WhiteFlag */}
         <AnimatePresence initial={false}>
           {countryData && (
             <motion.div

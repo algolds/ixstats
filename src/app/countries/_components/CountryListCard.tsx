@@ -1,5 +1,5 @@
-// src/app/countries/_components/CountryListCard.tsx
 "use client";
+// src/app/countries/_components/CountryListCard.tsx
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";

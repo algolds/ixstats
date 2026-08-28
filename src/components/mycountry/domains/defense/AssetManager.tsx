@@ -1,5 +1,5 @@
-// src/components/defense/AssetManager.tsx
 "use client";
+// src/components/defense/AssetManager.tsx
 
 import React, { useState } from "react";
 import { motion } from "motion/react";

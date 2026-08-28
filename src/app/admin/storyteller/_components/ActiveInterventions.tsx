@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/storyteller/_components/ActiveInterventions.tsx
 // Manage running storyteller effect interventions across all countries
-"use client";
 
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";

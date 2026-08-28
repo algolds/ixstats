@@ -1,43 +1,20 @@
 import type { GovernmentTemplate } from "~/types/government";
-import { Imperial_AdministrationTemplate } from "./imperial-administration";
-import { Nordic_Social_DemocracyTemplate } from "./nordic-social-democracy";
-import { Singaporean_MeritocracyTemplate } from "./singaporean-meritocracy";
-import { Swiss_Federal_ConfederationTemplate } from "./swiss-federal-confederation";
-import { Emirati_FederationTemplate } from "./emirati-federation";
-import { Japanese_Parliamentary_SystemTemplate } from "./japanese-parliamentary-system";
-import { German_Federal_RepublicTemplate } from "./german-federal-republic";
-import { Canadian_ConfederationTemplate } from "./canadian-confederation";
-import { Brazilian_Federal_RepublicTemplate } from "./brazilian-federal-republic";
-import { Indian_Union_GovernmentTemplate } from "./indian-union-government";
-import { Australian_CommonwealthTemplate } from "./australian-commonwealth";
+import archetypesData from "./archetypes.json";
 
-export {
-  Imperial_AdministrationTemplate,
-  Nordic_Social_DemocracyTemplate,
-  Singaporean_MeritocracyTemplate,
-  Swiss_Federal_ConfederationTemplate,
-  Emirati_FederationTemplate,
-  Japanese_Parliamentary_SystemTemplate,
-  German_Federal_RepublicTemplate,
-  Canadian_ConfederationTemplate,
-  Brazilian_Federal_RepublicTemplate,
-  Indian_Union_GovernmentTemplate,
-  Australian_CommonwealthTemplate,
-};
+export const governmentTemplates: GovernmentTemplate[] =
+  archetypesData as unknown as GovernmentTemplate[];
 
-export const governmentTemplates: GovernmentTemplate[] = [
-  Imperial_AdministrationTemplate,
-  Nordic_Social_DemocracyTemplate,
-  Singaporean_MeritocracyTemplate,
-  Swiss_Federal_ConfederationTemplate,
-  Emirati_FederationTemplate,
-  Japanese_Parliamentary_SystemTemplate,
-  German_Federal_RepublicTemplate,
-  Canadian_ConfederationTemplate,
-  Brazilian_Federal_RepublicTemplate,
-  Indian_Union_GovernmentTemplate,
-  Australian_CommonwealthTemplate,
-];
+export const Imperial_AdministrationTemplate: GovernmentTemplate = governmentTemplates[0]!;
+export const Nordic_Social_DemocracyTemplate: GovernmentTemplate = governmentTemplates[1]!;
+export const Singaporean_MeritocracyTemplate: GovernmentTemplate = governmentTemplates[2]!;
+export const Swiss_Federal_ConfederationTemplate: GovernmentTemplate = governmentTemplates[3]!;
+export const Emirati_FederationTemplate: GovernmentTemplate = governmentTemplates[4]!;
+export const Japanese_Parliamentary_SystemTemplate: GovernmentTemplate = governmentTemplates[5]!;
+export const German_Federal_RepublicTemplate: GovernmentTemplate = governmentTemplates[6]!;
+export const Canadian_ConfederationTemplate: GovernmentTemplate = governmentTemplates[7]!;
+export const Brazilian_Federal_RepublicTemplate: GovernmentTemplate = governmentTemplates[8]!;
+export const Indian_Union_GovernmentTemplate: GovernmentTemplate = governmentTemplates[9]!;
+export const Australian_CommonwealthTemplate: GovernmentTemplate = governmentTemplates[10]!;
 
 export function getGovernmentTemplates(): GovernmentTemplate[] {
   return governmentTemplates;

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { ArrowUpRight, ArrowDownRight } from "iconoir-react";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 

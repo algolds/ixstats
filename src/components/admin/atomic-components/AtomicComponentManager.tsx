@@ -1,6 +1,6 @@
+"use client";
 // src/components/admin/atomic-components/AtomicComponentManager.tsx
 // Unified orchestrator for Atomic Simulation Components (Economic & Government CMS)
-"use client";
 
 import { useEconomicComponentsAdmin } from "~/hooks/admin/useEconomicComponentsAdmin";
 import { useGovernmentComponentsAdmin } from "~/hooks/admin/useGovernmentComponentsAdmin";

@@ -1,5 +1,5 @@
-// src/app/admin/_components/WarningPanel.tsx
 "use client";
+// src/app/admin/_components/WarningPanel.tsx
 
 import { WarningTriangle as AlertTriangle } from "iconoir-react";
 

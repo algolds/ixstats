@@ -1,3 +1,4 @@
+"use client";
 /**
  * Government Builder State Management Hook
  *
@@ -6,8 +7,6 @@
  *
  * @module useGovernmentBuilder
  */
-
-"use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useNotify } from "~/hooks/useNotify";

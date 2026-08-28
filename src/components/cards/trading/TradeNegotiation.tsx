@@ -1,10 +1,9 @@
+"use client";
 /**
  * TradeNegotiation Component
  * Active trade negotiation view with accept/decline/counter options
  * Phase 3: P2P Trading System
  */
-
-"use client";
 
 import React, { useMemo } from "react";
 import Image from "next/image";

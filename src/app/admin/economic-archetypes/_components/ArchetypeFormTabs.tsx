@@ -1,5 +1,5 @@
-// src/app/admin/economic-archetypes/_components/ArchetypeFormTabs.tsx
 "use client";
+// src/app/admin/economic-archetypes/_components/ArchetypeFormTabs.tsx
 
 import React from "react";
 import { Input } from "~/components/ui/input";

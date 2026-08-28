@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/rings-audit/RingsAuditPanel.tsx
 // Rings Audit and Vitality Calibration Panel
-"use client";
 
 import { useMemo } from "react";
 import { api } from "~/trpc/react";

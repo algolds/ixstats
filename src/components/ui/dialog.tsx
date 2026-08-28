@@ -4,7 +4,7 @@ import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Xmark as XIcon } from "iconoir-react";
 
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { soundEffects } from "~/lib/sound/cuelume";
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {

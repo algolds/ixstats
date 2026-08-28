@@ -1,8 +1,7 @@
+"use client";
 // src/app/labs/onoma/components/shared/OnomaHelpModal.tsx
 // ⟨ONOMA⟩ Linguistic Engine — Contextual Help & Interactive Brand Walkthrough
 // Philosophy: Clean Typography × Apple Interactive Inspector × Focused Walkthrough
-
-"use client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";

@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/editor/ImageSearchModal.tsx
 // Modal for searching, uploading, and inserting images into the wiki editor.
-
-"use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Xmark as X, MediaImage as ImageIcon, Upload } from "iconoir-react";

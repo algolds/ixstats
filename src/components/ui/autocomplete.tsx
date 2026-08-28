@@ -6,7 +6,7 @@ import {
   ArrowSeparateVertical as ChevronsUpDown,
   SystemRestart as Loader2,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { Command, CommandGroup, CommandItem, CommandList } from "~/components/ui/command";
 import { Badge } from "~/components/ui/badge";
 

@@ -1,7 +1,8 @@
 "use client";
 
+import { Globe, Plus, StatsReport, Trophy } from "iconoir-react";
+
 import React from "react";
-import { RiGlobalLine, RiAddLine, RiBarChartLine, RiTrophyLine } from "react-icons/ri";
 import { cn } from "~/lib/utils";
 import type { Achievement } from "./cultural-exchange-types";
 
@@ -35,7 +36,7 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
       <div className="flex items-center justify-between">
         <div>
           <h3 className="flex items-center gap-3 text-xl font-bold text-[--intel-gold]">
-            <RiGlobalLine className="h-6 w-6" />
+            <Globe className="h-6 w-6" />
             Cultural Exchange Program
             <span className="ml-2 text-sm font-normal text-[--intel-silver]">
               ({filteredExchangesCount} exchanges)
@@ -81,7 +82,7 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
                   : "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
               )}
             >
-              <RiBarChartLine className="h-4 w-4" />
+              <StatsReport className="h-4 w-4" />
               Predictions
             </button>
           )}
@@ -91,7 +92,7 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
               onClick={onShowLeaderboard}
               className="flex items-center gap-2 rounded-lg bg-purple-500/20 px-4 py-2 text-sm font-medium text-purple-400 transition-colors hover:bg-purple-500/30"
             >
-              <RiTrophyLine className="h-4 w-4" />
+              <Trophy className="h-4 w-4" />
               Leaderboard
             </button>
           )}
@@ -100,7 +101,7 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
             onClick={onCreateExchange}
             className="flex items-center gap-2 rounded-lg bg-[--intel-gold]/20 px-4 py-2 text-sm font-medium text-[--intel-gold] transition-colors hover:bg-[--intel-gold]/30"
           >
-            <RiAddLine className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Create Exchange
           </button>
         </div>

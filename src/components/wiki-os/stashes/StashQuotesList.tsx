@@ -1,8 +1,7 @@
+"use client";
 // src/components/wiki-os/stashes/StashQuotesList.tsx
 // Dedicated Quotes & Highlights view for the Stash system.
 // Features quote card styling, parent article pills, copy actions, and jump-to-article anchors.
-
-"use client";
 
 import { useState } from "react";
 import Link from "next/link";

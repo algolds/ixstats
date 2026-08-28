@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/lorescanner/LoreScannerPanel.tsx
 // Wiki Links LoreScanner Admin Panel
-"use client";
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";

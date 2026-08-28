@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/realms/RealmsPanel.tsx
 // Realms Management Admin Panel
-"use client";
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";

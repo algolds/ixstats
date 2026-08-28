@@ -8,20 +8,16 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
-  Search,
-  Refresh as RefreshCw,
+  BookmarkBook,
+  GitFork,
   OpenNewWindow as ExternalLink,
-  Xmark as X,
+  Refresh as RefreshCw,
+  Search,
   SoundHigh as Volume2,
+  Star,
+  Shop,
+  Xmark as X,
 } from "iconoir-react";
-import {
-  RiBookMarkedLine,
-  RiGitForkLine,
-  RiStarFill,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  RiSoundModuleLine,
-  RiStore2Line,
-} from "react-icons/ri";
 import { FacetMaterial } from "~/components/ui/facet";
 import { LanguagePackCard, type LanguagePack } from "../shared/LanguagePackCard";
 import { api } from "~/trpc/react";
@@ -192,7 +188,7 @@ export function LanguagePacksSection({
               material="satin"
               className="border-border/30 rounded-2xl border p-12 text-center"
             >
-              <RiBookMarkedLine className="text-muted-foreground text-onoma-primary mx-auto mb-3 h-12 w-12 opacity-30" />
+              <BookmarkBook className="text-muted-foreground text-onoma-primary mx-auto mb-3 h-12 w-12 opacity-30" />
               <h4 className="text-foreground text-sm font-bold">No Language Packs Found</h4>
               <p className="text-muted-foreground mt-1 text-xs">
                 Try adjusting your search terms or language family filters.
@@ -342,7 +338,7 @@ export function LanguagePacksSection({
                     disabled={forkMutation.isPending}
                     className="bg-onoma-primary hover:bg-onoma-primary-light h-9 w-full cursor-pointer rounded-xl font-bold text-white shadow-md transition-all active:scale-[0.97]"
                   >
-                    <RiGitForkLine className="mr-1.5 h-4 w-4" />
+                    <GitFork className="mr-1.5 h-4 w-4" />
                     <span>Fork Pack to My Studio</span>
                   </Button>
                 </div>
@@ -381,7 +377,7 @@ export function LanguagePacksSection({
                           onClick={() => setReviewRating(star)}
                           className="cursor-pointer text-base transition-transform active:scale-110"
                         >
-                          <RiStarFill
+                          <Star
                             className={cn(
                               "h-4 w-4",
                               star <= reviewRating ? "fill-amber-400 text-amber-400" : "text-border"

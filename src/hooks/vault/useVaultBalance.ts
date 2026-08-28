@@ -1,3 +1,4 @@
+"use client";
 /**
  * useVaultBalance Hook
  *
@@ -6,8 +7,6 @@
  * - Refetches on window focus
  * - Provides manual refresh function
  */
-
-"use client";
 
 import { api } from "~/trpc/react";
 import { useAuth } from "@clerk/nextjs";

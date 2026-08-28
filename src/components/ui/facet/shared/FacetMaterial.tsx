@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { TextureOverlay, type TextureType } from "~/components/ui/texture-overlay";
 
 export type FacetMaterialType = "satin" | "paper" | "rubber" | "metal";

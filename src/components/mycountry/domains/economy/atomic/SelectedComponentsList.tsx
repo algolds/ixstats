@@ -1,11 +1,10 @@
+"use client";
 /**
  * Selected Components List
  *
  * Display and manage currently selected economic components.
  * Optimized with React.memo for performance.
  */
-
-"use client";
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";

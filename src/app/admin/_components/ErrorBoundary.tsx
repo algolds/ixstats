@@ -1,5 +1,5 @@
-// src/app/admin/_components/ErrorBoundary.tsx
 "use client";
+// src/app/admin/_components/ErrorBoundary.tsx
 
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
 import {

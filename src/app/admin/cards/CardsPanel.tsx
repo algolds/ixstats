@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/cards/CardsPanel.tsx
 // Unified Theme-Compliant Card Administration Dashboard - Overview, Explorer, Imports, Takedowns, Operations Log, Packs, Lore & Seasons
-"use client";
 
 import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";

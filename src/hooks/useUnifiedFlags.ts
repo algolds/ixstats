@@ -1,7 +1,6 @@
+"use client";
 // Unified Flag Hooks - Consolidates all flag loading approaches (Plan 164)
 // Replaces useFlag, useBulkFlagCache, useBatchFlags, etc.
-
-"use client";
 
 import { useState, useMemo, useCallback } from "react";
 import { api } from "~/trpc/react";
