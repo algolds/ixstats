@@ -17,6 +17,7 @@ The authoritative index for all IxStates architecture, systems, operations, spec
 - **API Catalog (90 Routers / 1,450+ Endpoints)** — [reference/api-complete.md](reference/api-complete.md)
 - **Database Schema Models** — [reference/database.md](reference/database.md)
 - **Facet Design System & Interaction Bible (v2)** — [reference/facet-design-system.md](reference/facet-design-system.md)
+- **Frontend & UI Cheatsheet (Junior Dev Guide)** — [reference/ui-cheatsheet.md](reference/ui-cheatsheet.md)
 - **Maps & Geographic Engine (UPG v2)** — [systems/maps.md](systems/maps.md)
 - **Local Dev Setup** — [operations/local-dev-setup.md](operations/local-dev-setup.md)
 - **Production Deployment** — [operations/deployment.md](operations/deployment.md)
@@ -152,6 +153,7 @@ The authoritative index for all IxStates architecture, systems, operations, spec
 | [reference/revision.md](reference/revision.md) | **Versioning & Release Architecture** — platform/app/engine/system versions |
 | [reference/branding.md](reference/branding.md) | Brand catalog — systems, icons, typography, and visual tokens |
 | [reference/facet-design-system.md](reference/facet-design-system.md) | **Facet Design System & Interaction Bible (v2)** — materials, Z-depth scale, 100% Radix primitives, Cuelume audio matrix, and Apple/Emil motion physics |
+| [reference/ui-cheatsheet.md](reference/ui-cheatsheet.md) | **Frontend & UI Cheatsheet (Junior Dev Guide)** — component recipes, code snippets, zero-hex tokens, and anti-pitfall guide |
 | [reference/events.md](reference/events.md) | WebSocket channels, notification payloads, and scheduled cron jobs |
 | [reference/edge-cases.md](reference/edge-cases.md) | Edge case handling, error boundaries, and recovery scenarios |
 | [reference/oceanography-report.md](reference/oceanography-report.md) | Ocean basins, seas, currents, shipping routes, and marine ecology |
