@@ -30,7 +30,9 @@ import {
   Expand as Maximize2,
   Compress as Minimize2,
   Undo as RotateCcw,
+  ArrowUpRight,
 } from "iconoir-react";
+import Link from "next/link";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { ColorPickerInput } from "~/components/ui/color-picker";
@@ -588,9 +590,18 @@ export default function SandboxPage() {
               Testing ground for simulation logic, tRPC endpoints, UI components, and quizzes.
             </p>
           </div>
-          <div className="bg-card border-border/60 text-muted-foreground flex items-center gap-2 self-start rounded-full border px-3.5 py-1.5 text-xs shadow-sm md:self-auto">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-            Sandbox Active
+          <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+            <Link
+              href="/labs/sandbox/hello-world"
+              className="group inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-xs transition-all duration-150 ease-out hover:border-primary/50 hover:bg-accent/40 active:scale-[0.97]"
+            >
+              <span>Hello world template</span>
+              <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" />
+            </Link>
+            <div className="bg-card border-border/60 text-muted-foreground flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs shadow-sm">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+              Sandbox Active
+            </div>
           </div>
         </div>
 
