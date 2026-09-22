@@ -4,7 +4,7 @@ import React from "react";
 import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
 import { toTitleCase } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { Building, Dollar as DollarSign, Crown } from "iconoir-react";
+import { Building, Crown } from "iconoir-react";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Card, CardContent } from "~/components/ui/card";
@@ -21,6 +21,15 @@ import { createUrl } from "~/lib/utils";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 import type { MetricType } from "~/hooks/useMetricDetailsModal";
 import { CabinetPanel } from "~/components/executive/politics/CabinetPanel";
+import type {
+  CountryWithEconomicData,
+  MappedEconomyData,
+} from "~/components/mycountry/shared/primitives/CountryDataProvider";
+import type { extractCountryImageData } from "~/lib/media";
+import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
+import type { RouterOutputs } from "~/trpc/react";
+import { GovernmentSpendingSection } from "./GovernmentSpendingSection";
+import { GovernmentFiscalSection } from "./GovernmentFiscalSection";
 
 export function GovernmentTab({
   country,
@@ -32,14 +41,14 @@ export function GovernmentTab({
   metricView,
   setMetricViewAction,
 }: {
-  country: any;
-  economyData: any;
-  countryImageData: any;
-  governmentStructure: any;
+  country: CountryWithEconomicData;
+  economyData: MappedEconomyData;
+  countryImageData: ReturnType<typeof extractCountryImageData>;
+  governmentStructure: RouterOutputs["government"]["getByCountryId"];
   setImageUploadModalAction: (state: { isOpen: boolean; cardType: CardImageType }) => void;
   openMetricModalAction: (metricType: MetricType, countryId: string) => void;
-  metricView: any;
-  setMetricViewAction: React.Dispatch<React.SetStateAction<any>>;
+  metricView: MyCountryMetricView;
+  setMetricViewAction: React.Dispatch<React.SetStateAction<MyCountryMetricView>>;
 }) {
   const [expandedSection, setExpandedSection] = React.useState<string | null>("structure");
   const [cabinetOpen, setCabinetOpen] = React.useState(false);
@@ -91,7 +100,7 @@ export function GovernmentTab({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 cursor-pointer gap-1.5 border-violet-500/20 bg-violet-500/5 text-xs text-violet-600 hover:bg-violet-500/10 dark:text-violet-400"
+                className="h-7 cursor-pointer gap-1.5 border-indigo-500/20 bg-indigo-500/5 text-xs text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
               >
                 <Building className="h-3.5 w-3.5" />
                 <span>Open Editor</span>
@@ -107,7 +116,7 @@ export function GovernmentTab({
               {/* Metric 1: Structure */}
               <button
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     structure: v.structure === "government" ? "state" : "government",
                   }))
@@ -143,7 +152,7 @@ export function GovernmentTab({
               {/* Metric 2: Budget */}
               <button
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     budget: v.budget === "percentage" ? "spending" : "percentage",
                   }))
@@ -189,7 +198,7 @@ export function GovernmentTab({
               {/* Metric 3: Fiscal */}
               <button
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     debt: v.debt === "ratio" ? "total" : "ratio",
                   }))
@@ -255,7 +264,7 @@ export function GovernmentTab({
                 }`}
               >
                 <Crown
-                  className={`h-3.5 w-3.5 ${expandedSection === "structure" ? "text-violet-500" : "text-muted-foreground/60"}`}
+                  className={`h-3.5 w-3.5 ${expandedSection === "structure" ? "text-indigo-500" : "text-muted-foreground/60"}`}
                 />
                 <span>State Structure</span>
                 <motion.div
@@ -365,10 +374,10 @@ export function GovernmentTab({
                     sectors={[
                       {
                         id: "leg",
-                        name: governmentStructure?.legislatureType || "Legislature",
+                        name: "Legislature",
                         value: 0,
                         percentage: 100,
-                        color: "purple",
+                        color: "indigo",
                         description: governmentStructure?.legislatureName || "Assembly",
                       },
                       {
@@ -384,10 +393,10 @@ export function GovernmentTab({
                       // governments show truthfully. See plans/mycountry-lore-alignment*.md
                       ...(governmentStructure?.branches ?? [])
                         .filter(
-                          (b: any) =>
+                          (b) =>
                             !["executive", "legislative", "judicial"].includes(String(b.branchType))
                         )
-                        .map((b: any) => ({
+                        .map((b) => ({
                           id: `branch-${b.id}`,
                           name: b.name,
                           value: 0,
@@ -406,7 +415,7 @@ export function GovernmentTab({
                     className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 px-3 py-2 text-xs font-bold tracking-wider uppercase transition-colors"
                   >
                     <Crown
-                      className={`h-3.5 w-3.5 ${cabinetOpen ? "text-violet-500" : "text-muted-foreground/60"}`}
+                      className={`h-3.5 w-3.5 ${cabinetOpen ? "text-indigo-500" : "text-muted-foreground/60"}`}
                     />
                     <span>Cabinet</span>
                     <motion.div
@@ -438,299 +447,20 @@ export function GovernmentTab({
           </div>
 
           {/* Dossier Section 2: Budget/Spending */}
-          <div className="flex flex-col">
-            <div className="flex">
-              <button
-                onClick={() => toggleSection("spending")}
-                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
-                  expandedSection === "spending"
-                    ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
-                    : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
-                }`}
-              >
-                <DollarSign
-                  className={`h-3.5 w-3.5 ${expandedSection === "spending" ? "text-violet-500" : "text-muted-foreground/60"}`}
-                />
-                <span>Public Budget</span>
-                <motion.div
-                  animate={{ rotate: expandedSection === "spending" ? 90 : 0 }}
-                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                  className="ml-1"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </motion.div>
-              </button>
-            </div>
-            <motion.div
-              initial={false}
-              animate={{ height: expandedSection === "spending" ? "auto" : 0 }}
-              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-              className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
-                expandedSection === "spending"
-                  ? "border border-white/10"
-                  : "border border-transparent"
-              }`}
-            >
-              <TextureOverlay
-                texture="paperGrain"
-                opacity={0.06}
-                className="pointer-events-none absolute inset-0 z-0"
-              />
-              <div className="relative z-10 space-y-4 p-4">
-                <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Total Spending
-                    </p>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {formatCompactCurrency(
-                        economyData?.spending?.totalSpending ?? 0,
-                        "N/A",
-                        currency
-                      )}
-                    </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
-                      Annual expenditure
-                    </p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Spending % GDP
-                    </p>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {`${(economyData?.spending?.spendingGDPPercent ?? 0).toFixed(1)}%`}
-                    </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
-                      GDP share percentage
-                    </p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Spending per Capita
-                    </p>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {formatExactCurrency(economyData?.spending?.spendingPerCapita ?? 0, currency)}
-                    </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Per citizen share</p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Budget Balance
-                    </p>
-                    <p
-                      className={(() => {
-                        const balance = economyData?.spending?.deficitSurplus ?? 0;
-                        return balance >= 0
-                          ? "mt-0.5 text-sm font-bold text-emerald-500"
-                          : "mt-0.5 text-sm font-bold text-red-500";
-                      })()}
-                    >
-                      {formatCompactCurrency(
-                        economyData?.spending?.deficitSurplus ?? 0,
-                        "N/A",
-                        currency
-                      )}
-                    </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
-                      {(economyData?.spending?.deficitSurplus ?? 0) >= 0 ? "Surplus" : "Deficit"}
-                    </p>
-                  </div>
-                </div>
-
-                <SectorBreakdownCard
-                  title="Spending by Category"
-                  subtitle="Budget allocation across government functions"
-                  layout="list"
-                  showProgressBars={true}
-                  cardWrapper="panel"
-                  accent="amber"
-                  currency={currency}
-                  sectors={[
-                    {
-                      id: "education",
-                      name: "Education",
-                      value: economyData?.spending?.education ?? 0,
-                      percentage:
-                        ((economyData?.spending?.education ?? 0) /
-                          (economyData?.spending?.totalSpending || 1)) *
-                        100,
-                      color: "blue",
-                    },
-                    {
-                      id: "healthcare",
-                      name: "Healthcare",
-                      value: economyData?.spending?.healthcare ?? 0,
-                      percentage:
-                        ((economyData?.spending?.healthcare ?? 0) /
-                          (economyData?.spending?.totalSpending || 1)) *
-                        100,
-                      color: "emerald",
-                    },
-                    {
-                      id: "welfare",
-                      name: "Social Welfare",
-                      value: economyData?.spending?.socialWelfare ?? 0,
-                      percentage:
-                        ((economyData?.spending?.socialWelfare ?? 0) /
-                          (economyData?.spending?.totalSpending || 1)) *
-                        100,
-                      color: "purple",
-                    },
-                    {
-                      id: "defense",
-                      name: "Military & Defense",
-                      value: economyData?.spending?.defense ?? 0,
-                      percentage:
-                        ((economyData?.spending?.defense ?? 0) /
-                          (economyData?.spending?.totalSpending || 1)) *
-                        100,
-                      color: "red",
-                    },
-                    {
-                      id: "infrastructure",
-                      name: "Infrastructure",
-                      value: economyData?.spending?.infrastructure ?? 0,
-                      percentage:
-                        ((economyData?.spending?.infrastructure ?? 0) /
-                          (economyData?.spending?.totalSpending || 1)) *
-                        100,
-                      color: "amber",
-                    },
-                  ]}
-                />
-              </div>
-            </motion.div>
-          </div>
+          <GovernmentSpendingSection
+            isExpanded={expandedSection === "spending"}
+            onToggle={() => toggleSection("spending")}
+            economyData={economyData}
+            currency={currency}
+          />
 
           {/* Dossier Section 3: Fiscal */}
-          <div className="flex flex-col">
-            <div className="flex">
-              <button
-                onClick={() => toggleSection("fiscal")}
-                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
-                  expandedSection === "fiscal"
-                    ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
-                    : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
-                }`}
-              >
-                <Building
-                  className={`h-3.5 w-3.5 ${expandedSection === "fiscal" ? "text-violet-500" : "text-muted-foreground/60"}`}
-                />
-                <span>Fiscal Policy</span>
-                <motion.div
-                  animate={{ rotate: expandedSection === "fiscal" ? 90 : 0 }}
-                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                  className="ml-1"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </motion.div>
-              </button>
-            </div>
-            <motion.div
-              initial={false}
-              animate={{ height: expandedSection === "fiscal" ? "auto" : 0 }}
-              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-              className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
-                expandedSection === "fiscal"
-                  ? "border border-white/10"
-                  : "border border-transparent"
-              }`}
-            >
-              <TextureOverlay
-                texture="paperGrain"
-                opacity={0.06}
-                className="pointer-events-none absolute inset-0 z-0"
-              />
-              <div className="relative z-10 space-y-4 p-4">
-                <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Tax Revenue % GDP
-                    </p>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {`${(economyData?.fiscal?.taxRevenueGDPPercent ?? 0).toFixed(1)}%`}
-                    </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Tax burden ratio</p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Total Debt
-                    </p>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {formatCompactCurrency(
-                        (economyData?.core.nominalGDP ?? 0) *
-                          ((economyData?.fiscal?.totalDebtGDPRatio ?? 0) / 100),
-                        "N/A",
-                        currency
-                      )}
-                    </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
-                      Outstanding national debt
-                    </p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Debt to GDP Ratio
-                    </p>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {`${(economyData?.fiscal?.totalDebtGDPRatio ?? 0).toFixed(1)}%`}
-                    </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
-                      Relative to economic size
-                    </p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Sovereign Rating
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold text-emerald-500">AAA</p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
-                      Credit worthiness rating
-                    </p>
-                  </div>
-                </div>
-
-                <SectorBreakdownCard
-                  title="Fiscal Conditions & Policy"
-                  subtitle="National fiscal policy indicators"
-                  layout="list"
-                  showProgressBars={true}
-                  cardWrapper="panel"
-                  accent="amber"
-                  sectors={[
-                    {
-                      id: "tax-compliance",
-                      name: "Tax Compliance Rate",
-                      value: 0,
-                      percentage: economyData?.fiscal?.taxComplianceRate ?? 88,
-                      color: "emerald",
-                    },
-                    {
-                      id: "inflation",
-                      name: "Annual Inflation Rate",
-                      value: 0,
-                      percentage: economyData?.fiscal?.inflationRate ?? 2.4,
-                      color: "blue",
-                    },
-                    {
-                      id: "interest",
-                      name: "Central Bank Interest Rate",
-                      value: 0,
-                      percentage: economyData?.fiscal?.interestRate ?? 4.25,
-                      color: "purple",
-                    },
-                    {
-                      id: "reserves",
-                      name: "Foreign Exchange Reserves % GDP",
-                      value: 0,
-                      percentage: economyData?.fiscal?.reservesGDPPercent ?? 18,
-                      color: "cyan",
-                    },
-                  ]}
-                />
-              </div>
-            </motion.div>
-          </div>
+          <GovernmentFiscalSection
+            isExpanded={expandedSection === "fiscal"}
+            onToggle={() => toggleSection("fiscal")}
+            economyData={economyData}
+            currency={currency}
+          />
         </div>
       </CardContent>
     </Card>

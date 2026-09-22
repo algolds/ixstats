@@ -121,7 +121,7 @@ async function runAudit() {
     "Petalstone Music",
     "Urcea",
     "Burgundie",
-    "Treaty of Oakhaven",
+    "League of Nations",
     "Main Page",
   ];
   for (const title of sampleTitles) {

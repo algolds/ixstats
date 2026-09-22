@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Eye, OpenBook as BookOpen, Activity } from "iconoir-react";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
 import type { ProfileTabType } from "../_types";
@@ -27,8 +28,8 @@ interface NavItem {
  * CountryTabs — prominent page-level top bar for the public country profile.
  * Tier 1 navigation: Factbook / Dossier / Activity.
  *
- * Employs Apple Design physical motion (active scale press, fluid indicator,
- * depth refraction) and strict type inference for tab items.
+ * Employs Apple Design physical motion (active scale press, Framer Motion spring layout,
+ * cuelume haptics, depth refraction) and strict type inference for tab items.
  */
 export function CountryTabs({ activeTab, onTabChange, countrySlug }: CountryTabsProps) {
   const pathname = usePathname();
@@ -66,8 +67,9 @@ export function CountryTabs({ activeTab, onTabChange, countrySlug }: CountryTabs
               href={createUrl(item.href)}
               onClick={() => onTabChange(item.id)}
               aria-current={isActive ? "page" : undefined}
+              data-cuelume-press="soft"
               className={cn(
-                "group relative flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold transition-all duration-150 ease-out active:scale-[0.97] sm:text-sm",
+                "group relative flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold transition-all duration-150 ease-out active:scale-[0.98] sm:text-sm",
                 isActive
                   ? "bg-[var(--flag-primary)]/12 text-[var(--flag-primary)] shadow-sm ring-1 ring-[var(--flag-primary)]/30 backdrop-blur-md"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"
@@ -83,8 +85,10 @@ export function CountryTabs({ activeTab, onTabChange, countrySlug }: CountryTabs
               <Icon className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
               <span>{item.label}</span>
               {isActive && (
-                <span
-                  className="absolute inset-x-4 -bottom-[6px] h-0.5 rounded-full bg-[var(--flag-primary)] opacity-85 shadow-[0_0_8px_var(--flag-primary)] transition-all duration-300"
+                <motion.span
+                  layoutId="country-profile-active-tab"
+                  className="absolute inset-x-4 -bottom-[6px] h-0.5 rounded-full bg-[var(--flag-primary)] opacity-85 shadow-[0_0_8px_var(--flag-primary)]"
+                  transition={{ type: "spring", bounce: 0, duration: 0.35 }}
                   aria-hidden="true"
                 />
               )}

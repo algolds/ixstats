@@ -70,7 +70,10 @@ export function ThinkPagesShareModal({
         if (changesJson) {
           const parsed = JSON.parse(changesJson);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            changesSummary = parsed.map((c: any) => c.label).join(", ");
+            changesSummary = parsed
+              .filter((c): c is { label: string } => typeof c === "object" && c !== null && "label" in c)
+              .map((c) => c.label)
+              .join(", ");
           }
         }
       } catch {
@@ -99,10 +102,10 @@ export function ThinkPagesShareModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-card/95 max-w-xl border-purple-500/30 backdrop-blur-xl">
+      <DialogContent className="bg-card/95 max-w-xl border-blue-500/30 backdrop-blur-xl">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <Badge className="border-purple-500/40 bg-purple-500/20 text-purple-300">
+            <Badge className="border-blue-500/40 bg-blue-500/20 text-blue-300">
               <ShieldCheck className="mr-1 h-3 w-3" />
               Official Government Account
             </Badge>
@@ -134,7 +137,7 @@ export function ThinkPagesShareModal({
               </Button>
               <Button
                 size="sm"
-                className="cursor-pointer bg-purple-600 font-bold text-white hover:bg-purple-500"
+                className="cursor-pointer bg-blue-600 font-bold text-white hover:bg-blue-500"
                 onClick={() => window.open("/thinkpages", "_blank")}
               >
                 <Globe className="mr-1.5 h-3.5 w-3.5" />
@@ -152,7 +155,7 @@ export function ThinkPagesShareModal({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={7}
-                className="border-white/10 bg-black/40 font-mono text-xs focus:border-purple-500/50"
+                className="border-white/10 bg-black/40 font-mono text-xs focus:border-blue-500/50"
               />
             </div>
 
@@ -166,7 +169,7 @@ export function ThinkPagesShareModal({
                   size="sm"
                   disabled={generateM.isPending}
                   onClick={() => handlePublish("draft")}
-                  className="cursor-pointer border-purple-500/30 text-purple-300 hover:bg-purple-500/10"
+                  className="cursor-pointer border-blue-500/30 text-blue-700 hover:bg-blue-500/10 dark:text-blue-300"
                 >
                   <FileText className="mr-1.5 h-3.5 w-3.5" />
                   Save as Draft
@@ -175,7 +178,7 @@ export function ThinkPagesShareModal({
                   size="sm"
                   disabled={generateM.isPending}
                   onClick={() => handlePublish("public")}
-                  className="cursor-pointer bg-purple-600 font-bold text-white shadow-md hover:bg-purple-500"
+                  className="cursor-pointer bg-blue-600 font-bold text-white shadow-md hover:bg-blue-500"
                 >
                   <Send className="mr-1.5 h-3.5 w-3.5" />
                   Publish Now Live

@@ -32,7 +32,7 @@ const PANEL_STORAGE_KEY = "ixworld-editor-panel-size";
 export type TabId =
   "properties" | "layers" | "features" | "wiki" | "linkages" | "sovereignty" | "history" | "queue";
 
-const TAB_DEFS: Record<TabId, { label: string; Icon: React.ComponentType<any> }> = {
+const TAB_DEFS: Record<TabId, { label: string; Icon: React.ComponentType<{ className?: string; title?: string }> }> = {
   layers: { label: "Layers", Icon: Layers },
   features: { label: "Features", Icon: List },
   properties: { label: "Properties", Icon: Settings2 },
@@ -144,13 +144,10 @@ export function EditorPanel({
     return stored ? Math.min(500, Math.max(120, parseInt(stored))) : 240;
   });
 
-  useEffect(() => {
-    localStorage.setItem(`${PANEL_STORAGE_KEY}-width`, String(panelWidth));
-  }, [panelWidth]);
-
-  useEffect(() => {
-    localStorage.setItem(`${PANEL_STORAGE_KEY}-height`, String(panelHeight));
-  }, [panelHeight]);
+  const panelWidthRef = useRef(panelWidth);
+  panelWidthRef.current = panelWidth;
+  const panelHeightRef = useRef(panelHeight);
+  panelHeightRef.current = panelHeight;
 
   const isDragging = useRef(false);
 
@@ -160,32 +157,65 @@ export function EditorPanel({
       isDragging.current = true;
       const startX = e.clientX;
       const startY = e.clientY;
-      const startW = panelWidth;
-      const startH = panelHeight;
+      const startW = panelWidthRef.current;
+      const startH = panelHeightRef.current;
+
+      let pendingW = startW;
+      let pendingH = startH;
+      let rafId: number | null = null;
 
       const onMove = (me: MouseEvent) => {
         if (!isDragging.current) return;
         if (placement === "bottom") {
           const delta = startY - me.clientY;
-          const newH = Math.min(500, Math.max(120, startH + delta));
-          setPanelHeight(newH);
+          pendingH = Math.min(500, Math.max(120, startH + delta));
         } else {
           const delta = placement === "left" ? me.clientX - startX : startX - me.clientX;
-          const newW = Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, startW + delta));
-          setPanelWidth(newW);
+          pendingW = Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, startW + delta));
+        }
+
+        if (rafId === null) {
+          rafId = requestAnimationFrame(() => {
+            rafId = null;
+            if (placement === "bottom") {
+              setPanelHeight(pendingH);
+            } else {
+              setPanelWidth(pendingW);
+            }
+          });
         }
       };
 
       const onUp = () => {
         isDragging.current = false;
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
+
+        if (placement === "bottom") {
+          setPanelHeight(pendingH);
+          try {
+            localStorage.setItem(`${PANEL_STORAGE_KEY}-height`, String(pendingH));
+          } catch {
+            // Ignore localStorage errors (e.g. quota, private mode)
+          }
+        } else {
+          setPanelWidth(pendingW);
+          try {
+            localStorage.setItem(`${PANEL_STORAGE_KEY}-width`, String(pendingW));
+          } catch {
+            // Ignore localStorage errors
+          }
+        }
       };
 
       document.addEventListener("mousemove", onMove);
       document.addEventListener("mouseup", onUp);
     },
-    [panelWidth, panelHeight, placement]
+    [placement]
   );
 
   // Auto-switch tabs based on mode (for properties tab)
@@ -445,8 +475,7 @@ export function EditorPanel({
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             <div
               key={activeTab}
-              className="flex h-full min-h-0 flex-col"
-              style={{ animation: "editorTabFadeIn 150ms ease" }}
+              className="animate-in fade-in flex h-full min-h-0 flex-col duration-150"
             >
               {activeTab === "properties" && propertiesContent && (
                 <div className="h-full overflow-y-auto px-3 py-3">{propertiesContent}</div>
@@ -488,17 +517,6 @@ export function EditorPanel({
               )}
             </div>
           </div>
-
-          <style jsx>{`
-            @keyframes editorTabFadeIn {
-              from {
-                opacity: 0;
-              }
-              to {
-                opacity: 1;
-              }
-            }
-          `}</style>
         </div>
       )}
 

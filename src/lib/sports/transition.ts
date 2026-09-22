@@ -175,68 +175,68 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
   // 3. Wrap updates and season creation in a transaction
   // Using $transaction if available on prisma instance (e.g. main client)
   const executeUpdates = async (tx: any) => {
-    // Update players
-    for (const pRes of playerResults) {
+    // Update players concurrently in a batch
+    const playerUpdatePromises = playerResults.map((pRes) => {
       if (pRes.retired) {
-        await tx.sportPlayer.update({
+        return tx.sportPlayer.update({
           where: { id: pRes.playerId },
           data: {
             isActive: false,
             careerStage: "retired",
-          },
-        });
-      } else {
-        const player = playersForAging.find((p) => p.id === pRes.playerId);
-        if (!player) continue;
-        const newRatings = { ...player.ratings };
-        for (const [k, v] of Object.entries(pRes.ratingChanges)) {
-          newRatings[k] = Math.max(1, Math.min(99, (newRatings[k] ?? 50) + v));
-        }
-
-        await tx.sportPlayer.update({
-          where: { id: pRes.playerId },
-          data: {
-            age: player.age + 1,
-            careerStage: pRes.newStage,
-            ratings: newRatings as any,
           },
         });
       }
-    }
+      const player = playersForAging.find((p) => p.id === pRes.playerId);
+      if (!player) return Promise.resolve(null);
+      const newRatings = { ...player.ratings };
+      for (const [k, v] of Object.entries(pRes.ratingChanges)) {
+        newRatings[k] = Math.max(1, Math.min(99, (newRatings[k] ?? 50) + v));
+      }
 
-    // Update coaches
+      return tx.sportPlayer.update({
+        where: { id: pRes.playerId },
+        data: {
+          age: player.age + 1,
+          careerStage: pRes.newStage,
+          ratings: newRatings as any,
+        },
+      });
+    });
+    await Promise.all(playerUpdatePromises);
+
+    // Update coaches concurrently
     const retiredCoachTeamIds: string[] = [];
-    for (const cRes of coachResults) {
+    const coachUpdatePromises = coachResults.map((cRes) => {
       if (cRes.retired) {
-        await tx.sportCoach.update({
-          where: { id: cRes.playerId },
-          data: {
-            isActive: false,
-            careerStage: "retired",
-          },
-        });
         const coach = coachesForAging.find((c) => c.id === cRes.playerId);
         if (coach) {
           retiredCoachTeamIds.push(coach.teamId);
         }
-      } else {
-        const coach = coachesForAging.find((c) => c.id === cRes.playerId);
-        if (!coach) continue;
-        const newRatings: Record<string, number> = { ...coach.ratings };
-        for (const [k, v] of Object.entries(cRes.ratingChanges)) {
-          newRatings[k] = Math.max(1, Math.min(99, (newRatings[k] ?? 50) + v));
-        }
-
-        await tx.sportCoach.update({
+        return tx.sportCoach.update({
           where: { id: cRes.playerId },
           data: {
-            age: coach.age + 1,
-            careerStage: cRes.newStage,
-            ratings: newRatings as any,
+            isActive: false,
+            careerStage: "retired",
           },
         });
       }
-    }
+      const coach = coachesForAging.find((c) => c.id === cRes.playerId);
+      if (!coach) return Promise.resolve(null);
+      const newRatings: Record<string, number> = { ...coach.ratings };
+      for (const [k, v] of Object.entries(cRes.ratingChanges)) {
+        newRatings[k] = Math.max(1, Math.min(99, (newRatings[k] ?? 50) + v));
+      }
+
+      return tx.sportCoach.update({
+        where: { id: cRes.playerId },
+        data: {
+          age: coach.age + 1,
+          careerStage: cRes.newStage,
+          ratings: newRatings as any,
+        },
+      });
+    });
+    await Promise.all(coachUpdatePromises);
 
     // Auto-generate replacement coaches
     for (const teamId of retiredCoachTeamIds) {

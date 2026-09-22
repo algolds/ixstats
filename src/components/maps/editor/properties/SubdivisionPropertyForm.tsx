@@ -37,12 +37,17 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
   // tRPC query that shipped the entire polygon in the GET URL, which blew past
   // URL/header limits for large countries → ERR_HTTP2_PROTOCOL_ERROR / 520.)
   const sampleAreaValue = React.useMemo<number | undefined>(() => {
-    const geom = form.geometry as { type?: string; coordinates?: unknown } | undefined;
+    const geom = form.geometry as
+      | { type?: string; coordinates?: number[][][] | number[][][][] }
+      | undefined;
     if (!geom || !geom.coordinates || geom.type === "Point" || geom.type === "LineString") {
       return undefined;
     }
     try {
-      const v = geometryAreaSqKm(geom as Parameters<typeof geometryAreaSqKm>[0]);
+      const v = geometryAreaSqKm({
+        type: geom.type ?? "Polygon",
+        coordinates: geom.coordinates,
+      });
       return Number.isFinite(v) && v > 0 ? v : undefined;
     } catch {
       return undefined;

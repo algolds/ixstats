@@ -41,7 +41,7 @@ export function NationStatesAttribution({
           <button
             type="button"
             onClick={onRequestTakedown}
-            className="inline-flex shrink-0 items-center gap-1 font-medium text-rose-500 transition-colors hover:text-rose-600 hover:underline dark:text-rose-400 dark:hover:text-rose-300"
+            className="inline-flex shrink-0 items-center gap-1 font-medium text-red-500 transition-colors hover:text-red-600 hover:underline dark:text-red-400 dark:hover:text-red-300"
           >
             <ShieldAlert className="h-3 w-3 shrink-0" />
             <span>Verify & Request Takedown</span>

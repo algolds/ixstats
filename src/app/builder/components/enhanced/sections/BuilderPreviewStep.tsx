@@ -1,1339 +1,228 @@
 "use client";
 
-import React, { useState, useMemo, memo } from "react";
-import { motion } from "motion/react";
-import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
+import React, { useState, memo } from "react";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import {
   WhiteFlag as Flag,
-  Globe,
-  Group as Users,
-  Dollar as DollarSign,
   City as Building2,
-  StatUp as TrendingUp,
   StatsReport as BarChart3,
-  ScaleFrameEnlarge as Scale,
-  Suitcase as Briefcase,
   NavArrowDown as ChevronDown,
   NavArrowUp as ChevronUp,
-  ArrowSeparateVertical as ChevronsDownUp,
-  ArrowSeparateVertical as ChevronsUpDown,
-  Eye,
-  Crown,
-  Bank as Landmark,
-  Archery as Target,
-  Calendar,
-  Phone,
-  Translate as Languages,
   Industry as Factory,
 } from "iconoir-react";
 import { useBuilderContext } from "../context/BuilderStateContext";
-import { formatCurrency } from "~/lib/utils";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
-import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
-import type { GovernmentStructure } from "~/types/government";
-
-// Import government preview components
-import { StructureOverview } from "../government-preview/StructureOverview";
-import { ComponentsList } from "../government-preview/ComponentsList";
-import { DepartmentsList } from "../government-preview/DepartmentsList";
-import { BudgetAllocationList } from "../government-preview/BudgetAllocationList";
-import { RevenueSourcesList } from "../government-preview/RevenueSourcesList";
-// Fiscal preview
-import { FiscalTab } from "../tabs/fiscal/FiscalTab";
-import { EconomyPreviewTab } from "../tabs/EconomyPreviewTab";
-
-interface SectionState {
-  nationalIdentity: boolean;
-  coreIndicators: boolean;
-  governmentConfig: boolean;
-  economyConfig: boolean;
-  taxSystem: boolean;
-}
+  PreviewIdentity,
+  PreviewGovernment,
+  PreviewEconomy,
+} from "./preview";
 
 /**
- * BuilderPreviewStep - Comprehensive preview of all builder configuration data
- *
- * Displays a complete overview of the country being built with collapsible sections
- * for National Identity, Core Indicators, Government Configuration, Economy Configuration,
- * and Tax System. All data is live-wired from the builder state context.
+ * BuilderPreviewStep - Comprehensive preview of all builder configuration data.
+ * Composes domain-specific preview sub-components into a balanced Bento layout.
  */
-// Phase 2 optimization: Wrap with React.memo to prevent unnecessary re-renders
 export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
   const { builderState } = useBuilderContext();
 
-  // Collapsible state for main sections
-  const [sectionStates, setSectionStates] = useState<SectionState>({
-    nationalIdentity: true,
-    coreIndicators: true,
-    governmentConfig: false,
-    economyConfig: false,
-    taxSystem: false,
-  });
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
-  // Individual item collapsible states (for government structure)
-  const [openDepartments, setOpenDepartments] = useState<Record<string, boolean>>({});
-  const [openAllocations, setOpenAllocations] = useState<Record<string, boolean>>({});
-  const [openRevenues, setOpenRevenues] = useState<Record<string, boolean>>({});
-
-  // Helper functions
-  const toggleSection = (section: keyof SectionState) => {
-    setSectionStates((prev) => ({ ...prev, [section]: !prev[section] }));
+  const toggleSection = (section: string) => {
+    setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const expandAll = () => {
-    setSectionStates({
-      nationalIdentity: true,
-      coreIndicators: true,
-      governmentConfig: true,
-      economyConfig: true,
-      taxSystem: true,
-    });
-  };
-
-  const collapseAll = () => {
-    setSectionStates({
-      nationalIdentity: false,
-      coreIndicators: false,
-      governmentConfig: false,
-      economyConfig: false,
-      taxSystem: false,
-    });
-  };
-
-  const allExpanded = Object.values(sectionStates).every(Boolean);
-
-  // Data validation and fallbacks
   const economicInputs = builderState.economicInputs;
   const nationalIdentity = economicInputs?.nationalIdentity;
   const coreIndicators = economicInputs?.coreIndicators;
-  const laborEmployment = economicInputs?.laborEmployment;
-  const demographics = economicInputs?.demographics;
   const governmentComponents = builderState.governmentComponents || [];
-  const governmentStructure = builderState.governmentStructure;
-  const taxSystemData = builderState.taxSystemData;
+  const rawCurrency = nationalIdentity?.currency || "USD";
+  const currencySymbol = nationalIdentity?.currencySymbol;
+  const symbolMatch = rawCurrency.match(/\(([^)]+)\)/);
+  const currency = currencySymbol || (symbolMatch ? symbolMatch[1].trim() : rawCurrency);
 
-  // Format currency helper
-  const formatCurrencyLocal = (amount: number) =>
-    formatCurrency(amount, coreIndicators?.currencyExchangeRate ? "USD" : "USD");
-
-  // Get government type icon
-  const getGovernmentTypeIcon = (type: string) => {
-    switch (type?.toLowerCase()) {
-      case "democracy":
-        return <Users className="h-5 w-5" />;
-      case "republic":
-        return <Landmark className="h-5 w-5" />;
-      case "monarchy":
-        return <Crown className="h-5 w-5" />;
-      case "federation":
-        return <Building2 className="h-5 w-5" />;
-      default:
-        return <Building2 className="h-5 w-5" />;
-    }
-  };
-
-  // Get department icon
-  const getDepartmentIcon = (category: string) => {
-    switch (category?.toLowerCase()) {
-      case "executive":
-        return <Crown className="h-4 w-4" />;
-      case "legislative":
-        return <Landmark className="h-4 w-4" />;
-      case "judicial":
-        return <Scale className="h-4 w-4" />;
-      case "defense":
-        return <Target className="h-4 w-4" />;
-      case "finance":
-        return <DollarSign className="h-4 w-4" />;
-      case "health":
-        return <Users className="h-4 w-4" />;
-      case "education":
-        return <Briefcase className="h-4 w-4" />;
-      default:
-        return <Building2 className="h-4 w-4" />;
-    }
-  };
-
-  // Normalize government structure for preview components
-  const normalizedGovernmentStructure = useMemo<GovernmentStructure | null>(() => {
-    if (!governmentStructure) return null;
-
-    const rawStructure = governmentStructure as any;
-    // If it's already a GovernmentStructure, return as is
-    if (rawStructure && "id" in rawStructure && "countryId" in rawStructure) {
-      return rawStructure as GovernmentStructure;
-    }
-
-    // If it's a GovernmentBuilderState, convert it
-    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'builderState' is intentional in this scope
-    const builderState = governmentStructure;
-    return {
-      id: "preview",
-      countryId: "preview",
-      governmentName: builderState.structure?.governmentName || "Government",
-      governmentType: builderState.structure?.governmentType || "Democracy",
-      headOfState: builderState.structure?.headOfState,
-      headOfGovernment: builderState.structure?.headOfGovernment,
-      legislatureName: builderState.structure?.legislatureName,
-      executiveName: builderState.structure?.executiveName,
-      judicialName: builderState.structure?.judicialName,
-      totalBudget: builderState.structure?.totalBudget || 0,
-      fiscalYear: builderState.structure?.fiscalYear || new Date().getFullYear().toString(),
-      budgetCurrency: builderState.structure?.budgetCurrency || "USD",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      departments: (builderState.departments || []).map((dept: any, index: number) => ({
-        id: index.toString(),
-        governmentStructureId: "preview",
-        name: dept.name,
-        shortName: dept.shortName,
-        category: dept.category,
-        description: dept.description,
-        minister: dept.minister,
-        ministerTitle: dept.ministerTitle,
-        headquarters: dept.headquarters,
-        established: dept.established,
-        employeeCount: dept.employeeCount,
-        icon: dept.icon,
-        color: dept.color,
-        priority: dept.priority,
-        isActive: true,
-        parentDepartmentId: dept.parentDepartmentId,
-        organizationalLevel: dept.organizationalLevel,
-        functions: dept.functions,
-        kpis: dept.kpis || [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        parentDepartment: undefined,
-        subDepartments: [],
-        budgetAllocations: [],
-        subBudgets: [],
-      })),
-      budgetAllocations: (builderState.budgetAllocations || []).map(
-        (alloc: any, index: number) => ({
-          id: index.toString(),
-          governmentStructureId: "preview",
-          departmentId: alloc.departmentId,
-          allocatedAmount: alloc.allocatedAmount,
-          spentAmount: 0,
-          encumberedAmount: 0,
-          availableAmount: alloc.allocatedAmount,
-          budgetStatus: "In Use" as const,
-          budgetYear: alloc.budgetYear,
-          allocatedPercent: alloc.allocatedPercent,
-          lastReviewed: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          department: undefined as any,
-        })
-      ),
-      revenueSources: (builderState.revenueSources || []).map((source: any, index: number) => ({
-        id: index.toString(),
-        governmentStructureId: "preview",
-        name: source.name,
-        category: source.category as any,
-        description: source.description,
-        revenueAmount: source.revenueAmount,
-        revenuePercent: source.revenuePercent || 0,
-        isActive: true,
-        rate: source.rate,
-        collectionMethod: source.collectionMethod,
-        administeredBy: source.administeredBy,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })),
-    } as GovernmentStructure;
-  }, [governmentStructure]);
-
-  // Economic health metrics for preview (lightweight approximation)
-  const economicHealthMetrics = useMemo(() => {
-    const selected = builderState.economyBuilderState?.selectedAtomicComponents || [];
-    return {
-      economicHealthScore: 65 + (selected.length ?? 0) * 2,
-      sustainabilityScore: 60,
-      resilienceScore: 60,
-      competitivenessScore: 60,
-      gdpGrowthRate: coreIndicators?.realGDPGrowthRate ?? 2,
-      potentialGrowthRate: 3,
-      growthSustainability: 60,
-      inflationRate: coreIndicators?.inflationRate ?? 2,
-      inflationVolatility: 1,
-      exchangeRateStability: 75,
-      fiscalStability: 70,
-      unemploymentRate: builderState.economyBuilderState?.laborMarket?.unemploymentRate ?? 5,
-      innovationIndex: 65 + (selected.length ?? 0) * 2,
-      productivityIndex: 70 + (selected.length ?? 0) * 1.5,
-      economicRiskLevel: "Medium",
-      externalVulnerability: 25,
-      domesticVulnerability: 35,
-      systemicRisk: 30,
-    } as any;
-  }, [builderState.economyBuilderState, coreIndicators]);
-
-  // Revenue / fiscal integration summary for preview
-  const revenueIntegration = useMemo(() => {
-    const nominalGDP = coreIndicators?.nominalGDP || 0;
-
-    const totalRevenueFromSources = normalizedGovernmentStructure
-      ? normalizedGovernmentStructure.revenueSources.reduce(
-          (sum: number, r: any) => sum + (r.revenueAmount || 0),
-          0
-        )
-      : 0;
-
-    const totalRevenue =
-      totalRevenueFromSources || (economicInputs?.fiscalSystem?.governmentRevenueTotal ?? 0);
-
-    let taxRevenue = 0;
-    if (normalizedGovernmentStructure) {
-      taxRevenue = normalizedGovernmentStructure.revenueSources.reduce((sum: number, r: any) => {
-        const cat = String(r.category || "").toLowerCase();
-        if (
-          cat.includes("tax") ||
-          cat.includes("vat") ||
-          cat.includes("income") ||
-          cat.includes("corporate") ||
-          cat.includes("tariff")
-        ) {
-          return sum + (r.revenueAmount || 0);
-        }
-        return sum;
-      }, 0);
-    }
-
-    // Fallbacks
-    if (!taxRevenue) {
-      if (economicInputs?.fiscalSystem?.taxRevenueGDPPercent && nominalGDP) {
-        taxRevenue = (nominalGDP * (economicInputs.fiscalSystem.taxRevenueGDPPercent || 0)) / 100;
-      } else if (totalRevenue > 0) {
-        taxRevenue = Math.round(totalRevenue * 0.7);
-      }
-    }
-
-    const nonTaxRevenue = Math.max(0, totalRevenue - taxRevenue);
-
-    const taxBurdenRatio = nominalGDP ? (taxRevenue / nominalGDP) * 100 : 0;
-    const revenueToGDPRatio = nominalGDP ? (totalRevenue / nominalGDP) * 100 : 0;
-
-    const governmentSizeIndicator: "Small" | "Medium" | "Large" =
-      revenueToGDPRatio >= 30 ? "Large" : revenueToGDPRatio >= 10 ? "Medium" : "Small";
-
-    return {
-      totalRevenue,
-      taxRevenue,
-      nonTaxRevenue,
-      taxBurdenRatio,
-      revenueToGDPRatio,
-      governmentSizeIndicator,
-    };
-  }, [normalizedGovernmentStructure, economicInputs, coreIndicators]);
+  // Compute readiness score across core pillars
+  const readinessChecks = [
+    Boolean(nationalIdentity?.countryName),
+    Boolean(coreIndicators?.nominalGDP && coreIndicators.nominalGDP > 0),
+    Boolean(coreIndicators?.totalPopulation && coreIndicators.totalPopulation > 0),
+    governmentComponents.length > 0 || Boolean(builderState.governmentStructure),
+  ];
+  const passedChecks = readinessChecks.filter(Boolean).length;
+  const readinessScore = Math.round((passedChecks / readinessChecks.length) * 100);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-4 text-center"
-      >
-        <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-green-600 shadow-lg">
-          <Flag className="h-8 w-8 text-white" />
-        </div>
-        <h2 className="text-3xl font-bold">Review Your Nation</h2>
-        <p className="text-muted-foreground mx-auto max-w-2xl">
-          Review all your configurations before creating your nation
-        </p>
-      </motion.div>
-
-      {/* Master Controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="bg-green-50 text-green-700">
-            <Eye className="mr-1 h-3 w-3" />
-            Preview Mode
-          </Badge>
-          <span className="text-muted-foreground text-sm">
-            {Object.values(sectionStates).filter(Boolean).length} of{" "}
-            {Object.keys(sectionStates).length} sections expanded
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={allExpanded ? collapseAll : expandAll}
-            className="gap-2"
-          >
-            {allExpanded ? (
-              <>
-                <ChevronsDownUp className="h-4 w-4" />
-                Collapse All
-              </>
-            ) : (
-              <>
-                <ChevronsUpDown className="h-4 w-4" />
-                Expand All
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-
-      {/* 1. National Identity Section */}
-      <Collapsible
-        open={sectionStates.nationalIdentity}
-        onOpenChange={() => toggleSection("nationalIdentity")}
-      >
-        <GlassCard
+      {/* ─── Row 1: Identity & Government (2-Col) ─── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* 1. National Identity */}
+        <FacetCard
           depth="base"
           theme="gold"
           className="border-amber-500/20"
           texture="chevron"
-          textureOpacity={0.04}
+          textureOpacity={0.03}
         >
-          <CollapsibleTrigger asChild>
-            <div className="border-border/40 cursor-pointer border-b bg-white/[0.02] px-6 py-4 transition-colors hover:bg-white/[0.04] dark:bg-black/[0.1]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-amber-500/10 p-2">
-                    <Flag className="h-5 w-5 text-amber-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-foreground text-lg font-bold">National Identity</h3>
-                    <p className="text-muted-foreground text-sm">Country symbols and identity</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="bg-amber-500/10 text-amber-600 dark:text-amber-300"
-                  >
-                    {nationalIdentity ? "Configured" : "Not Set"}
-                  </Badge>
-                  {sectionStates.nationalIdentity ? (
-                    <ChevronUp className="text-muted-foreground h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="text-muted-foreground h-4 w-4" />
-                  )}
-                </div>
+          <div
+            onClick={() => toggleSection("identity")}
+            className="flex cursor-pointer items-center justify-between border-b border-border/40 bg-muted/10 px-4 py-3 transition-colors hover:bg-muted/20 active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+                <Flag className="h-4 w-4" />
               </div>
+              <h3 className="text-sm font-semibold tracking-tight text-foreground">
+                National Identity
+              </h3>
             </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <GlassCardContent className="p-6">
-              {nationalIdentity ? (
-                <div className="space-y-6">
-                  {/* Flag and Coat of Arms */}
-                  <div className="flex items-center justify-center gap-8">
-                    {/* Flag */}
-                    <div className="text-center">
-                      {economicInputs?.flagUrl ? (
-                        <div className="group cursor-pointer">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <div className="relative rounded-lg border border-blue-400/30 bg-gradient-to-br from-blue-500/10 to-blue-600/10 p-3 backdrop-blur-sm transition-all duration-300 group-hover:border-blue-400/50">
-                                <UnifiedCountryFlag
-                                  countryName={nationalIdentity.countryName}
-                                  size="lg"
-                                  className="h-16 w-24 rounded object-cover transition-transform duration-300 group-hover:scale-105"
-                                />
-                                <div className="absolute -top-1 -right-1 h-3 w-3 animate-pulse rounded-full bg-blue-400"></div>
-                              </div>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle>
-                                  National Flag - {nationalIdentity.countryName}
-                                </DialogTitle>
-                              </DialogHeader>
-                              <div className="flex justify-center p-4">
-                                <UnifiedCountryFlag
-                                  countryName={nationalIdentity.countryName}
-                                  size="xl"
-                                  className="max-h-96 max-w-full rounded-lg object-contain"
-                                />
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      ) : (
-                        <div className="flex h-16 w-24 items-center justify-center rounded border border-white/10 bg-white/[0.03]">
-                          <Flag className="h-8 w-8 text-gray-400" />
-                        </div>
-                      )}
-                      <div className="mt-2 text-xs font-medium text-blue-400">National Flag</div>
-                    </div>
-
-                    {/* Coat of Arms */}
-                    <div className="text-center">
-                      {economicInputs?.coatOfArmsUrl ? (
-                        <div className="group cursor-pointer">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <div className="relative rounded-lg border border-amber-400/30 bg-gradient-to-br from-amber-500/10 to-orange-500/10 p-3 backdrop-blur-sm transition-all duration-300 group-hover:border-amber-400/50">
-                                <img
-                                  src={economicInputs.coatOfArmsUrl}
-                                  alt="Coat of Arms"
-                                  className="h-16 w-16 rounded object-cover transition-transform duration-300 group-hover:scale-105"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = "none";
-                                  }}
-                                />
-                                <div className="absolute -top-1 -right-1 h-3 w-3 animate-pulse rounded-full bg-amber-400"></div>
-                              </div>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle>
-                                  Coat of Arms - {nationalIdentity.countryName}
-                                </DialogTitle>
-                              </DialogHeader>
-                              <div className="flex justify-center p-4">
-                                <img
-                                  src={economicInputs.coatOfArmsUrl}
-                                  alt="Coat of Arms"
-                                  className="max-h-96 max-w-full rounded-lg object-contain"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = "none";
-                                  }}
-                                />
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded border border-white/10 bg-white/[0.03]">
-                          <Crown className="h-8 w-8 text-gray-400" />
-                        </div>
-                      )}
-                      <div className="mt-2 text-xs font-medium text-amber-400">Coat of Arms</div>
-                    </div>
-                  </div>
-
-                  {/* Identity Details */}
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <div className="space-y-3">
-                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300">
-                        <Globe className="h-4 w-4" />
-                        Basic Information
-                      </h4>
-                      <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="font-medium">Country:</span>{" "}
-                          {nationalIdentity.countryName}
-                        </div>
-                        {nationalIdentity.officialName && (
-                          <div>
-                            <span className="font-medium">Official:</span>{" "}
-                            {nationalIdentity.officialName}
-                          </div>
-                        )}
-                        <div>
-                          <span className="font-medium">Capital:</span>{" "}
-                          {nationalIdentity.capitalCity}
-                        </div>
-                        {nationalIdentity.largestCity && (
-                          <div>
-                            <span className="font-medium">Largest City:</span>{" "}
-                            {nationalIdentity.largestCity}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300">
-                        <Crown className="h-4 w-4" />
-                        Government & Culture
-                      </h4>
-                      <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="font-medium">Government:</span>{" "}
-                          {nationalIdentity.governmentType}
-                        </div>
-                        <div>
-                          <span className="font-medium">Demonym:</span> {nationalIdentity.demonym}
-                        </div>
-                        <div>
-                          <span className="font-medium">Currency:</span> {nationalIdentity.currency}
-                        </div>
-                        {nationalIdentity.nationalReligion && (
-                          <div>
-                            <span className="font-medium">Religion:</span>{" "}
-                            {nationalIdentity.nationalReligion}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300">
-                        <Languages className="h-4 w-4" />
-                        Language & Symbols
-                      </h4>
-                      <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="font-medium">Language:</span>{" "}
-                          {nationalIdentity.officialLanguages}
-                        </div>
-                        <div>
-                          <span className="font-medium">Native:</span>{" "}
-                          {nationalIdentity.nationalLanguage}
-                        </div>
-                        {nationalIdentity.motto && (
-                          <div>
-                            <span className="font-medium">Motto:</span> {nationalIdentity.motto}
-                          </div>
-                        )}
-                        {nationalIdentity.nationalAnthem && (
-                          <div>
-                            <span className="font-medium">Anthem:</span>{" "}
-                            {nationalIdentity.nationalAnthem}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Additional Details */}
-                  {(nationalIdentity.nationalDay || nationalIdentity.callingCode) && (
-                    <div className="grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="text-muted-foreground h-4 w-4" />
-                        <span className="text-sm">
-                          <span className="font-medium">National Day:</span>{" "}
-                          {nationalIdentity.nationalDay || "Not set"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="text-muted-foreground h-4 w-4" />
-                        <span className="text-sm">
-                          <span className="font-medium">Calling Code:</span>{" "}
-                          {nationalIdentity.callingCode || "Not set"}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="max-w-[180px] truncate border-amber-500/30 bg-amber-500/10 text-amber-700 sm:max-w-[240px] dark:text-amber-300"
+                title={nationalIdentity?.countryName || "Unspecified"}
+              >
+                {nationalIdentity?.countryName || "Unspecified"}
+              </Badge>
+              {collapsedSections.identity ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <div className="py-8 text-center">
-                  <Flag className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                  <p className="text-muted-foreground">No national identity configured</p>
-                </div>
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
               )}
-            </GlassCardContent>
-          </CollapsibleContent>
-        </GlassCard>
-      </Collapsible>
-
-      {/* 2. Core Economic Indicators Section */}
-      <Collapsible
-        open={sectionStates.coreIndicators}
-        onOpenChange={() => toggleSection("coreIndicators")}
-      >
-        <GlassCard
-          depth="base"
-          theme="blue"
-          className="border-blue-500/20"
-          texture="chevron"
-          textureOpacity={0.04}
-        >
-          <CollapsibleTrigger asChild>
-            <div className="border-border/40 cursor-pointer border-b bg-white/[0.02] px-6 py-4 transition-colors hover:bg-white/[0.04] dark:bg-black/[0.1]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-blue-500/10 p-2">
-                    <BarChart3 className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-foreground text-lg font-bold">Core Economic Indicators</h3>
-                    <p className="text-muted-foreground text-sm">Primary economic metrics</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="bg-blue-500/10 text-blue-600 dark:text-blue-300"
-                  >
-                    {coreIndicators ? "Configured" : "Not Set"}
-                  </Badge>
-                  {sectionStates.coreIndicators ? (
-                    <ChevronUp className="text-muted-foreground h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="text-muted-foreground h-4 w-4" />
-                  )}
-                </div>
-              </div>
             </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <GlassCardContent className="p-6">
-              {coreIndicators ? (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center">
-                    <Users className="mx-auto mb-2 h-8 w-8 text-blue-600" />
-                    <div className="text-2xl font-bold text-blue-600">
-                      {coreIndicators.totalPopulation?.toLocaleString() || "N/A"}
-                    </div>
-                    <div className="text-muted-foreground text-sm">Total Population</div>
-                  </div>
+          </div>
+          {!collapsedSections.identity && (
+            <FacetCardContent className="p-5">
+              <PreviewIdentity economicInputs={economicInputs} />
+            </FacetCardContent>
+          )}
+        </FacetCard>
 
-                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center">
-                    <DollarSign className="mx-auto mb-2 h-8 w-8 text-green-600" />
-                    <div className="text-2xl font-bold text-green-600">
-                      {coreIndicators.nominalGDP
-                        ? formatCurrencyLocal(coreIndicators.nominalGDP)
-                        : "N/A"}
-                    </div>
-                    <div className="text-muted-foreground text-sm">Nominal GDP</div>
-                  </div>
-
-                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center">
-                    <TrendingUp className="mx-auto mb-2 h-8 w-8 text-purple-600" />
-                    <div className="text-2xl font-bold text-purple-600">
-                      {coreIndicators.gdpPerCapita
-                        ? formatCurrencyLocal(coreIndicators.gdpPerCapita)
-                        : "N/A"}
-                    </div>
-                    <div className="text-muted-foreground text-sm">GDP per Capita</div>
-                  </div>
-
-                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center">
-                    <BarChart3 className="mx-auto mb-2 h-8 w-8 text-orange-600" />
-                    <div className="text-2xl font-bold text-orange-600">
-                      {coreIndicators.realGDPGrowthRate
-                        ? `${coreIndicators.realGDPGrowthRate}%`
-                        : "N/A"}
-                    </div>
-                    <div className="text-muted-foreground text-sm">GDP Growth Rate</div>
-                  </div>
-
-                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center">
-                    <TrendingUp className="mx-auto mb-2 h-8 w-8 text-red-600" />
-                    <div className="text-2xl font-bold text-red-600">
-                      {coreIndicators.inflationRate ? `${coreIndicators.inflationRate}%` : "N/A"}
-                    </div>
-                    <div className="text-muted-foreground text-sm">Inflation Rate</div>
-                  </div>
-
-                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center">
-                    <Globe className="mx-auto mb-2 h-8 w-8 text-indigo-600" />
-                    <div className="text-2xl font-bold text-indigo-600">
-                      {coreIndicators.currencyExchangeRate || "N/A"}
-                    </div>
-                    <div className="text-muted-foreground text-sm">Exchange Rate</div>
-                  </div>
-                </div>
-              ) : (
-                <div className="py-8 text-center">
-                  <BarChart3 className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                  <p className="text-muted-foreground">No economic indicators configured</p>
-                </div>
-              )}
-            </GlassCardContent>
-          </CollapsibleContent>
-        </GlassCard>
-      </Collapsible>
-
-      {/* 3. Government Configuration Section */}
-      <Collapsible
-        open={sectionStates.governmentConfig}
-        onOpenChange={() => toggleSection("governmentConfig")}
-      >
-        <GlassCard
+        {/* 2. Government */}
+        <FacetCard
           depth="base"
           theme="teal"
           className="border-cyan-500/20"
           texture="chevron"
-          textureOpacity={0.04}
+          textureOpacity={0.03}
         >
-          <CollapsibleTrigger asChild>
-            <div className="border-border/40 cursor-pointer border-b bg-white/[0.02] px-6 py-4 transition-colors hover:bg-white/[0.04] dark:bg-black/[0.1]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-cyan-500/10 p-2">
-                    <Building2 className="h-5 w-5 text-cyan-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-foreground text-lg font-bold">Government Configuration</h3>
-                    <p className="text-muted-foreground text-sm">
-                      Government structure and components
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="bg-cyan-500/10 text-cyan-600 dark:text-cyan-300"
-                  >
-                    {governmentComponents.length} Components
-                  </Badge>
-                  {sectionStates.governmentConfig ? (
-                    <ChevronUp className="text-muted-foreground h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="text-muted-foreground h-4 w-4" />
-                  )}
-                </div>
+          <div
+            onClick={() => toggleSection("government")}
+            className="flex cursor-pointer items-center justify-between border-b border-border/40 bg-muted/10 px-4 py-3 transition-colors hover:bg-muted/20 active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-500">
+                <Building2 className="h-4 w-4" />
               </div>
+              <h3 className="text-sm font-semibold tracking-tight text-foreground">Government</h3>
             </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <GlassCardContent className="p-6">
-              <div className="space-y-6">
-                {/* Government Structure Overview */}
-                {normalizedGovernmentStructure && (
-                  <StructureOverview
-                    structure={normalizedGovernmentStructure}
-                    getGovernmentTypeIcon={getGovernmentTypeIcon}
-                  />
-                )}
-
-                {/* Atomic Components */}
-                {governmentComponents.length > 0 && (
-                  <ComponentsList
-                    components={governmentComponents}
-                    isOpen={true}
-                    onOpenChange={() => {}}
-                  />
-                )}
-
-                {/* Departments and Budget */}
-                {normalizedGovernmentStructure && (
-                  <>
-                    <DepartmentsList
-                      departments={normalizedGovernmentStructure.departments}
-                      budgetAllocations={normalizedGovernmentStructure.budgetAllocations}
-                      totalBudget={normalizedGovernmentStructure.totalBudget}
-                      currency={normalizedGovernmentStructure.budgetCurrency}
-                      isOpen={true}
-                      onOpenChange={() => {}}
-                      openDepartments={openDepartments}
-                      onToggleDepartment={(id) =>
-                        setOpenDepartments((prev) => ({ ...prev, [id]: !prev[id] }))
-                      }
-                      getDepartmentIcon={getDepartmentIcon}
-                    />
-
-                    <BudgetAllocationList
-                      allocations={normalizedGovernmentStructure.budgetAllocations}
-                      departments={normalizedGovernmentStructure.departments}
-                      totalBudget={normalizedGovernmentStructure.totalBudget}
-                      currency={normalizedGovernmentStructure.budgetCurrency}
-                      isOpen={true}
-                      onOpenChange={() => {}}
-                      openAllocations={openAllocations}
-                      onToggleAllocation={(id) =>
-                        setOpenAllocations((prev) => ({ ...prev, [id]: !prev[id] }))
-                      }
-                    />
-
-                    <RevenueSourcesList
-                      sources={normalizedGovernmentStructure.revenueSources}
-                      totalRevenue={normalizedGovernmentStructure.revenueSources.reduce(
-                        (sum: number, r: any) => sum + r.revenueAmount,
-                        0
-                      )}
-                      currency={normalizedGovernmentStructure.budgetCurrency}
-                      isOpen={true}
-                      onOpenChange={() => {}}
-                      openRevenues={openRevenues}
-                      onToggleRevenue={(id) =>
-                        setOpenRevenues((prev) => ({ ...prev, [id]: !prev[id] }))
-                      }
-                    />
-                  </>
-                )}
-
-                {governmentComponents.length === 0 && !normalizedGovernmentStructure && (
-                  <div className="py-8 text-center">
-                    <Building2 className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                    <p className="text-muted-foreground">No government configuration set</p>
-                  </div>
-                )}
-              </div>
-            </GlassCardContent>
-          </CollapsibleContent>
-        </GlassCard>
-      </Collapsible>
-
-      {/* 4. Economy Configuration Section */}
-      <Collapsible
-        open={sectionStates.economyConfig}
-        onOpenChange={() => toggleSection("economyConfig")}
-      >
-        <GlassCard
-          depth="base"
-          theme="emerald"
-          className="border-emerald-500/20"
-          texture="chevron"
-          textureOpacity={0.04}
-        >
-          <CollapsibleTrigger asChild>
-            <div className="border-border/40 cursor-pointer border-b bg-white/[0.02] px-6 py-4 transition-colors hover:bg-white/[0.04] dark:bg-black/[0.1]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-emerald-500/10 p-2">
-                    <Factory className="h-5 w-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-foreground text-lg font-bold">Economy Configuration</h3>
-                    <p className="text-muted-foreground text-sm">
-                      Labor, demographics, and economic sectors
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
-                  >
-                    {laborEmployment || demographics ? "Configured" : "Not Set"}
-                  </Badge>
-                  {sectionStates.economyConfig ? (
-                    <ChevronUp className="text-muted-foreground h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="text-muted-foreground h-4 w-4" />
-                  )}
-                </div>
-              </div>
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <GlassCardContent className="p-6">
-              <div className="space-y-6">
-                {/* Labor & Employment */}
-                {laborEmployment && (
-                  <div className="space-y-4">
-                    <h4 className="flex items-center gap-2 font-semibold text-green-700 dark:text-emerald-300">
-                      <Briefcase className="h-4 w-4" />
-                      Labor & Employment
-                    </h4>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                        <div className="text-lg font-bold text-green-600">
-                          {laborEmployment.laborForceParticipationRate}%
-                        </div>
-                        <div className="text-muted-foreground text-sm">
-                          Labor Force Participation
-                        </div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                        <div className="text-lg font-bold text-green-600">
-                          {laborEmployment.employmentRate}%
-                        </div>
-                        <div className="text-muted-foreground text-sm">Employment Rate</div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                        <div className="text-lg font-bold text-red-600">
-                          {laborEmployment.unemploymentRate}%
-                        </div>
-                        <div className="text-muted-foreground text-sm">Unemployment Rate</div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                        <div className="text-lg font-bold text-blue-600">
-                          {laborEmployment.totalWorkforce?.toLocaleString() || "N/A"}
-                        </div>
-                        <div className="text-muted-foreground text-sm">Total Workforce</div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                        <div className="text-lg font-bold text-purple-600">
-                          {laborEmployment.averageWorkweekHours}hrs
-                        </div>
-                        <div className="text-muted-foreground text-sm">Avg Work Week</div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                        <div className="text-lg font-bold text-orange-600">
-                          {laborEmployment.averageAnnualIncome
-                            ? formatCurrencyLocal(laborEmployment.averageAnnualIncome)
-                            : "N/A"}
-                        </div>
-                        <div className="text-muted-foreground text-sm">Avg Annual Income</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Demographics */}
-                {demographics && (
-                  <div className="space-y-4">
-                    <h4 className="flex items-center gap-2 font-semibold text-green-700 dark:text-emerald-300">
-                      <Users className="h-4 w-4" />
-                      Demographics
-                    </h4>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {demographics.ageDistribution && demographics.ageDistribution.length > 0 && (
-                        <>
-                          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                            <div className="text-lg font-bold text-blue-600">
-                              {demographics.ageDistribution[0]?.percent || 0}%
-                            </div>
-                            <div className="text-muted-foreground text-sm">Youth Population</div>
-                          </div>
-                          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                            <div className="text-lg font-bold text-green-600">
-                              {demographics.ageDistribution[1]?.percent || 0}%
-                            </div>
-                            <div className="text-muted-foreground text-sm">Working Age</div>
-                          </div>
-                          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                            <div className="text-lg font-bold text-purple-600">
-                              {demographics.ageDistribution[2]?.percent || 0}%
-                            </div>
-                            <div className="text-muted-foreground text-sm">Elderly Population</div>
-                          </div>
-                        </>
-                      )}
-                      {demographics.urbanRuralSplit && (
-                        <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                          <div className="text-lg font-bold text-orange-600">
-                            {demographics.urbanRuralSplit.urban}%
-                          </div>
-                          <div className="text-muted-foreground text-sm">Urban Population</div>
-                        </div>
-                      )}
-                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                        <div className="text-lg font-bold text-red-600">
-                          {demographics.lifeExpectancy || "N/A"}
-                        </div>
-                        <div className="text-muted-foreground text-sm">Life Expectancy</div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                        <div className="text-lg font-bold text-indigo-600">
-                          {demographics.populationGrowthRate || "N/A"}%
-                        </div>
-                        <div className="text-muted-foreground text-sm">Population Growth</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Economy Preview Summary (migrated from per-economy preview tab) */}
-                {builderState.economyBuilderState && (
-                  <div className="space-y-6">
-                    <EconomyPreviewTab
-                      economyBuilder={builderState.economyBuilderState}
-                      economicHealthMetrics={economicHealthMetrics}
-                      selectedComponents={
-                        builderState.economyBuilderState.selectedAtomicComponents || []
-                      }
-                      economicInputs={economicInputs as any}
-                    />
-                  </div>
-                )}
-
-                {/* Fiscal / Government Revenue Integration Preview */}
-                {(revenueIntegration.totalRevenue > 0 || !!economicInputs?.fiscalSystem) && (
-                  <div className="space-y-4">
-                    <h4 className="flex items-center gap-2 font-semibold text-green-700 dark:text-emerald-300">
-                      <Landmark className="h-4 w-4" />
-                      Fiscal Policy
-                    </h4>
-                    {economicInputs && (
-                      <div>
-                        <FiscalTab
-                          revenueIntegration={revenueIntegration}
-                          economicInputs={economicInputs}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {!laborEmployment && !demographics && (
-                  <div className="py-8 text-center">
-                    <Factory className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                    <p className="text-muted-foreground">No economy configuration set</p>
-                  </div>
-                )}
-              </div>
-            </GlassCardContent>
-          </CollapsibleContent>
-        </GlassCard>
-      </Collapsible>
-
-      {/* 5. Tax System Section */}
-      <Collapsible open={sectionStates.taxSystem} onOpenChange={() => toggleSection("taxSystem")}>
-        <GlassCard
-          depth="base"
-          theme="red"
-          className="border-red-500/20"
-          texture="chevron"
-          textureOpacity={0.04}
-        >
-          <CollapsibleTrigger asChild>
-            <div className="border-border/40 cursor-pointer border-b bg-white/[0.02] px-6 py-4 transition-colors hover:bg-white/[0.04] dark:bg-black/[0.1]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-red-500/10 p-2">
-                    <Scale className="h-5 w-5 text-red-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-foreground text-lg font-bold">Tax System</h3>
-                    <p className="text-muted-foreground text-sm">
-                      Tax categories, brackets, and revenue
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-red-500/10 text-red-600 dark:text-red-300">
-                    {taxSystemData?.categories?.length || 0} Categories
-                  </Badge>
-                  {sectionStates.taxSystem ? (
-                    <ChevronUp className="text-muted-foreground h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="text-muted-foreground h-4 w-4" />
-                  )}
-                </div>
-              </div>
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <GlassCardContent className="p-6">
-              {taxSystemData ? (
-                <div className="space-y-6">
-                  {/* Tax System Overview */}
-                  <div className="grid grid-cols-1 gap-4 rounded-lg border border-white/10 bg-white/[0.03] p-4 md:grid-cols-3">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-red-600">
-                        {taxSystemData.taxSystem?.taxSystemName || "Unnamed System"}
-                      </div>
-                      <div className="text-muted-foreground text-sm">Tax System Name</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-red-600">
-                        {taxSystemData.taxSystem?.fiscalYear || "N/A"}
-                      </div>
-                      <div className="text-muted-foreground text-sm">Fiscal Year</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-red-600">
-                        {taxSystemData.taxSystem?.progressiveTax ? "Progressive" : "Flat"}
-                      </div>
-                      <div className="text-muted-foreground text-sm">Tax Type</div>
-                    </div>
-                  </div>
-
-                  {/* Tax Categories */}
-                  {taxSystemData.categories && taxSystemData.categories.length > 0 && (
-                    <div className="space-y-4">
-                      <h4 className="flex items-center gap-2 font-semibold text-red-700 dark:text-red-300">
-                        <Scale className="h-4 w-4" />
-                        Tax Categories
-                      </h4>
-                      <div className="space-y-3">
-                        {taxSystemData.categories.map(
-                          (category: TaxBuilderState["categories"][number], index: number) => (
-                            <Collapsible
-                              key={index}
-                              open={openDepartments[`tax-${index}`]}
-                              onOpenChange={(open: boolean) =>
-                                setOpenDepartments((prev) => ({ ...prev, [`tax-${index}`]: open }))
-                              }
-                            >
-                              <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.03]">
-                                <CollapsibleTrigger className="w-full">
-                                  <div className="flex cursor-pointer items-center justify-between p-3 transition-colors hover:bg-white/[0.05]">
-                                    <div>
-                                      <div className="flex items-center gap-2 font-medium">
-                                        {category.categoryName}
-                                        {openDepartments[`tax-${index}`] ? (
-                                          <ChevronDown className="h-4 w-4" />
-                                        ) : (
-                                          <ChevronUp className="h-4 w-4" />
-                                        )}
-                                      </div>
-                                      <div className="text-muted-foreground text-sm">
-                                        {category.categoryType} • {category.calculationMethod}
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <Badge variant="outline">
-                                        {category.baseRate}% base rate
-                                      </Badge>
-                                      {taxSystemData.brackets &&
-                                        taxSystemData.brackets[index.toString()]?.length > 0 && (
-                                          <div className="text-muted-foreground mt-1 text-xs">
-                                            {taxSystemData.brackets[index.toString()].length}{" "}
-                                            brackets
-                                          </div>
-                                        )}
-                                    </div>
-                                  </div>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent>
-                                  <div className="border-t border-white/10 bg-white/[0.02] p-3">
-                                    <p className="text-muted-foreground mb-3 text-sm">
-                                      {category.description}
-                                    </p>
-
-                                    {/* Tax Brackets */}
-                                    {taxSystemData.brackets &&
-                                      taxSystemData.brackets[index.toString()] && (
-                                        <div className="space-y-2">
-                                          <h5 className="text-sm font-medium">Tax Brackets:</h5>
-                                          <div className="space-y-1">
-                                            {taxSystemData.brackets[index.toString()].map(
-                                              (
-                                                bracket: TaxBuilderState["brackets"][string][number],
-                                                bracketIndex: number
-                                              ) => (
-                                                <div
-                                                  key={bracketIndex}
-                                                  className="rounded border border-white/10 bg-white/[0.03] p-2 text-xs"
-                                                >
-                                                  {bracket.minIncome && bracket.maxIncome
-                                                    ? `${formatCurrencyLocal(bracket.minIncome)} - ${formatCurrencyLocal(bracket.maxIncome)}: ${bracket.rate}%`
-                                                    : bracket.minIncome
-                                                      ? `${formatCurrencyLocal(bracket.minIncome)}+: ${bracket.rate}%`
-                                                      : `${bracket.rate}%`}
-                                                </div>
-                                              )
-                                            )}
-                                          </div>
-                                        </div>
-                                      )}
-                                  </div>
-                                </CollapsibleContent>
-                              </div>
-                            </Collapsible>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Exemptions and Deductions */}
-                  {(taxSystemData.exemptions?.length > 0 ||
-                    Object.keys(taxSystemData.deductions || {}).length > 0) && (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      {taxSystemData.exemptions && taxSystemData.exemptions.length > 0 && (
-                        <div className="space-y-2">
-                          <h5 className="text-sm font-medium">Exemptions:</h5>
-                          <div className="space-y-1">
-                            {taxSystemData.exemptions.map(
-                              (exemption: TaxBuilderState["exemptions"][number], index: number) => (
-                                <div
-                                  key={index}
-                                  className="rounded border border-white/10 bg-white/[0.03] p-2 text-xs"
-                                >
-                                  <div className="font-medium">{exemption.exemptionName}</div>
-                                  <div className="text-muted-foreground">
-                                    {exemption.description}
-                                  </div>
-                                  <div className="text-green-600">
-                                    {formatCurrencyLocal(exemption.exemptionAmount ?? 0)}
-                                  </div>
-                                </div>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {Object.keys(taxSystemData.deductions || {}).length > 0 && (
-                        <div className="space-y-2">
-                          <h5 className="text-sm font-medium">Deductions:</h5>
-                          <div className="space-y-1">
-                            {Object.entries(taxSystemData.deductions || {}).flatMap(
-                              ([categoryIndex, deductions]: [
-                                string,
-                                TaxBuilderState["deductions"][string],
-                              ]) =>
-                                deductions.map(
-                                  (
-                                    deduction: TaxBuilderState["deductions"][string][number],
-                                    index: number
-                                  ) => (
-                                    <div
-                                      key={`${categoryIndex}-${index}`}
-                                      className="rounded border border-white/10 bg-white/[0.03] p-2 text-xs"
-                                    >
-                                      <div className="font-medium">{deduction.deductionName}</div>
-                                      <div className="text-muted-foreground">
-                                        {deduction.description}
-                                      </div>
-                                      <div className="text-blue-600">
-                                        {formatCurrencyLocal(deduction.maximumAmount ?? 0)}
-                                      </div>
-                                    </div>
-                                  )
-                                )
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300"
+              >
+                {governmentComponents.length} Institutions
+              </Badge>
+              {collapsedSections.government ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <div className="py-8 text-center">
-                  <Scale className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                  <p className="text-muted-foreground">No tax system configured</p>
-                </div>
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
               )}
-            </GlassCardContent>
-          </CollapsibleContent>
-        </GlassCard>
-      </Collapsible>
-
-      {/* Summary Statistics */}
-      <GlassCard
-        depth="base"
-        theme="neutral"
-        className="border-zinc-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
-        <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-          <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
-            <BarChart3 className="h-5 w-5 text-zinc-400" />
-            Configuration Summary
-          </h3>
-        </div>
-        <GlassCardContent className="p-6">
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{nationalIdentity ? "✓" : "✗"}</div>
-              <div className="text-muted-foreground text-sm">National Identity</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{coreIndicators ? "✓" : "✗"}</div>
-              <div className="text-muted-foreground text-sm">Core Indicators</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {governmentComponents.length + (normalizedGovernmentStructure ? 1 : 0)}
-              </div>
-              <div className="text-muted-foreground text-sm">Government Items</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {(laborEmployment ? 1 : 0) + (demographics ? 1 : 0)}
-              </div>
-              <div className="text-muted-foreground text-sm">Economy Sections</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {taxSystemData?.categories?.length || 0}
-              </div>
-              <div className="text-muted-foreground text-sm">Tax Categories</div>
             </div>
           </div>
-        </GlassCardContent>
-      </GlassCard>
+          {!collapsedSections.government && (
+            <FacetCardContent className="p-5">
+              <PreviewGovernment
+                governmentStructure={builderState.governmentStructure}
+                governmentComponents={governmentComponents}
+                currency={currency}
+              />
+            </FacetCardContent>
+          )}
+        </FacetCard>
+      </div>
+
+      {/* ─── Row 2: Economy (Full Width) ─── */}
+      <FacetCard
+        depth="base"
+        theme="emerald"
+        className="border-emerald-500/20"
+        texture="chevron"
+        textureOpacity={0.03}
+      >
+        <div
+          onClick={() => toggleSection("economy")}
+          className="flex cursor-pointer items-center justify-between border-b border-border/40 bg-muted/10 px-4 py-3 transition-colors hover:bg-muted/20 active:scale-[0.99]"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+              <Factory className="h-4 w-4" />
+            </div>
+            <h3 className="text-sm font-semibold tracking-tight text-foreground">Economy</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="outline"
+              className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+            >
+              {coreIndicators ? "Configured" : "Default"}
+            </Badge>
+            {collapsedSections.economy ? (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
+        </div>
+        {!collapsedSections.economy && (
+          <FacetCardContent className="p-5">
+            <PreviewEconomy economicInputs={economicInputs} currency={currency} />
+          </FacetCardContent>
+        )}
+      </FacetCard>
+
+      {/* ─── Row 3: Ready to Create Strip ─── */}
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/40 bg-card/50 p-4 shadow-sm backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <BarChart3 className="h-5 w-5" />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <span className="text-sm font-semibold text-foreground">Ready to Create</span>
+            <Badge
+              variant="outline"
+              className={
+                readinessScore >= 80
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+              }
+            >
+              {readinessScore}% Complete
+            </Badge>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-muted/20 px-3 py-1.5">
+            <span className="font-semibold text-foreground">{governmentComponents.length}</span>
+            <span>Institutions</span>
+          </div>
+          {coreIndicators?.totalPopulation ? (
+            <div className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-muted/20 px-3 py-1.5">
+              <span className="font-semibold text-foreground">
+                {coreIndicators.totalPopulation >= 1e6
+                  ? `${(coreIndicators.totalPopulation / 1e6).toFixed(1)}M`
+                  : coreIndicators.totalPopulation.toLocaleString()}
+              </span>
+              <span>Population</span>
+            </div>
+          ) : null}
+          <div className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-muted/20 px-3 py-1.5">
+            <span className="font-semibold text-foreground">{currency}</span>
+            <span>Currency</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 });
 
-// Display name for debugging
 BuilderPreviewStep.displayName = "BuilderPreviewStep";

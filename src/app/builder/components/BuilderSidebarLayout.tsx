@@ -3,20 +3,23 @@
 import type { ReactNode } from "react";
 import { cn } from "~/lib/utils";
 import type { BuilderSection } from "../lib/builder-theme";
-import { BuilderPreviewWidget } from "./BuilderPreviewWidget";
-import { BuilderHelpWidget } from "./BuilderHelpWidget";
 import { Refresh as RefreshCw, XmarkCircle as XCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { useBuilderFilter } from "./builder-filter-context";
 import { useRouter } from "next/navigation";
 import { createUrl } from "~/lib/utils";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 interface BuilderSidebarLayoutProps {
   children: ReactNode;
-  /** Hero section rendered above the grid */
+  /** Hero section rendered above the studio header */
   heroSection?: ReactNode;
-  /** Sticky notch bar rendered below hero, above main content */
+  /** Sticky studio header docked cleanly above main content */
+  studioHeader?: ReactNode;
+  /** Grounded step footer rendered at bottom of main content */
+  stepFooter?: ReactNode;
+  /** Deprecated: Sticky notch bar */
   notchBar?: ReactNode;
   /** Alerts/banners rendered above main content */
   alerts?: ReactNode;
@@ -32,149 +35,118 @@ interface BuilderSidebarLayoutProps {
   mode?: "create" | "edit";
   heroCollapsed?: boolean;
   onHeroExpand?: () => void;
+  onReset?: () => void;
 }
 
 export function BuilderSidebarLayout({
   children,
   heroSection,
+  studioHeader,
+  stepFooter,
   notchBar,
   alerts,
   activeSection,
-  onNavigate,
+  onNavigate: _onNavigate,
   // oxlint-disable-next-line eslint/no-unused-vars
-  completedSteps,
+  completedSteps: _completedSteps,
   // oxlint-disable-next-line eslint/no-unused-vars
-  accessibleSteps,
+  accessibleSteps: _accessibleSteps,
   mode = "create",
-  heroCollapsed,
-  onHeroExpand,
+  // oxlint-disable-next-line eslint/no-unused-vars
+  heroCollapsed: _heroCollapsed,
+  // oxlint-disable-next-line eslint/no-unused-vars
+  onHeroExpand: _onHeroExpand,
+  onReset,
 }: BuilderSidebarLayoutProps) {
   const { clearDraft } = useBuilderContext();
   const filter = useBuilderFilter();
   const router = useRouter();
 
   const handleResetClick = () => {
+    if (onReset) {
+      onReset();
+      return;
+    }
+    soundEffects.press();
+    clearDraft();
     if (mode === "edit") {
-      const confirmExit = window.confirm(
-        "Are you sure you want to discard your current edits and exit the editor?"
-      );
-      if (confirmExit) {
-        clearDraft();
-        router.push(createUrl("/mycountry"));
-      }
+      router.push(createUrl("/mycountry"));
     } else {
-      const confirmReset = window.confirm(
-        "Are you sure you want to restart the builder? This will clear all current progress and start fresh."
-      );
-      if (confirmReset) {
-        clearDraft();
-        filter.clearSelection();
-        onNavigate("foundation");
-      }
+      filter.clearSelection();
+      _onNavigate("foundation");
     }
   };
 
+  const headerElement = studioHeader || notchBar;
+
   return (
-    <div className={cn("flex flex-col", !heroSection && "pt-[68px]")} data-builder-content>
+    <div
+      className={cn(
+        "flex min-h-[calc(100vh-1px)] w-full flex-1 flex-col",
+        "pt-24 sm:pt-28 lg:pt-32"
+      )}
+      data-builder-content
+    >
       {/* Hero Section */}
       {heroSection && (
-        <div className="container mx-auto px-4 pt-[6vh] lg:pt-[8vh]">{heroSection}</div>
+        <div className="container mx-auto px-4 pt-2 sm:pt-4">{heroSection}</div>
       )}
 
-      {/* Notch bar — sticky, sits just below DI, pushes content down */}
-      {notchBar}
+      {/* Docked Studio Header (Non-sticky, directly in normal flow above main container) */}
+      {headerElement}
 
       {/* Alerts */}
       {alerts && (
-        <div className="container mx-auto px-4 pt-4 sm:pt-6">
-          <div className="mb-4 space-y-3 sm:mb-6">{alerts}</div>
+        <div className="container mx-auto px-4 pt-2 empty:hidden">
+          <div className="space-y-2 empty:hidden">{alerts}</div>
         </div>
       )}
 
-      {/* Main Layout */}
-      <div
+      {/* Main Studio Canvas — Seamlessly Centered Across All Steps */}
+      <main
         className={cn(
-          "container mx-auto flex gap-4 px-4 pb-4 sm:gap-6 sm:pb-6",
-          !heroSection && !notchBar && "pt-16 lg:pt-20",
-          notchBar && "pt-3",
-          heroSection && !notchBar && "pt-6 lg:pt-8"
+          "mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col px-4 pb-8",
+          headerElement ? "pt-2 sm:pt-3" : "pt-4 sm:pt-6"
         )}
       >
-        {/* Desktop Sidebar Nav (CutoutCard widgets) */}
-        <div className="relative z-30 hidden shrink-0 lg:block lg:pt-8 lg:pr-2 lg:pl-6">
-          <div className="space-y-4">
-            {activeSection !== "import" && (
-              <BuilderPreviewWidget
-                heroCollapsed={heroCollapsed}
-                onHeroExpand={onHeroExpand}
-                activeSection={activeSection}
-              />
-            )}
-            {activeSection === "import" ? (
-              <div id="import-sidebar-portal" className="space-y-4" />
-            ) : (
-              <BuilderHelpWidget activeSection={activeSection} />
-            )}
+        <div className="flex h-full min-h-0 w-full flex-1 flex-col space-y-4">
+          {children}
 
-            {/* Sidebar actions: Reset / Restart */}
-            <div className="pt-2">
+          {/* Dedicated Step Footer Navigation */}
+          {stepFooter}
+
+          {/* Fallback Footer Reset Action (only when stepFooter not provided) */}
+          {!stepFooter && activeSection !== "foundation" && (
+            <div className="pt-8 pb-4 text-center">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={handleResetClick}
+                data-cuelume-press
                 className={cn(
-                  "w-full text-xs font-semibold select-none",
-                  "border-white/10 bg-white/[0.02] text-zinc-400 hover:border-red-500/25 hover:bg-red-500/10 hover:text-red-400"
+                  "px-4 text-xs font-medium select-none transition-colors active:scale-[0.98]",
+                  "text-muted-foreground/60 hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-400"
                 )}
               >
                 {mode === "edit" ? (
                   <>
                     <XCircle className="mr-1.5 h-3.5 w-3.5" />
-                    Cancel Editing
+                    Discard Changes & Exit Editor
                   </>
                 ) : (
                   <>
                     <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                    Restart Builder
+                    Restart Builder from Scratch
                   </>
                 )}
               </Button>
             </div>
-          </div>
+          )}
         </div>
-
-        {/* Main Content */}
-        <div className="min-w-0 flex-1 lg:pr-6 lg:pl-2">
-          <div className="space-y-4">
-            {children}
-
-            {/* Mobile Actions: Reset / Restart */}
-            <div className="block pt-4 text-center lg:hidden">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleResetClick}
-                className={cn(
-                  "px-6 text-xs font-semibold select-none",
-                  "border-white/10 bg-white/[0.02] text-zinc-400 hover:border-red-500/25 hover:bg-red-500/10 hover:text-red-400"
-                )}
-              >
-                {mode === "edit" ? (
-                  <>
-                    <XCircle className="mr-1.5 h-3.5 w-3.5" />
-                    Cancel Editing
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                    Restart Builder
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
+
+export { BuilderSidebarLayout as BuilderStudioLayout };
+

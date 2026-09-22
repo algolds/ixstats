@@ -7,6 +7,7 @@ import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { CutoutPanel } from "~/components/mycountry/cards";
 import { ACCENT_CLASSES, type MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
+import { timeAgo } from "~/lib/format/compact";
 
 export interface ContextStat {
   label: string;
@@ -100,15 +101,4 @@ export function SectionContextWidget({
       </div>
     </CutoutPanel>
   );
-}
-
-function timeAgo(date: Date): string {
-  const diffMin = Math.floor((Date.now() - date.getTime()) / 60000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 30) return `${diffDay}d ago`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }

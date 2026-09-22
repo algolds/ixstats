@@ -16,6 +16,7 @@ import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import Link from "next/link";
 import { getStandingBand, getSynergyBand } from "~/lib/diplomacy/relation-bands";
 import { calculateRelativeDevelopment } from "~/lib/diplomacy/relative-development";
+import { useCountryData } from "~/components/mycountry/shared/primitives";
 
 /**
  * Embassy data with calculated synergies
@@ -85,6 +86,13 @@ export const EmbassyCard = React.memo(function EmbassyCard({
   isOwner,
   onClick,
 }: EmbassyCardProps) {
+  const { country } = useCountryData();
+  const myName = country?.name;
+  const partnerCountry =
+    myName && embassy.hostCountry.toLowerCase() === myName.toLowerCase()
+      ? embassy.guestCountry
+      : embassy.hostCountry;
+
   const asymmetry = React.useMemo(() => {
     return calculateRelativeDevelopment(
       (embassy as any).guestCountryTier || "DEVELOPED",
@@ -197,20 +205,20 @@ export const EmbassyCard = React.memo(function EmbassyCard({
 
         {/* Benefits Grid */}
         <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="rounded-lg bg-green-500/10 p-2 text-center">
-            <div className="font-bold text-green-600 dark:text-green-400">
+          <div className="rounded-lg bg-emerald-500/10 p-2 text-center">
+            <div className="font-bold text-emerald-600 dark:text-emerald-400">
               {embassy.economicBonus > 0 ? "High" : "Standard"}
             </div>
             <div className="text-muted-foreground">Economic</div>
           </div>
-          <div className="rounded-lg bg-blue-500/10 p-2 text-center">
-            <div className="font-bold text-blue-600 dark:text-blue-400">
+          <div className="rounded-lg bg-cyan-500/10 p-2 text-center">
+            <div className="font-bold text-cyan-600 dark:text-cyan-400">
               {embassy.diplomaticBonus > 0 ? "High" : "Standard"}
             </div>
             <div className="text-muted-foreground">Diplomatic</div>
           </div>
-          <div className="rounded-lg bg-purple-500/10 p-2 text-center">
-            <div className="font-bold text-purple-600 dark:text-purple-400">
+          <div className="rounded-lg bg-blue-500/10 p-2 text-center">
+            <div className="font-bold text-blue-600 dark:text-blue-400">
               {embassy.culturalBonus > 0 ? "High" : "Standard"}
             </div>
             <div className="text-muted-foreground">Cultural</div>
@@ -221,13 +229,13 @@ export const EmbassyCard = React.memo(function EmbassyCard({
         {isOwner && (
           <div className="space-y-2 border-t pt-3">
             <Link
-              href={`/vault/market?nation=${encodeURIComponent(embassy.hostCountry)}`}
+              href={`/vault/market?nation=${encodeURIComponent(partnerCountry)}`}
               onClick={(e) => e.stopPropagation()}
               className="block"
             >
               <Button variant="outline" size="sm" className="w-full">
                 <CreditCard className="mr-2 h-3.5 w-3.5" />
-                Trade Cards with {embassy.hostCountry}
+                Trade Cards with {partnerCountry}
               </Button>
             </Link>
             <div className="text-muted-foreground text-center text-xs">

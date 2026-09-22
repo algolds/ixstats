@@ -41,45 +41,49 @@ export default function HelpPage() {
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/help/getting-started/welcome"
-            className="group flex items-center gap-3 rounded-xl border border-blue-500/30 bg-gradient-to-br from-blue-500/20 to-purple-500/20 p-4 transition-all hover:border-blue-400/50"
+            data-cuelume-press="tick"
+            className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-xs transition-colors hover:border-border hover:bg-accent/30 active:scale-[0.99]"
           >
-            <Target className="h-8 w-8 text-blue-600 transition-transform group-hover:scale-110 dark:text-blue-400" />
+            <Target className="h-7 w-7 text-blue-500 transition-transform group-hover:scale-105" />
             <div>
-              <div className="font-semibold text-slate-900 dark:text-white">New to IxStats?</div>
-              <div className="text-sm text-slate-700 dark:text-slate-300">Start here</div>
+              <div className="text-foreground text-sm font-semibold">New to IxStats?</div>
+              <div className="text-muted-foreground text-xs">Start here</div>
             </div>
           </Link>
 
           <Link
             href="/help/getting-started/first-country"
-            className="group flex items-center gap-3 rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/20 to-yellow-500/20 p-4 transition-all hover:border-amber-400/50"
+            data-cuelume-press="tick"
+            className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-xs transition-colors hover:border-border hover:bg-accent/30 active:scale-[0.99]"
           >
-            <Crown className="h-8 w-8 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
+            <Crown className="h-7 w-7 text-amber-500 transition-transform group-hover:scale-105" />
             <div>
-              <div className="font-semibold text-slate-900 dark:text-white">Build a Nation</div>
-              <div className="text-sm text-slate-700 dark:text-slate-300">Your first country</div>
+              <div className="text-foreground text-sm font-semibold">Build a Nation</div>
+              <div className="text-muted-foreground text-xs">Your first country</div>
             </div>
           </Link>
 
           <Link
             href="/help/getting-started/gameplay-overview"
-            className="group flex items-center gap-3 rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-4 transition-all hover:border-purple-400/50"
+            data-cuelume-press="tick"
+            className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-xs transition-colors hover:border-border hover:bg-accent/30 active:scale-[0.99]"
           >
-            <Gamepad2 className="h-8 w-8 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
+            <Gamepad2 className="h-7 w-7 text-indigo-500 transition-transform group-hover:scale-105" />
             <div>
-              <div className="font-semibold text-slate-900 dark:text-white">How It Works</div>
-              <div className="text-sm text-slate-700 dark:text-slate-300">The big picture</div>
+              <div className="text-foreground text-sm font-semibold">How It Works</div>
+              <div className="text-muted-foreground text-xs">The big picture</div>
             </div>
           </Link>
 
           <Link
             href="/help/vault/overview"
-            className="group flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 p-4 transition-all hover:border-emerald-400/50"
+            data-cuelume-press="tick"
+            className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-xs transition-colors hover:border-border hover:bg-accent/30 active:scale-[0.99]"
           >
-            <Coins className="h-8 w-8 text-emerald-600 transition-transform group-hover:scale-110 dark:text-emerald-400" />
+            <Coins className="h-7 w-7 text-emerald-500 transition-transform group-hover:scale-105" />
             <div>
-              <div className="font-semibold text-slate-900 dark:text-white">Cards & Vault</div>
-              <div className="text-sm text-slate-700 dark:text-slate-300">Collect & trade</div>
+              <div className="text-foreground text-sm font-semibold">Cards & Vault</div>
+              <div className="text-muted-foreground text-xs">Collect & trade</div>
             </div>
           </Link>
         </div>

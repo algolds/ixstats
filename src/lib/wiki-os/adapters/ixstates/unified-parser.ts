@@ -121,6 +121,8 @@ export interface UnifiedInfoboxData {
   patron_saint?: string;
   national_motto?: string;
   wikiIntro?: string;
+  categories?: string[];
+  rawWikitext?: string;
 
   // Raw infobox for interactive display
   rawInfobox?: Record<string, string>;

@@ -416,7 +416,7 @@ export default function LoanwordsSection() {
                   <button
                     type="button"
                     onClick={() => deleteContactMutation.mutate({ id: selectedContactId })}
-                    className="text-muted-foreground flex cursor-pointer items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-semibold transition-colors hover:bg-rose-500/10 hover:text-rose-400 active:scale-[0.97]"
+                    className="text-muted-foreground flex cursor-pointer items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-semibold transition-colors hover:bg-red-500/10 hover:text-red-400 active:scale-[0.97]"
                   >
                     <Trash2 className="h-3 w-3" />
                     <span>Delete</span>
@@ -608,7 +608,7 @@ export default function LoanwordsSection() {
                           <button
                             type="button"
                             onClick={() => handleRemoveShift(idx)}
-                            className="text-onoma-primary/60 cursor-pointer font-bold transition-colors hover:text-rose-400"
+                            className="text-onoma-primary/60 cursor-pointer font-bold transition-colors hover:text-red-400"
                           >
                             ×
                           </button>
@@ -771,7 +771,7 @@ export default function LoanwordsSection() {
                               type="button"
                               onClick={() => handleRemoveTestWord(idx)}
                               title="Remove word"
-                              className="text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:bg-rose-500/10 hover:text-rose-400 active:scale-90"
+                              className="text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:bg-red-500/10 hover:text-red-400 active:scale-90"
                             >
                               <Trash2 className="h-3 w-3" />
                             </button>

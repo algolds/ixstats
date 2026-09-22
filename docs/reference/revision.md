@@ -1,7 +1,7 @@
 # IxStates Versioning & Release Architecture
 
 **Status:** Canonical Standard v2  
-**Platform Release:** IxStates 1.4.0 "Ogma" (Release Candidate)  
+**Platform Release:** IxStates 1.4.0 "Lobster Crosby" (Release Candidate)  
 **Last Updated:** August 2026  
 
 ---
@@ -23,7 +23,7 @@ Versioning communicates:
 
 ```text
 ====================================================================================================
-                            IXSTATES 1.4.0 "OGMA" — OPERATING TAXONOMY
+                            IXSTATES 1.4.0 "LOBSTER CROSBY" — OPERATING TAXONOMY
 ====================================================================================================
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -136,7 +136,7 @@ Versioning communicates:
 The platform maintains strict separation between the **Platform SemVer Level** and the **Component Capability Integers**:
 
 1. **Platform**: `Major.Minor.Patch` + Permanent Epoch **Release Name** + **Channel**  
-   *Current:* **`IxStates 1.4.0 "Ogma"`** (Channel: *Release Candidate*).
+   *Current:* **`IxStates 1.4.0 "Lobster Crosby"`** (Channel: *Release Candidate*).
 2. **First-Party Apps**: A single monotonic capability integer (`ATLAS_VERSION = 2`, `WIKIOS_VERSION = 1`, `VAULT_VERSION = 2`, `MYCOUNTRY_VERSION = 5`, `THINKPAGES_VERSION = 2`).
 3. **Simulation Engines**: Internal capability integers surfaced only in the Developer Panel (`MYCOUNTRY_ENGINE_VERSION = 4`, `CONCORD_ENGINE_VERSION = 2`, `ATLAS_ENGINE_VERSION = 5`).
 4. **Subsystems & Components**: Independent capability integers (`BUILDER_VERSION = 3`, `ACHIEVEMENTS_VERSION = 2`, `STASH_VERSION = 1`, `REPOSITORY_VERSION = 2`, `WIKIAWARDS_VERSION = 1`, `HALO_VERSION = 5`, `ONOMA_VERSION = 4`, `FACET_VERSION = 2`, `CANVAS_VERSION = 1`).

@@ -3,17 +3,32 @@
 // Centralized modal host for WikiOS Visual and Source editors.
 
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { Puzzle, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { ImageSearchModal } from "~/components/wiki-os/editor/ImageSearchModal";
-import {
-  InfoboxCountryModal,
-  CountryStatsModal,
-  BusinessStatsModal,
-  MapCoordsModal,
-} from "~/components/wiki-os/editor/WikiTemplateModals";
 import { useEditorModalContext } from "../context/EditorModalContext";
 import { useTemplateSchema } from "../hooks/useTemplateSchema";
+
+const ImageSearchModal = dynamic(
+  () => import("~/components/wiki-os/editor/ImageSearchModal").then((m) => m.ImageSearchModal),
+  { ssr: false }
+);
+const InfoboxCountryModal = dynamic(
+  () => import("~/components/wiki-os/editor/template-modals/InfoboxCountryModal").then((m) => m.InfoboxCountryModal),
+  { ssr: false }
+);
+const CountryStatsModal = dynamic(
+  () => import("~/components/wiki-os/editor/template-modals/CountryStatsModal").then((m) => m.CountryStatsModal),
+  { ssr: false }
+);
+const BusinessStatsModal = dynamic(
+  () => import("~/components/wiki-os/editor/template-modals/BusinessStatsModal").then((m) => m.BusinessStatsModal),
+  { ssr: false }
+);
+const MapCoordsModal = dynamic(
+  () => import("~/components/wiki-os/editor/template-modals/MapCoordsModal").then((m) => m.MapCoordsModal),
+  { ssr: false }
+);
 
 export interface WikiEditorModalHostProps {
   onInsertImage: (wikitext: string) => void;
@@ -52,35 +67,45 @@ export function WikiEditorModalHost({
   const modal = useEditorModalContext();
   return (
     <>
-      <ImageSearchModal
-        isOpen={modal.showImageSearch}
-        onClose={() => modal.setShowImageSearch(false)}
-        onInsert={onInsertImage}
-      />
+      {modal.showImageSearch && (
+        <ImageSearchModal
+          isOpen={modal.showImageSearch}
+          onClose={() => modal.setShowImageSearch(false)}
+          onInsert={onInsertImage}
+        />
+      )}
 
-      <InfoboxCountryModal
-        isOpen={modal.showInfoboxModal}
-        onClose={() => modal.setShowInfoboxModal(false)}
-        onInsert={onInsertInfobox}
-      />
+      {modal.showInfoboxModal && (
+        <InfoboxCountryModal
+          isOpen={modal.showInfoboxModal}
+          onClose={() => modal.setShowInfoboxModal(false)}
+          onInsert={onInsertInfobox}
+        />
+      )}
 
-      <CountryStatsModal
-        isOpen={modal.showCountryStatsModal}
-        onClose={() => modal.setShowCountryStatsModal(false)}
-        onInsert={onInsertCountryStats}
-      />
+      {modal.showCountryStatsModal && (
+        <CountryStatsModal
+          isOpen={modal.showCountryStatsModal}
+          onClose={() => modal.setShowCountryStatsModal(false)}
+          onInsert={onInsertCountryStats}
+        />
+      )}
 
-      <BusinessStatsModal
-        isOpen={modal.showBusinessStatsModal}
-        onClose={() => modal.setShowBusinessStatsModal(false)}
-        onInsert={onInsertBusinessStats}
-      />
+      {modal.showBusinessStatsModal && (
+        <BusinessStatsModal
+          isOpen={modal.showBusinessStatsModal}
+          onClose={() => modal.setShowBusinessStatsModal(false)}
+          onInsert={onInsertBusinessStats}
+        />
+      )}
 
-      <MapCoordsModal
-        isOpen={modal.showMapCoordsModal}
-        onClose={() => modal.setShowMapCoordsModal(false)}
-        onInsert={onInsertMapCoords}
-      />
+      {modal.showMapCoordsModal && (
+        <MapCoordsModal
+          isOpen={modal.showMapCoordsModal}
+          onClose={() => modal.setShowMapCoordsModal(false)}
+          onInsert={onInsertMapCoords}
+        />
+      )}
 
       {editingTemplate &&
         setEditingTemplate &&

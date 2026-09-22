@@ -199,21 +199,40 @@ export interface RouteStyle {
   width: number;
   /** Optional MapLibre line-dasharray (undefined = solid) */
   dash?: number[];
+  /** Zoom level at which this route type becomes visible */
+  minZoom: number;
 }
 
 export const ROUTE_STYLES: Record<string, RouteStyle> = {
-  rail: { label: "Rail", color: "#374151", width: 3 },
-  highway: { label: "Highway", color: "#f97316", width: 2.5 },
-  road: { label: "Road", color: "#92400e", width: 1.5 },
-  shipping_lane: { label: "Shipping", color: "#3b82f6", width: 2 },
-  canal: { label: "Canal", color: "#06b6d4", width: 1.5 },
-  air_corridor: { label: "Air", color: "#a855f7", width: 2, dash: [6, 4] },
-  ferry: { label: "Ferry", color: "#14b8a6", width: 1.5, dash: [4, 3] },
-  pipeline: { label: "Pipeline", color: "#eab308", width: 2 },
-  power_grid: { label: "Power", color: "#f59e0b", width: 1.5 },
-  fiber: { label: "Fiber", color: "#e5e7eb", width: 1 },
-  military_supply: { label: "Mil. Supply", color: "#dc2626", width: 2 },
-  military_naval: { label: "Mil. Naval", color: "#7f1d1d", width: 2 },
+  // Rail family
+  rail: { label: "Rail", color: "#374151", width: 3, minZoom: 0 },
+  high_speed_rail: { label: "High-Speed Rail", color: "#0ea5e9", width: 4, minZoom: 0 },
+  freight_rail: { label: "Freight Rail", color: "#6b7280", width: 2.5, minZoom: 6 },
+  commuter_rail: { label: "Commuter Rail", color: "#475569", width: 2, minZoom: 6 },
+
+  // Road family
+  motorway: { label: "Motorway", color: "#ea580c", width: 3.5, minZoom: 0 },
+  highway: { label: "Highway", color: "#f97316", width: 2.5, minZoom: 0 },
+  trunk: { label: "Trunk Road", color: "#d97706", width: 2, minZoom: 4 },
+  road: { label: "Road", color: "#92400e", width: 1.5, minZoom: 4 },
+  secondary: { label: "Secondary Road", color: "#a8a29e", width: 1, minZoom: 6 },
+
+  // Maritime
+  shipping_lane: { label: "Shipping", color: "#3b82f6", width: 2, minZoom: 0 },
+  canal: { label: "Canal", color: "#06b6d4", width: 1.5, minZoom: 4 },
+  ferry: { label: "Ferry", color: "#14b8a6", width: 1.5, minZoom: 4, dash: [4, 3] },
+
+  // Air
+  air_corridor: { label: "Air Route", color: "#a855f7", width: 2, minZoom: 0, dash: [6, 4] },
+
+  // Utility
+  pipeline: { label: "Pipeline", color: "#eab308", width: 2, minZoom: 6 },
+  power_grid: { label: "Power Grid", color: "#f59e0b", width: 1.5, minZoom: 6 },
+  fiber: { label: "Fiber", color: "#e5e7eb", width: 1, minZoom: 6 },
+
+  // Military
+  military_supply: { label: "Mil. Supply", color: "#dc2626", width: 2, minZoom: 4 },
+  military_naval: { label: "Mil. Naval", color: "#7f1d1d", width: 2, minZoom: 4 },
 };
 
 /** Ordered list of all route type keys for consistent UI rendering */

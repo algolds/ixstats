@@ -7,10 +7,10 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import type { SportPreset } from "~/lib/sports/presets";
-import TeamLineup1 from "~/components/sports/team-lineups/TeamLineup1";
+import { TeamLineup } from "~/components/sports/TeamLineup";
 import { useNotify } from "~/hooks/useNotify";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
+import type { SportPreset } from "~/lib/sports/presets";
 
 interface LineupBuilderProps {
   teamId: string;
@@ -22,7 +22,7 @@ interface LineupBuilderProps {
     lastName: string;
     position: string;
     number?: number | null;
-    ratings: Record<string, any>;
+    ratings?: Record<string, number | undefined> | null;
   }>;
   presets: SportPreset[];
   sportPreset: string;
@@ -60,7 +60,7 @@ export function LineupBuilder({
         lastName: p.lastName,
         position: p.position,
         number: p.number,
-        overallRating: (p.ratings as any)?.overall ?? 50,
+        overallRating: (p.ratings as Record<string, number> | undefined)?.overall ?? 50,
       }));
   }, [players, starters]);
 
@@ -71,12 +71,10 @@ export function LineupBuilder({
     },
   });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const startingSlots = preset?.startingSlots ?? {};
+  const startingSlots: Record<string, number> = (preset?.startingSlots as Record<string, number>) ?? {};
 
-  const maxStarters = useMemo(() => {
-    return Object.values(startingSlots).reduce((sum, val) => sum + val, 0);
-    // oxlint-disable-next-line
+  const maxStarters: number = useMemo(() => {
+    return Object.values(startingSlots).reduce((sum: number, val: number) => sum + val, 0);
   }, [startingSlots]);
 
   const handleToggleStarter = (playerId: string) => {
@@ -146,14 +144,14 @@ export function LineupBuilder({
           <div className="grid max-h-[460px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
             {[...players]
               .sort((a, b) => {
-                const ovrA = (a.ratings as any)?.overall ?? 50;
-                const ovrB = (b.ratings as any)?.overall ?? 50;
+                const ovrA = a.ratings?.overall ?? 50;
+                const ovrB = b.ratings?.overall ?? 50;
                 return ovrB - ovrA;
               })
               .map((player) => {
                 const isStarter = starters.includes(player.id);
                 const isCaptain = captainId === player.id;
-                const ovr = (player.ratings as any)?.overall ?? 50;
+                const ovr = player.ratings?.overall ?? 50;
 
                 return (
                   <button
@@ -245,11 +243,11 @@ export function LineupBuilder({
         </CardContent>
       </Card>
 
-      <TeamLineup1
+      <TeamLineup
         teamName={teamName}
         teamColor={teamColor}
         players={starterPlayersMapped}
-        sportPreset={sportPreset as any}
+        sportPreset={sportPreset}
       />
     </div>
   );

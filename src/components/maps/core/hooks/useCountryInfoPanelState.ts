@@ -6,26 +6,17 @@ import { useFlag } from "~/hooks/useUnifiedFlags";
 import { api } from "~/trpc/react";
 import type { SelectedCountry } from "../IxWorldMap";
 
-export function formatNumber(n: number | null | undefined): string {
-  if (n == null) return "—";
-  if (n >= 1_000_000_000_000) return `$${(n / 1_000_000_000_000).toFixed(1)}T`;
-  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString();
-}
+import {
+  formatNumber,
+  formatPopulation,
+  formatCurrency,
+} from "~/lib/utils/format-utils";
 
-export function formatPopulation(n: number | null | undefined): string {
-  if (n == null) return "—";
-  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(2)}B`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return n.toLocaleString();
-}
+export { formatNumber, formatPopulation };
 
 export function formatGdpPerCapita(n: number | null | undefined): string {
   if (n == null) return "—";
-  return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  return formatCurrency(n, "USD", false);
 }
 
 export function formatArea(n: number | null | undefined): string {

@@ -88,8 +88,8 @@ export function InventorySidebarContent({
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <Copy className="h-3 w-3 shrink-0 text-purple-600 dark:text-purple-400" />
-            <span className="font-bold text-purple-600 dark:text-purple-400">0</span>
+            <Copy className="h-3 w-3 shrink-0 text-indigo-600 dark:text-indigo-400" />
+            <span className="font-bold text-indigo-600 dark:text-indigo-400">0</span>
           </div>
         </div>
       </FacetCard>
@@ -177,7 +177,7 @@ export function InventorySidebarContent({
           className={cn(
             "h-7 w-full px-2 text-xs",
             filters.season !== "all" &&
-              "border-purple-500/30 bg-purple-500/20 font-bold text-purple-600 dark:text-purple-300"
+              "border-amber-500/30 bg-amber-500/10 font-bold text-amber-600 dark:text-amber-400"
           )}
         >
           <Calendar className="mr-1.5 h-3 w-3 shrink-0" />

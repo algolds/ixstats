@@ -28,22 +28,6 @@ import { type ParsedEconomicComponent } from "./serializer";
 // ============================================================================
 
 const economicComponentTypeSchema = z.nativeEnum(EconomicComponentType);
-
-const _getAllComponentsSchema = z
-  .object({
-    category: z.string().optional(),
-    isActive: z.boolean().optional(),
-  })
-  .optional();
-
-const _getComponentByTypeSchema = z.object({
-  componentType: economicComponentTypeSchema,
-});
-
-const _incrementUsageSchema = z.object({
-  componentType: economicComponentTypeSchema,
-});
-
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -76,84 +60,6 @@ function getFallbackComponents(): ParsedEconomicComponent[] {
       usageCount: 0,
       isActive: true,
     }));
-}
-
-/**
- * Get fallback component by type
- */
-// oxlint-disable-next-line typescript/no-unused-vars
-function getFallbackComponentByType(
-  componentType: EconomicComponentType
-): ParsedEconomicComponent | null {
-  const component = ATOMIC_ECONOMIC_COMPONENTS[componentType];
-  if (!component) return null;
-
-  return {
-    id: component.id,
-    type: component.type,
-    name: component.name,
-    description: component.description,
-    effectiveness: component.effectiveness,
-    synergies: component.synergies,
-    conflicts: component.conflicts,
-    governmentSynergies: component.governmentSynergies,
-    governmentConflicts: component.governmentConflicts,
-    taxImpact: component.taxImpact,
-    sectorImpact: component.sectorImpact,
-    employmentImpact: component.employmentImpact,
-    implementationCost: component.implementationCost,
-    maintenanceCost: component.maintenanceCost,
-    requiredCapacity: component.requiredCapacity,
-    category: component.category,
-    color: component.color,
-    metadata: component.metadata,
-    usageCount: 0,
-    isActive: true,
-  };
-}
-
-/**
- * Ensure database is seeded with economic component reference data
- */
-// oxlint-disable-next-line typescript/no-unused-vars
-async function ensureSeeded(db: any) {
-  try {
-    const count = await db.economicComponentData.count();
-    if (count === 0) {
-      console.info("[economicComponents] Reference database is empty. Seeding components...");
-      const components = getFallbackComponents();
-      const dataToInsert = components.map((comp) => ({
-        componentType: comp.type,
-        name: comp.name,
-        description: comp.description,
-        category: comp.category,
-        effectiveness: comp.effectiveness,
-        synergies: JSON.stringify(comp.synergies),
-        conflicts: JSON.stringify(comp.conflicts),
-        governmentSynergies: JSON.stringify(comp.governmentSynergies),
-        governmentConflicts: JSON.stringify(comp.governmentConflicts),
-        taxImpact: JSON.stringify(comp.taxImpact),
-        sectorImpact: JSON.stringify(comp.sectorImpact),
-        employmentImpact: JSON.stringify(comp.employmentImpact),
-        implementationCost: comp.implementationCost,
-        maintenanceCost: comp.maintenanceCost,
-        requiredCapacity: comp.requiredCapacity,
-        color: comp.color,
-        iconName: comp.type.toLowerCase(),
-        metadata: JSON.stringify(comp.metadata),
-        isActive: true,
-        usageCount: 0,
-      }));
-
-      await db.economicComponentData.createMany({
-        data: dataToInsert,
-        skipDuplicates: true,
-      });
-      console.info(`[economicComponents] Successfully seeded ${dataToInsert.length} components.`);
-    }
-  } catch (error) {
-    console.error("[economicComponents] Failed to self-seed reference database:", error);
-  }
 }
 
 // ============================================================================

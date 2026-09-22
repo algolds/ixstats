@@ -28,16 +28,16 @@ const ECONOMIC_TIER_STYLES: Record<
 > = {
   Extravagant: {
     icon: Crown,
-    bg: "bg-purple-600/70",
-    glow: "shadow-[0_0_10px_rgba(168,85,247,0.3)]",
+    bg: "bg-indigo-600/70",
+    glow: "",
     text: "text-white",
-    border: "border-purple-400/30",
+    border: "border-indigo-400/30",
     description: "GDP/cap $65k+ · Max growth 0.5%",
   },
   "Very Strong": {
     icon: DollarSign,
     bg: "bg-blue-600/70",
-    glow: "shadow-[0_0_10px_rgba(59,130,246,0.3)]",
+    glow: "",
     text: "text-white",
     border: "border-blue-400/30",
     description: "GDP/cap $55-65k · Max growth 1.5%",
@@ -45,7 +45,7 @@ const ECONOMIC_TIER_STYLES: Record<
   Strong: {
     icon: TrendingUp,
     bg: "bg-emerald-600/70",
-    glow: "shadow-[0_0_10px_rgba(16,185,129,0.3)]",
+    glow: "",
     text: "text-white",
     border: "border-emerald-400/30",
     description: "GDP/cap $45-55k · Max growth 2.75%",
@@ -53,23 +53,23 @@ const ECONOMIC_TIER_STYLES: Record<
   Healthy: {
     icon: TrendingUp,
     bg: "bg-emerald-500/60",
-    glow: "shadow-[0_0_10px_rgba(52,211,153,0.25)]",
+    glow: "",
     text: "text-white",
     border: "border-emerald-400/25",
     description: "GDP/cap $35-45k · Max growth 3.5%",
   },
   Developed: {
     icon: Building2,
-    bg: "bg-teal-600/60",
-    glow: "shadow-[0_0_10px_rgba(20,184,166,0.25)]",
+    bg: "bg-cyan-600/60",
+    glow: "",
     text: "text-white",
-    border: "border-teal-400/25",
+    border: "border-cyan-400/25",
     description: "GDP/cap $25-35k · Max growth 5%",
   },
   Developing: {
     icon: TrendingUp,
     bg: "bg-amber-600/60",
-    glow: "shadow-[0_0_10px_rgba(245,158,11,0.25)]",
+    glow: "",
     text: "text-white",
     border: "border-amber-400/25",
     description: "GDP/cap $10-25k · Max growth 7.5%",
@@ -77,7 +77,7 @@ const ECONOMIC_TIER_STYLES: Record<
   Impoverished: {
     icon: Users,
     bg: "bg-red-600/60",
-    glow: "shadow-[0_0_10px_rgba(239,68,68,0.25)]",
+    glow: "",
     text: "text-white",
     border: "border-red-400/25",
     description: "GDP/cap $0-10k · Max growth 10%",
@@ -90,51 +90,51 @@ const POPULATION_TIER_STYLES: Record<
 > = {
   X: {
     label: "500M+",
-    color: "text-purple-400",
-    bg: "bg-purple-600/50",
-    glow: "shadow-[0_0_8px_rgba(168,85,247,0.25)]",
+    color: "text-indigo-400",
+    bg: "bg-indigo-600/50",
+    glow: "",
   },
   "7": {
     label: "350-499M",
     color: "text-blue-400",
     bg: "bg-blue-600/50",
-    glow: "shadow-[0_0_8px_rgba(59,130,246,0.25)]",
+    glow: "",
   },
   "6": {
     label: "120-349M",
     color: "text-cyan-400",
     bg: "bg-cyan-600/50",
-    glow: "shadow-[0_0_8px_rgba(6,182,212,0.25)]",
+    glow: "",
   },
   "5": {
     label: "80-119M",
-    color: "text-teal-400",
-    bg: "bg-teal-600/50",
-    glow: "shadow-[0_0_8px_rgba(20,184,166,0.25)]",
+    color: "text-cyan-400",
+    bg: "bg-cyan-600/50",
+    glow: "",
   },
   "4": {
     label: "50-79M",
     color: "text-emerald-400",
     bg: "bg-emerald-600/50",
-    glow: "shadow-[0_0_8px_rgba(52,211,153,0.25)]",
+    glow: "",
   },
   "3": {
     label: "30-49M",
-    color: "text-green-400",
-    bg: "bg-green-600/50",
-    glow: "shadow-[0_0_8px_rgba(34,197,94,0.25)]",
+    color: "text-emerald-400",
+    bg: "bg-emerald-600/50",
+    glow: "",
   },
   "2": {
     label: "10-29M",
-    color: "text-yellow-400",
-    bg: "bg-yellow-600/50",
-    glow: "shadow-[0_0_8px_rgba(234,179,8,0.25)]",
+    color: "text-amber-400",
+    bg: "bg-amber-600/50",
+    glow: "",
   },
   "1": {
     label: "0-9M",
-    color: "text-orange-400",
-    bg: "bg-orange-600/50",
-    glow: "shadow-[0_0_8px_rgba(249,115,22,0.25)]",
+    color: "text-red-400",
+    bg: "bg-red-600/50",
+    glow: "",
   },
 };
 
@@ -346,7 +346,7 @@ const CONTINENT_COLORS: Record<string, { bg: string }> = {
   Artemia: { bg: "bg-amber-500/15" },
   Levantia: { bg: "bg-blue-500/15" },
   Alshar: { bg: "bg-emerald-500/15" },
-  Audonia: { bg: "bg-purple-500/15" },
+  Audonia: { bg: "bg-indigo-500/15" },
   Crona: { bg: "bg-red-500/15" },
   Sarpedon: { bg: "bg-cyan-500/15" },
   Antarctica: { bg: "bg-slate-500/15" },
@@ -407,9 +407,8 @@ export function VaultLevelBadge({ level, xp, xpPerLevel = 1000, className }: Vau
         <div
           className={cn(
             "flex items-center justify-between rounded-md px-1.5 py-1 text-[8px] backdrop-blur-sm transition-all duration-300",
-            "bg-purple-600/40",
-            "shadow-[0_0_8px_rgba(147,51,234,0.2)]",
-            "border border-purple-400/25",
+            "bg-amber-600/30",
+            "border border-amber-400/25",
             "cursor-help hover:brightness-110",
             className
           )}
@@ -428,13 +427,13 @@ export function VaultLevelBadge({ level, xp, xpPerLevel = 1000, className }: Vau
                 d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
               />
             </svg>
-            <span className="font-bold text-purple-200">Lv.{level}</span>
+            <span className="font-bold text-amber-200">Lv.{level}</span>
           </div>
-          <div className="flex items-center gap-1 text-purple-200/80">
+          <div className="flex items-center gap-1 text-amber-200/80">
             <span className="text-[7px]">
               {xp % xpPerLevel}/{xpPerLevel >= 1000 ? "1k" : xpPerLevel}
             </span>
-            <MiniProgressArc progress={progress} color="rgba(168,85,247,0.9)" />
+            <MiniProgressArc progress={progress} color="rgba(245,158,11,0.9)" />
           </div>
         </div>
       </TooltipTrigger>

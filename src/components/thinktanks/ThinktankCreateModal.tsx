@@ -212,9 +212,9 @@ export function ThinktankCreateModal({
             </div>
 
             {/* Multi-Persona Posting Switch */}
-            <div className="flex items-center justify-between rounded-xl border border-purple-500/20 bg-purple-500/5 p-3">
+            <div className="flex items-center justify-between rounded-xl border border-blue-500/20 bg-blue-500/5 p-3">
               <div className="flex items-center gap-2">
-                <Group className="h-4 w-4 text-purple-500" />
+                <Group className="h-4 w-4 text-blue-500" />
                 <div>
                   <span className="text-foreground text-xs font-bold">
                     Enable Multi-Persona Posting

@@ -40,7 +40,7 @@ export function VaultShowcaseGrid({
   return (
     <div className="facet-layout-sidebar-span-1 space-y-6">
       {hasImported === false && !isNoticeDismissed && (
-        <div className="relative overflow-hidden rounded-xl border border-rose-500/25 bg-rose-500/10 p-3.5 shadow-sm backdrop-blur-md dark:border-rose-500/15">
+        <div className="relative overflow-hidden rounded-xl border border-amber-500/25 bg-amber-500/10 p-3.5 shadow-sm backdrop-blur-md dark:border-amber-500/15">
           <button
             onClick={onDismissNotice}
             className="text-muted-foreground hover:text-foreground absolute top-2.5 right-2.5 rounded-full p-1 transition-all hover:bg-white/10"
@@ -50,7 +50,7 @@ export function VaultShowcaseGrid({
           </button>
 
           <div className="flex gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-500/20 text-rose-600 dark:text-rose-400">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400">
               <Download className="h-4 w-4 animate-bounce" />
             </div>
             <div className="space-y-1 pr-4">
@@ -63,7 +63,7 @@ export function VaultShowcaseGrid({
               </p>
               <button
                 onClick={() => onNavigate?.("import")}
-                className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 hover:text-rose-500 hover:underline dark:text-rose-400"
+                className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 hover:text-amber-500 hover:underline dark:text-amber-400"
               >
                 Go to Importer <ArrowRight className="h-2.5 w-2.5" />
               </button>

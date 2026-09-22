@@ -66,7 +66,7 @@ export function DiplomaticScenarioCard({
                   </span>
                 )}
                 {timeFrame && (
-                  <span className="rounded bg-purple-500/10 px-2 py-0.5 text-xs text-purple-400">
+                  <span className="rounded bg-cyan-500/10 px-2 py-0.5 text-xs text-cyan-400">
                     {timeFrame.replace("_", " ")}
                   </span>
                 )}

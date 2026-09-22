@@ -14,6 +14,22 @@ import { JsonViewer } from "~/components/ui/json-viewer";
 
 type StatusFilter = "pending" | "approved" | "rejected";
 
+interface MapEditItem {
+  id: string;
+  countryId: string;
+  countryName: string;
+  countryFlag?: string | null;
+  userId: string;
+  editType: string;
+  targetId: string;
+  operation: string;
+  status: string;
+  reviewNote?: string | null;
+  createdAt: string | Date;
+  proposedData?: Record<string, string | number | boolean | null> | null;
+  currentData?: Record<string, string | number | boolean | null> | null;
+}
+
 export function EditQueuePanel() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [reviewNote, setReviewNote] = useState("");
@@ -96,7 +112,7 @@ export function EditQueuePanel() {
         </div>
       ) : (
         <div className="space-y-3">
-          {data.edits.map((edit: any) => (
+          {data.edits.map((edit: MapEditItem) => (
             <div key={edit.id} className="border-border bg-card rounded-xl border">
               {/* Header */}
               <button
@@ -131,7 +147,7 @@ export function EditQueuePanel() {
                       Proposed Changes
                     </span>
                     <JsonViewer
-                      data={edit.proposedData}
+                      data={edit.proposedData ?? null}
                       defaultExpanded={2}
                       className="border-border/30 bg-card/20 backdrop-blur-md"
                     />
@@ -198,7 +214,7 @@ export function EditQueuePanel() {
 
 function EditTypeBadge({ type }: { type: string }) {
   const colors: Record<string, string> = {
-    subdivision: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+    subdivision: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
     city: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
     poi: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
     border_adjust: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",

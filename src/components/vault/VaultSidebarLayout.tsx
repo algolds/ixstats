@@ -112,7 +112,7 @@ export function VaultSidebarLayout({
                         className={cn(
                           "rounded-lg border px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all duration-200",
                           isActive
-                            ? "border-purple-500/30 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-600 shadow-sm dark:text-purple-400"
+                            ? "border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent"
                         )}
                       >

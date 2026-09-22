@@ -1,7 +1,7 @@
 # Production Deployment Checklist
 
 **Last Updated:** August 2026
-**Version:** IxStates 1.4.0 "Ogma" (Release Candidate)
+**Version:** IxStates 1.4.0 "Lobster Crosby" (Release Candidate)
 
 Complete checklist for deploying IxStates to production. Follow these steps to ensure a safe, successful deployment.
 
@@ -908,6 +908,6 @@ Use this checklist for every production deployment to ensure:
 ---
 
 **Last Updated:** August 2026
-**Version:** IxStates 1.4.0 "Ogma" (Release Candidate)
+**Version:** IxStates 1.4.0 "Lobster Crosby" (Release Candidate)
 **Maintainer:** IxStates Core Engineering
 

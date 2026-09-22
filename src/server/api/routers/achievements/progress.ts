@@ -383,7 +383,9 @@ export const achievementsProgressRouter = createTRPCRouter({
               if (typeof wa.recipientUsers === "string") {
                 try {
                   parsedRecipients = JSON.parse(wa.recipientUsers);
-                } catch (_) {}
+                } catch (err) {
+                  console.warn("[AchievementsProgress] Failed to parse recipientUsers JSON:", err);
+                }
               } else if (Array.isArray(wa.recipientUsers)) {
                 parsedRecipients = wa.recipientUsers as string[];
               }

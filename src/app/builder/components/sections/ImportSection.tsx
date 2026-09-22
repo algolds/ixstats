@@ -1,51 +1,33 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { ArrowLeft } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { cn } from "~/lib/utils";
 import {
   DynamicIslandSearch,
   type SearchResult,
-} from "../../import/_components/DynamicIslandSearch";
-import { ImportSidebar } from "../../import/_components/ImportSidebar";
-import { BackButton } from "../../import/_components/BackButton";
-import { InteractiveInfoboxPreview } from "../../import/_components/InteractiveInfoboxPreview";
-import { EligibleCountryGrid } from "../../import/_components/EligibleCountryGrid";
-import type { BuilderSection } from "../../lib/builder-theme";
+  type WikiSite,
+} from "~/app/builder/import/_components/DynamicIslandSearch";
+import { Button } from "~/components/ui/button";
+import { formatNumber } from "~/lib/utils";
+import { InteractiveInfoboxPreview } from "~/app/builder/import/_components/InteractiveInfoboxPreview";
+import { EligibleCountryGrid } from "~/app/builder/import/_components/EligibleCountryGrid";
+import type { BuilderSection } from "~/app/builder/lib/builder-theme";
 import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
-import { WikiDeepScanPanel } from "../../import/_components/WikiDeepScanPanel";
-import type { ExtractedBuilderData } from "../../lib/wiki-data-extractor";
-import { ScanCompleteToast } from "../../import/_components/ScanCompleteToast";
-import type { WikiImportResult } from "~/app/builder/lib/wiki-builder-assembler";
+import type { ExtractedBuilderData } from "~/lib/builder/wiki-data-extractor";
+import { assembleWikiImport } from "~/app/builder/lib/wiki-builder-assembler";
+import type { BuilderState } from "~/app/builder/hooks/builderStateTypes";
+import type { GovernmentBuilderState } from "~/types/government";
+import type { EconomyBuilderState } from "~/types/economy-builder";
 
 // ─── Types ───
-
-interface WikiSite {
-  name: string;
-  displayName: string;
-  baseUrl: string;
-  description: string;
-  categoryFilter?: string;
-  theme: "blue" | "indigo";
-  gradient: string;
-}
 
 interface ParsedCountryData extends UnifiedInfoboxData {
   wikiIntro?: string;
 }
 
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
-
 const wikiSites: WikiSite[] = [
-  {
-    name: "ixwiki",
-    displayName: "IxWiki",
-    baseUrl: DEFAULT_MEDIAWIKI_URL,
-    description: "Geopolitical worldbuilding community",
-    theme: "blue",
-    gradient: "from-blue-500/20 to-cyan-600/20",
-  },
+
   {
     name: "iiwiki",
     displayName: "IIWiki",
@@ -64,17 +46,22 @@ const wikiSites: WikiSite[] = [
   },
 ];
 
-const popularCategories = ["Countries", "Nations", "Cities", "Regions", "Organizations"];
 const searchCache = new Map<string, SearchResult[]>();
+
+function setBoundedCache(key: string, value: SearchResult[]) {
+  if (searchCache.size >= 50) {
+    const firstKey = searchCache.keys().next().value;
+    if (firstKey) searchCache.delete(firstKey);
+  }
+  searchCache.set(key, value);
+}
 
 // ─── Props ───
 
 interface ImportSectionProps {
   onNavigate: (section: BuilderSection) => void;
   /** Called when import data is ready — populates builder state */
-  onImportComplete?: (
-    data: ParsedCountryData & { _wikiSource: string; _wikiSourceName: string }
-  ) => void;
+  onImportComplete?: (data: Partial<BuilderState>) => void;
 }
 
 // ─── Component ───
@@ -85,11 +72,6 @@ export const ImportSection = React.memo(function ImportSection({
 }: ImportSectionProps) {
   const utils = api.useUtils();
   const [selectedSite, setSelectedSite] = useState<WikiSite>(wikiSites[1]!);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  const [categoryFilter, setCategoryFilter] = useState("Countries");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -98,12 +80,43 @@ export const ImportSection = React.memo(function ImportSection({
   const [parsedData, setParsedData] = useState<ParsedCountryData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedCountryFlag, setSelectedCountryFlag] = useState<string | null>(null);
-  const [displayedResults, setDisplayedResults] = useState<SearchResult[]>([]);
-  const [resultsPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showDeepScan, setShowDeepScan] = useState(false);
-  const [showScanToast, setShowScanToast] = useState(false);
-  const [scanResult, setScanResult] = useState<WikiImportResult | null>(null);
+  const [isDeepScanning, setIsDeepScanning] = useState(false);
+  const [deepScanData, setDeepScanData] = useState<{
+    pagesScanned: number;
+    foundVariants: string[];
+    categoryUsed: string | null;
+    extractedData: ExtractedBuilderData;
+    pages: Array<{ title: string; content: string }>;
+  } | null>(null);
+  const [isAssembling, setIsAssembling] = useState(false);
+  const [selectedGov, setSelectedGov] = useState<string>("all");
+  const [sortOption, setSortOption] = useState<string>("default");
+  const [gridCount, setGridCount] = useState<number>(0);
+
+  const deepScanPromiseRef = useRef<Promise<{
+    pagesScanned: number;
+    foundVariants: string[];
+    categoryUsed: string | null;
+    extractedData: ExtractedBuilderData;
+    pages: Array<{ title: string; content: string }>;
+  } | null> | null>(null);
+  const activeSelectedResultRef = useRef<string | null>(null);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchTerm("");
+    setSelectedGov("all");
+    setSortOption("default");
+  }, []);
+
+  const handleSelectSite = useCallback((site: WikiSite) => {
+    setSelectedSite(site);
+    setSearchTerm("");
+    setSelectedGov("all");
+    setSortOption("default");
+  }, []);
+
+  const hasActiveFilters =
+    searchTerm.trim().length > 0 || selectedGov !== "all" || sortOption !== "default";
 
   const searchWikiMutation = api.countries.searchWiki.useMutation();
   const parseInfoboxMutation = api.countries.parseInfobox.useMutation();
@@ -115,12 +128,10 @@ export const ImportSection = React.memo(function ImportSection({
   searchTermRef.current = searchTerm;
   selectedSiteRef.current = selectedSite;
 
-  // Debounced search
+  // Debounced search (250ms for responsive typing)
   useEffect(() => {
     if (!searchTerm.trim()) {
       setSearchResults([]);
-      setDisplayedResults([]);
-      setCurrentPage(1);
       return;
     }
 
@@ -130,13 +141,10 @@ export const ImportSection = React.memo(function ImportSection({
       if (!currentSearchTerm.trim()) return;
 
       const requestId = ++searchRequestIdRef.current;
-      const cacheKey = `${currentSite.name}:${currentSearchTerm}:${categoryFilter}`;
+      const cacheKey = `${currentSite.name}:${currentSearchTerm}:countries`;
 
       if (searchCache.has(cacheKey)) {
-        const cachedResults = searchCache.get(cacheKey)!;
-        setSearchResults(cachedResults);
-        setDisplayedResults(cachedResults.slice(0, resultsPerPage));
-        setCurrentPage(1);
+        setSearchResults(searchCache.get(cacheKey)!);
         return;
       }
 
@@ -149,93 +157,98 @@ export const ImportSection = React.memo(function ImportSection({
         const results = await searchWikiMutation.mutateAsync({
           query: currentSearchTerm,
           site: currentSite.name as "ixwiki" | "iiwiki" | "althistory",
-          categoryFilter,
+          categoryFilter: "Countries",
         });
 
         if (requestId !== searchRequestIdRef.current) return;
 
-        if (
-          categoryFilter.toLowerCase() === "countries" ||
-          categoryFilter.toLowerCase() === "nations"
-        ) {
-          // Batch fetch flag URLs via tRPC resolver
-          let flagMap: Record<string, string | null> = {};
-          try {
-            flagMap = await utils.countries.flags.resolveBatch.fetch({
-              countryNames: results.map((r) => r.title),
-              fallbackPolicy: "fictional-wiki",
-            });
-          } catch {
-            // Ignore flag batch failure
-          }
-
-          const resultsWithFlags = results.map((result) => ({
-            ...result,
-            flagUrl: flagMap[result.title] ?? null,
-          }));
-
-          if (requestId !== searchRequestIdRef.current) return;
-
-          searchCache.set(cacheKey, resultsWithFlags);
-          setSearchResults(resultsWithFlags);
-          setDisplayedResults(resultsWithFlags.slice(0, resultsPerPage));
-          setCurrentPage(1);
-        } else {
-          searchCache.set(cacheKey, results);
-          setSearchResults(results);
-          setDisplayedResults(results.slice(0, resultsPerPage));
-          setCurrentPage(1);
+        // Batch fetch flag URLs via tRPC resolver
+        let flagMap: Record<string, string | null> = {};
+        try {
+          flagMap = await utils.countries.flags.resolveBatch.fetch({
+            countryNames: results.map((r) => r.title),
+            fallbackPolicy: "fictional-wiki",
+          });
+        } catch {
+          // Ignore flag batch failure
         }
+
+        const resultsWithFlags = results.map((result) => ({
+          ...result,
+          flagUrl: flagMap[result.title] ?? null,
+        }));
+
+        if (requestId !== searchRequestIdRef.current) return;
+
+        setBoundedCache(cacheKey, resultsWithFlags);
+        setSearchResults(resultsWithFlags);
       } catch (err) {
         if (requestId === searchRequestIdRef.current) {
           setError(`Search failed: ${err instanceof Error ? err.message : "Unknown error"}`);
           setSearchResults([]);
-          setDisplayedResults([]);
-          setCurrentPage(1);
         }
       } finally {
         if (requestId === searchRequestIdRef.current) {
           setIsSearching(false);
         }
       }
-    }, 500);
+    }, 250);
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, selectedSite.name, categoryFilter]);
+  }, [searchTerm, selectedSite.name]);
 
-  const handleSelectResult = async (result: SearchResult, cachedData?: any) => {
+  const handleSelectResult = async (result: SearchResult) => {
     setSelectedResult(result);
+    activeSelectedResultRef.current = result.title;
     setIsLoading(true);
     setError(null);
     setParsedData(null);
+    setDeepScanData(null);
+    setIsDeepScanning(false);
+    deepScanPromiseRef.current = null;
 
-    setTimeout(() => setSearchResults([]), 200);
+    // Clear search suggestions to keep the view focused
+    setSearchResults([]);
 
     try {
-      let data: any;
-
-      if (
-        cachedData &&
-        (cachedData.population ||
-          cachedData.gdpPerCapita ||
-          cachedData.capital ||
-          cachedData.government_type ||
-          cachedData.templateName)
-      ) {
-        data = cachedData;
-      } else {
-        // All wikis use tRPC (server-side proxy)
-        data = await parseInfoboxMutation.mutateAsync({
-          pageName: result.title,
-          site: selectedSite.name as "ixwiki" | "iiwiki" | "althistory",
-        });
-      }
+      const data = await parseInfoboxMutation.mutateAsync({
+        pageName: result.title,
+        site: selectedSite.name as "ixwiki" | "iiwiki" | "althistory",
+      });
 
       if (data?.flagUrl) setSelectedCountryFlag(data.flagUrl as string);
 
       if (data) {
-        setParsedData(data as unknown as ParsedCountryData);
+        const parsed = data as ParsedCountryData;
+        setParsedData(parsed);
+
+        // Instantly initiate background LoreScanner with country & category tags
+        setIsDeepScanning(true);
+        const scanPromise = utils.wikiCache.builderDeepScan
+          .fetch({
+            countryName: result.title,
+            wikiSource: selectedSite.name as "ixwiki" | "iiwiki" | "althistory",
+            officialName: parsed.official_name || parsed.conventional_long_name,
+            categoryTags: parsed.categories ?? [],
+            mainWikitext: parsed.rawWikitext,
+          })
+          .then((scanRes) => {
+            if (activeSelectedResultRef.current === result.title) {
+              setDeepScanData(scanRes);
+              setIsDeepScanning(false);
+            }
+            return scanRes;
+          })
+          .catch((err) => {
+            console.warn("[LoreScanner Background] Deep scan failed:", err);
+            if (activeSelectedResultRef.current === result.title) {
+              setIsDeepScanning(false);
+            }
+            return null;
+          });
+
+        deepScanPromiseRef.current = scanPromise;
       } else {
         setError("Could not parse data from this page.");
       }
@@ -246,43 +259,33 @@ export const ImportSection = React.memo(function ImportSection({
     }
   };
 
-  const handleContinueWithCountry = (result: any) => {
-    handleSelectResult(result, result);
-  };
-
-  const loadMoreResults = () => {
-    const nextPage = currentPage + 1;
-    const startIndex = (nextPage - 1) * resultsPerPage;
-    const endIndex = startIndex + resultsPerPage;
-    setDisplayedResults((prev) => [...prev, ...searchResults.slice(startIndex, endIndex)]);
-    setCurrentPage(nextPage);
-  };
-
-  const hasMoreResults = currentPage * resultsPerPage < searchResults.length;
-
   const handleBackFromSelection = () => {
+    activeSelectedResultRef.current = null;
     setSelectedResult(null);
     setParsedData(null);
     setSelectedCountryFlag(null);
     setError(null);
-    setShowDeepScan(false);
+    setDeepScanData(null);
+    setIsDeepScanning(false);
+    deepScanPromiseRef.current = null;
   };
 
   const handleContinueWithData = async () => {
-    if (!parsedData) return;
-    // Instead of immediately saving, move to the deep scan step
-    setShowDeepScan(true);
-  };
-
-  const handleDeepScanComplete = async (enhancedData?: ExtractedBuilderData) => {
     if (!parsedData || !selectedResult) return;
 
     try {
-      setIsLoading(true);
+      setIsAssembling(true);
       setError(null);
+
+      // Await background deep scan if it is still in flight
+      let scan = deepScanData;
+      if (!scan && deepScanPromiseRef.current) {
+        scan = await deepScanPromiseRef.current;
+      }
 
       // Merge the deep scan data with the infobox data
       const finalData: ParsedCountryData = { ...parsedData };
+      const enhancedData = scan?.extractedData;
 
       if (enhancedData) {
         if (enhancedData.government) {
@@ -297,50 +300,53 @@ export const ImportSection = React.memo(function ImportSection({
         }
         if (enhancedData.economy) {
           if (enhancedData.economy.gdpNominal)
-            (finalData as any).gdp_nominal = enhancedData.economy.gdpNominal.toString();
+            finalData.gdp_nominal = enhancedData.economy.gdpNominal;
           if (enhancedData.economy.gdpPerCapita)
-            (finalData as any).gdpPerCapita = enhancedData.economy.gdpPerCapita;
+            finalData.gdpPerCapita = enhancedData.economy.gdpPerCapita;
         }
         if (enhancedData.demographics) {
           if (enhancedData.demographics.population)
-            (finalData as any).population = enhancedData.demographics.population;
+            finalData.population = enhancedData.demographics.population;
         }
       }
 
-      // Fetch wiki pages for deep parsing
-      const pagesToScan = [
-        selectedResult.title,
-        `Government of ${selectedResult.title}`,
-        `Politics of ${selectedResult.title}`,
-        `Economy of ${selectedResult.title}`,
-      ];
-
-      const pages: { title: string; content: string }[] = [];
-      for (const pageName of pagesToScan) {
-        try {
-          const article = await parseInfoboxMutation.mutateAsync({
-            pageName,
-            site: selectedSite.name as "ixwiki" | "iiwiki" | "althistory",
-          });
-          if (article?.rawInfobox) {
-            pages.push({
-              title: pageName,
-              content: JSON.stringify(article.rawInfobox),
-            });
-          }
-        } catch {
-          // Page not found, continue
-        }
-      }
+      // Use real article wikitext from background LoreScanner
+      const scannedPages =
+        scan?.pages && scan.pages.length > 0
+          ? scan.pages
+          : [{ title: selectedResult.title, content: finalData.wikiIntro || selectedResult.title }];
 
       // Run comprehensive wiki-to-builder assembly
-      const { assembleWikiImport } = await import("~/app/builder/lib/wiki-builder-assembler");
       const importResult = await assembleWikiImport({
         infoboxData: finalData,
-        pages,
+        pages: scannedPages,
       });
 
-      setScanResult(importResult);
+      const builderStateData: Partial<BuilderState> = {
+        creationOrigin: "import",
+        selectedCountry: {
+          name: finalData.name || selectedResult.title,
+          countryCode: finalData.iso_code || "",
+          gdp: importResult.economicInputs.coreIndicators.nominalGDP,
+          gdpPerCapita: importResult.economicInputs.coreIndicators.gdpPerCapita,
+          population: importResult.economicInputs.coreIndicators.totalPopulation,
+          unemploymentRate: importResult.economicInputs.laborEmployment.unemploymentRate,
+          flagUrl: finalData.flagUrl || selectedCountryFlag || undefined,
+          coatOfArmsUrl: finalData.coatOfArmsUrl || undefined,
+          governmentType: finalData.government_type,
+          continent: finalData.continent,
+          religion: finalData.religion,
+          foundationCountryName: finalData.name || selectedResult.title,
+        },
+        economicInputs: importResult.economicInputs,
+        governmentStructure: importResult.governmentStructure as GovernmentBuilderState,
+        economyBuilderState: importResult.economyBuilderState as EconomyBuilderState,
+        governmentComponents: importResult.selectedComponents.map((c) => c.component),
+        completedSteps: ["foundation"],
+        step: "core",
+        activeCoreTab: "identity",
+      };
+
 
       const storageData = {
         ...finalData,
@@ -358,41 +364,32 @@ export const ImportSection = React.memo(function ImportSection({
         },
       };
 
-      // Store in localStorage for backward compat and call callback
+      // Store in localStorage for backward compat
       if (typeof window !== "undefined") {
         localStorage.setItem("builder_imported_data", JSON.stringify(storageData));
       }
 
+      // Propagate directly to live builder state
       if (onImportComplete) {
-        onImportComplete(storageData as any);
+        onImportComplete(builderStateData);
       }
 
-      // Show non-blocking toast instead of immediate navigation
-      setShowScanToast(true);
+      // Direct, single-action spring into Builder identity!
+      onNavigate("identity");
     } catch (err) {
       setError(
         `Failed to process wiki import: ${err instanceof Error ? err.message : "Unknown error"}`
       );
     } finally {
-      setIsLoading(false);
+      setIsAssembling(false);
     }
   };
 
-  const handleProceedToBuilder = () => {
-    setShowScanToast(false);
-    onNavigate("foundation");
-  };
+  const formatNumberSafe = useCallback((num: number | undefined, decimals = 1): string => {
+    if (num === undefined || num === null || Number.isNaN(num)) return "Unknown";
+    return formatNumber(num, decimals);
+  }, []);
 
-  const formatNumber = (num: number | undefined, _decimals?: number): string => {
-    if (!num) return "Unknown";
-    if (num >= 1e12) return `${(num / 1e12).toFixed(1)}T`;
-    if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
-    if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
-    if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
-    return num.toLocaleString();
-  };
-
-  // When a grid card is clicked, construct a minimal SearchResult and feed it into the existing parse flow
   const handleGridCountryClick = (pageName: string) => {
     const result: SearchResult = {
       title: pageName,
@@ -403,63 +400,66 @@ export const ImportSection = React.memo(function ImportSection({
   };
 
   return (
-    <div>
-      {/* Portal to mount the ImportSidebar in the main sidebar layout */}
-      {mounted &&
-        typeof document !== "undefined" &&
-        document.getElementById("import-sidebar-portal") &&
-        createPortal(
-          <ImportSidebar
-            selectedSite={selectedSite}
-            searchTerm={searchTerm}
-            isSearching={isSearching}
-            selectedResult={selectedResult}
-            parsedData={parsedData}
-            isLoading={isLoading}
-          />,
-          document.getElementById("import-sidebar-portal")!
-        )}
-
+    <div className="pt-1 sm:pt-2">
       {/* Main Content */}
       <div className="mt-4 space-y-6">
-        {(selectedResult || parsedData) && (
-          <div className="sticky top-[112px] z-20 mb-2">
-            <BackButton onClick={handleBackFromSelection} />
+        {/* Loading State Back Button */}
+        {selectedResult && !parsedData && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleBackFromSelection}
+              data-cuelume-press
+              className="rounded-xl border-border/60 text-xs active:scale-[0.97] cursor-pointer"
+            >
+              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+              Back to Search
+            </Button>
+        )}
+
+        {!parsedData && (
+          <div className="relative pb-4 transition-all duration-200">
+            {!selectedResult && (
+              <div className="mb-2 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => onNavigate("foundation")}
+                  className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-accent/40 hover:text-foreground active:scale-[0.97] cursor-pointer"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  <span>Back to Foundation</span>
+                </button>
+              </div>
+            )}
+            <DynamicIslandSearch
+              selectedSite={selectedSite}
+              wikiSites={wikiSites}
+              onSelectSite={handleSelectSite}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              isSearching={isSearching}
+              searchResults={searchResults}
+              selectedResult={selectedResult}
+              isLoading={isLoading}
+              parsedData={parsedData}
+              error={error}
+              selectedCountryFlag={selectedCountryFlag}
+              handleSelectResult={handleSelectResult}
+              formatNumber={formatNumberSafe}
+              onBackFromSelection={handleBackFromSelection}
+              selectedGov={selectedGov}
+              onSelectGov={setSelectedGov}
+              sortOption={sortOption}
+              onSelectSort={setSortOption}
+              nationCount={gridCount}
+              hasActiveFilters={hasActiveFilters}
+              onClearFilters={handleClearFilters}
+            />
           </div>
         )}
 
-        <div
-          className={cn(
-            "sticky z-10 pb-4 transition-all duration-200",
-            selectedResult || parsedData ? "top-[168px]" : "top-[112px]"
-          )}
-        >
-          <DynamicIslandSearch
-            selectedSite={selectedSite}
-            wikiSites={wikiSites}
-            onSelectSite={setSelectedSite}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            isSearching={isSearching}
-            searchResults={searchResults}
-            displayedResults={displayedResults}
-            hasMoreResults={hasMoreResults}
-            selectedResult={selectedResult}
-            isLoading={isLoading}
-            parsedData={parsedData}
-            error={error}
-            selectedCountryFlag={selectedCountryFlag}
-            categoryFilter={categoryFilter}
-            setCategoryFilter={setCategoryFilter}
-            popularCategories={popularCategories}
-            handleSelectResult={handleSelectResult}
-            loadMoreResults={loadMoreResults}
-            onContinueWithCountry={handleContinueWithCountry}
-            formatNumber={formatNumber}
-            onBackFromSelection={handleBackFromSelection}
-          />
-        </div>
-
+        {/* Loading Spinner */}
         {isLoading && !parsedData && (
           <div className="border-border/50 bg-card/60 flex items-center justify-center gap-3 rounded-xl border px-6 py-8 backdrop-blur-md">
             <div className="border-muted-foreground/30 h-5 w-5 animate-spin rounded-full border-2 border-t-blue-500" />
@@ -469,45 +469,40 @@ export const ImportSection = React.memo(function ImportSection({
           </div>
         )}
 
+        {/* Browse Grid (when nothing selected) */}
         {!selectedResult &&
           !parsedData &&
           !isLoading &&
           (selectedSite.name === "iiwiki" || selectedSite.name === "althistory") && (
-            <div className="mt-6">
+            <div className="mt-4">
               <EligibleCountryGrid
                 site={selectedSite.name as "iiwiki" | "althistory"}
                 searchFilter={searchTerm}
+                selectedGov={selectedGov}
+                sortOption={sortOption}
+                onCountChange={setGridCount}
+                onClearFilters={handleClearFilters}
                 onCountryClick={handleGridCountryClick}
               />
             </div>
           )}
 
-        {parsedData && !showDeepScan && (
+        {/* Staged Infobox Preview with Live Background LoreScanner */}
+        {parsedData && (
           <InteractiveInfoboxPreview
             data={parsedData}
             onContinue={handleContinueWithData}
-            isLoading={isLoading}
-          />
-        )}
-
-        {parsedData && showDeepScan && selectedResult && (
-          <WikiDeepScanPanel
-            countryName={selectedResult.title}
-            wikiSource={selectedSite.name as "ixwiki" | "iiwiki" | "althistory"}
-            onDataExtracted={(enhancedData) => handleDeepScanComplete(enhancedData)}
-            onSkip={() => handleDeepScanComplete(undefined)}
+            onBack={handleBackFromSelection}
+            isLoading={isLoading || isAssembling}
+            loreScanStatus={{
+              isScanning: isDeepScanning,
+              pagesFound: deepScanData?.pagesScanned,
+              categoryUsed: deepScanData?.categoryUsed,
+              hasCompleted: !isDeepScanning && !!deepScanData,
+            }}
           />
         )}
       </div>
-
-      {showScanToast && scanResult && (
-        <ScanCompleteToast
-          result={scanResult}
-          countryName={selectedResult?.title || ""}
-          onProceed={handleProceedToBuilder}
-          onClose={() => setShowScanToast(false)}
-        />
-      )}
     </div>
   );
 });

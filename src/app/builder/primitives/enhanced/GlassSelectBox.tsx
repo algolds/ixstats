@@ -12,7 +12,7 @@ interface SelectOption {
   value: string;
   label: string;
   description?: string;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<{ className?: string }>;
   disabled?: boolean;
 }
 
@@ -23,7 +23,7 @@ interface GlassSelectBoxProps extends Omit<EnhancedInputProps, "value" | "onChan
   placeholder?: string;
   searchable?: boolean;
   multiSelect?: boolean;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<{ className?: string }>;
   maxHeight?: number;
 }
 
@@ -174,9 +174,9 @@ export function GlassSelectBox({
         className={cn(
           "relative flex w-full items-center justify-between text-left",
           getGlassClasses("elevated", resolvedTheme, sectionId),
-          "border-2 bg-white/80 dark:bg-gray-800/90",
-          "border-gray-200/50 dark:border-gray-600/50",
-          "hover:border-gray-300/70 dark:hover:border-gray-500/70",
+          "border-2 bg-card/80 backdrop-blur-md",
+          "border-border/50",
+          "hover:border-foreground/20",
           "focus:border-[var(--primitive-primary)] focus:shadow-lg",
           "focus:shadow-[var(--primitive-primary)]/20",
           sizeClasses[size],
@@ -235,15 +235,15 @@ export function GlassSelectBox({
             className={cn(
               "absolute top-full right-0 left-0 z-50 mt-1",
               getGlassClasses("modal", resolvedTheme, sectionId),
-              "bg-white/95 dark:bg-gray-800/95",
-              "border border-gray-200/50 dark:border-gray-600/50",
+              "bg-popover/95 backdrop-blur-md",
+              "border border-border/50",
               "overflow-hidden rounded-lg shadow-xl"
             )}
             style={{ maxHeight }}
           >
             {/* Search Input */}
             {searchable && (
-              <div className="border-b border-gray-200/50 p-3 dark:border-gray-600/50">
+              <div className="border-b border-border/50 p-3">
                 <div className="relative">
                   <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                   <Input
@@ -252,7 +252,7 @@ export function GlassSelectBox({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search options..."
-                    className="text-foreground h-9 w-full border-gray-200/50 bg-transparent py-1 dark:border-gray-600/50"
+                    className="text-foreground h-9 w-full border-border/50 bg-transparent py-1"
                   />
                 </div>
               </div>

@@ -36,10 +36,10 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { format, subMonths } from "date-fns";
 import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
 import { MetricModalLayout } from "./MetricModalLayout";
 import type { TimeRange, ChartType } from "./types";
+import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
 
 interface GovernmentSpendingModalProps {
   isOpen: boolean;
@@ -60,7 +60,7 @@ const SPENDING_COLORS = [
   "#ef4444", // red - healthcare
   "#10b981", // green - defense
   "#fbbf24", // amber - social
-  "#8b5cf6", // purple - infrastructure
+  "#6366f1", // indigo - infrastructure
   "#06b6d4", // cyan - other
 ];
 
@@ -107,37 +107,22 @@ export function GovernmentSpendingModal({
       spending?.spendingGDPPercent || fiscal?.governmentBudgetGDPPercent || 30;
     const currentRevenuePct = fiscal?.taxRevenueGDPPercent || 25;
 
-    const now = new Date();
-    const rangeMap: Record<TimeRange, number> = {
-      "3m": 3,
-      "6m": 6,
-      "1y": 12,
-      "2y": 24,
-      "4y": 48,
-      "5y": 60,
-      "20y": 240,
-      all: Infinity,
-    };
-
-    const monthsToShow = rangeMap[timeRange] || 12;
-    const cutoffDate = monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
-
-    return historicalData
-      .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
-      .slice(-100)
-      .map((point: any) => {
+    return filterAndSortHistory(
+      historicalData,
+      timeRange,
+      (point, formattedDate, timestamp) => {
         const gdp = point.totalGdp || 0;
         const totalSpending = gdp * (currentSpendingPct / 100);
         const totalRevenue = gdp * (currentRevenuePct / 100);
         return {
-          date: format(new Date(point.ixTimeTimestamp), "MMM yyyy"),
-          timestamp: point.ixTimeTimestamp,
+          date: formattedDate,
+          timestamp,
           totalSpending: totalSpending / 1e9,
           spendingGdpPercent: currentSpendingPct,
           budgetBalance: (totalRevenue - totalSpending) / 1e9,
         };
-      })
-      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      }
+    );
   };
 
   const chartConfig = {
@@ -234,7 +219,7 @@ export function GovernmentSpendingModal({
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-purple-400">
+                  <div className="text-lg font-bold text-amber-400">
                     $
                     {(
                       (((fiscal?.totalDebtGDPRatio || 0) / 100) *
@@ -248,7 +233,7 @@ export function GovernmentSpendingModal({
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-rose-450 text-lg font-bold">
+                  <div className="text-lg font-bold text-red-400">
                     {(fiscal?.totalDebtGDPRatio || 0).toFixed(1)}%
                   </div>
                   <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
@@ -423,7 +408,7 @@ export function GovernmentSpendingModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Avg Budget Balance
               </span>
-              <span className="text-xl font-bold text-green-400">
+              <span className="text-xl font-bold text-emerald-400">
                 {spendStats?.avgBalance ? `$${spendStats.avgBalance.toFixed(1)}B` : "N/A"}
               </span>
             </div>
@@ -431,7 +416,7 @@ export function GovernmentSpendingModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Data Points
               </span>
-              <span className="text-xl font-bold text-purple-400">
+              <span className="text-xl font-bold text-blue-400">
                 {spendStats?.dataPoints || 0}
               </span>
             </div>
@@ -546,7 +531,7 @@ export function GovernmentSpendingModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Budget Status
               </span>
-              <span className="text-xl font-bold text-purple-400">
+              <span className={cn("text-xl font-bold", budgetBalance >= 0 ? "text-emerald-400" : "text-red-400")}>
                 {budgetBalance >= 0 ? "Surplus" : "Deficit"}
               </span>
               <span className="text-muted-foreground mt-1 text-[10px]">
@@ -575,12 +560,12 @@ export function GovernmentSpendingModal({
 
     const spending = economyData?.spending;
     const spendingCategories = spending?.spendingCategories;
-    const categories =
+    const categories: Array<{ name: string; value: number; color: string }> =
       spendingCategories && spendingCategories.length > 0
-        ? spendingCategories.slice(0, 6).map((cat: any, i: number) => ({
+        ? (spendingCategories as Array<{ category: string; percent?: number; gdpPercent?: number }>).slice(0, 6).map((cat, i) => ({
             name: cat.category,
             value: cat.percent || cat.gdpPercent || 0,
-            color: SPENDING_COLORS[i % SPENDING_COLORS.length],
+            color: SPENDING_COLORS[i % SPENDING_COLORS.length] ?? "#3b82f6",
           }))
         : [
             {
@@ -588,21 +573,21 @@ export function GovernmentSpendingModal({
               value: spending?.education
                 ? (spending.education / (spending?.totalSpending || 1)) * 100
                 : 15,
-              color: SPENDING_COLORS[0],
+              color: SPENDING_COLORS[0] ?? "#3b82f6",
             },
             {
               name: "Healthcare",
               value: spending?.healthcare
                 ? (spending.healthcare / (spending?.totalSpending || 1)) * 100
                 : 12,
-              color: SPENDING_COLORS[1],
+              color: SPENDING_COLORS[1] ?? "#10b981",
             },
             {
               name: "Social Safety",
               value: spending?.socialSafety
                 ? (spending.socialSafety / (spending?.totalSpending || 1)) * 100
                 : 20,
-              color: SPENDING_COLORS[3],
+              color: SPENDING_COLORS[3] ?? "#f59e0b",
             },
           ];
 
@@ -628,7 +613,7 @@ export function GovernmentSpendingModal({
                       paddingAngle={2}
                       dataKey="value"
                     >
-                      {categories.map((entry: any, index: number) => (
+                      {categories.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -646,7 +631,7 @@ export function GovernmentSpendingModal({
 
               {/* Category List */}
               <div className="max-h-[220px] w-full flex-1 space-y-2 overflow-y-auto pr-1">
-                {categories.map((category: any) => (
+                {categories.map((category) => (
                   <div
                     key={category.name}
                     className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-2 text-xs"

@@ -3,59 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 // Intelligence Classification Schema
-const classificationSchema = z.enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL"]);
-
 // Diplomatic Intelligence Types
-const _diplomaticRelationSchema = z.object({
-  id: z.string(),
-  countryId: z.string(),
-  relatedCountryId: z.string(),
-  relationType: z.enum(["alliance", "trade", "neutral", "tension"]),
-  strength: z.number().min(0).max(100),
-  recentActivity: z.string().optional(),
-  establishedAt: z.date(),
-  updatedAt: z.date(),
-});
-
-const _intelligenceBriefingSchema = z.object({
-  id: z.string(),
-  countryId: z.string(),
-  classification: classificationSchema,
-  briefingType: z.enum(["daily", "weekly", "crisis", "strategic"]),
-  executiveSummary: z.string(),
-  keyDevelopments: z.array(
-    z.object({
-      type: z.enum(["economic", "diplomatic", "security", "cultural"]),
-      title: z.string(),
-      description: z.string(),
-      priority: z.enum(["low", "medium", "high"]),
-      timestamp: z.date(),
-    })
-  ),
-  threatAssessments: z.array(
-    z.object({
-      category: z.string(),
-      level: z.enum(["low", "moderate", "high", "critical"]),
-      description: z.string(),
-    })
-  ),
-  recommendedActions: z.array(z.string()),
-  generatedAt: z.date(),
-  ixTimeContext: z.number(),
-});
-
-const _activityIntelligenceSchema = z.object({
-  id: z.string(),
-  countryId: z.string(),
-  activityType: z.enum(["diplomatic", "economic", "cultural", "security"]),
-  description: z.string(),
-  relatedCountries: z.array(z.string()),
-  importance: z.enum(["low", "medium", "high"]),
-  classification: classificationSchema,
-  timestamp: z.date(),
-  ixTimeTimestamp: z.number(),
-});
-
 export const diplomaticIntelligenceActionsRouter = createTRPCRouter({
   // Get diplomatic intelligence briefing for a country
 

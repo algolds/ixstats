@@ -44,4 +44,30 @@ describe("parseTemplateWikitext", () => {
       params: { motto: "Liberté, Ordre, Concorde" },
     });
   });
+
+  it("handles nested links with pipes inside parameters without corruption", () => {
+    expect(
+      parseTemplateWikitext("{{Infobox country|capital=[[Vilena|Vilena City]]|leader=John}}")
+    ).toEqual({
+      name: "Infobox country",
+      params: {
+        capital: "[[Vilena|Vilena City]]",
+        leader: "John",
+      },
+    });
+  });
+
+  it("handles nested templates with pipes inside parameters without corruption", () => {
+    expect(
+      parseTemplateWikitext("{{Infobox country|name=Urcea|flag={{flag|Urcea|civil}}|motto=Truth}}")
+    ).toEqual({
+      name: "Infobox country",
+      params: {
+        name: "Urcea",
+        flag: "{{flag|Urcea|civil}}",
+        motto: "Truth",
+      },
+    });
+  });
 });
+

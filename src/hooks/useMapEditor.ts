@@ -11,11 +11,15 @@ import { useMapEditorSync } from "./map-editor/useMapEditorSync";
 import { useMapEditorSelection } from "./map-editor/useMapEditorSelection";
 import { useMapEditorTransforms } from "./map-editor/useMapEditorTransforms";
 import { useMapFeatureMutations } from "./map-editor/useMapFeatureMutations";
+import { useHistoryReversalExecutor } from "./map-editor/useHistoryReversalExecutor";
 import { calculateNegativeSpaceGaps } from "~/lib/maps/map-editor-geom";
+import type { FeatureCollection } from "geojson";
+import { mapFeatureToEditState } from "./map-editor/feature-form-mapper";
 
 export * from "./map-editor/editor-types";
 import type {
   EditorMode,
+  FeatureType,
   EditorFeature,
   CityFormData,
   SubdivisionFormData,
@@ -64,17 +68,18 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   // ── Route Editor State ──
   const [routeWaypoints, setRouteWaypoints] = useState<[number, number][]>([]);
   const [routeDrawingHistory] = useState<[number, number][][]>([]);
+  const [routeType, setRouteType] = useState<string>("road");
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
   const [editingRouteVertices, setEditingRouteVertices] = useState<[number, number][]>([]);
   const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
-  const [snapTarget, setSnapTarget] = useState<any>(null);
+  const [snapTarget, setSnapTarget] = useState<[number, number] | null>(null);
   const [isSnapEnabled, setIsSnapEnabled] = useState(true);
 
   // ── Gaps & Negative Space ──
   const [showGaps, setShowGaps] = useState(false);
-  const [gapFeatures, setGapFeatures] = useState<any>(null);
+  const [gapFeatures, setGapFeatures] = useState<FeatureCollection | null>(null);
   const [showEmptyRegions, setShowEmptyRegions] = useState(false);
-  const [emptyRegionsFeatures] = useState<any>(null);
+  const [emptyRegionsFeatures] = useState<FeatureCollection | null>(null);
 
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -129,18 +134,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setLassoGeometry,
     applyLassoSelection,
     applyRectSelection,
-    wandMatchColor,
-    setWandMatchColor,
-    wandMatchLevel,
-    setWandMatchLevel,
-    wandMatchParent,
-    setWandMatchParent,
-    presetStyle,
-    setPresetStyle,
     guides,
     setGuides,
-    applyMagicWand,
-    applyEyedropper,
   } = selection;
 
   const transforms = useMapEditorTransforms({
@@ -190,7 +185,119 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     debouncedRefetch,
     setLastSavedAt,
     setMutationError,
+    pushAction,
   });
+
+  const historyExecutor = useHistoryReversalExecutor({
+    countryId,
+    invalidateAllMapData,
+    debouncedRefetch,
+  });
+
+  const handleUndo = useCallback(async () => {
+    const action = historyHook.getUndoAction();
+    if (!action) return;
+    historyHook.isUndoingRef.current = true;
+    try {
+      await historyExecutor.applyInverseAction(action);
+      stepUndo();
+      invalidateAllMapData();
+      debouncedRefetch();
+    } catch (e) {
+      console.error("Undo failed", e);
+    } finally {
+      historyHook.isUndoingRef.current = false;
+    }
+  }, [historyHook, historyExecutor, stepUndo, invalidateAllMapData, debouncedRefetch]);
+
+  const handleRedo = useCallback(async () => {
+    const action = historyHook.getRedoAction();
+    if (!action) return;
+    historyHook.isUndoingRef.current = true;
+    try {
+      await historyExecutor.applyForwardAction(action);
+      stepRedo();
+      invalidateAllMapData();
+      debouncedRefetch();
+    } catch (e) {
+      console.error("Redo failed", e);
+    } finally {
+      historyHook.isUndoingRef.current = false;
+    }
+  }, [historyHook, historyExecutor, stepRedo, invalidateAllMapData, debouncedRefetch]);
+
+  const jumpToHistoryPosition = useCallback(
+    async (targetPos: number) => {
+      if (!countryId || targetPos === history.position) return;
+      const isSteppingBack = targetPos < history.position;
+      historyHook.isUndoingRef.current = true;
+      try {
+        if (isSteppingBack) {
+          for (let i = history.position; i > targetPos; i--) {
+            const action = history.actions[i];
+            if (action) {
+              await historyExecutor.applyInverseAction(action);
+            }
+          }
+        } else {
+          for (let i = history.position + 1; i <= targetPos; i++) {
+            const action = history.actions[i];
+            if (action) {
+              await historyExecutor.applyForwardAction(action);
+            }
+          }
+        }
+        historyHook.setPosition(targetPos);
+        invalidateAllMapData();
+        debouncedRefetch();
+      } catch (e) {
+        console.error("Jump to history position failed", e);
+      } finally {
+        historyHook.isUndoingRef.current = false;
+      }
+    },
+    [countryId, history, historyHook, historyExecutor, invalidateAllMapData, debouncedRefetch]
+  );
+
+  const updatePointCoordinates = useCallback(
+    async (type?: FeatureType, id?: string, coords?: [number, number]) => {
+      if (!countryId || !type || !id || !coords || type === "gap") return;
+      try {
+        await historyExecutor.restoreFeatureData(type, id, { coordinates: coords });
+        invalidateAllMapData();
+        debouncedRefetch();
+      } catch (e) {
+        setMutationError(e instanceof Error ? e.message : "Failed to update coordinates");
+      }
+    },
+    [countryId, historyExecutor, invalidateAllMapData, debouncedRefetch, setMutationError]
+  );
+
+  const duplicateFeature = useCallback(
+    async (featureToDup?: EditorFeature) => {
+      const target = featureToDup || selectedFeature;
+      if (!target || !countryId || target.type === "gap") return;
+      try {
+        const offset = 0.02;
+        const dupName = `${target.name || "Feature"} (Copy)`;
+        const newCoords: [number, number] = target.coordinates
+          ? [target.coordinates[0] + offset, target.coordinates[1] + offset]
+          : [0, 0];
+
+        await historyExecutor.recreateFeature(target.type, {
+          ...target.properties,
+          name: dupName,
+          coordinates: newCoords,
+          geometry: target.geometry,
+        });
+        invalidateAllMapData();
+        debouncedRefetch();
+      } catch (e) {
+        setMutationError(e instanceof Error ? e.message : "Failed to duplicate feature");
+      }
+    },
+    [selectedFeature, countryId, historyExecutor, invalidateAllMapData, debouncedRefetch, setMutationError]
+  );
 
   const {
     isMutating,
@@ -217,118 +324,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   const startEditing = useCallback((feature: EditorFeature) => {
     setSelectedFeature(feature);
-    const p = feature.properties || {};
-
-    switch (feature.type) {
-      case "city":
-        setCityForm({
-          name: feature.name,
-          cityType: p.cityType || "city",
-          population: p.population,
-          isNationalCapital: !!p.isNationalCapital,
-          isSubdivisionCapital: !!p.isSubdivisionCapital,
-          subdivisionId: p.subdivisionId,
-          wikiPageTitle: p.wikiPageTitle,
-          elevation: p.elevation,
-          foundedYear: p.foundedYear,
-          coordinates: feature.coordinates,
-        });
-        setMode("edit-city");
-        break;
-      case "subdivision":
-        setSubdivisionForm({
-          name: feature.name,
-          type: p.type || "province",
-          level: p.level || 1,
-          capital: p.capital,
-          population: p.population,
-          areaSqKm: p.areaSqKm,
-          color: p.color,
-          wikiPageTitle: p.wikiPageTitle,
-          geometry: feature.geometry,
-        });
-        setMode("edit-subdivision");
-        break;
-      case "poi":
-        setPOIForm({
-          name: feature.name,
-          category: p.category || "landmark",
-          description: p.description,
-          icon: p.icon,
-          wikiPageTitle: p.wikiPageTitle,
-          subdivisionId: p.subdivisionId,
-          coordinates: feature.coordinates,
-        });
-        setMode("edit-poi");
-        break;
-      case "storyPin":
-        setStoryPinForm({
-          title: feature.name,
-          content: p.content || "",
-          contentFormat: p.contentFormat || "plain",
-          category: p.category || "cultural",
-          importance: p.importance || 0,
-          ixTimeYear: p.ixTimeYear,
-          eraLabel: p.eraLabel,
-          wikiPageTitle: p.wikiPageTitle,
-          photos: p.photos,
-          thumbnailUrl: p.thumbnailUrl,
-          storylineId: p.storylineId,
-          storylineOrder: p.storylineOrder,
-          coordinates: feature.coordinates,
-        });
-        setMode("edit-story-pin");
-        break;
-      case "mapLabel":
-        setMapLabelForm({
-          text: feature.name,
-          labelType: p.labelType || "mountain_range",
-          fontSize: p.fontSize || 14,
-          color: p.color || "#374151",
-          rotation: p.rotation || 0,
-          letterSpacing: p.letterSpacing || 0,
-          fontWeight: p.fontWeight || "normal",
-          opacity: p.opacity ?? 1,
-          minZoom: p.minZoom ?? 4,
-          maxZoom: p.maxZoom ?? 18,
-          wikiPageTitle: p.wikiPageTitle,
-          coordinates: feature.coordinates,
-        });
-        setMode("edit-label");
-        break;
-      case "peak":
-        setPeakForm({
-          name: feature.name,
-          elevation: p.elevation || 0,
-          prominence: p.prominence,
-          subdivisionId: p.subdivisionId,
-          wikiPageTitle: p.wikiPageTitle,
-          coordinates: feature.coordinates,
-        });
-        setMode("edit-peak");
-        break;
-      case "river":
-        setRiverForm({
-          name: feature.name,
-          wikiPageTitle: p.wikiPageTitle,
-          geometry: feature.geometry,
-        });
-        setMode("edit-river");
-        break;
-      case "lake":
-        setLakeForm({
-          name: feature.name,
-          waterType: p.waterType || "freshwater",
-          wikiPageTitle: p.wikiPageTitle,
-          geometry: feature.geometry,
-        });
-        setMode("edit-lake");
-        break;
-      case "route":
-        setEditingRouteId(feature.id);
-        setMode("edit-route");
-        break;
-    }
+    const state = mapFeatureToEditState(feature);
+    if (state.cityForm) setCityForm(state.cityForm);
+    if (state.subdivisionForm) setSubdivisionForm(state.subdivisionForm);
+    if (state.poiForm) setPOIForm(state.poiForm);
+    if (state.peakForm) setPeakForm(state.peakForm);
+    if (state.riverForm) setRiverForm(state.riverForm);
+    if (state.lakeForm) setLakeForm(state.lakeForm);
+    if (state.editingRouteId) setEditingRouteId(state.editingRouteId);
+    setMode(state.mode);
   }, []);
 
   // ── Map Events & Drawing ──
@@ -349,20 +353,22 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const finishRoute = useCallback(async () => {
     if (!countryId || routeWaypoints.length < 2) return;
     try {
+      const typeLabel = routeType.replace(/_/g, " ");
+      const formattedType = typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1);
       await createRoute.mutateAsync({
         countryId,
-        name: "New Route",
-        routeType: "road",
+        name: `New ${formattedType}`,
+        routeType,
         geometry: { type: "LineString", coordinates: routeWaypoints },
       });
       setRouteWaypoints([]);
       setMode("view");
       invalidateAllMapData();
       debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to create route");
+    } catch (e) {
+      setMutationError(e instanceof Error ? e.message : "Failed to create route");
     }
-  }, [countryId, routeWaypoints, createRoute, invalidateAllMapData, debouncedRefetch]);
+  }, [countryId, routeWaypoints, routeType, createRoute, invalidateAllMapData, debouncedRefetch]);
 
   const undoLastWaypoint = useCallback(() => {
     setRouteWaypoints((prev) => prev.slice(0, -1));
@@ -391,8 +397,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       setMode("view");
       invalidateAllMapData();
       debouncedRefetch();
-    } catch (e: any) {
-      setMutationError(e.message || "Failed to update route");
+    } catch (e) {
+      setMutationError(e instanceof Error ? e.message : "Failed to update route");
     }
   }, [
     countryId,
@@ -412,6 +418,62 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const addRouteWaypointWithSnap = useCallback((coord: [number, number]) => {
     setRouteWaypoints((prev) => [...prev, coord]);
   }, []);
+
+  const reverseRoute = useCallback(
+    async (routeId?: string) => {
+      const targetId = routeId || (selectedFeature?.type === "route" ? selectedFeature.id : null);
+      if (!countryId || !targetId) return;
+      const target = allFeatures.find((f) => f.id === targetId && f.type === "route");
+      if (!target || !target.geometry) return;
+      const geo = target.geometry as { type?: string; coordinates?: [number, number][] };
+      if (geo.type !== "LineString" || !Array.isArray(geo.coordinates) || geo.coordinates.length < 2)
+        return;
+      const reversed = [...geo.coordinates].reverse();
+      try {
+        await updateRouteGeometry.mutateAsync({
+          countryId,
+          id: targetId,
+          geometry: { type: "LineString", coordinates: reversed },
+        });
+        pushAction({
+          type: "update",
+          featureType: "route",
+          featureId: targetId,
+          description: `Reversed direction of Route "${target.name}"`,
+          previousData: { geometry: target.geometry },
+          newData: { geometry: { type: "LineString", coordinates: reversed } },
+        });
+        invalidateAllMapData();
+        debouncedRefetch();
+      } catch (e) {
+        setMutationError(e instanceof Error ? e.message : "Failed to reverse route");
+      }
+    },
+    [
+      countryId,
+      selectedFeature,
+      allFeatures,
+      updateRouteGeometry,
+      pushAction,
+      invalidateAllMapData,
+      debouncedRefetch,
+      setMutationError,
+    ]
+  );
+
+  const promoteCapital = useCallback(
+    async (cityId?: string) => {
+      const targetId = cityId || (selectedFeature?.type === "city" ? selectedFeature.id : null);
+      if (!countryId || !targetId) return;
+      const target = allFeatures.find((f) => f.id === targetId && f.type === "city");
+      if (!target) return;
+      await submitEditCity({
+        name: target.name,
+        isNationalCapital: true,
+      });
+    },
+    [countryId, selectedFeature, allFeatures, submitEditCity]
+  );
 
   // ── Bulk & Duplicate Actions ──
   const bulkDeleteSelected = useCallback(async () => {
@@ -485,10 +547,11 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     submitMapLabel,
     submitEditStoryPin,
     submitEditMapLabel,
-    updateSubdivisionGeometry: async (_subdivisionId?: any, _geom?: any) => {},
-    updatePointCoordinates: async (_type?: any, _id?: any, _coords?: any) => {},
+    updateSubdivisionGeometry: async (_subdivisionId?: string, _geom?: object) => {},
+    updatePointCoordinates,
     isMutating,
     mutationError,
+    setMutationError,
     lastSavedAt,
     validationErrors,
     refetchFeatures,
@@ -496,10 +559,13 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     historyCanRedo,
     history,
     pushAction,
-    undo: stepUndo,
-    redo: stepRedo,
+    undo: handleUndo,
+    redo: handleRedo,
     routeWaypoints,
+    setRouteWaypoints,
     routeDrawingHistory,
+    routeType,
+    setRouteType,
     editingRouteId,
     editingRouteVertices,
     setEditingRouteVertices,
@@ -520,16 +586,19 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     toggleSelectId,
     clearMultiSelect,
     bulkDeleteSelected,
-    bulkEditSelected: async (_featureIds?: any, _updates?: any) => {},
-    duplicateFeature: async (_feature?: any) => {},
+    bulkEditSelected: async (
+      _featureIds?: string[] | string,
+      _updates?: Record<string, string | number | boolean | null> | string | number | boolean | null
+    ) => ({ successCount: 0, failCount: 0 }),
+    duplicateFeature,
     showGaps,
     setShowGaps,
     gapFeatures,
     recalculateGaps,
-    createSubdivisionFromGap: async () => {},
-    scatterCities: async (_count?: any, _type?: any, _prefix?: any) => {},
-    snapCityToSubdivisionBorder: async () => {},
-    snapCityToCoastline: async () => {},
+    createSubdivisionFromGap: async (_geometry?: object | null) => {},
+    scatterCities: async (_count?: number, _type?: string, _prefix?: string) => {},
+    snapCityToSubdivisionBorder: async (_cityId?: string) => {},
+    snapCityToCoastline: async (_cityId?: string) => {},
     mergeSelectedCities: transforms.mergeSelectedCities,
     splitCity: transforms.splitCity,
     scaleSelectedCitiesPopulation: transforms.scaleSelectedCitiesPopulation,
@@ -537,9 +606,10 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     emptyRegionsFeatures,
     showEmptyRegions,
     setShowEmptyRegions,
-    createCentroidCities: async (_countryId?: any) => {},
+    createCentroidCities: async (_countryId?: string) => {},
     executeSplitSubdivision: transforms.executeSplitSubdivision,
     mergeSelectedSubdivisions: transforms.mergeSelectedSubdivisions,
+    pathfinderOperation: transforms.pathfinderOperation,
     applyGeometryTransformation: transforms.applyGeometryTransformation,
     rulerPoints,
     setRulerPoints,
@@ -551,20 +621,10 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     clearRuler,
     applyLassoSelection,
     applyRectSelection,
-    applyPaintFill: async () => {},
-    presetStyle,
-    setPresetStyle,
     guides,
     setGuides,
-    jumpToHistoryPosition: () => {},
-    wandMatchColor,
-    setWandMatchColor,
-    wandMatchLevel,
-    setWandMatchLevel,
-    wandMatchParent,
-    setWandMatchParent,
-    applyEyedropper,
-    applyMagicWand,
-    pathfinderOperation: async () => {},
+    jumpToHistoryPosition,
+    reverseRoute,
+    promoteCapital,
   };
 }

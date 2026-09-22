@@ -37,8 +37,8 @@ const TIPS = [
   },
   {
     icon: Hexagon,
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
+    color: "text-indigo-400",
+    bg: "bg-indigo-500/10",
     title: "Regions & Boundaries",
     description:
       "Forge provinces and regional borders. Use automatic vertex simplification to keep boundaries clean and low-poly.",
@@ -185,7 +185,7 @@ export function MapEditorWelcomeModal({
               {/* Header */}
               <div className="relative px-6 pt-6 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 shadow-md">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-md">
                     <Map className="h-4.5 w-4.5 text-white" />
                   </div>
                   <div>

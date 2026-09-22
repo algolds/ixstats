@@ -37,7 +37,7 @@ export const PolicyEffectivenessPanel = React.memo(function PolicyEffectivenessP
     <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Target className="h-5 w-5 text-purple-600" />
+          <Target className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           Current Policy Effectiveness
         </CardTitle>
         <CardDescription>Performance metrics for your active policies</CardDescription>
@@ -56,10 +56,10 @@ export const PolicyEffectivenessPanel = React.memo(function PolicyEffectivenessP
                       variant="outline"
                       className={cn(
                         component.effectivenessScore >= 75
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/20"
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 dark:text-emerald-400"
                           : component.effectivenessScore >= 50
-                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900/20"
-                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20"
+                            ? "bg-blue-500/10 text-blue-600 border-blue-500/30 dark:text-blue-400"
+                            : "bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400"
                       )}
                     >
                       {component.effectivenessScore}%
@@ -71,7 +71,7 @@ export const PolicyEffectivenessPanel = React.memo(function PolicyEffectivenessP
             </div>
 
             {policyEffectiveness && (
-              <div className="mt-6 rounded-lg border bg-gradient-to-r from-indigo-50/50 to-purple-50/50 p-6 dark:from-indigo-950/20 dark:to-purple-950/20">
+              <div className="mt-6 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-6">
                 <div className="mb-2 flex items-center justify-between">
                   <h4 className="font-semibold">Overall Policy Performance</h4>
                   <Badge variant="secondary" className="text-lg">

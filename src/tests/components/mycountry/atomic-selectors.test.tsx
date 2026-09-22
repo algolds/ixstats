@@ -78,5 +78,20 @@ describe("Atomic Component Selectors (Characterization & Integration - Plan 166)
 
       expect(screen.getByPlaceholderText(/Search economic components/i)).toBeDefined();
     });
+
+    test("renders in standalone mode with available components list", () => {
+      const onComponentChange = jest.fn();
+      render(
+        <AtomicEconomicComponentSelector
+          selectedComponents={[]}
+          onComponentChange={onComponentChange}
+          standalone={true}
+        />
+      );
+
+      expect(screen.getByText(/Available Components/i)).toBeDefined();
+      expect(screen.getByText(/0 \/ 15 selected/i)).toBeDefined();
+    });
   });
 });
+

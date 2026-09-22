@@ -64,93 +64,93 @@ export function useMapEditorSync({ countryId, skipLinkageGate = false }: UseMapE
     if (!features) return [];
     const list: EditorFeature[] = [];
 
-    (features.cities || []).forEach((c: any) => {
+    features.cities?.forEach((c) => {
       list.push({
         id: c.id,
         type: "city",
         name: c.name,
         coordinates: (c.coordinates as [number, number]) || undefined,
-        properties: c,
+        properties: c as Record<string, string | number | boolean | null | undefined | object>,
       });
     });
 
-    (features.subdivisions || []).forEach((s: any) => {
+    features.subdivisions?.forEach((s) => {
       list.push({
         id: s.id,
         type: "subdivision",
         name: s.name,
         geometry: (s.geometry as object) || undefined,
-        properties: s,
+        properties: s as Record<string, string | number | boolean | null | undefined | object>,
       });
     });
 
-    (features.pois || []).forEach((p: any) => {
+    features.pois?.forEach((p) => {
       list.push({
         id: p.id,
         type: "poi",
         name: p.name,
         coordinates: (p.coordinates as [number, number]) || undefined,
-        properties: p,
+        properties: p as Record<string, string | number | boolean | null | undefined | object>,
       });
     });
 
-    (features.storyPins || []).forEach((sp: any) => {
+    features.storyPins?.forEach((sp) => {
       list.push({
         id: sp.id,
         type: "storyPin",
         name: sp.title,
         coordinates: (sp.coordinates as [number, number]) || undefined,
-        properties: sp,
+        properties: sp as Record<string, string | number | boolean | null | undefined | object>,
       });
     });
 
-    (features.mapLabels || []).forEach((ml: any) => {
+    features.mapLabels?.forEach((ml) => {
       list.push({
         id: ml.id,
         type: "mapLabel",
         name: ml.text,
         coordinates: (ml.coordinates as [number, number]) || undefined,
-        properties: ml,
+        properties: ml as Record<string, string | number | boolean | null | undefined | object>,
       });
     });
 
-    (features.peaks || []).forEach((pk: any) => {
+    features.peaks?.forEach((pk) => {
       list.push({
         id: pk.id,
         type: "peak",
         name: pk.name,
         coordinates: (pk.coordinates as [number, number]) || undefined,
-        properties: pk,
+        properties: pk as Record<string, string | number | boolean | null | undefined | object>,
       });
     });
 
-    (features.namedRivers || []).forEach((r: any) => {
+    features.namedRivers?.forEach((r) => {
       list.push({
         id: r.id,
         type: "river",
         name: r.name,
         geometry: (r.geometry as object) || undefined,
-        properties: r,
+        properties: r as Record<string, string | number | boolean | null | undefined | object>,
       });
     });
 
-    (features.namedLakes || []).forEach((l: any) => {
+    features.namedLakes?.forEach((l) => {
       list.push({
         id: l.id,
         type: "lake",
         name: l.name,
         geometry: (l.geometry as object) || undefined,
-        properties: l,
+        properties: l as Record<string, string | number | boolean | null | undefined | object>,
       });
     });
 
-    (((routes as any)?.features as any[]) || []).forEach((f: any) => {
+    (routes?.features || []).forEach((f) => {
       list.push({
-        id: f.properties?.id || f.id,
+        id: f.properties.id,
         type: "route",
-        name: f.properties?.name || f.name || "Route",
+        name: f.properties.name || "Route",
         geometry: f.geometry || undefined,
-        properties: f.properties || f,
+        properties: f.properties as Record<string, string | number | boolean | null | undefined | object>,
       });
     });
 

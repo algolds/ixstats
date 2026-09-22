@@ -15,6 +15,7 @@ import { isEqual } from "~/lib/utils";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
+import type { ComponentType } from "@prisma/client";
 import { buildTaxSyncPayload } from "../components/enhanced/utils/taxSync";
 import { api } from "~/trpc/react";
 
@@ -26,7 +27,7 @@ interface UseEconomyBuilderSyncProps {
   enabled?: boolean;
   economyBuilder: EconomyBuilderState;
   economicInputs: EconomicInputs;
-  governmentComponents?: any[];
+  governmentComponents?: (ComponentType | string)[];
   taxSystemData?: TaxBuilderState | null;
   onEconomicInputsChange: (inputs: EconomicInputs) => void;
   onPersistEconomyBuilder?: (builder: EconomyBuilderState) => void;

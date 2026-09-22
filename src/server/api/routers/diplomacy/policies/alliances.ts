@@ -102,7 +102,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
   createAlliance: protectedProcedure
     .input(
       z.object({
-        name: z.string().min(2).max(100),
+        name: z.string().min(2, "Alliance name must be at least 2 characters long").max(100),
         shortName: z.string().max(10).optional(),
         type: z.enum(["military", "economic", "political", "regional"]),
         description: z.string().optional(),
@@ -136,7 +136,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
             create: {
               countryId: ctx.user.countryId,
               role: "founder",
-              votingPower: 2.0, // Founders get double voting power
+              votingPower: 1.0, // Standard 1 vote per member
               contributionLevel: "high",
             },
           },

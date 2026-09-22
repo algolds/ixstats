@@ -1,42 +1,27 @@
 import {
   MapPin,
   Bank as Landmark,
-  Bookmark as BookMarked,
-  Type,
   ModernTv as Mountain,
 } from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
+import { isKeyboardInputTarget } from "../hooks/drag-utils";
 
 export const PointPlacementPlugin: MapEditorPlugin = {
   id: "point-placement",
-  name: "POI & Label Placement",
-  global: true, // Listens globally to C/P/S/L/K keys
-  modes: ["add-city", "add-poi", "add-story-pin", "add-label", "add-peak"],
+  name: "POI & Feature Placement",
+  global: true, // Listens globally to C/P/K keys
+  modes: ["add-city", "add-poi", "add-peak"],
 
   toolbarItems: [
-    { id: "tool-city", mode: "add-city", icon: MapPin, label: "City", shortcut: "C", group: 2 },
-    { id: "tool-poi", mode: "add-poi", icon: Landmark, label: "POI", shortcut: "P", group: 2 },
-    { id: "tool-peak", mode: "add-peak", icon: Mountain, label: "Peak", shortcut: "K", group: 2 },
-    {
-      id: "tool-story",
-      mode: "add-story-pin",
-      icon: BookMarked,
-      label: "Story",
-      shortcut: "S",
-      group: 2,
-    },
-    { id: "tool-label", mode: "add-label", icon: Type, label: "Label", shortcut: "L", group: 3 },
+    { id: "tool-city", mode: "add-city", icon: MapPin, label: "City", shortcut: "C", group: 1, order: 2 },
+    { id: "tool-poi", mode: "add-poi", icon: Landmark, label: "POI", shortcut: "P", group: 1, order: 3 },
+    { id: "tool-peak", mode: "add-peak", icon: Mountain, label: "Peak", shortcut: "K", group: 3, order: 1 },
   ],
 
   onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
-    const activeEl = document.activeElement;
-    const inInput =
-      activeEl &&
-      (activeEl.tagName === "INPUT" ||
-        activeEl.tagName === "TEXTAREA" ||
-        activeEl.tagName === "SELECT" ||
-        activeEl.getAttribute("contenteditable") === "true");
-    if (inInput) return false;
+    if (isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement)) {
+      return false;
+    }
     if (e.ctrlKey || e.metaKey || e.altKey) return false;
 
     // In border edit mode, let border editor handle its own shortcuts (e.g. P for pencil/vertex_edit)
@@ -55,14 +40,6 @@ export const PointPlacementPlugin: MapEditorPlugin = {
     }
     if (key === "k") {
       context.onModeChange("add-peak");
-      return true;
-    }
-    if (key === "s") {
-      context.onModeChange("add-story-pin");
-      return true;
-    }
-    if (key === "l") {
-      context.onModeChange("add-label");
       return true;
     }
     return false;

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import { GlassBarChart, GlassPieChart } from "~/components/ui/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
@@ -36,14 +36,14 @@ export function DemographicsVisualizations({
   return (
     <div className="space-y-6">
       {/* Merged Age, Urban-Rural & Regional Distribution */}
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="p-6">
+        <FacetCardContent className="p-6">
           <div className="mb-4 flex flex-col gap-2 border-b border-white/5 pb-3 sm:flex-row sm:items-center sm:justify-between">
             <h4 className="flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
               {activeChart === "age" && (
@@ -143,18 +143,18 @@ export function DemographicsVisualizations({
                 colors={DEFAULT_CHART_COLORS}
               />
             ))}
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
 
       {/* Education Levels */}
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="p-6">
+        <FacetCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <GraduationCap className="h-5 w-5" />
             <span>Education Levels</span>
@@ -167,18 +167,18 @@ export function DemographicsVisualizations({
             colors={DEFAULT_CHART_COLORS}
             valueFormatter={(value) => `${value.toFixed(1)}%`}
           />
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
 
       {/* Demographics Health */}
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="p-6">
+        <FacetCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Gauge className="h-5 w-5" />
             <span>Demographics Health</span>
@@ -220,8 +220,8 @@ export function DemographicsVisualizations({
               <Progress value={demographics.ageDistribution.age15to64} className="h-2" />
             </div>
           </div>
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
     </div>
   );
 }

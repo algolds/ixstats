@@ -1,5 +1,6 @@
 import { Ruler } from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
+import { isKeyboardInputTarget } from "../hooks/drag-utils";
 
 export const RulerGuidesPlugin: MapEditorPlugin = {
   id: "ruler-guides",
@@ -15,10 +16,18 @@ export const RulerGuidesPlugin: MapEditorPlugin = {
       label: "Ruler (Measure)",
       shortcut: "U",
       group: 4,
+      order: 1,
     },
   ],
 
   onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
+    if (isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement)) {
+      return false;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) {
+      return false;
+    }
+
     if (e.key.toLowerCase() === "u") {
       context.onModeChange("ruler");
       return true;

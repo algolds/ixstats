@@ -1,22 +1,6 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createUrl } from "~/lib/utils";
 
-/**
- * Legacy import page — redirects to the unified builder with import section active.
- */
-export default function ImportFromWikiPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace(createUrl("/builder?section=import"));
-  }, [router]);
-
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-muted-foreground animate-pulse">Redirecting to MyCountry Builder...</div>
-    </div>
-  );
+export default function ImportFromWikiRedirectPage() {
+  redirect(createUrl("/mycountry/builder?section=import"));
 }

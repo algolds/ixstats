@@ -152,7 +152,7 @@ export function ArticleCompanionHUD({
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
                 )}
-                className="text-foreground inline-flex max-w-[140px] items-center gap-1.5 font-semibold transition-colors hover:text-purple-400"
+                className="text-foreground inline-flex max-w-[140px] items-center gap-1.5 font-semibold transition-colors hover:text-wiki"
                 title={`Original Author: ${creatorName}`}
               >
                 {creatorAvatar ? (
@@ -209,7 +209,7 @@ export function ArticleCompanionHUD({
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
                 )}
-                className="text-foreground/90 inline-flex max-w-[140px] items-center gap-1.5 font-medium transition-colors hover:text-purple-400"
+                className="text-foreground/90 inline-flex max-w-[140px] items-center gap-1.5 font-medium transition-colors hover:text-wiki"
                 title={`Last edited by ${lastEditorName}`}
               >
                 {lastEditorAvatar ? (
@@ -346,7 +346,7 @@ export function ArticleCompanionHUD({
             className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-[11px] font-medium transition-all duration-200 hover:bg-white/10 active:scale-[0.97]"
             title="Revision History"
           >
-            <Clock className="h-3 w-3 text-purple-400" />
+            <Clock className="h-3 w-3 text-muted-foreground" />
             <span>History</span>
           </button>
         </div>

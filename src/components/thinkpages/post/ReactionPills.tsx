@@ -57,7 +57,7 @@ export function ReactionPills({
               />
             ) : REACTION_ICONS[type] ? (
               React.createElement(REACTION_ICONS[type]!, {
-                className: "h-3.5 w-3.5 text-purple-400",
+                className: "h-3.5 w-3.5 text-blue-400",
               })
             ) : (
               <span className="text-sm">{type}</span>

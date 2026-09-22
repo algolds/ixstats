@@ -161,7 +161,9 @@ Example Output: { "commentary": ["The referee blows the whistle and we are under
       if (match) {
         try {
           results = JSON.parse(match[0]);
-        } catch (_) {}
+        } catch (err) {
+          console.warn("[sports-narrator] Regex fallback JSON parse failed:", err);
+        }
       }
     }
 

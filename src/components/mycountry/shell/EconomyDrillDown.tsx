@@ -16,6 +16,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 const BudgetManagementDashboard = dynamic(
   () =>
@@ -62,6 +63,53 @@ const TradeCommerceConsole = dynamic(
   }
 );
 
+const InfrastructureMaintenanceCard = dynamic(
+  () =>
+    import("~/components/mycountry/domains/government/budget/InfrastructureMaintenanceCard").then((m) => ({
+      default: m.InfrastructureMaintenanceCard,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+      </div>
+    ),
+  }
+);
+
+interface EconomicProfileData {
+  economicComplexity?: number | null;
+  exportsGDPPercent?: number | null;
+}
+
+interface LaborMarketData {
+  totalWorkforce?: number;
+  laborForceParticipationRate?: number;
+  unemploymentRate?: number;
+  youthUnemploymentRate?: number;
+  femaleParticipationRate?: number;
+  medianWage?: number;
+  informalEmploymentRate?: number;
+}
+
+interface FiscalSystemData {
+  taxEfficiency?: number | null;
+}
+
+interface IncomeDistributionData {
+  top10PercentWealth?: number | null;
+  middleClassPercent?: number | null;
+  intergenerationalMobility?: number | null;
+}
+
+interface EconomyConfigurationPayload {
+  economicProfile?: EconomicProfileData | null;
+  laborMarket?: LaborMarketData | null;
+  fiscalSystem?: FiscalSystemData | null;
+  incomeDistribution?: IncomeDistributionData | null;
+}
+
 export interface EconomyDrillDownProps {
   countryId: string;
 }
@@ -83,10 +131,11 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  const profile = (econConfig as any)?.economicProfile;
-  const labor = (econConfig as any)?.laborMarket;
-  const fiscal = (econConfig as any)?.fiscalSystem;
-  const income = (econConfig as any)?.incomeDistribution;
+  const typedConfig = econConfig as EconomyConfigurationPayload | undefined;
+  const profile = typedConfig?.economicProfile;
+  const labor = typedConfig?.laborMarket;
+  const fiscal = typedConfig?.fiscalSystem;
+  const income = typedConfig?.incomeDistribution;
 
   const gdpBase = country?.currentTotalGdp ?? 100_000_000_000;
 
@@ -130,7 +179,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
             ? `${dashboard.governmentalEfficiency}/100`
             : "—",
         sub: "Administrative capacity",
-        accent: "text-purple-400 border-purple-500/20 bg-purple-500/5",
+        accent: "text-indigo-400 border-indigo-500/20 bg-indigo-500/5",
       },
     ],
     [
@@ -149,11 +198,15 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           <button
             key={id}
             type="button"
-            onClick={() => setActiveTab(id)}
+            data-cuelume-press="soft"
+            onClick={() => {
+              soundEffects.press();
+              setActiveTab(id);
+            }}
             className={cn(
               "flex w-full cursor-pointer items-center justify-center gap-2 truncate rounded-xl px-3 py-2 text-center text-xs font-extrabold transition-all duration-200 select-none active:scale-95",
               activeTab === id
-                ? "border border-emerald-500/40 bg-gradient-to-r from-emerald-500/25 to-teal-500/20 text-emerald-400 shadow-sm shadow-emerald-500/10"
+                ? "border border-emerald-500/40 bg-emerald-500/20 text-emerald-950 dark:text-emerald-300 shadow-xs"
                 : "text-muted-foreground hover:bg-muted/20 hover:text-foreground border border-transparent"
             )}
           >
@@ -274,8 +327,8 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
                 </p>
                 <p className="mt-0.5 font-mono text-base font-bold text-cyan-400 tabular-nums">
                   $
-                  {(labor as any)?.medianWage
-                    ? Math.round((labor as any).medianWage).toLocaleString()
+                  {labor?.medianWage
+                    ? Math.round(labor.medianWage).toLocaleString()
                     : "42,500"}
                 </p>
                 <p className="text-muted-foreground mt-0.5 text-[10px]">Annual Full-Time</p>
@@ -285,9 +338,9 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
                 <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
                   Informal Labor
                 </p>
-                <p className="mt-0.5 font-mono text-base font-bold text-purple-400 tabular-nums">
-                  {(labor as any)?.informalEmploymentRate
-                    ? `${(labor as any).informalEmploymentRate}%`
+                <p className="mt-0.5 font-mono text-base font-bold text-foreground tabular-nums">
+                  {labor?.informalEmploymentRate
+                    ? `${labor.informalEmploymentRate}%`
                     : "4.1%"}
                 </p>
                 <p className="text-muted-foreground mt-0.5 text-[10px]">Unregulated Employment</p>
@@ -299,12 +352,12 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
             <div className="border-border/20 flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
-                <Scale className="h-4 w-4 text-purple-400" />
+                <Scale className="h-4 w-4 text-indigo-500" />
                 <h4 className="text-foreground text-xs font-semibold">
                   Income & Wealth Equality Console
                 </h4>
               </div>
-              <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-purple-400">
+              <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-indigo-500 dark:text-indigo-400">
                 Gini Index: 31.4 (Moderate)
               </span>
             </div>
@@ -408,6 +461,8 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           </FacetCard>
 
           <BudgetManagementDashboard countryId={countryId} />
+
+          <InfrastructureMaintenanceCard countryId={countryId} />
         </div>
       )}
 

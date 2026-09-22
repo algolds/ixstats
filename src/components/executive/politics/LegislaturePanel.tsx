@@ -49,21 +49,6 @@ const GovernmentMetricsEditor = dynamic(
   }
 );
 
-const LegislativePolicies = dynamic(
-  () =>
-    import("~/components/executive/politics/LegislativePolicies").then((m) => ({
-      default: m.LegislativePolicies,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-      </div>
-    ),
-  }
-);
-
 const LegislativeIssues = dynamic(
   () =>
     import("~/components/executive/politics/LegislativeIssues").then((m) => ({
@@ -90,7 +75,6 @@ interface LegislaturePanelProps {
 export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
   const [setupExpanded, setSetupExpanded] = useState(true);
   const [metricsExpanded, setMetricsExpanded] = useState(false);
-  const [policiesExpanded, setPoliciesExpanded] = useState(false);
   const [issuesExpanded, setIssuesExpanded] = useState(false);
 
   // Current parliament data for the hemicycle
@@ -222,7 +206,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
             className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
             onClick={() => setMetricsExpanded(!metricsExpanded)}
           >
-            <BarChart2 className="h-4 w-4 text-violet-600" />
+            <BarChart2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
             <h3 className="text-sm font-semibold">Political Metrics</h3>
           </button>
           <div className="flex items-center gap-1">
@@ -248,38 +232,9 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
 
       <Separator />
 
-      {/* ─── Laws & Active Policies (default: collapsed) ─── */}
-      <section className="space-y-3">
-        <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
-          <button
-            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
-            onClick={() => setPoliciesExpanded(!policiesExpanded)}
-          >
-            <ScrollText className="h-4 w-4 text-emerald-600" />
-            <h3 className="text-sm font-semibold">Laws & Active Policies</h3>
-          </button>
-          <div className="flex items-center gap-1">
-            <SectionHelpIcon
-              title="Laws & Active Policies"
-              content="View enacted legislation and active policy bills. Create new policies to shape your nation's direction."
-            />
-            <button
-              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
-              onClick={() => setPoliciesExpanded(!policiesExpanded)}
-            >
-              {policiesExpanded ? (
-                <ChevronDown className="text-muted-foreground h-4 w-4" />
-              ) : (
-                <ChevronRight className="text-muted-foreground h-4 w-4" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {policiesExpanded && <LegislativePolicies countryId={countryId} />}
-      </section>
-
       <Separator />
+
+      {/* ─── Governance Issues (default: collapsed) ─── */}
 
       {/* ─── Governance Issues (default: collapsed) ─── */}
       <section className="space-y-3">

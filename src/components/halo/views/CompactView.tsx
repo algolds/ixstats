@@ -217,7 +217,7 @@ function CompactViewComponent({
                       }
                     }
                   }}
-                  className={`flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-all duration-300 hover:bg-white/10 ${
+                  className={`flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 overflow-hidden rounded px-1.5 py-0.5 transition-all duration-300 hover:bg-white/10 ${
                     activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
                   }`}
                   title={`Open ${activePlugin.id} mode`}
@@ -226,7 +226,7 @@ function CompactViewComponent({
                 </div>
               ) : (
                 <div
-                  className={`flex items-center gap-1.5 px-1.5 py-0.5 transition-all duration-300 ${
+                  className={`flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden px-1.5 py-0.5 transition-all duration-300 ${
                     activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
                   }`}
                 >

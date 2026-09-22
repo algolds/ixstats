@@ -10,7 +10,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { IxTime } from "~/lib/ixtime";
 import { cn } from "~/lib/utils";
-import { GlassCard } from "~/app/builder/components/glass/GlassCard";
+import { FacetCard } from "~/components/ui/facet-container";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Dollar as DollarSign,
@@ -141,17 +141,14 @@ export function BudgetAllocationForm({
   const StatusIcon = statusConfig.icon;
 
   const cardElement = (
-    <GlassCard
-      depth="base"
-      theme="teal"
+    <FacetCard
+      depth={1}
       className={cn(
-        "relative overflow-hidden border-zinc-200/50 transition-all duration-200 dark:border-white/5",
+        "facet-surface facet-refraction relative overflow-hidden bg-card/60 backdrop-blur-md border-zinc-200/50 transition-all duration-200 dark:border-white/5",
         isCollapsed
           ? "hover:border-cyan-500/20 hover:bg-zinc-50/50 dark:hover:bg-white/[0.01]"
           : "border-cyan-500/20 shadow-lg dark:border-cyan-500/10"
       )}
-      texture="chevron"
-      textureOpacity={0.03}
     >
       {/* Header Row: Always visible */}
       <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -461,7 +458,7 @@ export function BudgetAllocationForm({
           </motion.div>
         )}
       </AnimatePresence>
-    </GlassCard>
+    </FacetCard>
   );
 
   // Render parent nesting curve line if sub-department

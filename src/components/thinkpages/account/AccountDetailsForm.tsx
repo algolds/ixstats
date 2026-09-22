@@ -64,11 +64,11 @@ export function AccountDetailsForm({
             onChange={(e) => setFormData((p: any) => ({ ...p, firstName: e.target.value }))}
             placeholder="Enter first name"
             className={cn(
-              "block w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none",
-              errors.firstName && "border-rose-500"
+              "block w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none",
+              errors.firstName && "border-red-500"
             )}
           />
-          {errors.firstName && <p className="mt-1 text-[10px] text-rose-400">{errors.firstName}</p>}
+          {errors.firstName && <p className="mt-1 text-[10px] text-red-400">{errors.firstName}</p>}
         </div>
 
         <div>
@@ -80,7 +80,7 @@ export function AccountDetailsForm({
             value={formData.lastName}
             onChange={(e) => setFormData((p: any) => ({ ...p, lastName: e.target.value }))}
             placeholder="Enter last name"
-            className="block w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none"
+            className="block w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none"
           />
         </div>
       </div>
@@ -98,8 +98,8 @@ export function AccountDetailsForm({
             onChange={(e) => handleUsernameChange(e.target.value)}
             placeholder="username"
             className={cn(
-              "block w-full rounded-xl border border-white/10 bg-black/40 py-2.5 pr-10 pl-8 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none",
-              errors.username && "border-rose-500",
+              "block w-full rounded-xl border border-white/10 bg-black/40 py-2.5 pr-10 pl-8 text-xs text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none",
+              errors.username && "border-red-500",
               isUsernameAvailable && "border-emerald-500"
             )}
           />
@@ -107,16 +107,16 @@ export function AccountDetailsForm({
             {isCheckingUsername && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
             {isUsernameAvailable === true && <Check className="h-4 w-4 text-emerald-400" />}
             {isUsernameAvailable === false && !errors.username && (
-              <AlertCircle className="h-4 w-4 text-rose-400" />
+              <AlertCircle className="h-4 w-4 text-red-400" />
             )}
           </div>
         </div>
         {errors.username ? (
-          <p className="mt-1 text-xs text-rose-400">{errors.username}</p>
+          <p className="mt-1 text-xs text-red-400">{errors.username}</p>
         ) : isUsernameAvailable === true ? (
           <p className="mt-1 text-xs text-emerald-400">Username handle is available</p>
         ) : isUsernameAvailable === false && formData.username.length >= 3 ? (
-          <p className="mt-1 text-xs text-rose-400">
+          <p className="mt-1 text-xs text-red-400">
             {!isValidUsernameFormat
               ? "Must start with a letter (letters, numbers, underscores only)"
               : "Username is already taken"}
@@ -136,7 +136,7 @@ export function AccountDetailsForm({
           onChange={(e) => setFormData((p: any) => ({ ...p, bio: e.target.value }))}
           placeholder="Describe this account..."
           maxLength={160}
-          className="block min-h-[80px] w-full rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none"
+          className="block min-h-[80px] w-full rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none"
         />
         <div className="mt-1 text-right text-[10px] text-slate-500">{formData.bio.length}/160</div>
       </div>
@@ -164,7 +164,7 @@ export function AccountDetailsForm({
             <button
               type="button"
               onClick={onOpenImageSearch}
-              className="rounded-xl border border-purple-500/30 bg-purple-500/15 px-3.5 py-2 text-xs font-semibold text-purple-300 transition-colors hover:bg-purple-500/25 active:scale-[0.96]"
+              className="rounded-xl border border-blue-500/30 bg-blue-500/15 px-3.5 py-2 text-xs font-semibold text-blue-300 transition-colors hover:bg-blue-500/25 active:scale-[0.96]"
             >
               Search Repository
             </button>
@@ -172,7 +172,7 @@ export function AccountDetailsForm({
               <button
                 type="button"
                 onClick={() => setFormData((p: any) => ({ ...p, profileImageUrl: "" }))}
-                className="text-xs font-medium text-rose-400 hover:underline"
+                className="text-xs font-medium text-red-400 hover:underline"
               >
                 Remove Image
               </button>

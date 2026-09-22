@@ -16,6 +16,7 @@ import {
 import { fetchMediaWikiImageBatch } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { withBasePath } from "~/lib/base-path";
+import { localFlagCache } from "./local-flag-cache.server";
 
 interface CacheEntry {
   resolution: FlagResolution;
@@ -286,4 +287,4 @@ export class ServerFlagResolver implements FlagResolver {
   }
 }
 
-export const serverFlagResolver = new ServerFlagResolver();
+export const serverFlagResolver = new ServerFlagResolver(localFlagCache);

@@ -22,9 +22,10 @@ import { motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { GlassChart, chartTheme } from "./GlassChart";
 import { generateChartColors } from "~/lib/builder";
+import type { ChartTooltipProps, ChartPayloadEntry } from "~/types/charts";
 
-interface BaseChartProps {
-  data: any[];
+interface BaseChartProps<T = Record<string, unknown>> {
+  data: T[];
   title?: string;
   description?: string;
   height?: number;
@@ -38,7 +39,7 @@ interface BaseChartProps {
   hideYAxis?: boolean;
 }
 
-interface BarChartProps extends BaseChartProps {
+interface BarChartProps<T = Record<string, unknown>> extends BaseChartProps<T> {
   xKey: string;
   yKey: string | string[];
   colors?: string[];
@@ -46,7 +47,7 @@ interface BarChartProps extends BaseChartProps {
   valueFormatter?: (value: number) => string;
 }
 
-interface LineChartProps extends BaseChartProps {
+interface LineChartProps<T = Record<string, unknown>> extends BaseChartProps<T> {
   xKey: string;
   yKey: string | string[];
   colors?: string[];
@@ -54,7 +55,7 @@ interface LineChartProps extends BaseChartProps {
   area?: boolean;
 }
 
-interface PieChartProps extends BaseChartProps {
+interface PieChartProps<T = Record<string, unknown>> extends BaseChartProps<T> {
   dataKey: string;
   nameKey: string;
   colors?: string[];
@@ -63,7 +64,13 @@ interface PieChartProps extends BaseChartProps {
 }
 
 // Custom Glass Tooltip Component
-function GlassTooltip({ active, payload, label, labelFormatter, formatter }: any) {
+function GlassTooltip({
+  active,
+  payload,
+  label,
+  labelFormatter,
+  formatter,
+}: ChartTooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
 
   return (
@@ -76,13 +83,13 @@ function GlassTooltip({ active, payload, label, labelFormatter, formatter }: any
         "rounded-lg p-3 shadow-lg"
       )}
     >
-      {label && (
+      {label !== undefined && label !== null && (
         <p className="mb-2 text-sm font-medium text-[var(--color-text-primary)]">
-          {labelFormatter ? labelFormatter(label, payload) : label}
+          {labelFormatter ? labelFormatter(label, payload) : String(label)}
         </p>
       )}
       <div className="space-y-1">
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry: ChartPayloadEntry, index: number) => (
           <div key={index} className="flex items-center gap-2 text-xs">
             <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: entry.color }} />
             <span className="text-[var(--color-text-secondary)]">{entry.name}:</span>
@@ -123,7 +130,7 @@ export function GlassBarChart({
     return generateChartColors(keys.length, "primary");
   }, [colors, yKey]);
 
-  const formatYAxis = (value: any) => {
+  const formatYAxis = (value: number | string | unknown): string => {
     if (typeof value === "number") {
       if (valueFormatter) return valueFormatter(value);
       if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
@@ -131,7 +138,7 @@ export function GlassBarChart({
       if (value >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
       return value.toFixed(0);
     }
-    return value;
+    return String(value ?? "");
   };
 
   const gradientId = useMemo(

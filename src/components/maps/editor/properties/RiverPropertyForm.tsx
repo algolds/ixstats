@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import type { NamedRiverFormData, EditorFeature } from "~/hooks/useMapEditor";
+import { polylineLengthKm } from "~/lib/maps/geo-math";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
 const inputClasses =
@@ -20,8 +21,30 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
   pendingGeometry,
   selectedFeature,
 }: RiverPropertyFormProps) {
-  const hasGeom = !!(form.geometry ?? pendingGeometry ?? selectedFeature?.geometry);
-  const lengthKm = selectedFeature?.properties?.lengthKm as number | undefined;
+  const activeGeom = (form.geometry ?? pendingGeometry ?? selectedFeature?.geometry) as {
+    type?: string;
+    coordinates?: unknown;
+  } | null;
+  const hasGeom = !!activeGeom;
+
+  const lengthKm = useMemo(() => {
+    if (!activeGeom) return (selectedFeature?.properties?.lengthKm as number | undefined);
+    if (activeGeom.type === "LineString" && Array.isArray(activeGeom.coordinates)) {
+      return polylineLengthKm(activeGeom.coordinates as [number, number][]);
+    }
+    if (
+      activeGeom.type === "MultiLineString" &&
+      Array.isArray(activeGeom.coordinates) &&
+      Array.isArray(activeGeom.coordinates[0])
+    ) {
+      let total = 0;
+      for (const line of activeGeom.coordinates as [number, number][][]) {
+        total += polylineLengthKm(line);
+      }
+      return total;
+    }
+    return (selectedFeature?.properties?.lengthKm as number | undefined);
+  }, [activeGeom, selectedFeature?.properties?.lengthKm]);
 
   return (
     <div className="space-y-2">

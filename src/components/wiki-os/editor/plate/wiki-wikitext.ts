@@ -20,20 +20,28 @@ export interface WikitextSerializeResult {
 function leavesToWikitext(children: Descendant[]): string {
   let out = "";
   for (const child of children) {
-    const t = child as WikiText;
+    const t = child as any;
     if (typeof t.text !== "string") continue;
-    let text = t.text.replace(/\n/g, "");
-    if (!(t.bold || t.italic || t.underline || t.strike || t.codeMark)) {
-      text = t.text;
+    let text = t.text;
+    const isCode = Boolean(t.codeMark || t.code);
+    const isStrike = Boolean(t.strike || t.strikethrough);
+    const isUnderline = Boolean(t.underline);
+    const isBold = Boolean(t.bold);
+    const isItalic = Boolean(t.italic);
+    const isSup = Boolean(t.sup || t.superscript);
+    const isSub = Boolean(t.sub || t.subscript);
+
+    if (isBold || isItalic || isUnderline || isStrike || isCode || isSup || isSub) {
+      text = text.replace(/\n/g, "");
     }
-    if (t.codeMark) text = `<code>${text}</code>`;
-    if (t.strike) text = `<s>${text}</s>`;
-    if (t.underline) text = `<u>${text}</u>`;
-    if (t.bold && t.italic) text = `'''''${text}'''''`;
-    else if (t.bold) text = `'''${text}'''`;
-    else if (t.italic) text = `''${text}''`;
-    if (t.sup) text = `<sup>${text}</sup>`;
-    if (t.sub) text = `<sub>${text}</sub>`;
+    if (isCode) text = `<code>${text}</code>`;
+    if (isStrike) text = `<s>${text}</s>`;
+    if (isUnderline) text = `<u>${text}</u>`;
+    if (isBold && isItalic) text = `'''''${text}'''''`;
+    else if (isBold) text = `'''${text}'''`;
+    else if (isItalic) text = `''${text}''`;
+    if (isSup) text = `<sup>${text}</sup>`;
+    if (isSub) text = `<sub>${text}</sub>`;
     out += text;
   }
   return out;
@@ -54,19 +62,29 @@ export function serializePlateToWikitext(nodes: Descendant[]): WikitextSerialize
         out += leavesToWikitext([child]);
         continue;
       }
-      switch (el.type) {
+      const elAny = child as any;
+      switch (elAny.type) {
+        case "a":
         case "link": {
-          const label = leavesToWikitext(el.children);
-          if (el.internal) {
-            const target = decodeURIComponent(el.url.replace(/^\/wiki\//, "").replace(/_/g, " "));
+          const label = leavesToWikitext(elAny.children || []);
+          const isInternal =
+            elAny.internal ??
+            Boolean(
+              elAny.target ||
+                (elAny.url ? !/^https?:/i.test(elAny.url) || elAny.url.startsWith("/wiki/") : true)
+            );
+          if (isInternal) {
+            const target =
+              elAny.target ||
+              decodeURIComponent((elAny.url || "").replace(/^\/wiki\//, "").replace(/_/g, " "));
             out += target === label ? `[[${target}]]` : `[[${target}|${label}]]`;
           } else {
-            out += `[${el.url} ${label}]`;
+            out += `[${elAny.url} ${label}]`;
           }
           break;
         }
         case "ref":
-          out += `<ref>${el.label}</ref>`;
+          out += `<ref>${elAny.label || ""}</ref>`;
           break;
         case "chip-coord": {
           const cc = child as any;
@@ -78,11 +96,33 @@ export function serializePlateToWikitext(nodes: Descendant[]): WikitextSerialize
           out += ce.wikitext || `[[${ce.connector || "CountryData"}:${ce.slug}|${ce.metric}]]`;
           break;
         }
+        case "chip-template":
+        case "inline-template": {
+          out +=
+            elAny.rawWikitext ||
+            elAny.wikitext ||
+            serializeTemplateToWikitext({
+              templateName: elAny.templateName || elAny.name || "Template",
+              params: elAny.params || {},
+              positional: elAny.positional,
+              paramList: elAny.paramList,
+            });
+          break;
+        }
+        case "lic":
+        case "span": {
+          out += walkInline(elAny.children || []);
+          break;
+        }
         default: {
           const wt =
             (child as unknown as { rawWikitext?: string; wikitext?: string }).rawWikitext ||
             (child as unknown as { wikitext?: string }).wikitext;
-          if (wt) out += wt;
+          if (wt) {
+            out += wt;
+          } else if (Array.isArray(elAny.children)) {
+            out += walkInline(elAny.children);
+          }
         }
       }
     }
@@ -123,20 +163,36 @@ export function serializePlateToWikitext(nodes: Descendant[]): WikitextSerialize
         break;
       case "ul":
       case "ol": {
-        const marker = el.type === "ol" ? "#" : "*";
-        for (const li of el.children as ListItemEl[]) {
-          parts.push(`${marker} ${walkInline(li.children).trim()}\n`);
+        const defaultMarker = el.type === "ol" ? "#" : "*";
+        for (const li of (el.children || []) as any[]) {
+          const level = Math.max(1, li.level || 1);
+          const marker = li.prefix || defaultMarker.repeat(level);
+          if (typeof li.text === "string") {
+            parts.push(`${marker} ${leavesToWikitext([li]).trim()}\n`);
+          } else {
+            let kids = li.children || [];
+            if (kids.length === 1 && kids[0]?.type === "lic") {
+              kids = kids[0].children || [];
+            }
+            parts.push(`${marker} ${walkInline(kids).trim()}\n`);
+          }
         }
         break;
       }
       case "table": {
-        const rows = el.children as RowEl[];
-        const lines = ['{| class="wikitable"'];
+        const rows = (el.children || []) as any[];
+        const tableAttrs = el.attributes ? ` ${el.attributes}` : ' class="wikitable"';
+        const lines = [`{|${tableAttrs}`];
+        if (el.caption) {
+          lines.push(`|+ ${el.caption}`);
+        }
         for (const tr of rows) {
-          lines.push("|-");
-          for (const cell of tr.children as CellEl[]) {
+          const trAttrs = tr.attributes ? ` ${tr.attributes}` : "";
+          lines.push(`|-${trAttrs}`);
+          for (const cell of (tr.children || []) as any[]) {
             const prefix = cell.type === "th" ? "!" : "|";
-            lines.push(`${prefix} ${walkInline(cell.children).trim()}`);
+            const attrPart = cell.attributes ? `${cell.attributes} | ` : "";
+            lines.push(`${prefix} ${attrPart}${walkInline(cell.children || []).trim()}`);
           }
         }
         lines.push("|}");
@@ -175,10 +231,20 @@ export function serializePlateToWikitext(nodes: Descendant[]): WikitextSerialize
         parts.push(`${wt}\n`);
         break;
       }
+      case "lic": {
+        const inner = walkInline(el.children);
+        if (inner.trim()) parts.push(`${inner}\n`);
+        break;
+      }
       case "media": {
         const wt =
-          el.wikitext || `[[File:${el.filename}|${el.align || "thumb"}|${el.caption || ""}]]`;
-        parts.push(`${wt}\n`);
+          el.wikitext ||
+          (el.filename
+            ? `[[File:${el.filename}${el.align ? `|${el.align}` : "|thumb"}${
+                el.caption ? `|${el.caption}` : ""
+              }]]`
+            : el.rawWikitext || "");
+        if (wt) parts.push(`${wt}\n`);
         break;
       }
       case "raw-html": {

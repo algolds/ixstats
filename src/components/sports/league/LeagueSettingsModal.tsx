@@ -241,7 +241,7 @@ export function LeagueSettingsModal({
       logo: finalLogoUrl || null,
       coverImage: coverUrl || null,
       wikiSlug: wikiSlug.trim() || null,
-      status: status as any,
+      status: status as "active" | "inactive" | "archived",
       tier,
       promotionCount,
       relegationCount,

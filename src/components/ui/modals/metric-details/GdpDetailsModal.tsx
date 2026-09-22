@@ -33,11 +33,10 @@ import {
   Legend,
 } from "recharts";
 import { format } from "date-fns";
-import { IxTime } from "~/lib/ixtime";
-import { getIxCutoff } from "~/lib/ixtime/range";
 import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
 import type { TimeRange, ChartType } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
+import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
 
 interface GdpDetailsModalProps {
   isOpen: boolean;
@@ -86,43 +85,31 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
 
   // Process historical data for charts - IxTime-aware cutoff (not real subMonths)
   const processHistoricalData = (timeRange: TimeRange) => {
-    if (!historicalData || historicalData.length === 0) return [];
-
-    const nowIx = IxTime.getCurrentIxTime();
-    const cutoffIx = getIxCutoff(timeRange, nowIx);
-
-    const filtered = historicalData.filter((point: any) => {
-      const ts = IxTime.toTimestamp(point.ixTimeTimestamp as any);
-      return ts !== null && ts >= cutoffIx;
-    });
-
-    return filtered
-      .slice(-365)
-      .map((point: any, index: number) => {
-        const tsNum = IxTime.toTimestamp(point.ixTimeTimestamp as any) as number;
+    return filterAndSortHistory(
+      historicalData,
+      timeRange,
+      (point, _, rawTimestamp) => {
+        const tsNum = typeof rawTimestamp === "number" ? rawTimestamp : new Date(rawTimestamp).getTime();
         return {
-          period: index + 1,
+          period: 1,
           date: format(new Date(tsNum), "MMM yyyy"),
           timestamp: tsNum,
-          totalGdp: point.totalGdp / 1e12,
+          totalGdp: (point.totalGdp || 0) / 1e12,
           gdpPerCapita: point.gdpPerCapita,
           gdpGrowth: (() => {
             const rate =
-              point.gdpGrowthRate !== undefined ? point.gdpGrowthRate : point.gdpGrowth || 0;
-            // Normalize: stored rate is usually 0.02 = 2%; handle legacy scaled values
+              point.gdpGrowthRate !== undefined ? point.gdpGrowthRate : (point as any).gdpGrowth || 0;
             const abs = Math.abs(rate);
             if (abs < 0.01) return rate * 100;
             if (abs <= 0.5) return rate * 100;
             return rate;
           })(),
-          realGdp: point.totalGdp / 1e12,
-          nominalGdp: point.totalGdp / 1e12,
+          realGdp: (point.totalGdp || 0) / 1e12,
+          nominalGdp: (point.totalGdp || 0) / 1e12,
         };
-      })
-      .sort(
-        (a: any, b: any) =>
-          (new Date(a.timestamp).getTime() ?? 0) - (new Date(b.timestamp).getTime() ?? 0)
-      );
+      },
+      365
+    );
   };
 
   // Calculate GDP statistics from processed data
@@ -194,7 +181,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
       { name: "Healthy", min: 35000, max: 44999, color: "text-green-600" },
       { name: "Strong", min: 45000, max: 54999, color: "text-blue-600" },
       { name: "Very Strong", min: 55000, max: 64999, color: "text-indigo-600" },
-      { name: "Extravagant", min: 65000, max: Infinity, color: "text-purple-600" },
+      { name: "Extravagant", min: 65000, max: Infinity, color: "text-indigo-600" },
     ];
 
     const currentTier = tiers.find(
@@ -281,7 +268,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   <div className="text-muted-foreground mt-1 text-xs">Avg Annual Growth</div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-purple-400">
+                  <div className="text-lg font-bold text-amber-400">
                     {gdpStats?.volatility ? `${gdpStats.volatility.toFixed(2)}%` : "N/A"}
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">GDP Volatility</div>
@@ -299,7 +286,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   <div className="text-muted-foreground mt-1 text-xs">Total Growth</div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-purple-400">
+                  <div className="text-lg font-bold text-indigo-400">
                     {gdpStats
                       ? `${(((gdpStats.maxGdp - gdpStats.minGdp) / gdpStats.maxGdp) * 100).toFixed(1)}%`
                       : "N/A"}
@@ -543,7 +530,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Volatility Factor
               </span>
-              <span className="text-xl font-bold text-purple-400">
+              <span className="text-xl font-bold text-amber-400">
                 {gdpStats?.volatility ? `${gdpStats.volatility.toFixed(2)}%` : "N/A"}
               </span>
             </div>
@@ -695,7 +682,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                 <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                   Global GDP Share
                 </span>
-                <span className="text-xl font-bold text-purple-400">
+                <span className="text-xl font-bold text-indigo-400">
                   {countryData?.currentTotalGdp &&
                   typeof globalStats === "object" &&
                   globalStats !== null &&

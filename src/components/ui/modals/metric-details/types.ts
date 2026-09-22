@@ -115,5 +115,5 @@ export interface HistoricalDataPoint {
   date: string;
   timestamp: number;
   value: number;
-  [key: string]: any;
+  [key: string]: string | number | boolean | Date | undefined | null;
 }

@@ -73,8 +73,9 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
 
   // Compute aggregate trade metrics
   const totalExports = useMemo(() => {
-    return (country as any)?.gdp ? (country as any).gdp * 0.28 : 50_000_000_000;
-  }, [country]);
+    const gdp = country?.currentTotalGdp ?? 0;
+    return gdp > 0 ? gdp * 0.28 : 50_000_000_000;
+  }, [country?.currentTotalGdp]);
 
   const totalImports = useMemo(() => {
     return totalExports * 0.92;
@@ -98,13 +99,15 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   // Format trade partners list
   const tradePartners = useMemo(() => {
     if (!diplomaticRelations) return [];
-    return diplomaticRelations.map((rel: any) => ({
-      countryId: rel.targetCountry?.id || rel.id,
-      countryName: rel.targetCountry?.name || "Diplomatic Partner",
-      flagUrl: rel.targetCountry?.flagUrl,
-      status: rel.relationshipType || "Formal",
+    return diplomaticRelations.map((rel) => ({
+      countryId: rel.targetCountryId || rel.id,
+      countryName: rel.targetCountryName || rel.targetCountry || "Diplomatic Partner",
+      flagUrl: rel.targetCountryFlag ?? rel.flagUrl ?? null,
+      status: rel.relationship || rel.status || "Formal",
       tradeAgreement:
-        agreements[rel.targetCountry?.id || rel.id] ?? rel.hasFreeTradeAgreement ?? false,
+        agreements[rel.targetCountryId || rel.id] ??
+        rel.treaties?.some((t) => t.toLowerCase().includes("trade")) ??
+        false,
     }));
   }, [diplomaticRelations, agreements]);
 
@@ -117,7 +120,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
         tradeBalance={tradeBalance}
         totalExports={totalExports}
         totalImports={totalImports}
-        currencySymbol={(country as any)?.currencySymbol || "$"}
+        currencySymbol={country?.nationalIdentity?.currencySymbol || "$"}
       />
 
       {/* Sector Tariffs Section */}
@@ -177,7 +180,9 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
 
   const partnerCount = diplomaticRelations?.length ?? 0;
   const ftaCount =
-    (diplomaticRelations as any[])?.filter((r: any) => r.hasFreeTradeAgreement)?.length ?? 0;
+    diplomaticRelations?.filter((r) =>
+      r.treaties?.some((t) => t.toLowerCase().includes("trade"))
+    )?.length ?? 0;
 
   return (
     <div className="border-border/40 bg-card/60 space-y-2 rounded-xl border p-3 backdrop-blur-sm">

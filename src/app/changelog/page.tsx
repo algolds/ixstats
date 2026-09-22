@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const RELEASES: Release[] = [
   {
     version: "1.4.0",
-    releaseName: "Ogma",
+    releaseName: "Lobster Crosby",
     date: "August 2026",
     channel: "Release Candidate",
     isCurrent: true,

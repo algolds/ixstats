@@ -151,7 +151,7 @@ function getQualitativeRating(score: number): { label: string; color: string } {
 
 // oxlint-disable-next-line eslint/no-unused-vars
 function getDiplomaticStance(strength: number): { label: string; color: string } {
-  if (strength >= 80) return { label: "Ironclad Alliance", color: "text-purple-400" };
+  if (strength >= 80) return { label: "Ironclad Alliance", color: "text-cyan-400" };
   if (strength >= 65) return { label: "Strong Ties", color: "text-emerald-400" };
   if (strength >= 45) return { label: "Warm Relations", color: "text-cyan-400" };
   if (strength >= 25) return { label: "Neutral Stance", color: "text-blue-400" };
@@ -337,7 +337,7 @@ function HeroSnapshotPanelsComponent({
         </div>
 
         <div className="flex min-w-0 items-center justify-center gap-1 border-l border-white/10 pl-1">
-          <Scale className="h-3 w-3 shrink-0 text-violet-400" />
+          <Scale className="h-3 w-3 shrink-0 text-indigo-400" />
           <span className="text-muted-foreground/70 text-[8px] font-medium tracking-wider uppercase">
             Stability:
           </span>

@@ -1,0 +1,9 @@
+Found 8 countries with government_type in infobox:
+Caracua                  : {{wp
+Coburia                  : Wik
+Intaria                  : {{wp
+Kagazi                   : 
+Papal_State              : {{wp
+Takatta_Loa              : Constitutional Theocracy
+Western_Kingdom_of_the_Levantines: Monarchy
+Zahazaréa                : Constitutional monarchy under a stratocratic democracy

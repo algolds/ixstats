@@ -163,9 +163,9 @@ export function EmbassyDetailSheet({
       3: "Grand Embassy",
     };
     const colors: Record<number, string> = {
-      1: "bg-blue-50 text-blue-700 dark:bg-blue-950/20",
-      2: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/20",
-      3: "bg-purple-50 text-purple-700 dark:bg-purple-950/20",
+      1: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 dark:bg-cyan-500/15",
+      2: "bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 dark:bg-cyan-500/25",
+      3: "bg-amber-500/15 text-amber-700 dark:text-amber-400 dark:bg-amber-500/20",
     };
     const l = level ?? 1;
     return (

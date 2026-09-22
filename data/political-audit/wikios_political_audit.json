@@ -1,0 +1,351 @@
+{
+  "totalArticles": 27,
+  "categories": {
+    "government": [
+      {
+        "id": "cmtb0v1cs0002f986069enmjo",
+        "slug": "government",
+        "name": "Government",
+        "parentId": null
+      },
+      {
+        "id": "cmtj7b3wb005sf9ftpbelddb2",
+        "slug": "government_of_urcea",
+        "name": "Government of Urcea",
+        "parentId": "cmtb0v1cs0002f986069enmjo"
+      },
+      {
+        "id": "cmtnvd09700cef9xit6o78119",
+        "slug": "government_of_nasastan",
+        "name": "Government of Nasastan",
+        "parentId": "cmtb0v1cs0002f986069enmjo"
+      }
+    ],
+    "politics": [
+      {
+        "id": "cmtb0v1d50005f986i61mstrj",
+        "slug": "politics",
+        "name": "Politics",
+        "parentId": null
+      },
+      {
+        "id": "cmtnvd08z00cbf9xi7mjucqge",
+        "slug": "politics_of_nasastan",
+        "name": "Politics of Nasastan",
+        "parentId": "cmtb0v1d50005f986i61mstrj"
+      },
+      {
+        "id": "cmtopun8s004uf9oqvc1z7ge5",
+        "slug": "urcean_elections",
+        "name": "Urcean elections",
+        "parentId": "cmtb0v1d50005f986i61mstrj"
+      },
+      {
+        "id": "cmtb0v5ds0038f97ctocb1tq9",
+        "slug": "politics_of_urcea",
+        "name": "Politics of Urcea",
+        "parentId": "cmtb0v1d50005f986i61mstrj"
+      }
+    ],
+    "ideologies": [],
+    "countries": [
+      {
+        "id": "cmtb0v1cj0000f986911t8zc8",
+        "slug": "countries",
+        "name": "Countries",
+        "parentId": null
+      },
+      {
+        "id": "cmtbxw4gx009df9uhz4z46r21",
+        "slug": "league_of_nations",
+        "name": "League of Nations",
+        "parentId": "cmtb0v1cj0000f986911t8zc8"
+      },
+      {
+        "id": "cmtbxw4hq009pf9uhlzjvqu0z",
+        "slug": "npc_countries",
+        "name": "NPC Countries",
+        "parentId": "cmtb0v1cj0000f986911t8zc8"
+      },
+      {
+        "id": "cmtf2zo1x006yf9lqe456aj9w",
+        "slug": "historical_countries",
+        "name": "Historical countries",
+        "parentId": "cmtb0v1cj0000f986911t8zc8"
+      }
+    ]
+  },
+  "articles": [
+    {
+      "slug": "union_for_national_solidarity_(urcea)",
+      "title": "Union for National Solidarity (Urcea)",
+      "summary": "The Union for National Solidarity is one of the three major contemporary political parties in Urcea, along with the its rival, the Social Labor Party as well as the National Pact. The Union's history originates in the Crown Regency of Gréagóir FitzRex, whose policies and inclinations led to the crea…",
+      "categories": [
+        "Politics of Urcea"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Urcea WIP}}\n{{OOD}}\n{{Infobox political party |name = Union for National Solidarity |logo = |leader = [[Livio Iarnán]] |founder = [[James Cossus Reed]] |founded = {{start date|2015|10|26}} |preceded_by = [[Commonwealth Union (Urcea)|Commonwealth Union]] |headquarters = 698 Impireachtor Street, [[Urcepól (City)|Urcepól]], [[Urcea]] |ideology =\n\n[[Wittonian Socialism]]\n[[Organicism]] |religion = [[Levantine Catholic Church|Catholicism]] |colors = Tyrian purple }}\nThe '''Union for National Solidarity''' is one of the three major contemporary [[Political parties in Urcea|political parties]] in [[Urcea]], along with the its rival, the [[Social Labor Party (Urcea)|Social Labor Party]] as well as the [[National Pact (Urcea)|National Pact]]. The Union's history originates in the Crown Regency of [[Gréagóir FitzRex]], whose policies and inclinations led to the creation of the [[Commonwealth Union (Urcea)|Commonwealth Union]], the UNS's legal predecessor. The ideology of the Union was especially shaped by the policies of the [[Michael Witte|Witte]] administration, policies that formed the ideological basis of [[Wittonian Socialism]]. The Union is the third largest party in the [[Conshilía Daoni]], inheriting the remnant delegates of the National Social Union.\n\n== History ==\n{{Main|Commonwealth Union (Urcea)}}\nCommonwealth Union survived as a united entity until the ascension of [[James Cossus Reed]] as Witte's successor. The failure of Reed's policies combined with the internal press"
+    },
+    {
+      "slug": "commonwealth_union_(urcea)",
+      "title": "Commonwealth Union (Urcea)",
+      "summary": "The Commonwealth Union was the second largest political party in the Apostolic Kingdom of Urcea during its existence. The Commonwealth Union's main opponent in Urcea was the older National Pact. The party originated as moderate supporters of the program of Gréagóir FitzRex during the latter portion…",
+      "categories": [
+        "Politics of Urcea"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Urcea WIP}}\n\n{{Infobox political party\n|name               = Commonwealth Union\n|native_name        =\n|lang1              = \n|name_lang1         = \n|lang2              = \n|name_lang2         = \n|lang3              = \n|name_lang3         = \n|lang4              = \n|name_lang4         = \n|logo               = \n|colorcode          = #008080\n|leader             = \n|chairman           = \n|chairperson        =   \n|president          = \n|secretary_general  = \n|spokesperson       = \n|founder            =\n|leader1_title      = \n|leader1_name       = \n|leader2_title      = \n|leader2_name       = \n|leader3_title      = \n|leader3_name       = \n|leader4_title      = \n|leader4_name       = \n|leader5_title      = \n|leader5_name       = \n|slogan             = \n|founded            = 1903 \n|dissolved          = \n|merger             = \n|split              = \n|predecessor        = FitzRexist faction (1895-1903)\n|merged             = \n|successor          = \n|headquarters       =  698 Impireachtor Street, [[Urcepól]], [[Urcea]]\n|newspaper          = \n|paramilitary_wing  = \n|student_wing       = \n|youth_wing         = \n|wing1_title        = \n|wing1              = \n|wing2_title        = \n|wing2              = \n|wing3_title        = \n|wing3              = \n|membership_year    =\n|membership         = \n|ideology           = {{wp|Centrism}}\n*{{wp|Third Way}}\n*{{wp|Neoconservatism}}\n*[[Wittonian Socialism]] (minority)\n|religion           = [[Catholic Church]]\n|national           = \n|international      ="
+    },
+    {
+      "slug": "republican_party_(urcea)",
+      "title": "Republican Party (Urcea)",
+      "summary": "The Republican Party was a political party in Urcea formed during the end of the Urcean Republic. Initially made up of the governing radical socialist majority of the Republic, the party was outlawed and sent underground during the Restoration, during which time it continued to field an insurgent Na…",
+      "categories": [
+        "Politics of Urcea"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Infobox political party |name = Republican Party |logo = |founded = 1902 |dissolved = 2016 |preceded_by = Independent socialist members of the [[Conshilía Daoni]] |merged_into = [[Social Labor Party (Urcea)|Social Labor Party]] |ideology = Far left-wing\n\nRadical democratic socialism\nDictatorship of the proletariat {{small|(Faction)}}\nRepublicanism |religion = Atheism |colors = Red }}\n\nThe '''Republican Party''' was a political party in [[Urcea]] formed during the end of the [[Urcean Republic]]. Initially made up of the governing radical socialist majority of the Republic, the party was outlawed and sent underground during the Restoration, during which time it continued to field an insurgent National Republican Army. The party was legalized in 1924 with the disbandment of the National Republican Army, but it only sparingly fielded candidates as many viewed the party with suspicion, so it served instead as an organizing committee for the Urcean far left. The party enjoyed some legitimacy during the 1950s as it had delegates in the [[Conshilía Daoni]] for the first time, but the creation of other minor, more mainstream, left wing parties sent the Republican Party back into obscurity. The Republican Party offered logistical support in the creation of the [[Democratic Labor Party (Urcea)|Democratic Labor Party]] in 2000, and some have referred to the parties as \"intertwined organizations\".\n\nThe Party would remain dormant and obscure until the 2010s with the revival of the fortun"
+    },
+    {
+      "slug": "julian_party_(urcea)",
+      "title": "Julian Party (Urcea)",
+      "summary": "The Julian Party was a Urcean traditonalist political party. The party formed in early 1903 as a splinter of Ionian Delegates from the National Pact during the early Restoration in a controversy known as The Enabling. The party has its roots in the late 19th century as part of the \"Julian Movement\",…",
+      "categories": [
+        "Politics of Urcea"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Urcea WIP}}\n{{Infobox political party |name = Julian Party |logo = JulianPartyLogo.png|leader = Gloria Sechnaill |founded = {{start date|1905|03|10}} |headquarters = 14 Union Street, [[Urcepól (City)|Urcepól]], [[Urcea]] |ideology = Far Right-wing\nTraditional Conservatism\nMonarchism\nInterventionism |religion = [[Catholic Church|Catholic]] |colors = Gold }}\n\nThe '''Julian Party''' was a [[Urcea|Urcean]] traditonalist [[Political parties in Urcea|political party]]. The party formed in early 1903 as a splinter of [[Ionian Plateau|Ionian]] Delegates from the [[National Pact (Urcea)|National Pact]] during the early [[History of Urcea (1902-1943)|Restoration]] in a controversy known as [[The Enabling]]. The party has its roots in the late 19th century as part of the \"Julian Movement\", a pro-Monarchical, Catholic movement aimed at slowing liberalization, promoting Urcea's place in the world (and, at that point, the [[Holy Levantine Empire]]), and maintenance of the ties between society and the State. In the 21st century, its economic platform was similar to that of the [[Union for National Solidarity (Urcea)|Union for National Solidarity]], but supports increasing the prerogative powers of the King and increasing the power of the clergy within civil government. In the 21st Century, the Party's aims were to work fully within the system, although critics in the 20th Century said their policy positions skewed closer to clerical fascism. The Party supported a reestablishment of the bo"
+    },
+    {
+      "slug": "urcea",
+      "title": "Urcea",
+      "summary": "Urcea, officially the Apostolic Kingdom of Urcea, is a in Levantia. It occupies a position in the southern half of Levantia, and it neighbors, among others, Burgundie, Lapody, and Rhotia to the east, and Carnland and Avonia to the north. The Kingdom's historic borders have largely sat between the Io…",
+      "categories": [
+        "Countries"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Infobox country\n|conventional_long_name = Apostolic Kingdom of Urcea\n|native_name =        ''Regna Urciona Abóstair'' ([[Lebhan language|Lebhan]])\n|image_flag =         Flag of Urcea.svg\n|alt_flag =           <!--alt text for flag (text shown when pointer hovers over flag)-->\n|flag_border =        <!--set to no to disable border around the flag-->\n|image_flag2 =        <!--e.g. Second-flag of country.svg-->\n|alt_flag2 =          <!--alt text for second flag-->\n|flag2_border =       <!--set to no to disable border around the flag-->\n|image_coat =         File:DeWelutaNew.png\n|alt_coat =           <!--alt text for coat of arms-->\n|symbol_type =        <!--emblem, seal, etc (if not a coat of arms)-->\n|national_motto =     Ad majorem Dei gloriam\n|englishmotto =        (\"For the greater glory of God\")\n|national_anthem =    ''[[Te_Deum#Use_in_Urcea|Te Deum]]''\n|royal_anthem =       \n|other_symbol_type =  <!--Use if a further symbol exists, e.g. hymn-->\n|other_symbol =\n|image_map =          [[File:Urcea Locator.png|250px]]\n|loctext =            <!--text description of location of country-->\n|alt_map =            <!--alt text for map-->\n|map_caption =        Location of Urcea (dark green)<br>In [[Levantia]] (gray and light green)<br>In the [[Levantine Union]] (light green)\n|image_map2 =         <!--Another map, if required-->\n|alt_map2 =           <!--alt text for second map-->\n|map_caption2 =       <!--Caption to place below second map-->\n|capital =            [[Urcepól (City)|Urc"
+    },
+    {
+      "slug": "alba_concordia",
+      "title": "Alba Concordia",
+      "summary": "Alba Concordia is a city in eastern Levantia, and serves as the headquarters of the League of Nations. A city-state in international territory, Alba Concordia is governed by a council of commissioners appointed by League of Nations officials. Most of the residents of the city are of non-Lapodian des…",
+      "categories": [
+        "League of Nations",
+        "NPC Countries"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Infobox settlement\n| name                      = Alba Concordia\n| other_name= \n| official_name             = \n| native_name_lang          = \n|settlement_type  = \n|image_skyline  = Avenida de la Unión, Bucarest, Rumanía, 2016-05-29, DD 57.jpg\n|image_size = \n|image_alt   =\n|image_caption  = <br>Avenue of the Nations, with Palace of Nations visible\n|image_flag   = LON Territory Flag.png\n|flag_alt    =\n|image_shield  =\n|shield_alt   =\n|nickname   =\n|motto    = <br>'''<small>''\"E pluribus unum\"''''' ([[wikipedia:Latin|Latin]])<br>\"Out of many, one\"</small>\n|subdivision_type           = Territory\n|subdivision_name           = [[League of Nations]]\n|subdivision_type1              = \n|subdivision_name1              = \n|subdivision_type2              = \n|subdivision_name2              = \n|established_title = Founded\n|established_date  = 1 June 1956\n|parts_type   =\n|parts_style   =\n|parts    =\n|government_type  =\n|governing_body  =\n|leader_title  = Commissioner\n|leader_name   = \n|unit_pref               = \n|elevation_max_m         = \n|elevation_max_ft        =\n|elevation_min_m         =\n|elevation_min_ft        =\n|population_rank         =\n|population_footnotes =\n|population_total = 96,401\n|population_urban =\n|population_metro=\n|population_as_of =2034\n|population_density_km2=\n|population_demonym = Concordian\n|blank_name_sec1         = \n|blank_info_sec1         = \n|blank_name_sec2         =\n|blank_info_sec2         = \n|timezone1   = Urcepólic Mean Time\n|utc_offset1   = +0\n|timezone1_D"
+    },
+    {
+      "slug": "thervala",
+      "title": "Thervala",
+      "summary": "'Thervala' (Terwalaah), officially the 'Kingdom of Thervala', is a constitutional monarchy in Audonia. It is neighbored by Oyashima and Metzetta Although the modern state that is the Kingdom of Thervala has only existed for a few centuries, people have been living in that region of Audonia since pre…",
+      "categories": [
+        "Countries"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Infobox country\n|conventional_long_name = Thervala (\"The Kingdom of Thervala\")\n|native_name =        Ratcha-anachak Ther (Ther)\n|image_flag =         Thervala.png\n|alt_flag =           <!--alt text for flag (text shown when pointer hovers over flag)-->\n|flag_border =        <!--set to no to disable border around the flag-->\n|image_flag2 =        <!--e.g. Second-flag of country.svg-->\n|alt_flag2 =          <!--alt text for second flag-->\n|flag2_border =       <!--set to no to disable border around the flag-->\n|alt_coat =           <!--alt text for coat of arms-->\n|symbol_type =        Emblem\n|national_motto =     ชัยชนะด้วยเลือด\n|englishmotto =        (\"Victory through blood\")\n|national_anthem =    [[file:Bravely_We_Fight.mp3]]\n|royal_anthem =       \n|other_symbol_type =  <!--Use if a further symbol exists, e.g. hymn-->\n|other_symbol =\n|image_map =          [[File:Thervala Wiki.png|250px]]\n|loctext =            <!--text description of location of country-->\n|alt_map =            <!--alt text for map-->\n|map_caption =        Location of Thervala (dark green)<br>In [[Audonia]] (gray)\n|image_map2 =         <!--Another map, if required-->\n|alt_map2 =           <!--alt text for second map-->\n|map_caption2 =       <!--Caption to place below second map-->\n|capital =            Wat Kram\n|largest_city =       capital\n|official_languages = Ther\n|ethnic_groups =      \n|religion =           \n|demonym =         Ther (noun)<br>\nTher (adjective)<br>\nTher (plural)\n|government_type =    Cons"
+    },
+    {
+      "slug": "varshan",
+      "title": "Varshan",
+      "summary": "Varshan is a large area that spans a vast swath of north-central Crona. From antiquity until 2040, it was a single sovereign country under various forms of government. It remains an important geographical and cultural concept. In its present form, Varshan is heavily shaped by the Final War of the De…",
+      "categories": [
+        "Countries"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Urcea WIP}}\n{{Infobox islands\n|name = Varshan\n|local_name = Warshàng\n|image_name = \n|image_caption = \n|image_alt = \n|map_image = Vespia (orthographic projection).svg\n|map_caption = Location of '''Varshan''' in [[Crona]]\n|location=[[Crona]]\n|coordinates = \n|archipelago =\n|waterbody = \n|area_km2 = \n|area_footnotes =\n|archive-url=\n|rank = \n|coastline_km = \n|coastline_footnotes =\n|website= \n|highest_mount = \n|demonym = Varshani\n|elevation_m = \n|country = \n|country_largest_city = [[Anzo]]\n|country_largest_city_type = city\n|population = 592,501,994\n|population_as_of = 2030 estimate\n|population_footnotes = \n|population_rank = \n|density_km2 = \n|languages = [[Hieratic Varshani]]\n|ethnic_groups = \n|timezone1 = \n|utc_offset1 = \n|timezone1_DST  = \n|utc_offset1_DST  =\n|footnotes = \n}}\n\n'''Varshan''' is a large area that spans a vast swath of north-central [[Crona]]. From antiquity until [[2040]], it was a single sovereign country under various forms of government. It remains an important geographical and cultural concept. \n\n{{MajorReconstruction}}\nIn its present form, Varshan is heavily shaped by the [[Final War of the Deluge]], which inaugurated a period of [[League-occupied Varshan|international occupation]] and near-complete social, political, and economic transformation and reformation of the country. Varshani civilization began around 5,000 BC, and the previous version of the state - [[Zurgite Varshan]] - persisted from the end of prehistory until the [[Fall of Anzo]] in [[2024]], "
+    },
+    {
+      "slug": "intaria",
+      "title": "Intaria",
+      "summary": "Intaria, officially the People's State of Intaria and known in parts of the world as Akhelia, is a sovereign, one-party authoritarian and technocratic state located in northeastern Sarpedon, bordering Caphiria to the west, with the Intaris mountain range forming the natural boundary between the two…",
+      "categories": [
+        "Countries"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Award winning article}}\n{{Infobox country\n|conventional_long_name = People's State of Intaria\n|image_flag =         Akcelis Flag.png\n|alt_flag =           <!--alt text for flag (text shown when pointer hovers over flag)-->\n|flag_border =        <!--set to no to disable border around the flag-->\n|image_coat =Akcelis CoA.png         \n|symbol_type =        Emblem\n|national_motto =     \"Post tenebras lux\"\n|englishmotto =        \"After darkness, light\"\n|national_anthem =    \"Εμβατμα Ινταρικι\"\n\"Forward Intaric\"\n[[File:Forward Intarics.ogg]]\n|other_symbol_type =  <!--Use if a further symbol exists, e.g. hymn-->\n|other_symbol =\n|loctext =            <!--text description of location of country-->\n|capital =            [[Celerium]]\n|largest_city =       [[Epiras (city)|Epiras]]\n|official_languages = [[intarian language|Intaric]]\n|ethnic_groups =      \n|demonym =         Intarian (Ινταρίνο/α)\n|government_type =    {{wp|Authoritarianism|Authoritarian}} {{wp|One-party state|one-party}} {{wp|Republic|republic}}\n|leader_title1 =      Princeps\n|leader_name1 = Varus Eliontaris\n|population_census =97,472,309 (2040) \n|GDP_nominal = [[Taler|₮]]2,92 trillion\n|GDP_nominal_per_capita = [[Taler|₮]]29,983\n|Gini                   = 35.6\n|currency =           Velic (Ꝟ)\n|currency_code =ITV      \n|drives_on =          right\n|area_km2=1583780|native_name=Στατος Ποβλȷαρι διλ Ινταρικιȷα ([[Intarian language|Intaric]])|image_map=Akcelis map projection.png|map_caption=Location of Intaria (dark green)|HDI=0."
+    },
+    {
+      "slug": "zurgite_varshan",
+      "title": "Zurgite Varshan",
+      "summary": "Zurgite Varshan, historically referred to as the Worshipful Realm of Varshan, was a large country which spanned a vast swath of the central Cronan continent. The nation lasted from around 5,000 B.C. until the Fall of Anzo, which marked the end of the Deluge and the Varshani state. It was, at the tim…",
+      "categories": [
+        "Historical countries"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{wip}}\n\n{{Infobox country\n|native_name                 = '''''Warshàng ulu Arzal gožu'''''\n|conventional_long_name      = {{nowrap|Worshipful Realm of Varshan}}\n|common_name                 = Varshan\n|image_flag                  = Old Varshan.png\n|image_coat                  = File:Mayahuel.svg\n|symbol_type                 = Emblem\n|national_motto              = <br>''Uqabu qawar dawaž miznač''<br/>\n|national_anthem             = <br>''[[TBD]]<br/><small>\"TBD\"</small>''\n|image_map                   = Vespia (orthographic projection).svg\n|map_caption                 = Location of '''Varshan''' in [[Western Crona]]\n|map_width                   = 250px\n|image_map2                  = \n|map_caption2                = \n|capital                     = [[Anzo]]\n|latd=  | latm= | latNS = <!--capital's latitude degree/min/dir-->\n|longd= |longm= |longEW = <!--capital's longitude deg/min/dir-->\n|largest_city                = capital\n|largest_settlement_type     = largest city\n|official_languages          = [[Hieratic Varshani]] \n|religion                    = [[Orthodox Arzalism]]\n|demonym                     = Varshani, Varshanite\n|legislature                 = The [[Dazga]]\n|government_type             = {{wpl|Theocracy|Theocratic}} {{wpl|Absolute monarchy|absolute monarchy}}\n|leader_title1               = [[Zûrg]]\n|leader_name1                = [[Zakan-jili]]\n|leader_title2               = Vizier\n|leader_name2                = Tupactzil of Yužak Čol\n|leader_title3               = King-"
+    },
+    {
+      "slug": "metzetta",
+      "title": "Metzetta",
+      "summary": "Metzetta is a country in East Alshar comprising the Metzettan Peninsula and the Metzettan Archipelago to the south. Metzetta has been inhabited since prehistory, with the earliest pottery fragments dating from around 8000 BC. In the 3rd Century AD the kingdoms of Metzetta were united under an Empero…",
+      "categories": [
+        "Countries"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "[[Category:IXWB]]\n{{Infobox country\n|conventional_long_name = Empire of Metzetta\n|native_name =        ''멛Δㅔ따'' ([[Metzi]])\n|image_flag =         MetzettanFlagLarge.png\n|alt_flag =           Flag of Metzetta\n|flag_border =        <!--set to no to disable border around the flag-->\n|image_flag2 =        <!--e.g. Second-flag of country.svg-->\n|alt_flag2 =          <!--alt text for second flag-->\n|flag2_border =       <!--set to no to disable border around the flag-->\n|image_coat =         \n|alt_coat =           <!--alt text for coat of arms-->\n|symbol_type =        Emblem\n|national_motto =     하나로 앞으로\n|englishmotto =        Onwards as one\n|national_anthem =    [[Atop Mount Riwa]]\n|royal_anthem =       \n|other_symbol_type =  <!--Use if a further symbol exists, e.g. hymn-->\n|other_symbol =\n|image_map =          [[File:MetzettaGlobe.png|250px]]\n|loctext =            <!--text description of location of country-->\n|alt_map =            <!--alt text for map-->\n|map_caption =        \n|image_map2 =         <!--Another map, if required-->\n|alt_map2 =           <!--alt text for second map-->\n|map_caption2 =       <!--Caption to place below second map-->\n|capital =            [[Hanzeong]]\n|largest_city =       capital\n|official_languages = [[Metzi]]\n|ethnic_groups =      \n|religion =           [[Chulcheo]]\n|demonym =         Metzettan\n|government_type =Monarchy    \n|leader_title1 =      [[Emperor of Metzetta]]\n|leader_name1 = [[Emperor Hachi]]\n|leader_title2 =[[War Chief of Metzetta]]     "
+    },
+    {
+      "slug": "confederal_almadaria",
+      "title": "Confederal Almadaria",
+      "summary": "Confederal Almadaria (Pelaxian: Almadaria Confederada), officially the Democratic Republic of Almadaria (Pelaxian: República Democrática de Almadaria), or simply known as Almadaria, is a country located in central Vallos, a in western Sarpedon. It is a member of the Central Vallosi Union, a loose be…",
+      "categories": [
+        "NPC Countries"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Infobox country\n|conventional_long_name = Democratic Republic of Almadaria\n|native_name = {{nowrap|''República Democrática de Almadaria'' ([[Almadarian Pelaxian|Pelaxian]])}}\n|image_flag = Flag_of_Almadaria_(1995).svg\n|flag_type = [[Flag of Almadaria|Flag]]\n|image_coat = [[File:Coat_of_Arms_of_Almadaria.svg|60px]]\n|symbol_type = [[Coat of arms of Almadaria|Coat of arms]]\n|national_motto = ¡Por pluma o por espada!\n|englishmotto = (\"By pen or by sword!\")\n|national_anthem = <br>'''Official anthem:''' {{wp|Ich hab mich ergeben|Nos Hemos Entregado}}<br>{{center|1=\"We Have Surrendered\"<div style=\"padding-top:0.5em;\">}}{{center|[[File:Media Player.png|link= https://upload.wikimedia.org/wikipedia/commons/6/6e/Micronesia_National_Anthem.ogg]]}}</div><div style=\"padding-top:0.5em;\"></div>'''Unofficial anthem:''' {{wp|Anthem of the Ukrainian Soviet Socialist Republic|State Anthem of Confederal Almadaria}}<div style=\"padding-top:0.5em;\">{{center|[[File:Media Player.png|link= https://upload.wikimedia.org/wikipedia/commons/d/d6/Anthem_of_the_Ukrainian_Soviet_Socialist_Republic_(Instrumental).oga]]}}</div><div style=\"padding-top:0.5em;\"></div>\n|royal_anthem = {{wp|Het Wilhelmus|Mine Shield for Thee}}<div style=\"padding-top:0.5em;\">{{center|[[File:Media Player.png|link= https://upload.wikimedia.org/wikipedia/commons/f/f5/United_States_Navy_Band_-_Het_Wilhelmus_(tempo_corrected).ogg]]}}</div><div style=\"padding-top:0.5em;\"></div>\n|image_map = [[File:AlmaGlobe.png|250px]]\n|map_caption = Loca"
+    },
+    {
+      "slug": "international_justice_court",
+      "title": "International Justice Court",
+      "summary": "The International Justice Court (Latin: Cura Internationalis Iustitiæ) is the of the League of Nations and the premier venue for the arbitration of disputes under . Created in 1961, the Court's primary functions are to settle international legal disputes submitted by states (contentious cases), over…",
+      "categories": [
+        "League of Nations"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Infobox court\n| court_name        = International Justice Court\n| native_name       = Curia Internationalis Iustitiæ\n| image             = IJC Flag.png\n| imagesize         = 150px\n| caption           = Flag of the International Justice Court\n| image2            = \n| imagesize2        = \n| caption2          = \n| established       = <!-- year -->\n| dissolved         = <!-- year -->\n| jurisdiction      = <!-- Official jurisdiction -->\n| location          = [[Alba Concordia]]\n| coordinates       = <!-- {{coord|45.000|-122.000|display=inline,title}} -->\n| motto             = \n| type              = <!-- partisan election/non-partisan election/legislative selection/executive selection/co-option/etc -->\n| authority         = [[Code of the League of Nations]]\n| appealsto         = <!-- appeals from this court go where -->\n| appealsfrom       = <!-- appeals from what other courts are heard by this -->\n| terms             = <!-- length of court term for judges -->\n| positions         = <!-- number of positions/seats on court -->\n| budget            = <!-- amount of annual budget -->\n| website           = <!-- official website -->\n| chiefjudgetitle   = Chief Justice\n| chiefjudgename    = [[Mikel Reilly]]\n| termstart         = <!-- year current chief became chief -->\n| termend           = <!-- year term for current chief as chief ends, if applicable -->\n| chiefjudgetitle2  = Associate Justice\n| chiefjudgename2   = [[Rocio Noyola]]\n| termstart2        = <!-- year current deputy chief bec"
+    },
+    {
+      "slug": "healthcare_in_urcea",
+      "title": "Healthcare in Urcea",
+      "summary": ".]] Urcea has a universal multi-payer health care system paid for by a combination of statutory, state-funded health insurance officially called King's Health Aid (KHA) and private health-insurance. The system, which provides a public health insurance option, sees approximately 65% of citizens using…",
+      "categories": [
+        "Government of Urcea"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Urcea WIP}}\n[[File:039 Hospital de Sant Pau, edifici d'Administració, cos central i torre del rellotge.JPG|thumb|right|120px|The Carmelite Alms-Medical School at [[Collegium_Scientificum#St._John's_University|Saint John's University]].]]\n'''[[Urcea]]''' has a universal multi-payer health care system paid for by a combination of statutory, state-funded health insurance officially called [[Ministry_of_Administration_of_the_Realm_(Urcea)#Agency_for_the_King.27s_Health_Aid_Administration|King's Health Aid]] (KHA) and private health-insurance. The system, which provides a public health insurance option, sees approximately 65% of citizens using the KHA System and the remaining percent using private health insurance plans. In the 2014-15 fiscal year, expenditures on the King's Health Aid was approximately $4.3 trillion dollars, or around 6% of the GDP and around $3,024 per capita.\n\nIn 2020, Urcea ranked highly in the world in life expectancy (80.5 years for men). It had a very low infant mortality rate (4.1 per 1,000 live births), and it ranked highly in the number of practicing physicians, at 3.7 per 1,000 persons. While outcomes, hospital wait times, and quality of care in Urcea are all considered to be \"very good\", the nation's healthcare system at times has come under criticism for its adherence to Catholic social teaching, and [[Discrimination around the world|LGBT advocates]] as well as [[Abortion around the world|pro-choice advocates]] ranked it the \"Most Regressive Healthc"
+    },
+    {
+      "slug": "kiravian_union",
+      "title": "Kiravian Union",
+      "summary": "The Kiravian Union (Coscivian: Kiravix Thūra), also referred to as Red Kirav (Coscivian: Hūrix Kirav), was a that governed Great Kirav and several historically Kiravian island possessions from 1934 to 1984. Under the leadership of the Kirosocialist Party the Kiravian Union undertook a campaign of ce…",
+      "categories": [
+        "Historical countries"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Award winning article}}\n{{Infobox former country\n|native_name            = ''Kiravix Thūra''\n|conventional_long_name = Kiravian Union <br> ꅆ꒼ ꒑꒜\n|common_name            = \n|continent              = [[Great Kirav]]\n|region                 = <!-- Reserved for generating categories on subregions of continents -->\n|era                    = Postwar Era\n|status                 = <!-- Status: see Category list on template page -->\n|status_text            = <!-- A free text to describe status at the top of the infobox. Use sparingly. -->\n|empire                 = <!-- The empire or country to which the entity was in a state of dependency -->\n|government_type        = {{wp|Single-party state|Single-party}} {{wp|socialist republic}}\n<!-- Rise and fall, events, years and dates -->\n<!-- only fill in the start/end event entry if a specific article exists. Don't just say \"abolition\" or \"declaration\" -->\n|event_start            = Declared\n|date_start             = \n|year_start             = 1934\n|event_end              = Denounced\n|date_end               = <!-- Optional: Date of disestablishment, in format 1 January (no year) -->\n|year_end               = 1984\n|year_exile_start       = <!-- Year of start of exile (if dealing with exiled government: status=\"Exile\") -->\n|year_exile_end         = <!-- Year of end of exile (leave blank if still in exile) -->\n|event1                 = <!-- Optional: other events between \"start\" and \"end\" -->\n|date_event1            = \n|event2                 ="
+    },
+    {
+      "slug": "sejdzas_sandbox",
+      "title": "Sejdzas Sandbox",
+      "summary": "as an unusually flexible state committed to promoting human happiness (seen as real progress), in contrast to other states. It was frequently reposted online prior to the establishment of Nesuras firewall.]] Sejdzas sandbox is a term used in political science to describe a characteristic mode of pol…",
+      "categories": [
+        "Politics of Nasastan",
+        "Government of Nasastan"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "[[File:Sejdza Internet Poster.png|thumb|533x533px|Drawing of a poster by Below273, circulated on the internet as an expression of pride in the Sejdzas sandbox methodology. The poster portrays [[Nasastan]] as an unusually flexible state committed to promoting human happiness (seen as real progress), in contrast to other states. It was frequently reposted online prior to the establishment of [[Alekšander Nesura|Nesuras]] firewall.]]\n'''Sejdzas sandbox''' is a term used in political science to describe a characteristic mode of policymaking historically associated with [[Nasastan]] and its predecessor states. The concept describes the deliberate alteration and experimental implementation of existing political, economic, social, or institutional systems while retaining an identifiable means of reversing the intervention if it produces an unacceptable outcome. It is generally divided into two principal phases, Sejdzaisation and sandboxing, preceded by an analytical process commonly termed pre-Sejdzaisation. Although the term Sejdzas sandbox was coined only in the early 21st century, the practice it describes predates the modern Nasastani state by many centuries. Recorded examples have been identified as far back as the reign of [[Kooroush Qajar]] (1056-1091), while similar institutional arrangements were subsequently employed by the [[Qajar dynasty]], the [[Grand Duchy of Nasastan]], the [[Lunarian Empire]], and the [[Nasastan|National Federation of Nasastan]]. The practice was tra"
+    },
+    {
+      "slug": "conshilía_daoni",
+      "title": "Conshilía Daoni",
+      "summary": "The Conshilía Daoni (lit. \"Common Council\") is the primary legislative body of the Apostolic Kingdom of Urcea. As the primary portion of the legislative branch of the Urcean government (the other being the Gildertach), the Daoni passes nearly all laws, elects the Chancellor and Temporary President,…",
+      "categories": [
+        "Government of Urcea"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Infobox legislature\n| background_color  = #1919A3\n| name              = Conshilía Daoni\n| legislature       = \n| coa_pic           = Seal of the Daoni.png\n| coa_res           =\n| coa_alt           = Seal of the Conshilía Daoni\n| coa_caption       = Seal of the Daoni\n| logo_pic          = Urcean_TRICOLOR.png{{!}}border\n| logo_res          =\n| logo_alt          = Flag of the Conshilía Daoni\n| logo_caption      = Flag of the Conshilía Daoni\n| house_type        = Lower house\n| body              = \n| term_limits       = None\n\n| leader2_type      = Minority Leader\n| leader2           = [[Cassia Mac-Niall]]\n| party2            = ([[Solidarity Party (Urcea)|S]]) \n\n| leader1_type      = [[Chancellor and Temporary President]]\n| leader1           = [[Caelian Agricola]] \n| party1            = ([[National Pact (Urcea)|NP]])\n\n| members           = 500<br>251 for a majority\n| structure1        = 2026-06-08-16-30-18-714006-49b402501c5eb25d98ccaa280cddd5635d0f5dd571a24573d7de7a3518e5a7fc.svg\n| structure1_res    = 250px\n| political_groups1 = \n'''Majority'''\n* {{nowrap|{{NationalPactBox}} [[National Pact (Urcea)|National Pact]] (268)}}\n\n'''Minority Parties'''\n* {{nowrap|{{SolidarityBox}} [[Solidarity Party (Urcea)|Solidarity Party]] (197)}}\n* {{nowrap|{{Color box|#808080|border=darkgray}} [[Fabríse Party]] (19)}}\n* {{nowrap|{{Color box|#FF7474|border=darkgray}} [[List_of_Urcean_political_parties#Working_Families_Party|Working Families Party]] (14)}}\n* {{nowrap|{{Color box|#e0ab76|border=darkg"
+    },
+    {
+      "slug": "local_government_in_urcea",
+      "title": "Local government in Urcea",
+      "summary": ", in 2010.]] Urcea is divided into thirty-four constituent entities (known variously as provinces, crownlands, or states) which are further subdivided into dioceses and then municipalities. Local government throughout Urcea retains the same form throughout the provinces, though in some instances the…",
+      "categories": [
+        "Government of Urcea"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "[[File:FEMA - 32463 - SBA at Findlay Town Meeting in Ohio.jpg|thumb|right|250px|A meeting of the communal assembly in Icron, [[Ardthirium]], in [[2010]].]]\n[[Urcea]] is divided into thirty-four constituent entities (known variously as [[Province (Urcea)|provinces]], [[Crownland (Urcea)|crownlands]], or [[State (Urcea)|states]]) which are further subdivided into dioceses and then municipalities. Local government throughout Urcea retains the same form throughout the provinces, though in some instances the nomenclature and titles of officeholders and public institutions may vary. Every part of Urcea is incorporated within a municipal government, precluding the use of {{wp|unincorporated area}}s. \n\nMunicipalities play an important role in the function of public administration in Urcea, and they typically take on three distinct forms of government. They are the primary instruments through which basic public services are provided to Urceans, including running water, local road maintenance, and the provision of public education. Diocesan governments - the second lowest level of government - are responsible for the administration of justice and also serve critical functions within Urcea's electoral and political systems.  Beyond their governmental role, municipalities in Urcea tend to have strong cultural associations and identity attached to them.\n==History==\n===Pre-Regency===\n{{Also|Feudalism in Urcea}}\nPre-modern Urcea had a variety of local government models and types between [[1"
+    },
+    {
+      "slug": "urcean_procuratorial_primary",
+      "title": "Urcean procuratorial primary",
+      "summary": "Each of the 34 Urcean provinces, states, and crownlands holds s help nominate individual candidates for the office of Procurator. This process is designed to choose the candidates that will represent their political parties in the general election. The primary process generally developed over time.…",
+      "categories": [
+        "Urcean elections",
+        "Politics of Urcea"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{stub}}\n\nEach of the 34 [[Urcea]]n provinces, states, and crownlands holds {{wp|primary election}}s help nominate individual candidates for the office of [[Procurator]]. This process is designed to choose the candidates that will represent their political parties in the [[Elections in Urcea|general election]]. The primary process generally developed over time. It was established [[History_of_Urcea_(1902-1943)#Mid-war_political_changes|among political changes]] in the [[Second Great War]], though a rudimentary primary system was in place between [[1903]] and [[1944]]. \n\nIndividuals who seek the office of Procurator do not receive the official endorsement of [[Political parties in Urcea|party apparatuses]]. Instead, they must gather ballot access petitions equal to 5% of the enrolled voters of a party within an individual province, crownland, or state in order to qualify for that subdivison's procuratorial primary. The ballot access requirements must be met forty days prior to the primary being held, and oftentimes lesser known candidates will only initially gather ballot access signatures in some of the earliest provinces so as to gain enough momentum to employ petition circulators in the later provinces. \n\nThe primaries themselves are staggered into four phases, with individual provincials, crownlands, and states agreeing to participate in phased primary by convention. Provincial and local governments run the primary elections. A province's primary election takes the form of"
+    },
+    {
+      "slug": "federalism_in_urcea",
+      "title": "Federalism in Urcea",
+      "summary": "Federalism in Urcea describes both the federal governance system of Urcea, employing thirty-four provinces, crownlands, and states, as well as attitudes and ideologies related to its use. Federalism, which finds its roots in many different areas including Urcea's feudal past and the concept of among…",
+      "categories": [
+        "Government of Urcea",
+        "Politics of Urcea"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Urcea WIP}}\n'''Federalism in Urcea''' describes both the federal governance system of Urcea, employing thirty-four [[Province (Urcea)|provinces]], [[Crownland (Urcea)|crownlands]], and [[State (Urcea)|states]], as well as attitudes and ideologies related to its use. Federalism, which finds its roots in many different areas including Urcea's feudal past and the concept of {{wp|Subsidiarity (Urcea)|subsidiarity}} among other sources, is a key part of the [[Constitution of Urcea]] and comprises a significant part of the political life of most Urceans. The thirty-four constituent entities of Urcea have significant latitude to pass laws, implement programs, and prosecute violators, playing an important role in shaping regionalized variations of Urcea's [[Economy of Urcea|economy]] and [[Society of Urcea|society]]. The provinces and other entities are also the primary organizing unit of many different institutions, including its [[Judiciary of Urcea|courts]], [[Local government in Urcea|local governments]], [[Guilds (Urcea)|guilds]], [[Political parties in Urcea|political parties]], and even the [[Urcean Conference of Catholic Bishops|Catholic Church hierarchy]] within the country. Views about Urcea's federal system shape Urceans conceptions of themselves (in terms of regionalized identity) but also form an important contrast between Urcea's main political parties and movements.\n==History==\n===Origins===\n{{Also|Feudalism in Urcea}}\nFederalism finds its precursor in Urcean history"
+    },
+    {
+      "slug": "mass_surveillance_in_nasastan",
+      "title": "Mass surveillance in Nasastan",
+      "summary": "Mass surveillance in Nasastan refers to the large-scale collection, retention, processing and administrative use of information concerning the population of Nasastan by state institutions and associated organizations. Although surveillance practices existed in rudimentary forms before the establishm…",
+      "categories": [
+        "Government of Nasastan"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "'''Mass surveillance in Nasastan''' refers to the large-scale collection, retention, processing and administrative use of information concerning the population of [[Nasastan]] by state institutions and associated organizations. Although surveillance practices existed in rudimentary forms before the establishment of the modern system, mass surveillance is generally considered to have begun ''de facto'' in 1951 and to have become institutionalized during the late 1950s and 1960s. The contemporary Nasastani system differs substantially from conventional secret-police models. Whereas surveillance during the early 1950s was principally directed against political opponents and groups regarded as threats to the state, the post-1950s system increasingly treated information as an administrative resource. Surveillance became associated with public administration, judicial proceedings, healthcare regulation, security, demographic policy and, eventually, digital services and artificial intelligence.\n\nA central feature of the Nasastani model is the absence of a conventional legal right to privacy from the state. This principle developed partly from the historical distinction between ''Saméné'', referring primarily to interpersonal privacy, and ''Préwatność'', a later legal concept concerning privacy from the state and society at large. The latter was introduced under Occidental influenced [[Republic of Nasastan]] during the 19th century but was largely forgotten during the political and i"
+    },
+    {
+      "slug": "ceylonia",
+      "title": "Ceylonia",
+      "summary": "Ceylonia, officially the Ceylon Republic (Yapokee: ᐁᐸᓴᔑᑯ ᐆ ᔭᐳᑫ, Epásashiko òò Yapoké), is a in southeastern Crona on the western Songun Peninsula. It is the southernmost country in Crona, located on a mostly flat plain of land at the tip of the peninsula. With a land area of 892458 km2 and a populat…",
+      "categories": [
+        "Countries",
+        "NPC Countries"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Infobox country\n|conventional_long_name = Ceylon Republic\n|native_name =       {{collapsible list\n| titlestyle = background:transparent;text-align:center;line-height:normal;font-size:86%;\n| title = 3 official names\n| {{Infobox\n| subbox=yes\n| bodystyle=font-size:77%;font-weight:normal;\n| rowclass1 = mergedrow\n| label1 = [[Yapokee language|Yapokee]]:\n| data1 = {{nowrap|ᐁᐸᓴᔑᑯ ᐆ ᔭᐳᑫ}}\n| rowclass2 = mergedrow\n| label2 = [[Qabóri language|Qabóri]]:\n| data2 = {{nowrap|ᐊᕋᑌᓗᐩ ᔭᐳᑫ}}\n| rowclass3 = mergedrow\n| label3 = [[Cartadanian Language|Cartadanian]]:\n| data3 = {{nowrap|República Ceilonia}}\n}}\n}}\n|image_flag =         Flag of the Ceylon Republic.svg\n|alt_flag =           <!--alt text for flag (text shown when pointer hovers over flag)-->\n|flag_border =        <!--set to no to disable border around the flag-->\n|image_flag2 =        <!--e.g. Second-flag of country.svg-->\n|alt_flag2 =          <!--alt text for second flag-->\n|flag2_border =       <!--set to no to disable border around the flag-->\n|image_coat =         Coat_of_Arms_of_the_Cartadanian_Republic.svg\n|alt_coat =           <!--alt text for coat of arms-->\n|symbol_type =        <!--emblem, seal, etc (if not a coat of arms)-->\n|national_motto =    \"Faiháni io hy’ypas\"<br /><small>\"Faith and hope\"</small>\n|national_anthem =    Yapoké graania\n|royal_anthem =       <!--in inverted commas and wikilinked if link exists-->\n|image_map =          Ceylonia globe.png\n|map_width            = 250px\n|loctext =            <!--text descrip"
+    },
+    {
+      "slug": "solidarity_party_(urcea)",
+      "title": "Solidarity Party (Urcea)",
+      "summary": "The Solidarity Party is a political party in Urcea. The Party is , , federalist in nature, adhering to the political philosophy of Wittonian Socialism. It was formed from a merger of the Union for National Solidarity and Julian Party and is ultimately the spiritual successor of the Commonwealth Unio…",
+      "categories": [
+        "Politics of Urcea"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Urcea WIP}}\n\n{{Infobox political party\n| name = Solidarity Party\n| abbreviation = SP\n| logo = Solidarity Party Logo.png\n| symbol = \n| colorcode = #66023C\n| chairperson = \n| leader2_title = Party Leader\n| leader2_name = [[List_of_Urcean_officials#Mac-Niall,_Cassia|Cassia Mac-Niall]]\n| founders = \n| foundation = 1 January 2025<br><small>As \"''Royal Solidarity Alliance''\"</small>\n| predecessor = [[Union for National Solidarity (Urcea)|Union for National Solidarity]]<br>[[Julian Party (Urcea)|Julian Party]]\n| headquarters = 18 Adonáire Strait Boulevard, [[Urcepól (City)|Urcepól]], [[Urcea]]\n| position = \n| ideology = *[[Wittonian Socialism]]\n**[[Model Economy]]\n*{{wp|Monarchism}}\n*{{wp|Nationalism}}\n*{{wp|Traditionialism}}\n| colors = Purple\n| seats1_title = [[Conshilía Daoni]]\n| seats1 = {{composition bar|197|500|hex=#66023C}} \n| country = Urcea\n}}\n\nThe '''Solidarity Party''' is a [[Political parties in Urcea|political party]] in [[Urcea]]. The Party is {{wp|distributist}}, {{wp|monarchist}}, [[Federalism in Urcea|federalist]] in nature, adhering to the political philosophy of [[Wittonian Socialism]]. It was formed from a merger of the [[Union for National Solidarity (Urcea)|Union for National Solidarity]] and [[Julian Party (Urcea)|Julian Party]] and is ultimately the spiritual successor of the [[Commonwealth Union (Urcea)|Commonwealth Union]], a political party that was once Urcea's second largest which persisted for more than a century. Unlike its predecessor, Solidarity is "
+    },
+    {
+      "slug": "list_of_political_parties_in_nasastan",
+      "title": "List of political parties in Nasastan",
+      "summary": "The National Federation of Nasastan is a federal parliamentary authoritarian republic characterized by a political system of managed pluralism. Under the Constitution of 1937, political participation is structured through a unique asymmetric bicameral legislature that separates economic governance f…",
+      "categories": [
+        "Politics of Nasastan"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Politics of Nasastan}}\n\nThe [[Nasastan|National Federation of Nasastan]] is a federal parliamentary authoritarian republic characterized by a political system of [[Guided democracy|managed pluralism]]. Under the [[Constitution of Nasastan|Constitution of 1937]], political participation is structured through a unique asymmetric bicameral legislature that separates economic governance from sociocultural deliberation. While the country permits a degree of multiparty competition, the [[Ethnofederalist Social Nasastani National Party]] (SNNSP) functions as the dominant legal and administrative framework of the state. Political activity in Nasastan is divided according to the specific competencies of the two parliamentary chambers; The [[Purokal]] (Economic Chamber)''':''' Membership is strictly restricted to representatives of the SNNSP. Economic debate is not conducted between rival parties but within five internal ideological factions of the SNNSP, which range from far-left to far-right economic currents. The [[Rada]] (Sociocultural Chamber) operates under a system of full party plurality, serving as the primary forum for multiparty competition and ideological contestation. Despite the plurality found in the Rada, all sociocultural legislation is subject to the absolute veto of the [[Načelnik]], the cultural sentinel of the state. Consequently, political parties in Nasastan function less as sovereign lawmaking bodies and more as mechanisms for regulating political participatio"
+    },
+    {
+      "slug": "league_of_nations_service_medal",
+      "title": "League of Nations Service Medal",
+      "summary": "The League of Nations Service Medal (LoNM) is an established by the League of Nations on September 14, 2025. The decoration is the first international award ever created by the League of Nations and recognized the multi-national defense forces which participated in the Final War of the Deluge in com…",
+      "categories": [
+        "League of Nations"
+      ],
+      "infoboxData": null,
+      "wikitextSnippet": "{{wip}}\n\n{{Infobox military award\n|name= League of Nations Service Medal\n|image=Varshan Service Medal.png\n|caption= League of Nations Service Medal\n|image2=[[File:MY-TER Family Order of Terengganu 1st class - DK I.svg|border|120px]] \n|caption2=Service ribbon\n|presenter= {{flag|League of Nations}}\n|type= {{wp|Campaign medal}}\n|eligibility= All [[League of Nations Command]] forces\n|awarded_for= Campaign service\n|campaign= [[Final War of the Deluge]]\n|status= \n|description=\n|clasps=\n|established= 14 September 2025\n|firstawarded=\n|lastawarded=\n|total_awarded= \n|total_awarded_posthumously=\n|total_recipients=\n|individual=\n|higher=\n|same=\n|lower= \n|related= \n}}\n\nThe '''League of Nations Service Medal''' ('''LoNM''') is an {{wp|international military decoration}} established by the [[League of Nations]] on September 14, 2025. The decoration is the first international award ever created by the League of Nations and recognized the multi-national defense forces which participated in the [[Final War of the Deluge]] in combat operations against [[Varshan]].\n\n==Criteria==\n\nEligibility for the Service Medal is used as a criteria for eligibility for grants under the [[League of Nations Wartime Benefit Fund]].\n\n==Description==\n\n==Prominent recipients==\n*{{flagicon|Urcea}} [[Martin St. Clair]], Supreme Allied Commander Varshan, [[League of Nations Command]]\n*{{flagicon|Urcea}} [[Aedan Frantone]], Lec. Pri, [[Royal and Imperial Army (Urcea)|Royal and Imperial Army]]\n*{{flagicon|Daxia}} [[Bort B"
+    },
+    {
+      "slug": "party_of_varshan_democrats",
+      "title": "Party of Varshan Democrats",
+      "summary": "The Party of Varshan Democrats is a centre-right political party founded in 2022 in Varshan during the Final War of the Deluge. As the Daxian army first repulsed Varshani attacks on Xisheng then counterattacked south, planning began on post-war governing options. The Daxian government decided to cob…",
+      "categories": [],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Infobox political party\n|name               = Party of Varshan Democrats\n|native_name        =\n|lang1              = \n|name_lang1         = \n|lang2              = \n|name_lang2         = \n|lang3              = \n|name_lang3         = \n|lang4              = \n|name_lang4         = \n| party_logo        = \n| colorcode         = #FFD700\n|leader             =\n|chairperson        = \n|president          = \n|secretary_general  = \n|spokesperson       = \n|founder            =\n|leader1_title      = First Secretary\n|leader1_name       = [[Utzni Totepuh]]\n|leader2_title      = Second Secretary\n|leader2_name       = \n|leader3_title      = \n|leader3_name       = \n|leader4_title      = \n|leader4_name       = \n|leader5_title      = \n|leader5_name       = \n|slogan             =\n|founded            = \n|dissolved          = \n|merger             = \n|split              =\n|predecessor        = \n|merged             = \n|successor          = \n|headquarters       = Tizro, [[Zanoma]]\n|newspaper          = \n|student_wing       = \n|youth_wing         = \n|wing1_title        = \n|wing1              =\n|wing2_title        = \n|wing2              = \n|wing3_title        = \n|wing3              =\n|membership_year    = \n|membership         = 25,000\n|ideology           = {{wp|Big tent party|Big tent}}<br>{{wp|Political pragmatism|Pragmatism}}<br>{{wp|Neo-Arzalism}}<br> Varshani Irredentism\n|religion           = \n|national           = \n|international      = \n|european           = \n|europarl           = \n|affiliation1_t"
+    },
+    {
+      "slug": "democratic_republic_of_thervala_in_exile",
+      "title": "Democratic Republic of Thervala in Exile",
+      "summary": "The Democratic Republic of Thervala is a proposed republican successor state to the Kingdom of Thervala and the central political objective of the modern Ther republican movement. The concept was first articulated by Dr.Yao Lin Lee, founder of the Society for Republican Values in Thervala. Yao, a Da…",
+      "categories": [],
+      "infoboxData": null,
+      "wikitextSnippet": "{{Award winning article}}\n{{Infobox legislature\n| name = All-Ther Democratic Congress\n| native_name = {{small|{{nowrap|{{nobold|สมัชชาประชาธิปไตยเธอร์ทั้งมวล}}<br>{{nobold|''S̄mạchchā pra chā ṭhip tịy ṭhex r̒ thậng mwl''}}}}}}\n| transcription_name = \n| legislature = \n| coa_pic = ATDC.png\n| coa_res = 100px\n| coa_caption = Coat of Arms of the Republic of Thervala\n| logo_pic = Republic of Thervala.png{{!}}border\n| logo_caption = Flag of the Republic of Thervala\n| house_type = Council\n| body = \n| houses = \n| leader1_type = President\n| leader1 = [[Chanin Rattanakul]]\n| party1 = \n| election1 = 2037\n| members = \n| house1 = \n| house2 = \n| structure1 = \n| structure1_res = \n| political_groups1 = \n| political_groups2 = \n| committees1 = \n| committees2 = \n| joint_committees = \n| voting_system1 = \n| voting_system2 = \n| last_election1 = \n| last_election2 = \n| session_room = \n| session_res = \n| meeting_place = Headquarters of the Thervala-Argyrea Friendship Organization\n| website = http://www.ATDC.arg\n| footnotes = \n}}The Democratic Republic of Thervala is a proposed republican successor state to the [[Thervala|Kingdom of Thervala]] and the central political objective of the modern Ther republican movement. The concept was first articulated by Dr.[[Yao Lin Lee]], founder of the [[Society for Republican Values in Thervala]].\n\nYao, a Daxio-Ther physician, political theorist, and reformer, argues that Ther nation constituted a civic community independent of the monarchy and that political sover"
+    }
+  ]
+}

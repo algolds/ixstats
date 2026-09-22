@@ -85,7 +85,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex flex-col gap-1.5 text-left">
         <div className="flex items-center gap-2">
-          <div className="rounded-lg bg-sky-500/10 p-1.5 text-sky-500 dark:bg-sky-500/20">
+          <div className="rounded-lg bg-blue-500/10 p-1.5 text-blue-500 dark:bg-blue-500/20">
             <MessageSquare className="h-4 w-4" />
           </div>
           <span className="text-foreground text-lg leading-none font-bold">Send Feedback</span>
@@ -136,7 +136,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
             value={message}
             onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
             placeholder="What's on your mind? Please describe any bugs or suggestions in detail..."
-            className="border-border bg-background/25 min-h-[100px] resize-none text-xs focus-visible:ring-sky-500/50"
+            className="border-border bg-background/25 min-h-[100px] resize-none text-xs focus-visible:ring-blue-500/50"
             required
           />
         </div>
@@ -149,7 +149,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
             className="hover:bg-muted/30 flex w-full items-center justify-between px-3 py-2 text-left transition-colors"
           >
             <span className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold">
-              <Terminal className="h-3.5 w-3.5 text-sky-500" />
+              <Terminal className="h-3.5 w-3.5 text-blue-500" />
               <span>Diagnostic Metadata Preview ({logs.length} logs)</span>
             </span>
             {showDiagnostics ? (
@@ -239,7 +239,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
         <Button
           type="submit"
           disabled={submitMutation.isPending}
-          className="h-8 border-0 bg-sky-600 px-4 text-xs text-white transition-colors hover:bg-sky-500"
+          className="h-8 border-0 bg-blue-600 px-4 text-xs text-white transition-colors hover:bg-blue-500"
         >
           {submitMutation.isPending ? (
             <>

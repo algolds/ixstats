@@ -1,0 +1,92 @@
+◇ injected env (17) from .env.local.dev // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+Found 145 countries in PostgreSQL.
+
+=== GOVERNMENT TYPES IN POSTGRESQL ===
+┌───────────────────────────────────────────────────────────────────────────┬────────┐
+│                                                                           │ Values │
+├───────────────────────────────────────────────────────────────────────────┼────────┤
+│                                            League of Nations headquarters │ 1      │
+│                                                                   Unknown │ 56     │
+│                                                   Federal Julian republic │ 1      │
+│                                        Unitary Valverdist one-party state │ 1      │
+│                                                                  republic │ 1      │
+│                 Unitary dominant-party syndicalist parliamentary republic │ 1      │
+│                  Federal Bolshevist-Livasist one-party socialist republic │ 1      │
+│                                                   Unitary Julian republic │ 3      │
+│                              Unitary presidential constitutional republic │ 2      │
+│                                      Unitary semi-constitutional woqalate │ 1      │
+│                                  Federal elective constitutional monarchy │ 2      │
+│                                             Unitary presidential republic │ 7      │
+│                              Federal consociational presidential republic │ 1      │
+│             Unitary thalattocractic parliamentary constitutional monarchy │ 1      │
+│                                           Unitary constitutional republic │ 1      │
+│                    Unitary parliamentary elective constitutional monarchy │ 1      │
+│                                                      Imperium of Caphiria │ 1      │
+│                                            Federal parliamentary republic │ 4      │
+│                                             Federal presidential republic │ 2      │
+│                                                           Sovereign State │ 1      │
+│                         Unitary semi-presidential constitutional republic │ 1      │
+│                                        Federal semi-presidential republic │ 1      │
+│                                          Confederal presidential republic │ 1      │
+│                                   Unitary one-party presidential republic │ 1      │
+│                                                                    custom │ 3      │
+│                                                                    Empire │ 2      │
+│                                                 League of Nations Mandate │ 2      │
+│                                                              Commonwealth │ 1      │
+│                                                           parliamentary}} │ 1      │
+│                                    Unitary parliamentary council republic │ 1      │
+│                             Federal parliamentary constitutional republic │ 2      │
+│                                        Unitary semi-presidential republic │ 2      │
+│                                       Pre-democratic military governorate │ 1      │
+│                                          League of Nations administration │ 1      │
+│                                      Unitary one-party socialist republic │ 1      │
+│                                             Unitary stratocratic republic │ 1      │
+│         Federal parliamentary tetrarchic semi-constitutional co-qhapaqate │ 1      │
+│                                                  Federal crowned republic │ 1      │
+│                             Unitary parliamentary constitutional monarchy │ 3      │
+│                                           Unitary constitutional monarchy │ 2      │
+│ Federal semi-presidential diarchic semi-aristocratic directorial republic │ 1      │
+│                              Confederal presidential directorial republic │ 1      │
+│                                                              Provinciarum │ 2      │
+│                              Federal presidential constitutional republic │ 4      │
+│                                                 Unitary absolute monarchy │ 3      │
+│                                               Confederal crowned republic │ 1      │
+│                                Semi-federal assembly-independent republic │ 1      │
+│                                            Unitary parliamentary republic │ 3      │
+│                                        Confederal constitutional monarchy │ 1      │
+│                                                                  Republic │ 1      │
+│                    Unitary theocratic Catholic elective absolute monarchy │ 1      │
+│                                                             Test Republic │ 1      │
+│                                      Unitary semi-constitutional Woqalate │ 1      │
+│                                                   Unitary Druze theocracy │ 1      │
+│                                     Executive Board of Special Governance │ 1      │
+│                                       Unitary theocratic Islamic republic │ 1      │
+│                             Federal parliamentary constitutional monarchy │ 1      │
+│                    Federal parliamentary elective constitutional monarchy │ 1      │
+│                                          Unitary Islamic crowned republic │ 1      │
+└───────────────────────────────────────────────────────────────────────────┴────────┘
+
+=== NOTABLE COUNTRY GOVERNMENTS ===
+- Burgundie      : Unitary thalattocractic parliamentary constitutional monarchy | Struct: Government of Burgundie (Constitutional Monarchy)
+    Branches: Court of St. Alphador (executive), Citizens Court of the National Assembly (legislative), Lazarine Court (judicial)
+- Caphiria       : Imperium of Caphiria | Struct: Government of Caphiria (Federal Republic)
+    Branches: Council of Ministers (executive), Corcillum (legislative), Supreme Court (judicial)
+- Cartadania     : Federal presidential republic | Struct: Government of Cartadania (Federal Constitutional Republic)
+    Branches: President (executive), National Congress (legislative), Supreme Court (judicial)
+- Castadilla     : Sovereign State | Struct: Government of Castadilla (Federal Republic)
+    Branches: Executive (executive), Legislature (legislative), Judiciary (judicial)
+- Daxia          : Unitary one-party presidential republic | Struct: Government of Daxia (Federal Republic)
+    Branches: Executive (executive), Legislature (legislative), Judiciary (judicial)
+- Faneria        : custom | Struct: Government of Faneria (Federal Republic)
+    Branches: Directorate (executive), National Assembly (legislative), National Audit Council (judicial)
+- Fiannria       : Commonwealth | Struct: Government of Fiannria (Federal Republic)
+    Branches: Executive (executive), Legislature (legislative), Judiciary (judicial)
+- Kiravia        : Federal crowned republic | Struct: Government of Kiravia (Federal Republic)
+    Branches: Executive (executive), Legislature (legislative), Judiciary (judicial)
+- Nasastan       : Federal parliamentary republic | Struct: undefined (undefined)
+- Pelaxia        : Federal parliamentary republic | Struct: undefined (undefined)
+- Thervala       : Unitary parliamentary constitutional monarchy | Struct: undefined (undefined)
+- Urcea          : Federal parliamentary constitutional monarchy | Struct: Government of Urcea (Federal Republic)
+    Branches: Executive (executive), Legislature (legislative), Judiciary (judicial)
+- Yonderre       : Federal parliamentary elective constitutional monarchy | Struct: Government of Yonderre (Federal Republic)
+    Branches: Executive (executive), Legislature (legislative), Judiciary (judicial)

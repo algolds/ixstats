@@ -378,12 +378,7 @@ export function renderInfoboxHtml(parsed: ParsedInfobox): string {
       const imgSrc = cleanImgName.startsWith("http")
         ? cleanImgName
         : `/api/mediawiki/ixwiki/${cleanImgName.replace(/ /g, "_")}`;
-      rows += `
-          <tr class="infobox-image-row">
-            <td colspan="2" class="p-3 text-center">
-              <img src="${imgSrc}" alt="${cleanImgName}" class="mx-auto max-h-48 rounded-xl object-contain shadow-xs border border-border/30" loading="lazy" />
-            </td>
-          </tr>`;
+      rows += `<tr class="infobox-image-row"><td colspan="2" class="p-3 text-center"><img src="${imgSrc}" alt="${cleanImgName}" class="mx-auto max-h-48 rounded-xl object-contain shadow-xs border border-border/30" loading="lazy" /></td></tr>`;
     }
   }
 
@@ -402,18 +397,10 @@ export function renderInfoboxHtml(parsed: ParsedInfobox): string {
         '<a href="/wiki/$1" class="text-wiki hover:underline font-medium">$1</a>'
       );
 
-    rows += `
-        <tr class="infobox-row border-b border-border/20 last:border-b-0 hover:bg-muted/15 transition-colors">
-          <th scope="row" class="infobox-label py-1.5 px-2.5 text-left text-xs font-semibold text-muted-foreground align-top w-2/5">${label}</th>
-          <td class="infobox-data py-1.5 px-2.5 text-left text-xs text-foreground align-top leading-relaxed">${formattedVal}</td>
-        </tr>`;
+    rows += `<tr class="infobox-row border-b border-border/20 last:border-b-0 hover:bg-muted/15 transition-colors"><th scope="row" class="infobox-label py-1.5 px-2.5 text-left text-xs font-semibold text-muted-foreground align-top w-2/5">${label}</th><td class="infobox-data py-1.5 px-2.5 text-left text-xs text-foreground align-top leading-relaxed">${formattedVal}</td></tr>`;
   }
 
-  return `
-  <table class="infobox wikios-infobox ib-${parsed.templateName.toLowerCase().replace(/[\s_]+/g, "-")} my-4 w-full max-w-sm rounded-2xl border border-border/40 bg-card/80 shadow-md backdrop-blur-md p-3 text-sm">
-    <caption class="infobox-title text-base font-bold text-foreground py-2.5 px-3 border-b border-border/40 text-center tracking-tight font-brand">${headerTitle}</caption>
-    <tbody>${rows}</tbody>
-  </table>\n`;
+  return `<table class="infobox wikios-infobox ib-${parsed.templateName.toLowerCase().replace(/[\s_]+/g, "-")} my-4 w-full max-w-sm rounded-2xl border border-border/40 bg-card/80 shadow-md backdrop-blur-md p-3 text-sm"><caption class="infobox-title text-base font-bold text-foreground py-2.5 px-3 border-b border-border/40 text-center tracking-tight font-brand">${headerTitle}</caption><tbody>${rows}</tbody></table>`;
 }
 
 /**

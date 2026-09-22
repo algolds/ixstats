@@ -29,23 +29,6 @@ function getTimeRangeDate(range: string): Date {
 }
 
 /**
- * Get granularity interval in milliseconds
- */
-// oxlint-disable-next-line typescript/no-unused-vars
-function getGranularityInterval(granularity: string): number {
-  switch (granularity) {
-    case "minute":
-      return 60 * 1000;
-    case "hour":
-      return 60 * 60 * 1000;
-    case "day":
-      return 24 * 60 * 60 * 1000;
-    default:
-      return 60 * 60 * 1000; // Default to hour
-  }
-}
-
-/**
  * Group timestamp by granularity
  */
 function groupByGranularity(timestamp: Date, granularity: string): string {

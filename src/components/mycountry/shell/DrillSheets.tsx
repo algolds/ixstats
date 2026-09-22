@@ -81,7 +81,10 @@ const TIER_BADGE: Record<string, string> = {
   extreme: "text-red-300 bg-red-500/10 border-red-400/20",
 };
 
-const CATEGORY_BROKER_MAP: Record<string, { name: string; icon: any; color: string }> = {
+const CATEGORY_BROKER_MAP: Record<
+  string,
+  { name: string; icon: React.ComponentType<{ className?: string }>; color: string }
+> = {
   defense: {
     name: "Generals",
     icon: Shield,
@@ -100,12 +103,12 @@ const CATEGORY_BROKER_MAP: Record<string, { name: string; icon: any; color: stri
   economy: {
     name: "Magnates",
     icon: Building2,
-    color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
   },
   social: {
     name: "Party",
     icon: Users2,
-    color: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+    color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
   },
   infrastructure: {
     name: "Technocrats",
@@ -142,7 +145,7 @@ function IntentBranchingTree({
         <span>Executive Decision Tree (Branching Lineage)</span>
       </div>
       <div className="space-y-2.5 pl-2">
-        {data.allIntents.slice(0, 4).map((it: any) => {
+        {data.allIntents.slice(0, 4).map((it) => {
           const isCurrent = it.id === currentIntentId;
           return (
             <div
@@ -202,17 +205,14 @@ function IntentDetail({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const items = useMemo(
-    () => (tree.data as any)?.allIntents ?? (Array.isArray(tree.data) ? tree.data : []),
-    [tree.data]
-  );
-  const intent = useMemo(() => items.find((i: any) => i.id === intentId), [items, intentId]);
+  const items = useMemo(() => tree.data?.allIntents ?? [], [tree.data]);
+  const intent = useMemo(() => items.find((i) => i.id === intentId), [items, intentId]);
   const parent = useMemo(
-    () => (intent?.parentId ? items.find((i: any) => i.id === intent.parentId) : null),
+    () => (intent?.parentId ? items.find((i) => i.id === intent.parentId) : null),
     [items, intent]
   );
   const children = useMemo(
-    () => items.filter((i: any) => i.parentId === intentId),
+    () => items.filter((i) => i.parentId === intentId),
     [items, intentId]
   );
 
@@ -272,7 +272,7 @@ function IntentDetail({
             <span
               className={cn(
                 "rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider uppercase",
-                TIER_BADGE[intent.tier] || "border-slate-500/30 bg-slate-500/10 text-slate-400"
+                TIER_BADGE[intent.tier] || "border-border bg-muted text-muted-foreground"
               )}
             >
               {intent.tier} Tier
@@ -367,7 +367,7 @@ function IntentDetail({
             <button
               type="button"
               onClick={() => setIsShareModalOpen(true)}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold text-purple-400 shadow-xs transition-all hover:bg-purple-500/20 active:scale-95"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-[11px] font-bold text-blue-500 dark:text-blue-400 shadow-xs transition-all hover:bg-blue-500/20 active:scale-95"
             >
               <BookOpen className="h-3.5 w-3.5" />
               <span>Share to ThinkPages...</span>
@@ -385,8 +385,8 @@ function IntentDetail({
         goal={intent.goal}
         tier={intent.tier}
         category={intent.category}
-        summary={intent.summary}
-        changesJson={intent.changesJson}
+        summary={intent.summary ?? undefined}
+        changesJson={intent.changesJson ?? undefined}
       />
 
       {/* Executive Narrative Summary */}
@@ -422,7 +422,7 @@ function IntentDetail({
                 ? "bg-emerald-500/80"
                 : (linked.data?.progress ?? 0) > 0
                   ? "bg-amber-500/80"
-                  : "bg-slate-400/40"
+                  : "bg-muted-foreground/40"
             )}
             style={{ width: `${Math.min(100, Math.max(0, linked.data?.progress ?? 0))}%` }}
           />
@@ -430,7 +430,7 @@ function IntentDetail({
 
         {linked.data && linked.data.issues.length > 0 ? (
           <div className="space-y-2">
-            {linked.data.issues.map((iss: any) => {
+            {linked.data.issues.map((iss) => {
               const done = ["responded", "auto_resolved", "dismissed"].includes(iss.status);
               return (
                 <div
@@ -445,7 +445,7 @@ function IntentDetail({
                           ? "bg-emerald-400"
                           : iss.status === "viewed"
                             ? "bg-amber-400"
-                            : "bg-slate-400"
+                            : "bg-muted-foreground/60"
                       )}
                     />
                     <span
@@ -578,7 +578,7 @@ function IntentDetail({
                 Follow-up Directives ({children.length})
               </div>
               <div className="space-y-2">
-                {children.map((kid: any) => (
+                {children.map((kid) => (
                   <FacetCard
                     key={kid.id}
                     depth={1}
@@ -657,7 +657,7 @@ function DrillSheetsComponent({
               <Link
                 href={`/countries/${encodeURIComponent(countryId)}#${drill.kind}`}
                 target="_blank"
-                className="group inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold text-purple-400 shadow-xs transition-all hover:bg-purple-500/20 active:scale-95"
+                className="group border-border/80 bg-muted/50 hover:bg-muted text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold shadow-xs transition-all active:scale-95"
               >
                 <span>Open Page</span>
                 <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

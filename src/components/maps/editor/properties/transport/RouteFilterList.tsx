@@ -1,9 +1,9 @@
 "use client";
 
 import React, { memo } from "react";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { Search, EditPencil as Pencil, Trash as Trash2, ModernTv as Mountain } from "iconoir-react";
+import { Search, EditPencil as Pencil, Trash as Trash2 } from "iconoir-react";
 import { ROUTE_STYLES } from "~/lib/maps/map-config";
+import { calculateRouteTravelTime } from "~/lib/economy/travel-time";
 
 interface RouteItem {
   id: string;
@@ -12,6 +12,8 @@ interface RouteItem {
   status: string;
   lengthKm?: number;
   elevationGainM?: number;
+  speedKmh?: number | null;
+  properties?: Record<string, unknown> | null;
 }
 
 interface RouteFilterListProps {
@@ -35,9 +37,11 @@ export const RouteFilterList = memo(function RouteFilterList({
   onEditRoute,
   onDeleteRoute,
 }: RouteFilterListProps) {
-  const filteredRoutes = routes.filter((r) =>
-    r.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const query = searchQuery.trim().toLowerCase();
+  const filteredRoutes = React.useMemo(() => {
+    if (!query) return routes;
+    return routes.filter((r) => r.name.toLowerCase().includes(query));
+  }, [routes, query]);
 
   return (
     <div className="space-y-3">
@@ -64,16 +68,27 @@ export const RouteFilterList = memo(function RouteFilterList({
         <div className="max-h-72 space-y-1.5 overflow-y-auto">
           {filteredRoutes.map((route) => {
             const isSelected = selectedRouteId === route.id;
-            const style = (ROUTE_STYLES as any)[route.type] ?? {
+            const style = ROUTE_STYLES[route.type] ?? {
               label: route.type,
-              color: "#94a3b8",
+              color: "var(--color-slate-400)",
             };
+
+            const travelDuration =
+              route.lengthKm !== undefined
+                ? calculateRouteTravelTime({
+                    lengthKm: route.lengthKm,
+                    speedKmh:
+                      route.speedKmh ??
+                      (route.properties as { speed_kmh?: number } | null)?.speed_kmh,
+                    routeType: route.type,
+                  }).formattedTime
+                : null;
 
             return (
               <div
                 key={route.id}
                 onClick={() => onSelectRouteId?.(isSelected ? null : route.id)}
-                className={`group flex cursor-pointer items-center justify-between rounded-md border p-2 text-xs transition ${
+                className={`group flex cursor-pointer items-center justify-between rounded-md border p-2 text-xs transition active:scale-[0.98] ${
                   isSelected
                     ? "border-primary bg-primary/10 text-foreground"
                     : "border-border/40 bg-card/40 hover:bg-muted/30"
@@ -86,9 +101,16 @@ export const RouteFilterList = memo(function RouteFilterList({
                   />
                   <div className="min-w-0">
                     <div className="truncate font-medium">{route.name}</div>
-                    <div className="text-muted-foreground flex items-center gap-2 text-[10px]">
+                    <div className="text-muted-foreground flex items-center gap-1.5 text-[10px]">
                       <span>{style.label}</span>
-                      {route.lengthKm && <span>• {route.lengthKm.toFixed(1)} km</span>}
+                      {route.lengthKm !== undefined && (
+                        <span className="font-mono tabular-nums">• {route.lengthKm.toFixed(1)} km</span>
+                      )}
+                      {travelDuration && (
+                        <span className="font-mono tabular-nums text-primary font-medium">
+                          • {travelDuration}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -101,7 +123,7 @@ export const RouteFilterList = memo(function RouteFilterList({
                         e.stopPropagation();
                         onEditRoute(route.id);
                       }}
-                      className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1"
+                      className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1 transition active:scale-[0.98]"
                       title="Edit Route Path"
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -114,7 +136,7 @@ export const RouteFilterList = memo(function RouteFilterList({
                         e.stopPropagation();
                         onDeleteRoute(route.id);
                       }}
-                      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded p-1"
+                      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded p-1 transition active:scale-[0.98]"
                       title="Delete Route"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

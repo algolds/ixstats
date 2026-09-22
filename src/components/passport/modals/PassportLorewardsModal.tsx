@@ -144,13 +144,13 @@ export function PassportLorewardsModal({
             <MetricCard
               label="Monthly Laurels"
               value={stats.monthlyWins}
-              icon={<Trophy className="h-4 w-4 text-purple-500" />}
+              icon={<Trophy className="h-4 w-4 text-indigo-500" />}
               subtext="Monthly Best"
             />
             <MetricCard
               label="Streak"
               value={`${stats.currentStreak}d`}
-              icon={<Flame className="h-4 w-4 text-rose-500" />}
+              icon={<Flame className="h-4 w-4 text-orange-500" />}
               subtext={`Best: ${stats.longestStreak}d`}
             />
             <MetricCard
@@ -317,7 +317,7 @@ export function PassportLorewardsModal({
                           award.type === "weekly" &&
                             "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400",
                           award.type === "monthly" &&
-                            "border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                            "border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
                         )}
                       >
                         {award.type}

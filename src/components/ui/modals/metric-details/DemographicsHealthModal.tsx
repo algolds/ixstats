@@ -36,6 +36,7 @@ import { format, subMonths } from "date-fns";
 import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
 import { MetricModalLayout } from "./MetricModalLayout";
 import type { TimeRange, ChartType } from "./types";
+import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
 
 interface DemographicsHealthModalProps {
   isOpen: boolean;
@@ -88,34 +89,19 @@ export function DemographicsHealthModal({
     const currentDeathRate = demographics?.deathRate || 8;
     const currentMedianAge = demographics?.medianAge || countryData?.medianAge || 30;
 
-    const now = new Date();
-    const rangeMap: Record<TimeRange, number> = {
-      "3m": 3,
-      "6m": 6,
-      "1y": 12,
-      "2y": 24,
-      "4y": 48,
-      "5y": 60,
-      "20y": 240,
-      all: Infinity,
-    };
-
-    const monthsToShow = rangeMap[timeRange] || 12;
-    const cutoffDate = monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
-
-    return historicalData
-      .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
-      .slice(-100)
-      .map((point: any) => ({
-        date: format(new Date(point.ixTimeTimestamp), "MMM yyyy"),
-        timestamp: point.ixTimeTimestamp,
+    return filterAndSortHistory(
+      historicalData,
+      timeRange,
+      (point, formattedDate, timestamp) => ({
+        date: formattedDate,
+        timestamp,
         population: (point.population || 0) / 1e6,
         lifeExpectancy: currentLifeExpectancy,
         birthRate: currentBirthRate,
         deathRate: currentDeathRate,
         medianAge: currentMedianAge,
-      }))
-      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      })
+    );
   };
 
   const chartConfig = {
@@ -161,9 +147,9 @@ export function DemographicsHealthModal({
       };
     return {
       label: "Below Average",
-      color: "text-rose-400",
-      bg: "bg-rose-500/10",
-      border: "border-rose-500/20",
+      color: "text-red-400",
+      bg: "bg-red-500/10",
+      border: "border-red-500/20",
       variant: "destructive",
     };
   };
@@ -239,7 +225,7 @@ export function DemographicsHealthModal({
             <CardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-rose-400 tabular-nums">
+                  <div className="text-lg font-bold text-red-400 tabular-nums">
                     {(demographics?.deathRate || 0).toFixed(1)}/1k
                   </div>
                   <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
@@ -247,7 +233,7 @@ export function DemographicsHealthModal({
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-green-400 tabular-nums">
+                  <div className="text-lg font-bold text-emerald-400 tabular-nums">
                     {((demographics?.birthRate || 0) - (demographics?.deathRate || 0)).toFixed(1)}
                     /1k
                   </div>
@@ -264,7 +250,7 @@ export function DemographicsHealthModal({
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-purple-400 tabular-nums">
+                  <div className="text-lg font-bold text-indigo-400 tabular-nums">
                     {(demographics?.dependencyRatio || 50).toFixed(0)}%
                   </div>
                   <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
@@ -462,7 +448,7 @@ export function DemographicsHealthModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Data Points
               </span>
-              <span className="text-xl font-bold text-purple-400">
+              <span className="text-xl font-bold text-blue-400">
                 {trendStats?.dataPoints || 0}
               </span>
             </div>
@@ -580,7 +566,7 @@ export function DemographicsHealthModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Age Structure
               </span>
-              <span className="text-xl font-bold text-purple-400">
+              <span className="text-xl font-bold text-blue-400">
                 {(demographics?.medianAge || 0) < 25
                   ? "Young"
                   : (demographics?.medianAge || 0) < 35
@@ -615,14 +601,14 @@ export function DemographicsHealthModal({
     const demographics = economyData?.demographics;
     const ageDistribution = demographics?.ageDistribution;
     const youthPct = Array.isArray(ageDistribution)
-      ? ageDistribution.find((a: any) => a.group?.includes("0-14"))?.percent || 25
+      ? (ageDistribution as Array<{ group?: string; percent?: number }>).find((a) => a.group?.includes("0-14"))?.percent || 25
       : 25;
     const workingPct = Array.isArray(ageDistribution)
-      ? ageDistribution.find((a: any) => a.group?.includes("15-64") || a.group?.includes("15-"))
+      ? (ageDistribution as Array<{ group?: string; percent?: number }>).find((a) => a.group?.includes("15-64") || a.group?.includes("15-"))
           ?.percent || 60
       : 60;
     const elderlyPct = Array.isArray(ageDistribution)
-      ? ageDistribution.find((a: any) => a.group?.includes("65"))?.percent || 15
+      ? (ageDistribution as Array<{ group?: string; percent?: number }>).find((a) => a.group?.includes("65"))?.percent || 15
       : 15;
 
     return (
@@ -646,7 +632,7 @@ export function DemographicsHealthModal({
                   <div className="text-muted-foreground mt-1 text-xs">15-64 Years</div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-semibold text-purple-400">
+                  <div className="text-lg font-semibold text-indigo-400">
                     {elderlyPct.toFixed(0)}%
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">65+ Years</div>
@@ -667,7 +653,7 @@ export function DemographicsHealthModal({
                       Education Attainment
                     </h4>
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                      {demographics.educationLevels.slice(0, 8).map((level: any, i: number) => (
+                      {(demographics.educationLevels as Array<{ level?: string; percentage?: number; percent?: number; color?: string }>).slice(0, 8).map((level, i) => (
                         <div
                           key={level.level || i}
                           className="rounded-xl border border-white/5 bg-white/5 p-3 text-center"
@@ -721,7 +707,7 @@ export function DemographicsHealthModal({
                 <span className="text-muted-foreground text-[10px] font-semibold uppercase">
                   Rural Population
                 </span>
-                <div className="mt-1 text-lg font-bold text-purple-400">
+                <div className="mt-1 text-lg font-bold text-emerald-400">
                   {(demographics?.urbanRuralSplit?.rural || 40).toFixed(1)}%
                 </div>
               </div>

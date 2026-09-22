@@ -23,7 +23,7 @@ export function DiplomacyGraphic({ className }: { className?: string }) {
     >
       {/* Background Treaty Rings & Global Meridian Arcs */}
       <svg
-        className="absolute -right-6 -bottom-6 h-36 w-36 text-teal-500/15 transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-80 dark:text-teal-400/15"
+        className="text-cyan-500/15 group-hover:scale-105 group-hover:opacity-80 dark:text-cyan-400/15 absolute -right-6 -bottom-6 h-36 w-36 transition-all duration-300 ease-out"
         viewBox="0 0 100 100"
         fill="none"
         stroke="currentColor"
@@ -37,7 +37,7 @@ export function DiplomacyGraphic({ className }: { className?: string }) {
       </svg>
 
       {/* Primary Globe Glyph */}
-      <div className="absolute -right-1 -bottom-1 text-teal-600/10 transition-all duration-300 ease-out group-hover:scale-105 group-hover:text-teal-500/20 dark:text-teal-400/10 dark:group-hover:text-teal-300/20">
+      <div className="text-cyan-600/10 group-hover:scale-105 group-hover:text-cyan-500/20 dark:text-cyan-400/10 dark:group-hover:text-cyan-300/20 absolute -right-1 -bottom-1 transition-all duration-300 ease-out">
         <Globe className="h-16 w-16" strokeWidth={1} />
       </div>
     </div>
@@ -80,7 +80,7 @@ export function PoliticsGraphic({ className }: { className?: string }) {
     >
       {/* Background Legislative Hemicycle & Column Lines */}
       <svg
-        className="absolute -right-6 -bottom-6 h-36 w-36 text-violet-500/15 transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-80 dark:text-violet-400/15"
+        className="text-indigo-500/15 group-hover:scale-105 group-hover:opacity-80 dark:text-indigo-400/15 absolute -right-6 -bottom-6 h-36 w-36 transition-all duration-300 ease-out"
         viewBox="0 0 100 100"
         fill="none"
         stroke="currentColor"
@@ -95,7 +95,7 @@ export function PoliticsGraphic({ className }: { className?: string }) {
       </svg>
 
       {/* Primary Scale Balance Glyph */}
-      <div className="absolute -right-1 -bottom-1 text-violet-600/10 transition-all duration-300 ease-out group-hover:scale-105 group-hover:text-violet-500/20 dark:text-violet-400/10 dark:group-hover:text-violet-300/20">
+      <div className="text-indigo-600/10 group-hover:scale-105 group-hover:text-indigo-500/20 dark:text-indigo-400/10 dark:group-hover:text-indigo-300/20 absolute -right-1 -bottom-1 transition-all duration-300 ease-out">
         <Scale className="h-16 w-16" strokeWidth={1} />
       </div>
     </div>

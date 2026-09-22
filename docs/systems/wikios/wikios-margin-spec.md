@@ -16,9 +16,9 @@ WikiOS replaces `/wiki/[slug]/talk` with **WikiOS Margin** — a responsive, har
 
 ```
 ┌────────────────────────────────────────────────────────┬──────────────────────────────────────────┐
-│  IxWiki: Treaty of Oakhaven                            │  WikiOS Margin                [⤢] [✕]    │
+│  IxWiki: League of Nations                            │  WikiOS Margin                [⤢] [✕]    │
 │                                                        ├──────────────────────────────────────────┤
-│  The Treaty of Oakhaven concluded the six-year war...  │  [ 💬 Threads ] [ ✏️ Markup ] [ 📑 Stash ]│
+│  The League of Nations was founded in 1919 to...       │  [ 💬 Threads ] [ ✏️ Markup ] [ 📑 Stash ]│
 │                                                        ├──────────────────────────────────────────┤
 │  == Territorial Boundaries ==           ┌───┐          │  💬 Section: Territorial Boundaries      │
 │  The eastern frontier was re-established│ 💬│ ◄─────── │  Thread #12 · Open · 3 comments          │

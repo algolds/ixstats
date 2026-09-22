@@ -28,7 +28,7 @@ export const PolicyDistributionChart = React.memo<PolicyDistributionChartProps>(
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <PieChartIcon className="h-5 w-5 text-purple-600" />
+              <PieChartIcon className="h-5 w-5 text-indigo-600" />
               Policy Category Distribution
             </span>
             <div className="flex items-center gap-1">

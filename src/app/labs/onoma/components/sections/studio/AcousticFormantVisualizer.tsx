@@ -338,7 +338,7 @@ export function AcousticFormantVisualizer({
                       fontSize="11"
                       fontFamily="monospace"
                       fontWeight={isActive ? "bold" : "normal"}
-                      fill={isActive ? "#38bdf8" : "rgba(255, 255, 255, 0.4)"}
+                      fill={isActive ? "#0091ff" : "rgba(255, 255, 255, 0.4)"}
                     >
                       /{v.ipa}/
                     </text>
@@ -386,14 +386,14 @@ export function AcousticFormantVisualizer({
                     cx={f2ToX(acousticCenter.f2, svgWidth, pad)}
                     cy={f1ToY(acousticCenter.f1, svgHeight, pad)}
                     r="5"
-                    fill="#ec4899"
+                    fill="#f59e0b"
                   />
                   <text
                     x={f2ToX(acousticCenter.f2, svgWidth, pad) + 8}
                     y={f1ToY(acousticCenter.f1, svgHeight, pad) - 4}
                     fontSize="9"
                     fontFamily="monospace"
-                    fill="#ec4899"
+                    fill="#f59e0b"
                     fontWeight="bold"
                   >
                     Center of Gravity

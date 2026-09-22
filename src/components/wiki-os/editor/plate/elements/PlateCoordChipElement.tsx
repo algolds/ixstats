@@ -48,7 +48,7 @@ export function PlateMapEmbedChipElement({
         href={el.href}
         title={el.title}
         onClick={(e) => e.preventDefault()}
-        className="wikios-ve-custom-chip chip-mapembed inline-flex items-center gap-1 rounded-full border border-sky-400/30 bg-sky-400/10 px-2 py-0.5 text-[11px] font-bold text-sky-300"
+        className="wikios-ve-custom-chip chip-mapembed inline-flex items-center gap-1 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[11px] font-bold text-cyan-300"
       >
         <span className="opacity-70">🗺️</span> Map Embed
       </a>

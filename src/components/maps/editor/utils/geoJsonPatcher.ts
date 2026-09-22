@@ -12,7 +12,7 @@ export type GeoJSONMutation =
       type: "UPDATE_FEATURE";
       featureId: string;
       geometry: GeoJSON.Geometry;
-      properties?: Record<string, unknown>;
+      properties?: Record<string, string | number | boolean | null | undefined>;
     }
   | { type: "ADD_FEATURE"; feature: GeoJSON.Feature }
   | { type: "REMOVE_FEATURE"; featureId: string };
@@ -78,7 +78,7 @@ class GeoJSONPatchEngine {
     map: MapLibreMap,
     sourceId: string,
     featureId: string | number,
-    state: Record<string, unknown>
+    state: Record<string, string | number | boolean | null>
   ): void {
     if (!map || !map.getSource(sourceId)) return;
     map.setFeatureState({ source: sourceId, id: featureId }, state);

@@ -47,7 +47,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
         <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
-              <RiLineChartLine className="h-6 w-6 text-orange-400" />
+              <StatsReport className="h-6 w-6 text-cyan-500" />
               Exchange Impact Analysis
             </DialogTitle>
             <DialogDescription>
@@ -61,23 +61,23 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
               <h4 className="text-foreground mb-4 font-semibold">Relationship State Evolution</h4>
               <div className="flex items-center justify-center gap-4">
                 <div className="text-center">
-                  <div className="mb-1 text-3xl font-bold text-yellow-400">
+                  <div className="mb-1 text-3xl font-bold text-amber-500 dark:text-amber-400">
                     {impact.currentState || "Neutral"}
                   </div>
-                  <div className="text-xs text-[--intel-silver]">Before</div>
+                  <div className="text-xs text-muted-foreground">Before</div>
                 </div>
-                <ArrowRight className="h-8 w-8 text-[--intel-silver]" />
+                <ArrowRight className="h-8 w-8 text-muted-foreground" />
                 <div className="text-center">
-                  <div className="mb-1 text-3xl font-bold text-green-400">
+                  <div className="mb-1 text-3xl font-bold text-emerald-500 dark:text-emerald-400">
                     {impact.newState || "Friendly"}
                   </div>
-                  <div className="text-xs text-[--intel-silver]">After</div>
+                  <div className="text-xs text-muted-foreground">After</div>
                 </div>
               </div>
               {impact.stateChanged && (
-                <div className="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-center">
-                  <Check className="mx-auto mb-1 h-5 w-5 text-green-400" />
-                  <p className="text-sm font-medium text-green-400">
+                <div className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-center">
+                  <Check className="mx-auto mb-1 h-5 w-5 text-emerald-500 dark:text-emerald-400" />
+                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
                     Relationship state improved! (
                     {Math.round((impact.transitionProbability || 0) * 100)}% probability)
                   </p>
@@ -89,19 +89,19 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
             <div className="grid grid-cols-2 gap-4">
               <div className="facet-hierarchy-child rounded-lg p-4">
                 <div className="mb-2 flex items-center gap-2">
-                  <ArrowUp className="h-4 w-4 text-[--intel-gold]" />
+                  <ArrowUp className="h-4 w-4 text-amber-500" />
                   <span className="text-foreground text-sm font-medium">Cultural Bonus</span>
                 </div>
-                <div className="text-2xl font-bold text-[--intel-gold]">
+                <div className="text-2xl font-bold text-amber-500 dark:text-amber-400">
                   +{impact.culturalBonusDelta || 0}
                 </div>
               </div>
               <div className="facet-hierarchy-child rounded-lg p-4">
                 <div className="mb-2 flex items-center gap-2">
-                  <ArrowUp className="h-4 w-4 text-blue-400" />
+                  <ArrowUp className="h-4 w-4 text-cyan-500" />
                   <span className="text-foreground text-sm font-medium">Diplomatic Bonus</span>
                 </div>
-                <div className="text-2xl font-bold text-blue-400">
+                <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
                   +{impact.diplomaticBonusDelta || 0}
                 </div>
               </div>
@@ -115,14 +115,14 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                   {impact.longTermEffects.culturalTiesStrength !== undefined && (
                     <div>
                       <div className="mb-2 flex items-center justify-between text-sm">
-                        <span className="text-[--intel-silver]">Cultural Ties Strength</span>
-                        <span className="font-medium text-purple-400">
+                        <span className="text-muted-foreground">Cultural Ties Strength</span>
+                        <span className="font-medium text-blue-500 dark:text-blue-400">
                           {impact.longTermEffects.culturalTiesStrength}%
                         </span>
                       </div>
                       <div className="h-3 w-full rounded-full bg-white/10">
                         <div
-                          className="h-3 rounded-full bg-purple-400"
+                          className="h-3 rounded-full bg-blue-500"
                           style={{ width: `${impact.longTermEffects.culturalTiesStrength}%` }}
                         />
                       </div>
@@ -132,14 +132,14 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                   {impact.longTermEffects.softPowerGain !== undefined && (
                     <div>
                       <div className="mb-2 flex items-center justify-between text-sm">
-                        <span className="text-[--intel-silver]">Soft Power Gain</span>
-                        <span className="font-medium text-cyan-400">
+                        <span className="text-muted-foreground">Soft Power Gain</span>
+                        <span className="font-medium text-cyan-500 dark:text-cyan-400">
                           {impact.longTermEffects.softPowerGain}%
                         </span>
                       </div>
                       <div className="h-3 w-full rounded-full bg-white/10">
                         <div
-                          className="h-3 rounded-full bg-cyan-400"
+                          className="h-3 rounded-full bg-cyan-500"
                           style={{ width: `${impact.longTermEffects.softPowerGain}%` }}
                         />
                       </div>
@@ -149,14 +149,14 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                   {impact.longTermEffects.peopleTopeopleBonds !== undefined && (
                     <div>
                       <div className="mb-2 flex items-center justify-between text-sm">
-                        <span className="text-[--intel-silver]">People-to-People Bonds</span>
-                        <span className="font-medium text-pink-400">
+                        <span className="text-muted-foreground">People-to-People Bonds</span>
+                        <span className="font-medium text-indigo-500 dark:text-indigo-400">
                           {impact.longTermEffects.peopleTopeopleBonds}%
                         </span>
                       </div>
                       <div className="h-3 w-full rounded-full bg-white/10">
                         <div
-                          className="h-3 rounded-full bg-pink-400"
+                          className="h-3 rounded-full bg-indigo-500"
                           style={{ width: `${impact.longTermEffects.peopleTopeopleBonds}%` }}
                         />
                       </div>
@@ -168,15 +168,12 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
 
             {/* Reasoning */}
             {impact.reasoning && Array.isArray(impact.reasoning) && impact.reasoning.length > 0 && (
-              <div className="rounded-lg bg-white/5 p-4">
-                <h5 className="text-foreground mb-3 flex items-center gap-2 font-semibold">
-                  <LightBulb className="h-4 w-4 text-yellow-400" />
-                  Analysis Factors
-                </h5>
+              <div className="facet-hierarchy-child rounded-lg p-6">
+                <h4 className="text-foreground mb-4 font-semibold">Impact Analysis</h4>
                 <ul className="space-y-2">
-                  {impact.reasoning.map((reason: string, idx: number) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-[--intel-silver]">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
+                  {impact.reasoning.map((reason, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                       <span>{reason}</span>
                     </li>
                   ))}

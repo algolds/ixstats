@@ -11,7 +11,7 @@ Sections are defined in `lib/builder-theme.ts` (`BuilderSection` / `BUILD_STEPS`
 | Section | Purpose | Notable sub-tabs |
 | --- | --- | --- |
 | `foundation` | Pick a starting/reference country (eligible-country grid) to seed the build | — |
-| `identity` | National identity, names, capital, flag & symbols | Archetype/Preset, Basic, Culture, Technical |
+| `identity` | National identity, names, capital, flag & symbols | Basic, Culture, Technical |
 | `government` | Atomic government components + traditional structure, departments, budget/revenue | Core Setup, Departments, Budget & Revenue, Verify & Preview |
 | `economics` | Core indicators, sectors, labor, demographics, tax system | Components, Sectors, Labor, Demographics, Tax |
 | `preview` | Final review, then commit the nation | — |
@@ -39,9 +39,9 @@ On commit, `api.countries.createCountry` (create mode) or `api.countries.updateC
 | `components/enhanced/` | Atomic selectors, economy builder, national identity, government preview, context |
 | `components/sections/ImportSection.tsx` | Wiki import flow |
 | `import/_components/` | `EligibleCountryGrid`, `WikiDeepScanPanel`, and related import UI |
-| `sections/` | Step section components (CoreIndicators, Economy, Labor, Demographics, FiscalSystem, GovernmentStructure, GovernmentSpending) |
+| `sections/` | Step section components (CoreIndicators, Economy, Labor, Demographics, FiscalSystem, GovernmentStructure) |
 | `components/` | Sidebar layout, notch bar, step nav, preview widget, vitality rings, welcome modal |
-| `hooks/` | `useBuilderActions`, `useBuilderAlerts`, `useBuilderState`, `useEconomyBuilderSync`, `useGovernmentSpending` |
+| `hooks/` | `useBuilderActions`, `useBuilderAlerts`, `useBuilderState`, `useEconomyBuilderSync` |
 | `lib/builder-theme.ts` | Section/step definitions, theming, section↔legacy-step mapping |
 | `data/archetypes/` | Archetype/preset data |
 

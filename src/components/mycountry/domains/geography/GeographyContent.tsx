@@ -16,6 +16,7 @@ import { RollupSettingsModal } from "~/components/mycountry/shared/modals/Rollup
 import { PopulateFromWikiButton } from "~/components/mycountry/shell/PopulateFromWikiButton";
 import { GeoCompliancePanel } from "./GeoCompliancePanel";
 import { GeographyReportModal } from "./GeographyReportModal";
+import { TransitMobilityCard } from "./TransitMobilityCard";
 import { Card, CardContent } from "~/components/ui/card";
 
 /**
@@ -176,6 +177,9 @@ export function GeographyContent() {
       {!isPublicReadOnly && (
         <GeoCompliancePanel countryId={countryId} onRefresh={() => refetch()} />
       )}
+
+      {/* National Transit & Mobility Index Card */}
+      <TransitMobilityCard countryId={countryId} countryName={country?.name} />
 
       {/* Cities editor */}
       <SearchableList

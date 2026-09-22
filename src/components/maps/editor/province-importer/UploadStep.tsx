@@ -86,15 +86,17 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
           Import Scope
         </label>
         <div className="grid grid-cols-3 gap-2">
-          {[
-            { id: "both", label: "Provinces & Cities" },
-            { id: "provinces", label: "Provinces Only" },
-            { id: "cities", label: "Cities Only" },
-          ].map((scope) => (
+          {(
+            [
+              { id: "both", label: "Provinces & Cities" },
+              { id: "provinces", label: "Provinces Only" },
+              { id: "cities", label: "Cities Only" },
+            ] as const
+          ).map((scope) => (
             <button
               key={scope.id}
               type="button"
-              onClick={() => importer.setImportScope(scope.id as any)}
+              onClick={() => importer.setImportScope(scope.id)}
               className={`rounded-lg border px-3 py-2 text-center text-xs font-medium transition-all ${
                 importer.importScope === scope.id
                   ? "border-primary bg-primary/10 text-primary shadow-sm"

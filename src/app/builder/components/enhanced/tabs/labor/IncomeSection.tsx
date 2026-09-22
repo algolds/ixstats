@@ -8,7 +8,10 @@ import type { LaborBounds } from "../utils/laborCalculations";
 
 interface IncomeSectionProps {
   laborMarket: LaborConfiguration;
-  onChange: (field: keyof LaborConfiguration, value: any) => void;
+  onChange: <K extends keyof LaborConfiguration>(
+    field: K,
+    value: LaborConfiguration[K]
+  ) => void;
   showAdvanced: boolean;
   componentBounds?: LaborBounds;
 }
@@ -25,7 +28,7 @@ export function IncomeSection({
         label="Minimum Wage (Hourly)"
         description="Minimum hourly wage rate"
         value={laborMarket.minimumWageHourly}
-        onChange={(value) => onChange("minimumWageHourly", value)}
+        onChange={(value) => onChange("minimumWageHourly", Number(value) || 0)}
         min={componentBounds?.minimumWage?.min ?? 5}
         max={componentBounds?.minimumWage?.max ?? 50}
         step={0.25}
@@ -39,7 +42,7 @@ export function IncomeSection({
         label="Living Wage (Hourly)"
         description="Living wage for basic needs"
         value={laborMarket.livingWageHourly}
-        onChange={(value) => onChange("livingWageHourly", value)}
+        onChange={(value) => onChange("livingWageHourly", Number(value) || 0)}
         min={componentBounds?.livingWage?.min ?? 10}
         max={componentBounds?.livingWage?.max ?? 100}
         step={0.5}

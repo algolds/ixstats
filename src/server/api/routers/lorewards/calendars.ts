@@ -189,7 +189,9 @@ export const lorewardsCalendarsRouter = createTRPCRouter({
         if (e.metadata) {
           try {
             candidates = JSON.parse(e.metadata);
-          } catch (_) {}
+          } catch (err) {
+            console.warn("[LorewardsCalendars] Failed to parse entry metadata JSON:", err);
+          }
         }
         calendar[day] = {
           winnerUser: e.winnerUser,

@@ -45,12 +45,12 @@ export const SOURCE_CONFIG: Record<
   activity: { icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10", label: "Activity" },
   thinkpages: {
     icon: Users,
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
+    color: "text-blue-400",
+    bg: "bg-blue-500/10",
     label: "Social",
   },
-  wiki: { icon: BookOpen, color: "text-teal-400", bg: "bg-teal-500/10", label: "Wiki" },
-  forum: { icon: MessageCircle, color: "text-indigo-400", bg: "bg-indigo-500/10", label: "Forum" },
+  wiki: { icon: BookOpen, color: "text-wiki", bg: "bg-wiki/10", label: "Wiki" },
+  forum: { icon: MessageCircle, color: "text-orange-400", bg: "bg-orange-500/10", label: "Forum" },
 };
 
 export function getActivityLabel(activity: any): {
@@ -112,7 +112,7 @@ export function getActivityLabel(activity: any): {
     title.includes("politic") ||
     title.includes("election")
   )
-    return { label: "Politics", icon: Landmark, color: "text-purple-400", bg: "bg-purple-500/10" };
+    return { label: "Politics", icon: Landmark, color: "text-indigo-400", bg: "bg-indigo-500/10" };
   if (cat === "crisis" || title.includes("crisis"))
     return { label: "Crisis", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10" };
   if (cat === "achievement" || title.includes("tier") || title.includes("achieve"))
@@ -185,11 +185,11 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
         <div
           className={cn(
             "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-xs transition-transform duration-200 group-hover:scale-105",
-            isWiki ? "border-teal-500/20 bg-teal-500/10" : cn(resolvedConfig.bg, "border-border/30")
+            isWiki ? "border-wiki/30 bg-wiki/10" : cn(resolvedConfig.bg, "border-border/30")
           )}
         >
           {isWiki ? (
-            <WikiOSLogomark className="h-4.5 w-4.5 text-teal-500" />
+            <WikiOSLogomark className="h-4.5 w-4.5 text-wiki" />
           ) : (
             <Icon className={cn("h-4.5 w-4.5", resolvedConfig.color)} />
           )}

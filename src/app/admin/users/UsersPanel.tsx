@@ -2,7 +2,7 @@
 // src/app/admin/users/UsersPanel.tsx
 // Master User Identity, MediaWiki Reconciliation, and Discord Bot Sync Control Center
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -35,6 +35,10 @@ import {
   RefreshDouble,
   Shield,
   Crown,
+  Play,
+  LogOut,
+  Globe,
+  Dashboard as LayoutDashboard,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { AdminHeader } from "../_components/AdminHeader";
@@ -48,6 +52,43 @@ export function UsersPanel() {
     "identities" | "wiki-reconciliation" | "discord-sync" | "country-claims"
   >("identities");
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Impersonation state
+  const [activePlayAs, setActivePlayAs] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const checkPlayAs = () => {
+      const current = localStorage.getItem("ixstats.play_as_user");
+      setActivePlayAs(current);
+    };
+    checkPlayAs();
+    window.addEventListener("storage", checkPlayAs);
+    window.addEventListener("ixstats-play-as-change", checkPlayAs);
+    return () => {
+      window.removeEventListener("storage", checkPlayAs);
+      window.removeEventListener("ixstats-play-as-change", checkPlayAs);
+    };
+  }, []);
+
+  const handleStartPlayAs = (clerkUserId: string, nationName?: string | null) => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("ixstats.play_as_user", clerkUserId);
+    window.dispatchEvent(new Event("ixstats-play-as-change"));
+    setActivePlayAs(clerkUserId);
+    notify.success(
+      "Impersonation Active",
+      `Now playing as ${nationName ? `${nationName} (${clerkUserId})` : clerkUserId}. All tRPC queries & Halo will mirror this user.`
+    );
+  };
+
+  const handleStopPlayAs = () => {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem("ixstats.play_as_user");
+    window.dispatchEvent(new Event("ixstats-play-as-change"));
+    setActivePlayAs(null);
+    notify.info("Impersonation Stopped", "Restored administrative identity.");
+  };
 
   // Modals state
   const [selectedUser, setSelectedUser] = useState<string>("");
@@ -178,6 +219,10 @@ export function UsersPanel() {
     );
   });
 
+  const activeImpersonatedIdentity = userIdentities?.find(
+    (u) => u.clerkUserId === activePlayAs
+  );
+
   return (
     <div className="space-y-6">
       <AdminHeader
@@ -185,6 +230,74 @@ export function UsersPanel() {
         title="User Identity & Accounts Hub"
         description="Comprehensive cross-platform identity management: MediaWiki reconciliation, Discord bot sync, nation linkage, and system roles."
       />
+
+      {/* Active Impersonation Session Banner */}
+      {activePlayAs && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 shadow-[0_0_20px_rgba(239,68,68,0.15)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-3 w-3 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500"></span>
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold tracking-wide text-red-600 uppercase dark:text-red-400">
+                  Active Admin Impersonation Session
+                </span>
+                <Badge className="border-red-500/30 bg-red-500/20 text-[10px] font-semibold text-red-600 dark:text-red-400">
+                  Playing As
+                </Badge>
+              </div>
+              <p className="mt-0.5 text-xs text-foreground">
+                Simulating user identity:{" "}
+                <strong className="font-mono font-bold text-red-500">{activePlayAs}</strong>
+                {activeImpersonatedIdentity?.country?.name && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    — Claimed Nation:{" "}
+                    <strong className="text-foreground">
+                      {activeImpersonatedIdentity.country.name}
+                    </strong>
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                window.location.href = "/dashboard";
+              }}
+              className="h-8 gap-1.5 rounded-xl border-border/40 text-xs transition-transform active:scale-[0.98]"
+            >
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              Open Dashboard
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                window.location.href = "/mycountry";
+              }}
+              className="h-8 gap-1.5 rounded-xl border-border/40 text-xs transition-transform active:scale-[0.98]"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              Open MyCountry
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleStopPlayAs}
+              className="h-8 gap-1.5 rounded-xl bg-red-600 px-3.5 text-xs font-semibold text-white shadow-xs transition-transform hover:bg-red-700 active:scale-[0.98]"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Stop Impersonation
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -368,6 +481,27 @@ export function UsersPanel() {
 
                         <td className="py-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            {activePlayAs === u.clerkUserId ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleStopPlayAs}
+                                className="h-7 gap-1 rounded-lg border-red-500/40 bg-red-500/10 px-2 text-[11px] font-semibold text-red-600 transition-transform hover:bg-red-500/20 active:scale-[0.98] dark:text-red-400"
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                                Active (Stop)
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStartPlayAs(u.clerkUserId, u.country?.name)}
+                                className="h-7 gap-1 rounded-lg border-border/40 px-2 text-[11px] font-medium transition-transform hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
+                              >
+                                <Play className="h-3 w-3 fill-current text-primary" />
+                                Play As
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
@@ -485,33 +619,63 @@ export function UsersPanel() {
                         </td>
                         <td className="text-muted-foreground py-3 text-[11px]">{e.notes || "—"}</td>
                         <td className="py-3 text-right">
-                          {e.matchedUser && e.status === "READY_TO_LINK" && (
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                linkWikiMutation.mutate({
-                                  userId: e.matchedUser!.id,
-                                  wikiUsername: e.wikiUsername,
-                                });
-                              }}
-                              disabled={linkWikiMutation.isPending}
-                              className="h-7 rounded-lg text-[11px]"
-                            >
-                              1-Click Link
-                            </Button>
-                          )}
-                          {e.status === "ALREADY_LINKED" && e.matchedUser && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                unlinkWikiMutation.mutate({ userId: e.matchedUser!.id });
-                              }}
-                              className="text-destructive h-7 text-[11px]"
-                            >
-                              Unlink
-                            </Button>
-                          )}
+                          <div className="flex items-center justify-end gap-1.5">
+                            {e.matchedUser && (
+                              activePlayAs === e.matchedUser.clerkUserId ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleStopPlayAs}
+                                  className="h-7 border-red-500/30 bg-red-500/10 px-2 text-[11px] font-semibold text-red-600 dark:text-red-400"
+                                >
+                                  Active (Stop)
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleStartPlayAs(
+                                      e.matchedUser!.clerkUserId,
+                                      e.matchedUser!.countryName
+                                    )
+                                  }
+                                  className="h-7 gap-1 border-border/40 px-2 text-[11px] font-medium hover:text-primary active:scale-[0.98]"
+                                  title={`Play as ${e.matchedUser.clerkUserId}`}
+                                >
+                                  <Play className="h-2.5 w-2.5 fill-current text-primary" />
+                                  Play As
+                                </Button>
+                              )
+                            )}
+                            {e.matchedUser && e.status === "READY_TO_LINK" && (
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  linkWikiMutation.mutate({
+                                    userId: e.matchedUser!.id,
+                                    wikiUsername: e.wikiUsername,
+                                  });
+                                }}
+                                disabled={linkWikiMutation.isPending}
+                                className="h-7 rounded-lg text-[11px]"
+                              >
+                                1-Click Link
+                              </Button>
+                            )}
+                            {e.status === "ALREADY_LINKED" && e.matchedUser && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  unlinkWikiMutation.mutate({ userId: e.matchedUser!.id });
+                                }}
+                                className="text-destructive h-7 text-[11px]"
+                              >
+                                Unlink
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -674,19 +838,41 @@ export function UsersPanel() {
                       </td>
                       <td className="py-2.5 text-right">
                         {c.user && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              unassignCountryMutation.mutate({
-                                userId: c.user!.clerkUserId,
-                                countryId: c.id,
-                              });
-                            }}
-                            className="text-destructive h-6 text-[10px]"
-                          >
-                            Unassign
-                          </Button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            {activePlayAs === c.user.clerkUserId ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleStopPlayAs}
+                                className="h-6 gap-1 rounded-md border-red-500/40 bg-red-500/10 px-2 text-[10px] font-semibold text-red-600 dark:text-red-400"
+                              >
+                                Active (Stop)
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStartPlayAs(c.user!.clerkUserId, c.name)}
+                                className="h-6 gap-1 rounded-md border-border/40 px-2 text-[10px] font-medium hover:text-primary active:scale-[0.98]"
+                              >
+                                <Play className="h-2.5 w-2.5 fill-current text-primary" />
+                                Play As
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                unassignCountryMutation.mutate({
+                                  userId: c.user!.clerkUserId,
+                                  countryId: c.id,
+                                });
+                              }}
+                              className="text-destructive h-6 text-[10px]"
+                            >
+                              Unassign
+                            </Button>
+                          </div>
                         )}
                       </td>
                     </tr>

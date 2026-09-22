@@ -7,7 +7,7 @@ import React, { useRef, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
 import { parseTemplateWikitext } from "~/lib/wiki-os/editor/parse-template-wikitext";
-import type { Descendant } from "slate";
+import { Editor, Transforms, type Descendant } from "slate";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
 import { useWikiVisualFormatting } from "./hooks/useWikiVisualFormatting";
 import { WikiVisualToolbar } from "./components/WikiVisualToolbar";
@@ -78,16 +78,21 @@ export function WikiVisualEditor({
     return { html: fixEditorImageUrls(initialHtml || "") };
   }, [title, initialHtml, initialWikitext]);
 
+  const { setIsDirty, setWordCount } = state;
+  const onSerializedWikitextRef = useRef(onSerializedWikitext);
+  onSerializedWikitextRef.current = onSerializedWikitext;
+  const refreshActiveFormats = fmt.refreshActiveFormats;
+
   const handleValueChange = useCallback(
     (nodes: Descendant[], html: string, plainText: string) => {
       htmlRef.current = html;
       wtRef.current = serializePlateToWikitext(nodes);
-      onSerializedWikitext?.(wtRef.current);
-      state.setIsDirty(true);
-      state.setWordCount(plainText.split(/\s+/).filter(Boolean).length);
-      fmt.refreshActiveFormats();
+      onSerializedWikitextRef.current?.(wtRef.current);
+      setIsDirty(true);
+      setWordCount(plainText.split(/\s+/).filter(Boolean).length);
+      refreshActiveFormats();
     },
-    [state, onSerializedWikitext, fmt]
+    [setIsDirty, setWordCount, refreshActiveFormats]
   );
 
   const handleSave = useCallback(async () => {
@@ -109,7 +114,6 @@ export function WikiVisualEditor({
     (id: string) => {
       const editor = editorRef.current;
       if (!editor || !fmt.setEditingTemplate) return;
-      const { Editor } = require("slate") as typeof import("slate");
       const entries = Array.from(
         Editor.nodes(editor as unknown as import("slate").BaseEditor, {
           at: [],
@@ -139,7 +143,6 @@ export function WikiVisualEditor({
       const editor = editorRef.current;
       if (!editor || !fmt.editingTemplate) return;
       const { id } = fmt.editingTemplate;
-      const { Editor, Transforms } = require("slate") as typeof import("slate");
       const entries = Array.from(
         Editor.nodes(editor as unknown as import("slate").BaseEditor, {
           at: [],
@@ -154,16 +157,15 @@ export function WikiVisualEditor({
         { at: path }
       );
       fmt.setEditingTemplate(null);
-      state.setIsDirty(true);
+      setIsDirty(true);
     },
-    [editorRef, fmt, state]
+    [editorRef, fmt, setIsDirty]
   );
 
   const handleUpdateInfoboxFields = useCallback(
     (id: string, fields: Array<{ label: string; value: string }>) => {
       const editor = editorRef.current;
       if (!editor) return;
-      const { Editor, Transforms } = require("slate") as typeof import("slate");
       const entries = Array.from(
         Editor.nodes(editor as unknown as import("slate").BaseEditor, {
           at: [],
@@ -177,9 +179,9 @@ export function WikiVisualEditor({
         { fields, edited: true } as unknown as Partial<import("slate").Descendant>,
         { at: path }
       );
-      state.setIsDirty(true);
+      setIsDirty(true);
     },
-    [editorRef, state]
+    [editorRef, setIsDirty]
   );
 
   // Template and Image Handlers
@@ -247,6 +249,18 @@ export function WikiVisualEditor({
     [fmt]
   );
 
+  const handleDeleteNode = useCallback(() => {
+    fmt.removeEditingNode();
+  }, [fmt]);
+
+  const handleEditorReady = useCallback(
+    (editor: unknown) => {
+      editorRef.current = editor as PlateEditorLike;
+      refreshActiveFormats();
+    },
+    [refreshActiveFormats]
+  );
+
   return (
     <EditorModalProvider value={state.modalContextValue}>
       <div className="wikios-ve-container">
@@ -278,8 +292,6 @@ export function WikiVisualEditor({
           insertRef={fmt.insertRef}
           clearFormatting={fmt.clearFormatting}
           insertHtmlAtCursor={fmt.insertHtmlAtCursor}
-          saveSelection={fmt.saveSelection}
-          restoreSelection={fmt.restoreSelection}
           handleInsertStashedImage={handleInsertStashedImage}
         />
 
@@ -299,9 +311,11 @@ export function WikiVisualEditor({
           <PlateWikiEditor
             initialHtml={initialContent.html}
             initialWikitext={initialContent.wikitext}
+            onEditorReady={handleEditorReady}
             onValueChange={handleValueChange}
+            onSelectionChange={refreshActiveFormats}
             openTemplateEditor={handleOpenTemplateEditor}
-            deleteNode={() => fmt.removeEditingNode()}
+            deleteNode={handleDeleteNode}
             updateInfoboxFields={handleUpdateInfoboxFields}
           />
         </div>

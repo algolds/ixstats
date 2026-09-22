@@ -117,7 +117,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
               <div className="relative flex h-64 items-center justify-center">
                 {/* Left circle */}
                 <motion.div
-                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 opacity-50"
+                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 opacity-50"
                   animate={{
                     x: [-100, 0],
                     scale: [1, 1.2, 0.8],
@@ -131,7 +131,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
 
                 {/* Right circle */}
                 <motion.div
-                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 opacity-50"
+                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-amber-500 to-indigo-500 opacity-50"
                   animate={{
                     x: [100, 0],
                     scale: [1, 1.2, 0.8],

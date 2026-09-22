@@ -1,5 +1,6 @@
 import { Hexagon, Droplet } from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
+import { isKeyboardInputTarget } from "../hooks/drag-utils";
 
 export const SubdivisionDrawPlugin: MapEditorPlugin = {
   id: "subdivision-draw",
@@ -15,6 +16,7 @@ export const SubdivisionDrawPlugin: MapEditorPlugin = {
       label: "Region",
       shortcut: "R",
       group: 1,
+      order: 1,
     },
     {
       id: "tool-lake",
@@ -22,11 +24,19 @@ export const SubdivisionDrawPlugin: MapEditorPlugin = {
       icon: Droplet,
       label: "Lake",
       shortcut: "J",
-      group: 2,
+      group: 3,
+      order: 3,
     },
   ],
 
   onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
+    if (isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement)) {
+      return false;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) {
+      return false;
+    }
+
     const key = e.key.toLowerCase();
     if (key === "r") {
       context.onModeChange("add-subdivision");

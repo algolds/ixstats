@@ -37,6 +37,20 @@ const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; label: string }> 
   environmental: { icon: Leaf, label: "Environmental" },
 };
 
+interface ReconRevealItem {
+  targetField: string;
+  value?: number | null;
+  operation?: string;
+  state?: "greyed" | "questioned" | "revealed" | string;
+  reason?: string | null;
+}
+
+interface ReconOptionItem {
+  optionId: string;
+  label: string;
+  reveals: ReconRevealItem[];
+}
+
 interface ResponseOption {
   id: string;
   label: string;
@@ -77,7 +91,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
   const utils = api.useUtils();
   const issueQuery = api.nationalIssues.getIssue.useQuery({ id: issueId }, { enabled: !!issueId });
   const respondM = api.nationalIssues.respond.useMutation({
-    onSuccess: async (res: any) => {
+    onSuccess: async (res: { recommendedDirective?: string }) => {
       setShowOutcome(true);
       setConfirmingOptionId(null);
       setLocalDirective(res?.recommendedDirective);
@@ -85,7 +99,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       await utils.nationalIssues.getMyIssues.invalidate();
       await utils.nationalIssues.getPendingCount.invalidate();
     },
-    onError: (e: any) => notify.error("Failed to submit response", e?.message),
+    onError: (e: { message?: string }) => notify.error("Failed to submit response", e?.message),
   });
   const dismissM = api.nationalIssues.dismiss.useMutation({
     onSuccess: () => {
@@ -94,7 +108,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       void utils.nationalIssues.getPendingCount.invalidate();
       onClose?.();
     },
-    onError: (e: any) => notify.error("Failed to delegate issue", e?.message),
+    onError: (e: { message?: string }) => notify.error("Failed to delegate issue", e?.message),
   });
 
   const scheduleMeetingM = api.quickActions.createMeeting.useMutation({
@@ -103,7 +117,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       void utils.nationalIssues.getMyIssues.invalidate();
       onClose?.();
     },
-    onError: (e: any) => notify.error("Failed to schedule meeting", e?.message),
+    onError: (e: { message?: string }) => notify.error("Failed to schedule meeting", e?.message),
   });
 
   const reconQuery = api.nationalIssues.getReconReveal.useQuery(
@@ -115,7 +129,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       void reconQuery.refetch();
       notify.success("Cabinet research commissioned — findings will land shortly.");
     },
-    onError: (e: any) => notify.error("Could not commission research", e?.message),
+    onError: (e: { message?: string }) => notify.error("Could not commission research", e?.message),
   });
 
   const [localDirective, setLocalDirective] = useState<string | undefined>(undefined);
@@ -237,7 +251,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
             {issue.title}
           </h2>
           {issue.intentId && (
-            <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-purple-400">
+            <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-indigo-400">
               <Command className="h-3 w-3" />
               Linked to an active directive
             </span>
@@ -302,9 +316,9 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       {!isResolved && !showOutcome && reconQuery.data && reconQuery.data.status !== "disabled" && (
         <FacetCard
           depth={1}
-          className="flex flex-col gap-2.5 border-sky-500/20 bg-sky-500/[0.03] p-4 backdrop-blur-md"
+          className="flex flex-col gap-2.5 border-cyan-500/20 bg-cyan-500/[0.03] p-4 backdrop-blur-md"
         >
-          <div className="flex items-center gap-2 text-xs font-bold text-sky-400">
+          <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
             <Sliders className="h-4 w-4" />
             <span>Cabinet Research</span>
           </div>
@@ -318,7 +332,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 type="button"
                 onClick={() => commissionRecon.mutate({ issueId: issue.id })}
                 disabled={commissionRecon.isPending}
-                className="shrink-0 cursor-pointer rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-[11px] font-bold text-sky-400 transition-all hover:bg-sky-500/20"
+                className="shrink-0 cursor-pointer rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-[11px] font-bold text-cyan-400 transition-all hover:bg-cyan-500/20"
               >
                 {commissionRecon.isPending ? "..." : "Commission"}
               </button>
@@ -326,7 +340,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
           )}
           {reconQuery.data.status === "pending" && (
             <p className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
-              <Clock className="h-3.5 w-3.5 animate-pulse text-sky-400" />
+              <Clock className="h-3.5 w-3.5 animate-pulse text-cyan-400" />
               Your team is researching — findings land in{" "}
               {Math.max(
                 1,
@@ -339,7 +353,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
           )}
           {reconQuery.data.status === "ready" && (
             <div className="space-y-2">
-              {reconQuery.data.options.map((o: any) => (
+              {(reconQuery.data.options as ReconOptionItem[]).map((o: ReconOptionItem) => (
                 <div
                   key={o.optionId}
                   className="border-border/40 bg-card/30 rounded-lg border p-2.5"
@@ -351,7 +365,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                         No measurable effects.
                       </span>
                     )}
-                    {o.reveals.map((r: any, i: number) => {
+                    {o.reveals.map((r: ReconRevealItem, i: number) => {
                       const field = r.targetField
                         .replace(/([A-Z])/g, " $1")
                         .replace(/^./, (c: string) => c.toUpperCase());
@@ -544,7 +558,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                     </div>
 
                     {option.recommendedDirective && (
-                      <div className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-purple-500/20 bg-purple-500/5 px-2.5 py-1.5 text-[10px] font-semibold text-purple-400/90">
+                      <div className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 px-2.5 py-1.5 text-[10px] font-semibold text-indigo-400/90">
                         <Command className="h-3 w-3 shrink-0" />
                         <span className="line-clamp-2">
                           Recommended directive: &ldquo;{option.recommendedDirective}&rdquo;

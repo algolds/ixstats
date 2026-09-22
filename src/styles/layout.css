@@ -38,8 +38,10 @@ body.compact-mode main {
   padding-top: var(--nav-height-compact);
 }
 
-/* Dedicated maps canvas pages have zero padding at the top */
-body:has([data-maps-page]) main {
+/* Immersion & Canvas pages have zero padding at the top */
+body:has([data-maps-page]) main,
+body:has([data-builder-content]) main,
+body:has([data-immersion-page]) main {
   padding-top: 0 !important;
 }
 
@@ -167,6 +169,6 @@ body.compact-mode .sticky.top-6 {
 
 @media (prefers-reduced-motion: reduce) {
   .navigation-bar {
-    transform: none !important;
+    transition: opacity 0.15s ease !important;
   }
 }

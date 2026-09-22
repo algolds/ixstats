@@ -58,7 +58,7 @@ export function UserProfileMenu({
             className="border-border h-8 w-8 rounded-full object-cover"
           />
         ) : (
-          <div className="border-border flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-medium text-white">
+          <div className="border-border flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-medium text-white">
             {user?.firstName?.[0] || (user as any)?.username?.[0] || "U"}
           </div>
         )}
@@ -84,7 +84,7 @@ export function UserProfileMenu({
                   className="border-border h-12 w-12 rounded-full object-cover"
                 />
               ) : (
-                <div className="border-border flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-lg font-medium text-white">
+                <div className="border-border flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-medium text-white">
                   {user?.firstName?.[0] || (user as any)?.username?.[0] || "U"}
                 </div>
               )}

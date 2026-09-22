@@ -171,12 +171,16 @@ export const wikiosPageContentRouter = createTRPCRouter({
             ? nativeArticle.contentHtml
             : "";
 
+        // Detect corrupted wikitext remnants in cached HTML (e.g. leaked table pipes or dangling image parameters)
+        const hasCorruptedMarkup =
+          Boolean(rawHtml && (/\|\d+px\|/i.test(rawHtml) || /\|\s*(?:center|left|right|thumb)\]\]/i.test(rawHtml)));
+
         const wikitextHasInfobox =
           nativeArticle.wikitext && /\{\{[Ii]nfobox/i.test(nativeArticle.wikitext);
         const htmlHasInfobox =
-          rawHtml && (rawHtml.includes("infobox") || rawHtml.includes("aside"));
+          rawHtml && !hasCorruptedMarkup && (rawHtml.includes("infobox") || rawHtml.includes("aside"));
 
-        if (!rawHtml || (wikitextHasInfobox && !htmlHasInfobox)) {
+        if (!rawHtml || hasCorruptedMarkup || (wikitextHasInfobox && !htmlHasInfobox)) {
           try {
             const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
             const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
@@ -200,8 +204,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
           }
         }
 
-        if (!rawHtml && nativeArticle.wikitext) {
+        if ((!rawHtml || hasCorruptedMarkup) && nativeArticle.wikitext) {
           rawHtml = parseWikitextToHtml(nativeArticle.wikitext, "ixwiki");
+          void saveArticleHtmlShadow(resolvedTitle, rawHtml, "ixwiki").catch(() => {});
         }
 
         const transformed = transformArticleHtml(stripConflictingStyles(rawHtml), "", "ixwiki");

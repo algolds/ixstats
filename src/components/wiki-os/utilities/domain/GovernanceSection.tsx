@@ -79,7 +79,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
       legacyAlias: "Special:ProtectedPages",
       icon: Shield,
       badge: "Sysop Protected",
-      color: "from-emerald-500/10 to-teal-500/10 text-emerald-400 border-emerald-500/20",
+      color: "from-emerald-500/10 to-emerald-600/10 text-emerald-400 border-emerald-500/20",
     },
   ];
 

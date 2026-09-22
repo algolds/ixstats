@@ -1,13 +1,16 @@
 /**
- * transport.ts — tRPC router for transport infrastructure.
+ * routeMutations.ts — tRPC mutations for transport infrastructure.
  *
  * Provides CRUD for transport routes and hubs, plus procedural
  * route generation using terrain-aware pathfinding.
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter } from "~/server/api/trpc";
-import { standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
+import type { PrismaClient, Prisma } from "@prisma/client";
+import {
+  createTRPCRouter,
+  standardMutationCountryOwnerProcedure,
+} from "~/server/api/trpc";
 import {
   generateTransportNetwork,
   estimateCoastalCities,
@@ -16,116 +19,33 @@ import {
 } from "~/lib/economy/transport-generator";
 import { calculateRouteCosts } from "~/lib/economy/transport-costs";
 import { syncResourcePoolModifiers } from "~/server/shared/geo-resource-sync";
+import { syncTransportEconomicModifiers } from "~/server/shared/transport-sync";
+import {
+  polylineLengthKm,
+  normalizeTerrainDifficulty,
+  samplePolylinePoints,
+} from "~/lib/maps/geo-math";
+import { getTerrainAtPoint } from "~/lib/country-geo";
 
-export async function syncTransportEconomicModifiers(db: any, countryId: string) {
-  const routes = await db.transportRoute.findMany({
-    where: { countryId, status: "operational" },
-  });
+type JsonPrimitive = string | number | boolean | null;
+type JsonObject = Record<string, JsonPrimitive | JsonPrimitive[] | Record<string, JsonPrimitive>>;
 
-  const hubs = await db.transportHub.findMany({
-    where: { countryId },
-  });
+const lineStringGeometrySchema = z.object({
+  type: z.string(),
+  coordinates: z.array(z.array(z.number())),
+});
 
-  let totalLengthKm = 0;
-  let totalMaintenanceCost = 0;
-
-  for (const route of routes) {
-    totalLengthKm += route.lengthKm ?? 0;
-    const props = (route.properties as Record<string, any>) || {};
-    totalMaintenanceCost += props.maintenanceCost !== undefined ? Number(props.maintenanceCost) : 0;
-  }
-
-  const gdpBonus = Math.min(0.15, totalLengthKm * 0.0001 + hubs.length * 0.01);
-  const tradeBonus = Math.min(0.2, totalLengthKm * 0.00015 + hubs.length * 0.015);
-  const syncDate = new Date();
-
-  // GDP modifier effect
-  const gdpEffectName = "transport_gdp_bonus";
-  const existingGdp = await db.storytellerEffect.findFirst({
-    where: { countryId, inputType: gdpEffectName, createdBy: "system_transport_sync" },
-  });
-  if (existingGdp) {
-    await db.storytellerEffect.update({
-      where: { id: existingGdp.id },
-      data: {
-        value: gdpBonus,
-        description: `GDP growth bonus from transport network (${totalLengthKm.toFixed(1)} km operational routes, ${hubs.length} hubs)`,
-        isActive: gdpBonus > 0,
-        ixTimeTimestamp: syncDate,
-      },
-    });
-  } else if (gdpBonus > 0) {
-    await db.storytellerEffect.create({
-      data: {
-        countryId,
-        inputType: gdpEffectName,
-        value: gdpBonus,
-        description: `GDP growth bonus from transport network (${totalLengthKm.toFixed(1)} km operational routes, ${hubs.length} hubs)`,
-        isActive: true,
-        createdBy: "system_transport_sync",
-        ixTimeTimestamp: syncDate,
-      },
-    });
-  }
-
-  // Trade modifier effect
-  const tradeEffectName = "transport_trade_bonus";
-  const existingTrade = await db.storytellerEffect.findFirst({
-    where: { countryId, inputType: tradeEffectName, createdBy: "system_transport_sync" },
-  });
-  if (existingTrade) {
-    await db.storytellerEffect.update({
-      where: { id: existingTrade.id },
-      data: {
-        value: tradeBonus,
-        description: `Trade efficiency bonus from transport network (${totalLengthKm.toFixed(1)} km operational routes, ${hubs.length} hubs)`,
-        isActive: tradeBonus > 0,
-        ixTimeTimestamp: syncDate,
-      },
-    });
-  } else if (tradeBonus > 0) {
-    await db.storytellerEffect.create({
-      data: {
-        countryId,
-        inputType: tradeEffectName,
-        value: tradeBonus,
-        description: `Trade efficiency bonus from transport network (${totalLengthKm.toFixed(1)} km operational routes, ${hubs.length} hubs)`,
-        isActive: true,
-        createdBy: "system_transport_sync",
-        ixTimeTimestamp: syncDate,
-      },
-    });
-  }
-
-  // Maintenance cost effect
-  const maintenanceEffectName = "transport_infra_maintenance";
-  const existingMaintenance = await db.storytellerEffect.findFirst({
-    where: { countryId, inputType: maintenanceEffectName, createdBy: "system_transport_sync" },
-  });
-  if (existingMaintenance) {
-    await db.storytellerEffect.update({
-      where: { id: existingMaintenance.id },
-      data: {
-        value: -totalMaintenanceCost,
-        description: `Annual transport network maintenance cost (${totalMaintenanceCost.toFixed(3)} billion IxCredits)`,
-        isActive: totalMaintenanceCost > 0,
-        ixTimeTimestamp: syncDate,
-      },
-    });
-  } else if (totalMaintenanceCost > 0) {
-    await db.storytellerEffect.create({
-      data: {
-        countryId,
-        inputType: maintenanceEffectName,
-        value: -totalMaintenanceCost,
-        description: `Annual transport network maintenance cost (${totalMaintenanceCost.toFixed(3)} billion IxCredits)`,
-        isActive: true,
-        createdBy: "system_transport_sync",
-        ixTimeTimestamp: syncDate,
-      },
-    });
-  }
-}
+const routePropertiesSchema = z.record(
+  z.string(),
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(z.string()),
+    z.array(z.number()),
+  ])
+);
 
 export const transportRouteMutationsRouter = createTRPCRouter({
   /**
@@ -139,18 +59,10 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         routeTypes: z
           .array(
             z.enum([
-              "rail",
-              "highway",
-              "road",
-              "shipping_lane",
-              "canal",
-              "air_corridor",
-              "ferry",
-              "pipeline",
-              "power_grid",
-              "fiber",
-              "military_supply",
-              "military_naval",
+              "rail", "high_speed_rail", "freight_rail", "commuter_rail",
+              "motorway", "highway", "trunk", "road", "secondary",
+              "shipping_lane", "canal", "air_corridor", "ferry",
+              "pipeline", "power_grid", "fiber", "military_supply", "military_naval",
             ])
           )
           .default(["rail", "highway"]),
@@ -226,9 +138,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
           select: { geometry: true },
         });
         if (countryGeo?.geometry) {
-          const coords = extractBoundaryCoords(
-            countryGeo.geometry as unknown as import("geojson").Geometry
-          );
+          const coords = extractBoundaryCoords(countryGeo.geometry);
           cityNodes = estimateCoastalCities(cityNodes, coords, 50);
         }
       }
@@ -263,7 +173,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
             geometry: route.geometry,
             stops: route.stops,
             properties: {
-              ...((route.properties as Record<string, any>) || {}),
+              ...((route.properties as JsonObject | null) || {}),
               costBillion,
               maintenanceCost,
             },
@@ -271,7 +181,8 @@ export const transportRouteMutationsRouter = createTRPCRouter({
             status: "operational",
             terrainDifficulty: route.terrainDifficulty,
             lengthKm: route.lengthKm,
-          },
+            speedKmh: typeof route.properties?.speed_kmh === "number" ? route.properties.speed_kmh : null,
+          } as Prisma.TransportRouteCreateInput,
         });
         created++;
 
@@ -324,13 +235,14 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         countryId: z.string(),
         routeType: z.string(),
         name: z.string().optional(),
-        geometry: z.any(), // GeoJSON LineString
-        properties: z.any().optional(),
+        geometry: lineStringGeometrySchema,
+        properties: routePropertiesSchema.optional(),
+        speedKmh: z.number().positive().max(2000).optional(),
         isInternational: z.boolean().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const coords = (input.geometry as { coordinates?: number[][] })?.coordinates ?? [];
+      const coords = input.geometry.coordinates ?? [];
 
       const { lengthKm, terrainDifficulty } = await computeRouteLengthAndDifficulty(
         ctx.db,
@@ -344,14 +256,22 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         terrainDifficulty,
       });
 
+      const baseSpeed =
+        input.speedKmh ??
+        (typeof (input.properties as Record<string, unknown> | null)?.speed_kmh === "number"
+          ? ((input.properties as Record<string, unknown>).speed_kmh as number)
+          : null);
+
       const route = await ctx.db.transportRoute.create({
         data: {
           countryId: input.countryId,
           routeType: input.routeType,
           name: input.name,
           geometry: input.geometry,
+          speedKmh: baseSpeed,
           properties: {
-            ...((input.properties as Record<string, any>) || {}),
+            ...((input.properties as JsonObject | null) || {}),
+            ...(baseSpeed ? { speed_kmh: baseSpeed } : {}),
             costBillion,
             maintenanceCost,
           },
@@ -359,7 +279,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
           status: "operational",
           lengthKm,
           terrainDifficulty,
-        },
+        } as Prisma.TransportRouteCreateInput,
       });
 
       await syncTransportEconomicModifiers(ctx.db, input.countryId);
@@ -391,7 +311,8 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         isInternational: z.boolean().optional(),
         builtYear: z.number().optional(),
         capacity: z.number().optional(),
-        properties: z.any().optional(),
+        speedKmh: z.number().positive().max(2000).optional(),
+        properties: routePropertiesSchema.optional(),
         /** Ordered stop list: [{cityId, name, coordinates, order}] */
         stops: z
           .array(
@@ -407,10 +328,16 @@ export const transportRouteMutationsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, countryId, ...data } = input;
-      // Filter undefined values
-      const updates: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(data)) {
-        if (v !== undefined) updates[k] = v;
+      const updates: Prisma.TransportRouteUpdateInput = {};
+      if (data.name !== undefined) updates.name = data.name;
+      if (data.routeType !== undefined) updates.routeType = data.routeType;
+      if (data.status !== undefined) updates.status = data.status;
+      if (data.isInternational !== undefined) updates.isInternational = data.isInternational;
+      if (data.builtYear !== undefined) updates.builtYear = data.builtYear;
+      if (data.capacity !== undefined) updates.capacity = data.capacity;
+      if (data.stops !== undefined) updates.stops = data.stops;
+      if (data.speedKmh !== undefined) {
+        (updates as Record<string, unknown>).speedKmh = data.speedKmh;
       }
 
       // If routeType changed or properties edited, recalculate costs
@@ -419,7 +346,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         select: { routeType: true, lengthKm: true, terrainDifficulty: true, properties: true },
       });
       if (route) {
-        const type = (updates.routeType as string) || route.routeType;
+        const type = (data.routeType as string) || route.routeType;
         const length = route.lengthKm ?? 0;
         const diff = route.terrainDifficulty ?? 0.2;
         const { costBillion, maintenanceCost } = calculateRouteCosts({
@@ -427,9 +354,12 @@ export const transportRouteMutationsRouter = createTRPCRouter({
           lengthKm: length,
           terrainDifficulty: diff,
         });
+        const currentProps = (route.properties as JsonObject | null) || {};
+        const newProps = data.properties || {};
         updates.properties = {
-          ...((route.properties as Record<string, any>) || {}),
-          ...((updates.properties as Record<string, any>) || {}),
+          ...currentProps,
+          ...newProps,
+          ...(data.speedKmh !== undefined ? { speed_kmh: data.speedKmh } : {}),
           costBillion,
           maintenanceCost,
         };
@@ -454,12 +384,12 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       z.object({
         id: z.string(),
         countryId: z.string(),
-        geometry: z.any(), // GeoJSON LineString
+        geometry: lineStringGeometrySchema,
       })
     )
     .mutation(async ({ ctx, input }) => {
       // Recalculate length and terrain difficulty from new geometry
-      const coords = (input.geometry as { coordinates?: number[][] })?.coordinates ?? [];
+      const coords = input.geometry.coordinates ?? [];
 
       const { lengthKm, terrainDifficulty } = await computeRouteLengthAndDifficulty(
         ctx.db,
@@ -473,7 +403,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         select: { routeType: true, properties: true },
       });
       const routeType = route?.routeType ?? "road";
-      const existingProps = (route?.properties as Record<string, any>) || {};
+      const existingProps = (route?.properties as JsonObject | null) || {};
       const { costBillion, maintenanceCost } = calculateRouteCosts({
         routeType,
         lengthKm,
@@ -500,17 +430,180 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       return updated;
     }),
 
-  // ── Hub Management ──
+  /**
+   * Create a new network segment between two nodes.
+   */
+  createSegment: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        fromNodeId: z.string(),
+        toNodeId: z.string(),
+        routeType: z.string(),
+        geometry: z.object({
+          type: z.literal("LineString"),
+          coordinates: z.array(z.array(z.number())),
+        }),
+        status: z.enum(["planned", "under_construction", "operational", "abandoned"]).default("operational"),
+        speedKmh: z.number().optional(),
+        capacity: z.number().optional(),
+        isInternational: z.boolean().default(false),
+        properties: z.record(z.string(), z.unknown()).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { lengthKm, terrainDifficulty } = await computeRouteLengthAndDifficulty(
+        ctx.db,
+        input.geometry.coordinates,
+        input.countryId
+      );
+
+      const dbAny = ctx.db as any;
+      if (!dbAny.transportSegment) {
+        throw new Error("TransportSegment model not yet initialized in database.");
+      }
+
+      const segment = await dbAny.transportSegment.create({
+        data: {
+          countryId: input.countryId,
+          fromNodeId: input.fromNodeId,
+          toNodeId: input.toNodeId,
+          routeType: input.routeType,
+          geometry: input.geometry,
+          status: input.status,
+          lengthKm,
+          terrainDifficulty,
+          speedKmh: input.speedKmh,
+          capacity: input.capacity,
+          isInternational: input.isInternational,
+          properties: input.properties as Prisma.InputJsonValue,
+        },
+      });
+
+      await syncTransportEconomicModifiers(ctx.db, input.countryId);
+      return segment;
+    }),
+
+  /**
+   * Split a segment at an intermediate coordinate by creating a new junction node
+   * and replacing the segment with two sub-segments.
+   */
+  splitSegment: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        segmentId: z.string(),
+        splitCoordinate: z.tuple([z.number(), z.number()]),
+        nodeName: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const dbAny = ctx.db as any;
+      const seg = await dbAny.transportSegment.findUnique({
+        where: { id: input.segmentId },
+      });
+      if (!seg) throw new Error("Segment not found");
+
+      // 1. Create junction node
+      const node = await dbAny.transportNode.create({
+        data: {
+          countryId: input.countryId,
+          coordinates: input.splitCoordinate,
+          nodeType: "junction",
+          name: input.nodeName ?? "Junction",
+          worldId: seg.worldId,
+        },
+      });
+
+      // 2. Divide geometry coordinates
+      const coords = (seg.geometry as { coordinates: [number, number][] }).coordinates;
+      const midIdx = Math.max(1, Math.floor(coords.length / 2));
+      const geom1 = { type: "LineString", coordinates: [...coords.slice(0, midIdx), input.splitCoordinate] };
+      const geom2 = { type: "LineString", coordinates: [input.splitCoordinate, ...coords.slice(midIdx)] };
+
+      // 3. Create sub-segments
+      const seg1 = await dbAny.transportSegment.create({
+        data: {
+          ...seg,
+          id: undefined,
+          fromNodeId: seg.fromNodeId,
+          toNodeId: node.id,
+          geometry: geom1,
+          createdAt: undefined,
+          updatedAt: undefined,
+        },
+      });
+
+      const seg2 = await dbAny.transportSegment.create({
+        data: {
+          ...seg,
+          id: undefined,
+          fromNodeId: node.id,
+          toNodeId: seg.toNodeId,
+          geometry: geom2,
+          createdAt: undefined,
+          updatedAt: undefined,
+        },
+      });
+
+      // 4. Delete original
+      await dbAny.transportSegment.delete({ where: { id: input.segmentId } });
+
+      return { node, segment1: seg1, segment2: seg2 };
+    }),
+
+  /**
+   * Merge two adjacent segments sharing a node into a single segment.
+   */
+  mergeSegments: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        segmentIdA: z.string(),
+        segmentIdB: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const dbAny = ctx.db as any;
+      const [segA, segB] = await Promise.all([
+        dbAny.transportSegment.findUnique({ where: { id: input.segmentIdA } }),
+        dbAny.transportSegment.findUnique({ where: { id: input.segmentIdB } }),
+      ]);
+      if (!segA || !segB) throw new Error("Segments not found");
+
+      const coordsA = (segA.geometry as { coordinates: [number, number][] }).coordinates;
+      const coordsB = (segB.geometry as { coordinates: [number, number][] }).coordinates;
+
+      const mergedCoords = [...coordsA, ...coordsB.slice(1)];
+      const { lengthKm, terrainDifficulty } = await computeRouteLengthAndDifficulty(
+        ctx.db,
+        mergedCoords,
+        input.countryId
+      );
+
+      const merged = await dbAny.transportSegment.create({
+        data: {
+          countryId: input.countryId,
+          fromNodeId: segA.fromNodeId,
+          toNodeId: segB.toNodeId,
+          routeType: segA.routeType,
+          geometry: { type: "LineString", coordinates: mergedCoords },
+          status: segA.status,
+          lengthKm,
+          terrainDifficulty,
+          worldId: segA.worldId,
+        },
+      });
+
+      await dbAny.transportSegment.deleteMany({
+        where: { id: { in: [input.segmentIdA, input.segmentIdB] } },
+      });
+
+      return merged;
+    }),
 });
 
 // ── Helpers ──────────────────────────────────────────────────────
-
-import {
-  polylineLengthKm,
-  normalizeTerrainDifficulty,
-  samplePolylinePoints,
-} from "~/lib/maps/geo-math";
-import { getTerrainAtPoint } from "~/lib/country-geo";
 
 /**
  * Compute accurate route length and terrain difficulty from GeoJSON LineString coordinates.
@@ -520,7 +613,7 @@ import { getTerrainAtPoint } from "~/lib/country-geo";
  * Falls back to countryGeoProfile.terrainRoughness if PostGIS data is unavailable.
  */
 async function computeRouteLengthAndDifficulty(
-  db: any,
+  db: PrismaClient | Prisma.TransactionClient,
   coords: number[][],
   countryId?: string
 ): Promise<{ lengthKm: number; terrainDifficulty: number }> {
@@ -538,7 +631,7 @@ async function computeRouteLengthAndDifficulty(
   if (samplePoints.length >= 2) {
     try {
       const results = await Promise.all(
-        samplePoints.map(([lng, lat]) => getTerrainAtPoint(db, lng, lat))
+        samplePoints.map(([lng, lat]) => getTerrainAtPoint(db as PrismaClient, lng, lat))
       );
       const elevations = results.map((r) => {
         if (!r.elevationZone) return 0;
@@ -557,7 +650,10 @@ async function computeRouteLengthAndDifficulty(
   return { lengthKm, terrainDifficulty };
 }
 
-async function getFallbackDifficulty(db: any, countryId?: string): Promise<number> {
+async function getFallbackDifficulty(
+  db: PrismaClient | Prisma.TransactionClient,
+  countryId?: string
+): Promise<number> {
   if (!countryId) return 0.2;
   try {
     const geoProfile = await db.countryGeoProfile.findUnique({
@@ -570,17 +666,27 @@ async function getFallbackDifficulty(db: any, countryId?: string): Promise<numbe
   }
 }
 
-function extractBoundaryCoords(geometry: import("geojson").Geometry): [number, number][] {
+function extractBoundaryCoords(geometry: Prisma.JsonValue): [number, number][] {
   const coords: [number, number][] = [];
-  function walk(obj: unknown): void {
-    if (coords.length >= 200) return;
-    if (!Array.isArray(obj)) return;
-    if (obj.length >= 2 && typeof obj[0] === "number" && typeof obj[1] === "number") {
-      coords.push([obj[0] as number, obj[1] as number]);
+  if (!geometry || typeof geometry !== "object" || Array.isArray(geometry)) return coords;
+  if (!("coordinates" in geometry)) return coords;
+
+  const rawCoords = geometry.coordinates;
+  if (!Array.isArray(rawCoords)) return coords;
+
+  const stack: (Prisma.JsonValue | Prisma.JsonValue[] | number[])[] = [rawCoords];
+  while (stack.length > 0 && coords.length < 200) {
+    const item = stack.pop();
+    if (!item || !Array.isArray(item)) continue;
+    if (item.length >= 2 && typeof item[0] === "number" && typeof item[1] === "number") {
+      coords.push([item[0], item[1]]);
     } else {
-      for (const item of obj) walk(item);
+      for (const sub of item) {
+        if (Array.isArray(sub)) {
+          stack.push(sub);
+        }
+      }
     }
   }
-  if ("coordinates" in geometry) walk(geometry.coordinates);
   return coords;
 }

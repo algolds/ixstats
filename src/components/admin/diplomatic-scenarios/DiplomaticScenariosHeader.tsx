@@ -164,7 +164,7 @@ export function DiplomaticScenariosHeader({
               }}
               className={`rounded-full px-3 py-1 text-xs transition-colors ${
                 isSelected
-                  ? "bg-purple-500 text-white"
+                  ? "bg-cyan-500 text-white"
                   : "bg-white/5 text-[--intel-silver] hover:bg-white/10"
               }`}
             >

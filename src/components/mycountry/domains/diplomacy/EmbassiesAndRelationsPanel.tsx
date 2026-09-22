@@ -18,6 +18,7 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 // Hooks
 import { useEmbassyNetworkData } from "~/hooks/useEmbassyNetworkData";
@@ -145,7 +146,11 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
       <div className="border-border/30 flex scrollbar-none items-center gap-1.5 overflow-x-auto border-b pb-2">
         <button
           type="button"
-          onClick={() => setActiveTab("embassies")}
+          data-cuelume-press="soft"
+          onClick={() => {
+            soundEffects.press();
+            setActiveTab("embassies");
+          }}
           className={cn(
             "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
             activeTab === "embassies"
@@ -162,7 +167,11 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
 
         <button
           type="button"
-          onClick={() => setActiveTab("relations")}
+          data-cuelume-press="soft"
+          onClick={() => {
+            soundEffects.press();
+            setActiveTab("relations");
+          }}
           className={cn(
             "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
             activeTab === "relations"
@@ -179,28 +188,36 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
 
         <button
           type="button"
-          onClick={() => setActiveTab("alliances")}
+          data-cuelume-press="soft"
+          onClick={() => {
+            soundEffects.press();
+            setActiveTab("alliances");
+          }}
           className={cn(
             "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
             activeTab === "alliances"
-              ? "border border-purple-500/40 bg-purple-500/20 text-purple-400 shadow-sm"
+              ? "border border-cyan-500/40 bg-cyan-500/20 text-cyan-400 shadow-sm"
               : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
           )}
         >
           <Users className="h-4 w-4" />
           <span>Alliances & Blocs</span>
-          <span className="rounded-full bg-purple-500/20 px-2 py-0.5 font-mono text-[9px]">
+          <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 font-mono text-[9px]">
             {stats.allianceCount}
           </span>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveTab("exchanges")}
+          data-cuelume-press="soft"
+          onClick={() => {
+            soundEffects.press();
+            setActiveTab("exchanges");
+          }}
           className={cn(
             "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
             activeTab === "exchanges"
-              ? "border border-pink-500/40 bg-pink-500/20 text-pink-400 shadow-sm"
+              ? "border border-blue-500/40 bg-blue-500/20 text-blue-400 shadow-sm"
               : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
           )}
         >
@@ -275,7 +292,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-purple-500" />
+              <Users className="h-4 w-4 text-cyan-500" />
               <h3 className="text-sm font-semibold">Alliances & Blocs</h3>
               <SectionHelpIcon
                 title="Alliances & Blocs"
@@ -319,7 +336,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
       {activeTab === "exchanges" && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <Palette className="h-4 w-4 text-pink-500" />
+            <Palette className="h-4 w-4 text-blue-500" />
             <h3 className="text-sm font-semibold">Cultural Exchanges</h3>
           </div>
           <CulturalExchangeProgram primaryCountry={{ id: countryId, name: countryName }} />

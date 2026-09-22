@@ -196,11 +196,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     }));
 
     return (
-      <Card className="facet-hierarchy-child relative overflow-hidden border-purple-500/20 bg-purple-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-purple-500/30 dark:bg-purple-950/10">
+      <Card className="facet-hierarchy-child relative overflow-hidden border-cyan-500/20 bg-cyan-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-cyan-500/30 dark:bg-cyan-950/10">
         <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-2 flex items-center justify-between">
           <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-            <Globe className="h-3.5 w-3.5 text-purple-500 dark:text-purple-400" />
+            <Globe className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />
             {title}
           </span>
           <span className="text-muted-foreground text-[10px]">
@@ -214,7 +214,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
             xKey="name"
             yKey="strength"
             height={125}
-            theme="purple"
+            theme="cyan"
             hideLegend={true}
             hideGrid={true}
             hideYAxis={true}
@@ -272,7 +272,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
               "font-bold tracking-wider uppercase",
               netTrade >= 0
                 ? "text-emerald-600 dark:text-emerald-400"
-                : "text-rose-600 dark:text-rose-400"
+                : "text-red-600 dark:text-red-400"
             )}
           >
             {netTrade >= 0 ? "Surplus" : "Deficit"}: {formatMoney(Math.abs(netTrade))}
@@ -350,11 +350,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="facet-hierarchy-child relative overflow-hidden border-teal-500/20 bg-teal-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-teal-500/30 dark:bg-teal-950/10">
+      <Card className="facet-hierarchy-child relative overflow-hidden border-cyan-500/20 bg-cyan-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-cyan-500/30 dark:bg-cyan-950/10">
         <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-3 flex items-center justify-between">
           <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-            <Users className="h-3.5 w-3.5 text-teal-500 dark:text-teal-400" />
+            <Users className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />
             {title}
           </span>
           <span className="text-muted-foreground text-[10px]">Demographic Split</span>
@@ -425,7 +425,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
             className={cn(
               "font-bold",
               activeEcon.totalDebtGDPRatio > 80
-                ? "text-rose-600 dark:text-rose-400"
+                ? "text-red-600 dark:text-red-400"
                 : "text-emerald-600 dark:text-emerald-400"
             )}
           >
@@ -517,7 +517,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
             xKey="name"
             yKey="score"
             height={125}
-            theme="purple"
+            theme="red"
             hideLegend={true}
             hideGrid={true}
             hideYAxis={true}

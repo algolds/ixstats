@@ -285,52 +285,152 @@ export const unifiedAtomicRouter = createTRPCRouter({
 function detectComponentSynergy(
   component1: string,
   component2: string,
-  _synergyType: string
+  synergyType: string
 ): { bonus: number; description: string } | null {
-  // Define synergy rules based on component types
-  const synergyRules: Record<string, Record<string, { bonus: number; description: string }>> = {
-    // Government + Economic synergies
-    FREE_MARKET_SYSTEM: {
-      FREE_MARKET_SYSTEM: {
-        bonus: 10,
-        description: "Free market government supports free market economy",
+  if (synergyType === "GOV_ECON") {
+    const govEconRules: Record<string, Record<string, { bonus: number; description: string }>> = {
+      ECONOMIC_INCENTIVES: {
+        FREE_MARKET_SYSTEM: {
+          bonus: 10,
+          description: "Economic incentive governance supercharges free market pricing mechanics",
+        },
+        COMPETITIVE_MARKETS: {
+          bonus: 8,
+          description: "Economic incentives foster competitive enterprise",
+        },
       },
-      MIXED_ECONOMY: {
-        bonus: 5,
-        description: "Free market government with mixed economy creates balance",
+      RULE_OF_LAW: {
+        FREE_MARKET_SYSTEM: {
+          bonus: 8,
+          description: "Judicial contract enforcement secures market transactions and private property",
+        },
+        STARTUP_ECOSYSTEM: {
+          bonus: 6,
+          description: "Transparent legal frameworks attract venture capital and startup investments",
+        },
       },
-    },
-    PLANNED_ECONOMY: {
-      PLANNED_ECONOMY: {
-        bonus: 10,
-        description: "Planned government with planned economy creates efficiency",
+      WELFARE_STATE: {
+        SOCIAL_MARKET_ECONOMY: {
+          bonus: 12,
+          description: "Welfare institutions provide the social safety net foundational to social market capitalism",
+        },
+        PROTECTED_WORKERS: {
+          bonus: 10,
+          description: "State welfare programs harmonize with statutory labor protections",
+        },
       },
-    },
-    SOCIAL_MARKET_ECONOMY: {
-      SOCIAL_MARKET_ECONOMY: {
-        bonus: 10,
-        description: "Social market government with social market economy",
+      TECHNOCRATIC_PROCESS: {
+        PLANNED_ECONOMY: {
+          bonus: 10,
+          description: "Data-driven technocratic governance optimizes planned resource allocation",
+        },
+        TECHNOLOGY_FOCUSED: {
+          bonus: 8,
+          description: "Technocratic policymaking accelerates tech sector growth",
+        },
       },
-    },
-    // Government + Tax synergies
-    PROGRESSIVE_TAX: {
-      PROGRESSIVE_TAX: {
-        bonus: 8,
-        description: "Progressive government with progressive taxation",
+      WORKER_PROTECTION: {
+        PROTECTED_WORKERS: {
+          bonus: 10,
+          description: "Statutory labor protections align with union and worker safety standards",
+        },
+        UNION_BASED: {
+          bonus: 8,
+          description: "Worker protection policies empower organized labor institutions",
+        },
       },
-    },
-    FLAT_TAX: {
-      FLAT_TAX: { bonus: 8, description: "Simplified government with flat taxation" },
-    },
-    // Economic + Tax synergies
-    FREE_TRADE: {
-      FREE_TRADE: { bonus: 6, description: "Free trade economy with free trade taxation" },
-    },
-  };
+      RESEARCH_AND_DEVELOPMENT: {
+        INNOVATION_ECONOMY: {
+          bonus: 12,
+          description: "Public research investment fuels breakthrough private sector innovation",
+        },
+        STARTUP_ECOSYSTEM: {
+          bonus: 10,
+          description: "Government R&D grants catalyze startup technology commercialization",
+        },
+      },
+      TRADE_AGREEMENTS: {
+        FREE_TRADE: {
+          bonus: 10,
+          description: "Multilateral trade pacts remove export tariffs and trade barriers",
+        },
+        EXPORT_ORIENTED: {
+          bonus: 8,
+          description: "Diplomatic trade agreements unlock foreign export markets",
+        },
+      },
+      DEMOCRATIC_PROCESS: {
+        FREE_MARKET_SYSTEM: {
+          bonus: 8,
+          description: "Democratic accountability protects open competitive markets",
+        },
+      },
+    };
+    return govEconRules[component1]?.[component2] ?? null;
+  }
 
-  const rules = synergyRules[component1];
-  if (rules && rules[component2]) {
-    return rules[component2];
+  if (synergyType === "GOV_TAX") {
+    const govTaxRules: Record<string, Record<string, { bonus: number; description: string }>> = {
+      WELFARE_STATE: {
+        PROGRESSIVE_TAX: {
+          bonus: 10,
+          description: "Progressive taxation funds universal welfare state programs",
+        },
+      },
+      DIGITAL_GOVERNMENT: {
+        E_FILING_SYSTEM: {
+          bonus: 10,
+          description: "Digital governance infrastructure streamlines electronic tax filing",
+        },
+        AUTOMATED_COLLECTION: {
+          bonus: 8,
+          description: "Automated public data platforms optimize tax collection",
+        },
+      },
+      RULE_OF_LAW: {
+        TAX_AVOIDANCE_PREVENTION: {
+          bonus: 8,
+          description: "Strong legal institutions enforce tax compliance and prevent evasion",
+        },
+      },
+      ECONOMIC_INCENTIVES: {
+        TAX_INCENTIVES: {
+          bonus: 8,
+          description: "Targeted policy incentives maximize tax incentive efficacy",
+        },
+      },
+    };
+    return govTaxRules[component1]?.[component2] ?? null;
+  }
+
+  if (synergyType === "ECON_TAX") {
+    const econTaxRules: Record<string, Record<string, { bonus: number; description: string }>> = {
+      FREE_TRADE: {
+        TAX_INCENTIVES: {
+          bonus: 8,
+          description: "Export and trade tax incentives expand international commerce",
+        },
+      },
+      STARTUP_ECOSYSTEM: {
+        TAX_CREDITS: {
+          bonus: 10,
+          description: "Targeted R&D tax credits accelerate startup innovation",
+        },
+      },
+      FREE_MARKET_SYSTEM: {
+        FLAT_TAX: {
+          bonus: 8,
+          description: "Simplified flat taxation lowers market friction and compliance overhead",
+        },
+      },
+      SOCIAL_MARKET_ECONOMY: {
+        PROGRESSIVE_TAX: {
+          bonus: 8,
+          description: "Progressive tax revenues support balanced social market infrastructure",
+        },
+      },
+    };
+    return econTaxRules[component1]?.[component2] ?? null;
   }
 
   return null;
@@ -341,26 +441,36 @@ function detectComponentConflict(
   component1: string,
   component2: string
 ): { penalty: number; description: string } | null {
-  // Define conflict rules
   const conflictRules: Record<string, Record<string, { penalty: number; description: string }>> = {
-    FREE_MARKET_SYSTEM: {
-      PLANNED_ECONOMY: {
-        penalty: 15,
-        description: "Free market government conflicts with planned economy",
+    SURVEILLANCE_SYSTEM: {
+      FREE_MARKET_SYSTEM: {
+        penalty: 12,
+        description: "Heavy state surveillance undermines free commerce and capital confidence",
       },
     },
-    PLANNED_ECONOMY: {
+    AUTOCRATIC_PROCESS: {
+      COMPETITIVE_MARKETS: {
+        penalty: 10,
+        description: "Arbitrary autocratic decrees disrupt competitive free enterprise",
+      },
       FREE_MARKET_SYSTEM: {
-        penalty: 15,
-        description: "Planned government conflicts with free market economy",
+        penalty: 10,
+        description: "Authoritarian control limits decentralized market decisions",
+      },
+    },
+    CENTRALIZED_POWER: {
+      COMPETITIVE_MARKETS: {
+        penalty: 8,
+        description: "Over-centralization hinders regional market competition",
+      },
+    },
+    MILITARY_ADMINISTRATION: {
+      FREE_TRADE: {
+        penalty: 12,
+        description: "Militarized governance and borders choke open international trade flows",
       },
     },
   };
 
-  const rules = conflictRules[component1];
-  if (rules && rules[component2]) {
-    return rules[component2];
-  }
-
-  return null;
+  return conflictRules[component1]?.[component2] ?? null;
 }

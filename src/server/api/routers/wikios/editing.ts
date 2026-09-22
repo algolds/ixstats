@@ -9,6 +9,7 @@ import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { htmlToWikitext, wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { transformWikiLinks } from "~/lib/wiki-os/transformers/url-compat";
+import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
 import {
   getRevisionWikitextShadow,
   getArticleHistoryShadow,
@@ -35,8 +36,17 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const html = await wikitextToHtml(input.wikitext, input.title);
-      return { html: transformWikiLinks(html) };
+      const rawHtml = await wikitextToHtml(input.wikitext, input.title, {
+        preserveUnknownTemplates: false,
+      });
+      const transformed = transformArticleHtml(stripConflictingStyles(rawHtml), "", "ixwiki");
+      const infoboxPrefix = transformed.infoboxHtml
+        ? `<div class="wikios-infobox-container mb-4 float-right clear-right max-w-[340px] ml-4">${transformed.infoboxHtml}</div>`
+        : "";
+      const noticesPrefix = transformed.noticesHtml
+        ? `<div class="wikios-notices-container mb-4">${transformed.noticesHtml}</div>`
+        : "";
+      return { html: noticesPrefix + infoboxPrefix + transformed.contentHtml };
     }),
 
   /**
@@ -50,7 +60,9 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const html = await wikitextToHtml(input.wikitext, input.title);
+      const html = await wikitextToHtml(input.wikitext, input.title, {
+        preserveUnknownTemplates: true,
+      });
       const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
       const bodyHtml = bodyMatch ? bodyMatch[1]! : html;
       return { html: bodyHtml };

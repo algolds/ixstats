@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import type { NamedLakeFormData, EditorFeature } from "~/hooks/map-editor/editor-types";
+import { geometryAreaSqKm } from "~/lib/maps/geo-math";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
 const inputClasses =
@@ -20,8 +21,24 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
   pendingGeometry,
   selectedFeature,
 }: LakePropertyFormProps) {
-  const hasGeom = !!(form.geometry ?? pendingGeometry ?? selectedFeature?.geometry);
-  const areaSqKm = selectedFeature?.properties?.areaSqKm as number | undefined;
+  const activeGeom = (form.geometry ?? pendingGeometry ?? selectedFeature?.geometry) as {
+    type?: string;
+    coordinates?: unknown;
+  } | null;
+  const hasGeom = !!activeGeom;
+
+  const areaSqKm = useMemo(() => {
+    if (!activeGeom) return (selectedFeature?.properties?.areaSqKm as number | undefined);
+    if (
+      (activeGeom.type === "Polygon" || activeGeom.type === "MultiPolygon") &&
+      Array.isArray(activeGeom.coordinates)
+    ) {
+      return geometryAreaSqKm(
+        activeGeom as { type: string; coordinates: number[][][] | number[][][][] }
+      );
+    }
+    return (selectedFeature?.properties?.areaSqKm as number | undefined);
+  }, [activeGeom, selectedFeature?.properties?.areaSqKm]);
 
   return (
     <div className="space-y-2">

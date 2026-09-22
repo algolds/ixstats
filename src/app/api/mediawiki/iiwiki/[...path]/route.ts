@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { externalApiCache } from "~/lib/cache";
+import { getFullIiwikiApiUrl } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -66,101 +67,46 @@ export async function GET(
       }
 
       if (!directUrl) {
-        // 1. Try to guess the MediaWiki upload path using MD5 hash to bypass Cloudflare
-        try {
-          const crypto = await import("crypto");
-          const normalizedName = filename.replace(/ /g, "_");
-          const hash = crypto.createHash("md5").update(normalizedName).digest("hex");
-          const guessedUrl = `https://iiwiki.com/images/${hash[0]}/${hash.slice(0, 2)}/${encodeURIComponent(normalizedName)}`;
-
-          console.log(`[IIWiki Proxy] Guessing upload path for ${filename} -> ${guessedUrl}`);
-
-          const wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(guessedUrl)}`;
-          const testResp = await fetch(wsrvUrl, {
-            method: "GET",
-            headers: { "User-Agent": "IxStats-Builder" },
-            signal: AbortSignal.timeout(8000),
-          });
-
-          if (testResp.ok) {
-            directUrl = guessedUrl;
-            console.log(`[IIWiki Proxy] Verified guessed URL for ${filename} -> ${directUrl}`);
-            await externalApiCache.set(cacheOptions, { url: directUrl }).catch(() => {});
-          } else {
-            console.warn(
-              `[IIWiki Proxy] Guessed URL test failed (status ${testResp.status}) for ${filename}`
-            );
-          }
-        } catch (guessErr) {
-          console.error("[IIWiki Proxy] Error guessing upload path:", guessErr);
-        }
-      }
-
-      if (!directUrl) {
-        // 2. Fallback: Query via api.php
-        const apiUrl = new URL("https://iiwiki.com/api.php");
+        // Query MediaWiki imageinfo via dev proxy URL (bypasses Cloudflare 403)
+        const apiUrl = new URL(getFullIiwikiApiUrl());
         apiUrl.searchParams.set("action", "query");
         apiUrl.searchParams.set("titles", `File:${filename}`);
         apiUrl.searchParams.set("prop", "imageinfo");
         apiUrl.searchParams.set("iiprop", "url");
         apiUrl.searchParams.set("format", "json");
+        apiUrl.searchParams.set("formatversion", "2");
         apiUrl.searchParams.set("origin", "*");
 
-        const maxRetries = 2;
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-          try {
-            const abortController = new AbortController();
-            const timeoutId = setTimeout(() => abortController.abort(), 10000);
+        try {
+          const apiResponse = await fetch(apiUrl.toString(), {
+            headers: {
+              "User-Agent": "IxStats-Builder",
+              "Api-User-Agent": "IxStats-Builder",
+              Accept: "application/json",
+            },
+            signal: AbortSignal.timeout(6000),
+          });
 
-            const apiResponse = await fetch(apiUrl.toString(), {
-              headers: {
-                "User-Agent": "IxStats-Builder",
-                "Api-User-Agent": "IxStats-Builder",
-                Accept: "application/json, text/html, */*",
-                "Accept-Language": "en-US,en;q=0.9",
-              },
-              signal: abortController.signal,
-            });
-
-            clearTimeout(timeoutId);
-
-            if (apiResponse.ok) {
-              const data = (await apiResponse.json()) as any;
-              const pages = data.query?.pages ?? {};
-              const page = Object.values(pages)[0] as any;
-              directUrl = page?.imageinfo?.[0]?.url;
-              if (directUrl) {
-                console.log(
-                  `[IIWiki Proxy] Cache MISS. Resolved Special:FilePath for ${filename} -> ${directUrl}. Caching...`
-                );
-                await externalApiCache.set(cacheOptions, { url: directUrl });
-              }
-              break; // success, exit retry loop
-            }
-
-            if (apiResponse.status === 403 && attempt < maxRetries) {
-              console.warn(
-                `[IIWiki Proxy] API returned 403 for ${filename}, retrying (${attempt + 1}/${maxRetries})...`
+          if (apiResponse.ok) {
+            const data = (await apiResponse.json()) as {
+              query?: {
+                pages?: Array<{
+                  title?: string;
+                  imageinfo?: Array<{ url?: string }>;
+                }>;
+              };
+            };
+            const page = data.query?.pages?.[0];
+            directUrl = page?.imageinfo?.[0]?.url ?? null;
+            if (directUrl) {
+              console.log(
+                `[IIWiki Proxy] Resolved Special:FilePath for ${filename} -> ${directUrl}. Caching...`
               );
-              await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)));
-              continue;
+              await externalApiCache.set(cacheOptions, { url: directUrl }).catch(() => {});
             }
-
-            break; // non-403 or last attempt, exit
-          } catch (apiErr) {
-            if (attempt < maxRetries) {
-              console.warn(
-                `[IIWiki Proxy] API error for ${filename}, retrying (${attempt + 1}/${maxRetries}):`,
-                apiErr
-              );
-              await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)));
-              continue;
-            }
-            console.error(
-              "[IIWiki Proxy] Error resolving Special:FilePath via api.php after max retries:",
-              apiErr
-            );
           }
+        } catch (apiErr) {
+          console.error(`[IIWiki Proxy] Error resolving Special:FilePath for ${filename}:`, apiErr);
         }
       }
 

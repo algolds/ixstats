@@ -166,7 +166,7 @@ export function WikiOSProfileWidget({
         )}
         {lorescore > 0 && (
           <div className="flex items-center gap-1.5 text-[10px] text-[var(--wikios-text-muted)]">
-            <Scroll className="h-3 w-3 shrink-0 text-purple-500 dark:text-purple-400/90" />
+            <Scroll className="h-3 w-3 shrink-0 text-indigo-500 dark:text-indigo-400/90" />
             <span className="truncate">{lorescore.toLocaleString()} Lorescore</span>
           </div>
         )}

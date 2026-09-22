@@ -32,7 +32,7 @@ export const AnalyticsHeader = React.memo<AnalyticsHeaderProps>(
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="flex items-center gap-2 text-3xl font-bold text-gray-900 dark:text-white">
-            <BarChart3 className="h-8 w-8 text-purple-600" />
+            <BarChart3 className="h-8 w-8 text-indigo-600" />
             Analytics Dashboard
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -59,7 +59,7 @@ export const AnalyticsHeader = React.memo<AnalyticsHeaderProps>(
             variant="default"
             size="sm"
             onClick={onExportAll}
-            className="bg-purple-600 hover:bg-purple-700"
+            className="bg-indigo-600 hover:bg-indigo-700"
           >
             <FileDown className="mr-2 h-4 w-4" />
             Export All

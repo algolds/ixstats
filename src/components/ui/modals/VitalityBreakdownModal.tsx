@@ -45,8 +45,8 @@ const DOMAIN_CONFIG: Record<
     description:
       "Measures GDP growth rate, labor market health, fiscal balance, and inflation stability.",
     drivers: ["Real GDP Growth", "Employment & Wages", "Fiscal System & Tax Yield"],
-    bgClass: "bg-amber-500/10 dark:bg-amber-500/15",
-    borderClass: "border-amber-500/20 dark:border-amber-500/30",
+    bgClass: "bg-emerald-500/10 dark:bg-emerald-500/15",
+    borderClass: "border-emerald-500/20 dark:border-emerald-500/30",
     icon: DollarSign,
   },
   population: {
@@ -57,8 +57,8 @@ const DOMAIN_CONFIG: Record<
       "Demographic Replacement Rate",
       "Social Security Coverage",
     ],
-    bgClass: "bg-cyan-500/10 dark:bg-cyan-500/15",
-    borderClass: "border-cyan-500/20 dark:border-cyan-500/30",
+    bgClass: "bg-blue-500/10 dark:bg-blue-500/15",
+    borderClass: "border-blue-500/20 dark:border-blue-500/30",
     icon: Users,
   },
   diplomatic: {
@@ -70,8 +70,8 @@ const DOMAIN_CONFIG: Record<
       "Alliance Treaties & Pacts",
       "Global Prestige & Soft Power",
     ],
-    bgClass: "bg-purple-500/10 dark:bg-purple-500/15",
-    borderClass: "border-purple-500/20 dark:border-purple-500/30",
+    bgClass: "bg-cyan-500/10 dark:bg-cyan-500/15",
+    borderClass: "border-cyan-500/20 dark:border-cyan-500/30",
     icon: Globe,
   },
   government: {
@@ -83,8 +83,8 @@ const DOMAIN_CONFIG: Record<
       "Policy Implementation Speed",
       "Administrative Capacity",
     ],
-    bgClass: "bg-red-500/10 dark:bg-red-500/15",
-    borderClass: "border-red-500/20 dark:border-red-500/30",
+    bgClass: "bg-indigo-500/10 dark:bg-indigo-500/15",
+    borderClass: "border-indigo-500/20 dark:border-indigo-500/30",
     icon: Building,
   },
 };

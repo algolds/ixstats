@@ -3,20 +3,25 @@
  */
 
 export type FeatureType =
-  "city" | "subdivision" | "poi" | "storyPin" | "mapLabel" | "route" | "peak" | "river" | "lake";
+  | "city"
+  | "subdivision"
+  | "poi"
+  | "storyPin"
+  | "mapLabel"
+  | "route"
+  | "peak"
+  | "river"
+  | "lake"
+  | "gap";
 
 export type EditorMode =
   | "view"
   | "add-city"
   | "add-subdivision"
   | "add-poi"
-  | "add-story-pin"
-  | "add-label"
   | "edit-city"
   | "edit-subdivision"
   | "edit-poi"
-  | "edit-story-pin"
-  | "edit-label"
   | "import-provinces"
   | "import-cities"
   | "add-route"
@@ -30,11 +35,7 @@ export type EditorMode =
   | "edit-lake"
   | "split-subdivision"
   | "lasso-select"
-  | "ruler"
-  | "eyedropper"
-  | "magic-wand"
-  | "paint-fill"
-  | "pan";
+  | "ruler";
 
 export interface EditorFeature {
   id: string;
@@ -42,7 +43,7 @@ export interface EditorFeature {
   name: string;
   coordinates?: [number, number];
   geometry?: object;
-  properties: Record<string, any>;
+  properties: Record<string, string | number | boolean | null | undefined | object>;
 }
 
 export interface CityFormData {
@@ -78,13 +79,47 @@ export interface POIFormData {
   wikiPageTitle?: string;
   subdivisionId?: string;
   coordinates?: [number, number];
+  // Story & Historical Lore attributes
+  storyContent?: string;
+  ixTimeYear?: number;
+  eraLabel?: string;
+  importance?: number;
+  storylineId?: string;
 }
+
+export type StoryPinCategory =
+  | "battle"
+  | "founding"
+  | "treaty"
+  | "cultural"
+  | "religious"
+  | "natural"
+  | "trade"
+  | "exploration"
+  | "naval"
+  | "settlement"
+  | "government"
+  | "biography"
+  | "linguistic"
+  | "upheaval";
+
+export type MapLabelType =
+  | "mountain_range"
+  | "strait"
+  | "bay"
+  | "peninsula"
+  | "plateau"
+  | "valley"
+  | "desert"
+  | "sea"
+  | "region"
+  | "historical";
 
 export interface StoryPinFormData {
   title: string;
   content: string;
   contentFormat: "plain" | "markdown";
-  category: string;
+  category: StoryPinCategory;
   importance: number;
   ixTimeYear?: number;
   eraLabel?: string;
@@ -98,7 +133,7 @@ export interface StoryPinFormData {
 
 export interface MapLabelFormData {
   text: string;
-  labelType: string;
+  labelType: MapLabelType;
   fontSize: number;
   color: string;
   rotation: number;
@@ -146,7 +181,14 @@ export type ActiveFormState =
 
 const DUPLICATE_OFFSET_DEG = 0.05;
 
-export function buildDuplicateInput(feature: EditorFeature): Record<string, unknown> {
+interface OffsettableGeometry {
+  type: "Polygon" | "MultiPolygon" | string;
+  coordinates: [number, number][][] | [number, number][][][];
+}
+
+export function buildDuplicateInput(
+  feature: EditorFeature
+): Record<string, string | number | boolean | object | null | undefined> {
   const name = `${feature.name} (copy)`;
 
   const offsetCoords = (coords: [number, number]): [number, number] => [
@@ -155,19 +197,24 @@ export function buildDuplicateInput(feature: EditorFeature): Record<string, unkn
   ];
 
   const offsetGeometry = (geometry: object): object => {
-    if (!geometry || typeof (geometry as any).type !== "string") return geometry;
-    const geom = geometry as any;
+    if (!geometry || !("type" in geometry) || typeof (geometry as { type: string }).type !== "string") {
+      return geometry;
+    }
+    const geom = geometry as OffsettableGeometry;
     if (geom.type === "Polygon") {
       return {
         ...geom,
-        coordinates: geom.coordinates.map((ring: [number, number][]) => ring.map(offsetCoords)),
+        coordinates: (geom.coordinates as [number, number][][]).map((ring: [number, number][]) =>
+          ring.map(offsetCoords)
+        ),
       };
     }
     if (geom.type === "MultiPolygon") {
       return {
         ...geom,
-        coordinates: geom.coordinates.map((polygon: [number, number][][]) =>
-          polygon.map((ring) => ring.map(offsetCoords))
+        coordinates: (geom.coordinates as [number, number][][][]).map(
+          (polygon: [number, number][][]) =>
+            polygon.map((ring: [number, number][]) => ring.map(offsetCoords))
         ),
       };
     }

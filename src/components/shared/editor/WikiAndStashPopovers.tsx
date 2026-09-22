@@ -2,7 +2,7 @@
 // src/components/shared/editor/WikiAndStashPopovers.tsx
 // Search and insertion popovers for MediaWiki articles and Lore Stash assets.
 
-import { Sparks as Sparkles, Bookmark, SystemRestart as Loader2, Plus } from "iconoir-react";
+import { Eye, Bookmark, SystemRestart as Loader2, Plus } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -106,7 +106,7 @@ export function WikiAndStashPopovers({
         >
           <div className="space-y-3 text-xs">
             <div className="flex items-center justify-between border-b pb-2">
-              <span className="font-semibold text-purple-400">Wiki Integration</span>
+              <span className="text-wiki font-semibold">Wiki Integration</span>
               <div className="flex rounded-md bg-neutral-100 p-0.5 dark:bg-white/5">
                 <button
                   type="button"
@@ -114,7 +114,7 @@ export function WikiAndStashPopovers({
                   className={cn(
                     "rounded px-2 py-0.5 text-[10px] font-semibold transition-all",
                     wikiInsertMode === "link"
-                      ? "bg-white text-purple-600 shadow-xs dark:bg-purple-600 dark:text-white"
+                      ? "bg-white text-wiki shadow-xs dark:bg-wiki dark:text-white"
                       : "text-neutral-500 hover:text-neutral-800 dark:text-slate-400"
                   )}
                 >
@@ -126,7 +126,7 @@ export function WikiAndStashPopovers({
                   className={cn(
                     "rounded px-2 py-0.5 text-[10px] font-semibold transition-all",
                     wikiInsertMode === "embed"
-                      ? "bg-white text-purple-600 shadow-xs dark:bg-purple-600 dark:text-white"
+                      ? "bg-white text-wiki shadow-xs dark:bg-wiki dark:text-white"
                       : "text-neutral-500 hover:text-neutral-800 dark:text-slate-400"
                   )}
                 >
@@ -143,7 +143,7 @@ export function WikiAndStashPopovers({
                 className={cn(
                   "flex-1 rounded-lg border py-1 text-center text-[10px] font-medium transition-all",
                   wikiSource === "ixwiki"
-                    ? "border-purple-500/50 bg-purple-500/10 text-purple-600 dark:text-purple-300"
+                    ? "border-wiki/50 bg-wiki/10 text-wiki"
                     : "border-neutral-200 text-neutral-500 hover:bg-neutral-50 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/5"
                 )}
               >
@@ -155,7 +155,7 @@ export function WikiAndStashPopovers({
                 className={cn(
                   "flex-1 rounded-lg border py-1 text-center text-[10px] font-medium transition-all",
                   wikiSource === "iiwiki"
-                    ? "border-purple-500/50 bg-purple-500/10 text-purple-600 dark:text-purple-300"
+                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                     : "border-neutral-200 text-neutral-500 hover:bg-neutral-50 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/5"
                 )}
               >
@@ -175,7 +175,7 @@ export function WikiAndStashPopovers({
               />
               {isSearchingWiki && (
                 <div className="flex items-center gap-1.5 py-1 text-[10px] text-neutral-400">
-                  <Loader2 className="h-3 w-3 animate-spin text-purple-500" /> Searching wiki...
+                  <Loader2 className="text-wiki h-3 w-3 animate-spin" /> Searching wiki...
                 </div>
               )}
               {wikiSearchResults.length > 0 && (
@@ -209,9 +209,9 @@ export function WikiAndStashPopovers({
             )}
 
             {wikiInsertMode === "embed" && (
-              <div className="space-y-2 rounded-lg border border-purple-500/20 bg-purple-500/5 p-2">
-                <div className="flex items-center gap-1 text-[10px] font-medium text-purple-400">
-                  <Sparkles className="h-3 w-3" /> Live Embed Preview
+              <div className="space-y-2 rounded-lg border border-border/60 bg-muted/30 p-2">
+                <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium">
+                  <Eye className="h-3 w-3" /> Live Embed Preview
                 </div>
                 {wikiIntroQuery.isLoading ? (
                   <div className="py-2 text-center text-[10px] text-neutral-400">
@@ -235,7 +235,7 @@ export function WikiAndStashPopovers({
                             className={cn(
                               "h-10 w-10 cursor-pointer rounded border object-cover transition-all",
                               selectedWikiImageUrl === img
-                                ? "border-purple-500 ring-2 ring-purple-500/50"
+                                ? "border-wiki ring-2 ring-wiki/50"
                                 : "border-transparent opacity-60 hover:opacity-100"
                             )}
                           />
@@ -253,7 +253,7 @@ export function WikiAndStashPopovers({
               size="sm"
               onClick={insertWikiLink}
               disabled={!wikiTarget.trim()}
-              className="h-7 w-full bg-purple-600 text-xs font-semibold text-white hover:bg-purple-500"
+              className="bg-wiki h-7 w-full text-xs font-semibold text-white hover:opacity-90"
             >
               <Plus className="mr-1 h-3 w-3" /> Insert{" "}
               {wikiInsertMode === "embed" ? "Embed Card" : "Link"}

@@ -17,8 +17,8 @@ function DemoModeBanner() {
   if (!isDemoActive) return null;
 
   return (
-    <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-1.5 text-sm font-medium text-white shadow-md">
-      <AlertTriangle className="h-4 w-4" />
+    <div className="sticky top-0 z-50 flex items-center justify-center gap-2 border-b border-amber-500/30 bg-amber-500/15 px-4 py-1.5 text-xs font-semibold tracking-wide text-amber-600 backdrop-blur-md dark:text-amber-400">
+      <AlertTriangle className="h-3.5 w-3.5" />
       <span>DEMO MODE — Viewing seeded demo data. Changes are not saved.</span>
     </div>
   );
@@ -29,7 +29,7 @@ export default function MyCountryLayout({ children }: MyCountryLayoutProps) {
     <Suspense fallback={null}>
       <DemoModeProvider>
         <DevCountryViewProvider>
-          <div className="relative min-h-screen">
+          <div className="relative flex min-h-screen flex-1 flex-col">
             <MyCountryHalo />
             <DemoModeBanner />
             <ViewingAsBanner />

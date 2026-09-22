@@ -2,12 +2,11 @@
 
 import React, { useCallback, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Spotlight } from "~/components/ui/spotlight-new";
 import { FadeIn } from "~/components/ui/text-reveal";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useRouter } from "next/navigation";
-import { createUrl } from "~/lib/utils";
+import { cn, createUrl } from "~/lib/utils";
 import {
   UserPlus,
   UserXmark as UserMinus,
@@ -171,39 +170,28 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
       establishEmbassyMutation.isPending ||
       foreignPolicyMutation.isPending;
 
-    const buttonClass = (colors: string) =>
-      `flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium backdrop-blur-sm transition-all duration-200 disabled:opacity-50 ${colors}`;
+    const buttonClass = (extra = "") =>
+      cn(
+        "flex w-full items-center gap-2.5 rounded-xl border border-border/70 bg-muted/40 px-3.5 py-2.5 text-xs font-semibold text-foreground shadow-xs backdrop-blur-md transition-all duration-150 hover:bg-muted/80 hover:border-border active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40",
+        extra
+      );
 
     return (
-      <div className="relative overflow-hidden border-t border-white/20 bg-black/75 backdrop-blur-xl">
-        <AnimatePresence>
-          <Spotlight
-            gradientFirst="radial-gradient(68.54% 68.72% at 55.02% 31.46%, hsla(220, 100%, 85%, .12) 0, hsla(220, 100%, 65%, .04) 50%, hsla(220, 100%, 55%, 0) 80%)"
-            gradientSecond="radial-gradient(50% 50% at 50% 50%, hsla(200, 100%, 85%, .08) 0, hsla(200, 100%, 65%, .03) 80%, transparent 100%)"
-            gradientThird="radial-gradient(50% 50% at 50% 50%, hsla(240, 100%, 85%, .06) 0, hsla(240, 100%, 55%, .02) 80%, transparent 100%)"
-            translateY={-200}
-            width={300}
-            height={600}
-            smallWidth={120}
-            duration={12}
-            xOffset={50}
-          />
-        </AnimatePresence>
-
-        <div className="relative z-10 space-y-4 px-4 py-4">
+      <div className="relative min-h-[320px] w-full bg-card/95 p-4 text-card-foreground backdrop-blur-2xl dark:bg-slate-950/95 sm:p-5">
+        <div className="relative z-10 space-y-4">
           {/* Header */}
           <FadeIn direction="up" delay={0.1}>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-semibold tracking-wide text-white/50 uppercase">
+              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Country Actions
               </span>
               {country.continent && (
-                <span className="rounded-full border border-white/15 bg-white/10 px-2 py-px text-[9px] font-medium text-white/75">
+                <span className="rounded-full border border-border/80 bg-muted/60 px-2.5 py-0.5 text-[10px] font-semibold text-foreground">
                   {country.continent}
                 </span>
               )}
               {country.region && (
-                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-px text-[9px] text-white/55">
+                <span className="rounded-full border border-border/80 bg-muted/30 px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                   {country.region}
                 </span>
               )}
@@ -215,10 +203,11 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
             <FadeIn direction="up" delay={0.15}>
               <motion.button
                 onClick={handleGoToMyCountry}
+                data-cuelume-press="tick"
                 className={buttonClass(
-                  "border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 hover:from-amber-500/30 hover:to-orange-500/30"
+                  "border-transparent bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
                 )}
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <Crown className="h-4 w-4" />
@@ -229,28 +218,29 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
           {/* Other Country Actions */}
           {!isOwnCountry && (
-            <div className="space-y-3.5">
+            <div className="space-y-4">
               {/* Social */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[9px] font-semibold tracking-widest text-white/30 uppercase">
+                <p className="px-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                   Social
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={handleFollowToggle}
                     disabled={!viewerCountryId || isLoading}
+                    data-cuelume-press="tick"
                     className={buttonClass(
                       followStatus?.isFollowing
-                        ? "border-red-500/20 bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-300 hover:from-red-500/30 hover:to-pink-500/30"
-                        : "border-blue-500/20 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 hover:from-blue-500/30 hover:to-cyan-500/30"
+                        ? "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20"
+                        : "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20"
                     )}
                   >
                     {followMutation.isPending || unfollowMutation.isPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : followStatus?.isFollowing ? (
-                      <UserMinus className="h-3.5 w-3.5" />
+                      <UserMinus className="h-3.5 w-3.5 text-destructive" />
                     ) : (
-                      <UserPlus className="h-3.5 w-3.5" />
+                      <UserPlus className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
                     )}
                     {followStatus?.isFollowing ? "Unfollow" : "Follow"}
                   </button>
@@ -258,11 +248,10 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                   <button
                     onClick={handleSendMessage}
                     disabled={!viewerCountryId}
-                    className={buttonClass(
-                      "border-purple-500/20 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 text-purple-300 hover:from-purple-500/30 hover:to-fuchsia-500/30"
-                    )}
+                    data-cuelume-press="tick"
+                    className={buttonClass()}
                   >
-                    <MessageSquare className="h-3.5 w-3.5" />
+                    <MessageSquare className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                     Message
                   </button>
                 </div>
@@ -270,21 +259,20 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Diplomacy */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[9px] font-semibold tracking-widest text-white/30 uppercase">
+                <p className="px-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                   Diplomacy
                 </p>
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={handleEstablishEmbassy}
                     disabled={!viewerCountryId || isLoading}
-                    className={buttonClass(
-                      "border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 hover:from-amber-500/30 hover:to-yellow-500/30"
-                    )}
+                    data-cuelume-press="tick"
+                    className={buttonClass()}
                   >
                     {establishEmbassyMutation.isPending ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600 dark:text-amber-400" />
                     ) : (
-                      <Building2 className="h-3.5 w-3.5" />
+                      <Building2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                     )}
                     Construct Embassy
                   </button>
@@ -299,11 +287,10 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                       setSchedulerOpen(true);
                     }}
                     disabled={!viewerCountryId || isLoading}
-                    className={buttonClass(
-                      "border-indigo-500/20 bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 hover:from-indigo-500/30 hover:to-violet-500/30"
-                    )}
+                    data-cuelume-press="tick"
+                    className={buttonClass()}
                   >
-                    <Calendar className="h-3.5 w-3.5" />
+                    <Calendar className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
                     Request Meeting
                   </button>
 
@@ -311,53 +298,53 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     <button
                       onClick={(e) => handleForeignPolicy(e, "free_trade")}
                       disabled={!viewerCountryId || isLoading}
-                      className={buttonClass(
-                        "border-emerald-500/20 bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-300 hover:from-emerald-500/30 hover:to-green-500/30"
-                      )}
+                      data-cuelume-press="tick"
+                      className={buttonClass()}
                     >
-                      <Handshake className="h-3.5 w-3.5" />
+                      <Handshake className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                       Free Trade
                     </button>
 
                     <button
                       onClick={(e) => handleForeignPolicy(e, "military_alliance")}
                       disabled={!viewerCountryId || isLoading}
-                      className={buttonClass(
-                        "border-sky-500/20 bg-gradient-to-r from-sky-500/20 to-blue-500/20 text-sky-300 hover:from-sky-500/30 hover:to-blue-500/30"
-                      )}
+                      data-cuelume-press="tick"
+                      className={buttonClass()}
                     >
-                      <Shield className="h-3.5 w-3.5" />
+                      <Shield className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
                       Alliance
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Foreign Policy */}
+              {/* Foreign Policy (Sanctions & Embargo) */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[9px] font-semibold tracking-widest text-white/30 uppercase">
+                <p className="px-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                   Foreign Policy
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={(e) => handleForeignPolicy(e, "sanction")}
                     disabled={!viewerCountryId || isLoading}
+                    data-cuelume-press="tick"
                     className={buttonClass(
-                      "border-orange-500/20 bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-300 hover:from-orange-500/30 hover:to-amber-500/30"
+                      "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive/40"
                     )}
                   >
-                    <Scale className="h-3.5 w-3.5" />
+                    <Scale className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                     Sanctions
                   </button>
 
                   <button
                     onClick={(e) => handleForeignPolicy(e, "embargo")}
                     disabled={!viewerCountryId || isLoading}
+                    data-cuelume-press="tick"
                     className={buttonClass(
-                      "border-red-500/20 bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 hover:from-red-500/30 hover:to-rose-500/30"
+                      "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive/40"
                     )}
                   >
-                    <Swords className="h-3.5 w-3.5" />
+                    <Swords className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                     Embargo
                   </button>
                 </div>
@@ -365,19 +352,18 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Quick Links */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[9px] font-semibold tracking-widest text-white/30 uppercase">
+                <p className="px-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                   Quick Links
                 </p>
                 <a
                   href={`/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`}
                   onClick={(e) => e.stopPropagation()}
-                  className={buttonClass(
-                    "border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10"
-                  )}
+                  data-cuelume-press="tick"
+                  className={buttonClass()}
                 >
-                  <Globe className="h-3.5 w-3.5" />
+                  <Globe className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                   View on IxWiki
-                  <ExternalLink className="ml-auto h-3 w-3 text-white/40" />
+                  <ExternalLink className="ml-auto h-3 w-3 text-muted-foreground" />
                 </a>
               </div>
             </div>
@@ -385,8 +371,8 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
           {/* Login warning */}
           {!viewerCountryId && !isOwnCountry && (
-            <div className="mt-2 border-t border-white/15 pt-3">
-              <p className="text-center text-[10px] text-white/40">
+            <div className="mt-3 border-t border-border/60 pt-3">
+              <p className="text-center text-xs font-medium text-muted-foreground">
                 Login required to perform actions
               </p>
             </div>

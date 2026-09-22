@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Component, type ReactNode } from "react";
 import { Map, WarningCircle as AlertCircle } from "iconoir-react";
+import type { Geometry, Position } from "geojson";
 
 // ── Editor Loading Screen ────────────────────────────────────────────
 
@@ -26,7 +27,7 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
           <div className="absolute inset-3 animate-[spin_4s_linear_infinite_reverse] rounded-full border border-emerald-400/20" />
           <div className="absolute inset-6 animate-pulse rounded-full border border-emerald-300/15" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <Map className="h-8 w-8 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+            <Map className="h-8 w-8 text-emerald-400" />
           </div>
         </div>
 
@@ -47,14 +48,14 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
 
 // ── Geometry Vertices Counter Helper ─────────────────────────────────
 
-export function countGeometryVertices(geometry: object): number {
-  const geo = geometry as { type: string; coordinates: unknown };
+export function countGeometryVertices(geometry: Geometry | object): number {
+  const geo = geometry as { type?: string; coordinates?: Position[][] | Position[][][] };
   if (!geo.coordinates) return 0;
   if (geo.type === "Polygon") {
-    return (geo.coordinates as number[][][]).reduce((s, ring) => s + ring.length, 0);
+    return (geo.coordinates as Position[][]).reduce((s, ring) => s + ring.length, 0);
   }
   if (geo.type === "MultiPolygon") {
-    return (geo.coordinates as number[][][][]).reduce(
+    return (geo.coordinates as Position[][][]).reduce(
       (s, poly) => s + poly.reduce((s2, ring) => s2 + ring.length, 0),
       0
     );

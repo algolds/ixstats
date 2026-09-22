@@ -73,7 +73,7 @@ export function useFlag(countryName?: string): UseFlagResult {
  */
 export function useBulkFlags(
   countryNames: readonly string[],
-  _source: "irl" | "wiki" = "wiki"
+  source: "irl" | "wiki" = "wiki"
 ): UseBulkFlagsResult {
   // oxlint-disable-next-line eslint/no-unused-vars
   const placeholderUrl = useMemo(() => withBasePath(DEFAULT_PLACEHOLDER), []);
@@ -88,13 +88,20 @@ export function useBulkFlags(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryNamesKey]);
 
+  const fallbackPolicy = useMemo(() => {
+    return source === "irl" ? ("commons-only" as const) : undefined;
+  }, [source]);
+
   const {
     data: batchResult,
     isLoading,
     error: trpcError,
     refetch: trpcRefetch,
   } = api.countries.flags.resolveBatch.useQuery(
-    { countryNames: memoizedCountryNames },
+    {
+      countryNames: memoizedCountryNames,
+      ...(fallbackPolicy ? { fallbackPolicy } : {}),
+    },
     {
       enabled: memoizedCountryNames.length > 0,
       staleTime: 1000 * 60 * 60, // 1 hour

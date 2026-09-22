@@ -11,7 +11,7 @@ const EDITABLE_FIELDS = [
   { value: "governmentType", label: "Gov. Type", inputType: "text" as const },
 ] as const;
 
-type EditableField = (typeof EDITABLE_FIELDS)[number]["value"];
+export type EditableField = (typeof EDITABLE_FIELDS)[number]["value"];
 
 const SUBDIVISION_TYPES = [
   { value: "province", label: "Province" },

@@ -241,7 +241,7 @@ export function MessagesConversationPanel({
             >
               {/* LoreBot Avatar */}
               <div className="relative shrink-0">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-500/10 text-teal-400 shadow-2xs ring-1 ring-teal-500/20">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-400 shadow-2xs ring-1 ring-cyan-500/20">
                   <BookOpen className="h-4 w-4" />
                 </div>
               </div>

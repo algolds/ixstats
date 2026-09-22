@@ -5,10 +5,10 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.4 "Ogma"**, channel Release Candidate), while Apps / Engines / Systems each carry a single
+**IxStates 1.4 "Lobster Crosby"**, channel Release Candidate), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
-## [1.4.0] — 2026-08-20 — "Ogma" (Release Candidate)
+## [1.4.0] — 2026-08-20 — "Lobster Crosby" (Release Candidate)
 
 ### 🚀 Bun 1.4 & TypeScript 7.0 Native Modernization (RC-1)
 
@@ -32,6 +32,65 @@ capability integer. Each release entry below lists which components advanced and
   - Modernized `scripts/deploy-ixworld.sh` to native `bun run next build` while preserving zero-downtime hardlink rollback snapshotting.
 
 ## [Unreleased]
+
+### 🌍 Countries Page UI/UX Polish & Apple Design Alignment (Plan 319)
+
+- **Permanent Idle Legibility on Country Cards**:
+  - Implemented permanent bottom contrast gradient scrim on `CountryFocusCard.tsx` ensuring Country Name, Tier, and Population are always legible on mobile touch screens and default desktop views without requiring hover.
+  - Replaced hardcoded purple border hover glows with physical Facet depth elevation (`scale(1.015) y(-4px)` with spring physics and translucent glass borders).
+  - Pruned heavy multi-layer `text-shadow` loops in favor of clean anti-aliased typography.
+- **Harmonized Diplomatic Dossier Actions**:
+  - Removed synthetic `Spotlight` radial canvas component from `ExpandedCardContent.tsx`.
+  - Replaced 7 hardcoded 2-color gradient meshes with semantic Facet action buttons, Cuelume haptics (`data-cuelume-press="tick"`), and tactile pointer-down compression (`active:scale-[0.98]`).
+- **Tactile Apple-Style Metric Controls**:
+  - Added `data-cuelume-press="tick"` and `active:scale-[0.98]` to all 4 header metric popover triggers in `CountriesStats.tsx`.
+  - Upgraded skeleton placeholders in `CountriesFocusGridModular.tsx` to mirror matching 16:9 card geometry.
+
+### 🚫 Eradicate AI Design Slop, Rainbow Mesh Gradients & Gratuitous Sparkles (Plan 318)
+
+- **Removed MagicUI Shimmer & Rotating Border Slop**:
+  - Rebuilt desktop navigation in `src/components/navigation/NavigationBar.tsx` with clean semantic tokens, Cuelume haptics, and static crisp iconography.
+  - Deleted `src/components/ui/magicui/shine-border.tsx` and `src/components/ui/magicui/animated-shiny-text.tsx`.
+  - Pruned dead `.glow-text`, `.shimmer-text`, `--animate-shiny-text`, and `--animate-shine` keyframes from `src/styles/globals.css`.
+  - Removed unreferenced `NAV_COLORS` and `DEFAULT_NAV` hardcoded hex tables from `src/lib/navigation-config.ts`.
+- **Eradicated Unmotivated Purple/Pink/Cyan Mesh Gradients**:
+  - Replaced rainbow gradients in `src/components/sports/league/LeagueSidebarNav.tsx`, `src/app/countries/_components/CountriesHeader.tsx`, `src/app/mycountry/layout.tsx`, `src/app/help/page.tsx`, `src/components/thinkpages/account/AccountTypeSelector.tsx`, and `src/components/thinkpages/ThinkPagesAccountHub.tsx` with semantic Facet cards, alerts, and primary buttons.
+- **Replaced Gratuitous Sparkle / Magic Icons**:
+  - Replaced unmotivated `Sparks as Sparkles` icons across step indicators (`ImportStepIndicator.tsx`, `ImportNationStep.tsx`), live embed preview banners (`WikiAndStashPopovers.tsx`), directive composers (`DirectivePresetsCatalog.tsx`, `IntentComposer.tsx`), sports upset pills (`SportsBulletinCard.tsx`), live data drawers (`ComposerLiveDataDrawer.tsx`), and legal docs (`LegalDocumentLayout.tsx`) with purpose-specific semantic icons (`Check`, `Eye`, `Dices`, `Compass`, `Activity`, `Zap`, `Copyright`).
+
+### 💎 Facet Design Anti-Slop, Material Polish & Motion Optimization (Plan 317)
+
+- **Eliminated `transition: all` across Core & Component Surfaces**:
+  - Replaced indiscriminate `transition: all` in `src/styles/facet/core.css`, `src/styles/animations.css`, and `src/styles/wiki-os/` with explicit hardware-accelerated property lists (`transform`, `opacity`, `box-shadow`, `border-color`, `background-color`).
+- **Pruned Synchronous DOM Mutation Observers in FacetContainer**:
+  - Replaced synchronous `MutationObserver` + `window.getComputedStyle` layout scans with pure CSS `.facet-adapt-auto` theme adaptivity, cutting layout thrashing during animations and scrolling.
+- **Asymmetric Drawer & Sheet Timing Curves**:
+  - Re-tuned `sheet.tsx` timing curves from generic 500ms down to 280ms open with `ease-out` / Apple drawer curve and 200ms quick-dismiss.
+- **Eradicated Unmotivated Flash & Singularity Scaling**:
+  - Replaced 3-color rainbow `@keyframes flash-notification` with semantic single-hue brand border/shadow pulses.
+  - Corrected ripple keyframes from `scale(0)` to `scale(0.95)` with initial opacity 0 for natural optical emergence.
+
+### 🧹 Code Quality, Complexity & Architecture Audit Remediation (Plans 312–316)
+
+- **Dead Code & Router Residue Elimination (Plan 312)**:
+  - Pruned all unused schemas, dead sub-router residue, and unreachable statements across `cultural/`, `embassies/`, and `government/` sub-routers.
+  - Reset `scripts/audit/router-residue-baseline.json` to `{}` baseline with 0 dead code.
+- **Centralized Color Math & Formatters (Plan 313)**:
+  - Created canonical `src/lib/color.ts` with zero-dependency native HSL/RGB/Hex conversion math (`hslToHex`, `hslToRgb`, `rgbToHsl`, `hexToRgb`, `hexToHsl`, `parseColorToHsl`).
+  - Standardized number and currency formatting across `CountryPortal.tsx`, `TourHUD.tsx`, `FeatureInfoPanel.tsx`, `useCountryInfoPanelState.ts`, and `compliance.ts`.
+  - Extracted shared metric history filtering hook `useMetricHistoryFilter.ts` across all 6 metric detail modals (`DemographicsHealthModal`, `LaborDetailsModal`, `GovernmentSpendingModal`, `DebtAnalysisModal`, `PopulationDetailsModal`, `GdpDetailsModal`).
+- **Type System Hardening & `any`/`unknown` Eradication (Plan 314)**:
+  - Created canonical chart types in `src/types/charts.ts` (`ChartPayloadEntry`, `ChartTooltipProps`, `ChartSeriesConfig`, `ChartConfig`).
+  - Strongly typed Recharts primitives (`RechartsIntegration.tsx`, `chart.tsx`), Next.js middleware proxy (`src/proxy.ts`), and Facet primitives (`FacetTabs.tsx`, `SwipeableRow.tsx`).
+  - Replaced arbitrary `any`/`unknown` assertions across metric modals and data pipelines, driving `any`/`unknown` occurrences to 0.
+- **Decomposition of High-Complexity Simulation & Geometry Engines (Plan 315)**:
+  - Deconstructed sports match simulation (`src/lib/sports/resolver.ts`) into pure strategy modules: `src/lib/sports/modifiers.ts` and `src/lib/sports/tactics.ts`.
+  - Deconstructed National Issues engine (`src/lib/national-issues/engine.ts`) into table-driven AST condition evaluation `src/lib/national-issues/evaluators/condition-evaluator.ts` and variable substitution `src/lib/national-issues/evaluators/issue-generator.ts`.
+  - Deconstructed SVG geometry parser (`src/lib/flags/svg-parser.ts`) into `src/lib/flags/svg/command-evaluator.ts` and `src/lib/flags/svg/topology-flattener.ts`.
+  - Reduced Cyclomatic Complexity $< 22$, Cognitive Complexity $< 22$, and Halstead Difficulty $< 80$ across all modules.
+- **CRAP Score Reduction, Error Recovery & Mutant Elimination (Plan 316)**:
+  - Eliminated swallowed `catch (_) {}` blocks across map overlays (`RiskHeatmapOverlay.tsx`, `useWorldMapInteractions.ts`), achievement trackers (`progress.ts`), lorewards (`calendars.ts`), and audio narration (`narrator.ts`), replacing them with structured logging and graceful fallbacks.
+  - Added characterization test suites for National Issues Evaluator (`national-issues-evaluator.test.ts`), SVG Geometry (`svg-parser-geometry.test.ts`), and Color Math (`color.test.ts`), driving CRAP $< 25$ and surviving mutants to 0.
 
 ### 🖼️ WikiOS Native Media & Asset Engine (Plan 191)
 

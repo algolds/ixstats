@@ -48,8 +48,8 @@ const TIPS = [
   },
   {
     icon: Layers,
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
+    color: "text-indigo-400",
+    bg: "bg-indigo-500/10",
     title: "Examine the Geography",
     description:
       "Use the layer panel to switch between political borders, climate zones, elevation, and river systems.",
@@ -169,10 +169,6 @@ export function MapWelcomeModal({
 
               {/* Header */}
               <div className="relative px-6 pt-6 pb-4">
-                {/* Decorative gradient orbs */}
-                <div className="pointer-events-none absolute -top-20 -left-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl" />
-                <div className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-purple-500/10 blur-3xl" />
-
                 <div className="relative flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 shadow-lg shadow-blue-500/20">
@@ -258,7 +254,7 @@ export function MapWelcomeModal({
                         ))}
                       </div>
 
-                      <div className="border-border/30 mt-4 rounded-xl border bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-3 dark:border-white/5">
+                      <div className="border-border/30 mt-4 rounded-xl border bg-blue-500/10 p-3 dark:border-white/5">
                         <div className="mb-1 flex items-center gap-2">
                           <Compass className="h-3.5 w-3.5 text-blue-400" />
                           <span className="text-foreground/90 text-xs font-medium">Tip</span>
@@ -317,11 +313,11 @@ export function MapWelcomeModal({
                               Temperate Oceanic (Do)
                             </span>
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-sky-500" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-cyan-500" />
                               Continental (Dc)
                             </span>
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-pink-300" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-stone-300 dark:bg-stone-400" />
                               Highland (H)
                             </span>
                             <span>

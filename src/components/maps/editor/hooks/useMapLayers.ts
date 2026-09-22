@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
+import type { Map as MapLibreMap, GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
 import type { Polygon, MultiPolygon, Position, FeatureCollection, Geometry } from "geojson";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
@@ -23,11 +23,11 @@ interface UseMapLayersProps {
   gridZoomBucket: number;
   routeWaypoints?: [number, number][];
   theme?: MapTheme;
-  gapFeatures?: any | null;
+  gapFeatures?: FeatureCollection | null;
   showGaps?: boolean;
-  emptyRegionsFeatures?: any | null;
+  emptyRegionsFeatures?: FeatureCollection | null;
   showEmptyRegions?: boolean;
-  lassoGeometry?: any | null;
+  lassoGeometry?: Polygon | MultiPolygon | null;
   rulerPoints?: [number, number][];
 }
 
@@ -53,7 +53,7 @@ export function useMapLayers({
   lassoGeometry,
   rulerPoints,
 }: UseMapLayersProps) {
-  const lastLoadedEditorDataRef = useRef<Map<string, any>>(new Map());
+  const lastLoadedEditorDataRef = useRef<Map<string, MapLayerData["data"]>>(new Map());
 
   // 1. Render world map context layers (altitudes, rivers, lakes) as background
   useEffect(() => {
@@ -122,9 +122,9 @@ export function useMapLayers({
                 type: "line",
                 source: sourceId,
                 paint: {
-                  "line-color": config.strokeColor ?? "#5295c4",
-                  "line-width": isRiver
-                    ? ([
+                  "line-color": config.strokeColor ?? "var(--color-sky-600)",
+                  "line-width": (isRiver
+                    ? [
                         "interpolate",
                         ["exponential", 1.2],
                         ["zoom"],
@@ -140,8 +140,8 @@ export function useMapLayers({
                         3.2,
                         12,
                         6.0,
-                      ] as any)
-                    : ([
+                      ]
+                    : [
                         "interpolate",
                         ["linear"],
                         ["zoom"],
@@ -149,10 +149,10 @@ export function useMapLayers({
                         config.strokeWidth ?? 1,
                         6,
                         (config.strokeWidth ?? 1) * 3,
-                      ] as [string, ...unknown[]]),
-                  "line-opacity": layer.visible
+                      ]) as ExpressionSpecification,
+                  "line-opacity": (layer.visible
                     ? isRiver
-                      ? ([
+                      ? [
                           "interpolate",
                           ["linear"],
                           ["zoom"],
@@ -166,9 +166,9 @@ export function useMapLayers({
                           0.75,
                           8,
                           0.9,
-                        ] as unknown as number)
+                        ]
                       : 0.7
-                    : 0,
+                    : 0) as ExpressionSpecification | number,
                 },
                 layout: { "line-cap": "round", "line-join": "round" },
               },
@@ -177,21 +177,22 @@ export function useMapLayers({
           }
 
           if (config.type === "fill") {
-            const fillPaint: Record<string, unknown> = {
-              "fill-opacity": layer.visible ? config.fillOpacity : 0,
-            };
-            if (config.fillColor === "from-property") {
-              fillPaint["fill-color"] = ["coalesce", ["get", "_fillColor"], "#e8e5da"];
-            } else {
-              fillPaint["fill-color"] = config.fillColor;
-            }
+            const fillColor: ExpressionSpecification | string =
+              config.fillColor === "from-property"
+                ? (["coalesce", ["get", "_fillColor"], "#e8e5da"] as ExpressionSpecification)
+                : typeof config.fillColor === "string"
+                  ? config.fillColor
+                  : "#e8e5da";
 
             map.addLayer(
               {
                 id: fillLayerId,
                 type: "fill",
                 source: sourceId,
-                paint: fillPaint as Record<string, unknown>,
+                paint: {
+                  "fill-opacity": layer.visible ? config.fillOpacity : 0,
+                  "fill-color": fillColor,
+                },
               },
               firstEditorLayer
             );
@@ -263,12 +264,12 @@ export function useMapLayers({
     const fillId = "editor-country-fill";
     const strokeId = "editor-country-stroke";
 
-    const geojson: any = {
+    const geojson: FeatureCollection = {
       type: "FeatureCollection" as const,
       features: [
         {
           type: "Feature" as const,
-          geometry: countryGeometry,
+          geometry: countryGeometry as Geometry,
           properties: {},
         },
       ],
@@ -469,7 +470,7 @@ export function useMapLayers({
       }));
 
     const pointsGeoJson = { type: "FeatureCollection" as const, features: pointFeatures };
-    geoJSONPatcher.cacheSourceFeatures("editor-points", pointFeatures as any);
+    geoJSONPatcher.cacheSourceFeatures("editor-points", pointFeatures);
 
     if (map.getSource("editor-points")) {
       getGeoJSONSource(map, "editor-points")?.setData(pointsGeoJson);
@@ -769,7 +770,7 @@ export function useMapLayers({
         : [],
     };
 
-    const midpointFeatures: any[] = [];
+    const midpointFeatures: GeoJSON.Feature[] = [];
     if (routeWaypoints && routeWaypoints.length >= 2) {
       for (let i = 1; i < routeWaypoints.length; i++) {
         const a = routeWaypoints[i - 1]!;
@@ -1168,7 +1169,7 @@ export function useMapLayers({
     const pointsId = "editor-ruler-points";
     const labelsId = "editor-ruler-labels";
 
-    const features: any[] = [];
+    const features: GeoJSON.Feature[] = [];
     if (rulerPoints && rulerPoints.length > 0) {
       // Add point features
       rulerPoints.forEach((pt, index) => {

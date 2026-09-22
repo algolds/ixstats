@@ -78,7 +78,7 @@ export function ImportConfirmStep({
         </Button>
         <Button
           onClick={onConfirmImport}
-          className="flex-1 bg-gradient-to-r from-rose-500 to-orange-500 font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600 active:scale-[0.98]"
+          className="flex-1 bg-amber-500 font-bold text-black shadow-xs hover:bg-amber-400 active:scale-[0.98] dark:bg-amber-400 dark:text-black dark:hover:bg-amber-300"
           size="lg"
         >
           <Download className="mr-2 h-4 w-4" /> Import Deck
@@ -157,9 +157,9 @@ export function ImportCompleteStep({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        <div className="rounded-xl border border-purple-400/20 bg-gradient-to-br from-purple-500/10 to-purple-600/5 p-5 text-center">
-          <Package className="mx-auto mb-2 h-6 w-6 text-purple-400" />
-          <p className="text-3xl font-bold tracking-tight text-purple-400 tabular-nums">
+        <div className="rounded-xl border border-indigo-400/20 bg-indigo-500/10 p-5 text-center">
+          <Package className="mx-auto mb-2 h-6 w-6 text-indigo-400" />
+          <p className="text-3xl font-bold tracking-tight text-indigo-400 tabular-nums">
             <NumberFlow value={importResult.cardsImported} />
           </p>
           <p className="text-muted-foreground text-xs font-semibold">Cards Imported</p>

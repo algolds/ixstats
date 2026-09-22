@@ -31,6 +31,7 @@ export function Navigation() {
   const { user, isLoaded } = useUser();
   const isImmersionPage =
     normalizedPathname.startsWith("/builder") ||
+    normalizedPathname.startsWith("/mycountry/builder") ||
     normalizedPathname.startsWith("/mycountry/editor") ||
     normalizedPathname.startsWith("/messages") ||
     isWikiPage;
@@ -127,11 +128,12 @@ export function Navigation() {
             : "border-border/40 bg-background/80 shadow-xs"
         }`}
         style={{
+          visibility: isNavVisible ? "visible" : "hidden",
           opacity: isNavVisible ? 1 : 0,
           transform: isNavVisible ? "translateY(0)" : "translateY(-100%)",
           pointerEvents: isNavVisible ? "auto" : "none",
           transition:
-            "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out, background-color 0.2s ease",
+            "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out, visibility 0.22s, background-color 0.2s ease",
         }}
       >
         <div className="mx-auto max-w-none px-3 sm:px-4 md:px-6 lg:px-8">
@@ -216,8 +218,8 @@ export function Navigation() {
 
       {!isMobile && (
         <motion.div
-          onMouseEnter={onNavMouseEnter}
-          onMouseLeave={onNavMouseLeave}
+          onMouseEnter={!isImmersionPage ? onNavMouseEnter : undefined}
+          onMouseLeave={!isImmersionPage ? onNavMouseLeave : undefined}
           className="pointer-events-none fixed top-0 right-0 left-0 z-[var(--z-command)] flex justify-center"
           animate={{
             y: activeIsSticky ? 8 : 10,

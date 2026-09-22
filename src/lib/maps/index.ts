@@ -27,7 +27,7 @@ export * from "./topology-engine";
 export * from "./territory-brush";
 export * from "./province-generator";
 export * from "./route-geometry";
-export * from "./route-network-graph";
+export * from "./transport-vehicle-sim";
 export * from "./story-pin-enrichment";
 export * from "./story-pin-icons";
 export * from "./overlay-metrics";

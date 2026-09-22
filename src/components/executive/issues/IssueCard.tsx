@@ -42,7 +42,7 @@ const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; color: string; la
   },
   political: {
     icon: Landmark,
-    color: "text-purple-500",
+    color: "text-indigo-500",
     label: "Political",
   },
   social: { icon: Users, color: "text-blue-500", label: "Social" },

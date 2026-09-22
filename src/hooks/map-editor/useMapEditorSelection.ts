@@ -1,9 +1,16 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import type { Polygon, MultiPolygon } from "geojson";
 import { point } from "@turf/helpers";
 import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
 import type { EditorFeature } from "./editor-types";
+
+export interface EditorGuideLine {
+  id: string;
+  type: "h" | "v";
+  value: number;
+}
 
 interface UseMapEditorSelectionProps {
   allFeatures: EditorFeature[];
@@ -48,23 +55,48 @@ export function useMapEditorSelection({
 
   // Lasso tool state
   const [lassoTool, setLassoTool] = useState<"freehand" | "rect">("freehand");
-  const [lassoGeometry, setLassoGeometry] = useState<any>(null);
+  const [lassoGeometry, setLassoGeometry] = useState<Polygon | MultiPolygon | null>(null);
 
   const applyLassoSelection = useCallback(
-    (polygonGeom: any) => {
-      if (!polygonGeom) return;
-      const newSelected = new Set<string>();
+    (
+      coordsOrGeom: [number, number][] | Polygon | MultiPolygon | null,
+      mode: "replace" | "add" | "subtract" = "replace"
+    ) => {
+      if (!coordsOrGeom) return;
+      let poly: Polygon | MultiPolygon;
+      if (Array.isArray(coordsOrGeom)) {
+        if (coordsOrGeom.length < 3) return;
+        poly = {
+          type: "Polygon",
+          coordinates: [[...coordsOrGeom, coordsOrGeom[0]!]],
+        };
+      } else {
+        poly = coordsOrGeom;
+      }
+      const matchedIds = new Set<string>();
       for (const feat of allFeatures) {
         if (feat.coordinates) {
           const pt = point(feat.coordinates);
           try {
-            if (booleanPointInPolygon(pt, polygonGeom)) {
-              newSelected.add(feat.id);
+            if (booleanPointInPolygon(pt, poly)) {
+              matchedIds.add(feat.id);
             }
           } catch {}
         }
       }
-      setSelectedIds(newSelected);
+      setSelectedIds((prev) => {
+        if (mode === "add") {
+          const next = new Set(prev);
+          for (const id of matchedIds) next.add(id);
+          return next;
+        }
+        if (mode === "subtract") {
+          const next = new Set(prev);
+          for (const id of matchedIds) next.delete(id);
+          return next;
+        }
+        return matchedIds;
+      });
       setLassoGeometry(null);
     },
     [allFeatures]
@@ -74,7 +106,8 @@ export function useMapEditorSelection({
     (
       bounds:
         | { west: number; south: number; east: number; north: number }
-        | [[number, number], [number, number]]
+        | [[number, number], [number, number]],
+      mode: "replace" | "add" | "subtract" = "replace"
     ) => {
       let minLng: number, minLat: number, maxLng: number, maxLat: number;
       if (Array.isArray(bounds)) {
@@ -85,59 +118,33 @@ export function useMapEditorSelection({
         maxLng = bounds.east;
         maxLat = bounds.north;
       }
-      const newSelected = new Set<string>();
+      const matchedIds = new Set<string>();
       for (const feat of allFeatures) {
         if (feat.coordinates) {
           const [lng, lat] = feat.coordinates;
           if (lng >= minLng && lng <= maxLng && lat >= minLat && lat <= maxLat) {
-            newSelected.add(feat.id);
+            matchedIds.add(feat.id);
           }
         }
       }
-      setSelectedIds(newSelected);
+      setSelectedIds((prev) => {
+        if (mode === "add") {
+          const next = new Set(prev);
+          for (const id of matchedIds) next.add(id);
+          return next;
+        }
+        if (mode === "subtract") {
+          const next = new Set(prev);
+          for (const id of matchedIds) next.delete(id);
+          return next;
+        }
+        return matchedIds;
+      });
     },
     [allFeatures]
   );
 
-  // Magic Wand and Eyedropper configs
-  const [wandMatchColor, setWandMatchColor] = useState(true);
-  const [wandMatchLevel, setWandMatchLevel] = useState(false);
-  const [wandMatchParent, setWandMatchParent] = useState(false);
-  const [presetStyle, setPresetStyle] = useState<any>(null);
-  const [guides, setGuides] = useState<any[]>([]);
-
-  const applyMagicWand = useCallback(
-    (targetFeature: EditorFeature) => {
-      if (!targetFeature) return;
-      const matched = new Set<string>([targetFeature.id]);
-      const targetColor = targetFeature.properties?.color;
-      const targetLevel = targetFeature.properties?.level;
-      const targetParent = targetFeature.properties?.subdivisionId;
-
-      for (const f of allFeatures) {
-        if (f.type !== targetFeature.type) continue;
-        let match = true;
-        if (wandMatchColor && f.properties?.color !== targetColor) match = false;
-        if (wandMatchLevel && f.properties?.level !== targetLevel) match = false;
-        if (wandMatchParent && f.properties?.subdivisionId !== targetParent) match = false;
-        if (match) {
-          matched.add(f.id);
-        }
-      }
-      setSelectedIds(matched);
-    },
-    [allFeatures, wandMatchColor, wandMatchLevel, wandMatchParent]
-  );
-
-  const applyEyedropper = useCallback((targetFeature: EditorFeature) => {
-    if (!targetFeature) return;
-    setPresetStyle({
-      color: targetFeature.properties?.color,
-      type: targetFeature.properties?.type,
-      fontSize: targetFeature.properties?.fontSize,
-      fontWeight: targetFeature.properties?.fontWeight,
-    });
-  }, []);
+  const [guides, setGuides] = useState<EditorGuideLine[]>([]);
 
   return {
     selectedIds,
@@ -154,17 +161,7 @@ export function useMapEditorSelection({
     setLassoGeometry,
     applyLassoSelection,
     applyRectSelection,
-    wandMatchColor,
-    setWandMatchColor,
-    wandMatchLevel,
-    setWandMatchLevel,
-    wandMatchParent,
-    setWandMatchParent,
-    presetStyle,
-    setPresetStyle,
     guides,
     setGuides,
-    applyMagicWand,
-    applyEyedropper,
   };
 }

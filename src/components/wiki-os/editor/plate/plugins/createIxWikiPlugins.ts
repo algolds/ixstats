@@ -24,10 +24,12 @@ export const ELEMENT_CHIP_MAP_EMBED = "chip-mapembed";
 export const ELEMENT_MEDIA = "media";
 export const ELEMENT_REF = "ref";
 export const ELEMENT_HR = "hr";
+export const ELEMENT_CHIP_TEMPLATE = "chip-template";
+export const ELEMENT_INLINE_TEMPLATE = "inline-template";
 
-function voidPlugin(key: string) {
+function voidPlugin(key: string, isInline = false) {
   return createPlatePlugin({ key }).extend({
-    node: { isVoid: true, isElement: true },
+    node: { isVoid: true, isElement: true, isInline },
   });
 }
 
@@ -42,12 +44,14 @@ export function createIxWikiPlugins() {
     voidPlugin(ELEMENT_TEMPLATE_BLOCK),
     voidPlugin(ELEMENT_INFOBOX),
     voidPlugin(ELEMENT_INFOBOX_BLOCK),
-    voidPlugin(ELEMENT_CHIP_ENGINE),
-    voidPlugin(ELEMENT_CHIP_COORD),
+    voidPlugin(ELEMENT_CHIP_ENGINE, true),
+    voidPlugin(ELEMENT_CHIP_COORD, true),
     voidPlugin(ELEMENT_CHIP_MAP_EMBED),
     voidPlugin(ELEMENT_MEDIA),
-    voidPlugin(ELEMENT_REF),
+    voidPlugin(ELEMENT_REF, true),
     voidPlugin(ELEMENT_HR),
+    voidPlugin(ELEMENT_CHIP_TEMPLATE, true),
+    voidPlugin(ELEMENT_INLINE_TEMPLATE, true),
   ];
 }
 

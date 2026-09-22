@@ -1,7 +1,7 @@
 import { describe, it, expect } from "@jest/globals";
 import { generateSchedule } from "~/lib/sports/scheduler";
 import { resolveMatch, resolveRace } from "~/lib/sports/resolver";
-import type { TeamRatingVector } from "~/lib/sports/resolver";
+import type { TeamRatingVector, EventTraceStep, ExtendedMatchResult } from "~/lib/sports/types";
 
 describe("MyLeague Sports Engine", () => {
   describe("generateSchedule fallback for division_conference", () => {
@@ -172,7 +172,7 @@ describe("MyLeague Sports Engine", () => {
 
       expect(result.trace.length).toBeGreaterThan(0);
       const hasFreeThrows = result.trace.some(
-        (t: any) =>
+        (t: EventTraceStep) =>
           t.description.toLowerCase().includes("free throw") ||
           t.description.toLowerCase().includes("ft:")
       );
@@ -191,7 +191,7 @@ describe("MyLeague Sports Engine", () => {
       });
 
       expect(result.trace.length).toBeGreaterThan(0);
-      const hasPitchingChange = result.trace.some((t: any) =>
+      const hasPitchingChange = result.trace.some((t: EventTraceStep) =>
         t.description.toLowerCase().includes("pitching change")
       );
       expect(hasPitchingChange).toBe(true);
@@ -199,7 +199,7 @@ describe("MyLeague Sports Engine", () => {
 
     it("simulates soccer extra time in bracket archetype", () => {
       // Loop to find a seed that results in a regulation draw
-      let result: any = null;
+      let result: ExtendedMatchResult | null = null;
       let hasExtraTime = false;
       for (let seed = 1; seed <= 500; seed++) {
         result = resolveMatch({
@@ -211,13 +211,13 @@ describe("MyLeague Sports Engine", () => {
           homeRoster: mockRoster("Home"),
           awayRoster: mockRoster("Away"),
         });
-        hasExtraTime = result.trace.some((t: any) =>
+        hasExtraTime = result.trace.some((t: EventTraceStep) =>
           t.description.toLowerCase().includes("extra time")
         );
         if (hasExtraTime) break;
       }
       expect(hasExtraTime).toBe(true);
-      expect(result.trace.length).toBeGreaterThan(0);
+      expect(result?.trace.length).toBeGreaterThan(0);
     });
   });
 

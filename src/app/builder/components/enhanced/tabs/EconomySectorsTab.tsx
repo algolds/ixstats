@@ -7,7 +7,7 @@ import {
   CheckCircle,
   InfoCircle as Info,
 } from "iconoir-react";
-import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -101,7 +101,11 @@ export function EconomySectorsTab({
   };
 
   // Handle sector field changes (realtime slider drags)
-  const handleSectorChange = (sectorId: string, field: keyof SectorConfiguration, value: any) => {
+  const handleSectorChange = <K extends keyof SectorConfiguration>(
+    sectorId: string,
+    field: K,
+    value: SectorConfiguration[K]
+  ) => {
     const updatedSectors = economyBuilder.sectors.map((sector) => {
       if (sector.id === sectorId) {
         return { ...sector, [field]: value };
@@ -256,11 +260,18 @@ export function EconomySectorsTab({
       />
 
       {/* 3. Search & Grid Selector (Component UX style) */}
-      <GlassCard depth="base" theme="emerald" className="border-emerald-500/10">
-        <GlassCardContent className="space-y-5 p-6">
+      <FacetCard depth="base" theme="emerald" className="border-emerald-500/10">
+        <FacetCardContent className="space-y-5 p-6">
           <div className="flex flex-col gap-4 border-b border-white/5 pb-4 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap items-center gap-4">
-              <Tabs value={activeCategory} onValueChange={(val: any) => setActiveCategory(val)}>
+              <Tabs
+                value={activeCategory}
+                onValueChange={(val) =>
+                  setActiveCategory(
+                    val as "all" | "primary" | "secondary" | "tertiary"
+                  )
+                }
+              >
                 <TabsList className="border border-white/10 bg-white/5 p-0.5">
                   <TabsTrigger value="all" className="text-xs">
                     All Sectors
@@ -352,8 +363,8 @@ export function EconomySectorsTab({
               );
             })}
           </div>
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
 
       {/* 4. Active Configuration Area & Visualizations (Two Columns layout) */}
       {economyBuilder.sectors.length > 0 && (

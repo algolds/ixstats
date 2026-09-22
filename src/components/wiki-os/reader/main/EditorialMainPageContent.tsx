@@ -303,8 +303,8 @@ export function EditorialMainPageContent({
                     "border border-black/[0.08] dark:border-white/[0.1]",
                     "bg-white/70 backdrop-blur-xl dark:bg-zinc-900/70",
                     "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_24px_rgba(0,0,0,0.3)]",
-                    "hover:border-purple-500/40 hover:bg-white/90 hover:shadow-md dark:hover:bg-zinc-900/90",
-                    "block text-left transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:outline-none dark:focus-visible:ring-offset-zinc-900"
+                    "hover:border-wiki/40 hover:bg-white/90 hover:shadow-md dark:hover:bg-zinc-900/90",
+                    "block text-left transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-wiki focus-visible:ring-offset-2 focus-visible:outline-none dark:focus-visible:ring-offset-zinc-900"
                   )}
                 >
                   <div className="bg-foreground/5 border-foreground/10 relative mb-2.5 h-16 w-full overflow-hidden rounded-xl border shadow-2xs">
@@ -321,7 +321,7 @@ export function EditorialMainPageContent({
                       </div>
                     )}
                   </div>
-                  <span className="text-foreground truncate text-xs font-semibold transition-colors group-hover:text-purple-500 dark:group-hover:text-purple-400">
+                  <span className="text-foreground group-hover:text-wiki truncate text-xs font-semibold transition-colors">
                     {c.name}
                   </span>
                   <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate text-[10.5px] font-medium tabular-nums">

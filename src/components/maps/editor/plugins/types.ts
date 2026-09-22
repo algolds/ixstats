@@ -1,34 +1,51 @@
-import type { Map as MapLibreMap } from "maplibre-gl";
+import type { Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import type React from "react";
 import type { EditorMode } from "~/hooks/useMapEditor";
+import type { useMapEditorOverlayState } from "../hooks/useMapEditorOverlayState";
+
+export type MapEditorEvent = MapLayerMouseEvent | MouseEvent | TouchEvent;
 
 export interface ToolbarItem {
   id: string;
-  icon: any; // Lucide or custom icon component
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   shortcut: string;
   group: number;
   mode: EditorMode; // The mode this tool activates
+  order?: number;
 }
 
 export interface SidebarTab {
   id: string;
   label: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   component: React.ComponentType<{ context: MapEditorContextType }>;
 }
 
+export type PluginStateValue =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: PluginStateValue }
+  | PluginStateValue[];
+
+export type MapEditorOverlayStateReturnType = ReturnType<typeof useMapEditorOverlayState>;
+
 export interface MapEditorContextType {
   /** Core state object returned by useMapEditorOverlayState hook */
-  state: any;
+  state: MapEditorOverlayStateReturnType;
   /** Reference to the MapLibre Map instance */
   map: MapLibreMap | null;
   /** Set MapLibre Map instance */
   setMap: (map: MapLibreMap | null) => void;
   /** Generic reactive dictionary for plugin custom states */
-  pluginStates: Record<string, any>;
+  pluginStates: Record<string, PluginStateValue>;
   /** Update custom state for a specific plugin */
-  setPluginState: (pluginId: string, state: any) => void;
+  setPluginState: (
+    pluginId: string,
+    state: PluginStateValue | ((prev: PluginStateValue) => PluginStateValue)
+  ) => void;
   /** Triggered when active mode is changed */
   onModeChange: (mode: string) => void;
 }
@@ -54,13 +71,13 @@ export interface MapEditorPlugin {
 
   /** Map canvas interaction event handlers */
   mapEvents?: {
-    [key: string]: ((e: any, context: MapEditorContextType) => void) | undefined;
-    onClick?: (e: any, context: MapEditorContextType) => void;
-    onMouseMove?: (e: any, context: MapEditorContextType) => void;
-    onMouseDown?: (e: any, context: MapEditorContextType) => void;
-    onMouseUp?: (e: any, context: MapEditorContextType) => void;
-    onDoubleClick?: (e: any, context: MapEditorContextType) => void;
-    onContextMenu?: (e: any, context: MapEditorContextType) => void;
+    [key: string]: ((e: MapEditorEvent, context: MapEditorContextType) => void) | undefined;
+    onClick?: (e: MapEditorEvent, context: MapEditorContextType) => void;
+    onMouseMove?: (e: MapEditorEvent, context: MapEditorContextType) => void;
+    onMouseDown?: (e: MapEditorEvent, context: MapEditorContextType) => void;
+    onMouseUp?: (e: MapEditorEvent, context: MapEditorContextType) => void;
+    onDoubleClick?: (e: MapEditorEvent, context: MapEditorContextType) => void;
+    onContextMenu?: (e: MapEditorEvent, context: MapEditorContextType) => void;
   };
 
   /** Custom coordinate snapping function */

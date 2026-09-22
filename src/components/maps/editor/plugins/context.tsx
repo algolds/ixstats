@@ -2,30 +2,40 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import type { MapEditorContextType } from "./types";
+import type { EditorMode } from "~/hooks/useMapEditor";
+import type { MapEditorContextType, PluginStateValue, MapEditorOverlayStateReturnType } from "./types";
 import { getPlugins } from "./registry";
 
 const MapEditorContext = createContext<MapEditorContextType | null>(null);
 
 interface MapEditorPluginProviderProps {
   children: React.ReactNode;
-  state: any; // Overlay state
+  state: MapEditorOverlayStateReturnType;
 }
 
 export function MapEditorPluginProvider({ children, state }: MapEditorPluginProviderProps) {
   const [map, setMap] = useState<MapLibreMap | null>(null);
-  const [pluginStates, setPluginStates] = useState<Record<string, any>>({});
+  const [pluginStates, setPluginStates] = useState<Record<string, PluginStateValue>>({});
 
-  const setPluginState = useCallback((pluginId: string, newState: any) => {
-    setPluginStates((prev) => ({
-      ...prev,
-      [pluginId]: typeof newState === "function" ? newState(prev[pluginId]) : newState,
-    }));
-  }, []);
+  const setPluginState = useCallback(
+    (
+      pluginId: string,
+      newState: PluginStateValue | ((prev: PluginStateValue) => PluginStateValue)
+    ) => {
+      setPluginStates((prev) => ({
+        ...prev,
+        [pluginId]:
+          typeof newState === "function"
+            ? (newState as (p: PluginStateValue) => PluginStateValue)(prev[pluginId] ?? null)
+            : newState,
+      }));
+    },
+    []
+  );
 
   const onModeChange = useCallback(
     (newMode: string) => {
-      state.editor?.setMode?.(newMode);
+      state.editor?.setMode?.(newMode as EditorMode);
     },
     [state.editor]
   );

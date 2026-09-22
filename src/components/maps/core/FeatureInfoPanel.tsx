@@ -23,18 +23,12 @@ import { api } from "~/trpc/react";
 import type { SelectedFeature } from "./IxWorldMap";
 import { SnapBottomSheet } from "./SnapBottomSheet";
 import { useIsMobile } from "~/hooks/useIsMobile";
+import { formatPopulation } from "~/lib/utils/format-utils";
 
 interface FeatureInfoPanelProps {
   feature: SelectedFeature;
   onClose: () => void;
   onOpenStoryModal?: (pinId: string) => void;
-}
-
-function formatPopulation(n: number | null | undefined): string {
-  if (n == null) return "—";
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return n.toLocaleString();
 }
 
 function FeaturePeekContent({ feature }: { feature: SelectedFeature }) {
@@ -94,11 +88,11 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
           <div className="flex items-center gap-2.5 overflow-hidden">
             <div
               className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-                isStoryPin ? "bg-purple-100" : isCity ? "bg-blue-100" : "bg-amber-100"
+                isStoryPin ? "bg-wiki/15" : isCity ? "bg-blue-500/15" : "bg-amber-500/15"
               }`}
             >
               {isStoryPin ? (
-                <BookMarked className="h-4 w-4 text-purple-600" />
+                <BookMarked className="h-4 w-4 text-wiki" />
               ) : isCity ? (
                 <MapPin
                   className={`h-4 w-4 ${feature.isCapital ? "text-amber-600" : "text-blue-600"}`}
@@ -179,9 +173,9 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
         {isStoryPin && (
           <div className="mb-3 space-y-2">
             {(feature.ixTimeYear || feature.eraLabel) && (
-              <div className="flex items-center gap-2 rounded-lg bg-purple-50 px-3 py-2 dark:bg-purple-900/20">
-                <Calendar className="h-3.5 w-3.5 text-purple-600" />
-                <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+              <div className="flex items-center gap-2 rounded-lg bg-wiki/10 px-3 py-2">
+                <Calendar className="h-3.5 w-3.5 text-wiki" />
+                <span className="text-xs font-medium text-wiki">
                   {feature.ixTimeYear && `Year ${feature.ixTimeYear}`}
                   {feature.ixTimeYear && feature.eraLabel && " · "}
                   {feature.eraLabel}
@@ -189,14 +183,14 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
               </div>
             )}
             {feature.category && (
-              <span className="inline-block rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700 capitalize dark:bg-purple-900/30 dark:text-purple-300">
+              <span className="inline-block rounded-full bg-wiki/15 px-2 py-0.5 text-[10px] font-medium text-wiki capitalize">
                 {feature.category}
               </span>
             )}
             {onOpenStoryModal && feature.id && (
               <button
                 onClick={() => onOpenStoryModal(feature.id)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-purple-50 py-2 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-100 dark:bg-purple-900/20 dark:text-purple-300"
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-wiki/10 py-2 text-xs font-medium text-wiki transition-colors hover:bg-wiki/20"
               >
                 <BookMarked className="h-3 w-3" />
                 Read Full Story

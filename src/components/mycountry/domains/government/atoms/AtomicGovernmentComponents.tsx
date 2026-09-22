@@ -4,11 +4,7 @@
  * Atomic Government Components
  *
  * Main orchestrator component for the atomic government builder system.
- * Refactored to use modular UI components with clean composition.
- *
- * Original: 2,167 lines (monolithic)
- * Refactored: ~350 lines (orchestrator only)
- * Reduction: 84% code reduction
+ * Uses modular UI components with clean composition.
  *
  * @module AtomicGovernmentComponents
  */
@@ -21,15 +17,9 @@ import {
   Undo as RotateCcw,
   InfoCircle as Info,
   Component as Blocks,
-  Flash as Zap,
-  WarningTriangle as AlertTriangle,
-  Package,
-  Archery as Target,
-  Dollar as DollarSign,
-  StatUp as TrendingUp,
+  HelpCircle,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { useAtomicGovernmentBuilder } from "~/hooks/useAtomicGovernmentBuilder";
 import { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from "~/lib/government/atomic-data";
 import { getCategories } from "~/lib/government/atomic-utils";
@@ -37,14 +27,14 @@ import { useGovernmentComponentsData } from "~/hooks/useGovernmentComponentsData
 import {
   ComponentLibrary,
   SelectedComponentsList,
-  CategoryFilter,
-  ComponentSearch,
   MetricsPanel,
   AtomicWelcomeModal,
 } from "~/components/mycountry/domains/government/atomic";
+import { AtomicFilterBar } from "~/components/shared/atomic-picker";
 import { ComponentType } from "~/lib/enums";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { TooltipProvider } from "~/components/ui/tooltip";
+import { GovernmentMetricModals } from "./GovernmentMetricModals";
 
 export interface AtomicGovernmentComponentsProps {
   /** Currently selected components */
@@ -85,7 +75,7 @@ export function AtomicGovernmentComponents({
   // Fetch component data from database (with fallback)
   const {
     // oxlint-disable-next-line eslint/no-unused-vars
-    components: componentData,
+    components: _componentData,
     isLoading: componentsLoading,
     isUsingFallback,
     incrementUsage,
@@ -132,13 +122,13 @@ export function AtomicGovernmentComponents({
     return selected;
   }, [selectedComponentObjects]);
 
-  // Dialog state for active synergies/conflicts
+  // Dialog state for active synergies/conflicts & details
   const [interactionsOpen, setInteractionsOpen] = React.useState(false);
   const [selectedListOpen, setSelectedListOpen] = React.useState(false);
   const [effectivenessOpen, setEffectivenessOpen] = React.useState(false);
   const [implementationOpen, setImplementationOpen] = React.useState(false);
   const [maintenanceOpen, setMaintenanceOpen] = React.useState(false);
-  const [welcomeOpen, setWelcomeOpen] = React.useState(false);
+  const [welcomeOpen, setWelcomeOpen] = React.useState(true);
 
   const handleSynergiesClick = React.useCallback(() => {
     setInteractionsOpen(true);
@@ -186,6 +176,16 @@ export function AtomicGovernmentComponents({
 
   const isAllCategoriesSelected = builder.categoryFilter === null;
 
+  // Templates list for AtomicFilterBar
+  const templatesList = useMemo(() => {
+    return Object.entries(GOVERNMENT_TEMPLATES).map(([id, t]) => ({
+      id,
+      name: t.name,
+      description: t.description,
+      components: t.components,
+    }));
+  }, []);
+
   // Handle template selection
   const handleTemplateSelect = (templateId: string) => {
     const template = GOVERNMENT_TEMPLATES[templateId as keyof typeof GOVERNMENT_TEMPLATES];
@@ -200,7 +200,6 @@ export function AtomicGovernmentComponents({
   // Handle save with usage tracking
   const handleSave = () => {
     if (builder.validation.isValid) {
-      // Track usage of all selected components
       builder.selectedComponents.forEach((componentType) => {
         incrementUsage(componentType);
       });
@@ -219,18 +218,80 @@ export function AtomicGovernmentComponents({
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="space-y-2 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-purple-600"></div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Loading components...</p>
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-amber-500"></div>
+          <p className="text-sm text-muted-foreground">Loading components...</p>
         </div>
       </div>
     );
   }
 
+  const workspaceContent = (
+    <div className="space-y-6">
+      {/* Filter and Search Bar */}
+      {!hideCategorySelector && (
+        <div className="border-b border-border/40 pb-6">
+          <AtomicFilterBar
+            searchQuery={builder.searchQuery}
+            onSearchChange={builder.setSearchQuery}
+            categories={categories}
+            selectedCategory={builder.categoryFilter}
+            onCategoryChange={builder.setCategoryFilter}
+            categoryCounts={categoryCounts}
+            templates={templatesList}
+            onTemplateSelect={handleTemplateSelect}
+            searchPlaceholder="Search components by name or description..."
+            disabled={isReadOnly}
+          />
+        </div>
+      )}
+
+      {/* Library and Selected list */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className={hideSelectedList ? "lg:col-span-3" : "lg:col-span-2"}>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                Available Components
+              </h3>
+              <Badge variant="outline" className="font-mono text-[11px] text-muted-foreground">
+                {builder.selectedComponents.length} / {maxComponents} selected
+              </Badge>
+            </div>
+
+            <ComponentLibrary
+              components={builder.filteredComponents}
+              selectedIds={builder.selectedComponents}
+              onSelect={handleComponentSelect}
+              onDeselect={builder.deselectComponent}
+              isReadOnly={isReadOnly}
+              canSelectMore={builder.canSelectMore}
+              enableInlineScroll={true}
+            />
+          </div>
+        </div>
+
+        {!hideSelectedList && (
+          <div className="border-t border-border/40 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+            <SelectedComponentsList
+              selectedComponents={selectedComponentObjects}
+              onDeselect={builder.deselectComponent}
+              isReadOnly={isReadOnly}
+              totalCost={builder.implementationCost}
+              totalEffectiveness={builder.effectiveness.totalEffectiveness}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <TooltipProvider delayDuration={150}>
       <div className="space-y-6">
         {/* Welcome & Instruction Modal */}
-        {!standalone && <AtomicWelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />}
+        {!standalone && (
+          <AtomicWelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />
+        )}
 
         {/* Fallback Warning Banner */}
         {isUsingFallback && (
@@ -248,8 +309,8 @@ export function AtomicGovernmentComponents({
             <CardHeader>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 p-2">
-                    <Blocks className="h-6 w-6 text-purple-400" />
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2">
+                    <Blocks className="h-6 w-6 text-amber-400" />
                   </div>
                   <div>
                     <CardTitle className="flex items-center gap-2 text-2xl font-extrabold text-zinc-100">
@@ -257,7 +318,7 @@ export function AtomicGovernmentComponents({
                       <button
                         type="button"
                         onClick={() => setWelcomeOpen(true)}
-                        className="text-xs font-semibold text-purple-400 hover:text-purple-300 hover:underline"
+                        className="text-xs font-semibold text-amber-400 hover:text-amber-300 hover:underline"
                       >
                         (Guide)
                       </button>
@@ -286,7 +347,7 @@ export function AtomicGovernmentComponents({
                       size="sm"
                       onClick={handleSave}
                       disabled={!builder.validation.isValid}
-                      className="bg-purple-600 font-bold hover:bg-purple-700"
+                      className="bg-amber-600 font-bold text-white hover:bg-amber-500 shadow-amber-500/20"
                     >
                       <Save className="mr-2 h-4 w-4" />
                       Save Configuration
@@ -301,7 +362,7 @@ export function AtomicGovernmentComponents({
         {/* Info Alert */}
         {!standalone && (
           <Alert className="border-white/10 bg-white/[0.02] text-zinc-300">
-            <Info className="h-4 w-4 text-cyan-400" />
+            <Info className="h-4 w-4 text-amber-400" />
             <AlertDescription className="text-xs leading-normal">
               Select {maxComponents} government components to build your custom governance system.
               Watch for synergies (bonuses) and conflicts (penalties) between components.
@@ -333,375 +394,36 @@ export function AtomicGovernmentComponents({
           onConflictsClick={handleConflictsClick}
         />
 
-        {/* Selected Components Dialog */}
-        <Dialog open={selectedListOpen} onOpenChange={setSelectedListOpen}>
-          <DialogContent className="max-h-[80vh] max-w-lg overflow-y-auto border-zinc-200 bg-white/95 text-zinc-900 shadow-2xl backdrop-blur-2xl sm:max-w-lg dark:border-white/10 dark:bg-zinc-900/90 dark:text-zinc-100">
-            <DialogHeader>
-              <DialogTitle className="text-foreground flex items-center gap-2 text-base font-bold">
-                <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                Selected Components ({selectedComponentObjects.length})
-              </DialogTitle>
-            </DialogHeader>
-            <div className="pt-4">
-              <SelectedComponentsList
-                selectedComponents={selectedComponentObjects}
-                onDeselect={(type) => {
-                  builder.deselectComponent(type);
-                }}
-                isReadOnly={isReadOnly}
-                totalCost={builder.implementationCost}
-                totalEffectiveness={builder.effectiveness.totalEffectiveness}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Metric Modals & Dialogs */}
+        <GovernmentMetricModals
+          selectedListOpen={selectedListOpen}
+          setSelectedListOpen={setSelectedListOpen}
+          interactionsOpen={interactionsOpen}
+          setInteractionsOpen={setInteractionsOpen}
+          effectivenessOpen={effectivenessOpen}
+          setEffectivenessOpen={setEffectivenessOpen}
+          implementationOpen={implementationOpen}
+          setImplementationOpen={setImplementationOpen}
+          maintenanceOpen={maintenanceOpen}
+          setMaintenanceOpen={setMaintenanceOpen}
+          selectedComponentObjects={selectedComponentObjects}
+          isReadOnly={isReadOnly}
+          onDeselect={builder.deselectComponent}
+          implementationCost={builder.implementationCost}
+          maintenanceCost={builder.maintenanceCost}
+          effectiveness={builder.effectiveness}
+          synergies={builder.synergies}
+          conflicts={builder.conflicts}
+        />
 
-        {/* Component Interactions Dialog */}
-        <Dialog open={interactionsOpen} onOpenChange={setInteractionsOpen}>
-          <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto border-zinc-200 bg-white/95 text-zinc-900 shadow-2xl backdrop-blur-2xl sm:max-w-lg dark:border-white/10 dark:bg-zinc-900/90 dark:text-zinc-100">
-            <DialogHeader>
-              <DialogTitle className="text-foreground flex items-center gap-2 text-base font-bold">
-                <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                Government Interactions
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-6 pt-4">
-              {/* Active Synergies */}
-              <div>
-                <h4 className="mb-3 flex items-center gap-2 text-xs font-bold tracking-wider text-green-600 uppercase dark:text-green-400">
-                  <Zap className="h-4 w-4" />
-                  Active Synergies ({builder.synergies.length})
-                </h4>
-                {builder.synergies.length === 0 ? (
-                  <p className="pl-6 text-xs text-zinc-500 italic">No active synergies.</p>
-                ) : (
-                  <div className="max-h-[30vh] space-y-2 overflow-y-auto pr-1">
-                    {builder.synergies.map(({ comp1, comp2, score }, index) => {
-                      const component1 = ATOMIC_COMPONENTS[comp1];
-                      const component2 = ATOMIC_COMPONENTS[comp2];
-                      if (!component1 || !component2) return null;
-                      return (
-                        <div
-                          key={`${comp1}-${comp2}-${index}`}
-                          className="rounded-xl border border-green-500/20 bg-green-500/5 p-3 transition-colors hover:bg-green-500/10 dark:hover:bg-green-500/10"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <p className="dark:text-foreground text-xs font-semibold text-zinc-900">
-                                {component1.name} + {component2.name}
-                              </p>
-                              <p className="mt-0.5 text-[10px] text-green-600 dark:text-green-400/90">
-                                Complementary systems boost administrative output.
-                              </p>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 border border-green-500/20 bg-green-600/10 font-bold text-green-600 dark:text-green-400"
-                            >
-                              +{score}%
-                            </Badge>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Active Conflicts */}
-              <div>
-                <h4 className="mb-3 flex items-center gap-2 text-xs font-bold tracking-wider text-red-600 uppercase dark:text-red-400">
-                  <AlertTriangle className="h-4 w-4" />
-                  Active Conflicts ({builder.conflicts.length})
-                </h4>
-                {builder.conflicts.length === 0 ? (
-                  <p className="pl-6 text-xs text-zinc-500 italic">No active conflicts.</p>
-                ) : (
-                  <div className="max-h-[30vh] space-y-2 overflow-y-auto pr-1">
-                    {builder.conflicts.map(({ comp1, comp2 }, index) => {
-                      const component1 = ATOMIC_COMPONENTS[comp1];
-                      const component2 = ATOMIC_COMPONENTS[comp2];
-                      if (!component1 || !component2) return null;
-                      return (
-                        <div
-                          key={`${comp1}-${comp2}-${index}`}
-                          className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 transition-colors hover:bg-red-500/10 dark:hover:bg-red-500/10"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <p className="dark:text-foreground text-xs font-semibold text-zinc-900">
-                                {component1.name} vs {component2.name}
-                              </p>
-                              <p className="mt-0.5 text-[10px] text-red-600 dark:text-red-400/90">
-                                Incompatible policies drag down performance.
-                              </p>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 border border-red-500/20 bg-red-600/10 font-bold text-red-600 dark:text-red-400"
-                            >
-                              -15%
-                            </Badge>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Effectiveness Detail Dialog */}
-        <Dialog open={effectivenessOpen} onOpenChange={setEffectivenessOpen}>
-          <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto border-zinc-200 bg-white/95 text-zinc-900 shadow-2xl backdrop-blur-2xl sm:max-w-lg dark:border-white/10 dark:bg-zinc-900/90 dark:text-zinc-100">
-            <DialogHeader>
-              <DialogTitle className="text-foreground flex items-center gap-2 text-base font-bold">
-                <Target className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                Government Effectiveness Breakdown
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6 pt-4">
-              <div className="grid grid-cols-2 gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-white/5 dark:bg-white/[0.02]">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
-                    Base Score
-                  </p>
-                  <p className="text-xl font-extrabold text-zinc-800 dark:text-zinc-300">
-                    {builder.effectiveness.baseEffectiveness.toFixed(1)}%
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
-                    Synergy Bonus
-                  </p>
-                  <p className="text-xl font-extrabold text-green-600 dark:text-green-400">
-                    +{builder.effectiveness.synergyBonus.toFixed(1)}%
-                  </p>
-                </div>
-                <div className="mt-2 space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
-                    Conflict Penalty
-                  </p>
-                  <p className="text-xl font-extrabold text-red-600 dark:text-red-400">
-                    -{builder.effectiveness.conflictPenalty.toFixed(1)}%
-                  </p>
-                </div>
-                <div className="mt-2 space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
-                    Total Score
-                  </p>
-                  <p className="text-xl font-extrabold text-purple-600 dark:text-purple-400">
-                    {builder.effectiveness.totalEffectiveness.toFixed(1)}%
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-                  Component Contributions
-                </h4>
-                {selectedComponentObjects.length === 0 ? (
-                  <p className="text-xs text-zinc-500 italic">No components selected.</p>
-                ) : (
-                  <div className="max-h-[30vh] space-y-2 overflow-y-auto pr-1">
-                    {selectedComponentObjects.map((comp) => (
-                      <div
-                        key={comp.type}
-                        className="flex items-center justify-between border-b border-zinc-200 pb-2 text-xs dark:border-white/5"
-                      >
-                        <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                          {comp.name}
-                        </span>
-                        <span className="font-mono font-bold text-zinc-500 dark:text-zinc-400">
-                          {comp.effectiveness}% base
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Implementation Cost Detail Dialog */}
-        <Dialog open={implementationOpen} onOpenChange={setImplementationOpen}>
-          <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto border-zinc-200 bg-white/95 text-zinc-900 shadow-2xl backdrop-blur-2xl sm:max-w-lg dark:border-white/10 dark:bg-zinc-900/90 dark:text-zinc-100">
-            <DialogHeader>
-              <DialogTitle className="text-foreground flex items-center gap-2 text-base font-bold">
-                <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                Implementation Cost Breakdown
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6 pt-4">
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center">
-                <p className="text-[10px] font-semibold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
-                  Total Implementation Cost
-                </p>
-                <p className="mt-1 font-mono text-2xl font-bold tracking-tight text-zinc-900 tabular-nums dark:text-zinc-100">
-                  ${builder.implementationCost.toLocaleString()}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-                  Cost per Component
-                </h4>
-                {selectedComponentObjects.length === 0 ? (
-                  <p className="text-xs text-zinc-500 italic">No components selected.</p>
-                ) : (
-                  <div className="max-h-[30vh] space-y-2 overflow-y-auto pr-1">
-                    {selectedComponentObjects.map((comp) => (
-                      <div
-                        key={comp.type}
-                        className="flex items-center justify-between border-b border-zinc-200 pb-2 text-xs dark:border-white/5"
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                            {comp.name}
-                          </span>
-                          <span className="text-[9px] text-zinc-400 capitalize">
-                            {comp.category}
-                          </span>
-                        </div>
-                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          ${comp.implementationCost.toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Maintenance Cost Detail Dialog */}
-        <Dialog open={maintenanceOpen} onOpenChange={setMaintenanceOpen}>
-          <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto border-zinc-200 bg-white/95 text-zinc-900 shadow-2xl backdrop-blur-2xl sm:max-w-lg dark:border-white/10 dark:bg-zinc-900/90 dark:text-zinc-100">
-            <DialogHeader>
-              <DialogTitle className="text-foreground flex items-center gap-2 text-base font-bold">
-                <TrendingUp className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                Annual Maintenance Cost Breakdown
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6 pt-4">
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
-                <p className="text-[10px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
-                  Total Annual Maintenance Cost
-                </p>
-                <p className="mt-1 font-mono text-2xl font-bold tracking-tight text-zinc-900 tabular-nums dark:text-zinc-100">
-                  ${builder.maintenanceCost.toLocaleString()}/yr
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-                  Maintenance per Component
-                </h4>
-                {selectedComponentObjects.length === 0 ? (
-                  <p className="text-xs text-zinc-500 italic">No components selected.</p>
-                ) : (
-                  <div className="max-h-[30vh] space-y-2 overflow-y-auto pr-1">
-                    {selectedComponentObjects.map((comp) => (
-                      <div
-                        key={comp.type}
-                        className="flex items-center justify-between border-b border-zinc-200 pb-2 text-xs dark:border-white/5"
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                            {comp.name}
-                          </span>
-                          <span className="text-[9px] text-zinc-400 capitalize">
-                            {comp.category}
-                          </span>
-                        </div>
-                        <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                          ${comp.maintenanceCost.toLocaleString()}/yr
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Main Workspace wrapped in a single premium Card */}
-        <Card className="border-white/10 bg-white/[0.01] shadow-2xl backdrop-blur-xl dark:bg-black/20">
-          <div className="space-y-6 p-6">
-            {/* Filter, Search and Template Row */}
-            <div className="flex flex-col gap-4 border-b border-white/5 pb-6">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                {/* Search Bar & Template Selector unified */}
-                <div className="w-full">
-                  <ComponentSearch
-                    value={builder.searchQuery}
-                    onChange={builder.setSearchQuery}
-                    placeholder="Search components by name or description..."
-                    templates={GOVERNMENT_TEMPLATES}
-                    onTemplateSelect={handleTemplateSelect}
-                    disabled={isReadOnly}
-                  />
-                </div>
-              </div>
-
-              {/* Category tabs underneath */}
-              {!hideCategorySelector && (
-                <div className="pt-2">
-                  <CategoryFilter
-                    categories={categories}
-                    selectedCategory={builder.categoryFilter}
-                    onChange={builder.setCategoryFilter}
-                    categoryCounts={categoryCounts}
-                    selectedCategories={selectedCategories}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Library and Selected list */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              {/* Component Library (2/3 width on large screens) */}
-              <div className={hideSelectedList ? "lg:col-span-3" : "lg:col-span-2"}>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold tracking-wider text-zinc-400 uppercase">
-                      Available Components
-                    </h3>
-                  </div>
-
-                  <ComponentLibrary
-                    components={builder.filteredComponents}
-                    selectedIds={builder.selectedComponents}
-                    onSelect={handleComponentSelect}
-                    onDeselect={builder.deselectComponent}
-                    isReadOnly={isReadOnly}
-                    canSelectMore={builder.canSelectMore}
-                    enableInlineScroll={isAllCategoriesSelected}
-                  />
-                </div>
-              </div>
-
-              {/* Selected Components List (1/3 width on large screens) */}
-              {!hideSelectedList && (
-                <div className="border-t border-white/5 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:border-white/5 lg:pt-0 lg:pl-6">
-                  <SelectedComponentsList
-                    selectedComponents={selectedComponentObjects}
-                    onDeselect={builder.deselectComponent}
-                    isReadOnly={isReadOnly}
-                    totalCost={builder.implementationCost}
-                    totalEffectiveness={builder.effectiveness.totalEffectiveness}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </Card>
+        {/* Main Workspace */}
+        {standalone ? (
+          workspaceContent
+        ) : (
+          <Card className="border-border/60 bg-card/40 shadow-2xl backdrop-blur-xl">
+            <div className="space-y-6 p-6">{workspaceContent}</div>
+          </Card>
+        )}
 
         {/* Save Button (Bottom) */}
         {!isReadOnly && !standalone && (
@@ -719,7 +441,7 @@ export function AtomicGovernmentComponents({
               onClick={handleSave}
               disabled={!builder.validation.isValid}
               size="lg"
-              className="bg-cyan-600 font-bold text-white shadow-lg shadow-cyan-500/20 hover:bg-cyan-500"
+              className="bg-amber-600 font-bold text-white shadow-lg shadow-amber-500/20 hover:bg-amber-500"
             >
               <Save className="mr-2 h-4 w-4" />
               Save Government Configuration

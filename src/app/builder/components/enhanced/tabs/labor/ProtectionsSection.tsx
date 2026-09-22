@@ -8,8 +8,15 @@ import type { LaborBounds } from "../utils/laborCalculations";
 
 interface ProtectionsSectionProps {
   laborMarket: LaborConfiguration;
-  onChange: (field: keyof LaborConfiguration, value: any) => void;
-  onNestedChange: (parentField: keyof LaborConfiguration, field: string, value: any) => void;
+  onChange: <K extends keyof LaborConfiguration>(
+    field: K,
+    value: LaborConfiguration[K]
+  ) => void;
+  onNestedChange: (
+    parentField: keyof LaborConfiguration,
+    field: string,
+    value: number | string | boolean
+  ) => void;
   showAdvanced: boolean;
   componentBounds?: LaborBounds;
 }
@@ -81,7 +88,7 @@ export function ProtectionsSection({
             label="Paid Vacation Days"
             description="Average annual paid vacation days"
             value={laborMarket.paidVacationDays}
-            onChange={(value) => onChange("paidVacationDays", value)}
+            onChange={(value) => onChange("paidVacationDays", Number(value) || 0)}
             min={0}
             max={50}
             step={1}
@@ -94,7 +101,7 @@ export function ProtectionsSection({
             label="Paid Sick Leave Days"
             description="Average annual paid sick leave days"
             value={laborMarket.paidSickLeaveDays}
-            onChange={(value) => onChange("paidSickLeaveDays", value)}
+            onChange={(value) => onChange("paidSickLeaveDays", Number(value) || 0)}
             min={0}
             max={30}
             step={1}
@@ -107,7 +114,7 @@ export function ProtectionsSection({
             label="Parental Leave Weeks"
             description="Paid parental leave duration"
             value={laborMarket.parentalLeaveWeeks}
-            onChange={(value) => onChange("parentalLeaveWeeks", value)}
+            onChange={(value) => onChange("parentalLeaveWeeks", Number(value) || 0)}
             min={0}
             max={52}
             step={1}

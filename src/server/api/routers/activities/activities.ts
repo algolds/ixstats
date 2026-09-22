@@ -6,16 +6,6 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { globalCache } from "~/lib/cache";
 
 // Input schemas
-const _activityFilterSchema = z.object({
-  limit: z.number().min(1).max(80).default(20),
-  cursor: z.string().optional(),
-  filter: z
-    .enum(["all", "achievements", "diplomatic", "economic", "social", "meta"])
-    .default("all"),
-  category: z.enum(["all", "game", "platform", "social"]).default("all"),
-  userId: z.string().optional(),
-});
-
 const createActivitySchema = z.object({
   type: z.enum(["achievement", "diplomatic", "economic", "social", "meta"]),
   category: z.enum(["game", "platform", "social"]).default("game"),
@@ -33,13 +23,6 @@ const createActivitySchema = z.object({
   visibility: z.enum(["public", "followers", "friends"]).default("public"),
   relatedCountries: z.array(z.string()).optional(),
 });
-
-const _engagementActionSchema = z.object({
-  activityId: z.string(),
-  action: z.string(),
-  userId: z.string(),
-});
-
 const commentActionSchema = z.object({
   activityId: z.string(),
   userId: z.string(),

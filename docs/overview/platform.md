@@ -26,15 +26,15 @@ IxStates follows an OS-inspired model (`Major.Minor.Patch` + permanent epoch **r
 <!-- BEGIN_DOCS:VERSION_MATRIX -->
 | Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
 | :--- | :--- | :---: | :--- |
-| **Platform** | **IxStates (Ogma)** | **1.4.0 "Ogma"** | **Release Candidate** |
+| **Platform** | **IxStates (Lobster Crosby)** | **1.4.0 "Lobster Crosby"** | **Release Candidate** |
 | **Apps** | IxWorld | v2 | Standalone & Embedded Maps Engine |
 | | WikiOS | v1 | Headless Wiki & Canvas Architecture |
 | | IxVault | v2 | Cards, Credits & Marketplace |
 | **Engines** | MyCountry Engine | v4 | Deterministic Nation Simulation |
 | | Concord Engine | v2 | Living World Simulation & Events |
 | | Atlas Engine | v5 | Spatial Math & Geometry Pipeline |
-| **Systems** | MyCountry UI | v5 | 4-Tier Command Architecture |
-| | Nation Builder | v3 | Statecraft & Tax Builder Subsystems |
+| **Systems** | MyCountry UI | v6 | 4-Tier Command Architecture |
+| | Nation Builder | v4 | Statecraft & Tax Builder Subsystems |
 | | ThinkPages | v2 | Social Knowledge & Feed Components |
 | | Achievements | v2 | Awards & LoreWards Resync |
 | | Stash | v1 | Article Stashing (was LoreStash) |
@@ -66,7 +66,7 @@ Documentation updates must accompany feature work; use this overview and [`docs/
 ## Platform Hierarchy
 
 ```
-IxStates (platform — release: Ogma, channel: Release Candidate)
+IxStates (platform — release: Lobster Crosby, channel: Release Candidate)
 ├── Apps (capability version): IxWorld, WikiOS (incl Canvas editor + Image Repository), IxVault (Cards/Credits/Packs/Lore)
 ├── Engines (sim cores): MyCountry Engine, Concord (living-world/crises/NPCs), Atlas (spatial/worldgen)
 ├── Core Systems: MyCountry (command UI), Builder (statecraft/tax), ThinkPages (knowledge/feed), Achievements, Stash, Repository, Halo, Onoma

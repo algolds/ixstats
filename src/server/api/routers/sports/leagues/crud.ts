@@ -57,7 +57,7 @@ export const leaguesCrudRouter = createTRPCRouter({
     .input(z.object({ seasonId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        return await (ctx.db as any).sportDraftPick.findMany({
+        return await ctx.db.sportDraftPick.findMany({
           where: { seasonId: input.seasonId },
           orderBy: [{ round: "asc" }, { pickNumber: "asc" }],
           include: {

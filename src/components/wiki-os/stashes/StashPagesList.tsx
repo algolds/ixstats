@@ -94,7 +94,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
                       </span>
                     )}
                     {item.note && (
-                      <span className="py-0.2 flex items-center gap-1 rounded-md border border-purple-500/30 bg-purple-500/15 px-2 text-[10px] font-bold text-purple-400">
+                      <span className="py-0.2 flex items-center gap-1 rounded-md border border-indigo-500/30 bg-indigo-500/15 px-2 text-[10px] font-bold text-indigo-400">
                         <StickyNote className="h-2.5 w-2.5" />
                         Note
                       </span>

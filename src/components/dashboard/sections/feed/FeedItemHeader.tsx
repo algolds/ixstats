@@ -80,7 +80,7 @@ export function FeedItemHeader({
         {isWiki && wikiPageTitle ? (
           <Link
             href={wikiHref ?? "#"}
-            className="text-foreground truncate text-sm font-semibold tracking-tight transition-colors hover:text-teal-300"
+            className="text-foreground hover:text-wiki truncate text-sm font-semibold tracking-tight transition-colors"
           >
             {wikiPageTitle}
           </Link>
@@ -97,7 +97,7 @@ export function FeedItemHeader({
         )}
 
         {activity._isNew && (
-          <Badge className="shrink-0 rounded-full border-teal-500/30 bg-teal-500/15 text-[8px] font-semibold tracking-wider text-teal-400 uppercase">
+          <Badge className="shrink-0 rounded-full border-wiki/30 bg-wiki/15 text-[8px] font-semibold tracking-wider text-wiki uppercase">
             NEW
           </Badge>
         )}

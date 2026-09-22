@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import type { Map as MapLibreMap } from "maplibre-gl";
+import type { Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import type { Polygon, MultiPolygon } from "geojson";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
 import { snapPointToGeometries } from "~/lib/maps/border-editor";
@@ -12,6 +12,7 @@ import {
   snapToLayerFeatures,
 } from "../utils/map-helpers";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
+import { isKeyboardInputTarget } from "./drag-utils";
 
 interface UseSubdivisionDrawProps {
   map: MapLibreMap | null;
@@ -140,7 +141,7 @@ export function useSubdivisionDraw({
   useEffect(() => {
     if (!map || !isLoaded) return;
 
-    const onClick = (e: any) => {
+    const onClick = (e: MapLayerMouseEvent & { routeClicked?: boolean }) => {
       if (e.routeClicked || e.defaultPrevented) return;
       if (mode !== "add-subdivision" && mode !== "add-lake") return;
 
@@ -159,13 +160,14 @@ export function useSubdivisionDraw({
           snapGeoms.push(countryGeometry);
         }
         for (const feat of features) {
+          const geo = feat.geometry as Polygon | MultiPolygon | null;
           if (
             feat.type === "subdivision" &&
-            feat.geometry &&
-            (feat.geometry as any).coordinates &&
-            (feat.geometry as any).coordinates.length > 0
+            geo &&
+            "coordinates" in geo &&
+            geo.coordinates.length > 0
           ) {
-            snapGeoms.push(feat.geometry as Polygon | MultiPolygon);
+            snapGeoms.push(geo);
           }
         }
         clickPoint = snapPointToGeometries(clickPoint, snapGeoms, snapTol) as [number, number];
@@ -181,7 +183,7 @@ export function useSubdivisionDraw({
       setDrawVertices([...drawVerticesRef.current]);
     };
 
-    const onDblClick = (e: any) => {
+    const onDblClick = (e: MapLayerMouseEvent) => {
       if (mode !== "add-subdivision" && mode !== "add-lake") return;
       if (drawVerticesRef.current.length >= 3) {
         e.preventDefault();
@@ -211,12 +213,17 @@ export function useSubdivisionDraw({
     snapPoint,
   ]);
 
-  // Keyboard undo listener (Backspace/Delete/Ctrl+Z)
+  // Keyboard undo & cancel listener (Backspace/Delete/Ctrl+Z to undo vertex, Escape to cancel drawing)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (mode !== "add-subdivision" && mode !== "add-lake") return;
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement)) return;
+
+      if (e.key === "Escape" && drawVerticesRef.current.length > 0) {
+        e.preventDefault();
+        clearDraw();
+        return;
+      }
 
       const isUndo =
         e.key === "Backspace" || e.key === "Delete" || (e.key === "z" && (e.ctrlKey || e.metaKey));
@@ -228,7 +235,7 @@ export function useSubdivisionDraw({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [mode, undoLastVertex]);
+  }, [mode, undoLastVertex, clearDraw]);
 
   // Clear draw state when mode changes away from add-subdivision
   useEffect(() => {

@@ -62,79 +62,7 @@ export interface ContextualMenuDefinition {
   groups: ContextualMenuGroup[];
 }
 
-// ── Nav item color config (ShineBorder hex + icon glow/hover classes) ──
-export const NAV_COLORS: Record<string, { shine: string[]; glow: string; hover: string }> = {
-  "MyCountry®": {
-    shine: ["#f59e0b", "#eab308", "#fbbf24"],
-    glow: "text-amber-400",
-    hover: "group-hover:text-amber-400",
-  },
-  ThinkPages: {
-    shine: ["#3b82f6", "#1d4ed8", "#60a5fa"],
-    glow: "text-blue-400",
-    hover: "group-hover:text-blue-400",
-  },
-  Dashboard: {
-    shine: ["#10b981", "#059669", "#34d399"],
-    glow: "text-emerald-400",
-    hover: "group-hover:text-emerald-400",
-  },
-  Feed: {
-    shine: ["#8b5cf6", "#7c3aed", "#a78bfa"],
-    glow: "text-purple-400",
-    hover: "group-hover:text-purple-400",
-  },
-  Explore: {
-    shine: ["#8b5cf6", "#7c3aed", "#a78bfa"],
-    glow: "text-purple-400",
-    hover: "group-hover:text-purple-400",
-  },
-  Countries: {
-    shine: ["#8b5cf6", "#7c3aed", "#a78bfa"],
-    glow: "text-purple-400",
-    hover: "group-hover:text-purple-400",
-  },
-  Intelligence: {
-    shine: ["#6366f1", "#4f46e5", "#818cf8"],
-    glow: "text-indigo-400",
-    hover: "group-hover:text-indigo-400",
-  },
-  Admin: {
-    shine: ["#ef4444", "#dc2626", "#f87171"],
-    glow: "text-red-400",
-    hover: "group-hover:text-red-400",
-  },
-  Cards: {
-    shine: ["#06b6d4", "#0891b2", "#22d3ee"],
-    glow: "text-cyan-400",
-    hover: "group-hover:text-cyan-400",
-  },
-  Help: {
-    shine: ["#fb923c", "#f97316", "#fdba74"],
-    glow: "text-orange-400",
-    hover: "group-hover:text-orange-400",
-  },
-  Forum: {
-    shine: ["#f97316", "#ea580c", "#fb923c"],
-    glow: "text-orange-400",
-    hover: "group-hover:text-orange-400",
-  },
-  MyLeague: {
-    shine: ["#f59e0b", "#d97706", "#fbbf24"],
-    glow: "text-amber-400",
-    hover: "group-hover:text-amber-400",
-  },
-  MyClub: {
-    shine: ["#10b981", "#059669", "#34d399"],
-    glow: "text-emerald-400",
-    hover: "group-hover:text-emerald-400",
-  },
-};
-export const DEFAULT_NAV = {
-  shine: ["#3b82f6", "#8b5cf6", "#06b6d4"],
-  glow: "text-blue-400",
-  hover: "group-hover:text-blue-400",
-};
+
 
 export const contextualMenus: Record<string, ContextualMenuDefinition> = {
   dashboard: {
@@ -371,13 +299,13 @@ export const contextualMenus: Record<string, ContextualMenuDefinition> = {
         items: [
           {
             name: "Create Nation",
-            href: "/builder",
+            href: "/mycountry/builder",
             icon: Layers,
             description: "Start from scratch with guided setup.",
           },
           {
             name: "Import Scenario",
-            href: "/builder/import",
+            href: "/mycountry/builder?section=import",
             icon: Database,
             description: "Bring in external data or legacy nations.",
           },
@@ -619,6 +547,7 @@ export const contextualMenus: Record<string, ContextualMenuDefinition> = {
 
 export function getContextKey(path: string): keyof typeof contextualMenus {
   if (path.startsWith("/labs/onoma")) return "onoma";
+  if (path.startsWith("/mycountry/builder")) return "builder";
   if (path.startsWith("/mycountry")) return "mycountry";
   if (path.startsWith("/thinkpages")) return "thinkpages";
   if (path.startsWith("/forum")) return "forum";

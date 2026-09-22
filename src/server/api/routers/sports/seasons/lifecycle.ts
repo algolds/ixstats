@@ -305,6 +305,20 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
                 wikiSlug: true,
               },
             },
+            season: {
+              select: {
+                id: true,
+                seasonNumber: true,
+                league: {
+                  select: {
+                    id: true,
+                    name: true,
+                    sportPreset: true,
+                    archetype: true,
+                  },
+                },
+              },
+            },
             playerStats: {
               include: {
                 player: {

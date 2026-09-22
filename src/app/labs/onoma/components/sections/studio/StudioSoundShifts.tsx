@@ -278,7 +278,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <GitFork className="h-3.5 w-3.5 text-pink-500" />
+            <GitFork className="text-onoma-primary h-3.5 w-3.5" />
             <span>Historical Sound Shifts</span>
           </button>
           <button
@@ -291,7 +291,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Globe2 className="h-3.5 w-3.5 text-pink-500" />
+            <Globe2 className="text-onoma-primary h-3.5 w-3.5" />
             <span>Loanwords & Contact Adaptation</span>
           </button>
         </div>
@@ -328,8 +328,8 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                     className={cn(
                       "cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
                       selectedPresetId === preset.id
-                        ? "border-pink-500/40 bg-pink-500/10 text-pink-600 shadow-sm dark:text-pink-400"
-                        : "border-border/40 bg-background/50 text-muted-foreground hover:text-foreground hover:border-pink-500/30 hover:bg-pink-500/5"
+                        ? "border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary shadow-sm dark:text-onoma-primary-light"
+                        : "border-border/40 bg-background/50 text-muted-foreground hover:text-foreground hover:border-onoma-primary/30 hover:bg-onoma-primary/5"
                     )}
                   >
                     {preset.name.split(" ")[0]}
@@ -344,7 +344,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
             <div className="space-y-5 lg:col-span-7">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-pink-500" />
+                  <Layers className="text-onoma-primary h-4 w-4" />
                   <h4 className="text-foreground text-sm font-bold">
                     Chronological Epochs & Rules
                   </h4>
@@ -352,7 +352,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                 <button
                   type="button"
                   onClick={handleAddEpoch}
-                  className="border-border/40 bg-secondary/20 flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-semibold transition-all hover:border-pink-500/40 hover:bg-pink-500/10 hover:text-pink-600 active:scale-95 dark:hover:text-pink-400"
+                  className="border-border/40 bg-secondary/20 hover:border-onoma-primary/40 hover:bg-onoma-primary/10 hover:text-onoma-primary flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-semibold transition-all active:scale-95"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>Add Epoch</span>
@@ -369,7 +369,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                     key={sym.label}
                     type="button"
                     onClick={() => handleInsertSymbol(sym.value)}
-                    className="border-border/40 bg-background/80 cursor-pointer rounded border px-2 py-0.5 font-mono text-[10px] transition-all hover:border-pink-500/40 hover:bg-pink-500/10 hover:text-pink-500 active:scale-90"
+                    className="border-border/40 bg-background/80 hover:border-onoma-primary/40 hover:bg-onoma-primary/10 hover:text-onoma-primary cursor-pointer rounded border px-2 py-0.5 font-mono text-[10px] transition-all active:scale-90"
                   >
                     {sym.label}
                   </button>
@@ -386,7 +386,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                     {/* Epoch Header */}
                     <div className="border-border/20 flex items-center justify-between gap-2 border-b pb-2.5">
                       <div className="flex flex-1 items-center gap-2">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-pink-500/15 text-[10px] font-bold text-pink-600 dark:text-pink-400">
+                        <span className="bg-onoma-primary/15 text-onoma-primary dark:text-onoma-primary-light flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold">
                           {epochIdx + 1}
                         </span>
                         <input
@@ -406,7 +406,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                         onClick={() => handleRemoveEpoch(epochIdx)}
                         disabled={epochs.length <= 1}
                         title="Delete Epoch"
-                        className="text-muted-foreground cursor-pointer p-1 transition-colors hover:text-rose-500 disabled:opacity-30"
+                        className="text-muted-foreground cursor-pointer p-1 transition-colors hover:text-red-500 disabled:opacity-30"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -429,7 +429,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                             onChange={(e) =>
                               handleUpdateRule(epochIdx, ruleIdx, "enabled", e.target.checked)
                             }
-                            className="h-3.5 w-3.5 cursor-pointer rounded accent-pink-500"
+                            className="accent-onoma-primary h-3.5 w-3.5 cursor-pointer rounded"
                             title="Toggle Rule"
                           />
 
@@ -445,7 +445,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                 handleUpdateRule(epochIdx, ruleIdx, "source", e.target.value)
                               }
                               placeholder="Source"
-                              className="border-border/40 bg-secondary/10 w-full rounded border px-2 py-1 font-mono text-xs focus:border-pink-500 focus:outline-none"
+                              className="border-border/40 bg-secondary/10 focus:border-onoma-primary w-full rounded border px-2 py-1 font-mono text-xs focus:outline-none"
                             />
                           </div>
 
@@ -463,7 +463,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                 handleUpdateRule(epochIdx, ruleIdx, "target", e.target.value)
                               }
                               placeholder="Target"
-                              className="border-border/40 bg-secondary/10 w-full rounded border px-2 py-1 font-mono text-xs focus:border-pink-500 focus:outline-none"
+                              className="border-border/40 bg-secondary/10 focus:border-onoma-primary w-full rounded border px-2 py-1 font-mono text-xs focus:outline-none"
                             />
                           </div>
 
@@ -481,7 +481,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                 handleUpdateRule(epochIdx, ruleIdx, "context", e.target.value)
                               }
                               placeholder="Env (e.g. V_V, _[ei], _#)"
-                              className="border-border/40 bg-secondary/10 w-full rounded border px-2 py-1 font-mono text-xs focus:border-pink-500 focus:outline-none"
+                              className="border-border/40 bg-secondary/10 focus:border-onoma-primary w-full rounded border px-2 py-1 font-mono text-xs focus:outline-none"
                             />
                           </div>
 
@@ -506,7 +506,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                             <button
                               type="button"
                               onClick={() => handleRemoveRule(epochIdx, ruleIdx)}
-                              className="text-muted-foreground cursor-pointer p-1 transition-colors hover:text-rose-500"
+                              className="text-muted-foreground cursor-pointer p-1 transition-colors hover:text-red-500"
                             >
                               <Trash2 className="h-3 w-3" />
                             </button>
@@ -517,7 +517,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                       <button
                         type="button"
                         onClick={() => handleAddRule(epochIdx)}
-                        className="text-muted-foreground flex cursor-pointer items-center gap-1 pt-1 text-[11px] font-semibold transition-colors hover:text-pink-500"
+                        className="text-muted-foreground hover:text-onoma-primary flex cursor-pointer items-center gap-1 pt-1 text-[11px] font-semibold transition-colors"
                       >
                         <Plus className="h-3 w-3" />
                         <span>Add Shift Rule</span>
@@ -557,7 +557,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                   value={inputWordsText}
                   onChange={(e) => setInputWordsText(e.target.value)}
                   placeholder="Enter proto-words separated by newlines or commas..."
-                  className="border-border/40 bg-background/50 text-foreground w-full rounded-lg border p-2.5 font-mono text-xs focus:border-pink-500 focus:outline-none"
+                  className="border-border/40 bg-background/50 text-foreground focus:border-onoma-primary w-full rounded-lg border p-2.5 font-mono text-xs focus:outline-none"
                 />
                 <div className="text-muted-foreground flex items-center justify-between text-[10px]">
                   <span>{parsedWords.length} words loaded</span>
@@ -586,7 +586,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                       });
                       notify.success(`Saved ${words.length} evolved words to Stash!`);
                     }}
-                    className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-pink-500/40 bg-pink-500/10 px-2.5 py-1 text-[11px] font-semibold text-pink-600 shadow-xs transition-all hover:bg-pink-500/20 active:scale-95 dark:text-pink-400"
+                    className="border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary hover:bg-onoma-primary/20 dark:text-onoma-primary-light flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold shadow-xs transition-all active:scale-95"
                   >
                     <FolderDown className="h-3.5 w-3.5" />
                     <span>Save to Stash</span>
@@ -603,7 +603,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                         key={`${res.original}-${idx}`}
                         className={cn(
                           "border-border/30 bg-background/60 rounded-lg border p-2.5 transition-all",
-                          hasChanged && "border-pink-500/30 bg-pink-500/[0.02]"
+                          hasChanged && "border-onoma-primary/30 bg-onoma-primary/[0.02]"
                         )}
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -634,7 +634,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                 type="button"
                                 onClick={() => handlePlay(res.final)}
                                 title="Pronounce Evolved Word"
-                                className="cursor-pointer p-0.5 text-pink-500 hover:text-pink-600"
+                                className="text-onoma-primary hover:text-onoma-primary/80 cursor-pointer p-0.5"
                               >
                                 <Volume2 className="h-3 w-3" />
                               </button>
@@ -648,7 +648,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                               type="button"
                               onClick={() => handleSaveToStash(res)}
                               title="Save to Stash"
-                              className="text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:text-pink-500"
+                              className="text-muted-foreground hover:text-onoma-primary cursor-pointer rounded p-1 transition-colors"
                             >
                               <Bookmark className="h-3.5 w-3.5" />
                             </button>
@@ -673,7 +673,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                 type="button"
                                 onClick={() => setExpandedWordIdx(isExpanded ? null : idx)}
                                 title="Inspect derivation steps"
-                                className="text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:text-pink-500"
+                                className="text-muted-foreground hover:text-onoma-primary cursor-pointer rounded p-1 transition-colors"
                               >
                                 {isExpanded ? (
                                   <ChevronDown className="h-3.5 w-3.5" />
@@ -699,7 +699,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                 <span className="text-muted-foreground truncate">
                                   {step.epochName}
                                 </span>
-                                <span className="text-pink-600 dark:text-pink-400">
+                                <span className="text-onoma-primary dark:text-onoma-primary-light">
                                   {step.ruleDescription}
                                 </span>
                                 <span className="text-foreground font-bold">

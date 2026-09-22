@@ -354,6 +354,7 @@ export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
         routeData: data as FeatureCollection,
         visible,
         onRouteClick: onRouteClick ? (id: string) => onRouteClick(id) : undefined,
+        enableDeckGl: true,
       };
     },
     legend: TRANSPORT_LEGEND,

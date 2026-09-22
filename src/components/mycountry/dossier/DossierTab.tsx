@@ -193,7 +193,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
     return (
       <Card className="facet-hierarchy-child">
         <CardContent className="p-8 text-center">
-          <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-rose-500" />
+          <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
           <h3 className="mb-2 text-lg font-semibold">Wiki Intelligence Unavailable</h3>
           <p className="text-muted-foreground mb-4">{wikiData.error}</p>
           <Button onClick={handleRefresh} variant="outline">
@@ -422,7 +422,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                                     ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                                     : doc.clearance === "ALLIANCE"
                                       ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                                      : "border-rose-500/30 bg-rose-500/10 text-rose-400"
+                                      : "border-red-500/30 bg-red-500/10 text-red-400"
                                 }`}
                               >
                                 {doc.clearance}
@@ -453,7 +453,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                             <button
                               type="button"
                               onClick={() => handleDeleteNativeDoc(doc.id)}
-                              className="text-muted-foreground flex h-7 w-7 items-center justify-center rounded-lg hover:bg-rose-500/10 hover:text-rose-400"
+                              className="text-muted-foreground flex h-7 w-7 items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-400"
                               title="Delete Document"
                             >
                               <Trash2 className="h-3.5 w-3.5" />

@@ -216,7 +216,7 @@ export function VoicePreferencesPanel({
                   healthData.fastapi === "up" || healthData.web === "up"
                     ? "text-emerald-500"
                     : healthData.fastapi === "down" && healthData.web === "down"
-                      ? "text-rose-500"
+                      ? "text-red-500"
                       : "text-muted-foreground"
                 }
               >

@@ -98,7 +98,7 @@ function BlurbPromptModal({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex items-center gap-2">
-                <BookOpen className="h-4 w-4 shrink-0 text-purple-400" />
+                <BookOpen className="h-4 w-4 shrink-0 text-wiki" />
                 <DialogTitle className="text-base font-semibold">{prompt.title}</DialogTitle>
               </div>
               <p className="text-muted-foreground text-sm leading-relaxed">{prompt.question}</p>
@@ -170,7 +170,7 @@ function BlurbPromptModal({
         <div className="flex items-center justify-between border-t border-white/10 px-5 py-3">
           <Link
             href={withBasePath(`/blurbs/${prompt.slug}`)}
-            className="inline-flex items-center gap-1.5 text-xs text-purple-400 transition-colors hover:text-purple-300"
+            className="inline-flex items-center gap-1.5 text-xs text-wiki transition-colors hover:text-wiki-hover"
           >
             <ExternalLink className="h-3 w-3" />
             Open full prompt

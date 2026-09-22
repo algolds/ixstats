@@ -33,7 +33,7 @@ export const CustomSectorDialog = React.memo(function CustomSectorDialog({
   const [shortLabel, setShortLabel] = useState("");
   const [defaultTariff, setDefaultTariff] = useState("5.0");
   const [defaultShare, setDefaultShare] = useState("10.0");
-  const [accent, setAccent] = useState<AccentColor>("teal");
+  const [accent, setAccent] = useState<AccentColor>("cyan");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,9 +127,9 @@ export const CustomSectorDialog = React.memo(function CustomSectorDialog({
                 <SelectItem value="emerald">Emerald</SelectItem>
                 <SelectItem value="cyan">Cyan</SelectItem>
                 <SelectItem value="amber">Amber</SelectItem>
-                <SelectItem value="purple">Purple</SelectItem>
-                <SelectItem value="rose">Rose</SelectItem>
-                <SelectItem value="teal">Teal</SelectItem>
+                <SelectItem value="indigo">Indigo</SelectItem>
+                <SelectItem value="red">Red</SelectItem>
+                <SelectItem value="blue">Blue</SelectItem>
               </SelectContent>
             </Select>
           </div>

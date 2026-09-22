@@ -104,23 +104,23 @@ export function CardMarketTab({
               if (event.action === "PACK_OPEN") {
                 icon = <Package className="h-4 w-4 text-white" />;
                 actionLabel = "Pulled from Card Pack";
-                colorClass = "bg-purple-500";
+                colorClass = "bg-indigo-500";
               } else if (event.action === "DAILY_CLAIM") {
                 icon = <Award className="h-4 w-4 text-white" />;
                 actionLabel = "Claimed as Daily Bonus";
-                colorClass = "bg-yellow-500";
+                colorClass = "bg-amber-500";
               } else if (event.action === "GIFT") {
                 icon = <Gift className="h-4 w-4 text-white" />;
                 actionLabel = event.fromUserName
                   ? `Gifted from ${event.fromUserName} to ${event.toUserName}`
                   : `Gifted to ${event.toUserName}`;
-                colorClass = "bg-pink-500";
+                colorClass = "bg-blue-500";
               } else if (event.action === "TRADE") {
                 icon = <ArrowRightLeft className="h-4 w-4 text-white" />;
                 actionLabel = event.fromUserName
                   ? `Traded from ${event.fromUserName} to ${event.toUserName}`
                   : `Traded to ${event.toUserName}`;
-                colorClass = "bg-teal-500";
+                colorClass = "bg-cyan-500";
               } else if (event.action === "AUCTION_BUYOUT" || event.action === "AUCTION_END") {
                 icon = <ShoppingBag className="h-4 w-4 text-white" />;
                 actionLabel = (

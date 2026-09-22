@@ -42,9 +42,9 @@ export function PopulateFromWikiButton({
   const [result, setResult] = useState<ParseWikiResult | null>(null);
 
   const mutate = api.countryGeo.populateFromWiki.useMutation({
-    onSuccess: (data: any) => {
-      setResult(data as ParseWikiResult);
-      if (data?.appliedCount > 0 || (data?.applied && data.applied.length > 0)) {
+    onSuccess: (data: ParseWikiResult) => {
+      setResult(data);
+      if (data?.hasChanges || (data?.applied && data.applied.length > 0)) {
         onApplied?.();
       }
     },
@@ -63,7 +63,7 @@ export function PopulateFromWikiButton({
         }
         disabled={mutate.isPending}
         title={`Pull population, leader, and other attributes from the linked wiki page (${wikiTitle ?? "entity name"}).`}
-        className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors hover:bg-violet-500/15 disabled:opacity-50"
+        className="text-muted-foreground hover:text-foreground hover:bg-accent flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors disabled:opacity-50"
       >
         {mutate.isPending ? (
           <Loader2 className="h-3 w-3 animate-spin" />

@@ -95,7 +95,7 @@ export function CardTakedownVerificationModal({
       <DialogContent className="border-border/40 bg-card/95 rounded-2xl p-6 shadow-2xl backdrop-blur-xl sm:max-w-md">
         <DialogHeader className="space-y-2">
           <div className="flex items-center gap-2.5">
-            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2 text-rose-500">
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-2 text-red-500">
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
@@ -126,14 +126,14 @@ export function CardTakedownVerificationModal({
             {/* Nation name first — drives the dynamic verify URL */}
             <div>
               <label className="text-muted-foreground mb-1 block text-[11px] font-semibold">
-                Nation Name <span className="text-rose-500">*</span>
+                Nation Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={nationName}
                 onChange={(e) => setNationName(e.target.value)}
                 placeholder="e.g. The Grendels"
-                className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-xl border px-3 text-xs transition-all outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-xl border px-3 text-xs transition-all outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
               />
             </div>
 
@@ -194,14 +194,14 @@ export function CardTakedownVerificationModal({
             <div className="space-y-3">
               <div>
                 <label className="text-muted-foreground mb-1 block text-[11px] font-semibold">
-                  Verification Token <span className="text-rose-500">*</span>
+                  Verification Token <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={checksum}
                   onChange={(e) => setChecksum(e.target.value)}
                   placeholder="Paste one-time token"
-                  className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-xl border px-3 font-mono text-xs transition-all outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                  className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-xl border px-3 font-mono text-xs transition-all outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
                 />
               </div>
 
@@ -212,7 +212,7 @@ export function CardTakedownVerificationModal({
                 <select
                   value={selectedReason}
                   onChange={(e) => setSelectedReason(e.target.value)}
-                  className="border-border bg-background text-foreground h-9 w-full cursor-pointer rounded-xl border px-3 text-xs transition-all outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                  className="border-border bg-background text-foreground h-9 w-full cursor-pointer rounded-xl border px-3 text-xs transition-all outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
                 >
                   <option value="">— Select a reason —</option>
                   <option value="I am the nation owner and rights holder of this flag artwork.">
@@ -233,7 +233,7 @@ export function CardTakedownVerificationModal({
                     onChange={(e) => setCustomReason(e.target.value)}
                     placeholder="Describe your basis for removal"
                     autoFocus
-                    className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-xl border px-3 text-xs transition-all outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                    className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-xl border px-3 text-xs transition-all outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
                   />
                 )}
               </div>
@@ -241,7 +241,7 @@ export function CardTakedownVerificationModal({
 
             {/* Error Display */}
             {takedownMutation.error && (
-              <div className="flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-600 dark:text-rose-300">
+              <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-xs text-red-600 dark:text-red-300">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <p>{takedownMutation.error.message}</p>
               </div>
@@ -261,7 +261,7 @@ export function CardTakedownVerificationModal({
                 size="sm"
                 disabled={!nationName.trim() || !checksum.trim() || takedownMutation.isPending}
                 onClick={handleVerifyAndTakedown}
-                className="h-9 rounded-xl border border-rose-500/30 bg-rose-600 text-xs font-semibold text-white shadow-sm transition-all hover:bg-rose-700 active:scale-95"
+                className="h-9 rounded-xl border border-red-500/30 bg-red-600 text-xs font-semibold text-white shadow-sm transition-all hover:bg-red-700 active:scale-95"
               >
                 {takedownMutation.isPending ? (
                   <>

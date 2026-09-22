@@ -445,7 +445,7 @@ export function MidRibbonPassportDocument({
                   {/* ThinkPages Voice Bio (if available) */}
                   {data?.thinkpages?.bio && (
                     <div className="space-y-1 rounded-xl border border-black/6 bg-black/[0.015] p-3 dark:border-white/8 dark:bg-white/[0.02]">
-                      <div className="flex items-center gap-1.5 text-purple-500">
+                      <div className="flex items-center gap-1.5 text-blue-500">
                         <Sparkles className="h-3 w-3" />
                         <span className="font-mono text-[9px] font-bold tracking-wider uppercase">
                           ThinkPages Bio

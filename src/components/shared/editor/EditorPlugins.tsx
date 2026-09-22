@@ -85,7 +85,7 @@ export const WikiLinkPlugin = createPlatePlugin({
       <a
         {...attributes}
         href={`/wiki/${((element?.target as string) || "").replace(/ /g, "_")}`}
-        className="font-semibold text-purple-400 underline transition-colors hover:text-purple-300"
+        className="text-wiki font-semibold underline transition-colors hover:opacity-80"
       >
         {children}
       </a>
@@ -100,9 +100,9 @@ export const WikiEmbedPlugin = createPlatePlugin({
     node: ({ children, element, attributes }: any) => (
       <div
         {...attributes}
-        className="my-2 rounded-lg border border-purple-500/30 bg-purple-500/10 p-3"
+        className="border-wiki/30 bg-wiki/10 my-2 rounded-lg border p-3"
       >
-        <span className="text-xs font-bold text-purple-300">📖 {element?.title}</span>
+        <span className="text-wiki text-xs font-bold">📖 {element?.title}</span>
         <p className="mt-1 text-xs text-slate-300">{element?.summary}</p>
         {children}
       </div>

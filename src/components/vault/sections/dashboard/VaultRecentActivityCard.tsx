@@ -65,7 +65,7 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
                       "flex h-7 w-7 items-center justify-center rounded-full border shadow-sm backdrop-blur-md",
                       isEarn
                         ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                        : "border-rose-500/30 bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                        : "border-red-500/30 bg-red-500/15 text-red-600 dark:text-red-400"
                     )}
                   >
                     {isEarn ? (
@@ -87,8 +87,8 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
                   className={cn(
                     "flex items-center gap-0.5 font-mono text-sm font-bold tracking-tight",
                     isEarn
-                      ? "text-emerald-600 drop-shadow-[0_0_6px_rgba(16,185,129,0.3)] dark:text-emerald-400"
-                      : "text-rose-600 dark:text-rose-400"
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-red-600 dark:text-red-400"
                   )}
                 >
                   {isEarn ? "+" : "-"}

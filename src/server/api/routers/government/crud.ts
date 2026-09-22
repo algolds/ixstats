@@ -5,32 +5,6 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { detectGovernmentConflicts } from "~/server/services/builderIntegrationService";
 import { GovernmentBuilderStateSchema } from "~/types/government";
 
-// Input validation schemas
-const _governmentStructureInputSchema = z.object({
-  governmentName: z.string().min(1, "Government name is required"),
-  governmentType: z.enum([
-    "Constitutional Monarchy",
-    "Federal Republic",
-    "Parliamentary Democracy",
-    "Presidential Republic",
-    "Federal Constitutional Republic",
-    "Unitary State",
-    "Federation",
-    "Confederation",
-    "Empire",
-    "City-State",
-    "Other",
-  ]),
-  headOfState: z.string().optional(),
-  headOfGovernment: z.string().optional(),
-  legislatureName: z.string().optional(),
-  executiveName: z.string().optional(),
-  judicialName: z.string().optional(),
-  totalBudget: z.number().positive("Total budget must be positive"),
-  fiscalYear: z.string().default("Calendar Year"),
-  budgetCurrency: z.string().default("USD"),
-});
-
 // Base schema for government departments
 const departmentBaseSchema = z.object({
   name: z.string().min(1, "Department name is required"),

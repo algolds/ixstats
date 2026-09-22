@@ -3,7 +3,7 @@
 **Status**: Primary & Default Encyclopedia Engine  
 **Package**: `@wikios/core`  
 **Runtime**: TypeScript 7.0, Bun 1.4+  
-**Platform**: IxStates 1.4.0 Ogma (RC-1)  
+**Platform**: IxStates 1.4.0 Lobster Crosby (RC-1)  
 
 ---
 

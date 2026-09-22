@@ -14,6 +14,9 @@ import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
 import {
   countryEconomicInputsSchema,
   countryGovernmentComponentSchema,
+  countryTaxSystemInputSchema,
+  countryGovernmentStructureInputSchema,
+  countryEconomyBuilderStateSchema,
 } from "~/server/shared/country-payload-builder";
 import {
   syncNationalIdentity,
@@ -34,9 +37,9 @@ export const managementCreateProcedures = {
         foundationCountry: z.string().nullable(),
         economicInputs: countryEconomicInputsSchema,
         governmentComponents: z.array(countryGovernmentComponentSchema).optional(),
-        taxSystemData: z.any().optional(),
-        governmentStructure: z.any().optional(),
-        economyBuilderState: z.any().optional(),
+        taxSystemData: countryTaxSystemInputSchema.optional(),
+        governmentStructure: countryGovernmentStructureInputSchema.optional(),
+        economyBuilderState: countryEconomyBuilderStateSchema.optional(),
         archetypeId: z.string().optional(),
       })
     )
@@ -229,13 +232,21 @@ export const managementCreateProcedures = {
         }
       }
 
-      const slug = input.name
+      let baseSlug = input.name
         .toLowerCase()
         .trim()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
+      if (!baseSlug) baseSlug = "country";
+
+      let slug = baseSlug;
+      let counter = 1;
+      while (await ctx.db.country.findUnique({ where: { slug }, select: { id: true } })) {
+        counter++;
+        slug = `${baseSlug}-${counter}`;
+      }
 
       try {
         const result = await ctx.db.$transaction(async (tx) => {

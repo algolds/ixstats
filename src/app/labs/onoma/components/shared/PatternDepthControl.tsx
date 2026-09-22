@@ -62,11 +62,11 @@ export const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     editorialTier: "Faithful",
     tag: "Strong Resonance",
     description: "Strong structural fidelity; generates forms closely echoing seed language roots.",
-    color: "#8b5cf6",
-    textClassName: "text-violet-600 dark:text-violet-400",
-    bgClassName: "bg-violet-500/10 dark:bg-violet-500/15",
-    borderClassName: "border-violet-500/30",
-    dotClassName: "bg-violet-500",
+    color: "#6366f1",
+    textClassName: "text-indigo-600 dark:text-indigo-400",
+    bgClassName: "bg-indigo-500/10 dark:bg-indigo-500/15",
+    borderClassName: "border-indigo-500/30",
+    dotClassName: "bg-indigo-500",
   },
   {
     depth: 4,
@@ -262,8 +262,8 @@ export function PatternDepthControl({
                   <span>Natural flow (★)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
-                  <span className="font-semibold text-violet-600 dark:text-violet-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                  <span className="font-semibold text-indigo-600 dark:text-indigo-400">
                     3 Faithful:
                   </span>
                   <span>Strong resonance</span>

@@ -111,7 +111,7 @@ const TEMPLATE_GROUP_CONFIG: readonly TemplateGroupConfig[] = [
     id: "social",
     label: "Social & Welfare",
     icon: Heart,
-    iconClassName: "text-rose-600 dark:text-rose-400",
+    iconClassName: "text-red-600 dark:text-red-400",
     keywords: [
       "welfare",
       "social_",

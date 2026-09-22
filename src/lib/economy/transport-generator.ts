@@ -13,16 +13,28 @@
  */
 
 export type RouteType =
+  // Rail family
   | "rail"
+  | "high_speed_rail"
+  | "freight_rail"
+  | "commuter_rail"
+  // Road family
+  | "motorway"
   | "highway"
+  | "trunk"
   | "road"
+  | "secondary"
+  // Maritime
   | "shipping_lane"
   | "canal"
-  | "air_corridor"
   | "ferry"
+  // Air
+  | "air_corridor"
+  // Utility
   | "pipeline"
   | "power_grid"
   | "fiber"
+  // Military
   | "military_supply"
   | "military_naval";
 
@@ -82,6 +94,34 @@ const ROUTE_CONFIGS: Record<
     elevationCostFactor: 5,
     baseSpeed: 120,
   },
+  high_speed_rail: {
+    maxElevation: 1800,
+    maxGrade: 2.5,
+    waterCost: Infinity,
+    elevationCostFactor: 6,
+    baseSpeed: 300,
+  },
+  freight_rail: {
+    maxElevation: 2200,
+    maxGrade: 2.0,
+    waterCost: Infinity,
+    elevationCostFactor: 5,
+    baseSpeed: 80,
+  },
+  commuter_rail: {
+    maxElevation: 2500,
+    maxGrade: 3.5,
+    waterCost: Infinity,
+    elevationCostFactor: 4,
+    baseSpeed: 90,
+  },
+  motorway: {
+    maxElevation: 2800,
+    maxGrade: 6,
+    waterCost: Infinity,
+    elevationCostFactor: 3.5,
+    baseSpeed: 130,
+  },
   highway: {
     maxElevation: 3000,
     maxGrade: 8,
@@ -89,12 +129,26 @@ const ROUTE_CONFIGS: Record<
     elevationCostFactor: 3,
     baseSpeed: 100,
   },
+  trunk: {
+    maxElevation: 3500,
+    maxGrade: 10,
+    waterCost: Infinity,
+    elevationCostFactor: 2.5,
+    baseSpeed: 80,
+  },
   road: {
     maxElevation: 4500,
     maxGrade: 15,
     waterCost: Infinity,
     elevationCostFactor: 1.5,
     baseSpeed: 60,
+  },
+  secondary: {
+    maxElevation: 4500,
+    maxGrade: 18,
+    waterCost: Infinity,
+    elevationCostFactor: 1.2,
+    baseSpeed: 50,
   },
   shipping_lane: {
     maxElevation: 0,
@@ -374,21 +428,43 @@ export function generateTransportNetwork(
       const dist = haversineKm(from.coordinates, to.coordinates);
       const combinedPop = from.population + to.population;
 
-      // Classify standard transport route type by importance
-      let transportType: RouteType;
-      if (combinedPop > 5_000_000 || from.isCapital || to.isCapital) {
-        transportType = "rail";
-      } else if (combinedPop > 1_000_000 || dist > 200) {
-        transportType = "highway";
-      } else {
-        transportType = "road";
+      // Sub-type classification for rail & road families
+      let railType: RouteType = "rail";
+      if (routeTypes.includes("high_speed_rail") && (from.isCapital || to.isCapital || combinedPop > 6_000_000)) {
+        railType = "high_speed_rail";
+      } else if (routeTypes.includes("commuter_rail") && dist < 60 && combinedPop > 1_500_000) {
+        railType = "commuter_rail";
+      } else if (routeTypes.includes("freight_rail") && dist > 150) {
+        railType = "freight_rail";
+      }
+
+      let roadType: RouteType = "road";
+      if (routeTypes.includes("motorway") && (from.isCapital || to.isCapital || combinedPop > 4_000_000)) {
+        roadType = "motorway";
+      } else if (routeTypes.includes("highway") && (combinedPop > 1_000_000 || dist > 150)) {
+        roadType = "highway";
+      } else if (routeTypes.includes("trunk") && combinedPop > 300_000) {
+        roadType = "trunk";
+      } else if (routeTypes.includes("secondary") && combinedPop < 150_000) {
+        roadType = "secondary";
       }
 
       // Collect all land route types we should generate for this edge
       const typesToGenerate = new Set<RouteType>();
-      if (routeTypes.includes(transportType)) {
-        typesToGenerate.add(transportType);
+      if (routeTypes.includes(railType)) {
+        typesToGenerate.add(railType);
+      } else if (routeTypes.includes("rail")) {
+        typesToGenerate.add("rail");
       }
+
+      if (routeTypes.includes(roadType)) {
+        typesToGenerate.add(roadType);
+      } else if (routeTypes.includes("highway")) {
+        typesToGenerate.add("highway");
+      } else if (routeTypes.includes("road")) {
+        typesToGenerate.add("road");
+      }
+
       for (const t of ["pipeline", "power_grid", "fiber", "military_supply"] as RouteType[]) {
         if (routeTypes.includes(t)) {
           typesToGenerate.add(t);
@@ -411,8 +487,14 @@ export function generateTransportNetwork(
 
         let typeLabel = "";
         if (t === "rail") typeLabel = "Railway";
+        else if (t === "high_speed_rail") typeLabel = "Express Shinkansen";
+        else if (t === "freight_rail") typeLabel = "Freight Corridor";
+        else if (t === "commuter_rail") typeLabel = "Commuter Line";
+        else if (t === "motorway") typeLabel = "Autoroute";
         else if (t === "highway") typeLabel = "Highway";
+        else if (t === "trunk") typeLabel = "Trunk Expressway";
         else if (t === "road") typeLabel = "Road";
+        else if (t === "secondary") typeLabel = "Secondary Arterial";
         else if (t === "pipeline") typeLabel = "Pipeline";
         else if (t === "power_grid") typeLabel = "Power Grid";
         else if (t === "fiber") typeLabel = "Fiber Link";
@@ -678,3 +760,89 @@ export function estimateCoastalCities(
     return { ...city, isCoastal: minDist < thresholdKm };
   });
 }
+
+export interface GeneratedNode {
+  id: string;
+  name: string;
+  coordinates: [number, number];
+  nodeType: string;
+  cityId?: string;
+}
+
+export interface GeneratedSegment {
+  id: string;
+  fromNodeId: string;
+  toNodeId: string;
+  routeType: RouteType;
+  geometry: { type: "LineString"; coordinates: [number, number][] };
+  lengthKm: number;
+  terrainDifficulty: number;
+  speedKmh: number;
+  status: string;
+  isInternational: boolean;
+}
+
+export interface GeneratedNetwork {
+  nodes: GeneratedNode[];
+  segments: GeneratedSegment[];
+  routes: GeneratedRoute[];
+}
+
+export function generateTransportNetworkWithSegments(
+  input: GenerationInput,
+  routeTypes: RouteType[] = ["rail", "highway", "road"]
+): GeneratedNetwork {
+  const routes = generateTransportNetwork(input, routeTypes);
+
+  const nodeMap = new Map<string, GeneratedNode>();
+  const segments: GeneratedSegment[] = [];
+
+  function getOrCreateNode(coord: [number, number], name: string, cityId?: string): GeneratedNode {
+    const key = `${coord[0].toFixed(3)},${coord[1].toFixed(3)}`;
+    const existing = nodeMap.get(key);
+    if (existing) return existing;
+
+    const node: GeneratedNode = {
+      id: `node_${nodeMap.size + 1}`,
+      name,
+      coordinates: coord,
+      nodeType: cityId ? "city" : "waypoint",
+      cityId,
+    };
+    nodeMap.set(key, node);
+    return node;
+  }
+
+  for (let i = 0; i < routes.length; i++) {
+    const r = routes[i]!;
+    const coords = r.geometry.coordinates;
+    const fromCoord = coords[0]!;
+    const toCoord = coords[coords.length - 1]!;
+
+    const stop0 = r.stops[0];
+    const stop1 = r.stops[1];
+
+    const fromNode = getOrCreateNode(fromCoord, stop0?.name ?? "Node A", stop0?.cityId);
+    const toNode = getOrCreateNode(toCoord, stop1?.name ?? "Node B", stop1?.cityId);
+
+    segments.push({
+      id: `seg_${i + 1}`,
+      fromNodeId: fromNode.id,
+      toNodeId: toNode.id,
+      routeType: r.routeType,
+      geometry: r.geometry,
+      lengthKm: r.lengthKm,
+      terrainDifficulty: r.terrainDifficulty,
+      speedKmh: (r.properties.speed_kmh as number) ?? 80,
+      status: "operational",
+      isInternational: r.isInternational,
+    });
+  }
+
+  return {
+    nodes: Array.from(nodeMap.values()),
+    segments,
+    routes,
+  };
+}
+

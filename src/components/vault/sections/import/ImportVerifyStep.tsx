@@ -36,7 +36,7 @@ export function ImportVerifyStep({
         <h2 className="text-foreground text-xl font-bold tracking-tight">Verify Ownership</h2>
         <p className="text-muted-foreground mt-1 text-sm">
           Prove you own{" "}
-          <span className="font-semibold text-rose-600 dark:text-rose-400">{nationName}</span> via
+          <span className="font-semibold text-amber-600 dark:text-amber-400">{nationName}</span> via
           NationStates login verification
         </p>
       </div>
@@ -111,7 +111,7 @@ export function ImportVerifyStep({
         <Button
           onClick={onVerify}
           disabled={!checksum.trim() || isPending}
-          className="flex-1 bg-gradient-to-r from-rose-500 to-orange-500 font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600 active:scale-[0.98]"
+          className="flex-1 bg-amber-500 font-bold text-black shadow-xs hover:bg-amber-400 active:scale-[0.98] dark:bg-amber-400 dark:text-black dark:hover:bg-amber-300"
         >
           {isPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

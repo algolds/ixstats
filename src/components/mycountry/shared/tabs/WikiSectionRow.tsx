@@ -96,7 +96,7 @@ export const WikiSectionRow = React.memo(function WikiSectionRow({
                 href={getWikiSectionUrl(wikiUrl, title)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-[10px] text-purple-500 hover:underline"
+                className="mt-1 inline-flex items-center gap-1 text-[10px] text-wiki hover:text-wiki-hover hover:underline"
               >
                 Read more <ExternalLink className="h-2.5 w-2.5" />
               </a>

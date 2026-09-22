@@ -50,8 +50,8 @@ export function WikiAuthorPopover({ username }: { username: string }) {
                   className="shrink-0"
                 />
               ) : (
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-teal-500/10">
-                  <Users className="h-3 w-3 text-teal-400" />
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-wiki/10">
+                  <Users className="h-3 w-3 text-wiki" />
                 </div>
               )}
               <div className="min-w-0">
@@ -81,14 +81,14 @@ export function WikiAuthorPopover({ username }: { username: string }) {
                 href={wikiUserUrl}
                 className="text-muted-foreground hover:text-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] transition-colors"
               >
-                <BookOpen className="h-3 w-3 shrink-0 text-teal-400" />
+                <BookOpen className="h-3 w-3 shrink-0 text-wiki" />
                 Wiki User Page
               </Link>
               <Link
                 href={wikiContribsUrl}
                 className="text-muted-foreground hover:text-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] transition-colors"
               >
-                <Clock className="h-3 w-3 shrink-0 text-teal-400" />
+                <Clock className="h-3 w-3 shrink-0 text-wiki" />
                 Contributions
               </Link>
               {author?.country?.slug && (

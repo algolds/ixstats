@@ -1,0 +1,14 @@
+◇ injected env (17) from .env.local.dev // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+◇ injected env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+Connecting to MariaDB on port 13306
+Connected to MariaDB.
+Gathering trees for Government, Politics, Countries, Political ideologies...
+Government: 53 subcategories, 605 articles.
+Politics: 48 subcategories, 590 articles.
+Ideologies: 3 subcategories, 32 articles.
+Countries: 309 subcategories, 3593 articles.
+Total unique articles across all targeted categories: 3643
+Fetching wikitext for articles...
+Successfully fetched text for 3573 articles.
+Reports saved to /tmp/full_political_audit.json and /tmp/political_entities.json

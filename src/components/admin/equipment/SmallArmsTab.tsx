@@ -52,13 +52,13 @@ export function SmallArmsTab({
               </Card>
               <Card className="facet-card-child p-4">
                 <p className="text-muted-foreground text-sm">Manufacturers</p>
-                <p className="mt-2 text-3xl font-bold text-green-400">
+                <p className="mt-2 text-3xl font-bold text-emerald-400">
                   {smallArmsStats.totalManufacturers}
                 </p>
               </Card>
               <Card className="facet-card-child p-4">
                 <p className="text-muted-foreground text-sm">Eras</p>
-                <p className="mt-2 text-3xl font-bold text-purple-400">
+                <p className="mt-2 text-3xl font-bold text-indigo-400">
                   {smallArmsStats.equipmentByEra.length}
                 </p>
               </Card>

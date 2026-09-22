@@ -32,7 +32,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
       {/* Shelf Title */}
       <div className="border-border/50 flex items-center justify-between border-b pb-2">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)] dark:text-amber-400" />
+          <Sparkles className="h-4 w-4 text-amber-500 dark:text-amber-400" />
           <h3 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
             Rare Achievements Showcase
           </h3>

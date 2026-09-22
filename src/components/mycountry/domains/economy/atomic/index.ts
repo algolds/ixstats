@@ -13,7 +13,6 @@ export { ComponentSearch } from "./ComponentSearch";
 export { MetricsPanel } from "./MetricsPanel";
 export { TemplateSelector } from "./TemplateSelector";
 export { EconomicWelcomeModal } from "./EconomicWelcomeModal";
-export { AtomicEconomicEffectivenessPanel } from "./AtomicEconomicEffectivenessPanel";
 
 export type { ComponentCardProps } from "./ComponentCard";
 export type { ComponentLibraryProps } from "./ComponentLibrary";
@@ -23,4 +22,3 @@ export type { CategoryFilterProps } from "./CategoryFilter";
 export type { ComponentSearchProps } from "./ComponentSearch";
 export type { MetricsPanelProps } from "./MetricsPanel";
 export type { TemplateSelectorProps } from "./TemplateSelector";
-export type { AtomicEconomicEffectivenessPanelProps } from "./AtomicEconomicEffectivenessPanel";

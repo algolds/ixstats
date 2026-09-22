@@ -11,18 +11,22 @@ import {
   City as Building2,
   Component as Layers,
   Xmark as X,
-  Sparks as Sparkles,
+  DiceSix as Dices,
+  Compass,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { PolicyCreatorSheet } from "~/components/executive/PolicyCreatorSheet";
 import { cn } from "~/lib/utils";
+import type { RouterOutputs } from "~/trpc/react";
 import { useCountryData } from "./CountryDataProvider";
 import { DirectivePresetsCatalog, DOMESTIC_SUGGESTIONS } from "./composer/DirectivePresetsCatalog";
+
+export type IntentCommitResult = RouterOutputs["intent"]["commit"];
 
 export interface IntentComposerProps {
   countryId: string;
   initialGoal?: string;
-  onCommitted?: (res: any) => void;
+  onCommitted?: (res: IntentCommitResult) => void;
 }
 
 export const IntentComposer = React.memo(function IntentComposer({
@@ -91,7 +95,7 @@ export const IntentComposer = React.memo(function IntentComposer({
   const handleSurpriseMe = useCallback(() => {
     const crime = country?.crimeRate ?? 40;
     const approval = country?.approvalRating ?? 65;
-    const readiness = (country as any)?.militaryReadiness ?? 75;
+    const readiness = (country as { militaryReadiness?: number | null })?.militaryReadiness ?? 75;
 
     let candidates = DOMESTIC_SUGGESTIONS;
     if (crime > 50) {
@@ -177,9 +181,10 @@ export const IntentComposer = React.memo(function IntentComposer({
           <button
             type="button"
             onClick={handleSurpriseMe}
-            className="flex cursor-pointer items-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-900 transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-300"
+            data-cuelume-press="tick"
+            className="flex cursor-pointer items-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-500/20 active:scale-95 dark:text-amber-300"
           >
-            <Sparkles className="h-3.5 w-3.5" />
+            <Dices className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Surprise Me</span>
           </button>
         </div>
@@ -216,9 +221,9 @@ export const IntentComposer = React.memo(function IntentComposer({
       {hasActiveGoal && (
         <div className="animate-in fade-in slide-in-from-top-3 space-y-5 duration-200">
           {/* Active Directive Badge Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-bold text-amber-900 backdrop-blur-md dark:text-amber-300">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-900 backdrop-blur-md dark:text-amber-300">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 shrink-0 text-amber-500" />
+              <Compass className="h-4 w-4 shrink-0 text-amber-500" />
               <span>Selected Goal: &ldquo;{goal}&rdquo;</span>
             </div>
             <button
@@ -305,7 +310,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                     className={cn(
                       "relative flex cursor-pointer flex-col justify-between rounded-2xl border p-4 text-left transition-all duration-200 active:scale-[0.98]",
                       isSelected
-                        ? cn(tierItem.borderCls, "shadow-lg ring-2 ring-amber-500/50")
+                        ? cn(tierItem.borderCls, "shadow-sm ring-1 ring-amber-500/50")
                         : "border-border/40 bg-card/40 text-muted-foreground hover:bg-card/80 hover:text-foreground"
                     )}
                   >
@@ -440,7 +445,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                       parentId: parentId ?? undefined,
                     });
                   }}
-                  className="w-full cursor-pointer rounded-2xl border border-amber-500/50 bg-gradient-to-r from-amber-500 to-yellow-600 px-4 py-3.5 text-xs font-bold tracking-tight text-slate-950 shadow-lg transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full cursor-pointer rounded-2xl border border-amber-500/50 bg-amber-500 hover:bg-amber-600 px-4 py-3.5 text-xs font-bold tracking-tight text-neutral-950 shadow-sm transition-all hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {commitMutation.isPending
                     ? "Enacting Executive Order..."

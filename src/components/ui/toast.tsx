@@ -16,8 +16,8 @@
 
 import * as React from "react";
 import { createContext, useContext } from "react";
-import { useToastQueueStore } from "~/stores/toastQueueStore";
-
+import { registerToastRenderer, useToastQueueStore } from "~/stores/toastQueueStore";
+import { ToastBanner } from "~/components/ui/ToastBanner";
 import { Toaster } from "sonner";
 
 export type ToastType = "success" | "error" | "warning" | "info";
@@ -34,6 +34,13 @@ export interface Toast {
   };
 }
 
+// Auto-register ToastBanner as the global custom toast renderer
+if (typeof window !== "undefined") {
+  registerToastRenderer((toast, onDismiss) => (
+    <ToastBanner toast={toast} onDismiss={onDismiss} />
+  ));
+}
+
 // ─── Context (kept for backward compatibility) ──────────────────────
 
 type ToastAction =
@@ -47,9 +54,15 @@ const ToastContext = createContext<{
   toast: (toast: Omit<Toast, "id">) => void;
 } | null>(null);
 
-// ─── Provider (no longer renders ToastContainer) ────────────────────
+// ─── Provider ───────────────────────────────────────────────────────
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  React.useEffect(() => {
+    registerToastRenderer((toast, onDismiss) => (
+      <ToastBanner toast={toast} onDismiss={onDismiss} />
+    ));
+  }, []);
+
   // Facade: toast() now delegates to the DI toast queue store
   const toastFn = React.useCallback((input: Omit<Toast, "id">) => {
     const store = useToastQueueStore.getState();
@@ -74,6 +87,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <Toaster
         position="top-center"
         className="dynamic-island-toaster"
+        toastOptions={{
+          className: "dynamic-island-toast-item",
+        }}
         offset={76}
         mobileOffset={16}
       />

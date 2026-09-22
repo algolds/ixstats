@@ -418,7 +418,7 @@ html:not([data-theme="dark"]) .wikios-sticky-toc {
   overflow: hidden;
   border: none;
   background: transparent;
-  transition: all 0.2s ease;
+  transition: transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
 }
 
 .wikios-fa-image {
@@ -625,7 +625,7 @@ html:not([data-theme="light"]) .wikios-fa-image {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--wikios-border);
   text-decoration: none;
-  transition: all 0.15s;
+  transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease;
 }
 
 .wikios-main-cat-pill:hover {
@@ -698,7 +698,7 @@ html:not([data-theme="light"]) .wikios-fa-image {
   padding: 10px 14px;
   border-radius: 8px;
   text-decoration: none;
-  transition: all 0.15s;
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
   overflow: hidden;
 }
 
@@ -916,7 +916,7 @@ html:not([data-theme="light"]) .wikios-fa-image {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: transform 120ms ease, background-color 150ms ease, border-color 150ms ease;
   white-space: nowrap;
 }
 

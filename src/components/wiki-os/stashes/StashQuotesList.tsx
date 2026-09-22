@@ -107,7 +107,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
             {q.comment && q.comment !== "Saved quote" && (
               <div className="ml-2 space-y-0.5 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/70 p-2.5 text-[11px] text-[var(--wikios-text-muted)] shadow-2xs">
                 <div className="flex items-center gap-1 text-[10px] font-bold text-[var(--wikios-text)]">
-                  <MessageSquare className="h-3 w-3 text-purple-400" />
+                  <MessageSquare className="h-3 w-3 text-blue-400" />
                   <span>Lore Note</span>
                 </div>
                 <p className="leading-relaxed italic">{q.comment}</p>

@@ -205,16 +205,11 @@ function ImportDeckTab() {
                 {currentStep === "importing" && (
                   <div className="flex flex-col items-center justify-center space-y-6 py-14">
                     <div className="relative">
-                      <motion.div
-                        className="absolute inset-0 rounded-2xl bg-gradient-to-br from-rose-500/15 to-orange-500/15 blur-3xl"
-                        animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.6, 0.3] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                      />
                       <div className="relative flex h-28 w-28 items-center justify-center">
                         {[0, 1, 2].map((i) => (
                           <motion.div
                             key={i}
-                            className="absolute h-14 w-10 rounded-lg border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm"
+                            className="absolute h-14 w-10 rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm"
                             animate={{
                               rotate: [0 + i * 120, 360 + i * 120],
                               x: [0, 20, 0, -20, 0],
@@ -238,7 +233,7 @@ function ImportDeckTab() {
                             style={{ originX: 0.5, originY: 0.5 }}
                           />
                         ))}
-                        <Loader2 className="relative h-10 w-10 animate-spin text-rose-400" />
+                        <Loader2 className="relative h-10 w-10 animate-spin text-amber-400" />
                       </div>
                     </div>
 
@@ -255,7 +250,7 @@ function ImportDeckTab() {
                     <div className="w-full max-w-xs">
                       <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
                         <motion.div
-                          className="h-full rounded-full bg-gradient-to-r from-rose-500 to-orange-500"
+                          className="h-full rounded-full bg-amber-500"
                           animate={{ x: ["-100%", "100%"] }}
                           transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                           style={{ width: "50%" }}

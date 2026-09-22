@@ -9,66 +9,69 @@ Public, read-only nation profiles plus the browse/explore experience. Anyone (si
 | Route | File | Purpose |
 | --- | --- | --- |
 | `/countries` | `page.tsx` | Explore grid: searchable/filterable/sortable list of all countries |
-| `/countries/new` | `new/page.tsx` | Alternate explore entry re-using `CountriesPageModular` |
-| `/countries/[slug]` | `[slug]/page.tsx` | Public country profile (tabbed Apple HIG, Facet UI) |
-| `/countries/[slug]/modeling` | `[slug]/modeling/page.tsx` | Economic modeling/scenario engine for a country |
+| `/countries/[slug]` | `[slug]/(profile)/page.tsx` | Deep link redirect handler (routes hash fragments to nested routes) |
+| `/countries/[slug]/factbook` | `[slug]/(profile)/factbook/page.tsx` | Public Factbook overview (overview tab) |
+| `/countries/[slug]/factbook/economy` | `[slug]/(profile)/factbook/economy/page.tsx` | Factbook economy indicators & charts |
+| `/countries/[slug]/factbook/labor` | `[slug]/(profile)/factbook/labor/page.tsx` | Factbook labor force & employment statistics |
+| `/countries/[slug]/factbook/government` | `[slug]/(profile)/factbook/government/page.tsx` | Factbook governance structure & budget spending |
+| `/countries/[slug]/factbook/geography` | `[slug]/(profile)/factbook/geography/page.tsx` | Factbook geographic compliance & terrain rollup |
+| `/countries/[slug]/dossier` | `[slug]/(profile)/dossier/page.tsx` | Wiki-synced dossier & native lore canvas reader |
+| `/countries/[slug]/activity` | `[slug]/(profile)/activity/page.tsx` | Public nation governance timeline & community posts |
+| `/countries/[slug]/modeling` | `[slug]/modeling/page.tsx` | Economic modeling/scenario simulation engine |
 
-The dynamic segment is `[slug]`. The profile query accepts either a slug or an id — pages resolve `params.slug` and pass it to `api.countries.getByIdWithEconomicData` as `{ id }`.
+## Profile Navigation Structure
 
-## Profile sections (tabs)
-
-Defined in `[slug]/_components/CountryTabs.tsx` (`TabType`), rendered by `[slug]/page.tsx`:
-
-| Tab | Component | Content |
-| --- | --- | --- |
-| Overview | `CountryOverviewPanel` | Vitality rings, headline economic stats, government summary, map embed, wiki intro/infobox |
-| Factbook | `FactbookSidebar` | Factbook parameters, demography, geographic stats, and reference data |
-| Governance | `CountryGovernancePanel` | Executive structure, cabinet, political parties, and active laws |
-| Community | `CountryActivityPanel` | Recent country governance timeline, diplomatic events, and community feed |
-
-Deeper economic detail (indicators, labor, fiscal, demographics, comparisons, modeling) is provided by the shared economy components — see `_src/components/mycountry/domains/economy/README.md`.
+The public profile employs a 2-tier Apple Design navigation hierarchy:
+1. **Tier 1 (Page Top Bar — `CountryTabs.tsx`):** `Factbook` (`/factbook`), `Dossier` (`/dossier`), and `Activity` (`/activity`) with physical Framer Motion spring layout indicators.
+2. **Tier 2 (Factbook Sections — `MyCountryTabsList.tsx`):** `Overview`, `Economy`, `Labor`, `Government`, and `Geography` with sliding underline navigation.
 
 ## Architecture
 
 ```
 countries/
-├── page.tsx, new/page.tsx        # explore entry points
-├── _components/                  # explore + shared profile UI
-│   ├── CountriesPageModular.tsx  # explore page orchestrator
-│   ├── CountriesFocusGridModular / CountriesGrid / CountryFocusCard
-│   ├── CountriesFilterSidebar / CountriesSearch / CountriesSortBar
-│   ├── CountriesHeader / CountriesPageHeader / CountriesStats
-│   ├── CountriesCommandPalette.tsx
-│   ├── CountryComparisonModal.tsx / charts/ComparisonCharts.tsx
-│   ├── CountryInfobox.tsx
-│   └── economy/                  # shared economic display components (see its README)
+├── page.tsx                          # Explore page orchestrator
+├── _components/                      # Explore + shared widgets
+│   ├── CountriesPageModular.tsx      # Explore grid orchestrator
+│   ├── CountriesFocusGridModular.tsx
+│   ├── CountriesFilterSidebar.tsx
+│   ├── CountriesSearch.tsx
+│   ├── CountriesSortBar.tsx
+│   ├── CountriesStats.tsx
+│   ├── CountryComparisonModal.tsx
+│   └── economy/                      # Economic modeling engine
+│       └── EconomicModelingEngine.tsx
 └── [slug]/
-    ├── page.tsx                  # tabbed public profile
-    ├── _components/              # CountryHeader, CountryTabs, FactbookSidebar, CountryActivityPanel
-    ├── _hooks/useCountryPageState.ts   # tab state, banner mode, wiki intro/infobox
-    ├── _types/                   # domain types for profile pages
-    └── _utils/countryDataTransformers.ts  # vitality data derivation and transformer helpers
+    ├── (profile)/
+    │   ├── layout.tsx                # Country shell (CountryDataProvider + CountryHeader + CountryTabs)
+    │   ├── page.tsx                  # Hash redirect router
+    │   ├── factbook/
+    │   │   ├── layout.tsx            # Factbook shell (FactbookMetricsProvider + FactbookSidebar)
+    │   │   ├── page.tsx              # Overview section
+    │   │   ├── economy/page.tsx      # Economy section
+    │   │   ├── labor/page.tsx        # Labor section
+    │   │   ├── government/page.tsx   # Government section
+    │   │   └── geography/page.tsx    # Geography section
+    │   ├── dossier/page.tsx          # Dossier tab
+    │   └── activity/page.tsx         # Activity feed tab
+    ├── modeling/page.tsx             # Economic scenario engine
+    ├── _components/                  # CountryHeader, CountryTabs, FactbookSidebar, CountryActivityPanel
+    ├── _hooks/useCountryPageState.ts # Tab & banner state manager
+    ├── _types/                       # Domain types for profile pages
+    └── _utils/countryDataTransformers.ts # Telemetry vitality calculation
 ```
-
-- Explore page (`page.tsx`) fetches all countries, prefetches flags via `unifiedFlagService` / `useBulkFlagCache`, and maps results into `CountryCardData` for `CountriesPageModular`.
-- Profile page (`[slug]/page.tsx`) drives tab/banner state with `useCountryPageState` and derives ring data with `calculateVitalityData`.
 
 ## Data sources (verified `api.*`)
 
 | Procedure | Used by |
 | --- | --- |
-| `api.countries.getAll` | Explore list (`page.tsx`, `new/page.tsx`) |
-| `api.countries.getByIdWithEconomicData` | Profile, modeling |
-| `api.countries.getWikiInfoboxCached` / `getWikiRichIntro` | Overview wiki content (via `useCountryPageState`) |
-| `api.government.getByCountryId` | Overview government structure |
-| `api.activities.getCountryActivity` | Activity tab |
-| `api.economics.getCountryIndicators` / `getProjections` | Economy components |
-| `api.enhancedEconomics.getEconomicDashboard` | Economy dashboard |
+| `api.countries.getAll` | Explore list (`page.tsx`) |
+| `api.countries.getByIdWithEconomicData` | Profile shell (`CountryDataProvider`), modeling |
+| `api.countries.getActivityRingsData` | Telemetry vitality rings |
+| `api.activities.getCountryActivity` | Factbook sidebar & activity tab |
+| `api.government.getByCountryId` | Overview government structure (via `useMyCountryMetrics`) |
+| `api.wikiCache.getCountryProfile` | Overview wiki content (via `useMyCountryMetrics`) |
+| `api.maps.getCountryGeometry` | Factbook sidebar map embed |
 | `api.system.getCurrentIxTime` | Time context |
 | `api.users.getProfile` | Viewer identity (`useUserCountry`) |
 
 All routers above are registered in `src/server/api/root.ts`.
-
-## Relationship to MyCountry
-
-This area is the **public, read-only** view of any nation. Editing, executive controls, and owner-only intelligence live under `/mycountry` (`src/components/mycountry/`). The profile page detects the viewer's own country (`isOwnCountry` via `useUserCountry`) only to surface banner customization and the `CountryActionsMenu`; it does not expose simulation editing here.

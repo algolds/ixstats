@@ -228,6 +228,22 @@ export function useTouchGestures() {
   return touchState;
 }
 
+interface BatteryManagerLike {
+  level: number;
+  charging: boolean;
+}
+
+interface NetworkInformationLike {
+  effectiveType?: string;
+}
+
+interface NavigatorWithCapabilities {
+  getBattery?: () => Promise<BatteryManagerLike>;
+  connection?: NetworkInformationLike;
+  mozConnection?: NetworkInformationLike;
+  webkitConnection?: NetworkInformationLike;
+}
+
 // Performance optimization hook for mobile
 export function useMobilePerformance() {
   const [performanceState, setPerformanceState] = React.useState({
@@ -240,11 +256,13 @@ export function useMobilePerformance() {
     // Check for reduced motion preference
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    const nav = navigator as NavigatorWithCapabilities;
+
     // Check for battery status (if supported)
     const checkBattery = async () => {
-      if ("getBattery" in navigator) {
+      if (typeof nav.getBattery === "function") {
         try {
-          const battery = await (navigator as any).getBattery();
+          const battery = await nav.getBattery();
           const isLowBattery = battery.level < 0.2 && !battery.charging;
           setPerformanceState((prev) => ({ ...prev, lowBattery: isLowBattery }));
         } catch {
@@ -255,9 +273,9 @@ export function useMobilePerformance() {
 
     // Check for slow connection
     const connection =
-      (navigator as any).connection ||
-      (navigator as any).mozConnection ||
-      (navigator as any).webkitConnection;
+      nav.connection ||
+      nav.mozConnection ||
+      nav.webkitConnection;
     const slowConnection =
       connection && (connection.effectiveType === "slow-2g" || connection.effectiveType === "2g");
 

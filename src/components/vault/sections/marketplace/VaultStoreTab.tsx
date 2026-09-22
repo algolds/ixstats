@@ -258,10 +258,10 @@ export function VaultStoreTab() {
     },
     cosmetics: {
       title: "Profile Customizations",
-      icon: <Sparkles className="h-4 w-4 text-purple-500" />,
+      icon: <Sparkles className="h-4 w-4 text-indigo-500" />,
       description:
         "Exclusive decorations, neon frames, and elite name tags to customize your profile presence.",
-      badgeStyle: "border-purple-500/20 text-purple-600 dark:text-purple-400 bg-purple-500/5",
+      badgeStyle: "border-indigo-500/20 text-indigo-600 dark:text-indigo-400 bg-indigo-500/5",
       statusText: "Cosmetics",
     },
     upgrades: {
@@ -286,9 +286,9 @@ export function VaultStoreTab() {
       icon: "text-amber-500",
     },
     cosmetics: {
-      text: "text-purple-650 dark:text-purple-400",
-      bg: "bg-purple-500/10 dark:bg-purple-500/15 border-purple-500/20",
-      icon: "text-purple-500",
+      text: "text-indigo-600 dark:text-indigo-400",
+      bg: "bg-indigo-500/10 dark:bg-indigo-500/15 border-indigo-500/20",
+      icon: "text-indigo-500",
     },
     upgrades: {
       text: "text-emerald-600 dark:text-emerald-400",

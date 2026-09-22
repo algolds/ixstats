@@ -72,7 +72,7 @@ export function StashSidebar({
       {/* Sidebar Header */}
       <div className="flex items-center justify-between rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 px-3 py-2 shadow-xs backdrop-blur-xl">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-xl border border-purple-500/30 bg-purple-500/15 text-purple-400">
+          <div className="flex h-7 w-7 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 text-amber-400">
             <FolderIcon className="h-3.5 w-3.5" />
           </div>
           <span className="text-xs font-bold tracking-tight text-[var(--wikios-text)]">
@@ -216,7 +216,7 @@ export function StashSidebar({
 
                       {!s.isDefault &&
                         (isDeletingThis ? (
-                          <div className="flex items-center gap-1 rounded-lg border border-rose-500/40 bg-[var(--wikios-surface)] p-0.5 shadow-md">
+                          <div className="flex items-center gap-1 rounded-lg border border-red-500/40 bg-[var(--wikios-surface)] p-0.5 shadow-md">
                             <button
                               type="button"
                               onClick={(e) => {
@@ -224,7 +224,7 @@ export function StashSidebar({
                                 handleConfirmDelete(s.id);
                               }}
                               disabled={isDeleting}
-                              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-90"
+                              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded bg-red-500 text-white transition-all hover:bg-red-600 active:scale-90"
                               title="Confirm delete"
                             >
                               {isDeleting ? (
@@ -252,7 +252,7 @@ export function StashSidebar({
                               e.stopPropagation();
                               setConfirmDelete(s.id);
                             }}
-                            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] text-[var(--wikios-text-dim)] shadow-xs transition-all hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400 active:scale-95"
+                            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] text-[var(--wikios-text-dim)] shadow-xs transition-all hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 active:scale-95"
                             title="Delete collection"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -276,7 +276,7 @@ export function StashSidebar({
       >
         <button
           type="button"
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--wikios-border)] px-3 py-2 text-xs font-semibold text-[var(--wikios-text-muted)] shadow-2xs transition-all select-none hover:border-rose-500 hover:bg-rose-500/5 hover:text-rose-400 active:scale-[0.98]"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--wikios-border)] px-3 py-2 text-xs font-semibold text-[var(--wikios-text-muted)] shadow-2xs transition-all select-none hover:border-amber-500/40 hover:bg-amber-500/5 hover:text-amber-400 active:scale-[0.98]"
         >
           <Plus className="h-3.5 w-3.5" />
           <span>New Collection</span>

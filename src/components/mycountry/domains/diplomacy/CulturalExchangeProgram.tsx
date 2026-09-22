@@ -560,14 +560,14 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
           <h4 className="text-foreground mb-2 text-lg font-semibold">
             No Cultural Exchanges Found
           </h4>
-          <p className="mb-6 text-[--intel-silver]">
+          <p className="mb-6 text-muted-foreground">
             {filterType !== "all" || filterStatus !== "all"
               ? "Try adjusting your filters or create a new exchange to get started."
               : "Be the first to create a cultural exchange and connect nations!"}
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="rounded-lg bg-[--intel-gold]/20 px-6 py-3 font-medium text-[--intel-gold] transition-colors hover:bg-[--intel-gold]/30"
+            className="rounded-lg bg-cyan-500/20 px-6 py-3 font-medium text-cyan-600 dark:text-cyan-400 transition-colors hover:bg-cyan-500/30"
           >
             Create Your First Exchange
           </button>

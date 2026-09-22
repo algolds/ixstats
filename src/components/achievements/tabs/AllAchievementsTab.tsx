@@ -71,9 +71,9 @@ const ACHIEVEMENT_TIER_CONFIG: Record<
   bronze: {
     label: "Core",
     icon: Target,
-    bg: "bg-sky-500/15 border-sky-500/35 text-sky-600 dark:text-sky-300 font-extrabold shadow-sm",
-    border: "border-sky-500/40 shadow-sm",
-    text: "text-sky-600 dark:text-sky-300 font-bold",
+    bg: "bg-stone-500/15 border-stone-500/35 text-stone-600 dark:text-stone-300 font-extrabold shadow-sm",
+    border: "border-stone-500/40 shadow-sm",
+    text: "text-stone-600 dark:text-stone-300 font-bold",
   },
 };
 
@@ -346,7 +346,7 @@ function GroupedSeriesCard({
                           ? "bg-foreground text-background shadow-md"
                           : lvlUnlocked
                             ? "cursor-pointer border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-400"
-                            : "border-border/30 bg-muted/20 text-muted-foreground/40 cursor-not-allowed border opacity-50 hover:border-rose-500/40 hover:bg-rose-500/5 hover:text-rose-500/70"
+                            : "border-border/30 bg-muted/20 text-muted-foreground/40 cursor-not-allowed border opacity-50 hover:border-red-500/40 hover:bg-red-500/5 hover:text-red-500/70"
                       )}
                       title={`Level ${idx + 1}: ${lvl.title} (${lvlUnlocked ? "Unlocked - Click to view" : "Locked Tier (Immutable)"})`}
                     >

@@ -68,7 +68,10 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
   setIsPickingLocation,
 }: POIPropertyFormProps) {
   const activeCoords = form.coordinates ?? pendingCoordinates;
-  const subdivisions = (allFeatures ?? []).filter((f) => f.type === "subdivision");
+  const subdivisions = React.useMemo(
+    () => (allFeatures ?? []).filter((f) => f.type === "subdivision"),
+    [allFeatures]
+  );
 
   return (
     <div className="space-y-2">
@@ -120,10 +123,10 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
           <button
             type="button"
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}
-            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none ${
+            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none active:scale-[0.98] ${
               isPickingLocation
-                ? "animate-pulse font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-                : "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                ? "animate-pulse font-bold text-amber-500 hover:text-amber-400"
+                : "text-emerald-500 hover:text-emerald-400"
             }`}
           >
             <MapPin className="h-3.5 w-3.5" />
@@ -170,6 +173,75 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
           </option>
         ))}
       </select>
+
+      {/* Historical Story & Narrative Lore (Optional) */}
+      <details className="border-border/60 bg-muted/10 group rounded-lg border p-2.5">
+        <summary className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-between text-xs font-semibold select-none">
+          <span>Historical Story & Lore (Optional)</span>
+          <span className="text-muted-foreground text-[10px] transition-transform group-open:rotate-180">
+            &#9660;
+          </span>
+        </summary>
+        <div className="border-border/40 mt-2.5 space-y-2 border-t pt-1">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-muted-foreground mb-1 block text-left text-[11px] font-medium">
+                IxTime Year
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 1420"
+                value={form.ixTimeYear ?? ""}
+                onChange={(e) =>
+                  onChange({
+                    ...form,
+                    ixTimeYear: e.target.value === "" ? undefined : parseInt(e.target.value, 10),
+                  })
+                }
+                className={inputClasses}
+              />
+            </div>
+            <div>
+              <label className="text-muted-foreground mb-1 block text-left text-[11px] font-medium">
+                Era Label
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Bronze Age"
+                value={form.eraLabel ?? ""}
+                onChange={(e) => onChange({ ...form, eraLabel: e.target.value || undefined })}
+                className={inputClasses}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-muted-foreground mb-1 block text-left text-[11px] font-medium">
+              Importance Level
+            </label>
+            <select
+              value={form.importance ?? 0}
+              onChange={(e) => onChange({ ...form, importance: parseInt(e.target.value, 10) || 0 })}
+              className={selectClasses}
+            >
+              <option value={0}>Normal (Standard marker)</option>
+              <option value={1}>Major (Prominent marker)</option>
+              <option value={2}>Legendary (Hero glow)</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-muted-foreground mb-1 block text-left text-[11px] font-medium">
+              Story Narrative (Markdown)
+            </label>
+            <textarea
+              placeholder="Narrative lore or historical chronicle..."
+              value={form.storyContent ?? ""}
+              onChange={(e) => onChange({ ...form, storyContent: e.target.value || undefined })}
+              rows={3}
+              className={inputClasses}
+            />
+          </div>
+        </div>
+      </details>
     </div>
   );
 });

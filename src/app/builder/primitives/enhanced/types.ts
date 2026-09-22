@@ -51,22 +51,7 @@ export interface EnhancedInputProps {
   className?: string;
 }
 
-export interface EnhancedChartProps {
-  data: any[];
-  title?: string;
-  description?: string;
-  height?: number;
-  width?: number;
-  sectionId?: SectionId;
-  theme?: PrimitiveTheme;
-  loading?: boolean;
-  error?: string;
-  showLegend?: boolean;
-  showTooltip?: boolean;
-  showGrid?: boolean;
-  animationDuration?: number;
-  className?: string;
-}
+import type { TextureType } from "~/components/ui/texture-overlay";
 
 export interface NumberFlowConfig {
   format?: (value: number) => string;
@@ -80,7 +65,7 @@ export interface ChartDataPoint {
   name: string;
   value: number;
   color?: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface MetricCardProps {
@@ -88,7 +73,7 @@ export interface MetricCardProps {
   value: number | string;
   unit?: string;
   description?: string;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   sectionId?: SectionId;
   theme?: PrimitiveTheme;
   trend?: "up" | "down" | "neutral";
@@ -96,7 +81,7 @@ export interface MetricCardProps {
   changeUnit?: string;
   className?: string;
   size?: "sm" | "md" | "lg";
-  texture?: string;
+  texture?: TextureType;
   textureOpacity?: number;
   tooltip?: string;
   precision?: number;

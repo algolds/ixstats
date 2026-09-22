@@ -1,7 +1,7 @@
 # IxStates Test Suite Comprehensive Audit & Justification
 
 **Date**: August 2026  
-**Platform**: IxStates 1.4.0 "Ogma" (Release Candidate)  
+**Platform**: IxStates 1.4.0 "Lobster Crosby" (Release Candidate)  
 **Runners**: Jest 30.4.2 (`@swc/jest`, `jsdom`), Bun 1.4.0 Native Parallel Runner (`bun test`)  
 **Scope**: 122 test files (860+ test cases) across `src/tests/` and root libraries  
 **Methodologies**: Ponytail Audit (Over-Engineering & Dead Code Pruning), TypeScript & Jest Architectural Invariants  

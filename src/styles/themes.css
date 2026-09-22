@@ -5,9 +5,8 @@
    =================================== */
 
 :root {
-  /* Font definition moved from @theme block */
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  /* Font definition driven by typography preset */
+  --font-sans: var(--font-preset-sans, "National", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
 
   /* Dark Theme Colors (WikiOS-aligned) */
   --color-bg-primary: #0f1114;        /* WikiOS bg */

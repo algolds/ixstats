@@ -150,7 +150,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
                 }
                 className={`w-full rounded px-2 py-1 text-left text-xs transition-colors ${
                   brushTargetId === n.featureId
-                    ? "bg-purple-500/30 text-purple-500 ring-1 ring-purple-500/40"
+                    ? "bg-indigo-500/20 text-indigo-400 ring-1 ring-indigo-500/40"
                     : "text-muted-foreground hover:bg-muted"
                 }`}
               >

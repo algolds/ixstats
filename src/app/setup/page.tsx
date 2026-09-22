@@ -701,7 +701,7 @@ export default function SetupPage() {
                             <li className="flex items-center">
                               <div className="mr-4 h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
                               <strong>Image Repository: </strong> Use our image repository to
-                              natively search for images from Wiki Commons, Unsplash, and IIWiki.
+                              natively search for images from Wiki Commons, IxWiki, and IIWiki.
                             </li>
                           </ul>
                         </div>

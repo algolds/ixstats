@@ -55,7 +55,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
       icon: EyeClosed,
       count: orphans?.length ?? 0,
       badge: "0 Inbound",
-      color: "from-amber-500/10 to-orange-500/10 text-amber-400 border-amber-500/20",
+      color: "border-amber-500/20 bg-amber-500/10 text-amber-400",
     },
     {
       id: "deadEnds",
@@ -65,7 +65,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
       icon: LinkSlash,
       count: deadEnds?.length ?? 0,
       badge: "0 Outbound",
-      color: "from-purple-500/10 to-pink-500/10 text-purple-400 border-purple-500/20",
+      color: "border-indigo-500/20 bg-indigo-500/10 text-indigo-400",
     },
     {
       id: "brokenRedirects",
@@ -75,7 +75,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
       icon: WarningTriangle,
       count: brokenRedirects?.length ?? 0,
       badge: "Broken Links",
-      color: "from-rose-500/10 to-red-500/10 text-rose-400 border-rose-500/20",
+      color: "border-red-500/20 bg-red-500/10 text-red-400",
     },
     {
       id: "short",
@@ -85,7 +85,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
       icon: Page,
       count: shortestArticles?.length ?? 0,
       badge: "Stubs",
-      color: "from-blue-500/10 to-cyan-500/10 text-blue-400 border-blue-500/20",
+      color: "border-blue-500/20 bg-blue-500/10 text-blue-400",
     },
     {
       id: "long",
@@ -95,7 +95,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
       icon: Page,
       count: longestArticles?.length ?? 0,
       badge: "Flagship",
-      color: "from-emerald-500/10 to-teal-500/10 text-emerald-400 border-emerald-500/20",
+      color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
     },
   ];
 

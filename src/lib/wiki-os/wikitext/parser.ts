@@ -19,6 +19,7 @@ import type {
   WikiTemplateNode,
   WikiParserFunctionBlock,
   DividerBlock,
+  ParsedTemplate,
 } from "./types";
 
 export function parse(input: string, options?: { title?: string; slug?: string }): ParseResult {
@@ -34,14 +35,18 @@ export function parse(input: string, options?: { title?: string; slug?: string }
     };
   }
 
-  // 1. Scan for block-level templates and parser functions
+  // 1. Scan for templates and parser functions
   const { templates, diagnostics: tmplDiags } = scanTemplates(input);
   diagnostics.push(...tmplDiags);
+
+  // Partition into block-level templates vs inline templates.
+  // Inline templates remain inside running text and are parsed as inline nodes by parseInlineLinksAndFormatting.
+  const blockTemplates = templates.filter((t) => isBlockTemplate(t, input));
 
   // Split document into inter-template text intervals and template blocks
   let cursor = 0;
 
-  for (const tmpl of templates) {
+  for (const tmpl of blockTemplates) {
     // Process text before this template
     if (tmpl.source.start > cursor) {
       const textChunk = input.slice(cursor, tmpl.source.start);
@@ -168,13 +173,20 @@ function parseTextBlocks(
     // 3. Wikitables: {| ... |}
     if (trimmed.startsWith("{|")) {
       const tableLines: string[] = [line];
+      let tableDepth = 1;
       i++;
       while (i < lines.length) {
         const curLine = lines[i]!;
         tableLines.push(curLine);
-        if (curLine.trim() === "|}") {
-          i++;
-          break;
+        const curTrim = curLine.trim();
+        if (curTrim.startsWith("{|")) {
+          tableDepth++;
+        } else if (curTrim.startsWith("|}") || curTrim === "|}") {
+          tableDepth--;
+          if (tableDepth <= 0) {
+            i++;
+            break;
+          }
         }
         i++;
       }
@@ -196,9 +208,20 @@ function parseTextBlocks(
 
     // 4. Lists: * or # or : or ;
     if (/^[*#:\;]/.test(trimmed)) {
+      const firstChar = trimmed[0]!;
       const listLines: string[] = [line];
       i++;
-      while (i < lines.length && /^[*#:\;]/.test(lines[i]!.trim())) {
+      while (i < lines.length) {
+        const nextTrimmed = lines[i]!.trim();
+        if (!/^[*#:\;]/.test(nextTrimmed)) break;
+        const nextFirstChar = nextTrimmed[0]!;
+        // Separate transitions between bullet (*) and numbered (#) lists
+        if (
+          (firstChar === "*" && nextFirstChar === "#") ||
+          (firstChar === "#" && nextFirstChar === "*")
+        ) {
+          break;
+        }
         listLines.push(lines[i]!);
         i++;
       }
@@ -254,4 +277,30 @@ function parseTextBlocks(
       children: inlines,
     });
   }
+}
+
+function isBlockTemplate(
+  tmpl: ParsedTemplate,
+  fullText: string
+): boolean {
+  // Infoboxes are always block-level
+  if (tmpl.classification === "infobox") return true;
+
+  // Check preceding text on the line
+  const lineStart = fullText.lastIndexOf("\n", tmpl.source.start - 1);
+  const beforeOnLine = fullText.slice(lineStart === -1 ? 0 : lineStart + 1, tmpl.source.start);
+
+  // Check following text on the line
+  const nextNewline = fullText.indexOf("\n", tmpl.source.end);
+  const afterOnLine = fullText.slice(
+    tmpl.source.end,
+    nextNewline === -1 ? fullText.length : nextNewline
+  );
+
+  // If there is preceding or trailing non-whitespace text on the same line,
+  // it is embedded inside inline text (paragraph, heading, list item, etc.)
+  if (beforeOnLine.trim() !== "") return false;
+  if (afterOnLine.trim() !== "") return false;
+
+  return true;
 }

@@ -8,7 +8,7 @@ interface MapHintPillProps {
 }
 
 export function MapHintPill({ isVertexEditing, mode, drawVerticesCount }: MapHintPillProps) {
-  if (isVertexEditing) return null;
+  if (isVertexEditing || drawVerticesCount > 0) return null;
   if (
     mode === "view" ||
     mode === "import-provinces" ||

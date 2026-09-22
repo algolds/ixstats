@@ -34,18 +34,18 @@ const STATUS_CONFIG: Record<Status, { label: string; dot: string; text: string }
   },
   "major-outage": {
     label: "Major Outage",
-    dot: "bg-rose-500",
-    text: "text-rose-700 dark:text-rose-400",
+    dot: "bg-red-500",
+    text: "text-red-700 dark:text-red-400",
   },
   maintenance: {
     label: "Maintenance",
-    dot: "bg-sky-500",
-    text: "text-sky-700 dark:text-sky-400",
+    dot: "bg-blue-500",
+    text: "text-blue-700 dark:text-blue-400",
   },
   incident: {
     label: "Incident",
-    dot: "bg-rose-500",
-    text: "text-rose-700 dark:text-rose-400",
+    dot: "bg-red-500",
+    text: "text-red-700 dark:text-red-400",
   },
   unknown: {
     label: "Unknown",
@@ -55,8 +55,8 @@ const STATUS_CONFIG: Record<Status, { label: string; dot: string; text: string }
   // Release channel statuses
   developer: {
     label: "Developer",
-    dot: "bg-purple-500",
-    text: "text-purple-700 dark:text-purple-400",
+    dot: "bg-indigo-500",
+    text: "text-indigo-700 dark:text-indigo-400",
   },
   alpha: {
     label: "Alpha",
@@ -65,13 +65,13 @@ const STATUS_CONFIG: Record<Status, { label: string; dot: string; text: string }
   },
   beta: {
     label: "Beta",
-    dot: "bg-sky-500",
-    text: "text-sky-700 dark:text-sky-400",
+    dot: "bg-blue-500",
+    text: "text-blue-700 dark:text-blue-400",
   },
   rc: {
     label: "RC",
-    dot: "bg-teal-500",
-    text: "text-teal-700 dark:text-teal-400",
+    dot: "bg-cyan-500",
+    text: "text-cyan-700 dark:text-cyan-400",
   },
   stable: {
     label: "Stable",

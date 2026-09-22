@@ -1,0 +1,2112 @@
+[
+  {
+    "index": 1,
+    "id": "cmn1zq2p80001rpvak5umzosu",
+    "name": "Estro",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 43974,
+    "calculatedAreaKm2": 43876,
+    "population": 0,
+    "centroid": [
+      29.24,
+      -9.89
+    ],
+    "bbox": [
+      26.66,
+      -11.24,
+      31.59,
+      -8.61
+    ],
+    "climates": [
+      {
+        "name": "Tropical Wet (Ar)",
+        "type": "Tropical Wet (Ar)",
+        "areaSqKm": 5631.39,
+        "percentArea": 11.4,
+        "agricultureFactor": 0.7
+      },
+      {
+        "name": "Tropical Wet-And-Dry (Aw)",
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaSqKm": 43669.85,
+        "percentArea": 88.6,
+        "agricultureFactor": 0.8
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 49947.64,
+        "percentArea": 100
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": false,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 0
+    }
+  },
+  {
+    "index": 2,
+    "id": "cmn1zq2q00003rpvat2bs1ntl",
+    "name": "Netharra",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 60087,
+    "calculatedAreaKm2": 59953,
+    "population": 8500271,
+    "centroid": [
+      33.48,
+      -2.88
+    ],
+    "bbox": [
+      31.13,
+      -4.37,
+      35.09,
+      -1.69
+    ],
+    "climates": [
+      {
+        "name": "Tropical Wet (Ar)",
+        "type": "Tropical Wet (Ar)",
+        "areaSqKm": 108650.7,
+        "percentArea": 100,
+        "agricultureFactor": 0.7
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 106750.03,
+        "percentArea": 94.9
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 4558.79,
+        "percentArea": 4.1
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 169.92,
+        "percentArea": 0.2
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 1002,
+        "percentArea": 0.9
+      }
+    ],
+    "waterAccess": {
+      "hasLake": true,
+      "hasRiver": true,
+      "lakeAreaSqKm": 1470.97,
+      "riverLengthKm": 644.77
+    }
+  },
+  {
+    "index": 3,
+    "id": "cmn1zq2r10005rpvazj69gflz",
+    "name": "Narico",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 59114,
+    "calculatedAreaKm2": 58990,
+    "population": 16294450,
+    "centroid": [
+      32,
+      -7.18
+    ],
+    "bbox": [
+      29.78,
+      -8.52,
+      33.84,
+      -4.87
+    ],
+    "climates": [
+      {
+        "name": "Tropical Wet (Ar)",
+        "type": "Tropical Wet (Ar)",
+        "areaSqKm": 18.78,
+        "percentArea": 0,
+        "agricultureFactor": 0.7
+      },
+      {
+        "name": "Tropical Wet-And-Dry (Aw)",
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaSqKm": 58705.29,
+        "percentArea": 100,
+        "agricultureFactor": 0.8
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 58723.86,
+        "percentArea": 100
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": true,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 719.52
+    }
+  },
+  {
+    "index": 4,
+    "id": "cmn1zq2s70007rpvalhbkdoea",
+    "name": "Canterra",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 83832,
+    "calculatedAreaKm2": 83617,
+    "population": 9000215,
+    "centroid": [
+      28.95,
+      -5.83
+    ],
+    "bbox": [
+      27.27,
+      -7.4,
+      30.6,
+      -4.11
+    ],
+    "climates": [
+      {
+        "name": "Tropical Wet-And-Dry (Aw)",
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaSqKm": 83218.57,
+        "percentArea": 89.6,
+        "agricultureFactor": 0.8
+      },
+      {
+        "name": "Tropical Wet (Ar)",
+        "type": "Tropical Wet (Ar)",
+        "areaSqKm": 9670.3,
+        "percentArea": 10.4,
+        "agricultureFactor": 0.7
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 92888.87,
+        "percentArea": 52.8
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 27265.85,
+        "percentArea": 15.5
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 45783.57,
+        "percentArea": 26
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 10089.31,
+        "percentArea": 5.7
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": true,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 421.83
+    }
+  },
+  {
+    "index": 5,
+    "id": "cmn1zq2su0009rpvam8vclpin",
+    "name": "Iscasta",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 77181,
+    "calculatedAreaKm2": 76945,
+    "population": 10999988,
+    "centroid": [
+      28.45,
+      -2.71
+    ],
+    "bbox": [
+      27.55,
+      -3.94,
+      31.22,
+      -1.24
+    ],
+    "climates": [
+      {
+        "name": "Tropical Wet (Ar)",
+        "type": "Tropical Wet (Ar)",
+        "areaSqKm": 61752.99,
+        "percentArea": 47.6,
+        "agricultureFactor": 0.7
+      },
+      {
+        "name": "Tropical Wet-And-Dry (Aw)",
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaSqKm": 65849.8,
+        "percentArea": 50.8,
+        "agricultureFactor": 0.8
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 2126.83,
+        "percentArea": 1.6,
+        "agricultureFactor": 0.2
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 122367.45,
+        "percentArea": 64.5
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 11114.72,
+        "percentArea": 5.9
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 2768.89,
+        "percentArea": 1.5
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 30144.2,
+        "percentArea": 15.9
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 23209.13,
+        "percentArea": 12.2
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": true,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 430.87
+    }
+  },
+  {
+    "index": 6,
+    "id": "cmn1zq2t9000brpvaociu88hk",
+    "name": "Ovetta",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 125478,
+    "calculatedAreaKm2": 125283,
+    "population": 5999937,
+    "centroid": [
+      32.68,
+      -5.31
+    ],
+    "bbox": [
+      28.97,
+      -6.33,
+      33.55,
+      -1.76
+    ],
+    "climates": [
+      {
+        "name": "Tropical Wet (Ar)",
+        "type": "Tropical Wet (Ar)",
+        "areaSqKm": 121825.86,
+        "percentArea": 65.1,
+        "agricultureFactor": 0.7
+      },
+      {
+        "name": "Tropical Wet-And-Dry (Aw)",
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaSqKm": 64812.06,
+        "percentArea": 34.7,
+        "agricultureFactor": 0.8
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 401.75,
+        "percentArea": 0.2,
+        "agricultureFactor": 0.2
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 185379.29,
+        "percentArea": 72.8
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 23668.97,
+        "percentArea": 9.3
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 42241.21,
+        "percentArea": 16.6
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 2886.2,
+        "percentArea": 1.1
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 307.61,
+        "percentArea": 0.1
+      }
+    ],
+    "waterAccess": {
+      "hasLake": true,
+      "hasRiver": true,
+      "lakeAreaSqKm": 572.2,
+      "riverLengthKm": 2768.21
+    }
+  },
+  {
+    "index": 7,
+    "id": "cmn1zq2ui000frpvalgbr8mjb",
+    "name": "Isuriana",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 449285,
+    "calculatedAreaKm2": 452411,
+    "population": 32500020,
+    "centroid": [
+      11.73,
+      -24.23
+    ],
+    "bbox": [
+      7.51,
+      -27.6,
+      18.77,
+      -17.67
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 196472.43,
+        "percentArea": 42.5,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Desert or Arid (Bw)",
+        "type": "Desert or Arid (Bw)",
+        "areaSqKm": 5100.97,
+        "percentArea": 1.1,
+        "agricultureFactor": 0.05
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 202870.06,
+        "percentArea": 43.9,
+        "agricultureFactor": 0.75
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 2965.68,
+        "percentArea": 0.6,
+        "agricultureFactor": 0.2
+      },
+      {
+        "name": "Subtropical Humid (Cf)",
+        "type": "Subtropical Humid (Cf)",
+        "areaSqKm": 54627.1,
+        "percentArea": 11.8,
+        "agricultureFactor": 0.9
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 330590.45,
+        "percentArea": 36.4
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 102745.38,
+        "percentArea": 11.3
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 21440.66,
+        "percentArea": 2.4
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 3115.97,
+        "percentArea": 0.3
+      },
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 451312.51,
+        "percentArea": 49.6
+      }
+    ],
+    "waterAccess": {
+      "hasLake": true,
+      "hasRiver": true,
+      "lakeAreaSqKm": 1973.83,
+      "riverLengthKm": 6779.99
+    }
+  },
+  {
+    "index": 8,
+    "id": "cmn1zq2v6000hrpvaxqh6fffr",
+    "name": "Turiana",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 194737,
+    "calculatedAreaKm2": 194360,
+    "population": 17499869,
+    "centroid": [
+      15.8,
+      -14.08
+    ],
+    "bbox": [
+      14.83,
+      -17.35,
+      18.85,
+      -9.91
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 3073.68,
+        "percentArea": 1.6,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 62237.23,
+        "percentArea": 31.8,
+        "agricultureFactor": 0.75
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 658.95,
+        "percentArea": 0.3,
+        "agricultureFactor": 0.2
+      },
+      {
+        "name": "Tropical Wet-And-Dry (Aw)",
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaSqKm": 129628.16,
+        "percentArea": 66.3,
+        "agricultureFactor": 0.8
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 93527.13,
+        "percentArea": 28.5
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 34997.11,
+        "percentArea": 10.6
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 5973.69,
+        "percentArea": 1.8
+      },
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 193611.27,
+        "percentArea": 58.9
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 536.73,
+        "percentArea": 0.2
+      }
+    ],
+    "waterAccess": {
+      "hasLake": true,
+      "hasRiver": true,
+      "lakeAreaSqKm": 3125.5,
+      "riverLengthKm": 2907.36
+    }
+  },
+  {
+    "index": 9,
+    "id": "cmn1zq2vg000jrpvan5h8mbgn",
+    "name": "Misena",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 30966,
+    "calculatedAreaKm2": 30889,
+    "population": 27000026,
+    "centroid": [
+      27.65,
+      -14.11
+    ],
+    "bbox": [
+      26.48,
+      -14.75,
+      29.26,
+      -13.5
+    ],
+    "climates": [
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 30778.25,
+        "percentArea": 100,
+        "agricultureFactor": 0.75
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 30778.54,
+        "percentArea": 100
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": false,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 0
+    }
+  },
+  {
+    "index": 10,
+    "id": "cmn1zq2vo000lrpvah4q6rw0a",
+    "name": "Ranaella",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 0,
+    "calculatedAreaKm2": 208843,
+    "population": 26500083,
+    "centroid": [
+      28.13,
+      -29.8
+    ],
+    "bbox": [
+      25.61,
+      -33.35,
+      30.39,
+      -26.94
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 208166.11,
+        "percentArea": 76.8,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Desert or Arid (Bw)",
+        "type": "Desert or Arid (Bw)",
+        "areaSqKm": 62264.39,
+        "percentArea": 23,
+        "agricultureFactor": 0.05
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 453.35,
+        "percentArea": 0.2,
+        "agricultureFactor": 0.75
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 208594.2,
+        "percentArea": 46.9
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 208594.2,
+        "percentArea": 46.9
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 27424.1,
+        "percentArea": 6.2
+      }
+    ],
+    "waterAccess": {
+      "hasLake": true,
+      "hasRiver": true,
+      "lakeAreaSqKm": 14803.35,
+      "riverLengthKm": 1228.15
+    }
+  },
+  {
+    "index": 11,
+    "id": "cmn1zq2wf000prpva9gpr3aib",
+    "name": "Meceria",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 154350,
+    "calculatedAreaKm2": 153904,
+    "population": 38999901,
+    "centroid": [
+      18.53,
+      -16.54
+    ],
+    "bbox": [
+      16.23,
+      -18.65,
+      22.25,
+      -14.32
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 82213.95,
+        "percentArea": 48,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 83098.89,
+        "percentArea": 48.5,
+        "agricultureFactor": 0.75
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 6079.17,
+        "percentArea": 3.5,
+        "agricultureFactor": 0.2
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 153387.49,
+        "percentArea": 32.9
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 139416.87,
+        "percentArea": 29.9
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 55484.04,
+        "percentArea": 11.9
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 6307.52,
+        "percentArea": 1.4
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 111575.47,
+        "percentArea": 23.9
+      }
+    ],
+    "waterAccess": {
+      "hasLake": true,
+      "hasRiver": true,
+      "lakeAreaSqKm": 231.88,
+      "riverLengthKm": 4123.48
+    }
+  },
+  {
+    "index": 12,
+    "id": "cmn1zq2xo000rrpvaysdlxpx3",
+    "name": "Desia",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 146773,
+    "calculatedAreaKm2": 146700,
+    "population": 18999699,
+    "centroid": [
+      20.21,
+      -14.16
+    ],
+    "bbox": [
+      18.16,
+      -15.82,
+      22.52,
+      -12.03
+    ],
+    "climates": [
+      {
+        "name": "Tropical Wet-And-Dry (Aw)",
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaSqKm": 125444.85,
+        "percentArea": 85.9,
+        "agricultureFactor": 0.8
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 20618.81,
+        "percentArea": 14.1,
+        "agricultureFactor": 0.75
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 146002.15,
+        "percentArea": 54.8
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 85592.02,
+        "percentArea": 32.1
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 3287.48,
+        "percentArea": 1.2
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 31732.56,
+        "percentArea": 11.9
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": true,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 717.43
+    }
+  },
+  {
+    "index": 13,
+    "id": "cmn1zq2yj000trpvaak0keifa",
+    "name": "Inosia",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 72813,
+    "calculatedAreaKm2": 72625,
+    "population": 53000166,
+    "centroid": [
+      27.78,
+      -15.56
+    ],
+    "bbox": [
+      24.79,
+      -16.55,
+      29.46,
+      -14.72
+    ],
+    "climates": [
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 72452.12,
+        "percentArea": 100,
+        "agricultureFactor": 0.75
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 72452.12,
+        "percentArea": 97.8
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 1611.2,
+        "percentArea": 2.2
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": true,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 1041.78
+    }
+  },
+  {
+    "index": 14,
+    "id": "cmn1zq2yn000vrpval1drn9aa",
+    "name": "Leonia",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 0,
+    "calculatedAreaKm2": 118544,
+    "population": 35500298,
+    "centroid": [
+      25.25,
+      -17.67
+    ],
+    "bbox": [
+      22.77,
+      -19.25,
+      28.08,
+      -16.19
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 1526.58,
+        "percentArea": 1.3,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 117173.57,
+        "percentArea": 98.7,
+        "agricultureFactor": 0.75
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 118054.29,
+        "percentArea": 65.1
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 3420.28,
+        "percentArea": 1.9
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 18822.34,
+        "percentArea": 10.4
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 41068.18,
+        "percentArea": 22.6
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": true,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 717.77
+    }
+  },
+  {
+    "index": 15,
+    "id": "cmn1zq2ys000xrpvarc9c37uv",
+    "name": "Amarsia",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 0,
+    "calculatedAreaKm2": 196730,
+    "population": 43999952,
+    "centroid": [
+      23.72,
+      -14.91
+    ],
+    "bbox": [
+      21.39,
+      -17.92,
+      26.13,
+      -11.02
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 4251.24,
+        "percentArea": 2.2,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 102241.31,
+        "percentArea": 52,
+        "agricultureFactor": 0.75
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 299.69,
+        "percentArea": 0.2,
+        "agricultureFactor": 0.2
+      },
+      {
+        "name": "Tropical Wet-And-Dry (Aw)",
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaSqKm": 89995.89,
+        "percentArea": 45.7,
+        "agricultureFactor": 0.8
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 195871.06,
+        "percentArea": 64.9
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 66429.34,
+        "percentArea": 22
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 5055.53,
+        "percentArea": 1.7
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 34128.46,
+        "percentArea": 11.3
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 350.36,
+        "percentArea": 0.1
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": true,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 482.6
+    }
+  },
+  {
+    "index": 16,
+    "id": "cmn1zq2yy000zrpvanemzd13d",
+    "name": "Alcarca",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 103478,
+    "calculatedAreaKm2": 103310,
+    "population": 11999875,
+    "centroid": [
+      28.6,
+      -18.12
+    ],
+    "bbox": [
+      25.8,
+      -20.17,
+      30.02,
+      -15.65
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 2466.87,
+        "percentArea": 2.4,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 100880.04,
+        "percentArea": 97.6,
+        "agricultureFactor": 0.75
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 102981.9,
+        "percentArea": 57.6
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 54084.82,
+        "percentArea": 30.2
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 14715.9,
+        "percentArea": 8.2
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 7061.56,
+        "percentArea": 3.9
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": true,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 1518.31
+    }
+  },
+  {
+    "index": 17,
+    "id": "cmn1zq2z40011rpvag6ofcwpa",
+    "name": "Carina",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 78037,
+    "calculatedAreaKm2": 77831,
+    "population": 48523854,
+    "centroid": [
+      30.18,
+      -15.22
+    ],
+    "bbox": [
+      28.73,
+      -17.37,
+      31.5,
+      -13.1
+    ],
+    "climates": [
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 77482.34,
+        "percentArea": 100,
+        "agricultureFactor": 0.75
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 77486.1,
+        "percentArea": 67.7
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 36934.16,
+        "percentArea": 32.3
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": true,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 401.34
+    }
+  },
+  {
+    "index": 18,
+    "id": "cmn1zq2z90013rpvavjuoakky",
+    "name": "Novetra",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 121162,
+    "calculatedAreaKm2": 127236,
+    "population": 30000304,
+    "centroid": [
+      31.05,
+      -19.41
+    ],
+    "bbox": [
+      28.46,
+      -20.95,
+      33.3,
+      -17.29
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 13683.44,
+        "percentArea": 9.8,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Boreal (E)",
+        "type": "Boreal (E)",
+        "areaSqKm": 2424.26,
+        "percentArea": 1.7,
+        "agricultureFactor": 0.15
+      },
+      {
+        "name": "Subtropical Humid (Cf)",
+        "type": "Subtropical Humid (Cf)",
+        "areaSqKm": 197.37,
+        "percentArea": 0.1,
+        "agricultureFactor": 0.9
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 114219.78,
+        "percentArea": 81.6,
+        "agricultureFactor": 0.75
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 9417.53,
+        "percentArea": 6.7,
+        "agricultureFactor": 0.2
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 126848.18,
+        "percentArea": 45
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 41786.96,
+        "percentArea": 14.8
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 12271.08,
+        "percentArea": 4.4
+      },
+      {
+        "name": "High Mountains",
+        "zone": "zone_6",
+        "maxElev": 3999,
+        "minElev": 3000,
+        "areaSqKm": 1856.85,
+        "percentArea": 0.7
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 68279.58,
+        "percentArea": 24.2
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 24207.54,
+        "percentArea": 8.6
+      },
+      {
+        "name": "Mid Mountains",
+        "zone": "zone_5",
+        "maxElev": 2999,
+        "minElev": 2000,
+        "areaSqKm": 6638.19,
+        "percentArea": 2.4
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": true,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 1895.43
+    }
+  },
+  {
+    "index": 19,
+    "id": "cmn1zq2zq0015rpva9e1b1y00",
+    "name": "Legenvum",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 1238694,
+    "calculatedAreaKm2": 1288780,
+    "population": 4500107,
+    "centroid": [
+      22.96,
+      -27.99
+    ],
+    "bbox": [
+      16.54,
+      -29.9,
+      30.49,
+      -16.81
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 1282876.43,
+        "percentArea": 40.3,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Desert or Arid (Bw)",
+        "type": "Desert or Arid (Bw)",
+        "areaSqKm": 1892589.38,
+        "percentArea": 59.4,
+        "agricultureFactor": 0.05
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 6023.93,
+        "percentArea": 0.2,
+        "agricultureFactor": 0.75
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 2891.92,
+        "percentArea": 0.1,
+        "agricultureFactor": 0.2
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 1285951.17,
+        "percentArea": 59.2
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 707879.83,
+        "percentArea": 32.6
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 128947.29,
+        "percentArea": 5.9
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 44735.01,
+        "percentArea": 2.1
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 2738.71,
+        "percentArea": 0.1
+      },
+      {
+        "name": "Mid Mountains",
+        "zone": "zone_5",
+        "maxElev": 2999,
+        "minElev": 2000,
+        "areaSqKm": 357.44,
+        "percentArea": 0
+      }
+    ],
+    "waterAccess": {
+      "hasLake": true,
+      "hasRiver": true,
+      "lakeAreaSqKm": 9985.24,
+      "riverLengthKm": 10768.99
+    }
+  },
+  {
+    "index": 20,
+    "id": "cmn1zq3080017rpvam6oyet9q",
+    "name": "Pescorto",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 342121,
+    "calculatedAreaKm2": 410128,
+    "population": 0,
+    "centroid": [
+      33.22,
+      -24.55
+    ],
+    "bbox": [
+      27.28,
+      -26.99,
+      35.89,
+      -20.19
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 409609.8,
+        "percentArea": 40.2,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Desert or Arid (Bw)",
+        "type": "Desert or Arid (Bw)",
+        "areaSqKm": 601765.52,
+        "percentArea": 59,
+        "agricultureFactor": 0.05
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 251.09,
+        "percentArea": 0,
+        "agricultureFactor": 0.75
+      },
+      {
+        "name": "Boreal (E)",
+        "type": "Boreal (E)",
+        "areaSqKm": 271.85,
+        "percentArea": 0,
+        "agricultureFactor": 0.15
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 7995.15,
+        "percentArea": 0.8,
+        "agricultureFactor": 0.2
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 409168.98,
+        "percentArea": 55.2
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 208286.89,
+        "percentArea": 28.1
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 81567.36,
+        "percentArea": 11
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 30790.9,
+        "percentArea": 4.2
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 9086.19,
+        "percentArea": 1.2
+      },
+      {
+        "name": "Mid Mountains",
+        "zone": "zone_5",
+        "maxElev": 2999,
+        "minElev": 2000,
+        "areaSqKm": 1995.07,
+        "percentArea": 0.3
+      },
+      {
+        "name": "High Mountains",
+        "zone": "zone_6",
+        "maxElev": 3999,
+        "minElev": 3000,
+        "areaSqKm": 203.05,
+        "percentArea": 0
+      }
+    ],
+    "waterAccess": {
+      "hasLake": true,
+      "hasRiver": true,
+      "lakeAreaSqKm": 2033.36,
+      "riverLengthKm": 3670.17
+    }
+  },
+  {
+    "index": 21,
+    "id": "cmn1zq316001brpvag8tguf0b",
+    "name": "Cesindes",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 0,
+    "calculatedAreaKm2": 181707,
+    "population": 16200016,
+    "centroid": [
+      36.68,
+      -16.96
+    ],
+    "bbox": [
+      33.77,
+      -19.63,
+      39.32,
+      -14.46
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 85800.76,
+        "percentArea": 40,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 93313.86,
+        "percentArea": 43.5,
+        "agricultureFactor": 0.75
+      },
+      {
+        "name": "Boreal (E)",
+        "type": "Boreal (E)",
+        "areaSqKm": 3559.49,
+        "percentArea": 1.7,
+        "agricultureFactor": 0.15
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 31691.79,
+        "percentArea": 14.8,
+        "agricultureFactor": 0.2
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 181078.83,
+        "percentArea": 29.9
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 150133.81,
+        "percentArea": 24.8
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 38134.34,
+        "percentArea": 6.3
+      },
+      {
+        "name": "Mid Mountains",
+        "zone": "zone_5",
+        "maxElev": 2999,
+        "minElev": 2000,
+        "areaSqKm": 14579.68,
+        "percentArea": 2.4
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 129130,
+        "percentArea": 21.3
+      },
+      {
+        "name": "High Mountains",
+        "zone": "zone_6",
+        "maxElev": 3999,
+        "minElev": 3000,
+        "areaSqKm": 2696.58,
+        "percentArea": 0.4
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 89859.21,
+        "percentArea": 14.8
+      }
+    ],
+    "waterAccess": {
+      "hasLake": false,
+      "hasRiver": true,
+      "lakeAreaSqKm": 0,
+      "riverLengthKm": 2742.58
+    }
+  },
+  {
+    "index": 22,
+    "id": "cmn1zq31r001drpvampwpd5xj",
+    "name": "Santicino",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 234189,
+    "calculatedAreaKm2": 234770,
+    "population": 14000265,
+    "centroid": [
+      39.91,
+      -15.44
+    ],
+    "bbox": [
+      36.52,
+      -17.55,
+      41.98,
+      -11.47
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 136947.59,
+        "percentArea": 48.8,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Tropical Wet (Ar)",
+        "type": "Tropical Wet (Ar)",
+        "areaSqKm": 706.14,
+        "percentArea": 0.3,
+        "agricultureFactor": 0.7
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 50618.98,
+        "percentArea": 18,
+        "agricultureFactor": 0.75
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 31161.1,
+        "percentArea": 11.1,
+        "agricultureFactor": 0.2
+      },
+      {
+        "name": "Tropical Wet-And-Dry (Aw)",
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaSqKm": 61227.17,
+        "percentArea": 21.8,
+        "agricultureFactor": 0.8
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 233899.56,
+        "percentArea": 36.4
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 34002.11,
+        "percentArea": 5.3
+      },
+      {
+        "name": "Mid Mountains",
+        "zone": "zone_5",
+        "maxElev": 2999,
+        "minElev": 2000,
+        "areaSqKm": 10144.69,
+        "percentArea": 1.6
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 80392.48,
+        "percentArea": 12.5
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 158687.8,
+        "percentArea": 24.7
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 124869.4,
+        "percentArea": 19.5
+      }
+    ],
+    "waterAccess": {
+      "hasLake": true,
+      "hasRiver": true,
+      "lakeAreaSqKm": 2735.91,
+      "riverLengthKm": 5838
+    }
+  },
+  {
+    "index": 23,
+    "id": "cmn1zq326001frpva8mpcjl76",
+    "name": "Thessia",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 159274,
+    "calculatedAreaKm2": 173190,
+    "population": 16999925,
+    "centroid": [
+      43.32,
+      -15.08
+    ],
+    "bbox": [
+      40.51,
+      -16.91,
+      45.13,
+      -10.75
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 80487.95,
+        "percentArea": 42.2,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Tropical Wet (Ar)",
+        "type": "Tropical Wet (Ar)",
+        "areaSqKm": 56026.64,
+        "percentArea": 29.4,
+        "agricultureFactor": 0.7
+      },
+      {
+        "name": "Subtropical Humid (Cf)",
+        "type": "Subtropical Humid (Cf)",
+        "areaSqKm": 5656.06,
+        "percentArea": 3,
+        "agricultureFactor": 0.9
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 8861.64,
+        "percentArea": 4.7,
+        "agricultureFactor": 0.2
+      },
+      {
+        "name": "Tropical Wet-And-Dry (Aw)",
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaSqKm": 10070.25,
+        "percentArea": 5.3,
+        "agricultureFactor": 0.8
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 29406.64,
+        "percentArea": 15.4,
+        "agricultureFactor": 0.75
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 172472.28,
+        "percentArea": 42.5
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 39164.75,
+        "percentArea": 9.6
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 9730.65,
+        "percentArea": 2.4
+      },
+      {
+        "name": "Mid Mountains",
+        "zone": "zone_5",
+        "maxElev": 2999,
+        "minElev": 2000,
+        "areaSqKm": 1307.03,
+        "percentArea": 0.3
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 112809.91,
+        "percentArea": 27.8
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 70786.37,
+        "percentArea": 17.4
+      }
+    ],
+    "waterAccess": {
+      "hasLake": true,
+      "hasRiver": true,
+      "lakeAreaSqKm": 1056.02,
+      "riverLengthKm": 1987.12
+    }
+  },
+  {
+    "index": 24,
+    "id": "cmqlbittc0041rp9090dqj0m3",
+    "name": "Belactrum",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "dbAreaSqKm": 110628,
+    "calculatedAreaKm2": 104324,
+    "population": 0,
+    "centroid": [
+      34.21,
+      -19.5
+    ],
+    "bbox": [
+      32.14,
+      -20.76,
+      36.44,
+      -17.24
+    ],
+    "climates": [
+      {
+        "name": "Steppe or Semiarid (Bs)",
+        "type": "Steppe or Semiarid (Bs)",
+        "areaSqKm": 55370.84,
+        "percentArea": 43.7,
+        "agricultureFactor": 0.3
+      },
+      {
+        "name": "Highland (H)",
+        "type": "Highland (H)",
+        "areaSqKm": 9563.13,
+        "percentArea": 7.5,
+        "agricultureFactor": 0.2
+      },
+      {
+        "name": "Subtropical Dry Summer (Cs)",
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaSqKm": 61347.14,
+        "percentArea": 48.4,
+        "agricultureFactor": 0.75
+      },
+      {
+        "name": "Boreal (E)",
+        "type": "Boreal (E)",
+        "areaSqKm": 540,
+        "percentArea": 0.4,
+        "agricultureFactor": 0.15
+      }
+    ],
+    "elevations": [
+      {
+        "name": "Coastal Lowlands",
+        "zone": "zone_0",
+        "maxElev": 99,
+        "minElev": 0,
+        "areaSqKm": 103985.01,
+        "percentArea": 40.8
+      },
+      {
+        "name": "Low Hills",
+        "zone": "zone_1",
+        "maxElev": 349,
+        "minElev": 100,
+        "areaSqKm": 63918.15,
+        "percentArea": 25.1
+      },
+      {
+        "name": "Uplands",
+        "zone": "zone_3",
+        "maxElev": 999,
+        "minElev": 500,
+        "areaSqKm": 28643.71,
+        "percentArea": 11.2
+      },
+      {
+        "name": "Low Mountains",
+        "zone": "zone_4",
+        "maxElev": 1999,
+        "minElev": 1000,
+        "areaSqKm": 10601.75,
+        "percentArea": 4.2
+      },
+      {
+        "name": "Mid Mountains",
+        "zone": "zone_5",
+        "maxElev": 2999,
+        "minElev": 2000,
+        "areaSqKm": 3512.57,
+        "percentArea": 1.4
+      },
+      {
+        "name": "Rolling Hills",
+        "zone": "zone_2",
+        "maxElev": 499,
+        "minElev": 350,
+        "areaSqKm": 43716.39,
+        "percentArea": 17.2
+      },
+      {
+        "name": "High Mountains",
+        "zone": "zone_6",
+        "maxElev": 3999,
+        "minElev": 3000,
+        "areaSqKm": 337.32,
+        "percentArea": 0.1
+      }
+    ],
+    "waterAccess": {
+      "hasLake": true,
+      "hasRiver": true,
+      "lakeAreaSqKm": 365.27,
+      "riverLengthKm": 2470.34
+    }
+  }
+]

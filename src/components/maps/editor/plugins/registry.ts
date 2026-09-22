@@ -3,18 +3,14 @@ import { SelectPlugin } from "./SelectPlugin";
 import { SubdivisionDrawPlugin } from "./SubdivisionDrawPlugin";
 import { RouteEditPlugin } from "./RouteEditPlugin";
 import { PointPlacementPlugin } from "./PointPlacementPlugin";
-import { EyedropperMagicWandPlugin } from "./EyedropperMagicWandPlugin";
 import { RulerGuidesPlugin } from "./RulerGuidesPlugin";
-import { PaintFillPlugin } from "./PaintFillPlugin";
 
 const PLUGINS: MapEditorPlugin[] = [
   SelectPlugin,
   SubdivisionDrawPlugin,
   RouteEditPlugin,
   PointPlacementPlugin,
-  EyedropperMagicWandPlugin,
   RulerGuidesPlugin,
-  PaintFillPlugin,
 ];
 
 export function getPlugins(): MapEditorPlugin[] {

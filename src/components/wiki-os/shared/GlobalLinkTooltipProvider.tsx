@@ -268,7 +268,7 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
           <span className="text-foreground text-sm font-medium">Loading thread...</span>
         </div>
         <div className="bg-muted h-10 animate-pulse rounded" />
@@ -279,11 +279,11 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
         <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
       </div>
       {thread.forumName && (
-        <span className="inline-block rounded-full bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400">
+        <span className="inline-block rounded-full bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-400">
           {thread.forumName}
         </span>
       )}
@@ -311,7 +311,7 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
         href={forumUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-1 text-[10px] font-medium text-violet-500 transition-colors hover:text-violet-400"
+        className="flex items-center gap-1 text-[10px] font-medium text-orange-500 transition-colors hover:text-orange-400"
       >
         Open thread <ExternalLink className="h-2.5 w-2.5" />
       </a>

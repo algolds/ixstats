@@ -42,16 +42,16 @@ const SECTION_TO_DOMAIN: Record<string, V2Domain> = {
 };
 
 const DOMAIN_GLOW: Record<V2Domain, string> = {
-  relations: "bg-teal-400",
+  relations: "bg-cyan-400",
   defense: "bg-red-400",
-  politics: "bg-purple-400",
+  politics: "bg-indigo-400",
   economy: "bg-emerald-400",
 };
 
 const DOMAIN_BORDER: Record<V2Domain, string> = {
-  relations: "border-t-teal-500/40",
+  relations: "border-t-cyan-500/40",
   defense: "border-t-red-500/40",
-  politics: "border-t-purple-500/40",
+  politics: "border-t-indigo-500/40",
   economy: "border-t-emerald-500/40",
 };
 
@@ -65,7 +65,7 @@ export interface DomainSurfaceProps {
   countryId: string;
   section: string;
   onDeclare?: (prefilled?: string) => void;
-  onNavigate?: (section: any) => void;
+  onNavigate?: (section: string) => void;
 }
 
 export type V2DomainSurfaceProps = DomainSurfaceProps;

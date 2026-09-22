@@ -166,12 +166,12 @@
   --tab-labor-icon: #B91C1C;
 
   /* Government Tab - Governance & Authority */
-  --tab-government-primary: #7C3AED;
-  --tab-government-secondary: #8B5CF6;
-  --tab-government-accent: #A78BFA;
-  --tab-government-bg: rgba(124, 58, 237, 0.08);
-  --tab-government-glow: rgba(124, 58, 237, 0.3);
-  --tab-government-icon: #6D28D9;
+  --tab-government-primary: #4F46E5;
+  --tab-government-secondary: #6366F1;
+  --tab-government-accent: #818CF8;
+  --tab-government-bg: rgba(79, 70, 229, 0.08);
+  --tab-government-glow: rgba(79, 70, 229, 0.15);
+  --tab-government-icon: #4338CA;
 
   /* Demographics Tab - Population & Society */
   --tab-demographics-primary: #0891B2;
@@ -579,7 +579,7 @@
   --tab-executive-glow: rgba(180, 83, 9, 0.5);
   --tab-economy-glow: rgba(5, 150, 105, 0.5);
   --tab-labor-glow: rgba(220, 38, 38, 0.5);
-  --tab-government-glow: rgba(124, 58, 237, 0.5);
+  --tab-government-glow: rgba(79, 70, 229, 0.25);
   --tab-demographics-glow: rgba(8, 145, 178, 0.5);
   --tab-diplomacy-glow: rgba(8, 145, 178, 0.5);
   --tab-intelligence-glow: rgba(37, 99, 235, 0.5);
@@ -592,7 +592,7 @@
   --tab-executive-bg: rgba(180, 83, 9, 0.15);
   --tab-economy-bg: rgba(5, 150, 105, 0.15);
   --tab-labor-bg: rgba(220, 38, 38, 0.15);
-  --tab-government-bg: rgba(124, 58, 237, 0.15);
+  --tab-government-bg: rgba(79, 70, 229, 0.15);
   --tab-demographics-bg: rgba(8, 145, 178, 0.15);
   --tab-diplomacy-bg: rgba(8, 145, 178, 0.15);
   --tab-intelligence-bg: rgba(37, 99, 235, 0.15);
@@ -622,7 +622,7 @@
   --tab-executive-bg: rgba(180, 83, 9, 0.06);
   --tab-economy-bg: rgba(5, 150, 105, 0.06);
   --tab-labor-bg: rgba(220, 38, 38, 0.06);
-  --tab-government-bg: rgba(124, 58, 237, 0.06);
+  --tab-government-bg: rgba(79, 70, 229, 0.06);
   --tab-demographics-bg: rgba(8, 145, 178, 0.06);
   --tab-diplomacy-bg: rgba(8, 145, 178, 0.06);
   --tab-intelligence-bg: rgba(37, 99, 235, 0.06);
@@ -635,7 +635,7 @@
   --tab-executive-glow: rgba(180, 83, 9, 0.25);
   --tab-economy-glow: rgba(5, 150, 105, 0.25);
   --tab-labor-glow: rgba(220, 38, 38, 0.25);
-  --tab-government-glow: rgba(124, 58, 237, 0.25);
+  --tab-government-glow: rgba(79, 70, 229, 0.15);
   --tab-demographics-glow: rgba(8, 145, 178, 0.25);
   --tab-diplomacy-glow: rgba(8, 145, 178, 0.25);
   --tab-intelligence-glow: rgba(37, 99, 235, 0.25);

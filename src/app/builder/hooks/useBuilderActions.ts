@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import type { BuilderStep } from "../components/enhanced/builderConfig";
 import type { BuilderState } from "./useBuilderState";
-import { TAX_SYSTEM_TEMP_DISABLED } from "../constants";
+import { isScratchOrImportOrigin } from "../lib/builder-theme";
 
 /**
  * Return value interface for useBuilderActions hook.
@@ -32,6 +32,8 @@ interface UseBuilderActionsProps {
   setBuilderState: React.Dispatch<React.SetStateAction<BuilderState>>;
   /** Builder mode: 'create' for new countries, 'edit' for existing */
   mode?: "create" | "edit";
+  /** Builder complexity mode: 'standard' or 'expert' */
+  viewMode?: "standard" | "expert";
 }
 
 /**
@@ -130,13 +132,33 @@ export function useBuilderActions({
   builderState,
   setBuilderState,
   mode = "create",
+  viewMode = "standard",
 }: UseBuilderActionsProps): UseBuilderActionsReturn {
-  // Dynamic step lists based on mode
+  const isScratchOrImport = useMemo(
+    () => isScratchOrImportOrigin(builderState),
+    [builderState]
+  );
+
+  // Dynamic step lists based on mode and creation origin
   const steps = useMemo(() => {
-    return mode === "edit"
+    return mode === "edit" || isScratchOrImport
       ? ["core", "government", "economics", "preview"]
       : ["foundation", "core", "government", "economics", "preview"];
-  }, [mode]);
+  }, [mode, isScratchOrImport]);
+
+  // Government sub-tabs vary by viewMode: standard mode is components-only; expert or edit mode exposes departments and budget
+  const govTabs = useMemo(() => {
+    return mode === "edit" || viewMode === "expert"
+      ? ["components", "structure", "spending"]
+      : ["components"];
+  }, [mode, viewMode]);
+
+  // Economics sub-tabs vary by viewMode: standard mode is components-only; expert or edit mode exposes sectors and workforce
+  const econTabs = useMemo(() => {
+    return mode === "edit" || viewMode === "expert"
+      ? ["components", "sectors", "workforce"]
+      : ["components"];
+  }, [mode, viewMode]);
 
   // Handle tab navigation within steps
   const handleTabChange = useCallback(
@@ -185,10 +207,9 @@ export function useBuilderActions({
         }
         break;
 
-      case "government":
-        const govTabs = ["components", "structure", "spending", "preview"];
+      case "government": {
         const currentGovIndex = govTabs.indexOf(activeGovernmentTab);
-        if (currentGovIndex < govTabs.length - 1) {
+        if (currentGovIndex >= 0 && currentGovIndex < govTabs.length - 1) {
           handleTabChange("government", govTabs[currentGovIndex + 1]!);
         } else {
           setBuilderState((prev) => ({
@@ -198,20 +219,11 @@ export function useBuilderActions({
           }));
         }
         break;
+      }
 
       case "economics": {
-        const econTabs = ["components", "sectors", "labor", "demographics"];
-        if (!TAX_SYSTEM_TEMP_DISABLED) {
-          econTabs.push("tax");
-        }
-        // Map legacy states
-        let normalizedTab = activeEconomicsTab;
-        if (normalizedTab === "structure") normalizedTab = "sectors";
-        if (normalizedTab === "economy" || !econTabs.includes(normalizedTab)) {
-          normalizedTab = "components";
-        }
-        const currentEconIndex = econTabs.indexOf(normalizedTab);
-        if (currentEconIndex < econTabs.length - 1) {
+        const currentEconIndex = econTabs.indexOf(activeEconomicsTab);
+        if (currentEconIndex >= 0 && currentEconIndex < econTabs.length - 1) {
           handleTabChange("economics", econTabs[currentEconIndex + 1]!);
         } else {
           setBuilderState((prev) => ({
@@ -224,7 +236,7 @@ export function useBuilderActions({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [builderState, setBuilderState, handleTabChange, mode]);
+  }, [builderState, setBuilderState, handleTabChange, mode, govTabs, econTabs]);
 
   // Handle previous step - moves to previous tab or previous step
   const handlePreviousStep = useCallback(() => {
@@ -237,7 +249,6 @@ export function useBuilderActions({
     }
 
     if (step === "government") {
-      const govTabs = ["components", "structure", "spending", "preview"];
       const currentGovIndex = govTabs.indexOf(activeGovernmentTab);
       if (currentGovIndex > 0) {
         handleTabChange("government", govTabs[currentGovIndex - 1]!);
@@ -246,17 +257,7 @@ export function useBuilderActions({
     }
 
     if (step === "economics") {
-      const econTabs = ["components", "sectors", "labor", "demographics"];
-      if (!TAX_SYSTEM_TEMP_DISABLED) {
-        econTabs.push("tax");
-      }
-      // Map legacy states
-      let normalizedTab = activeEconomicsTab;
-      if (normalizedTab === "structure") normalizedTab = "sectors";
-      if (normalizedTab === "economy" || !econTabs.includes(normalizedTab)) {
-        normalizedTab = "components";
-      }
-      const currentEconIndex = econTabs.indexOf(normalizedTab);
+      const currentEconIndex = econTabs.indexOf(activeEconomicsTab);
       if (currentEconIndex > 0) {
         handleTabChange("economics", econTabs[currentEconIndex - 1]!);
         return;
@@ -284,15 +285,14 @@ export function useBuilderActions({
       if (prevStep === "core") {
         updatedState.activeCoreTab = "indicators";
       } else if (prevStep === "government") {
-        updatedState.activeGovernmentTab = "preview";
+        updatedState.activeGovernmentTab = viewMode === "expert" ? "spending" : "components";
       } else if (prevStep === "economics") {
-        const lastEconTab = !TAX_SYSTEM_TEMP_DISABLED ? "tax" : "demographics";
-        updatedState.activeEconomicsTab = lastEconTab;
+        updatedState.activeEconomicsTab = viewMode === "expert" ? "workforce" : "components";
       }
 
       return updatedState;
     });
-  }, [builderState, setBuilderState, steps, handleTabChange]);
+  }, [builderState, setBuilderState, steps, handleTabChange, govTabs, econTabs, viewMode]);
 
   // Handle direct step navigation
   const handleStepClick = useCallback(
@@ -312,8 +312,9 @@ export function useBuilderActions({
         return;
       }
 
-      // In create mode, once unlocked (foundation completed), allow free navigation to any step
-      const isUnlocked = builderState.completedSteps.includes("foundation" as BuilderStep);
+      // In create mode, once unlocked (foundation completed or scratch/import), allow free navigation to any step
+      const isUnlocked =
+        builderState.completedSteps.includes("foundation" as BuilderStep) || isScratchOrImport;
       if (isUnlocked || targetIndex <= currentIndex || builderState.completedSteps.includes(step)) {
         setBuilderState((prev) => ({
           ...prev,
@@ -322,7 +323,7 @@ export function useBuilderActions({
         }));
       }
     },
-    [builderState.step, builderState.completedSteps, setBuilderState, mode, steps]
+    [builderState.step, builderState.completedSteps, setBuilderState, mode, steps, isScratchOrImport]
   );
 
   // Check if navigation to a specific step is allowed
@@ -334,13 +335,14 @@ export function useBuilderActions({
       if (targetIndex === -1) return false;
       if (mode === "edit") return true;
 
-      // In create mode, once unlocked (foundation completed), allow free navigation to any step
-      const isUnlocked = builderState.completedSteps.includes("foundation" as BuilderStep);
+      // In create mode, once unlocked (foundation completed or scratch/import), allow free navigation to any step
+      const isUnlocked =
+        builderState.completedSteps.includes("foundation" as BuilderStep) || isScratchOrImport;
       if (isUnlocked) return true;
 
       return targetIndex <= currentIndex || builderState.completedSteps.includes(step);
     },
-    [builderState.step, builderState.completedSteps, mode, steps]
+    [builderState.step, builderState.completedSteps, mode, steps, isScratchOrImport]
   );
 
   // Calculate progress percentage

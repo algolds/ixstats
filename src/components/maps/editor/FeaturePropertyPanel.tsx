@@ -8,13 +8,12 @@ import React from "react";
  */
 
 import { SystemRestart as Loader2, Check, CheckCircle as CheckCircle2 } from "iconoir-react";
+import dynamic from "next/dynamic";
 import type {
   EditorMode,
   CityFormData,
   SubdivisionFormData,
   POIFormData,
-  StoryPinFormData,
-  MapLabelFormData,
   PeakFormData,
   NamedRiverFormData,
   NamedLakeFormData,
@@ -24,14 +23,31 @@ import {
   CityPropertyForm,
   SubdivisionPropertyForm,
   POIPropertyForm,
-  StoryPinPropertyForm,
-  MapLabelPropertyForm,
-  TransportPropertyForm,
   PeakPropertyForm,
   RiverPropertyForm,
   LakePropertyForm,
 } from "./properties";
 import { SmartPlacement } from "./SmartPlacement";
+
+const TransportPropertyForm = dynamic(
+  () => import("./properties/TransportPropertyForm").then((m) => m.TransportPropertyForm),
+  { ssr: false }
+);
+
+const MODE_TITLES: Record<string, string> = {
+  "add-city": "New City",
+  "edit-city": "Edit City",
+  "add-subdivision": "New Region",
+  "edit-subdivision": "Edit Region",
+  "add-poi": "New POI",
+  "edit-poi": "Edit POI",
+  "add-peak": "New Peak",
+  "edit-peak": "Edit Peak",
+  "add-river": "New River",
+  "edit-river": "Edit River",
+  "add-lake": "New Lake",
+  "edit-lake": "Edit Lake",
+};
 
 interface PointInfo {
   elevation?: {
@@ -55,10 +71,6 @@ interface FeaturePropertyPanelProps {
   onSubdivisionFormChange: (form: SubdivisionFormData) => void;
   poiForm: POIFormData;
   onPOIFormChange: (form: POIFormData) => void;
-  storyPinForm?: StoryPinFormData;
-  onStoryPinFormChange?: (form: StoryPinFormData) => void;
-  mapLabelForm?: MapLabelFormData;
-  onMapLabelFormChange?: (form: MapLabelFormData) => void;
   peakForm?: PeakFormData;
   onPeakFormChange?: (form: PeakFormData) => void;
   riverForm?: NamedRiverFormData;
@@ -80,7 +92,14 @@ interface FeaturePropertyPanelProps {
   clearRouteWaypoints?: () => void;
   selectedRouteId?: string | null;
   onSelectRouteId?: (id: string | null) => void;
-  allFeatures?: any[];
+  onEditRoute?: (routeId: string) => void;
+  editingRouteId?: string | null;
+  editingRouteVertices?: [number, number][];
+  onRouteVerticesUpdate?: (vertices: [number, number][]) => void;
+  onRouteEditCommit?: () => Promise<void> | void;
+  onRouteEditCancel?: () => void;
+  onFlyToCoords?: (coord: [number, number]) => void;
+  allFeatures?: EditorFeature[];
   isPickingLocation?: boolean;
   setIsPickingLocation?: (active: boolean) => void;
 }
@@ -98,6 +117,13 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
     clearRouteWaypoints,
     selectedRouteId,
     onSelectRouteId,
+    onEditRoute,
+    editingRouteId,
+    editingRouteVertices,
+    onRouteVerticesUpdate,
+    onRouteEditCommit,
+    onRouteEditCancel,
+    onFlyToCoords,
     allFeatures,
     isPickingLocation,
     setIsPickingLocation,
@@ -118,6 +144,13 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
         clearRouteWaypoints={clearRouteWaypoints}
         selectedRouteId={selectedRouteId}
         onSelectRouteId={onSelectRouteId}
+        onEditRoute={onEditRoute}
+        editingRouteId={editingRouteId}
+        editingRouteVertices={editingRouteVertices}
+        onRouteVerticesUpdate={onRouteVerticesUpdate}
+        onRouteEditCommit={onRouteEditCommit}
+        onRouteEditCancel={onRouteEditCancel}
+        onFlyToCoords={onFlyToCoords}
       />
     );
   }
@@ -139,8 +172,6 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
     (mode === "add-city" && pendingCoordinates) ||
     (mode === "add-subdivision" && pendingGeometry) ||
     (mode === "add-poi" && pendingCoordinates) ||
-    (mode === "add-story-pin" && pendingCoordinates) ||
-    (mode === "add-label" && pendingCoordinates) ||
     (mode === "add-peak" && pendingCoordinates) ||
     (mode === "add-river" && pendingGeometry) ||
     (mode === "add-lake" && pendingGeometry);
@@ -150,52 +181,28 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
     ((mode === "add-subdivision" || mode === "edit-subdivision") &&
       props.subdivisionForm.name.trim()) ||
     ((mode === "add-poi" || mode === "edit-poi") && props.poiForm.name.trim()) ||
-    ((mode === "add-story-pin" || mode === "edit-story-pin") && props.storyPinForm?.title.trim()) ||
-    ((mode === "add-label" || mode === "edit-label") && props.mapLabelForm?.text.trim()) ||
     ((mode === "add-peak" || mode === "edit-peak") && props.peakForm?.name.trim()) ||
     ((mode === "add-river" || mode === "edit-river") && props.riverForm?.name.trim()) ||
     ((mode === "add-lake" || mode === "edit-lake") && props.lakeForm?.name.trim());
 
   const canSubmit = hasLocation && hasName && !isMutating;
 
-  // Mode title mapping
-  const titles: Record<string, string> = {
-    "add-city": "New City",
-    "edit-city": "Edit City",
-    "add-subdivision": "New Region",
-    "edit-subdivision": "Edit Region",
-    "add-poi": "New POI",
-    "edit-poi": "Edit POI",
-    "add-story-pin": "New Story Pin",
-    "edit-story-pin": "Edit Story Pin",
-    "add-label": "New Map Label",
-    "edit-label": "Edit Map Label",
-    "add-peak": "New Peak",
-    "edit-peak": "Edit Peak",
-    "add-river": "New River",
-    "edit-river": "Edit River",
-    "add-lake": "New Lake",
-    "edit-lake": "Edit Lake",
-  };
-
   const isPointMode =
     mode === "add-city" ||
     mode === "add-poi" ||
-    mode === "add-story-pin" ||
-    mode === "add-label" ||
     mode === "add-peak";
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          {titles[mode] ?? mode}
+          {MODE_TITLES[mode] ?? mode}
         </h3>
       </div>
 
       {/* Location indicator */}
       {!isEdit && !hasLocation && (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-500 font-medium">
           {mode === "add-subdivision" || mode === "add-lake"
             ? "Draw a polygon on the map to define the boundary"
             : mode === "add-river"
@@ -204,17 +211,17 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
         </div>
       )}
       {pendingCoordinates && isPointMode && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-500">
           Location: {pendingCoordinates[1].toFixed(3)}&deg;, {pendingCoordinates[0].toFixed(3)}&deg;
         </div>
       )}
       {pendingGeometry && (mode === "add-subdivision" || mode === "add-lake") && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-500">
           Polygon boundary drawn
         </div>
       )}
       {pendingGeometry && mode === "add-river" && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-500">
           Line path drawn
         </div>
       )}
@@ -295,30 +302,6 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
           setIsPickingLocation={setIsPickingLocation}
         />
       )}
-      {(mode === "add-story-pin" || mode === "edit-story-pin") &&
-        props.storyPinForm &&
-        props.onStoryPinFormChange && (
-          <StoryPinPropertyForm
-            form={props.storyPinForm}
-            onChange={props.onStoryPinFormChange}
-            countryId={countryId}
-            pendingCoordinates={pendingCoordinates}
-            isPickingLocation={isPickingLocation}
-            setIsPickingLocation={setIsPickingLocation}
-          />
-        )}
-      {(mode === "add-label" || mode === "edit-label") &&
-        props.mapLabelForm &&
-        props.onMapLabelFormChange && (
-          <MapLabelPropertyForm
-            form={props.mapLabelForm}
-            onChange={props.onMapLabelFormChange}
-            countryId={countryId}
-            pendingCoordinates={pendingCoordinates}
-            isPickingLocation={isPickingLocation}
-            setIsPickingLocation={setIsPickingLocation}
-          />
-        )}
       {(mode === "add-peak" || mode === "edit-peak") &&
         props.peakForm &&
         props.onPeakFormChange && (
@@ -355,18 +338,15 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
 
       {/* Success flash with fade-in animation */}
       {lastSavedAt && !error && (
-        <div
-          className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400"
-          style={{ animation: "featureSavedFadeIn 300ms ease" }}
-        >
+        <div className="flex animate-in fade-in slide-in-from-top-1 duration-200 items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-500">
           <CheckCircle2 className="h-3.5 w-3.5" />
-          <span>{isEdit ? "Changes saved" : "Saved \u2014 click map to place another"}</span>
+          <span>{isEdit ? "Changes saved" : "Saved — click map to place another"}</span>
         </div>
       )}
 
       {/* Error message */}
       {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400">
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive font-medium">
           {error.message}
         </div>
       )}
@@ -376,7 +356,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
         <button
           onClick={onSubmit}
           disabled={!canSubmit}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80 flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-3 text-base font-medium shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:py-1.5 sm:text-sm"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80 active:scale-[0.98] flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-3 text-base font-medium shadow-sm transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 sm:py-1.5 sm:text-sm"
         >
           {isMutating ? (
             <Loader2 className="h-4 w-4 animate-spin sm:h-3.5 sm:w-3.5" />
@@ -387,24 +367,11 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
         </button>
         <button
           onClick={onCancel}
-          className="border-border text-foreground/80 hover:bg-accent active:bg-accent rounded-lg border px-3 py-3 text-base transition-colors sm:py-1.5 sm:text-sm"
+          className="border-border text-foreground/80 hover:bg-accent active:bg-accent active:scale-[0.98] rounded-lg border px-3 py-3 text-base transition-all duration-150 sm:py-1.5 sm:text-sm"
         >
           Cancel
         </button>
       </div>
-
-      <style jsx>{`
-        @keyframes featureSavedFadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-4px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 });

@@ -6,6 +6,9 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { EconomicArchetype as PrismaArchetype } from "@prisma/client";
+import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
+import type { EconomicComponentType } from "~/lib/economy/atomic-data";
+import type { ComponentType } from "@prisma/client";
 import { memoryConfig } from "~/lib/system/dev-memory-config";
 
 // Import hardcoded fallback data
@@ -16,13 +19,16 @@ import { historicalArchetypes } from "~/lib/economy/archetypes/historical";
  * Parse JSON string fields back to objects
  * Transforms database representation to TypeScript interface
  */
-function parseArchetypeJSON(archetype: PrismaArchetype) {
+function parseArchetypeJSON(archetype: PrismaArchetype): EconomicArchetype {
   try {
     return {
-      ...archetype,
+      id: archetype.id,
+      name: archetype.name,
+      description: archetype.description,
+      region: archetype.region,
       characteristics: JSON.parse(archetype.characteristics) as string[],
-      economicComponents: JSON.parse(archetype.economicComponents) as string[],
-      governmentComponents: JSON.parse(archetype.governmentComponents) as string[],
+      economicComponents: JSON.parse(archetype.economicComponents) as EconomicComponentType[],
+      governmentComponents: JSON.parse(archetype.governmentComponents) as ComponentType[],
       taxProfile: JSON.parse(archetype.taxProfile) as {
         corporateRate: number;
         incomeRate: number;
@@ -43,7 +49,9 @@ function parseArchetypeJSON(archetype: PrismaArchetype) {
       },
       strengths: JSON.parse(archetype.strengths) as string[],
       challenges: JSON.parse(archetype.challenges) as string[],
+      implementationComplexity: archetype.implementationComplexity as "low" | "medium" | "high",
       culturalFactors: JSON.parse(archetype.culturalFactors) as string[],
+      historicalContext: archetype.historicalContext,
       modernExamples: JSON.parse(archetype.modernExamples) as string[],
       recommendations: JSON.parse(archetype.recommendations) as string[],
     };
@@ -60,7 +68,7 @@ function parseArchetypeJSON(archetype: PrismaArchetype) {
  * Get fallback archetypes from hardcoded data
  * Used when database is empty for graceful degradation
  */
-function getFallbackArchetypes(era: "modern" | "historical" | "all") {
+function getFallbackArchetypes(era: "modern" | "historical" | "all"): EconomicArchetype[] {
   console.warn("[economicArchetypes.ts] Database empty, using fallback hardcoded archetypes");
 
   const modern = Array.from(modernArchetypes.values());
@@ -70,46 +78,6 @@ function getFallbackArchetypes(era: "modern" | "historical" | "all") {
   if (era === "historical") return historical;
   return [...modern, ...historical];
 }
-
-/**
- * Zod schema for archetype creation/update
- * Validates input data structure
- */
-const _archetypeInputSchema = z.object({
-  key: z.string().min(1),
-  name: z.string().min(1),
-  description: z.string().min(1),
-  region: z.string().min(1),
-  era: z.enum(["modern", "historical"]),
-  characteristics: z.array(z.string()),
-  economicComponents: z.array(z.string()),
-  governmentComponents: z.array(z.string()),
-  taxProfile: z.object({
-    corporateRate: z.number().min(0).max(100),
-    incomeRate: z.number().min(0).max(100),
-    consumptionRate: z.number().min(0).max(100),
-    revenueEfficiency: z.number().min(0).max(1),
-  }),
-  sectorFocus: z.record(z.string(), z.number()),
-  employmentProfile: z.object({
-    unemploymentRate: z.number().min(0).max(100),
-    laborParticipation: z.number().min(0).max(100),
-    wageGrowth: z.number(),
-  }),
-  growthMetrics: z.object({
-    gdpGrowth: z.number(),
-    innovationIndex: z.number().min(0).max(100),
-    competitiveness: z.number().min(0).max(100),
-    stability: z.number().min(0).max(100),
-  }),
-  strengths: z.array(z.string()),
-  challenges: z.array(z.string()),
-  culturalFactors: z.array(z.string()),
-  modernExamples: z.array(z.string()),
-  recommendations: z.array(z.string()),
-  implementationComplexity: z.enum(["Low", "Medium", "High"]),
-  historicalContext: z.string(),
-});
 
 export const economicArchetypesPublicRouter = createTRPCRouter({
   // ============================================================================
@@ -224,10 +192,9 @@ export const economicArchetypesPublicRouter = createTRPCRouter({
 
       // If database empty, use fallback
       if (archetypes.length === 0) {
-        const fallback = getFallbackArchetypes("all");
         return {
-          modern: fallback.filter((a) => (a as any).era === "modern"),
-          historical: fallback.filter((a) => (a as any).era === "historical"),
+          modern: Array.from(modernArchetypes.values()),
+          historical: Array.from(historicalArchetypes.values()),
         };
       }
 
@@ -238,10 +205,9 @@ export const economicArchetypesPublicRouter = createTRPCRouter({
     } catch (error) {
       console.error("Error fetching archetypes by category:", error);
       // Fallback on error
-      const fallback = getFallbackArchetypes("all");
       return {
-        modern: fallback.filter((a) => (a as any).era === "modern"),
-        historical: fallback.filter((a) => (a as any).era === "historical"),
+        modern: Array.from(modernArchetypes.values()),
+        historical: Array.from(historicalArchetypes.values()),
       };
     }
   }),

@@ -46,13 +46,13 @@ export function WikiOSArticleToolbarWidget({
   const getModeIcon = (mode: string) => {
     switch (mode) {
       case "auto":
-        return <SunMoon className="h-3 w-3 text-sky-400" />;
+        return <SunMoon className="h-3 w-3 text-cyan-400" />;
       case "plinth":
         return <Square className="h-3 w-3 text-emerald-400" />;
       case "raw":
         return <Eye className="h-3 w-3 text-zinc-400" />;
       default:
-        return <SunMoon className="h-3 w-3 text-sky-400" />;
+        return <SunMoon className="h-3 w-3 text-cyan-400" />;
     }
   };
 
@@ -89,7 +89,7 @@ export function WikiOSArticleToolbarWidget({
         <button
           type="button"
           onClick={cycleMediaThemeMode}
-          className="rail-glow-teal flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/5 text-teal-400 shadow-md transition-all hover:scale-105 hover:bg-teal-500/15 active:scale-95"
+          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 shadow-xs transition-all hover:scale-105 hover:bg-cyan-500/15 active:scale-95"
           title={`Media Theme: ${mediaThemeMode} (Click to cycle Auto / Plinth / Raw)`}
         >
           {getModeIcon(mediaThemeMode)}
@@ -176,7 +176,7 @@ export function WikiOSArticleToolbarWidget({
         <div className="mt-2 space-y-1.5 border-t border-white/5 pt-2">
           <div className="flex items-center justify-between px-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
             <span>Media Theme</span>
-            <span className="text-[9px] font-semibold text-sky-400 capitalize">
+            <span className="text-[9px] font-semibold text-cyan-400 capitalize">
               {mediaThemeMode}
             </span>
           </div>

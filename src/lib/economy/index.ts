@@ -25,6 +25,7 @@ export * from "./passive-income-distribution-cron";
 export * from "./auction-completion-cron";
 export * from "./auction-service";
 export * from "./transport-costs";
+export * from "./multimodal-routing";
 export * from "./transport-generator";
 export * from "./resource-generator";
 export * from "./calculations";

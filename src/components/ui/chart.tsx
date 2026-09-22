@@ -97,6 +97,8 @@ ${colorConfig
 
 const ChartTooltip = Tooltip;
 
+import type { ChartPayloadEntry } from "~/types/charts";
+
 function ChartTooltipContent({
   active,
   payload,
@@ -113,15 +115,21 @@ function ChartTooltipContent({
   labelKey,
 }: {
   active?: boolean;
-  payload?: any[];
-  label?: any;
+  payload?: ChartPayloadEntry[];
+  label?: string | number | React.ReactNode;
   className?: string;
   indicator?: "line" | "dot" | "dashed";
   hideLabel?: boolean;
   hideIndicator?: boolean;
-  labelFormatter?: (label: any, payload: any[]) => React.ReactNode;
+  labelFormatter?: (label: React.ReactNode, payload: ChartPayloadEntry[]) => React.ReactNode;
   labelClassName?: string;
-  formatter?: (value: any, name: any, item: any, index: number, payload: any[]) => React.ReactNode;
+  formatter?: (
+    value: unknown,
+    name: string | number,
+    item: ChartPayloadEntry,
+    index: number,
+    payload: Record<string, unknown>
+  ) => React.ReactNode;
   color?: string;
   nameKey?: string;
   labelKey?: string;
@@ -247,7 +255,7 @@ function ChartLegendContent({
 }: {
   className?: string;
   hideIcon?: boolean;
-  payload?: any[];
+  payload?: ChartPayloadEntry[];
   verticalAlign?: "top" | "bottom";
   nameKey?: string;
 }) {
@@ -265,7 +273,7 @@ function ChartLegendContent({
         className
       )}
     >
-      {payload?.map((item: any, index: number) => {
+      {payload?.map((item: ChartPayloadEntry, index: number) => {
         const key = `${nameKey || item.dataKey || "value"}`;
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
 

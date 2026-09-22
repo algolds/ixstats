@@ -7,8 +7,15 @@ import type { DemographicsConfiguration } from "~/types/economy-builder";
 
 interface SocialIndicatorsSectionProps {
   demographics: DemographicsConfiguration;
-  onChange: (field: keyof DemographicsConfiguration, value: any) => void;
-  onNestedChange: (parentField: keyof DemographicsConfiguration, field: string, value: any) => void;
+  onChange: <K extends keyof DemographicsConfiguration>(
+    field: K,
+    value: DemographicsConfiguration[K]
+  ) => void;
+  onNestedChange: (
+    parentField: keyof DemographicsConfiguration,
+    field: string,
+    value: number | string | boolean
+  ) => void;
   showAdvanced: boolean;
 }
 
@@ -112,7 +119,7 @@ export function SocialIndicatorsSection({
             label="Infant Mortality Rate"
             description="Deaths per 1000 live births"
             value={demographics.infantMortalityRate}
-            onChange={(value) => onChange("infantMortalityRate", value)}
+            onChange={(value) => onChange("infantMortalityRate", Number(value) || 0)}
             min={0}
             max={100}
             step={0.1}
@@ -125,7 +132,7 @@ export function SocialIndicatorsSection({
             label="Maternal Mortality Rate"
             description="Deaths per 100,000 live births"
             value={demographics.maternalMortalityRate}
-            onChange={(value) => onChange("maternalMortalityRate", value)}
+            onChange={(value) => onChange("maternalMortalityRate", Number(value) || 0)}
             min={0}
             max={1000}
             step={1}

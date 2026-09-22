@@ -1,0 +1,171 @@
+{
+  "country": "Maristella",
+  "featureId": "Maristella",
+  "generatedAt": "2026-09-06T20:07:40.565Z",
+  "area": {
+    "km2": 98820,
+    "sqMi": 38155,
+    "boundingBox": {
+      "minLng": -10.4803,
+      "minLat": -37.83,
+      "maxLng": -5.5225,
+      "maxLat": -29.6271
+    },
+    "nsSpanKm": 912,
+    "ewSpanKm": 458,
+    "centroid": {
+      "lng": -7.8045,
+      "lat": -33.8529
+    },
+    "perimeterKm": 2613
+  },
+  "elevation": {
+    "zones": [
+      {
+        "zone": "Coastal Lowlands",
+        "minM": 0,
+        "maxM": 99,
+        "areaKm2": 78335,
+        "percent": 79.3
+      },
+      {
+        "zone": "Low Hills",
+        "minM": 100,
+        "maxM": 349,
+        "areaKm2": 14376,
+        "percent": 14.5
+      },
+      {
+        "zone": "Rolling Hills",
+        "minM": 350,
+        "maxM": 499,
+        "areaKm2": 4489,
+        "percent": 4.5
+      },
+      {
+        "zone": "Uplands",
+        "minM": 500,
+        "maxM": 999,
+        "areaKm2": 1620,
+        "percent": 1.6
+      }
+    ],
+    "minElevationM": 0,
+    "maxElevationM": 999,
+    "meanElevationM": 103,
+    "dominantTerrain": "Coastal Lowlands",
+    "terrainRoughness": 0.0127
+  },
+  "climate": {
+    "zones": [
+      {
+        "type": "Subtropical Humid (Cf)",
+        "areaKm2": 90568,
+        "percent": 91.6,
+        "description": "Warm with year-round moisture"
+      },
+      {
+        "type": "Temperate Oceanic (Do)",
+        "areaKm2": 8252,
+        "percent": 8.4,
+        "description": "Maritime influence with mild, wet conditions"
+      }
+    ],
+    "dominantType": "Subtropical Humid (Cf)",
+    "shannonDiversity": 0.283,
+    "temperature": {
+      "meanC": 11.9,
+      "meanF": 53.5,
+      "summerDailyHighC": 25.3,
+      "winterDailyLowC": -1.5,
+      "seasonalRangeC": 16.8,
+      "diurnalRangeC": 10
+    },
+    "annualPrecipitationMm": 1206
+  },
+  "hydrography": {
+    "riverCount": 3,
+    "totalRiverLengthKm": 974,
+    "lakeCount": 0,
+    "totalLakeAreaKm2": 0,
+    "drainageDensity": 0.01
+  },
+  "position": {
+    "hemisphere": "Southern",
+    "latitudeBand": "Subtropical",
+    "atmosphericZone": "Subtropical high zone (horse latitudes)",
+    "distanceFromEquatorKm": 3764,
+    "timezone": "UTC-1"
+  },
+  "neighbors": [
+    {
+      "name": "path190-4",
+      "direction": "SE",
+      "sharedBorderKm": 0
+    }
+  ],
+  "coastline": {
+    "hasCoastline": true,
+    "isLandlocked": false,
+    "coastlineKm": 2613,
+    "landBorderKm": 0,
+    "coastlinePercent": 100
+  },
+  "shape": {
+    "compactnessRatio": 0.182,
+    "compactness": "Highly irregular or fragmented",
+    "elongationRatio": 1.99,
+    "elongation": "Slightly elongated N-S",
+    "fragments": 4,
+    "islands": 1
+  },
+  "iceCoverage": {
+    "hasIcecaps": false,
+    "areaKm2": 0,
+    "percent": 0
+  },
+  "insights": {
+    "agriculture": {
+      "arableLandPercent": 89.6,
+      "arableLandKm2": 88525,
+      "growingSeasonDays": 296,
+      "waterAvailability": "Abundant",
+      "waterScore": 70,
+      "cropSuitability": [
+        "Citrus",
+        "Tea",
+        "Cotton",
+        "Wheat",
+        "Barley",
+        "Root vegetables"
+      ],
+      "overallRating": "Excellent"
+    },
+    "strategic": {
+      "maritimeIndex": "Maritime power (extensive coastline)",
+      "coastlineToAreaRatio": 831.3,
+      "strategicDepthKm": 229,
+      "borderDefensibility": "Open terrain (few natural barriers)",
+      "mountainCoveragePercent": 0,
+      "islandExposure": "Minor archipelagic (1 island)",
+      "accessPoints": "Limited entry points"
+    },
+    "habitability": {
+      "score": 86,
+      "descriptor": "Highly habitable",
+      "climateComfort": 38,
+      "waterAccess": 18,
+      "terrainAccess": 30,
+      "keyFactors": [
+        "Favorable climate",
+        "Accessible terrain"
+      ]
+    },
+    "biome": {
+      "dominantBiome": "Broadleaf evergreen forest, mixed woodland",
+      "ecoRegionCount": 8,
+      "ecologicalDiversity": "Homogeneous",
+      "summary": "The landscape is dominated by broadleaf evergreen forest, mixed woodland (Subtropical Humid), covering over half the country."
+    }
+  }
+}

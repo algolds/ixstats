@@ -405,7 +405,7 @@ export function PolicyCreatorSheet({
                   <div className="border-border/30 flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">GDP growth:</span>
                     <span
-                      className={`font-semibold ${calculatedEffects.gdpEffect >= 0 ? "text-emerald-500" : "text-rose-500"}`}
+                      className={`font-semibold ${calculatedEffects.gdpEffect >= 0 ? "text-emerald-500" : "text-red-500"}`}
                     >
                       {calculatedEffects.gdpEffect >= 0 ? "+" : ""}
                       {calculatedEffects.gdpEffect.toFixed(2)}%
@@ -414,7 +414,7 @@ export function PolicyCreatorSheet({
                   <div className="border-border/30 flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Employment:</span>
                     <span
-                      className={`font-semibold ${calculatedEffects.employmentEffect >= 0 ? "text-emerald-500" : "text-rose-500"}`}
+                      className={`font-semibold ${calculatedEffects.employmentEffect >= 0 ? "text-emerald-500" : "text-red-500"}`}
                     >
                       {calculatedEffects.employmentEffect >= 0 ? "+" : ""}
                       {calculatedEffects.employmentEffect.toFixed(2)}%

@@ -57,7 +57,7 @@ export function EditorToolbar({
         className={cn(
           "rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]",
           activeMarks.bold
-            ? "bg-purple-500/20 text-purple-600 dark:text-purple-300"
+            ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300"
             : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 dark:hover:text-white"
         )}
         title="Bold"
@@ -72,7 +72,7 @@ export function EditorToolbar({
         className={cn(
           "rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]",
           activeMarks.italic
-            ? "bg-purple-500/20 text-purple-600 dark:text-purple-300"
+            ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300"
             : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 dark:hover:text-white"
         )}
         title="Italic"
@@ -87,7 +87,7 @@ export function EditorToolbar({
         className={cn(
           "rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]",
           activeMarks.underline
-            ? "bg-purple-500/20 text-purple-600 dark:text-purple-300"
+            ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300"
             : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 dark:hover:text-white"
         )}
         title="Underline"
@@ -146,7 +146,7 @@ export function EditorToolbar({
               size="sm"
               onClick={handleAddLink}
               disabled={!linkUrl.trim()}
-              className="w-full bg-purple-600 text-xs font-semibold text-white hover:bg-purple-500"
+              className="w-full bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-500"
             >
               Add Link
             </Button>

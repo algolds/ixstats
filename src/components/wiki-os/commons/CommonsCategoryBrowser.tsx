@@ -8,6 +8,7 @@ import {
   Search,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { cn } from "~/lib/utils";
 
 // Curated worldbuilding-relevant categories organized by theme
 interface CategoryGroup {
@@ -361,19 +362,23 @@ export function CommonsCategoryBrowser({
   );
 
   const autocompleteResults = isCommons ? commonsAutocomplete : localAutocomplete;
+  const safeAutocompleteResults = useMemo(
+    () => (autocompleteResults ? autocompleteResults.slice(0, 25) : []),
+    [autocompleteResults]
+  );
 
   const { data: commonsSearchCounts } = api.commons.getCategoryTotalCounts.useQuery(
-    { categories: autocompleteResults ?? [] },
+    { categories: safeAutocompleteResults },
     {
-      enabled: isCommons && isSearching && !!autocompleteResults && autocompleteResults.length > 0,
+      enabled: isCommons && isSearching && safeAutocompleteResults.length > 0,
       staleTime: 30 * 60 * 1000,
     }
   );
 
   const { data: localSearchCounts } = api.wikios.getCategoryTotalCounts.useQuery(
-    { categories: autocompleteResults ?? [], wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
+    { categories: safeAutocompleteResults, wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
     {
-      enabled: !isCommons && isSearching && !!autocompleteResults && autocompleteResults.length > 0,
+      enabled: !isCommons && isSearching && safeAutocompleteResults.length > 0,
       staleTime: 30 * 60 * 1000,
     }
   );
@@ -381,20 +386,20 @@ export function CommonsCategoryBrowser({
   const searchCounts = isCommons ? commonsSearchCounts : localSearchCounts;
 
   return (
-    <div className="wikios-commons-sidebar">
+    <div className="flex flex-col h-full overflow-y-auto py-2">
       {/* Search */}
-      <div className="wikios-commons-sidebar-search">
-        <Search className="wikios-commons-sidebar-search-icon" />
+      <div className="flex items-center gap-1.5 mx-2 mb-2 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border/40 focus-within:border-border transition-colors">
+        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search categories..."
-          className="wikios-commons-sidebar-search-input"
+          className="flex-1 bg-transparent border-none outline-none text-xs text-foreground placeholder:text-muted-foreground"
         />
       </div>
 
-      <div className="wikios-commons-sidebar-list">
+      <div className="px-1.5 overflow-y-auto space-y-0.5">
         {isSearching ? (
           /* Autocomplete search results */
           <>
@@ -418,7 +423,7 @@ export function CommonsCategoryBrowser({
               />
             ))}
             {(!autocompleteResults || autocompleteResults.length === 0) && (
-              <p className="wikios-commons-sidebar-empty">No categories found</p>
+              <p className="text-xs text-muted-foreground py-4 text-center">No categories found</p>
             )}
           </>
         ) : (
@@ -484,8 +489,11 @@ function CategoryGroupSection({
   const groupCounts = isCommons ? commonsGroupCounts : group.counts || {};
 
   return (
-    <div className="wikios-commons-group">
-      <button onClick={onToggleGroup} className="wikios-commons-group-header">
+    <div className="mb-1">
+      <button
+        onClick={onToggleGroup}
+        className="flex items-center gap-1.5 w-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground cursor-pointer rounded-md transition-colors active:scale-[0.98]"
+      >
         {isGroupOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <span>{group.label}</span>
       </button>
@@ -557,51 +565,62 @@ function CategoryRow({
   return (
     <div>
       <div
-        className={`wikios-commons-cat-row ${isActive ? "wikios-commons-cat-row--active" : ""} ${
-          isBrowsingThisCat
-            ? "wikios-commons-cat-row--browsing bg-white/5 font-bold text-[var(--wikios-accent)]"
-            : ""
-        }`}
+        className={cn(
+          "group/row flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors text-xs hover:bg-muted/40 select-none",
+          isActive && "bg-primary/10 text-primary",
+          isBrowsingThisCat && "bg-muted/60 font-semibold text-foreground"
+        )}
       >
-        <button onClick={onExpand} className="wikios-commons-cat-expand">
+        <button
+          onClick={onExpand}
+          className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0 rounded cursor-pointer active:scale-90 transition-transform"
+          aria-label={isExpanded ? "Collapse subcategories" : "Expand subcategories"}
+        >
           {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         </button>
         <button
           onClick={() => onBrowse(name)}
-          className="wikios-commons-cat-name"
+          className="flex-1 text-left text-xs text-muted-foreground hover:text-foreground truncate cursor-pointer select-none transition-colors"
           title={`Browse ${name}`}
         >
           {name}
         </button>
         {totalCount != null && totalCount > 0 && (
-          <span className="wikios-commons-cat-count">{totalCount.toLocaleString()}</span>
+          <span className="text-[10px] text-muted-foreground/70 shrink-0 mr-1 tabular-nums">
+            {totalCount.toLocaleString()}
+          </span>
         )}
         <button
           onClick={onToggle}
-          className={`wikios-commons-cat-chip ${isActive ? "wikios-commons-cat-chip--on" : ""}`}
+          className={cn(
+            "h-5 w-5 flex items-center justify-center rounded border border-border/40 text-[10px] text-muted-foreground hover:border-primary hover:text-primary shrink-0 transition-all cursor-pointer active:scale-95",
+            isActive && "bg-primary/15 border-primary/40 text-primary font-bold"
+          )}
           title={isActive ? "Remove filter" : "Add as filter"}
+          aria-label={isActive ? `Remove ${name} filter` : `Add ${name} filter`}
         >
           {isActive ? "✓" : "+"}
         </button>
       </div>
 
       {isExpanded && subcats && subcats.length > 0 && (
-        <div className="wikios-commons-subcats">
+        <div className="pl-5 pr-1 py-0.5 space-y-0.5">
           {subcats.map((sub) => {
             const isSubActive = browsingCategory === sub;
             return (
               <button
                 key={sub}
                 onClick={() => onBrowse(sub)}
-                className={`wikios-commons-subcat flex w-full items-center gap-1.5 py-1 text-left text-[10px] transition-colors ${
+                className={cn(
+                  "flex w-full items-center gap-1.5 py-1 px-1.5 text-left text-[11px] rounded transition-colors hover:bg-muted/30 active:scale-[0.98] cursor-pointer",
                   isSubActive
-                    ? "font-bold text-[var(--wikios-accent)]"
-                    : "text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
-                }`}
+                    ? "font-semibold text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
                 title={`Browse ${sub}`}
               >
                 <Folder
-                  className={`h-2.5 w-2.5 ${isSubActive ? "text-blue-500 opacity-100" : "opacity-40"}`}
+                  className={cn("h-2.5 w-2.5 shrink-0", isSubActive ? "text-primary opacity-100" : "opacity-40")}
                 />
                 <span className="truncate">{sub}</span>
               </button>

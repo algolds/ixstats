@@ -15,7 +15,7 @@ import type { CommandNavMode } from "./CommandNavToggle";
 
 export interface CommandSurfaceProps {
   section?: string;
-  onNavigate?: (section: any) => void;
+  onNavigate?: (section: string) => void;
 }
 
 function CommandSurfaceComponent({
@@ -45,8 +45,8 @@ function CommandSurfaceComponent({
     (prefilled?: string) => {
       if (prefilled) setGoal(prefilled);
       setMode("executive");
-      if (section !== "overview") {
-        onNavigate?.("overview");
+      if (section !== "executive" && section !== "overview") {
+        onNavigate?.("executive");
       }
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
@@ -96,7 +96,7 @@ function CommandSurfaceComponent({
       ) : DOMAIN_SECTIONS.has(section) ? (
         <DomainSurface
           countryId={countryId}
-          section={section as any}
+          section={section}
           onDeclare={declare}
           onNavigate={onNavigate}
         />

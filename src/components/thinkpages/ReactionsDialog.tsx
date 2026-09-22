@@ -117,13 +117,13 @@ export function ReactionsDialog({
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.95, y: 15, opacity: 0 }}
             transition={{ type: "spring", duration: 0.4 }}
-            className="relative w-full max-w-md rounded-2xl bg-gradient-to-b from-black/10 to-black/5 p-[1px] shadow-xl dark:from-white/15 dark:to-white/5 dark:shadow-[0_25px_60px_-15px_rgba(139,92,246,0.3)]"
+            className="relative w-full max-w-md rounded-2xl bg-gradient-to-b from-black/10 to-black/5 p-[1px] shadow-2xl dark:from-white/15 dark:to-white/5"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Inner glass card with overflow-hidden */}
             <div className="text-foreground bg-card/95 dark:bg-card/95 relative flex max-h-[580px] w-full flex-col overflow-hidden rounded-2xl backdrop-blur-2xl dark:border-white/10">
               {/* Ambient inner glow */}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-violet-500/10 via-transparent to-transparent" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-blue-500/5 via-transparent to-transparent" />
 
               {/* Header */}
               <div className="border-border bg-muted/20 relative flex items-center justify-between border-b px-6 py-4.5 dark:border-white/10 dark:bg-white/5">
@@ -188,7 +188,7 @@ export function ReactionsDialog({
                       className={cn(
                         "cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all",
                         selectedTab === "all"
-                          ? "bg-violet-600 text-white shadow-md shadow-violet-600/20"
+                          ? "bg-blue-600 text-white shadow-sm"
                           : "bg-muted text-muted-foreground hover:bg-muted/80 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:text-white"
                       )}
                     >
@@ -207,7 +207,7 @@ export function ReactionsDialog({
                             className={cn(
                               "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all",
                               selectedTab === type
-                                ? "bg-violet-600 text-white shadow-md shadow-violet-600/20"
+                                ? "bg-blue-600 text-white shadow-sm"
                                 : "bg-muted text-muted-foreground hover:bg-muted/80 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:text-white"
                             )}
                           >
@@ -238,7 +238,7 @@ export function ReactionsDialog({
                   <div className="flex-1 scrollbar-thin scrollbar-thumb-white/10 p-4">
                     {isLoading ? (
                       <div className="flex flex-col items-center justify-center space-y-3 py-16">
-                        <div className="h-8 w-8 animate-spin rounded-full border-t-2 border-violet-500"></div>
+                        <div className="h-8 w-8 animate-spin rounded-full border-t-2 border-blue-500"></div>
                         <span className="text-muted-foreground text-xs">Loading reactions...</span>
                       </div>
                     ) : filteredReactions.length === 0 ? (
@@ -312,7 +312,7 @@ export function ReactionsDialog({
                                       "text-foreground truncate text-left text-sm font-semibold transition-colors dark:text-white",
                                       reaction.account.isDiscordUser
                                         ? "cursor-default"
-                                        : "hover:text-violet-500 hover:underline dark:hover:text-violet-400"
+                                        : "hover:text-blue-500 hover:underline dark:hover:text-blue-400"
                                     )}
                                     disabled={!!reaction.account.isDiscordUser}
                                   >
@@ -376,7 +376,7 @@ export function ReactionsDialog({
                                   {React.createElement(ReactionIcon, { className: "h-4.5 w-4.5" })}
                                 </div>
                               ) : (
-                                <div className="bg-muted/50 border-border/30 rounded-full border px-2 py-1 text-xs font-bold text-violet-500 dark:border-white/5 dark:bg-white/5 dark:text-violet-400">
+                                <div className="bg-muted/50 border-border/30 rounded-full border px-2 py-1 text-xs font-bold text-blue-500 dark:border-white/5 dark:bg-white/5 dark:text-blue-400">
                                   {reaction.reactionType}
                                 </div>
                               )}

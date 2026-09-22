@@ -1,5 +1,10 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { type NextRequest, NextResponse } from "next/server";
+import {
+  type NextRequest,
+  type NextFetchEvent,
+  type NextMiddleware,
+  NextResponse,
+} from "next/server";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
 
 // Get base path from environment - should match Next.js basePath
@@ -203,7 +208,7 @@ function simpleMiddleware(req: NextRequest) {
 // responses are incompatible with Clerk's cookie/session header rewriting.
 const SSE_ENDPOINTS = ["/api/sse/map-updates", "/api/sse"];
 
-let clerkMiddlewareInstance: any = null;
+let clerkMiddlewareInstance: NextMiddleware | null = null;
 let isClerkChecked = false;
 
 function getClerkMiddleware() {
@@ -300,7 +305,7 @@ function getClerkMiddleware() {
   return clerkMiddlewareInstance;
 }
 
-export default async function middleware(req: NextRequest, event: any) {
+export default async function middleware(req: NextRequest, event: NextFetchEvent) {
   // Block spoofed internal headers (defense in depth for CVE-2025-29927)
   const internalHeader = req.headers.get("x-middleware-subrequest");
   if (internalHeader) {

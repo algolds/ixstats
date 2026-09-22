@@ -204,7 +204,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
         {!isConsecutive ? (
           <Avatar className="border-border/50 h-8 w-8 rounded-full border shadow-2xs">
             <AvatarImage src={account.profileImageUrl ?? undefined} />
-            <AvatarFallback className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+            <AvatarFallback className="bg-emerald-500/10 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
               {account.country?.flag ? account.country.flag : initials}
             </AvatarFallback>
           </Avatar>

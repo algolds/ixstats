@@ -40,10 +40,6 @@ const MODE_LABELS: Partial<Record<EditorMode, { label: string; hint: string }>> 
   "add-route": { label: "Route", hint: "Generate or draw transport routes" },
   "edit-route": { label: "Edit Route", hint: "Modify route waypoints" },
   paint: { label: "Paint", hint: "Click regions to view stats, use panel to switch map modes" },
-  "add-story-pin": { label: "Add Story Pin", hint: "Click map to place story pin" },
-  "edit-story-pin": { label: "Edit Story Pin", hint: "Modify story pin properties in the panel" },
-  "add-label": { label: "Add Label", hint: "Click map to place text label" },
-  "edit-label": { label: "Edit Label", hint: "Modify text label properties in the panel" },
   "add-peak": { label: "Add Peak", hint: "Click map to place mountain peak" },
   "edit-peak": { label: "Edit Peak", hint: "Modify peak properties in the panel" },
   "add-river": { label: "Draw River", hint: "Click to add river path, double-click to close" },
@@ -53,9 +49,6 @@ const MODE_LABELS: Partial<Record<EditorMode, { label: string; hint: string }>> 
   "split-subdivision": { label: "Split Region", hint: "Draw line across region to split" },
   "lasso-select": { label: "Lasso Select", hint: "Draw lasso loop to select features" },
   ruler: { label: "Ruler", hint: "Click two points to measure distance" },
-  "paint-fill": { label: "Paint Fill", hint: "Click region to apply color" },
-  eyedropper: { label: "Eyedropper", hint: "Click region to sample properties" },
-  "magic-wand": { label: "Magic Wand", hint: "Click to select similar regions" },
 };
 
 function formatCoord(value: number, posLabel: string, negLabel: string): string {

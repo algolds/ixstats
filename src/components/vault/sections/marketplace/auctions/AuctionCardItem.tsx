@@ -86,7 +86,7 @@ export function AuctionCardItem({
           <span
             className={cn(
               "flex items-center gap-0.5 font-medium",
-              isUrgent ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
+              isUrgent ? "text-red-600 dark:text-red-400" : "text-muted-foreground"
             )}
           >
             <Clock className="h-3 w-3" />

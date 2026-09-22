@@ -3,12 +3,12 @@
 import type { IntentTemplate } from "./meeting-scheduler-types";
 
 export const AGENDA_CATEGORIES = [
-  { value: "economic", label: "Economic Affairs", color: "bg-blue-500" },
-  { value: "social", label: "Social Policy", color: "bg-pink-500" },
-  { value: "infrastructure", label: "Infrastructure", color: "bg-orange-500" },
+  { value: "economic", label: "Economic Affairs", color: "bg-emerald-500" },
+  { value: "social", label: "Social Policy", color: "bg-blue-500" },
+  { value: "infrastructure", label: "Infrastructure", color: "bg-amber-500" },
   { value: "diplomatic", label: "Diplomatic Relations", color: "bg-cyan-500" },
   { value: "governance", label: "Governance & Administration", color: "bg-indigo-500" },
-  { value: "other", label: "Other", color: "bg-gray-500" },
+  { value: "other", label: "Other", color: "bg-neutral-500" },
 ];
 
 export const INTENT_TEMPLATES: IntentTemplate[] = [

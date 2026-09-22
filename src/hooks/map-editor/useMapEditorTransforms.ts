@@ -1,15 +1,20 @@
 "use client";
 
 import { useCallback } from "react";
+import type { Feature, Polygon, MultiPolygon } from "geojson";
 import { point } from "@turf/helpers";
 import { centroid } from "@turf/centroid";
 import { transformRotate } from "@turf/transform-rotate";
 import { transformScale } from "@turf/transform-scale";
 import { union } from "@turf/union";
+import { difference } from "@turf/difference";
+import { intersect } from "@turf/intersect";
 import { featureCollection } from "@turf/helpers";
 import { api } from "~/trpc/react";
 import { splitPolygonByLine, cleanPolygonGeometry } from "~/lib/maps/map-editor-geom";
 import type { EditorFeature } from "./editor-types";
+
+type PolyFeature = Feature<Polygon | MultiPolygon>;
 
 interface UseMapEditorTransformsProps {
   countryId?: string;
@@ -179,64 +184,84 @@ export function useMapEditorTransforms({
     [countryId, selectedIds, allFeatures, updateCity, invalidateAllMapData, debouncedRefetch]
   );
 
-  const mergeSelectedSubdivisions = useCallback(async () => {
-    if (!countryId || selectedIds.size < 2) return;
-    const subs = allFeatures.filter(
-      (f) => selectedIds.has(f.id) && f.type === "subdivision" && f.geometry
-    );
-    if (subs.length < 2) return;
+  const pathfinderOperation = useCallback(
+    async (op: "union" | "subtract" | "intersect") => {
+      if (!countryId || selectedIds.size < 2) return;
+      const subs = allFeatures.filter(
+        (f) => selectedIds.has(f.id) && f.type === "subdivision" && f.geometry
+      );
+      if (subs.length < 2) return;
 
-    let mergedGeom: any = null;
-    const baseSub = subs[0]!;
+      let resultGeom: PolyFeature | null = null;
+      const baseSub = subs[0]!;
 
-    for (const sub of subs) {
-      const feat = { type: "Feature" as const, geometry: sub.geometry as any, properties: {} };
-      if (!mergedGeom) {
-        mergedGeom = feat;
-      } else {
-        try {
-          const res = union(featureCollection([mergedGeom, feat]));
-          if (res) mergedGeom = res;
-        } catch (e) {
-          console.warn("Union failed during merge:", e);
+      for (let i = 0; i < subs.length; i++) {
+        const sub = subs[i]!;
+        const feat: PolyFeature = {
+          type: "Feature",
+          geometry: sub.geometry as Polygon | MultiPolygon,
+          properties: {},
+        };
+        if (!resultGeom) {
+          resultGeom = feat;
+        } else {
+          try {
+            if (op === "union") {
+              const res = union(featureCollection([resultGeom, feat]));
+              if (res) resultGeom = res as PolyFeature;
+            } else if (op === "subtract") {
+              const res = difference(featureCollection([resultGeom, feat]));
+              if (res) resultGeom = res as PolyFeature;
+            } else if (op === "intersect") {
+              const res = intersect(featureCollection([resultGeom, feat]));
+              if (res) resultGeom = res as PolyFeature;
+            }
+          } catch (e) {
+            console.warn(`Pathfinder ${op} failed:`, e);
+          }
         }
       }
-    }
 
-    if (!mergedGeom) return;
+      if (!resultGeom) return;
 
-    const cleaned = cleanPolygonGeometry(mergedGeom.geometry);
-    if (!cleaned) return;
+      const cleaned = cleanPolygonGeometry(resultGeom.geometry);
+      if (!cleaned) return;
 
-    await updateSubdivision.mutateAsync({
-      countryId,
-      subdivisionId: baseSub.id,
-      name: baseSub.name,
-      geometry: cleaned,
-      type: baseSub.properties.type as string,
-      level: Number(baseSub.properties.level) || 1,
-    });
-
-    for (let i = 1; i < subs.length; i++) {
-      await deleteSubdivision.mutateAsync({
+      await updateSubdivision.mutateAsync({
         countryId,
-        subdivisionId: subs[i]!.id,
+        subdivisionId: baseSub.id,
+        name: baseSub.name,
+        geometry: cleaned,
+        type: baseSub.properties.type as string,
+        level: Number(baseSub.properties.level) || 1,
       });
-    }
 
-    clearMultiSelect();
-    invalidateAllMapData();
-    debouncedRefetch();
-  }, [
-    countryId,
-    selectedIds,
-    allFeatures,
-    updateSubdivision,
-    deleteSubdivision,
-    clearMultiSelect,
-    invalidateAllMapData,
-    debouncedRefetch,
-  ]);
+      for (let i = 1; i < subs.length; i++) {
+        await deleteSubdivision.mutateAsync({
+          countryId,
+          subdivisionId: subs[i]!.id,
+        });
+      }
+
+      clearMultiSelect();
+      invalidateAllMapData();
+      debouncedRefetch();
+    },
+    [
+      countryId,
+      selectedIds,
+      allFeatures,
+      updateSubdivision,
+      deleteSubdivision,
+      clearMultiSelect,
+      invalidateAllMapData,
+      debouncedRefetch,
+    ]
+  );
+
+  const mergeSelectedSubdivisions = useCallback(async () => {
+    await pathfinderOperation("union");
+  }, [pathfinderOperation]);
 
   const executeSplitSubdivision = useCallback(
     async (subdivisionId: string, lineCoords: [number, number][]) => {
@@ -290,17 +315,21 @@ export function useMapEditorTransforms({
       const sub = allFeatures.find((f) => f.id === subdivisionId && f.type === "subdivision");
       if (!sub || !sub.geometry) return;
 
-      const feat = { type: "Feature" as const, geometry: sub.geometry as any, properties: {} };
-      let transformed: any;
+      const feat: PolyFeature = {
+        type: "Feature",
+        geometry: sub.geometry as Polygon | MultiPolygon,
+        properties: {},
+      };
+      let transformed: PolyFeature | null = null;
 
       if (transform.type === "rotate") {
         transformed = transformRotate(feat, transform.factor, {
           pivot: transform.pivot ? point(transform.pivot) : undefined,
-        });
+        }) as PolyFeature;
       } else if (transform.type === "scale") {
         transformed = transformScale(feat, transform.factor, {
           origin: transform.pivot ? point(transform.pivot) : undefined,
-        });
+        }) as PolyFeature;
       }
 
       if (!transformed?.geometry) return;
@@ -328,6 +357,7 @@ export function useMapEditorTransforms({
     scaleSelectedCitiesPopulation,
     rotateSelectedCities,
     mergeSelectedSubdivisions,
+    pathfinderOperation,
     executeSplitSubdivision,
     applyGeometryTransformation,
   };

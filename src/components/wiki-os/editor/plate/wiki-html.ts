@@ -42,18 +42,25 @@ export interface ListEl extends BaseEl {
 }
 export interface ListItemEl extends BaseEl {
   type: "li";
+  level?: number;
+  prefix?: string;
 }
 export interface CodeBlockEl extends BaseEl {
   type: "code-block";
 }
 export interface TableEl extends BaseEl {
   type: "table";
+  caption?: string;
+  attributes?: string;
 }
 export interface RowEl extends BaseEl {
   type: "tr";
+  attributes?: string;
 }
 export interface CellEl extends BaseEl {
   type: "td" | "th";
+  attributes?: string;
+  isHeader?: boolean;
 }
 export interface HrEl extends BaseEl {
   type: "hr";
@@ -629,28 +636,60 @@ export function deserializeParsoidHtml(html: string): Descendant[] {
             }
             break;
           }
-          if (FURNITURE_RE.test(cls) || el.querySelector("figure, [typeof*=File]")) {
+          if (FURNITURE_RE.test(cls)) {
             pushRaw(el, "generic");
             break;
           }
           // real (non-infobox) wikitable → structured table model
+          const tableAttrs: string[] = [];
+          if (cls) tableAttrs.push(`class="${cls}"`);
+          const tableStyle = el.getAttribute("style");
+          if (tableStyle) tableAttrs.push(`style="${tableStyle}"`);
+          const caption = el.querySelector("caption")?.textContent?.trim();
+
           const rows: Descendant[] = [];
           el.querySelectorAll("tr").forEach((tr) => {
+            const trAttrs: string[] = [];
+            const trClass = tr.getAttribute("class");
+            if (trClass) trAttrs.push(`class="${trClass}"`);
+            const trStyle = tr.getAttribute("style");
+            if (trStyle) trAttrs.push(`style="${trStyle}"`);
+
             const cells: Descendant[] = [];
             tr.querySelectorAll("th,td").forEach((cell) => {
+              const attrs: string[] = [];
+              const colspan = cell.getAttribute("colspan");
+              if (colspan) attrs.push(`colspan="${colspan}"`);
+              const rowspan = cell.getAttribute("rowspan");
+              if (rowspan) attrs.push(`rowspan="${rowspan}"`);
+              const cellStyle = cell.getAttribute("style");
+              if (cellStyle) attrs.push(`style="${cellStyle}"`);
+              const classAttr = cell.getAttribute("class");
+              if (classAttr) attrs.push(`class="${classAttr}"`);
+
               cells.push({
                 type: cell.tagName.toLowerCase(),
+                attributes: attrs.length > 0 ? attrs.join(" ") : undefined,
                 children: convertBlockChildren(cell),
                 id: nextId(),
               } as unknown as Descendant);
             });
             if (cells.length > 0)
-              rows.push({ type: "tr", children: cells, id: nextId() } as unknown as Descendant);
+              rows.push({
+                type: "tr",
+                attributes: trAttrs.length > 0 ? trAttrs.join(" ") : undefined,
+                children: cells,
+                id: nextId(),
+              } as unknown as Descendant);
           });
-          if (rows.length > 0 && !el.querySelector("[typeof*=Transclusion], figure")) {
-            blocks.push({ type: "table", children: rows, id: nextId() } as unknown as Descendant);
-          } else if (rows.length > 0) {
-            pushRaw(el, "generic");
+          if (rows.length > 0) {
+            blocks.push({
+              type: "table",
+              caption: caption || undefined,
+              attributes: tableAttrs.length > 0 ? tableAttrs.join(" ") : undefined,
+              children: rows,
+              id: nextId(),
+            } as unknown as Descendant);
           }
           break;
         }
@@ -780,15 +819,22 @@ function serializeBlock(el: WikiElement): string {
       return `<${el.type}>${items}</${el.type}>`;
     }
     case "table": {
-      const rows = (el.children as RowEl[])
-        .map(
-          (tr) =>
-            `<tr>${(tr.children as CellEl[])
-              .map((cell) => `<${cell.type}>${serializeInline(cell.children)}</${cell.type}>`)
-              .join("")}</tr>`
-        )
+      const tb = el as TableEl;
+      const caption = tb.caption ? `<caption>${esc(tb.caption)}</caption>` : "";
+      const rows = ((tb.children as RowEl[]) || [])
+        .map((tr) => {
+          const rowAttrs = tr.attributes ? ` ${tr.attributes}` : "";
+          const cells = ((tr.children as CellEl[]) || [])
+            .map((cell) => {
+              const cellAttrs = cell.attributes ? ` ${cell.attributes}` : "";
+              return `<${cell.type}${cellAttrs}>${serializeInline(cell.children)}</${cell.type}>`;
+            })
+            .join("");
+          return `<tr${rowAttrs}>${cells}</tr>`;
+        })
         .join("");
-      return `<table style="border-collapse:collapse;width:100%"><tbody>${rows}</tbody></table>`;
+      const tableAttrs = tb.attributes ? ` ${tb.attributes}` : ' class="wikitable"';
+      return `<table${tableAttrs}>${caption}<tbody>${rows}</tbody></table>`;
     }
     case "hr":
       return "<hr>";

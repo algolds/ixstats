@@ -57,14 +57,14 @@ const TRENDING_SOURCE: Record<
   },
   forum: {
     icon: MessageSquare,
-    color: "text-violet-700 dark:text-violet-300",
-    bg: "bg-violet-500/15 border-violet-500/30",
+    color: "text-orange-600 dark:text-orange-400",
+    bg: "bg-orange-500/15 border-orange-500/30",
     label: "Forum",
   },
   wiki: {
     icon: BookOpen,
-    color: "text-teal-700 dark:text-teal-300",
-    bg: "bg-teal-500/15 border-teal-500/30",
+    color: "text-wiki",
+    bg: "bg-wiki/15 border-wiki/30",
     label: "Wiki",
   },
   ixstats: {
@@ -141,7 +141,7 @@ export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwi
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-teal-500" />
+        <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-wiki" />
         <span className="text-foreground truncate text-sm font-semibold">{title}</span>
         <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-medium">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
@@ -177,7 +177,7 @@ export function ForumPreviewContent({ threadId }: { threadId: number }) {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
           <span className="text-foreground text-sm font-medium">Loading thread...</span>
         </div>
         <div className="bg-muted h-10 animate-pulse rounded" />
@@ -187,11 +187,11 @@ export function ForumPreviewContent({ threadId }: { threadId: number }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
         <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
       </div>
       {thread.forumName && (
-        <span className="inline-block rounded-md bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400">
+        <span className="inline-block rounded-md bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-400">
           {thread.forumName}
         </span>
       )}
@@ -429,7 +429,7 @@ export function TrendingSectionWidget() {
 
                     <div className="text-muted-foreground/70 mt-1 flex items-center gap-2.5 text-[9px] font-medium tabular-nums">
                       {item.engagement?.likes > 0 && (
-                        <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400">
+                        <span className="flex items-center gap-0.5 text-red-500">
                           <Heart className="h-2.5 w-2.5 fill-current" />
                           {item.engagement.likes}
                         </span>

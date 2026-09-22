@@ -55,7 +55,7 @@ export function MessagesNewConversationModal({
             disabled={isCreating}
             className="border-border/50 hover:bg-muted/50 flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600">
               <MessageSquare className="h-4 w-4 text-white" />
             </div>
             <div>
@@ -99,7 +99,7 @@ export function MessagesNewConversationModal({
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.country?.flag ?? undefined} />
-                      <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-semibold text-white">
+                      <AvatarFallback className="bg-emerald-600 text-xs font-semibold text-white">
                         {(user.country?.name ?? user.displayName ?? "?")
                           .split(" ")
                           .map((n: string) => n[0])

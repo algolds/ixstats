@@ -31,7 +31,7 @@ export interface StatGaugeProps {
     medium?: number;
     high?: number;
   };
-  color?: "green" | "blue" | "purple" | "red" | "amber" | "cyan";
+  color?: "emerald" | "green" | "blue" | "indigo" | "purple" | "red" | "amber" | "cyan";
   size?: "sm" | "md" | "lg";
   animate?: boolean;
   className?: string;
@@ -39,46 +39,60 @@ export interface StatGaugeProps {
 
 // Color configurations
 const colorConfig = {
+  emerald: {
+    iconBg: "bg-emerald-500",
+    text: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    progress: "bg-emerald-500",
+  },
   green: {
-    gradient: "from-green-500 to-emerald-500",
-    text: "text-green-600 dark:text-green-400",
-    bg: "bg-green-50 dark:bg-green-900/20",
-    border: "border-green-200 dark:border-green-800",
-    progress: "bg-green-500",
+    iconBg: "bg-emerald-500",
+    text: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    progress: "bg-emerald-500",
   },
   blue: {
-    gradient: "from-blue-500 to-cyan-500",
+    iconBg: "bg-blue-500",
     text: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-50 dark:bg-blue-900/20",
-    border: "border-blue-200 dark:border-blue-800",
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/20",
     progress: "bg-blue-500",
   },
+  indigo: {
+    iconBg: "bg-indigo-500",
+    text: "text-indigo-600 dark:text-indigo-400",
+    bg: "bg-indigo-500/10",
+    border: "border-indigo-500/20",
+    progress: "bg-indigo-500",
+  },
   purple: {
-    gradient: "from-purple-500 to-violet-500",
-    text: "text-purple-600 dark:text-purple-400",
-    bg: "bg-purple-50 dark:bg-purple-900/20",
-    border: "border-purple-200 dark:border-purple-800",
-    progress: "bg-purple-500",
+    iconBg: "bg-indigo-500",
+    text: "text-indigo-600 dark:text-indigo-400",
+    bg: "bg-indigo-500/10",
+    border: "border-indigo-500/20",
+    progress: "bg-indigo-500",
   },
   red: {
-    gradient: "from-red-500 to-rose-500",
+    iconBg: "bg-red-500",
     text: "text-red-600 dark:text-red-400",
-    bg: "bg-red-50 dark:bg-red-900/20",
-    border: "border-red-200 dark:border-red-800",
+    bg: "bg-red-500/10",
+    border: "border-red-500/20",
     progress: "bg-red-500",
   },
   amber: {
-    gradient: "from-amber-500 to-yellow-500",
+    iconBg: "bg-amber-500",
     text: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-50 dark:bg-amber-900/20",
-    border: "border-amber-200 dark:border-amber-800",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
     progress: "bg-amber-500",
   },
   cyan: {
-    gradient: "from-cyan-500 to-teal-500",
+    iconBg: "bg-cyan-500",
     text: "text-cyan-600 dark:text-cyan-400",
-    bg: "bg-cyan-50 dark:bg-cyan-900/20",
-    border: "border-cyan-200 dark:border-cyan-800",
+    bg: "bg-cyan-500/10",
+    border: "border-cyan-500/20",
     progress: "bg-cyan-500",
   },
 };
@@ -135,9 +149,9 @@ export function StatGauge({
   const getStatusColor = () => {
     if (!thresholds) return colors.progress;
 
-    if (thresholds.high && safeValue >= thresholds.high) return "bg-green-500";
-    if (thresholds.medium && safeValue >= thresholds.medium) return "bg-yellow-500";
-    if (thresholds.low && safeValue >= thresholds.low) return "bg-orange-500";
+    if (thresholds.high && safeValue >= thresholds.high) return "bg-emerald-500";
+    if (thresholds.medium && safeValue >= thresholds.medium) return "bg-amber-500";
+    if (thresholds.low && safeValue >= thresholds.low) return "bg-amber-500";
     return "bg-red-500";
   };
 
@@ -159,7 +173,7 @@ export function StatGauge({
       <div
         className={cn(
           "flex items-center gap-1 text-xs",
-          isPositive ? "text-green-500" : "text-red-500"
+          isPositive ? "text-emerald-500" : "text-red-500"
         )}
       >
         <TIcon className="h-3 w-3" />
@@ -187,7 +201,7 @@ export function StatGauge({
       <div className="mb-2 flex items-start justify-between">
         <div className="flex items-center gap-2">
           {Icon && (
-            <div className={cn("rounded-lg bg-gradient-to-br p-1.5", colors.gradient)}>
+            <div className={cn("rounded-lg p-1.5", colors.iconBg)}>
               <Icon className={cn(sizes.icon, "text-white")} />
             </div>
           )}
@@ -320,16 +334,17 @@ export function DistributionBar({
   };
 
   const colorClasses: Record<string, string> = {
-    green: "bg-green-500",
+    green: "bg-emerald-500",
+    emerald: "bg-emerald-500",
     blue: "bg-blue-500",
-    purple: "bg-purple-500",
+    indigo: "bg-indigo-500",
+    purple: "bg-indigo-500",
+    violet: "bg-indigo-500",
     red: "bg-red-500",
     amber: "bg-amber-500",
+    orange: "bg-amber-500",
     cyan: "bg-cyan-500",
-    emerald: "bg-emerald-500",
-    violet: "bg-violet-500",
-    pink: "bg-pink-500",
-    orange: "bg-orange-500",
+    pink: "bg-blue-500",
   };
 
   const safeTotal = total || 1;

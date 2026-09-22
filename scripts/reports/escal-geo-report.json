@@ -1,0 +1,150 @@
+{
+  "country": "Escal",
+  "featureId": "Escal",
+  "generatedAt": "2026-09-06T20:07:14.217Z",
+  "area": {
+    "km2": 14038,
+    "sqMi": 5420,
+    "boundingBox": {
+      "minLng": -90.7407,
+      "minLat": -52.4843,
+      "maxLng": -86.5306,
+      "maxLat": -50.4824
+    },
+    "nsSpanKm": 223,
+    "ewSpanKm": 291,
+    "centroid": {
+      "lng": -88.552,
+      "lat": -51.589
+    },
+    "perimeterKm": 995
+  },
+  "elevation": {
+    "zones": [
+      {
+        "zone": "Coastal Lowlands",
+        "minM": 0,
+        "maxM": 99,
+        "areaKm2": 10927,
+        "percent": 77.8
+      },
+      {
+        "zone": "Low Hills",
+        "minM": 100,
+        "maxM": 349,
+        "areaKm2": 2325,
+        "percent": 16.6
+      },
+      {
+        "zone": "Rolling Hills",
+        "minM": 350,
+        "maxM": 499,
+        "areaKm2": 787,
+        "percent": 5.6
+      }
+    ],
+    "minElevationM": 0,
+    "maxElevationM": 499,
+    "meanElevationM": 100,
+    "dominantTerrain": "Coastal Lowlands",
+    "terrainRoughness": 0.0253
+  },
+  "climate": {
+    "zones": [
+      {
+        "type": "Temperate Continental (Dc)",
+        "areaKm2": 14038,
+        "percent": 100,
+        "description": "Cold winters, warm summers, moderate precipitation"
+      }
+    ],
+    "dominantType": "Temperate Continental (Dc)",
+    "shannonDiversity": -0.042,
+    "temperature": {
+      "meanC": 1,
+      "meanF": 33.8,
+      "summerDailyHighC": 19.3,
+      "winterDailyLowC": -17.3,
+      "seasonalRangeC": 23.1,
+      "diurnalRangeC": 13.5
+    },
+    "annualPrecipitationMm": 732
+  },
+  "hydrography": {
+    "riverCount": 0,
+    "totalRiverLengthKm": 0,
+    "lakeCount": 0,
+    "totalLakeAreaKm2": 0,
+    "drainageDensity": 0
+  },
+  "position": {
+    "hemisphere": "Southern",
+    "latitudeBand": "Temperate",
+    "atmosphericZone": "Subpolar low zone",
+    "distanceFromEquatorKm": 5736,
+    "timezone": "UTC-6"
+  },
+  "neighbors": [],
+  "coastline": {
+    "hasCoastline": true,
+    "isLandlocked": false,
+    "coastlineKm": 995,
+    "landBorderKm": 0,
+    "coastlinePercent": 100
+  },
+  "shape": {
+    "compactnessRatio": 0.178,
+    "compactness": "Highly irregular or fragmented",
+    "elongationRatio": 1.31,
+    "elongation": "Slightly elongated E-W",
+    "fragments": 5,
+    "islands": 2
+  },
+  "iceCoverage": {
+    "hasIcecaps": false,
+    "areaKm2": 0,
+    "percent": 0
+  },
+  "insights": {
+    "agriculture": {
+      "arableLandPercent": 80,
+      "arableLandKm2": 11231,
+      "growingSeasonDays": 180,
+      "waterAvailability": "Limited",
+      "waterScore": 37,
+      "cropSuitability": [
+        "Grain",
+        "Potatoes",
+        "Flax"
+      ],
+      "overallRating": "Good"
+    },
+    "strategic": {
+      "maritimeIndex": "Maritime power (extensive coastline)",
+      "coastlineToAreaRatio": 840,
+      "strategicDepthKm": 111,
+      "borderDefensibility": "Open terrain (few natural barriers)",
+      "mountainCoveragePercent": 0,
+      "islandExposure": "Minor archipelagic (2 islands)",
+      "accessPoints": "Limited entry points"
+    },
+    "habitability": {
+      "score": 69,
+      "descriptor": "Very habitable",
+      "climateComfort": 32,
+      "waterAccess": 7,
+      "terrainAccess": 30,
+      "keyFactors": [
+        "Favorable climate",
+        "Water scarcity",
+        "Accessible terrain"
+      ]
+    },
+    "biome": {
+      "dominantBiome": "Mixed deciduous-coniferous forest",
+      "ecoRegionCount": 3,
+      "ecologicalDiversity": "Homogeneous",
+      "summary": "The landscape is dominated by mixed deciduous-coniferous forest (Temperate Continental), covering over half the country."
+    }
+  }
+}

@@ -269,13 +269,13 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                         </div>
                         <div className="text-center">
                           <div className="text-xs text-white/50">Value</div>
-                          <div className="flex items-center justify-center gap-0.5 text-sm font-bold text-green-400">
+                          <div className="flex items-center justify-center gap-0.5 text-sm font-bold text-amber-400">
                             <IxCreditsSymbol className="h-3.5 w-3.5 shrink-0" />0
                           </div>
                         </div>
                         <div className="text-center">
                           <div className="text-xs text-white/50">Likes</div>
-                          <div className="flex items-center justify-center gap-1 text-sm font-bold text-pink-400">
+                          <div className="flex items-center justify-center gap-1 text-sm font-bold text-red-400">
                             <Heart className="h-3 w-3" />0
                           </div>
                         </div>

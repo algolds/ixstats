@@ -19,25 +19,6 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 const recipeTypeEnum = z.enum(["FUSION", "EVOLUTION"]);
 
 /**
- * Material requirement schema
- */
-const _materialRequirementSchema = z.object({
-  cardId: z.string().optional(), // Specific card ID (for evolution)
-  rarity: z.string().optional(), // Required rarity (for fusion)
-  type: z.string().optional(), // Required card type
-  quantity: z.number().int().min(1), // Number of cards needed
-});
-
-/**
- * Unlock requirement schema
- */
-const _unlockRequirementSchema = z.object({
-  minLevel: z.number().int().optional(), // Minimum collector level
-  achievements: z.array(z.string()).optional(), // Required achievements
-  completedRecipes: z.array(z.string()).optional(), // Required completed recipes
-});
-
-/**
  * Calculate success rate based on card rarity
  */
 function calculateSuccessRate(resultRarity: string): number {
@@ -83,54 +64,6 @@ function calculateXPReward(resultRarity: string): number {
     MYTHIC: 1000,
   };
   return xp[resultRarity] ?? 50;
-}
-
-/**
- * Check if user meets unlock requirements
- */
-// oxlint-disable-next-line typescript/no-unused-vars
-async function checkUnlockRequirements(
-  userId: string,
-  requirements: any,
-  db: any
-): Promise<boolean> {
-  if (!requirements) return true;
-
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { collectorLevel: true },
-  });
-
-  if (!user) return false;
-
-  // Check collector level
-  if (requirements.minLevel && user.collectorLevel < requirements.minLevel) {
-    return false;
-  }
-
-  // Check achievements (placeholder - implement when achievement system is ready)
-  if (requirements.achievements && requirements.achievements.length > 0) {
-    // TODO: Check achievements
-  }
-
-  // Check completed recipes
-  if (requirements.completedRecipes && requirements.completedRecipes.length > 0) {
-    const completedRecipes = await db.craftingHistory.findMany({
-      where: {
-        userId,
-        success: true,
-        recipeId: { in: requirements.completedRecipes },
-      },
-      select: { recipeId: true },
-      distinct: ["recipeId"],
-    });
-
-    if (completedRecipes.length < requirements.completedRecipes.length) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 export const craftingAdminRouter = createTRPCRouter({

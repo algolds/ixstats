@@ -53,13 +53,13 @@ export function PostBody({
     <div className={className}>
       {/* Blurb Header Badge */}
       {blurbMeta?.isBlurb && (
-        <div className="mb-2.5 flex items-center gap-2 text-xs font-semibold text-purple-400">
+        <div className="mb-2.5 flex items-center gap-2 text-xs font-semibold text-blue-400">
           <BookOpen className="h-3.5 w-3.5" />
           <span className="tracking-tight">{blurbMeta.promptTitle ?? "Topic Tuesday"}</span>
           {blurbMeta.promptSlug && (
             <Link
               href={`/thinkpages/topic/${blurbMeta.promptSlug}`}
-              className="text-purple-400/80 hover:text-purple-300 hover:underline"
+              className="text-blue-400/80 hover:text-blue-300 hover:underline"
             >
               View Topic →
             </Link>

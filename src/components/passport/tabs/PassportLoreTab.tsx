@@ -292,7 +292,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1 rounded-md border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-purple-600 dark:text-purple-400">
+                      <span className="flex items-center gap-1 rounded-md border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
                         <Globe className="h-3 w-3" />
                         Language Pack
                       </span>
@@ -322,7 +322,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                     <Link
                       href={`/onoma/pack/${item.slug || item.id}`}
                       data-cuelume-press="soft"
-                      className="inline-flex cursor-pointer items-center gap-1 font-mono text-xs font-bold text-purple-600 hover:underline dark:text-purple-400"
+                      className="inline-flex cursor-pointer items-center gap-1 font-mono text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
                     >
                       <span>View Pack</span>
                       <ArrowRight className="h-3 w-3" />
@@ -459,7 +459,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                       "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-2xs",
                       item.type === "publish" && "border-blue-500/20 bg-blue-500/10 text-blue-500",
                       item.type === "revision" &&
-                        "border-purple-500/20 bg-purple-500/10 text-purple-500",
+                        "border-indigo-500/20 bg-indigo-500/10 text-indigo-500",
                       item.type === "minor_edit" &&
                         "border-stone-500/20 bg-stone-500/10 text-stone-500",
                       item.type === "discussion" &&
@@ -484,7 +484,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                           item.type === "publish" &&
                             "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400",
                           item.type === "revision" &&
-                            "border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400",
+                            "border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
                           item.type === "minor_edit" &&
                             "border-stone-500/20 bg-stone-500/10 text-stone-600 dark:text-stone-400",
                           item.type === "discussion" &&

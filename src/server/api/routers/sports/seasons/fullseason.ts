@@ -1,8 +1,7 @@
 /**
- * MyLeague — Sports Router
+ * MyLeague — Sports Router (Full Season Simulation)
  *
- * tRPC router for the IxStates sports & competition engine.
- * Manages leagues, teams, seasons, simulations, and historical records.
+ * High-performance batched simulation router for IxStates sports engine.
  */
 
 import { z } from "zod";
@@ -18,20 +17,12 @@ import {
   getTeamModifiers,
 } from "~/lib/sports";
 
-// ─── Router ───────────────────────────────────────────────────────────────────
-
 export const sportsSeasonsFullseasonRouter = createTRPCRouter({
-  // ═══ League Management ══════════════════════════════════════════════════════
-
-  // ═══ Team Management ═════════════════════════════════════════════════════════
-
-  // ═══ Season & Simulation ════════════════════════════════════════════════════
-
   simulateFullSeason: protectedProcedure
     .input(z.object({ seasonId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        let currentSeason = await (ctx.db as any).sportSeason.findUnique({
+        let currentSeason = await ctx.db.sportSeason.findUnique({
           where: { id: input.seasonId },
           include: { league: true },
         });
@@ -42,7 +33,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
 
         if (currentSeason.league.archetype === "circuit") {
           // Simulate all remaining races
-          const races = await (ctx.db as any).sportRace.findMany({
+          const races = await ctx.db.sportRace.findMany({
             where: {
               seasonId: input.seasonId,
               status: { in: ["upcoming", "qualifying_complete"] },
@@ -51,7 +42,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
           });
 
           // Fetch all drivers for the season's teams
-          const teams = await (ctx.db as any).sportTeam.findMany({
+          const teams = await ctx.db.sportTeam.findMany({
             where: {
               leagueId: currentSeason.leagueId,
               players: { some: { position: "driver", isActive: true } },
@@ -97,57 +88,45 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
               isWet: false,
             });
 
-            await (ctx.db as any).sportRace.update({
+            await ctx.db.sportRace.update({
               where: { id: race.id },
               data: {
-                grid: allDrivers.map((d, idx) => ({
-                  driverId: d.driverId,
-                  teamId: d.teamId,
-                  gridPosition: idx + 1,
-                })) as any,
-                results: raceResult.positions as any,
                 status: "completed",
-                raceIxTime: IxTime.getCurrentIxTime(),
+                results: raceResult.positions as any,
               },
             });
 
-            // Update standings from race results
-            const results = raceResult.positions;
-            if (Array.isArray(results)) {
-              for (const r of results) {
-                if (r.teamId && r.points !== undefined) {
-                  await (ctx.db as any).sportStanding.updateMany({
-                    where: { seasonId: input.seasonId, teamId: r.teamId as string },
-                    data: { points: { increment: (r.points as number) ?? 0 } },
-                  });
-                }
+            // Update standings for top 10 positions
+            for (const r of raceResult.positions.slice(0, 10)) {
+              if (r.points > 0) {
+                await ctx.db.sportStanding.updateMany({
+                  where: { seasonId: input.seasonId, teamId: r.teamId },
+                  data: {
+                    points: { increment: r.points },
+                    pointsFor: { increment: r.points },
+                  },
+                });
               }
             }
           }
         } else {
-          // League, bracket, or multi-stage tournament
-          // Pre-fetch all teams with rosters for the entire league to avoid N+1 queries
-          const leagueTeams = await ctx.db.sportTeam.findMany({
+          // League, Knockout, or Multi-Stage Tournament Simulation
+          const allTeams = await ctx.db.sportTeam.findMany({
             where: { leagueId: currentSeason.leagueId },
             include: {
               players: { where: { isActive: true } },
               coaches: { where: { isActive: true } },
             },
           });
+          const teamsMap = new Map(allTeams.map((t) => [t.id, t]));
 
-          const teamsMap = new Map<string, any>();
-          const nationIds = new Set<string>();
-          for (const t of leagueTeams) {
-            teamsMap.set(t.id, t);
-            if (t.nationId) nationIds.add(t.nationId);
-          }
-
-          // Pre-fetch storyteller effects
+          // Pre-fetch storyteller effects for all involved teams
+          const nationIds = allTeams.map((t) => t.nationId).filter(Boolean) as string[];
           const effectsMap = new Map<string, any[]>();
-          if (nationIds.size > 0) {
+          if (nationIds.length > 0) {
             const effects = await ctx.db.storytellerEffect.findMany({
               where: {
-                countryId: { in: Array.from(nationIds) },
+                countryId: { in: nationIds },
                 isActive: true,
               },
             });
@@ -161,22 +140,27 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
           }
 
           let seasonInProgress = true;
-          while (seasonInProgress) {
-            const activeStage = (currentSeason as any).activeStage ?? 1;
 
-            // 1. Simulate matches of this stage
-            const pendingMatches = await (ctx.db as any).sportMatch.findMany({
-              where: { seasonId: input.seasonId, stage: activeStage, status: "scheduled" },
+          while (seasonInProgress && currentSeason) {
+            const activeStage = currentSeason.activeStage ?? 1;
+
+            // 1. Simulate matches of this stage day-by-day (batched in transactions)
+            const scheduledMatches = await ctx.db.sportMatch.findMany({
+              where: {
+                seasonId: input.seasonId,
+                stage: activeStage,
+                status: "scheduled",
+              },
+              select: { matchDay: true },
+              distinct: ["matchDay"],
+              orderBy: { matchDay: "asc" },
             });
 
-            if (pendingMatches.length > 0) {
-              // Get match days
-              const matchDays = Array.from(
-                new Set(pendingMatches.map((m: any) => m.matchDay))
-              ).sort((a: any, b: any) => a - b) as number[];
+            if (scheduledMatches.length > 0) {
+              const matchDays = scheduledMatches.map((m) => m.matchDay);
+
               for (const matchDay of matchDays) {
-                // Simulate all matches on this matchDay in this stage
-                const matches = (await (ctx.db as any).sportMatch.findMany({
+                const matches = await ctx.db.sportMatch.findMany({
                   where: {
                     seasonId: input.seasonId,
                     stage: activeStage,
@@ -197,219 +181,226 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
                       },
                     },
                   },
-                })) as any[];
+                });
 
-                for (let i = 0; i < matches.length; i++) {
-                  const match = matches[i];
-                  const seed = simpleHash(input.seasonId, matchDay + activeStage * 100, i);
+                // Batch matchday database operations atomically
+                await ctx.db.$transaction(async (tx) => {
+                  for (let i = 0; i < matches.length; i++) {
+                    const match = matches[i];
+                    if (!match || !currentSeason) continue;
+                    const seed = simpleHash(input.seasonId, matchDay + activeStage * 100, i);
 
-                  const homeRatings = computeTeamRatingVector(
-                    match.homeTeam.players as any[],
-                    match.homeTeam.coaches as any[],
-                    currentSeason.league.sportPreset
-                  );
-                  const awayRatings = computeTeamRatingVector(
-                    match.awayTeam.players as any[],
-                    match.awayTeam.coaches as any[],
-                    currentSeason.league.sportPreset
-                  );
+                    const homeRatings = computeTeamRatingVector(
+                      match.homeTeam.players as any,
+                      match.homeTeam.coaches as any,
+                      currentSeason.league.sportPreset
+                    );
+                    const awayRatings = computeTeamRatingVector(
+                      match.awayTeam.players as any,
+                      match.awayTeam.coaches as any,
+                      currentSeason.league.sportPreset
+                    );
 
-                  const homeTeamModifiers = await getTeamModifiers(
-                    match.homeTeam,
-                    ctx.db,
-                    effectsMap
-                  );
-                  const awayTeamModifiers = await getTeamModifiers(
-                    match.awayTeam,
-                    ctx.db,
-                    effectsMap
-                  );
+                    const homeTeamModifiers = await getTeamModifiers(
+                      match.homeTeam,
+                      tx,
+                      effectsMap
+                    );
+                    const awayTeamModifiers = await getTeamModifiers(
+                      match.awayTeam,
+                      tx,
+                      effectsMap
+                    );
 
-                  const rivalry = await (ctx.db as any).sportRivalry.findFirst({
-                    where: {
-                      OR: [
-                        { team1Id: match.homeTeamId, team2Id: match.awayTeamId },
-                        { team1Id: match.awayTeamId, team2Id: match.homeTeamId },
-                      ],
-                    },
-                  });
-                  const rivalryIntensity = rivalry?.intensity ?? 0;
-                  const homeAdvantage = rivalryIntensity > 70 ? 65 : 55;
+                    const rivalry = await tx.sportRivalry.findFirst({
+                      where: {
+                        OR: [
+                          { team1Id: match.homeTeamId, team2Id: match.awayTeamId },
+                          { team1Id: match.awayTeamId, team2Id: match.homeTeamId },
+                        ],
+                      },
+                    });
+                    const rivalryIntensity = rivalry?.intensity ?? 0;
+                    const homeAdvantage = rivalryIntensity > 70 ? 65 : 55;
 
-                  const result = resolveMatch({
-                    sport: currentSeason.league.sportPreset,
-                    homeTeam: homeRatings,
-                    awayTeam: awayRatings,
-                    archetype: currentSeason.league.archetype,
-                    seed,
-                    homeTeamModifiers,
-                    awayTeamModifiers,
-                    homeRoster: match.homeTeam.players as any,
-                    awayRoster: match.awayTeam.players as any,
-                    context: { homeAdvantage },
-                  });
+                    const result = resolveMatch({
+                      sport: currentSeason.league.sportPreset,
+                      homeTeam: homeRatings,
+                      awayTeam: awayRatings,
+                      archetype: currentSeason.league.archetype,
+                      seed,
+                      homeTeamModifiers,
+                      awayTeamModifiers,
+                      homeRoster: match.homeTeam.players as any,
+                      awayRoster: match.awayTeam.players as any,
+                      context: { homeAdvantage },
+                    });
 
-                  const resRec = result as any;
-                  const homeScore = (resRec.homeScore as number) ?? 0;
-                  const awayScore = (resRec.awayScore as number) ?? 0;
-                  const homeRatingDelta = (resRec.homeRatingDelta as number) ?? 0;
-                  const awayRatingDelta = (resRec.awayRatingDelta as number) ?? 0;
+                    const resRec = result as any;
+                    const homeScore = (resRec.homeScore as number) ?? 0;
+                    const awayScore = (resRec.awayScore as number) ?? 0;
+                    const homeRatingDelta = (resRec.homeRatingDelta as number) ?? 0;
+                    const awayRatingDelta = (resRec.awayRatingDelta as number) ?? 0;
 
-                  const homeRatingAfter = {
-                    ...homeRatings,
-                    overall:
-                      Math.round(((homeRatings.overall as number) + homeRatingDelta) * 100) / 100,
-                  };
-                  const awayRatingAfter = {
-                    ...awayRatings,
-                    overall:
-                      Math.round(((awayRatings.overall as number) + awayRatingDelta) * 100) / 100,
-                  };
+                    const homeRatingAfter = {
+                      ...homeRatings,
+                      overall:
+                        Math.round(((homeRatings.overall as number) + homeRatingDelta) * 100) / 100,
+                    };
+                    const awayRatingAfter = {
+                      ...awayRatings,
+                      overall:
+                        Math.round(((awayRatings.overall as number) + awayRatingDelta) * 100) / 100,
+                    };
 
-                  const winner =
-                    homeScore > awayScore
-                      ? match.homeTeamId
-                      : awayScore > homeScore
-                        ? match.awayTeamId
-                        : null;
-                  const status = winner
-                    ? homeScore > awayScore
-                      ? "home_win"
-                      : "away_win"
-                    : "draw";
+                    const winner =
+                      homeScore > awayScore
+                        ? match.homeTeamId
+                        : awayScore > homeScore
+                          ? match.awayTeamId
+                          : null;
+                    const status = winner
+                      ? homeScore > awayScore
+                        ? "home_win"
+                        : "away_win"
+                      : "draw";
 
-                  await (ctx.db as any).sportMatch.update({
-                    where: { id: match.id },
-                    data: {
-                      homeScore,
-                      awayScore,
-                      status: "completed",
-                      resolvedIxTime: IxTime.getCurrentIxTime(),
-                      matchStats: {
-                        keyStats: result.keyStats,
-                        evaluation: result.evaluation,
-                        trace: result.trace,
-                      } as any,
-                      homeRatingBefore: { ...homeRatings },
-                      awayRatingBefore: { ...awayRatings },
-                      homeRatingAfter: { ...homeRatingAfter },
-                      awayRatingAfter: { ...awayRatingAfter },
-                    },
-                  });
+                    await tx.sportMatch.update({
+                      where: { id: match.id },
+                      data: {
+                        homeScore,
+                        awayScore,
+                        status: "completed",
+                        resolvedIxTime: IxTime.getCurrentIxTime(),
+                        matchStats: {
+                          keyStats: result.keyStats,
+                          evaluation: result.evaluation,
+                          trace: result.trace,
+                        } as any,
+                        homeRatingBefore: { ...homeRatings },
+                        awayRatingBefore: { ...awayRatings },
+                        homeRatingAfter: { ...homeRatingAfter },
+                        awayRatingAfter: { ...awayRatingAfter },
+                      },
+                    });
 
-                  // Update team season rating vectors
-                  await (ctx.db as any).sportTeamSeason.updateMany({
-                    where: { seasonId: input.seasonId, teamId: match.homeTeamId },
-                    data: { ratingVector: { ...homeRatingAfter } },
-                  });
-                  await (ctx.db as any).sportTeamSeason.updateMany({
-                    where: { seasonId: input.seasonId, teamId: match.awayTeamId },
-                    data: { ratingVector: { ...awayRatingAfter } },
-                  });
-
-                  // Update standings (for group stage or round robin)
-                  if (status === "home_win") {
-                    await (ctx.db as any).sportStanding.updateMany({
+                    // Update team season rating vectors
+                    await tx.sportTeamSeason.updateMany({
                       where: { seasonId: input.seasonId, teamId: match.homeTeamId },
-                      data: {
-                        wins: { increment: 1 },
-                        points: { increment: 3 },
-                        pointsFor: { increment: homeScore },
-                        pointsAgainst: { increment: awayScore },
-                      },
+                      data: { ratingVector: { ...homeRatingAfter } },
                     });
-                    await (ctx.db as any).sportStanding.updateMany({
+                    await tx.sportTeamSeason.updateMany({
                       where: { seasonId: input.seasonId, teamId: match.awayTeamId },
-                      data: {
-                        losses: { increment: 1 },
-                        pointsFor: { increment: awayScore },
-                        pointsAgainst: { increment: homeScore },
-                      },
+                      data: { ratingVector: { ...awayRatingAfter } },
                     });
-                  } else if (status === "away_win") {
-                    await (ctx.db as any).sportStanding.updateMany({
-                      where: { seasonId: input.seasonId, teamId: match.awayTeamId },
-                      data: {
-                        wins: { increment: 1 },
-                        points: { increment: 3 },
-                        pointsFor: { increment: awayScore },
-                        pointsAgainst: { increment: homeScore },
+
+                    // Update standings
+                    if (status === "home_win") {
+                      await tx.sportStanding.updateMany({
+                        where: { seasonId: input.seasonId, teamId: match.homeTeamId },
+                        data: {
+                          wins: { increment: 1 },
+                          points: { increment: 3 },
+                          pointsFor: { increment: homeScore },
+                          pointsAgainst: { increment: awayScore },
+                        },
+                      });
+                      await tx.sportStanding.updateMany({
+                        where: { seasonId: input.seasonId, teamId: match.awayTeamId },
+                        data: {
+                          losses: { increment: 1 },
+                          pointsFor: { increment: awayScore },
+                          pointsAgainst: { increment: homeScore },
+                        },
+                      });
+                    } else if (status === "away_win") {
+                      await tx.sportStanding.updateMany({
+                        where: { seasonId: input.seasonId, teamId: match.awayTeamId },
+                        data: {
+                          wins: { increment: 1 },
+                          points: { increment: 3 },
+                          pointsFor: { increment: awayScore },
+                          pointsAgainst: { increment: homeScore },
+                        },
+                      });
+                      await tx.sportStanding.updateMany({
+                        where: { seasonId: input.seasonId, teamId: match.homeTeamId },
+                        data: {
+                          losses: { increment: 1 },
+                          pointsFor: { increment: homeScore },
+                          pointsAgainst: { increment: awayScore },
+                        },
+                      });
+                    } else {
+                      await tx.sportStanding.updateMany({
+                        where: { seasonId: input.seasonId, teamId: match.homeTeamId },
+                        data: {
+                          draws: { increment: 1 },
+                          points: { increment: 1 },
+                          pointsFor: { increment: homeScore },
+                          pointsAgainst: { increment: awayScore },
+                        },
+                      });
+                      await tx.sportStanding.updateMany({
+                        where: { seasonId: input.seasonId, teamId: match.awayTeamId },
+                        data: {
+                          draws: { increment: 1 },
+                          points: { increment: 1 },
+                          pointsFor: { increment: awayScore },
+                          pointsAgainst: { increment: homeScore },
+                        },
+                      });
+                    }
+
+                    // Update player morale
+                    const homePlayerIds = match.homeTeam.players.map((p) => p.id);
+                    const awayPlayerIds = match.awayTeam.players.map((p) => p.id);
+
+                    if (status === "home_win") {
+                      await tx.sportPlayer.updateMany({
+                        where: { id: { in: homePlayerIds } },
+                        data: { morale: { increment: 5 } },
+                      });
+                      await tx.sportPlayer.updateMany({
+                        where: { id: { in: awayPlayerIds } },
+                        data: { morale: { decrement: 5 } },
+                      });
+                    } else if (status === "away_win") {
+                      await tx.sportPlayer.updateMany({
+                        where: { id: { in: awayPlayerIds } },
+                        data: { morale: { increment: 5 } },
+                      });
+                      await tx.sportPlayer.updateMany({
+                        where: { id: { in: homePlayerIds } },
+                        data: { morale: { decrement: 5 } },
+                      });
+                    }
+
+                    // Cap morale at [0, 100]
+                    await tx.sportPlayer.updateMany({
+                      where: {
+                        id: { in: [...homePlayerIds, ...awayPlayerIds] },
+                        morale: { gt: 100 },
                       },
+                      data: { morale: 100 },
                     });
-                    await (ctx.db as any).sportStanding.updateMany({
-                      where: { seasonId: input.seasonId, teamId: match.homeTeamId },
-                      data: {
-                        losses: { increment: 1 },
-                        pointsFor: { increment: homeScore },
-                        pointsAgainst: { increment: awayScore },
+                    await tx.sportPlayer.updateMany({
+                      where: {
+                        id: { in: [...homePlayerIds, ...awayPlayerIds] },
+                        morale: { lt: 0 },
                       },
-                    });
-                  } else {
-                    await (ctx.db as any).sportStanding.updateMany({
-                      where: { seasonId: input.seasonId, teamId: match.homeTeamId },
-                      data: {
-                        draws: { increment: 1 },
-                        points: { increment: 1 },
-                        pointsFor: { increment: homeScore },
-                        pointsAgainst: { increment: awayScore },
-                      },
-                    });
-                    await (ctx.db as any).sportStanding.updateMany({
-                      where: { seasonId: input.seasonId, teamId: match.awayTeamId },
-                      data: {
-                        draws: { increment: 1 },
-                        points: { increment: 1 },
-                        pointsFor: { increment: awayScore },
-                        pointsAgainst: { increment: homeScore },
-                      },
+                      data: { morale: 0 },
                     });
                   }
-
-                  // Update player morale
-                  const homePlayerIds = (match.homeTeam.players as any[]).map((p) => p.id);
-                  const awayPlayerIds = (match.awayTeam.players as any[]).map((p) => p.id);
-
-                  if (status === "home_win") {
-                    await (ctx.db as any).sportPlayer.updateMany({
-                      where: { id: { in: homePlayerIds } },
-                      data: { morale: { increment: 5 } },
-                    });
-                    await (ctx.db as any).sportPlayer.updateMany({
-                      where: { id: { in: awayPlayerIds } },
-                      data: { morale: { decrement: 5 } },
-                    });
-                  } else if (status === "away_win") {
-                    await (ctx.db as any).sportPlayer.updateMany({
-                      where: { id: { in: awayPlayerIds } },
-                      data: { morale: { increment: 5 } },
-                    });
-                    await (ctx.db as any).sportPlayer.updateMany({
-                      where: { id: { in: homePlayerIds } },
-                      data: { morale: { decrement: 5 } },
-                    });
-                  }
-
-                  // Cap morale at [0, 100]
-                  await (ctx.db as any).sportPlayer.updateMany({
-                    where: {
-                      id: { in: [...homePlayerIds, ...awayPlayerIds] },
-                      morale: { gt: 100 },
-                    },
-                    data: { morale: 100 },
-                  });
-                  await (ctx.db as any).sportPlayer.updateMany({
-                    where: { id: { in: [...homePlayerIds, ...awayPlayerIds] }, morale: { lt: 0 } },
-                    data: { morale: 0 },
-                  });
-                }
+                });
               }
             }
 
-            // 2. Simulate brackets of this stage (if bracket or golden box)
+            // 2. Simulate brackets of this stage (if bracket or tournament)
             let currentRound = 1;
             let hasMoreBracketsInStage = true;
             while (hasMoreBracketsInStage) {
-              const pendingBrackets = await (ctx.db as any).sportBracket.findMany({
+              const pendingBrackets = await ctx.db.sportBracket.findMany({
                 where: {
                   seasonId: input.seasonId,
                   stage: activeStage,
@@ -419,7 +410,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
               });
 
               if (pendingBrackets.length === 0) {
-                const completedInRound = await (ctx.db as any).sportBracket.count({
+                const completedInRound = await ctx.db.sportBracket.count({
                   where: {
                     seasonId: input.seasonId,
                     stage: activeStage,
@@ -434,6 +425,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
               } else {
                 for (let i = 0; i < pendingBrackets.length; i++) {
                   const bm = pendingBrackets[i];
+                  if (!bm || !currentSeason) continue;
                   const seed = simpleHash(
                     input.seasonId,
                     currentRound * 100 + activeStage * 1000,
@@ -446,13 +438,13 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
                   if (!f1 || !f2) continue;
 
                   const f1ratings = computeTeamRatingVector(
-                    f1.players as any[],
-                    f1.coaches as any[],
+                    f1.players as any,
+                    f1.coaches as any,
                     currentSeason.league.sportPreset
                   );
                   const f2ratings = computeTeamRatingVector(
-                    f2.players as any[],
-                    f2.coaches as any[],
+                    f2.players as any,
+                    f2.coaches as any,
                     currentSeason.league.sportPreset
                   );
 
@@ -476,7 +468,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
                   const awayScore = (resRec.awayScore as number) ?? 0;
                   const winnerId = homeScore > awayScore ? bm.fighter1Id : bm.fighter2Id;
 
-                  await (ctx.db as any).sportBracket.update({
+                  await ctx.db.sportBracket.update({
                     where: { id: bm.id },
                     data: {
                       winnerId,
@@ -488,8 +480,8 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
                 }
               }
 
-              // After resolving currentRound, check if we can generate the next round's matchups within this stage
-              const completedBrackets = await (ctx.db as any).sportBracket.findMany({
+              // After resolving currentRound, check if we can generate the next round's matchups
+              const completedBrackets = await ctx.db.sportBracket.findMany({
                 where: {
                   seasonId: input.seasonId,
                   stage: activeStage,
@@ -500,12 +492,12 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
               });
 
               const winners = completedBrackets
-                .map((b: any) => b.winnerId)
+                .map((b) => b.winnerId)
                 .filter(Boolean) as string[];
 
               if (winners.length >= 2) {
                 const nextRound = currentRound + 1;
-                const nextRoundCount = await (ctx.db as any).sportBracket.count({
+                const nextRoundCount = await ctx.db.sportBracket.count({
                   where: { seasonId: input.seasonId, stage: activeStage, round: nextRound },
                 });
 
@@ -517,7 +509,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
                     const a = i < winners.length ? winners[i]! : null;
                     const b = pow2 - 1 - i < winners.length ? winners[pow2 - 1 - i]! : null;
                     if (a && b) {
-                      await (ctx.db as any).sportBracket.create({
+                      await ctx.db.sportBracket.create({
                         data: {
                           seasonId: input.seasonId,
                           round: nextRound,
@@ -538,19 +530,22 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
               }
             }
 
-            // 3. Evaluate if activeStage has completed and try to transition to the next stage
+            // 3. Evaluate if activeStage has completed and transition to next stage
             const transitioned = await transitionToNextStage(ctx.db as any, input.seasonId);
             if (transitioned) {
-              // Fetch updated currentSeason to get new activeStage
-              currentSeason = await (ctx.db as any).sportSeason.findUnique({
+              currentSeason = await ctx.db.sportSeason.findUnique({
                 where: { id: input.seasonId },
                 include: { league: true },
               });
+              if (!currentSeason) break;
             } else {
-              // No more transitions means we are done!
               seasonInProgress = false;
             }
           }
+        }
+
+        if (!currentSeason) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Season not found at finalization" });
         }
 
         // Determine champion
@@ -564,21 +559,12 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
         let championTeamId: string | null = null;
 
         if (currentSeason.league.archetype === "bracket") {
-          // Winner of the final round
-          const finalRound = await (ctx.db as any).sportBracket.findFirst({
+          const finalRound = await ctx.db.sportBracket.findFirst({
             where: { seasonId: input.seasonId },
             orderBy: { round: "desc" },
           });
           championTeamId = finalRound?.winnerId ?? null;
-        } else if (currentSeason.league.archetype === "circuit") {
-          // Team with most points from race results
-          const topStanding = await ctx.db.sportStanding.findFirst({
-            where: { seasonId: input.seasonId },
-            orderBy: [{ points: "desc" }, { pointsFor: "desc" }],
-          });
-          championTeamId = topStanding?.teamId ?? null;
         } else {
-          // League: top of the standings
           const topStanding = await ctx.db.sportStanding.findFirst({
             where: { seasonId: input.seasonId },
             orderBy: [{ points: "desc" }, { pointsFor: "desc" }],
@@ -586,7 +572,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
           championTeamId = topStanding?.teamId ?? null;
         }
 
-        await (ctx.db as any).sportSeason.update({
+        await ctx.db.sportSeason.update({
           where: { id: input.seasonId },
           data: {
             status: "completed",
@@ -612,10 +598,4 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
         });
       }
     }),
-
-  // ═══ History & Records ══════════════════════════════════════════════════════
-
-  // ═══ MyClub ══════════════════════════════════════════════════════════════════
-
-  // ═══ Utility ═════════════════════════════════════════════════════════════════
 });

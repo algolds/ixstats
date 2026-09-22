@@ -427,14 +427,14 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                         className="h-8 bg-slate-900 text-xs"
                       />
                     </div>
-                    <div className="space-y-1">
+                    <div className="min-w-0 space-y-1">
                       <Label className="text-[10px] text-slate-400">Electoral System</Label>
                       <Select
                         value={chamber.electoralSystem}
                         onValueChange={(v) => updateChamber(index, "electoralSystem", v)}
                       >
-                        <SelectTrigger className="h-8 bg-slate-900 text-xs">
-                          <SelectValue />
+                        <SelectTrigger className="h-8 w-full min-w-0 overflow-hidden bg-slate-900 text-xs">
+                          <SelectValue className="truncate" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="proportional">Proportional (D&apos;Hondt)</SelectItem>
@@ -443,14 +443,14 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1">
+                    <div className="min-w-0 space-y-1">
                       <Label className="text-[10px] text-slate-400">Selection Method</Label>
                       <Select
                         value={chamber.selectionMethod || "elected"}
                         onValueChange={(v) => updateChamber(index, "selectionMethod", v)}
                       >
-                        <SelectTrigger className="h-8 bg-slate-900 text-xs">
-                          <SelectValue />
+                        <SelectTrigger className="h-8 w-full min-w-0 overflow-hidden bg-slate-900 text-xs">
+                          <SelectValue className="truncate" />
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(SELECTION_METHOD_LABELS).map(([value, label]) => (

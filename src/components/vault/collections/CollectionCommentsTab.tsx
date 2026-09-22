@@ -45,7 +45,7 @@ export function CollectionCommentsTab({
             <Button
               onClick={onAddComment}
               disabled={!commentText.trim() || isPending}
-              className="bg-gradient-to-r from-blue-500 to-purple-500"
+              className="bg-blue-600 hover:bg-blue-500 text-white"
             >
               <Send className="h-4 w-4" />
             </Button>

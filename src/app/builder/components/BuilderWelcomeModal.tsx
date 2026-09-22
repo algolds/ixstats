@@ -65,30 +65,30 @@ const ADVANCED_TIPS = [
   {
     icon: Save,
     color: "text-amber-400",
-    title: "Autosave",
+    title: "Continuous Autosave",
     description:
-      "Your progress is automatically saved as you go. A green save indicator on the top right shows when changes are successfully backed up.",
+      "Your progress is automatically saved to your account and local session as you work. The studio header displays real-time sync status.",
   },
   {
     icon: Sparkles,
     color: "text-purple-400",
-    title: "Live Preview Panel",
+    title: "Halo & Dynamic Guidance",
     description:
-      "The panel on the left sidebar shows a live preview of your country, including its flag, name, and current stats. It updates instantly as you make changes.",
+      "The floating Halo and Studio Header provide context-aware guidance and validation feedback for every step of statecraft.",
   },
   {
     icon: Info,
     color: "text-cyan-400",
-    title: "Vitality Rings",
+    title: "Real-Time Synthesis",
     description:
-      "Watch the rings on the preview panel. They show your country's Economic Health, Market Activity, and Development Index, indicating how your policies are performing.",
+      "Every slider, institution, and budget change recalculates your projected GDP, tax revenue, stability, and demographic breakdown in real time.",
   },
   {
     icon: Smile,
     color: "text-pink-400",
     title: "Experiment & Have Fun",
     description:
-      "Feel free to try wild ideas! You can always change your symbols, government blocks, and policies in the editor later.",
+      "Feel free to explore bold ideas! You can always fine-tune your institutions, ministries, and economic parameters in the editor later.",
   },
 ];
 

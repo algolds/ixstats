@@ -13,12 +13,15 @@ import {
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
-import type { ExtractedBuilderData } from "~/app/builder/lib/wiki-data-extractor";
+import type { ExtractedBuilderData } from "~/lib/builder/wiki-data-extractor";
 
 interface WikiDeepScanPanelProps {
   countryName: string;
   wikiSource: "ixwiki" | "iiwiki" | "althistory";
-  onDataExtracted: (enhancedData: ExtractedBuilderData) => void;
+  onDataExtracted: (
+    enhancedData?: ExtractedBuilderData,
+    pages?: Array<{ title: string; content: string }>
+  ) => void;
   onSkip: () => void;
 }
 
@@ -101,7 +104,10 @@ export function WikiDeepScanPanel({
             Scanned {foundVariants.length} pages, but didn't find any additional structured data.
             We'll proceed with the infobox data.
           </p>
-          <Button onClick={onSkip} className="bg-emerald-500 hover:bg-emerald-600">
+          <Button
+            onClick={() => onDataExtracted(undefined, data.pages)}
+            className="bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] transition-all"
+          >
             Continue to Builder <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </CardContent>
@@ -203,12 +209,16 @@ export function WikiDeepScanPanel({
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <Button variant="outline" onClick={onSkip}>
+          <Button
+            variant="outline"
+            onClick={() => onDataExtracted(undefined, data.pages)}
+            className="active:scale-[0.98] transition-all"
+          >
             Skip Deep Data
           </Button>
           <Button
-            className="bg-emerald-500 text-white hover:bg-emerald-600"
-            onClick={() => onDataExtracted(extractedData)}
+            className="bg-emerald-500 text-white hover:bg-emerald-600 active:scale-[0.98] transition-all"
+            onClick={() => onDataExtracted(extractedData, data.pages)}
           >
             Import Enhanced Data <ChevronRight className="ml-2 h-4 w-4" />
           </Button>

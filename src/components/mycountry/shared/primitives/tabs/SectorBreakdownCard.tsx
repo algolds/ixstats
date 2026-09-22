@@ -71,47 +71,53 @@ function formatPeopleCount(value: number | undefined | null): string {
 // Get color classes for a given color name
 function getColorClasses(color: string) {
   const colorMap: Record<string, { bg: string; text: string; progress: string; border: string }> = {
-    green: {
-      bg: "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20",
-      text: "text-green-600 dark:text-green-400",
-      progress: "bg-green-500 dark:bg-green-400",
-      border: "border-green-200 dark:border-green-700/40",
-    },
-    blue: {
-      bg: "bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20",
-      text: "text-blue-600 dark:text-blue-400",
-      progress: "bg-blue-500 dark:bg-blue-400",
-      border: "border-blue-200 dark:border-blue-700/40",
-    },
-    purple: {
-      bg: "bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20",
-      text: "text-purple-600 dark:text-purple-400",
-      progress: "bg-purple-500 dark:bg-purple-400",
-      border: "border-purple-200 dark:border-purple-700/40",
-    },
     emerald: {
-      bg: "bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20",
+      bg: "bg-emerald-500/10",
       text: "text-emerald-600 dark:text-emerald-400",
-      progress: "bg-emerald-500 dark:bg-emerald-400",
-      border: "border-emerald-200 dark:border-emerald-700/40",
+      progress: "bg-emerald-500",
+      border: "border-emerald-500/20",
+    },
+    green: {
+      bg: "bg-emerald-500/10",
+      text: "text-emerald-600 dark:text-emerald-400",
+      progress: "bg-emerald-500",
+      border: "border-emerald-500/20",
     },
     cyan: {
-      bg: "bg-gradient-to-br from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20",
+      bg: "bg-cyan-500/10",
       text: "text-cyan-600 dark:text-cyan-400",
-      progress: "bg-cyan-500 dark:bg-cyan-400",
-      border: "border-cyan-200 dark:border-cyan-700/40",
+      progress: "bg-cyan-500",
+      border: "border-cyan-500/20",
+    },
+    indigo: {
+      bg: "bg-indigo-500/10",
+      text: "text-indigo-600 dark:text-indigo-400",
+      progress: "bg-indigo-500",
+      border: "border-indigo-500/20",
+    },
+    purple: {
+      bg: "bg-indigo-500/10",
+      text: "text-indigo-600 dark:text-indigo-400",
+      progress: "bg-indigo-500",
+      border: "border-indigo-500/20",
     },
     amber: {
-      bg: "bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20",
+      bg: "bg-amber-500/10",
       text: "text-amber-600 dark:text-amber-400",
-      progress: "bg-amber-500 dark:bg-amber-400",
-      border: "border-amber-200 dark:border-amber-700/40",
+      progress: "bg-amber-500",
+      border: "border-amber-500/20",
     },
     red: {
-      bg: "bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20",
+      bg: "bg-red-500/10",
       text: "text-red-600 dark:text-red-400",
-      progress: "bg-red-500 dark:bg-red-400",
-      border: "border-red-200 dark:border-red-700/40",
+      progress: "bg-red-500",
+      border: "border-red-500/20",
+    },
+    blue: {
+      bg: "bg-blue-500/10",
+      text: "text-blue-600 dark:text-blue-400",
+      progress: "bg-blue-500",
+      border: "border-blue-500/20",
     },
   };
 
@@ -199,9 +205,9 @@ export function SectorBreakdownCard({
       stable: Minus,
     };
     const colors = {
-      up: "text-green-500",
+      up: "text-emerald-500",
       down: "text-red-500",
-      stable: "text-gray-500",
+      stable: "text-muted-foreground",
     };
 
     const Icon = icons[trend];

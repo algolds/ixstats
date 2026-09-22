@@ -16,7 +16,7 @@
  *   await exchangeService.earn(userId, 100, 'CONTRACT_PAYOUT', 'CONTRACT:abc', db);
  */
 
-import { type PrismaClient } from "@prisma/client";
+import { type PrismaClient, type Prisma } from "@prisma/client";
 import { IxTime } from "~/lib/ixtime";
 import { getExchangeConfig } from "./exchange-config";
 
@@ -33,6 +33,7 @@ export type ExchangeTxType =
   | "ADMIN_ADJUSTMENT"
   | "TRAINING_FEE"
   | "TEAM_TRAINING"
+  | "STADIUM_UPGRADE"
   | "PREDICTION_STAKE"
   | "PREDICTION_PAYOUT";
 
@@ -104,15 +105,15 @@ export class ExchangeService {
     amount: number,
     type: ExchangeTxType,
     source: string,
-    db: PrismaClient,
+    db: PrismaClient | Prisma.TransactionClient,
     metadata?: Record<string, unknown>
   ): Promise<ExchangeMutationResult> {
     try {
       if (!(amount > 0))
         return { success: false, newBalance: 0, message: "Amount must be positive" };
-      const wallet = await this.getOrCreateWallet(userIdOrClerkId, db);
+      const wallet = await this.getOrCreateWallet(userIdOrClerkId, db as PrismaClient);
 
-      const updated = await db.$transaction(async (tx) => {
+      const runUpdate = async (tx: PrismaClient | Prisma.TransactionClient) => {
         const w = await tx.exchangeWallet.update({
           where: { id: wallet.id },
           data: { sovereigns: { increment: amount }, lifetimeEarned: { increment: amount } },
@@ -129,7 +130,11 @@ export class ExchangeService {
           },
         });
         return w;
-      });
+      };
+
+      const updated = "$transaction" in db && typeof db.$transaction === "function"
+        ? await db.$transaction(runUpdate)
+        : await runUpdate(db);
 
       return { success: true, newBalance: updated.sovereigns };
     } catch (error) {
@@ -144,13 +149,13 @@ export class ExchangeService {
     amount: number,
     type: ExchangeTxType,
     source: string,
-    db: PrismaClient,
+    db: PrismaClient | Prisma.TransactionClient,
     metadata?: Record<string, unknown>
   ): Promise<ExchangeMutationResult> {
     try {
       if (!(amount > 0))
         return { success: false, newBalance: 0, message: "Amount must be positive" };
-      const wallet = await this.getOrCreateWallet(userIdOrClerkId, db);
+      const wallet = await this.getOrCreateWallet(userIdOrClerkId, db as PrismaClient);
 
       if (wallet.sovereigns < amount) {
         return {
@@ -160,7 +165,7 @@ export class ExchangeService {
         };
       }
 
-      const updated = await db.$transaction(async (tx) => {
+      const runUpdate = async (tx: PrismaClient | Prisma.TransactionClient) => {
         const w = await tx.exchangeWallet.update({
           where: { id: wallet.id },
           data: { sovereigns: { decrement: amount }, lifetimeSpent: { increment: amount } },
@@ -177,7 +182,11 @@ export class ExchangeService {
           },
         });
         return w;
-      });
+      };
+
+      const updated = "$transaction" in db && typeof db.$transaction === "function"
+        ? await db.$transaction(runUpdate)
+        : await runUpdate(db);
 
       return { success: true, newBalance: updated.sovereigns };
     } catch (error) {

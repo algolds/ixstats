@@ -1,0 +1,46 @@
+import type { SportDefinition } from "./types";
+
+export const baseballDefinition: SportDefinition = {
+  id: "baseball",
+  name: "Baseball",
+  emoji: "⚾",
+  surfaceType: "diamond",
+  terminology: {
+    athlete: "Player",
+    athletes: "Players",
+    organization: "Franchise",
+    organizations: "Franchises",
+    match: "Game",
+    matches: "Games",
+    scoringUnit: "Run",
+    scoringUnitPlural: "Runs",
+    surfaceName: "Diamond",
+    headCoach: "Manager",
+  },
+  periods: {
+    count: 9,
+    periodName: "Inning",
+    periodNamePlural: "Innings",
+    hasOvertime: true,
+    overtimeName: "Extra Innings",
+    hasShootout: false,
+  },
+  scoringRules: {
+    winPoints: 1,
+    drawPoints: 0,
+    lossPoints: 0,
+    pointSystemDescription: "Win percentage driven standings",
+  },
+  rosterSlots: [
+    { code: "SP", label: "Starting Pitcher", group: "defense", isStarter: true },
+    { code: "C", label: "Catcher", group: "defense", isStarter: true },
+    { code: "1B", label: "First Baseman", group: "defense", isStarter: true },
+    { code: "2B", label: "Second Baseman", group: "defense", isStarter: true },
+    { code: "3B", label: "Third Baseman", group: "defense", isStarter: true },
+    { code: "SS", label: "Shortstop", group: "defense", isStarter: true },
+    { code: "LF", label: "Left Fielder", group: "offense", isStarter: true },
+    { code: "CF", label: "Center Fielder", group: "offense", isStarter: true },
+    { code: "RF", label: "Right Fielder", group: "offense", isStarter: true },
+    { code: "DH", label: "Designated Hitter", group: "offense", isStarter: true },
+  ],
+};

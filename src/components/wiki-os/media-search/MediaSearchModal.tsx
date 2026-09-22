@@ -11,7 +11,6 @@ import { processImageSelection, isExternalImageUrl } from "~/lib/media";
 import { cn } from "~/lib/utils";
 
 import type { CommonsImage } from "./types";
-import { WebPhotosTab } from "./WebPhotosTab";
 import { WikiRepositoryTab } from "./WikiRepositoryTab";
 import { UploadTab } from "./UploadTab";
 
@@ -22,7 +21,7 @@ interface MediaSearchModalProps {
   onFileUpload?: (file: File) => Promise<void>;
 }
 
-type MainTab = "web-photos" | "wiki-repository" | "stash" | "upload";
+type MainTab = "wiki-repository" | "upload";
 
 export function MediaSearchModal({
   isOpen,
@@ -98,14 +97,14 @@ export function MediaSearchModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         className={cn(
-          "glass-hierarchy-modal flex max-h-[92vh] flex-col overflow-hidden p-0 transition-all duration-300 ease-in-out",
+          "glass-hierarchy-modal flex h-[88vh] max-h-[92vh] flex-col overflow-hidden p-0 transition-[max-width] duration-300 ease-in-out",
           isCategoryExpanded ? "max-w-7xl" : "max-w-5xl"
         )}
         data-dialog-nested="true"
       >
         <DialogHeader className="border-border/40 shrink-0 border-b px-6 pt-5 pb-3">
           <DialogTitle className="text-foreground text-base font-bold">
-            Search Image Library
+            Search Repository
           </DialogTitle>
         </DialogHeader>
 
@@ -114,40 +113,22 @@ export function MediaSearchModal({
           onValueChange={(val) => setActiveTab(val as MainTab)}
           className="flex min-h-0 flex-1 flex-col"
         >
-          <TabsList className="border-border/40 grid w-full grid-cols-3 rounded-none border-b bg-transparent p-0">
+          <TabsList className="border-border/40 grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0">
             <TabsTrigger
               value="wiki-repository"
-              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-black/5 data-[state=active]:shadow-none dark:data-[state=active]:bg-white/5"
+              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-muted/50 data-[state=active]:shadow-none transition-all cursor-pointer select-none"
             >
               Repository
             </TabsTrigger>
             <TabsTrigger
-              value="web-photos"
-              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-black/5 data-[state=active]:shadow-none dark:data-[state=active]:bg-white/5"
-            >
-              Web Photos
-            </TabsTrigger>
-            <TabsTrigger
               value="upload"
-              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-black/5 data-[state=active]:shadow-none dark:data-[state=active]:bg-white/5"
+              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-muted/50 data-[state=active]:shadow-none transition-all cursor-pointer select-none"
             >
-              Upload
+              Upload 
             </TabsTrigger>
           </TabsList>
 
-          {/* Tab 1: Web Photos (Unsplash) */}
-          <TabsContent
-            value="web-photos"
-            className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
-          >
-            <WebPhotosTab
-              selectedImage={selectedImage}
-              onSelectImage={setSelectedImage}
-              onDoubleClickConfirm={handleSelectConfirm}
-            />
-          </TabsContent>
-
-          {/* Tab 2: Wiki Repository */}
+          {/* Tab 1: Wiki Repository (Commons, IxWiki, IIWiki, My Stash) */}
           <TabsContent
             value="wiki-repository"
             className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
@@ -161,7 +142,7 @@ export function MediaSearchModal({
             />
           </TabsContent>
 
-          {/* Tab 4: Upload */}
+          {/* Tab 2: Upload */}
           <TabsContent
             value="upload"
             className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
@@ -180,7 +161,7 @@ export function MediaSearchModal({
         {activeTab !== "upload" && (
           <div className="border-border/40 bg-card/10 flex shrink-0 items-center justify-end gap-3 border-t px-6 py-4">
             {isDownloading && (
-              <div className="flex items-center gap-2 text-xs text-blue-400">
+              <div className="flex items-center gap-2 text-xs text-primary">
                 <Download className="h-3.5 w-3.5 animate-bounce" />
                 <span>Downloading file to local cache...</span>
               </div>
@@ -189,7 +170,7 @@ export function MediaSearchModal({
               onClick={handleSelectConfirm}
               disabled={!selectedImage || isDownloading}
               size="sm"
-              className="h-8 px-4 text-xs font-semibold"
+              className="h-8 px-4 text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer"
             >
               {isDownloading ? (
                 <>

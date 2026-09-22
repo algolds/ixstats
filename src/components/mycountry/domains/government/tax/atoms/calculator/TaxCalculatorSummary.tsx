@@ -67,11 +67,11 @@ export const TaxCalculatorSummary = React.memo(function TaxCalculatorSummary({
         </CardContent>
       </Card>
 
-      <Card className="border-purple-500/20 bg-purple-500/5">
+      <Card className="border-indigo-500/20 bg-indigo-500/5">
         <CardContent className="space-y-1 p-4">
           <div className="text-muted-foreground flex items-center justify-between text-xs">
             <span>Net Income (Take-home)</span>
-            <TrendingUp className="h-4 w-4 text-purple-500" />
+            <TrendingUp className="h-4 w-4 text-indigo-500" />
           </div>
           <p className="text-foreground text-2xl font-bold tracking-tight">
             {formatCurrency(result.netIncome)}

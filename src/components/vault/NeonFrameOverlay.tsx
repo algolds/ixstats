@@ -19,17 +19,17 @@ export function NeonFrameOverlay({ neonFrame, className }: NeonFrameOverlayProps
       className={cn(
         "pointer-events-none absolute inset-0 z-30 rounded-2xl",
         style === "ruby" &&
-          "from-red-650/10 border-2 border-red-500 bg-gradient-to-r to-rose-600/10 shadow-[0_0_15px_rgba(239,68,68,0.7),_inset_0_0_10px_rgba(244,63,94,0.5)]",
+          "border-2 border-red-500 bg-gradient-to-r from-red-500/10 to-red-600/10 shadow-[0_0_8px_rgba(239,68,68,0.3),_inset_0_0_4px_rgba(239,68,68,0.2)]",
         style === "winter" &&
-          "border-2 border-sky-300 bg-gradient-to-br from-sky-400/15 via-teal-300/5 to-transparent shadow-[0_0_15px_rgba(56,189,248,0.7),_inset_0_0_12px_rgba(186,230,253,0.5)] after:absolute after:inset-0 after:rounded-2xl after:bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)]",
+          "border-2 border-cyan-300 bg-gradient-to-br from-cyan-400/15 via-cyan-300/5 to-transparent shadow-[0_0_8px_rgba(6,182,212,0.3),_inset_0_0_4px_rgba(6,182,212,0.2)] after:absolute after:inset-0 after:rounded-2xl after:bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)]",
         style !== "ruby" && style !== "winter" && "border-2",
         className
       )}
       style={
         style !== "ruby" && style !== "winter"
           ? {
-              borderColor: neonFrame.color || "#22d3ee",
-              boxShadow: `0 0 12px ${neonFrame.color || "#22d3ee"}, inset 0 0 8px ${neonFrame.color || "#22d3ee"}`,
+              borderColor: neonFrame.color || "#06b6d4",
+              boxShadow: `0 0 8px ${neonFrame.color || "rgba(6,182,212,0.25)"}, inset 0 0 4px ${neonFrame.color || "rgba(6,182,212,0.15)"}`,
             }
           : undefined
       }
@@ -47,13 +47,13 @@ export function NeonFrameOverlay({ neonFrame, className }: NeonFrameOverlayProps
       {/* Winter Frost particles / snowflakes */}
       {style === "winter" && (
         <div className="absolute inset-0 overflow-hidden rounded-2xl">
-          <span className="absolute top-1 left-2 animate-bounce text-[8px] text-sky-200/50 select-none">
+          <span className="absolute top-1 left-2 animate-bounce text-[8px] text-blue-200/50 select-none">
             ❄
           </span>
-          <span className="absolute right-3 bottom-2 animate-pulse text-[10px] text-sky-200/60 select-none">
+          <span className="absolute right-3 bottom-2 animate-pulse text-[10px] text-blue-200/60 select-none">
             ❄
           </span>
-          <span className="absolute top-1/2 right-1 text-[7px] text-sky-100/40 select-none">❄</span>
+          <span className="absolute top-1/2 right-1 text-[7px] text-blue-100/40 select-none">❄</span>
         </div>
       )}
       {/* Ruby gem shimmer sweep effect */}

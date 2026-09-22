@@ -7,11 +7,8 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from "react"
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
   InfoCircle as Info,
-  HelpCircle,
-  Settings,
   Crown,
   Coins,
-  Eye,
   WarningTriangle as AlertTriangle,
   Group as Users,
   Dollar as DollarSign,
@@ -22,28 +19,30 @@ import { GovernmentStructureForm } from "~/components/mycountry/domains/governme
 import { RevenueSourceForm } from "~/components/mycountry/domains/government/atoms/RevenueSourceForm";
 import { DepartmentList } from "~/components/mycountry/domains/government/builder/DepartmentList";
 import { BudgetAllocationList } from "~/components/mycountry/domains/government/builder/BudgetAllocationList";
-import { GovernmentSpendingSection } from "~/app/builder/sections/GovernmentSpendingSection";
 import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
 import { ComponentType } from "@prisma/client";
-import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { BuilderTabCard, type TabDefinition } from "../../../primitives/BuilderTabCard";
 import { AtomicGovernmentComponents } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
-import { AtomicWelcomeModal } from "~/components/mycountry/domains/government/atomic";
+import { useBuilderGuide } from "../../builder-guide-context";
 import { computeGovernmentWarnings } from "../government-preview/governmentWarnings";
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
+import { useBuilderContextOptional } from "../context/BuilderStateContext";
+import type { GovernmentBuilderState, GovernmentType } from "~/types/government";
 
 interface GovernmentStepProps {
   economicInputs: EconomicInputs;
   selectedCountry: RealCountryData | null;
   governmentComponents: ComponentType[];
-  governmentStructure: any;
+  governmentStructure: GovernmentBuilderState | null;
   activeGovernmentTab: string;
   onGovernmentComponentsChange: (components: ComponentType[]) => void;
-  onGovernmentStructureChange: (structure: any) => void;
-  onGovernmentStructureSave: (structure: any) => Promise<void>;
+  onGovernmentStructureChange: (structure: GovernmentBuilderState) => void;
+  onGovernmentStructureSave: (structure: GovernmentBuilderState) => Promise<void>;
   onEconomicInputsChange: (inputs: EconomicInputs) => void;
   onTabChange: (tab: string) => void;
+  mode?: "create" | "edit";
 }
 
 export function GovernmentStep({
@@ -58,14 +57,17 @@ export function GovernmentStep({
   onGovernmentStructureSave,
   onEconomicInputsChange,
   onTabChange,
+  mode: propMode,
 }: GovernmentStepProps) {
+  const builderCtx = useBuilderContextOptional();
+  const effectiveMode = propMode ?? builderCtx?.mode ?? "create";
   // Local fallback to prevent null pointer exceptions
-  const governmentStructure = useMemo(() => {
+  const governmentStructure = useMemo((): GovernmentBuilderState => {
     if (propGovernmentStructure) return propGovernmentStructure;
     return {
       structure: {
         governmentName: `Government of ${selectedCountry?.name || "the Nation"}`,
-        governmentType: (economicInputs?.nationalIdentity?.governmentType || "Other") as any,
+        governmentType: (economicInputs?.nationalIdentity?.governmentType || "Other") as GovernmentType,
         headOfState: "",
         headOfGovernment: "",
         legislatureName: "",
@@ -83,7 +85,14 @@ export function GovernmentStep({
     };
   }, [propGovernmentStructure, selectedCountry, economicInputs]);
 
-  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const { openGuide, isSectionSeen } = useBuilderGuide();
+
+  // Auto-slide open the Companion Sheet on first visit in create mode only
+  useEffect(() => {
+    if (effectiveMode === "create" && !isSectionSeen("government")) {
+      openGuide({ tab: "rules", section: "government" });
+    }
+  }, [effectiveMode, isSectionSeen, openGuide]);
 
   // Budget allocations collapsed state
   const [budgetAllocationsCollapsed, setBudgetAllocationsCollapsed] = useState<
@@ -99,7 +108,7 @@ export function GovernmentStep({
 
   const handleExpandAll = useCallback(() => {
     const newState: Record<number, boolean> = {};
-    governmentStructure.departments.forEach((_: any, idx: number) => {
+    governmentStructure.departments.forEach((_, idx) => {
       newState[idx] = false;
     });
     setBudgetAllocationsCollapsed(newState);
@@ -107,7 +116,7 @@ export function GovernmentStep({
 
   const handleCollapseAll = useCallback(() => {
     const newState: Record<number, boolean> = {};
-    governmentStructure.departments.forEach((_: any, idx: number) => {
+    governmentStructure.departments.forEach((_, idx) => {
       newState[idx] = true;
     });
     setBudgetAllocationsCollapsed(newState);
@@ -138,10 +147,12 @@ export function GovernmentStep({
 
   const gdpCapWarning = warnings.gdpCapWarning;
   const { viewMode } = useBuilderFilter();
+  const isExpertOrEdit = effectiveMode === "edit" || viewMode === "expert";
 
-  // Auto-allocate standard departments if empty in standard mode
+  // Auto-allocate standard departments if empty in standard mode (create mode only)
   useEffect(() => {
     if (
+      effectiveMode !== "edit" &&
       viewMode === "standard" &&
       (!governmentStructure.departments || governmentStructure.departments.length === 0)
     ) {
@@ -152,7 +163,7 @@ export function GovernmentStep({
         {
           name: "Department of Finance",
           shortName: "Finance",
-          category: "administrative",
+          category: "Finance" as const,
           description: "Manages state treasury, revenue collection, and economic planning.",
           minister: "Finance Minister",
           ministerTitle: "Minister",
@@ -163,12 +174,13 @@ export function GovernmentStep({
           color: "#eab308",
           priority: 80,
           isActive: true,
+          organizationalLevel: "Ministry" as const,
           functions: ["Treasury", "Taxation", "Economic Planning"],
         },
         {
           name: "Department of Social Services",
           shortName: "Social Services",
-          category: "social",
+          category: "Social Services" as const,
           description: "Administers social welfare, public pensions, and community support.",
           minister: "Minister of Social Services",
           ministerTitle: "Minister",
@@ -179,28 +191,30 @@ export function GovernmentStep({
           color: "#3b82f6",
           priority: 70,
           isActive: true,
+          organizationalLevel: "Ministry" as const,
           functions: ["Social Security", "Pensions", "Welfare"],
         },
         {
           name: "Department of Health",
           shortName: "Health",
-          category: "social",
+          category: "Health" as const,
           description: "Oversees public health, medical facilities, and sanitation.",
           minister: "Health Minister",
           ministerTitle: "Minister",
           headquarters: "Capital City",
           established: "2026",
-          employeeCount: 5000,
+          employeeCount: 2000,
           icon: "Activity",
           color: "#10b981",
           priority: 90,
           isActive: true,
+          organizationalLevel: "Ministry" as const,
           functions: ["Public Health", "Medical Care"],
         },
         {
           name: "Department of Education",
           shortName: "Education",
-          category: "social",
+          category: "Education" as const,
           description: "Directs national education curriculum, schools, and research funding.",
           minister: "Education Minister",
           ministerTitle: "Minister",
@@ -211,12 +225,13 @@ export function GovernmentStep({
           color: "#a855f7",
           priority: 85,
           isActive: true,
+          organizationalLevel: "Ministry" as const,
           functions: ["Schools", "Curriculum", "Universities"],
         },
         {
           name: "Department of Infrastructure",
           shortName: "Infrastructure",
-          category: "administrative",
+          category: "Transportation" as const,
           description: "Maintains national transit networks, utilities, and public works.",
           minister: "Infrastructure Minister",
           ministerTitle: "Minister",
@@ -227,16 +242,17 @@ export function GovernmentStep({
           color: "#f97316",
           priority: 60,
           isActive: true,
+          organizationalLevel: "Ministry" as const,
           functions: ["Transport", "Utilities", "Public Works"],
         },
       ];
 
       const defaultAllocations = [
-        { departmentId: "0", allocatedPercent: 15, allocatedAmount: totalBudget * 0.15 },
-        { departmentId: "1", allocatedPercent: 25, allocatedAmount: totalBudget * 0.25 },
-        { departmentId: "2", allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
-        { departmentId: "3", allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
-        { departmentId: "4", allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
+        { departmentId: "0", budgetYear: 2026, allocatedPercent: 15, allocatedAmount: totalBudget * 0.15 },
+        { departmentId: "1", budgetYear: 2026, allocatedPercent: 25, allocatedAmount: totalBudget * 0.25 },
+        { departmentId: "2", budgetYear: 2026, allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
+        { departmentId: "3", budgetYear: 2026, allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
+        { departmentId: "4", budgetYear: 2026, allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
       ];
 
       onGovernmentStructureChange({
@@ -262,7 +278,6 @@ export function GovernmentStep({
         { id: "spending", label: "Budget", icon: Coins }
       );
     }
-    list.push({ id: "preview", label: "Policies", icon: Eye });
     return list;
   }, [viewMode]);
 
@@ -271,80 +286,101 @@ export function GovernmentStep({
     if (viewMode === "standard" && (rawTab === "structure" || rawTab === "spending")) {
       return "components";
     }
+    if (rawTab === "preview") {
+      return "components";
+    }
     return rawTab;
   }, [activeGovernmentTab, viewMode]);
 
+  const budgetSummary = useMemo(() => {
+    if (!governmentStructure) {
+      return {
+        totalAllocated: 0,
+        totalAllocatedPercent: 0,
+        remaining: 0,
+        remainingPercent: 100,
+        isOverBudget: false,
+        isUnderBudget: false,
+      };
+    }
+    const totalBudgetVal = governmentStructure.structure?.totalBudget || 0;
+    const totalAllocated =
+      governmentStructure.budgetAllocations?.reduce(
+        (sum, a) => sum + (a.allocatedAmount || 0),
+        0
+      ) || 0;
+    const totalAllocatedPercent =
+      governmentStructure.budgetAllocations?.reduce(
+        (sum, a) => sum + (a.allocatedPercent || 0),
+        0
+      ) || 0;
+    return {
+      totalAllocated,
+      totalAllocatedPercent,
+      remaining: totalBudgetVal - totalAllocated,
+      remainingPercent: 100 - totalAllocatedPercent,
+      isOverBudget: totalAllocated > totalBudgetVal,
+      isUnderBudget: totalAllocated < totalBudgetVal,
+    };
+  }, [governmentStructure]);
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-12">
-      <AtomicWelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />
       <BuilderTabCard
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={onTabChange}
         sectionTheme="government"
+        hideTabList={tabs.length <= 1}
       >
         {activeTab === "components" && (
           <div className="space-y-6">
-            <GlassCard
+            <FacetCard
               depth="base"
-              theme="teal"
-              className="border-cyan-500/20"
+              theme="gold"
+              className="border-amber-500/20"
               texture="chevron"
               textureOpacity={0.04}
+              interactive="none"
             >
-              <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                  <Settings className="h-5 w-5 text-cyan-400" />
-                  Government Components
-                  <button
-                    onClick={() => setWelcomeOpen(true)}
-                    className="cursor-pointer rounded-full p-0.5 text-zinc-400 transition-colors hover:bg-white/5 hover:text-cyan-400"
-                    title="Open Help Guide"
-                    type="button"
-                  >
-                    <HelpCircle className="h-4 w-4" />
-                  </button>
-                </h3>
-              </div>
-              <GlassCardContent className="p-6">
+              <FacetCardContent className="p-6">
                 <AtomicGovernmentComponents
                   initialComponents={governmentComponents}
                   onChange={onGovernmentComponentsChange}
                   isReadOnly={false}
                   maxComponents={15}
                   standalone={true}
-                  defaultCategoryFilter="governance"
                   hideSelectedList={true}
                 />
-              </GlassCardContent>
-            </GlassCard>
+              </FacetCardContent>
+            </FacetCard>
           </div>
         )}
 
         {activeTab === "structure" && (
           <div className="space-y-6">
             {/* Departments list */}
-            <GlassCard
+            <FacetCard
               depth="base"
-              theme="teal"
-              className="border-cyan-500/20"
+              theme="gold"
+              className="border-amber-500/20"
               texture="chevron"
               textureOpacity={0.04}
             >
               <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
                 <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                  <Users className="h-5 w-5 text-cyan-400" />
+                  <Users className="h-5 w-5 text-amber-400" />
                   Government Departments
                 </h3>
               </div>
-              <GlassCardContent className="p-6">
+              <FacetCardContent className="p-6">
                 <DepartmentList
                   departments={governmentStructure.departments}
                   onAddDepartment={() => {
                     const newDept = {
-                      name: `Department ${((governmentStructure.departments || []).length || 0) + 1}`,
-                      shortName: "",
-                      category: "executive",
+                      name: "New Department",
+                      shortName: "New",
+                      category: "Other" as const,
                       description: "",
                       minister: "",
                       ministerTitle: "",
@@ -352,11 +388,11 @@ export function GovernmentStep({
                       established: "",
                       employeeCount: 0,
                       icon: "",
-                      color: "#06b6d4",
+                      color: "#f59e0b",
                       priority: 50,
                       isActive: true,
                       parentDepartmentId: undefined,
-                      organizationalLevel: "",
+                      organizationalLevel: "Ministry" as const,
                       functions: [],
                       kpis: [],
                     };
@@ -377,7 +413,7 @@ export function GovernmentStep({
                     onGovernmentStructureChange({
                       ...governmentStructure,
                       departments: (governmentStructure.departments || []).filter(
-                        (_: any, i: number) => i !== idx
+                        (_dept: unknown, i: number) => i !== idx
                       ),
                     });
                   }}
@@ -385,68 +421,28 @@ export function GovernmentStep({
                   governmentComponents={governmentComponents}
                   onGovernmentComponentsChange={onGovernmentComponentsChange}
                 />
-              </GlassCardContent>
-            </GlassCard>
+              </FacetCardContent>
+            </FacetCard>
 
             {/* Budget Allocations list */}
-            <GlassCard
+            <FacetCard
               depth="base"
-              theme="teal"
-              className="border-cyan-500/20"
+              theme="gold"
+              className="border-amber-500/20"
               texture="chevron"
               textureOpacity={0.04}
             >
               <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
                 <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                  <DollarSign className="h-5 w-5 text-cyan-400" />
+                  <DollarSign className="h-5 w-5 text-amber-400" />
                   Budget Allocations
                 </h3>
               </div>
-              <GlassCardContent className="p-6">
+              <FacetCardContent className="p-6">
                 <BudgetAllocationList
                   departments={governmentStructure.departments}
                   budgetAllocations={governmentStructure.budgetAllocations}
-                  budgetSummary={{
-                    totalAllocated:
-                      governmentStructure.budgetAllocations?.reduce(
-                        (sum: number, a: any) => sum + (a.allocatedAmount || 0),
-                        0
-                      ) || 0,
-                    totalAllocatedPercent: governmentStructure.budgetAllocations
-                      ? governmentStructure.budgetAllocations.reduce(
-                          (sum: number, a: any) => sum + (a.allocatedPercent || 0),
-                          0
-                        )
-                      : 0,
-                    remaining:
-                      (governmentStructure.structure?.totalBudget || 0) -
-                      (governmentStructure.budgetAllocations?.reduce(
-                        (sum: number, a: any) => sum + (a.allocatedAmount || 0),
-                        0
-                      ) || 0),
-                    remainingPercent:
-                      100 -
-                      (governmentStructure.budgetAllocations
-                        ? governmentStructure.budgetAllocations.reduce(
-                            (sum: number, a: any) => sum + (a.allocatedPercent || 0),
-                            0
-                          )
-                        : 0),
-                    isOverBudget:
-                      (governmentStructure.budgetAllocations
-                        ? governmentStructure.budgetAllocations.reduce(
-                            (sum: number, a: any) => sum + (a.allocatedPercent || 0),
-                            0
-                          )
-                        : 0) > 100,
-                    isUnderBudget:
-                      (governmentStructure.budgetAllocations
-                        ? governmentStructure.budgetAllocations.reduce(
-                            (sum: number, a: any) => sum + (a.allocatedPercent || 0),
-                            0
-                          )
-                        : 0) < 100,
-                  }}
+                  budgetSummary={budgetSummary}
                   totalBudget={governmentStructure.structure.totalBudget}
                   currency={governmentStructure.structure.budgetCurrency || "USD"}
                   onUpdateAllocation={(idx, updated) => {
@@ -471,7 +467,7 @@ export function GovernmentStep({
                     if (numDepts === 0) return;
                     const evenPercent = 100 / numDepts;
                     const fixedAllocations = governmentStructure.departments.map(
-                      (_: any, idx: number) => ({
+                      (_dept, idx) => ({
                         departmentId: idx.toString(),
                         budgetYear: new Date().getFullYear(),
                         allocatedPercent: evenPercent,
@@ -490,8 +486,8 @@ export function GovernmentStep({
                   onExpandAll={handleExpandAll}
                   onCollapseAll={handleCollapseAll}
                 />
-              </GlassCardContent>
-            </GlassCard>
+              </FacetCardContent>
+            </FacetCard>
           </div>
         )}
 
@@ -538,7 +534,7 @@ export function GovernmentStep({
                 currency={governmentStructure.structure.budgetCurrency || "USD"}
                 isReadOnly={false}
                 availableDepartments={governmentStructure.departments.map(
-                  (d: any, idx: number) => ({
+                  (d, idx) => ({
                     id: idx.toString(),
                     name: d.name,
                   })
@@ -548,34 +544,6 @@ export function GovernmentStep({
           </div>
         )}
 
-        {activeTab === "preview" && (
-          <div className="space-y-6">
-            {/* Policies spending section */}
-            <GlassCard
-              depth="base"
-              theme="teal"
-              className="border-cyan-500/20"
-              texture="chevron"
-              textureOpacity={0.04}
-            >
-              <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                  <Settings className="h-5 w-5 text-cyan-400" />
-                  Governance Spending Policies
-                </h3>
-              </div>
-              <GlassCardContent className="p-6">
-                <GovernmentSpendingSection
-                  inputs={economicInputs}
-                  onInputsChange={onEconomicInputsChange}
-                  selectedAtomicComponents={governmentComponents}
-                  governmentBuilderData={governmentStructure}
-                  countryId={selectedCountry?.countryCode || undefined}
-                />
-              </GlassCardContent>
-            </GlassCard>
-          </div>
-        )}
       </BuilderTabCard>
     </div>
   );

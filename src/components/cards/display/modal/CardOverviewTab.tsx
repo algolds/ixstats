@@ -33,7 +33,7 @@ export interface CardOverviewTabProps {
     color: string;
   };
   neonFrame: Parameters<typeof NeonFrameOverlay>[0]["neonFrame"];
-  stats: FormattedStats;
+  stats?: FormattedStats;
   onTrade?: (card: CardInstance) => void;
   onList?: (card: CardInstance) => void;
   onViewCollection?: (countryId: string) => void;
@@ -43,7 +43,7 @@ export function CardOverviewTab({
   card,
   rarityConfig,
   neonFrame: _neonFrame,
-  stats,
+  stats: _stats,
   onTrade,
   onList,
   onViewCollection,
@@ -242,7 +242,7 @@ export function CardOverviewTab({
           </div>
         )}
 
-        {/* Card Specifications or NS Stats */}
+        {/* Card Specifications */}
         {(() => {
           const cardTypeStr = (card.cardType as string) || "";
           const isIIWiki = isIIWikiCard(card);
@@ -270,95 +270,64 @@ export function CardOverviewTab({
 
           const categoryTheme = resolvedCategory ? getCategoryTheme(resolvedCategory) : null;
 
-          if (isLoreCard) {
-            return (
-              <div className="facet-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
-                <h3 className="text-foreground text-muted-foreground/80 mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
-                  <Layers className="text-primary h-3.5 w-3.5" />
-                  Card Specifications
-                </h3>
+          return (
+            <div className="facet-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
+              <h3 className="text-foreground text-muted-foreground/80 mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                <Layers className="text-primary h-3.5 w-3.5" />
+                Card Specifications
+              </h3>
 
-                <div className="space-y-2.5 divide-y divide-white/5 text-xs">
-                  {resolvedCategory && (
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-muted-foreground font-medium">Category</span>
-                      <span className="text-foreground inline-flex items-center gap-1.5 font-bold">
-                        <CategoryIcon
-                          category={resolvedCategory}
-                          treatment="seal"
-                          size="xs"
-                          color={categoryTheme?.accentColor}
-                        />
-                        {getCategoryLabel(resolvedCategory)}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-muted-foreground font-medium">Tier & Season</span>
-                    <div className="inline-flex items-center gap-2">
-                      <RarityBadge rarity={card.rarity} size="small" />
-                      <span className="text-foreground font-semibold">Season {card.season}</span>
-                    </div>
+              <div className="space-y-2.5 divide-y divide-white/5 text-xs">
+                {resolvedCategory && (
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-muted-foreground font-medium">Category</span>
+                    <span className="text-foreground inline-flex items-center gap-1.5 font-bold">
+                      <CategoryIcon
+                        category={resolvedCategory}
+                        treatment="seal"
+                        size="xs"
+                        color={categoryTheme?.accentColor}
+                      />
+                      {getCategoryLabel(resolvedCategory)}
+                    </span>
                   </div>
+                )}
 
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-muted-foreground font-medium">Tier & Season</span>
+                  <div className="inline-flex items-center gap-2">
+                    <RarityBadge rarity={card.rarity} size="small" />
+                    <span className="text-foreground font-semibold">Season {card.season}</span>
+                  </div>
+                </div>
+
+                {isLoreCard && (
                   <div className="flex items-center justify-between pt-2">
                     <span className="text-muted-foreground font-medium">Wiki Archive</span>
                     {isIIWiki ? (
                       <IIWikiBadge size="sm" />
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 dark:text-sky-400">
+                      <span className="text-wiki inline-flex items-center gap-1 text-xs font-semibold">
                         <Globe className="h-3 w-3" /> IxWiki
                       </span>
                     )}
                   </div>
+                )}
 
-                  {wikiAuthor && (
-                    <div className="flex items-center justify-between pt-2">
-                      <span className="text-muted-foreground font-medium">Wiki Author</span>
-                      <span
-                        className="text-foreground max-w-[200px] truncate font-semibold"
-                        title={wikiAuthor}
-                      >
-                        {wikiAuthor}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          }
-
-          return Object.keys(stats.base).length > 0 ? (
-            <div className="facet-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
-              <div className="flex items-center justify-between">
-                <h3 className="text-foreground text-sm font-bold">NS Simulation Stats</h3>
-                {card.level > 1 && (
-                  <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-500 dark:text-amber-400">
-                    Lv.{card.level} +{stats.totalBoost}
-                  </span>
+                {wikiAuthor && (
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-muted-foreground font-medium">Wiki Author</span>
+                    <span
+                      className="text-foreground max-w-[200px] truncate font-semibold"
+                      title={wikiAuthor}
+                    >
+                      {wikiAuthor}
+                    </span>
+                  </div>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(stats.base).map(([key, stat]) => (
-                  <div key={key} className="rounded-lg border border-white/10 bg-black/40 p-2.5">
-                    <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
-                      {stat.def.label}
-                    </div>
-                    <div className="mt-0.5 flex items-baseline gap-2">
-                      <span
-                        className="font-mono text-lg font-bold tabular-nums"
-                        style={{ color: stat.def.color }}
-                      >
-                        {stat.value}
-                      </span>
-                      <span className="text-muted-foreground/50 text-[10px]">/100</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
-          ) : null;
+          );
         })()}
 
         {/* Quick actions */}

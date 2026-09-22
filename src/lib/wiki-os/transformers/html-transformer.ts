@@ -298,7 +298,7 @@ function transformLinks(html: string, basePath: string): string {
   return result;
 }
 
-function transformImages(
+export function transformImages(
   html: string,
   wikiSource: "ixwiki" | "iiwiki" | "althistory" = "ixwiki"
 ): string {

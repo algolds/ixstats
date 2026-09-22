@@ -147,7 +147,7 @@ export function ThinktankHeader({
             </Button>
           )}
 
-          <Avatar className="border-border/50 h-9 w-9 shrink-0 rounded-xl border bg-gradient-to-br from-emerald-500/20 to-teal-500/20 shadow-xs">
+          <Avatar className="border-border/50 h-9 w-9 shrink-0 rounded-xl border bg-emerald-500/15 shadow-xs">
             <AvatarImage src={group.avatar || undefined} alt={group.name} />
             <AvatarFallback className="rounded-xl bg-transparent text-xs font-bold text-emerald-600 dark:text-emerald-400">
               {group.name.slice(0, 2).toUpperCase()}
@@ -177,7 +177,7 @@ export function ThinktankHeader({
               {allowPersona && (
                 <>
                   <span>·</span>
-                  <span className="flex items-center gap-1 font-medium text-purple-600 dark:text-purple-400">
+                  <span className="flex items-center gap-1 font-medium text-indigo-600 dark:text-indigo-400">
                     <Group className="h-3 w-3" /> Multi-Persona
                   </span>
                 </>
@@ -227,7 +227,7 @@ export function ThinktankHeader({
               size="sm"
               disabled={isLeaving}
               onClick={onLeave}
-              className="h-8 rounded-xl px-2.5 text-xs text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 active:scale-95"
+              className="h-8 rounded-xl px-2.5 text-xs text-red-500 hover:bg-red-500/10 hover:text-red-600 active:scale-95"
             >
               <LogOut className="mr-1.5 h-3.5 w-3.5" />
               Leave

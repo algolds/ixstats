@@ -66,28 +66,28 @@ export function ImportNationStep({
             title: "Enter Nation",
             desc: "Type your NationStates nation name",
             icon: Globe,
-            color: "rose",
+            color: "amber",
           },
           {
             step: "2",
             title: "Visit NS Link",
             desc: "Open a NationStates verification page",
             icon: ExternalLink,
-            color: "amber",
+            color: "cyan",
           },
           {
             step: "3",
             title: "Paste Code",
             desc: "Copy the code NS gives you and paste it here",
             icon: ShieldCheck,
-            color: "green",
+            color: "emerald",
           },
           {
             step: "4",
             title: "Import",
             desc: "Your NS trading cards are imported",
             icon: Download,
-            color: "purple",
+            color: "indigo",
           },
         ].map((item) => (
           <FacetCard
@@ -97,11 +97,11 @@ export function ImportNationStep({
           >
             <div
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-xs font-bold text-white shadow-sm",
-                item.color === "rose" && "from-rose-500 to-rose-600",
-                item.color === "amber" && "from-amber-500 to-amber-600",
-                item.color === "green" && "from-green-500 to-green-600",
-                item.color === "purple" && "from-purple-500 to-purple-600"
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white shadow-xs",
+                item.color === "amber" && "bg-amber-500 text-black",
+                item.color === "cyan" && "bg-cyan-500 text-black",
+                item.color === "emerald" && "bg-emerald-500",
+                item.color === "indigo" && "bg-indigo-500"
               )}
             >
               {item.step}
@@ -150,11 +150,11 @@ export function ImportNationStep({
           >
             <Button
               onClick={() => setShowNameInput(true)}
-              className="h-12 w-full bg-gradient-to-r from-rose-500 to-orange-500 text-base font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600 active:scale-[0.98]"
+              className="h-11 w-full text-sm font-semibold"
               size="lg"
             >
-              <Sparkles className="mr-2 h-5 w-5" />
               Get Started
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </motion.div>
         ) : (
@@ -196,7 +196,7 @@ export function ImportNationStep({
               <Button
                 onClick={() => onRequestVerification(nationName)}
                 disabled={!nationName.trim() || isPending}
-                className="h-11 w-full bg-gradient-to-r from-rose-500 to-orange-500 font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600 active:scale-[0.98]"
+                className="h-11 w-full bg-amber-500 font-bold text-black shadow-xs hover:bg-amber-400 active:scale-[0.98] dark:bg-amber-400 dark:text-black dark:hover:bg-amber-300"
                 size="lg"
               >
                 {isPending ? (

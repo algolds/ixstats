@@ -265,7 +265,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
           )}
           {/* Card back */}
           <div
-            className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/30 to-violet-500/30 backdrop-blur-sm"
+            className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/30 to-indigo-500/30 backdrop-blur-sm"
             style={{
               backfaceVisibility: "hidden",
             }}

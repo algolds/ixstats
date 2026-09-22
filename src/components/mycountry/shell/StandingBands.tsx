@@ -16,17 +16,12 @@ import { VitalityBreakdownModal } from "~/components/ui/modals/VitalityBreakdown
 import {
   useCountryData,
   createVitalityRingsFromCountry,
+  type VitalityRing,
 } from "~/components/mycountry/shared/primitives";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
-
-function formatCompact(num: number): string {
-  if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
-  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-  return (num ?? 0).toLocaleString();
-}
+import { formatCompact } from "~/lib/format/compact";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 
@@ -57,11 +52,10 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
   const approvalPct = useMemo(() => {
     const raw =
       country?.currentPublicApproval ??
-      (country as any)?.publicApproval ??
       country?.approvalRating ??
       68;
     return Math.round(raw > 1 ? raw : raw * 100);
-  }, [country]);
+  }, [country?.currentPublicApproval, country?.approvalRating]);
 
   // 2. Live Political Stability
   const stabilityPct = useMemo(() => {
@@ -70,20 +64,20 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
   }, [country?.currentStability, country?.stability]);
 
   // 3. Live Statecraft Civil Capacity Throughput
+  const usedSlots = intentStatus.data?.usedThisWeek ?? 0;
+  const slotCap = intentStatus.data?.cap ?? 3;
   const capacityPct = useMemo(() => {
-    const usedSlots = intentStatus.data?.usedThisWeek ?? 0;
-    const slotCap = intentStatus.data?.cap ?? 3;
     return Math.round(Math.max(10, Math.min(100, ((slotCap - usedSlots) / slotCap) * 100)));
-  }, [intentStatus.data?.usedThisWeek, intentStatus.data?.cap]);
+  }, [usedSlots, slotCap]);
 
-  const rings = useMemo(() => {
+  const rings = useMemo<VitalityRing[]>(() => {
     if (!country) return [];
     return createVitalityRingsFromCountry(country);
   }, [country]);
 
   const compositeScore = useMemo(() => {
     return rings.length > 0
-      ? Math.round(rings.reduce((sum: number, r: any) => sum + r.value, 0) / rings.length)
+      ? Math.round(rings.reduce((sum: number, r: VitalityRing) => sum + r.value, 0) / rings.length)
       : 0;
   }, [rings]);
 
@@ -91,9 +85,9 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
 
   const population = useMemo(() => {
     return (
-      country?.currentPopulation ?? country?.population ?? (country as any)?.populationTotal ?? 0
+      country?.currentPopulation ?? country?.population ?? 0
     );
-  }, [country?.currentPopulation, country?.population, (country as any)?.populationTotal]);
+  }, [country?.currentPopulation, country?.population]);
 
   const totalGdp = useMemo(() => {
     return (
@@ -107,7 +101,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
     return showExactPop ? Math.round(population).toLocaleString() : formatCompact(population);
   }, [showExactPop, population]);
 
-  const flagUrl = (country as any)?.flagUrl || country?.flag;
+  const flagUrl = country?.flagUrl || country?.flag;
 
   const handleOpenBreakdown = () => {
     soundEffects.bloom();
@@ -124,7 +118,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
       <FacetCard
         depth={1}
         interactive="none"
-        className="group/card relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.04] p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-300 before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent dark:border-white/10 dark:bg-black/35 dark:shadow-2xl"
+        className="group/card border-border/60 bg-card/60 relative flex flex-col gap-3 overflow-hidden rounded-2xl border p-3.5 shadow-sm backdrop-blur-md transition-all duration-300"
       >
         {/* Cinematic Background Flag Watermark Scrim */}
         {flagUrl && (
@@ -147,7 +141,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
               </span>
               {country?.name && (
                 <div className="mt-0.5 flex min-w-0 items-center gap-2">
-                  <div className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/20 bg-white/10 p-0.5 shadow-xs backdrop-blur-md transition-transform group-hover/card:scale-105">
+                  <div className="border-border/60 bg-muted/40 relative flex shrink-0 items-center justify-center overflow-hidden rounded-md border p-0.5 shadow-2xs backdrop-blur-md transition-transform group-hover/card:scale-105">
                     <UnifiedCountryFlag
                       countryName={country.name}
                       flagUrl={flagUrl}
@@ -170,12 +164,12 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
               }}
               whileTap={{ scale: 0.96 }}
               onClick={handleOpenBreakdown}
-              className="group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-xs backdrop-blur-md transition-all hover:bg-cyan-500/20 active:scale-95"
+              className="border-border/80 bg-muted/50 hover:bg-muted text-foreground group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold shadow-2xs backdrop-blur-md transition-all active:scale-95"
               title="Click for full Vitality Breakdown"
             >
-              <Activity className="h-3.5 w-3.5 text-cyan-400 transition-transform group-hover:scale-110" />
-              <span className="font-bold">{ratingLabelText}</span>
-              <span className="font-mono text-[9px] font-semibold text-cyan-300/80">
+              <Activity className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-colors" />
+              <span className="font-semibold">{ratingLabelText}</span>
+              <span className="text-muted-foreground font-mono text-[9px]">
                 ({compositeScore})
               </span>
             </motion.button>
@@ -183,9 +177,9 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
 
           {/* Single Unified Telemetry Glass Container (Pop, GDP, Approval, Stability, Capacity) */}
           {country && (
-            <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.04] p-2.5 shadow-xs backdrop-blur-md dark:border-white/10 dark:bg-white/[0.03]">
+            <div className="border-border/50 bg-muted/20 flex flex-col gap-2 rounded-xl border p-2.5 shadow-2xs backdrop-blur-md">
               {/* Row 1: Population & GDP */}
-              <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1.5">
+              <div className="border-border/40 flex items-center justify-between gap-2 border-b pb-1.5">
                 <motion.button
                   type="button"
                   whileHover={{ scale: 1.02 }}
@@ -194,7 +188,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                   className="group flex cursor-pointer items-center gap-1.5 text-xs transition-colors"
                   title="Click to toggle exact population count"
                 >
-                  <Users className="group-hover:text-foreground h-3.5 w-3.5 text-blue-400 transition-colors" />
+                  <Users className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-colors" />
                   <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
                     Pop:
                   </span>
@@ -204,11 +198,11 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                 </motion.button>
 
                 <div className="flex items-center gap-1.5 text-xs">
-                  <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
+                  <DollarSign className="text-muted-foreground h-3.5 w-3.5" />
                   <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
                     GDP:
                   </span>
-                  <strong className="text-xs font-bold tracking-tight text-emerald-400 tabular-nums">
+                  <strong className="text-foreground text-xs font-bold tracking-tight tabular-nums">
                     ${formatCompact(totalGdp)}
                   </strong>
                 </div>
@@ -217,7 +211,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
               {/* Row 2: Executive Governance Telemetry (Approval, Stability, Capacity) */}
               <div className="grid grid-cols-3 gap-1 pt-0.5">
                 <div className="flex min-w-0 items-center gap-1.5 px-0.5 text-xs">
-                  <Heart className="h-3.5 w-3.5 shrink-0 text-red-400" />
+                  <Heart className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                   <div className="flex min-w-0 flex-col">
                     <span className="text-muted-foreground/70 text-[8px] leading-none font-bold tracking-wider uppercase">
                       Approval
@@ -228,8 +222,8 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                   </div>
                 </div>
 
-                <div className="flex min-w-0 items-center gap-1.5 border-l border-white/10 px-1 text-xs">
-                  <Scale className="h-3.5 w-3.5 shrink-0 text-violet-400" />
+                <div className="border-border/40 flex min-w-0 items-center gap-1.5 border-l px-1 text-xs">
+                  <Scale className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                   <div className="flex min-w-0 flex-col">
                     <span className="text-muted-foreground/70 text-[8px] leading-none font-bold tracking-wider uppercase">
                       Stability
@@ -240,14 +234,17 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                   </div>
                 </div>
 
-                <div className="flex min-w-0 items-center gap-1.5 border-l border-white/10 px-1 text-xs">
-                  <Zap className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                <div
+                  className="border-border/40 flex min-w-0 items-center gap-1.5 border-l px-1 text-xs"
+                  title={`${usedSlots} of ${slotCap} weekly Directive slots utilized (${capacityPct}% throughput remaining)`}
+                >
+                  <Zap className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                   <div className="flex min-w-0 flex-col">
                     <span className="text-muted-foreground/70 text-[8px] leading-none font-bold tracking-wider uppercase">
-                      Capacity
+                      Directives
                     </span>
-                    <span className="text-foreground truncate text-xs leading-tight font-bold tabular-nums">
-                      {capacityPct}%
+                    <span className="text-foreground truncate font-mono text-xs leading-tight font-bold tabular-nums">
+                      {usedSlots}/{slotCap}
                     </span>
                   </div>
                 </div>
@@ -257,7 +254,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
 
           {/* 4 Vitality Rings Grid */}
           <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-            {rings.map((ring: any) => (
+            {rings.map((ring) => (
               <motion.button
                 key={ring.id}
                 type="button"
@@ -267,7 +264,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={handleOpenBreakdown}
-                className="group/ring flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-2 text-left backdrop-blur-md transition-all duration-150 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.97]"
+                className="group/ring border-border/50 bg-card/40 hover:border-border/80 hover:bg-card/70 flex cursor-pointer items-center gap-2 rounded-xl border p-2 text-left backdrop-blur-md transition-all duration-150 active:scale-[0.97]"
               >
                 <HealthRing value={ring.value} size={34} color={ring.color} label={ring.label} />
                 <div className="min-w-0 flex-1">

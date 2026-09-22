@@ -2,13 +2,22 @@
 
 import React from "react";
 import { countGeometryVertices } from "~/components/maps/editor/utils/editor-overlay-helpers";
+import type { EditorFeature } from "~/components/maps/editor/types/editor-state";
+
+export interface HoveredFeatureInfo {
+  feature: EditorFeature;
+  screenPos: { x: number; y: number };
+}
 
 interface RegionHoverTooltipProps {
-  hoveredFeature: any;
+  hoveredFeature: HoveredFeatureInfo | null;
   editorMode: string;
 }
 
-export function RegionHoverTooltip({ hoveredFeature, editorMode }: RegionHoverTooltipProps) {
+export const RegionHoverTooltip = React.memo(function RegionHoverTooltip({
+  hoveredFeature,
+  editorMode,
+}: RegionHoverTooltipProps) {
   if (!hoveredFeature || (editorMode !== "view" && editorMode !== "paint")) {
     return null;
   }
@@ -27,14 +36,14 @@ export function RegionHoverTooltip({ hoveredFeature, editorMode }: RegionHoverTo
         <div className="flex justify-between gap-3">
           <span>Type</span>
           <span className="text-foreground font-medium">
-            {hoveredFeature.feature.properties.subdivisionType ?? hoveredFeature.feature.type}
+            {String(hoveredFeature.feature.properties.subdivisionType ?? hoveredFeature.feature.type)}
           </span>
         </div>
         {hoveredFeature.feature.properties.areaSqKm != null && (
           <div className="flex justify-between gap-3">
             <span>Area</span>
             <span className="text-foreground font-medium tabular-nums">
-              {Number(hoveredFeature.feature.properties.areaSqKm).toLocaleString()} km²
+              {Math.round(Number(hoveredFeature.feature.properties.areaSqKm)).toLocaleString()} km²
             </span>
           </div>
         )}
@@ -57,4 +66,4 @@ export function RegionHoverTooltip({ hoveredFeature, editorMode }: RegionHoverTo
       </div>
     </div>
   );
-}
+});

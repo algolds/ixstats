@@ -79,7 +79,7 @@ export function MetricCard({
       style={cssVars as React.CSSProperties}
     >
       {texture && texture !== "none" && (
-        <TextureOverlay texture={texture as any} opacity={textureOpacity ?? 0.03} />
+        <TextureOverlay texture={texture} opacity={textureOpacity ?? 0.03} />
       )}
 
       {/* Header with Icon and Label */}

@@ -4,10 +4,6 @@ import { TRPCError } from "@trpc/server";
 import { enhancedArchetypes, archetypeCategories } from "~/lib/archetypes/catalog";
 
 // Input validation schemas
-const _archetypeSelectionSchema = z.object({
-  archetypeIds: z.array(z.string()).max(5, "Maximum 5 archetypes can be selected"),
-});
-
 const createArchetypeSchema = z.object({
   name: z.string().min(1).max(50),
   description: z.string().min(1).max(200),

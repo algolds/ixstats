@@ -32,7 +32,7 @@ export const PolicyOverviewStats = React.memo(function PolicyOverviewStats({
               <p className="text-muted-foreground text-sm">Overall Effectiveness</p>
               <p className="text-3xl font-bold">{policyEffectiveness.overall}%</p>
             </div>
-            <Target className="h-8 w-8 text-indigo-600" />
+            <Target className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
           </div>
         </CardContent>
       </Card>
@@ -44,7 +44,7 @@ export const PolicyOverviewStats = React.memo(function PolicyOverviewStats({
               <p className="text-muted-foreground text-sm">Component Score</p>
               <p className="text-3xl font-bold">{Math.round(policyEffectiveness.components)}%</p>
             </div>
-            <Zap className="h-8 w-8 text-purple-600" />
+            <Zap className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
           </div>
         </CardContent>
       </Card>
@@ -56,7 +56,7 @@ export const PolicyOverviewStats = React.memo(function PolicyOverviewStats({
               <p className="text-muted-foreground text-sm">Tax Efficiency</p>
               <p className="text-3xl font-bold">{policyEffectiveness.tax}%</p>
             </div>
-            <TrendingUp className="h-8 w-8 text-green-600" />
+            <TrendingUp className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
           </div>
         </CardContent>
       </Card>
@@ -68,7 +68,7 @@ export const PolicyOverviewStats = React.memo(function PolicyOverviewStats({
               <p className="text-muted-foreground text-sm">Active Components</p>
               <p className="text-3xl font-bold">{componentCount}</p>
             </div>
-            <Activity className="h-8 w-8 text-blue-600" />
+            <Activity className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
           </div>
         </CardContent>
       </Card>

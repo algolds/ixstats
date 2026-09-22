@@ -20,6 +20,8 @@ import {
   findCoatOfArmsUrl,
   type WikiIntro,
 } from "~/lib/wiki-os/adapters/ixstates/integration";
+import type { CountryWithEconomicData } from "../primitives/CountryDataProvider";
+import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
 
 type MetricView = {
   gdp: "perCapita" | "total";
@@ -39,12 +41,12 @@ export function OverviewTab({
   metricView,
   setMetricViewAction,
 }: {
-  country: any;
-  wikiIntro: unknown;
+  country: CountryWithEconomicData;
+  wikiIntro: WikiIntro | null | undefined;
   wikiImages: Array<{ title: string; url: string }> | null | undefined;
   wikiLoading: boolean;
   metricView: MetricView;
-  setMetricViewAction: React.Dispatch<React.SetStateAction<any>>;
+  setMetricViewAction: React.Dispatch<React.SetStateAction<MyCountryMetricView>>;
 }) {
   return (
     <Card className="facet-surface facet-refraction bg-gradient-overview border-border overflow-hidden">
@@ -54,13 +56,15 @@ export function OverviewTab({
           <TooltipTrigger asChild>
             <div className="grid grid-cols-3 gap-2">
               <button
+                type="button"
+                data-cuelume-press="soft"
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
-                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="border-border/30 bg-card/40 hover:bg-card/70 cursor-pointer rounded-xl border p-3 text-left transition-all duration-150 active:scale-[0.98] backdrop-blur-md"
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.gdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
@@ -103,13 +107,15 @@ export function OverviewTab({
                 </p>
               </button>
               <button
+                type="button"
+                data-cuelume-press="soft"
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     population: v.population === "total" ? "density" : "total",
                   }))
                 }
-                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="border-border/30 bg-card/40 hover:bg-card/70 cursor-pointer rounded-xl border p-3 text-left transition-all duration-150 active:scale-[0.98] backdrop-blur-md"
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.population === "total" ? "Population" : "Pop. Density"}
@@ -150,20 +156,22 @@ export function OverviewTab({
                 </p>
               </button>
               <button
+                type="button"
+                data-cuelume-press="soft"
                 onClick={
                   country.areaSqMi && country.landArea
                     ? () =>
-                        setMetricViewAction((v: any) => ({
+                        setMetricViewAction((v: MyCountryMetricView) => ({
                           ...v,
                           area: v.area === "km" ? "mi" : "km",
                         }))
                     : undefined
                 }
                 className={cn(
-                  "border-border-secondary/30 bg-bg-accent/5 rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02]",
+                  "border-border/30 bg-card/40 rounded-xl border p-3 text-left transition-all duration-150 backdrop-blur-md",
                   country.areaSqMi &&
                     country.landArea &&
-                    "hover:bg-bg-accent/10 cursor-pointer dark:hover:bg-white/[0.05]"
+                    "hover:bg-card/70 cursor-pointer active:scale-[0.98]"
                 )}
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
@@ -198,7 +206,7 @@ export function OverviewTab({
         {/* Growth footer */}
         <div className="border-border/40 text-muted-foreground flex items-center gap-4 border-t pt-2.5 text-[11px]">
           <span>
-            <TrendingUp className="mr-1 inline h-3 w-3 text-pink-500" />
+            <TrendingUp className="mr-1 inline h-3 w-3 text-muted-foreground" />
             Max GDP Growth{" "}
             <span className="text-foreground font-semibold">
               {((country.maxGdpGrowthRate ?? 0) * 100).toFixed(1)}%
@@ -206,7 +214,7 @@ export function OverviewTab({
             <span className="ml-1 opacity-60">({country.economicTier || "N/A"} cap)</span>
           </span>
           <span>
-            <Activity className="mr-1 inline h-3 w-3 text-pink-500" />
+            <Activity className="mr-1 inline h-3 w-3 text-muted-foreground" />
             Local Factor{" "}
             <span
               className={cn(
@@ -234,7 +242,7 @@ export function OverviewTab({
           {/* Wiki intro + coat of arms */}
           {(() => {
             const introHtml =
-              extractWikiIntroHtml(wikiIntro as WikiIntro) ||
+              (wikiIntro ? extractWikiIntroHtml(wikiIntro) : null) ||
               country?.wikiSummary ||
               country?.description ||
               null;

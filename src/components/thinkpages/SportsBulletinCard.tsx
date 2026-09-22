@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Trophy, NavArrowRight as ChevronRight, Shield, Sparks as Sparkles } from "iconoir-react";
+import { Trophy, NavArrowRight as ChevronRight, Shield, Flash as Zap } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";
@@ -243,7 +243,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
                   <div className="flex shrink-0 items-center gap-2">
                     {res.isUpset && (
                       <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400">
-                        <Sparkles className="h-2.5 w-2.5" />
+                        <Zap className="h-2.5 w-2.5" />
                         UPSET
                       </span>
                     )}

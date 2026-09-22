@@ -1,0 +1,1487 @@
+=== ENTIRE WIKI CORPUS AUDIT (4725 ARTICLES) ===
+Date: 2026-09-10T02:38:44.043Z
+
+=== REGIONAL DISTRIBUTION ===
+{
+  "Levantia": 975,
+  "Sarpedon": 665,
+  "Crona": 893,
+  "Audonia": 688,
+  "Orient": 868,
+  "Coscivia": 1090,
+  "Other": 2037
+}
+
+=== ALL DISCOVERED IDEOLOGIES (31) ===
+
+[IDEOLOGY] Pan-Cronanism
+Categories: IXWB, Political_ideologies
+Snippet:
+'''Pan-Cronanism''', a movement which has recently gained momentum in the 2020's, is the political ideology calling for the unification of states on the continent of [[Crona]] into a larger political entity, commonly in the form of supranational organizations, but also rarely in form of one of several unified Cronan superstates. The movement is most popular in southern Crona, with smaller movements elsewhere on the continent.
+
+==Origins==
+The Pan-Cronan movement emerged after the end of the [[Great Cronan War]] in the mid-late 1950s. It originally began as a movement of peace, intended to call for peaceful resolution to any further conflicts that could escalate into another Great War. As time went on, however, the movement grew into one that sought to join together the continent of Crona in some respect of unity and cooperation. Kronatan congressman [[Gregor Friedrich Mandel]] coined the term ''Pan-Cronanism'' in his 1961 speech to the [[Kronatan Legislature|Bundeskongress]], saying that "It is a necessary idea of brotherly cooperation between all the states of Crona to rebuild the relationships shaken by the war."
+
+[[Category:IXWB]]
+[[Category:Political ideologies]]
+-----------------------------------------
+
+[IDEOLOGY] Kirosocialism
+Categories: IXWB, KRV, Kiravian_politics, Political_ideologies, Types_of_socialism
+Snippet:
+
+
+{{Cquote|The essence of Kirosocialism is a revolutionary theory which has provided solutions to problems arising in the revolutionary praxis in a new age different from the era that gave rise to Marxism–Leninism, one that gives a profound explanation of the theories, strategies and tactics of national liberation, class emancipation and human liberations in our era. Thus, it can be said that Kirosocialism is a creative application of socialist thought to the material - yes - but also social, cultural, and spiritual conditions of Coscivian civilization under capitalism. You see, Marxism–Leninism presented a series of dicta on building socialism with the ultimate goal of world communism, but Marxist–Livasist thought as generally understood cannot escape the confines of presuppositions and hypotheses owing to the limitations of the conditions of their ages and practical experiences. Thus, as many countries applied the principles of Marxist–Leninist materialistic conception of history dogmatically, they have failed to advance revolution continually after the establishment of the socialist system. Kirosocialism, then, is not merely "Socialism with Coscivian characteristics". On the contrary, the philosophical and social-scientific synthesis of Kirosocialism has brought us closer to classical Marxism, which expresses the relationship between economics and politics, and further, the economic base and superstructure where the latter is determined fundamentally by the former and only
+-----------------------------------------
+
+[IDEOLOGY] Shaftonist_democracy
+Categories: IXWB, KRV, Political_ideologies
+Snippet:
+[[File:DodgerBlue flag waving.svg|thumb|Sky blue and teal are the traditional colour of Shaftonist-democratic movements in the Coscivian world.]]
+
+'''Shaftonist democracy''' (Coscivian: ''Śavtoplānoāritarisēn'', ''Śavtoþérmúāritarisēn'') is an ideology within the larger tradition of Shaftonist republicanism seeking to apply Shaftonic ideals and Shaftonist political theory in the context of modern {{wp|liberal democracy}}. 
+
+Shaftonist democracy grew out of the modern Shaftonist political movement anchored in the [[Renaissance Party]] and underground networks of dissident intellectuals during Kirosocialism, and gained prominence amid the Mid-Kirosocialist period of political and socio-economic stagnation. It was posited as the vision of the [[Federalist Republican Alliance]] and the National Renewal Movement for a post-Kirosocialist future, and remains the main ideological line of the SRA caucus and most of its member-parties to this day.  
+
+Shaftonist democracy can be characterised as an approach to politics that combines Shaftonist principles such as ''ixtévirsa'' ("higher order"), ''athnivirsa'' ("proper order"), ''uordhiria'' ("edification"), ''xarbonara'' ("continuity"), and ''valium'' ("duty"); with political structures and practices typical of [[Occidental]] liberal democracy. It can be distinguished from the much older and broader tradition of Shaftonist republicanism (''śavtokéaritarisēn''), which dates back to the lifetime of Shafto himself and has put forward many d
+-----------------------------------------
+
+[IDEOLOGY] Constantinus_I
+Categories: Articles_with_short_description, Caphiria, House_Panther, IXWB, Imperators_of_Caphiria, Incomplete_articles, People, People_in_Caphiria, Politicians
+Snippet:
+{{wip}}
+{{Infobox Imperator
+| embed          = 
+| name           = Constantinus I
+| title          = Caesar, Augustus, Dictator Perpetuo, Dominus, Invictus, Primus inter pares, Princeps Civitatis
+| titletext      = ''[[Imperator#Titles|(more...)]]''
+| image          = ConstantinusPortrait.jpg
+| caption        = 
+| succession     = [[Imperator of Caphiria]]
+| moretext       = ''[[Imperator#Titles|(more...)]]''
+| reign          = 1 Jan [[2025]] – present
+| reign-type     = Reign
+| coronation     = 15 March [[2025]]
+| cor-type       = caphiria
+| predecessor    = [[Atancello II]]
+| birth_name     = Colrin Oscarleo Caepacellio Panther
+| birth_date     = 16 Dec [[1977]] (age 47)
+| birth_place    = [[Venceia]], [[Caphiria]]
+| death_date     = 
+| death_place    = 
+| spouse         = [[Arabella IX]]
+| issue          = 
+| house          = [[Panther Estate]]
+| father         = Haladino Panther
+| mother         = Ileana Panther
+| religion       = [[Caphiric Catholicism]]
+}}
+'''Constantinus I''' ('''Colrin Oscarleo Caepacellio Panther'''; born 16 Dec 1977) is the current [[Imperator]] of the [[Imperium of Caphiria]]. His reign began in 2025, after the death of Atancello II. Born into the [[Panther Estate]], Constantinus has wielded significant power and influence within the Imperium. As a teenager, he became a successful fashion model and first gained mainstream support. He was given the nickname "''Princeps Lepore" -'' or prince charming, due to his attractiveness and charm, and received
+-----------------------------------------
+
+[IDEOLOGY] Organicism
+Categories: IXWB, Incomplete_articles_(Urcea), Occidental_civilization, Political_ideologies, Urcea
+Snippet:
+{{Urcea WIP}}
+
+'''Organicism''' is a political and moral philosophy based on the existence of organically developed, interconnected societies and public life as an expression of these concepts. Organicists argue that all human persons are social animals and, consequently, humans are created to be governed and live in society. Accordingly, society is not created but is an organic, developing institution based around the organically developed set of social relationships to which all individuals are subject; since this is the case, it is in society's interests to ensure the common good, defined as "the sum total of social conditions which allow people, either as groups or as individuals, to reach their fulfillment more fully and more easily".  Organicists espouse a somewhat wide array of views depending on their understanding of these principles, but they generally support {{wp|social democracy}}, organized religion, moral law as public law, degrees of social equality, with some proponents of organicism supporting nationalism or [[organic socialism]].
+
+Organicism became a distinct movement in the 18th century, when it became popular among [[Occidental]] philosophers and economists as a position contra {{wp|social contract theory}}. Proponents of organicism sought to reform the norms of hereditary privilege, state religion, absolute monarchy, the divine right of kings and traditional conservatism into more inclusive systems without creating a definitive rupture; many viewed it as
+-----------------------------------------
+
+[IDEOLOGY] Restarkism
+Categories: IXWB, Incomplete_articles, Political_ideologies
+Snippet:
+{{wip}}
+[[File:RNP flag.svg|thumb|330px|The flag of the [[Republican Nationalist Party]], containing a [[Coscivian civilisation|four-pointed star]] representing the four principles and their Coscivian inspiration.]]
+'''Restarkism''', ([[Cape Coscivian]]: ''Restarkizme'', archaically ''Rektarizm''), or '''the Four Principles''', is the founding ideology of the [[the Cape|Federacy of the Cape]]. Developed by [[Melvyn Kalma]], it is a philosophy with the aim of developing and uniting the Cape into a modern, [[Occidental]], and powerful state. As defined by him, it is a national liberation ideology with the broad goal of uniting the ethnically disparate peoples of the country and separating the new nation from its previous tribal and colonial roots. To this day, Restarkism remains the official constitutional {{wp|ideology|state ideology}} of the Federacy, and is the guiding philosophy of the {{wp|dominant-party system|dominant}} [[Republican Nationalist Party]]. 
+
+Much of the ideology originated from various colonial reforms before the [[Cape War of Independence]], where the ideas of {{wp|civic nationalism}} and democracy took root. Following the independence of the Cape, Kalma took the earlier civic-nationalist and democratic ideals and combined them with the ideas of the budding {{wp|liberalism|liberal}} and {{wp|socialist}} movements of the Occident. Restarkism was first implemented during the premiership of Kalma, with the ideology further reformed and enshrined by later lead
+-----------------------------------------
+
+[IDEOLOGY] Crown_Liberalism
+Categories: IXWB, Incomplete_articles_(Urcea), Political_ideologies, Politics_of_Urcea
+Snippet:
+{{Urcea WIP}}
+
+'''Crown Liberalism''' is a semi-{{wp|liberalism|liberal}} philosophy and political ideology originating in [[Urcea]] based on {{wp|consent of the governed}}, {{wp|Reform movement|gradual reform}}, and the establishment of a government "guided by but not limited to" non-elected authorities such as the [[Apostolic King of Urcea]] or [[Catholic Church]]. Crown Liberalism is considered to be {{wp|fusionist}}, embracing core liberal principles such as the {{wp|social contract}} and {{wp|individual rights}} while accepting the necessity of public stability and opposing political {{wp|radicalism}}. It is similar to [[Organicism]] in application inasmuch as Crown Liberalism emphasizes reform and continuity, but major disagreements between Crown Liberalism and Organicism exist on basic issues such as {{wp|social contract}} and class distinctions, as Crown Liberalism is viewed by many to be a definitively {{wp|bourgeoisie}} ideology. The philosophy has been described by the [[Kiravia|Kiravian]] scholar [[P. G. W. Gelema]] "a movement aimed at creating the maximum degree of liberty and mobility for the individual and the family with the minimum degree of instability".
+
+In terms of its philosophical origin, Crown Liberalism has largely been traced back to {{wp|absolutist}} notions in [[Urcea]] regarding the {{wp|social contract}} between the [[Apostolic King of Urcea|Apostolic King]] and [[Urcean people]]. Philosophers and scholars have noted that Crown Liberalism's prima
+-----------------------------------------
+
+[IDEOLOGY] Bairdism
+Categories: Carna, NonCanon, Pages_with_script_errors, Political_ideologies, Types_of_socialism
+Snippet:
+{{NonCanon}}
+{{Template:Bairdism sidebar}}
+<!-- the governing [[Communism in Carna|communist philosophy]] of [[Carna]]. -->
+[[File:William Baird.jpg|thumb|250px|[[William Baird]], whose writings and philosophy formed the basis for Bairdism and set the stage for the [[Carnish Revolution]]]]
+Bairdism is a {{wp|List of communist ideologies|communist ideology}} developed by Carnish {{wp|Marxism|Marxist}} {{wp|political theorist}}, {{wp|philosopher}} and revolutionary [[William Baird]] that proposes the establishment of a {{wp|communism|communist society}} through the creation of {{wp|Democracy|democratic}} {{wp|Workers' council|people's councils}} organised under a {{wp|Decentralization|decentralised}}, {{wp|Non-partisan democracy|non-partisan}}, {{wp|Classless society|classless}} union. Built around the theories of {{wp|Council communism|council communism}} and {{wp|Libertarian Marxism|libertarian Marxism}}, Bairdism is staunchly {{wp|Anti-authoritarianism|anti-authoritarian}}, {{wp|Anti-statism|anti-state}} and democratic and is firmly opposed to [[Devinism]] and the concept of the revolutionary {{wp|vanguardism|vanguard party}}. Bairdism instead proposes that a network of worker councils would be the main vehicle for revolution against the {{wp|Capitalism|capitalist state}}. Bairdism is also critical of {{wp|Reformism|reformist}} positions such as those held by {{wp|Social democracy|social democrats}}, believing that communists should not participate in bourgeois parliaments. 
+-----------------------------------------
+
+[IDEOLOGY] Devinism
+Categories: Incomplete_articles, Koré'hetanùa, Out_of_date_articles, Political_ideologies, Types_of_socialism
+Snippet:
+{{wip}}
+{{OOD}}
+[[File:ADPR flag.png|thumb|250px|Flag of the Austral Democratic People's Republic, the proclaimed center of the Devinist and wider communist world according to the Devinist ideology.]]
+Devinism is a {{wp|List of communist ideologies|communist ideology}} developed by Australic Coscivian {{wp|wp|Post-Marxism|post-Marxist}}, {{wp|economist}}, and {{wp|Military strategy|military strategist}} Grand Admiral Varunor Devin. The ideology proposes the establishment of a {{wp|Market socialism|market socialist}} sphere of states across the world with Australis at its center. Varunor Devin proposed that {{wp|world communism}} could only ultimately be achieved through the forceful military expansion and the gaining of political influence in other countries in order to incite {{wp|world revolution}}. Devin believed communism could only succeed in {{wp|one-party states}} with {{wp|vanguardist}} communist parties dictating national doctrine in each communist state throughout the world. Devin was a firm believer in the concept of the {{wp|nation-state}}, and sought to use the political independence and strong military position of Australis to form a series of communist states around the central [[Koré'hetanùa|Austral Democratic People's Republic]]. This aim was part of the Southern Century initiative undertaken by Devin in the 1910s and is a key component of Devinism to this day. Devin was a staunch opponent of [[Bairdism]], the prevailing communist thought in [[Carna]], as he 
+-----------------------------------------
+
+[IDEOLOGY] Republican_Nationalist_Party_(the_Cape)
+Categories: IXWB, The_Cape
+Snippet:
+{{Infobox political party
+| name = Republican Nationalist Party
+| native_name = Parduv Restarka Nationalista
+| native_name_lang = Cape Coscivian
+| lang1 = 
+| name_lang1 = 
+| lang2 = 
+| name_lang2 = 
+| lang3 = 
+| name_lang3 = 
+| lang4 = 
+| name_lang4 = 
+| logo = Logo of the RNP1.svg
+| logo_size = 200px
+| logo_upright =
+| logo_alt =
+| caption =
+| colorcode =         #082a3f
+| abbreviation =      RNP, PRN
+| leader = Kil Furey
+| president = 
+| chairperson =       <!-- or | chairman = -->
+| general_secretary =
+| first_secretary = Saoirse Kairtus
+| secretary_general = 
+| presidium =
+| standing_committee = [[Central Committee of Workers, Peasants, and Nationals]]
+| secretary =
+| spokesperson =      <!-- or | spokesman = -->
+| leader1_title = 
+| leader1_name = 
+| leader2_title = 
+| leader2_name = 
+| leader3_title = 
+| leader3_name = 
+| leader4_title = 
+| leader4_name = 
+| leader5_title = 
+| leader5_name = 
+| founder =           [[Melvyn Kalma]]
+| founded =           {{Plainlist|
+* {{start date|1897|3|12|df=y}}<br />(as a resistance organisation)
+* {{start date|1901|10|8|df=y}}<br />(as a political party)
+* {{start date|1951|10|8|df=y}}<br />(re-establishment)}}
+| registered = 
+| legalised =         <!-- or | legalized = -->
+| dissolved =         <!-- or | banned = or | dissolution = use {{end date|YYYY|MM|DD}} -->
+| merger = 
+| split = 
+| predecessor = [[Political Office of the National Revolutionary Army]]
+| merged = 
+| successor = 
+| headquarters = 12 Republic Ave, [[Cape Town]], [
+-----------------------------------------
+
+[IDEOLOGY] Pelaxian_Socialism
+Categories: Pelaxia, Political_ideologies, Types_of_socialism
+Snippet:
+Pelaxian Socialism is a political, social, and economic philosophy of Marxist origing encompassing a range political theories, and social systems characterised by social ownership of the means of production. It includes the economic policies and movements associated with such systems. Social ownership can be public, collective, cooperative, or of equity. 
+
+While no single definition encapsulates the many types of principles, social ownership is the one common element that has been higlighted in the 21st century. 
+
+Historically Pelaxian Socialists disagreed about the degree to which social control or regulation of the economy is necessary, how far society should intervene and whether government, particularly existing government, is the correct vehicle for change. Pelaxian Socialism lines of thought have been divided in non-market and market forms. Non-market socialism substitutes factor markets and money with integrated economic planning and engineering or technical criteria based on calculation performed in-kind, thereby producing a different economic mechanism that functions according to different economic laws and dynamics than those of capitalism. A non-market socialist system eliminates the inefficiencies and crises traditionally associated with capital accumulation and the profit system in capitalism. The socialist calculation debate, originated by the economic calculation problem, concerns the feasibility and methods of resource allocation for a planned socialist system
+-----------------------------------------
+
+[IDEOLOGY] Urcean_socialist_philosophy
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, IXWB, Incomplete_articles_(Urcea), Political_ideologies, Politics_of_Urcea, Types_of_socialism, Urcea
+Snippet:
+{{Urcea WIP}}
+
+'''Urcean socialist philosophy''' is the study of the different strains of {{wp|socialist}} thought in [[Urcea]].
+==Marxism==
+Traditional readings of [[Carlos Marx]] have been popular in small circles in [[Urcea]] since the establishment of his works in the mid 19th century. Marx's discussion of the {{wp|Historical materialism|materialist reading of history}} described a system in which the feudal mode of production would give way to a capitalist mode followed by the creation of the socialist mode of production. Marx's view of the materialist progression, however, has caused divisions among Urcean Marxists since its inception; writing as a continental [[Sarpedon|Sarpedonian]], it was not clear to Marxists of the 19th century through today if this straight-forward model is applicable to Urcea. This fundamental disagreement led to the division of Marxists within Urcea between the "Traditionalist Marxists" and the "Particular Marxists".
+===Traditionalist Marxists===
+Traditionalist Marxists in [[Urcea]] argue that Urcean society is merely in the capitalist mode of production with a mix of particular institutions that provide a public benefit but do not otherwise change its historical state. The traditionalists point out that a {{wp|distributist}} economy is still, largely, a {{wp|market economy}} and that the means of production are still owned by private hands and serve the interests of private individuals. Mid-20th century [[Republican Party (Urcea)|Republican Pa
+-----------------------------------------
+
+[IDEOLOGY] Adaptivism
+Categories: All_stub_articles, Fiannria, Political_ideologies, Stubs
+Snippet:
+{{stub}}
+
+[[Fiannria]]n {{wp|conservative liberalism}} iirc.
+
+[[Category:Political ideologies]]
+[[Category:Fiannria]]
+-----------------------------------------
+
+[IDEOLOGY] Disurbanism
+Categories: IXWB, KRV
+Snippet:
+'''Disurbanism''' (Coscivian: ''Akasarisēn'', from ''aka-'' "away from" + ''sar'' "city, town") is an ideology and a design movement originating in [[Kiravia]] with relevance to urban and civil planning, politics, and culture. Disurbanism posits that the {{wp|city}} (and in many formulations, the {{wp|town}}) is a harmful and unnecessary formation and a poor way to organise human life, and that cities and towns as currently understood should be abandoned in favour of more geographically distributed patterns of settlement. Most disurbanists believe that while cities once served legitimate purposes, they have since been rendered obsolete by modern advances in communications and transportation technology, and that the utilitarian benefits of cities no longer justify the social, economic, and political costs of urbanocentrism.
+
+Disurbanism can be distinguished from traditionalist-agrarian anti-urbanism in that disurbanists embrace technological modernity as enabling a mass escape from cities and support the diffusion of traditionally urban activities such as industry, commerce, and human services into the countryside, with the ultimate goal of erasing any clear distinction between agricultural rural areas and industrial/commercial urban ones. However, in practice there is significant overlap and coöperation between disurbanist and rural anti-urbanist currents.
+
+Disurbanism has a long history in Coscivian thought, dating back to the orator and philosopher Linux Isō, who argued tha
+-----------------------------------------
+
+[IDEOLOGY] Commarcho_Capitalism
+Categories: Castadilla, Castapunk, IXWB, Political_ideologies
+Snippet:
+'''Commarcho Capitalism''' ([[Classical Latin|Latin]]: ''Capitalista Commarchismus''; [[Pelaxian language|Pelaxian]]: ''Comarcocapitalismo''; [[Brenadine Tainean|Reform Tainean]]: ''Comarkaukapitaulismau'') is one of the official ideologies of the {{wp|List of frivolous political parties|satirical political party}} the [[Party of National Acceleration]], a self-declared party of the "steelvetines" (''cabacerciopeladistas'') founded in 1998 by two {{wp|punk ideologies|punks}} in [[Las Joquis]], [[Castadilla]]. The name of the ideology comes from the ideologies of {{wp|communism}} and {{wp|anarcho-capitalism}}, making it a portmanteau of the two terms.
+
+Followers of this ideology have often called it "the final evolutionary stage for the Castadillaan nation where everyone will be free to do as they please ten times over or more in the struggle against any and all forms of education". Political analysts often debate over whether commarcho capitalism is meant to be a jab at [[Velvetine Socialism|Velvetine socialism]], or a tongue-in-cheek attempt at presenting an "alternative" to the [[People's Democratic Party|PDP]], but each and every single one of them have reached a consensus that the ideology is designed to be an expression of the growing [[Rumapunk subculture|Castadillaan punk subculture]] much like the other satirical ideologies that have risen in the late 1990s.
+
+Outside of Castadilla, commarcho capitalism has very little following outside of online social media, nor are 
+-----------------------------------------
+
+[IDEOLOGY] 21st_Century_Burgoignesc_Power_Projection_Stratagem
+Categories: 2025_Award_winning_pages, Burgoignesc_Security_Forces, Burgundie, Defense_policy, Economy, Economy_of_Burgundie, History, History_of_Burgundie, IXWB, Military, Military_History_of_Burgundie, Military_reform, Pages_using_duplicate_arguments_in_template_calls, Pages_with_broken_file_links, Political_ideologies, Politics, Politics_of_Burgundie, White_papers_and_strategies
+Snippet:
+[[File:Morgan_Barbancon_Mestre_mit_Vitana_V.JPG|330px|Right|thumb|Princess Amelia preparing to rule the world   #GurlBOSS]]
+
+The '''21st Century Burgoignesc Power Projection Stratagem''' ([[Burgoignesc language|Burg:]] ''Stratageme por la Projection della Etat Real Burgoignesc dans la XXIe siècle'') (SPERB XXI) is the external affairs proposal put forward by the [[Crown Princess Amelia|Crown Princess of Burgundie, Amelia]], for review by top political, military, institutional, and business leaders in [[Burgundie]]. In it she proposes how she plans to rule in the event of her father's death, the Great Prince of Burgundie, [[Pasqual I]]. 
+
+==Background==
+She follows in the footsteps of all members of the [[List_of_Rulers_of_Burgundie#Palacin_Dynasty|Palacin dynasty]] in creating a ''Condicio Princeps'' (Eng. Position of the heir to the throne (Prince)), essentially a whitepaper on how they plan to rule and the priorities they intend to pursue in the initial years of their reign. The ''Condicio Rex'' was introduced during the process of selecting a new Great Prince in [[1985]] when it became clear that August II would not have an issue, and was rather unpopular. The [[Government of Burgundie#Executive Branch|Advisors of the Court of St. Alphador]] went through an arduous selection process and by the end of [[1987]] had still not found a suitable candidate and they adjourned for Christmas and New Years' holidays. On their return in mid-January of [[1988]] they received an unsolic
+-----------------------------------------
+
+[IDEOLOGY] Puertegan_Path_to_Socialism
+Categories: 2023_Award_winning_pages, Articles_containing_Spanish-language_text, IXWB, Pages_with_broken_file_links, Political_ideologies, Puertego, Types_of_socialism
+Snippet:
+Puertegan Path to Socialism {{lang|es|(camino al socialismo de Puertego)}} is a {{wp|Marxist revisionist}} {{wp|socialist}} ideology based around a set of political theories and policies advocated for by the dominant party of Puertego the Puertegan White Flag communist Party that are seen by their proponents as representing {{wp|Marxism–Leninism}} but adapted and reformed to best serve Puertego for the modern circumstances it finds itself in. Most people consider the largest modern proponent of this ideology to be the current president of Puertego Matthias Torres, the primary principles advocated by him for the ideology are an opening of the formally state controlled economy to the rest of the world, a strong central government to help oversee this transition and to maintain public order during this transition, and the protecting of Puertegan culture and traditions in society.
+
+== History ==
+The name of the ideology was first coined by Erik Alférez the founder of the Puertegan White Flag Communist Party and first president of Puertego who called it "the only way I can see Puertego having a future on the world stage". Since that time however the ideology has branched out massively from Alférez's original vision which was focused largely on social and political reforms and only had minor plans for economic reforms to prevent the economy from collapsing however Alférez did not live long enough to enshrine this aspect of the ideology into law as he died from a stroke after only 3
+-----------------------------------------
+
+[IDEOLOGY] Velvetine_Socialism
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Castadilla, IXWB, Political_ideologies, Politics_of_Castadilla, Types_of_socialism
+Snippet:
+'''Velvetine Socialism''' ([[Classical Latin|Latin]]: ''Socialismi Holoserica''; [[Pelaxian language|Pelaxian]]: ''Socialismo Velutíno''; [[Brenadine Tainean|Reform Tainean]]: ''Sausalism des Velaus''), also known as '''Castadillaan Socialism''', '''Democratic Revolutionary Socialism''', or '''Reformist Labourism''', is the form of socialist thought developed during the [[Velvet Revolution]] in [[Castadilla]] to realise a socialist revolution in a country ruled by a [[Estado Social (Castadilla)|nationalist dictatorship]] for decades through gradual {{wp|reformist}} means. It is the official ideology of the [[People's Democratic Party]]. Ostensibly a form of [[Livasism#Marxism-Livasism|Marxism-Livasism]], Velvetine Socialism is in practice a form of {{wp|market socialism}} with elements of {{wp|dirigism}} and {{wp|tripartism}}, though some political analysts have described the ideology as being more akin to {{wp|social democracy}} with lots of government intervention than any particular form of socialism. It consists of [[Livasism#Cabaceroism|Cabaceroism]], [[Livasism#Borbonism|Borbonism]], and [[Castadillaanism]] ([[Francisco Carvalho]]). Each of these theories are, according to the party constitution of the PDP, representative of the relevant policies utilised for a given time period.
+
+Under Velvetine Socialism, the state plays an active interventionist role over a {{wp|market economy}} as a means to curb inefficiencies in production and {{wp|market failures}} through the us
+-----------------------------------------
+
+[IDEOLOGY] Securing_the_Cultural_Currency_of_Levantine_Union_in_the_Global_Social_Marketplace
+Categories: All_stub_articles, Burgundie, History, History_of_Burgundie, IXWB, Political_ideologies, Politics, Politics_of_Burgundie, Stubs, White_papers_and_strategies
+Snippet:
+{{stub}}
+'''Securing the Cultural Currency of Levantine Union in the Global Social Marketplace''' is the external affairs proposal put forward by the [[Pasqual I|Crown Prince of Burgundie, Pasqual]], for review by top political, military, institutional, and business leaders in [[Burgundie]]. In it he proposed how he plans to rule in the event of his father's death, the Great Prince of Burgundie, [[List_of_Rulers_of_Burgundie#Palacin_Dynasty|Maurice I]].
+==Background==
+Pasqual followed in his father's footsteps in creating a ''Condicio Princeps'' (Eng. Position of the heir to the throne (Prince)), essentially a whitepaper on how he planned to rule and the priorities he intended to pursue in the initial years of his reign. 
+
+The ''Condicio Rex'' was introduced during the process of selecting a new Great Prince in [[1985]] when it became clear that August II would not have an issue, and was rather unpopular. The [[Government of Burgundie#Executive Branch|Advisors of the Court of St. Alphador]] went through an arduous selection process and by the end of [[1987]] had still not found a suitable candidate and they adjourned for Christmas and New Years' holidays. On their return in mid-January of [[1988]] they received an unsolicited pamphlet titled ''Condicio Rex'' which laid out, in detail, the work of ruling. It was proposed by the head of the Palacin family, [[List_of_Rulers_of_Burgundie#Palacin_Dynasty|Maurice]], a descendant of the [[List_of_Rulers_of_Burgundie#Palacin-Diteaux_
+-----------------------------------------
+
+[IDEOLOGY] Nolanism
+Categories: All_stub_articles, IXWB, Political_ideologies, Politics_of_Urcea, Stubs
+Snippet:
+{{Stub}}
+
+'''Nolanism''' is a strain of {{wp|liberalism|liberal}} thought within [[Urcea]] that advocates the complete adoption of liberal social and economic ideas while remaining neutral on political issues such as the structure of the [[Constitution of Urcea|constitution]] or [[Apostolic King of Urcea|monarchy]] for pragmatic reasons. Nolanists are generally regarded as a radical strain of {{wp|conservative liberalism|conservative liberals}}, with the ideology calling for no accomodation with ancient institutions in Urcea such as the [[Guilds (Urcea)|guild system]], the established [[Catholic Church]], and the prevalence of so-called vice laws. Nolanism is generally opposed to [[Crown Liberalism]] and views the emancipation of the individual and enshrinement of {{wp|civil rights}} at the center of Urcean society as its chief aims. Adherents of the ideology also denounce {{Wp|socialism}} and various left-wing movements, feeling that they often make the monarchy a politically distracting issue while making their civil rights-oriented goals more easily subject to {{wp|strawman}} dismissals. The ideology is named for Linar Orens-Nolan, a onetime [[National Pact (Urcea)|National Pact]] member of the [[Conshilía Daoni]] and mid-20th century thought leader.
+
+[[Category:IXWB]]
+[[Category:Politics of Urcea]]
+[[Category:Political ideologies]]
+-----------------------------------------
+
+[IDEOLOGY] Total_Economic_Engagement
+Categories: All_stub_articles, Burgundie, Economy, Economy_of_Burgundie, IXWB, Pages_using_country_topics_with_unknown_parameters, Political_ideologies, Politics, Politics_of_Burgundie, Stubs
+Snippet:
+{{stub}}
+{{Economy of Burgundie}}
+[[Burgundie]]'s Total Economic Engagement (TEE) strategy was devised in the aftermath of [[Operation Kipling]] to build national strength through resilient regional economies. Instead of a top-down approach, TEE empowers each [[Burgundie|Burgoignesc]] [[Government_of_Burgundie#Provinces|province]] to determine their own maximum economic potential and then the national and constituent country government invests in achieving that potential. The key principle is finding ways for every working-age person to contribute, regardless of gender, race, ethnicity, ability, or background. Public programs, education initiatives, and private partnerships play a crucial role in skill development and ensuring everyone has the opportunity and motivation to engage in the economy. TEE goes beyond mere participation, actively dismantling barriers like gender inequality and institutional racism to create a truly inclusive playing field. Recognizing the long-term impact, investments in equal rights, preventative healthcare, high-quality education, and dismantling systemic barriers are seen as pillars of economic empowerment and therefore are key foci for the [[Government of Burgundie|government]]. Measuring success goes beyond traditional economic metrics, incorporating factors like regional well-being and social indicators. Equity is seen not as an issue of the rights of the individual but rather as an economic imperative of the state to ensure that every [[Burgo
+-----------------------------------------
+
+[IDEOLOGY] 2026_Pelaxian_Defence_White_Paper
+Categories: 2024_Award_winning_pages, Defense_policy, History, IXWB, Military, Military_reform, Pages_with_broken_file_links, Political_ideologies, Politics, White_papers_and_strategies
+Snippet:
+The 2026 Pelaxian Defence White Paper is an official document published by the Pelaxian Ministry of Defence in the wake of the Akanatoa War. The document outline the MoD discoveries and challenges presented to the armed forces for the second half of of the 21st century as well as the actions needes to meet specific objectives.
+
+== Introduction ==
+
+The Pelaxian Ministry of Defence presents this Defence White Paper in conjunction with the DEFENSA 2050 strategy, aimed at addressing the identified shortcomings within the Pelaxian Armed Forces and enhancing our military capabilities to meet future challenges. This strategy outlines a comprehensive roadmap for modernization, acquisition, and development initiatives critical to ensuring the readiness and effectiveness of our armed forces.
+
+== Challenges ==
+
+The Pelaxian Armed Forces face several challenges, including the aging armored personnel carrier fleet, the absence of a modern Main Battle Tank, and the need for revitalization of the Marine Expeditionary Force. To address these challenges effectively, the DEFENSA 2050 strategy outlines strategic initiatives and priorities aimed at modernizing and enhancing our military capabilities across all branches. In addition to land-based threats, the Pelaxian military recognizes the necessity to enforce and effectively protect sea routes around the Kindred from international threats and foreign aggressors. To address this challenge, maritime security capabilities will be enhanced, includ
+-----------------------------------------
+
+[IDEOLOGY] Political_ideologies_in_Castadilla
+Categories: 2024_Award_winning_pages, 2025_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Castadilla, IXWB, Political_ideologies, Politics_of_Castadilla
+Snippet:
+Formal '''political ideologies in Castadilla''' are aligned based upon the {{wp|left-right political spectrum}}, an axis used to classify political positions in relation to their emphasis on either social equality or social hierarchy. Most [[Castadillaans]] identify as at least one of four main ideologies: {{wp|socialism}}, {{wp|liberalism}}, {{wp|conservatism}}, and {{wp|nationalism}}; it is very common for one to identify as being any combination of two of the four main ideologies, with {{wp|political polarization|political polarisation}} being largely miniscule for the most part thanks to the four ideological groups more or less cooperating with each other during the era of the provisional government after the end of the [[Velvet Revolution]].
+
+[[Castadilla]], alongside [[Pelaxia]], have often been called the "cradle of socialism", and the main subsections within modern [[Socialism in Castadilla|Castadillaan socialism]] include [[Velvetine Socialism]], [[Livasism#Borbonism|Borbonism]], [[Livasism#Cabaceroism|Cabaceroism]], and even various flavours of socialist-aligned {{wp|social democracy}}; with Velvetine Socialism and Borbonism having emerged from the revolutionary left-wing factions of the Velvet Revolution while socialist-aligned social democracy developed throughout the latter half of the 19th Century and had gained prominence as the left-wing faction of the anti-Pascualist opposition groups which were formed in the late 1940s. Cabaceroism emerged in the 1930s as an
+-----------------------------------------
+
+[IDEOLOGY] Resistanceism
+Categories: Audonia, IXWB, Political_ideologies
+Snippet:
+}Y�����+x[)�HJYt��r"ز�Ȁ����Ls�Mv���X��}J~�ǜ�	�~�_��GvO�H�I�4��X�^�z�j��u�鷺���������e�>���~蛡]��I6��WL�Tب��}c��ku"u&tΤ���;ggg�O����Ii��������W,��N���{��Z�e+�Ճ/��2��^�Vχ:x�//��ke�88íW�)�����|��u�I���r����՗���0iƅ����=���ۜw1TN����eۙ�O�mV�o��՞Ol4��K��_3T�L�(W'<���S��k��/T�S������,Y(��,~׀��8g~�!ֆ D���R�l87U����z+�/��jm*�`�	 �D3�U�7x�ZxH9�)�6��ِ�� ��m���ձ3�h�>�m�@0c�T����3gњ��s��3�F��=�s2��[���Z +6v��g��>x���o?����'�-�M�Nح�W�9���pJ���?*��h��'K��78��N��;[��j-pBʓ���k������	On���J4����'l*�m�������<1�Ƥ�ޅ#�nM�PW���� e2�a�����K
+�M�$ɤ�&K\L&�le���$3�V�e�!�빔���k�5��(O��V����;��luFL{YB���MIhΘ�ގ���L%�ڥz��H���L�ϝ��G(��Y6d0��4��޷���� ����/5�QM*�@��DL��'���ѮU����<�,�I	��vKu��<���1����Z�,(�����_e�����U�!?QM�	d��(,��u�$^tV6�nc��u��S�m����."X�hf�>��.$�p�EZ]a��dԀ��$�hP�C�?X
+Z���S��mT�B��ץz)�W:Jֆ2B`�Z�@@jAN��mT��ǧ�����ND2���8��=ʰڂ$�T�\o[bZNP�bY?�c���(7R��k�5�j��E���6_�����EU��3x��_��zI�-��0�ȟ������Z�:�DH���Yn5x�݁E<�-�/��՛��ϾG$�V�<��Bd�6=/�4���]���,\Q��#O�bY�4?JMG�� �]*��X�&�F��$��n/o�l&�1S)�ʑ�lZ�F��q��2Fjѻ�Ƴ�A�Dz�i;��$����KY_�Tp�;�3�������v�f�e���@w�n7���;;��4
+��۬��܍���[�k��I)��UJ75����F^Č�W!ĺ�>�:SYrl�n��D)���Y��A�Y���.T��QY��ȷ�Hg?p�D��*��H" �+�Z�Ci��&�"���x�U��)Vɲ��,�q��j�T����8�De��!g��&JaΚ�0�mc걈b�_)Y�v����>Bj���$ LC2Ƴ����Q�f4�̋��O���� ڢ��~'�x�Ϙ^ڭ/�n=���a�N3�eV��Z6�-�%n��mE�2U4�ݚ����.�~��/�L`R�]�b^V�C��
+-----------------------------------------
+
+[IDEOLOGY] Universal_Nationalism
+Categories: Political_ideologies
+Snippet:
+uWˎ���Wpw��g���z1��o.�@�YPT�T>d��6������$����'ho�Y�S�N����cO�|�\��d�w�NO�4}���.o_꼆�<4�X)[Jrl+���u6�]�˜��\���Ç��s��X3QZ�����j�H��ш��x}�H��������VC�}1Q-���8N�r��2�ՏfI�P)�,eõ�t�������HFGk8�iN��V_��v�)�pѤ0�!';�b�zN������W�˓�!���:�瑒O�E�@Tƥxb��hj�̎��	�'�RM�`Ⴃ���[�C[~;.yO�}����Z�0�:Le��WR{ǔ��kf["�2�9�#!q}S���o~+>���$�WCZ%�4����9���6��5�q���(�
+��Yf^Z����� �l�#�d��?�bm|yy2�3�}A(� �lGKUDw���c��fqᴔ�9�<6�Q �9"�!d�F|��K9���ΈkϻS�9��@��F��|[��}��X�^��~E���N�����nD/����X7j�����/���	P/Ȇr�rA�l��s2y0�H�d̕8O�_'���^ף��R@��էU93r��B6�M��;��"4��i��(��?~���{5s�����m���%;�����C�8�o|U����K���K��E\��OR��m`�9�z��]}S"��,��"�J$��PV�f��GJgP�p�V�; �F~���	 a�B��O?(e�b�Pߑݜ��� �!�6:�k��OC�uW�"]Q4`��-��[c/^�K�.������y�PHIG�?nD��N\����8�@f(�v5�[o���JQ47bw#� a��\:g@��%����+f4�jkO��z7�?upPjJ��&0�4��!|	��$�&	�
+�U5�:ҥkSP��2"��"�>`�
+�!=S쑄.ck!D��@�T��� ���]ߤS���D+jѰ��74� �m��>XU���@@"��tJ��^������Ix��,��XR��b��.=7�CȻ��k�F�M}u�AP��1������Pձ�S�w�ւh[*[�پ��G�I��v�բ̕�8��H�)��S�VH�j�d������'��u�(E��T���D�m�8��u>��2F(,<0(�LY�|�9��ա��XgX���J%;���#rA%/^hz�U����f+�-�9@v��d#�&ב`㠼o���:�\�$@�xS'��P=fd��i��#O�uc���K�H��J��]!0��ЏE�-F:j[xw2l��`5mWNj�FVW�kA�Xm��X�tlw�H��l�����N�
+���7:�n"B��fWۈ�c}N;�n�U�M$Ds�ܖC2������	(|^��=�K�G	��n�Ƕ>�@<鷮��'3e(˶j���I9:!���]w���l%�8L'�w
+Q��g��z��+�@�G�yɈ�ڣc�ު�cy�`��������s�[eKm�:Z�Q��k�8.M��,)Wi���sL��&���uh��f�Y%]�
+-----------------------------------------
+
+[IDEOLOGY] Counter_Empire
+Categories: Audonia, IXWB, Nasastan, Political_ideologies
+Snippet:
+mXˮ���+��{/�JQۑ-v ̂î�f.�l�1sG�7����F��T��=#�M7Y�ǩS����^��3E��4�H��N}t8|�ӓ����K��=����Ȗi��X٤������	�М�!^�T�p���MY�M����W>UCƼW�z����wiU�����C�T��gX�a=L'�)�P�pRʱ�\���ⲝ)]�<�(	浛���<�:�[����> �V;���`��ӣ�lێ���z�S�,u�t��������[�ǽ�c09�2��'�~�g^~8��H��e�����<�R��z���X5YdRǫr�;�C���Li�!�n�K�%rq�.�xn�Ev��zw�D��V�h��!J~�>�.��jDM�LdFJK8�����!.��HWj�� ���>�n�:��ɓ9jSAr����}��c�e'U�1�>:$���r���F�^L7篊�����>�I��#᷸�+S06<lx�D]Z}���}A��!Q5��u��!㲡�_��%�\�V3L$Fa�G���h�(X���y�s,�X_��q����U邷�x��:k;xFt�+�$ބ8�(��󹶨�Ar`�������d��'@�в���E�n�	���/���}� �hO����!v������7`����������Z���r"g�Oj$�Ֆ���[�"C3'�-%����'/!rsk �pbt!7�&��[�3�r��ݹWvB�H��ss� [�$�/���<i&��=s�4ƨ[� 敓W<��p:@D���0W�@��V֊�{���ZJ3ͦ�G�;8	�A�7�C��j�97Qw��%��k����^���e���nd8U��z�B����G|�%�ot|��C!^?V�"[8��|BOeb�x��| �uyCi��J�K5����{޹5E�%�P;�2�gE�:�==��=� m�b{����4��p\. H^�>��{�\�T���2y wQwc�ٌ�BZ7�����M#�\b��쨶[TN�%�|H�zKg����a ��a/G8���mE��ܲ�Q}G��� sҐ��^�~�(��x��g�]7'�Ⴘ��=t��W�ma��+�6�_ۢ�h3��S��Sr�9�	o�SZd+��[[���F�i�#g� �F�@�N��:���_�\e�vjx�L���(�@sO[W1�3+?�U�}�-�Q�I��ob�g�nX�.�$��0���恿�j�Vp�:�!e��70Wq�@��V�����sr���:'W5�\���1|d)k����ŭ�2l�op�l�`�v}�6�\�G����$�k8� ��,Ke1��/�)�lu��n�(�g.��7(�v��G��EG���A�5F���p��<������2��Lf��wA�ԅ�w� %%s>e�<��)sn��/��BhR���#�2��m�q��X�{k�����/�d�Ӥ�z�My��B�خ���cG^x	�_FB��ph��Y:��Z쑵4Fĉ�i��� �A"�o�^ё�� �c)�P��]�������seG�D�rZ�Te�jQ��v
+�
+-----------------------------------------
+
+[IDEOLOGY] Limited_Divinity
+Categories: Audonia, IXWB, Nasastan, Political_ideologies
+Snippet:
+}X͎���S�660�@n�n��'�qo ́ͮ首�l��mY��)r�3�g_�}�<I�*�3�Y%�!��4Y_}��l6���`��w�hG���f���������`������l�����bl���s�f�Qi5yg�5�ݦ�����ZoR�#)Px�v���Q�G��a���{<�IQL�q6��A�v��ש������S�<۪H�:ٱ�;[v�T�G
+d�1-�LP�A��A$3;�j \u��sav�_�Z;���w�o���yl)���5%?����~�ǃ?!;b�����6��И� omR=�:x�����LH��S6��}C!�ѐ��~�U�j�(#2er�u��͢NV���d]u�����_9+5�wm�I^�D;�/'#�5��fi��="�s�> 	�q޷�_L�����qSG8u����ou7����p�ˏ��u�-B~@\V�����@�V���2 +k�vQ�#c#]@�䌭͉t�D���� �hc�w���'��-0ߪfN5��<W#�,��x/� E;x����F94����q�EǇ9w�/c�O�A۱�x��q�`z �� �@q�c���fBUJ����@�?jw��;��8L�o�6�;
+% ;8l͋O�@C��HO�H��I���b9�[e���v|-���J�@;Q"��["R8ZC5��;G��Pq����<�Йr5s
+
+)٤G�Q���W$��+
+g�i�4Z�}
+���M�r_���^ؿ@���hKf꽗�l'��l.;�Tʞp��dϟ;��V,i޲�a!w�36s�V�*A�X���Ęf�Ka)��Ž��̌���t������]�(6beߍ0�\o��R�vu�y�TI��hz2��椖�\�Î����
+8#�,�/|�[�Y���Ѷ��� �<���P¥o9���<����y���%k+j,���wnM�b
+W�H����b�q�z8���$�vq��!*�k	Q��&?����u�p��l�'9�ISָ\I���=Ϻ<���#/�����i�wF�ޮ��r-�{(�
+_LL= w��u�qv�<�H��^�򨅏���k��i$�(���i��r�W���)�p�G6��]űp<c�ٌXІzd@�|�Y�jx �9ٽ�t�}�ehΧ����s�G�?~杸�~�G� 󞃎����'D�f'�p.���0����yz���1"�|ݴ�{�Cp��9s�s�F��J��
+��|����O��=�(<�篌Bʓ�1�;��4b)�Je�nG~��i����77/�Rף� ��4��N�"*P4g/�=k�#`§@l�y����Ajܟ�qp�,28�~Ջ���#d��P'G�0�]���pg���i0b�L>g/�e�,?�'zPo> �S�!�� ���(a�4����� ˹��dd )��.=�A��%B�>.�28����İ. �F�@@H�L���8�U.�?K6ܶ�ZT_�xṳ�c��K�;�
+��et6�Ff#� �)��g�B�*[u�
+�,���G��x#�D��g�(
+���Y���ܹ��E�~��+<�e.�:R��Q
+-----------------------------------------
+
+[IDEOLOGY] Kaidoism
+Categories: Audonia, IXWB, Political_ideologies
+Snippet:
+[[File:Kaidoist flag.png|330px|thumb|Flag used by Kaidoists between 1840s and 1850s]]
+
+'''Kaidoism''' ([[Pomorskitong]]: ''Kaidoézm'') is a [[Nasastan|Nasastani]] political ideology and movement based on the ideas of Načelnik [[Kréstofer Kaido]] (1800 - 1839). Emerging in the early 19th century, it represents one of the principal ideological offshoots of [[Resistanceism]], often described as Nasastan's own internally developed variant of socialist thought. Kaidoism emphasizes the pursuit of [[Final egalitarianism|final egalitarianism]], the gradual equalization and standardization of all facets of social and economic life under a state-managed order. Although initially associated with Kaido’s rule in the 1830s, the term Kaidoism did not enter common usage until the tenure of Načelnik [[Kats Kontor]] (1844 - 1849), whose public identification with Kaido's legacy led to its formal recognition as a distinct ideological tradition within Nasastani politics.
+
+The term Kaidoism derives from the surname of Kréstofer Kaido, Načelnik of Nasastan between 1829 and 1839. The suffix -ism (''-ézm'' in Pomorskitong) was first applied during the late 1840s by political commentators under the [[Aristocratic Sovereignty of Nasastan]] to describe Kontor's attempts to restore elements of Kaido’s program.
+
+== Background ==
+Appointed Načelnik of Nasastan in 1829 by King [[Alekšander III Ziółkowski|Alekšander III]], Kaido implemented a series of sweeping reforms that sought to consolidate state powe
+-----------------------------------------
+
+[IDEOLOGY] Foralism
+Categories: Castadilla, History_of_Castadilla, IXWB, Incomplete_articles, Political_ideologies, Politics_of_Castadilla
+Snippet:
+{{WIP}}
+'''Foralism''' ([[Castadillaan Pelaxian|Pelaxian]]: ''foralismo''), also known as '''rationalised feudalism''', '''semi-feudalism''', and '''Toryism''' in older [[Ænglish language|Ænglish]]-language sources, is the form of {{wp|traditionalist conservatism}} which governed the [[Viceroyalty of Los Rumas]] and the subsequent [[Delepasian Kingdom]] and [[Delepasian Confederation|Confederation]] from the fall of the [[First Pelaxian Republic]] in 1814 until the 1860s though lingering elements of the philosophy legally remained in place until 1888, and culturally until the rise of the ''[[Estado Social (Castadilla)|Estado Social]]'' in the 1920s. Foralists were staunch {{wp|monarchism|monarchists}}, supporters of the legal system of {{wp|common law}}, wished for the preservation of the traditional decentralised political structure of the Viceroyalty, and were greatly opposed to the {{wp|liberalism}} found in [[Delepasianism]].
+
+Foralism emerged from the colonial aristocratic and mercantile opposition to the First Pelaxian Republic, though supporters of the philosophy were not necessarily loyal to the [[House of Girojón]] or any particular royal house; they saw the preservation of the traditional rights as espoused in the [[Charter of San Lina]] as the highest priority, and thus believed that the monarch should have little to no political power. The term is derived from the word ''fuero'', or "forum", which referred to constitution-like documents granted to a given class or
+-----------------------------------------
+
+[IDEOLOGY] Guided_democracy
+Categories: IXWB, Political_ideologies
+Snippet:
+'''Guided democracy''', also called '''directed democracy''' and '''managed democracy''', is a ''de jure'' {{wp|democracy|democratic}} {{wp|government|government}} that nonetheless functions as a ''de facto'' {{wp|Authoritarianism|authoritarian regime}} or, in some cases, as an outright {{wp|Autocracy|autocratic regime}}. Such forms of {{wp|Hybrid regime|hybrid regimes}} are legitimised by elections, but these elections do not serve to change the {{wp|State (polity)|state}}'s government in any meaningful way but rather are deemed as {{wp|sham election|shams}} designed to keep up the appearance of a {{wp|liberal democracy}}.
+
+In a guided democratic system, elections are directly controlled and manipulated by the government; people are permitted to exercise their democratic rights, but the government ensures that voters cannot change public policy. While they ostensibly follow basic democratic principles, they generally are beholden to a variety of authoritarianism to keep democracy "on a leash". Under a managed democratic system, the state makes heavy use of {{wp|propaganda techniques}} to {{wp|Manufacturing Consent|manufacture consent}} from the governed, and at times might make extensive use of {{wp|electoral fraud}} techniques such as voter intimidation, disinformation, or even announcing a predetermined result without bothering to count the votes, to prevent the electorate from having any kind of impact on government policy.
+
+This concept is somewhat related to a {{wp|Anoc
+-----------------------------------------
+
+[IDEOLOGY] Kallistocracy
+Categories: IXWB, Nasastan, Political_ideologies
+Snippet:
+[[File:ZD kallistocracy Poster 1937.png|thumb|"Kallistocracy; Live for Another." Recruitment poster for the [[Zabitur'š z duzelzo|ZD Secret Service]], produced in late 1937 to encourage enlistment following the [[Paramilitary Revolution]] and prior to the adoption of the organization's revised insignia.]]
+'''Kallistocracy''' ([[Pomorskitong]]: ''Kallistokracéa'', literally ''government for the best condition'') is a political and philosophical doctrine originating in [[Nasastan]] that holds that the primary purpose of the state is to preserve the most desirable form of ordinary human life for the majority of the population. Rather than defining the state through sovereignty, liberty, or divine authority, Kallistocracy argues that government exists to maximize collective convenience, social stability, and interpersonal trust while minimizing unnecessary struggle. The doctrine constitutes one of the central political expressions of [[Zmoric Philosophy]] and the [[Lakhe'žic]] principle of 'easy life', serving as the dominant ideological framework of the modern Nasastani state.
+
+The term derives from the [[istroyan]] roots ''kallistos'' (''best'', ''most beautiful'', or ''ideal'') and ''kratos'' (''rule'' or ''government''), collectively interpreted in Nasastani political philosophy as "government for the best condition." Unlike conventional translations such as "rule by the best," the phrase refers not to the excellence of rulers themselves but to the preservation of the best po
+-----------------------------------------
+
+
+=== SAMPLE OF COUNTRIES ACROSS ALL REGIONS (293 TOTAL) ===
+
+[COUNTRY] Caphiria | Gov: [[Government of Caphiria | Leader: N/A | Leg: Corcillum
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Caphiria, Countries, IXWB, Incomplete_articles, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links, Sarpedon
+
+[COUNTRY] Kiravia | Gov: {{wp | Leader: N/A | Leg: Federal Stanora
+Categories: 2024_Award_winning_pages, Countries, IXWB, KRV, Major_Reconstruction, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Zurgite_Varshan | Gov: {{wpl | Leader: N/A | Leg: The Dazga
+Categories: 2023_Award_winning_pages, 2025_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Crona, Historical_countries, IXWB, Incomplete_articles, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links, Varshan
+
+[COUNTRY] Chappaqua | Gov: Constitutional pentarchy | Leader: N/A | Leg: N/A
+Categories: Canonical_Article, Countries, Crona, IXWB, KRV, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Burgundie | Gov: Great Republican Principality | Leader: N/A | Leg: N/A
+Categories: Burgundie, Countries, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Umcara | Gov: Federal Semi-presidential Constitutional Republic | Leader: N/A | Leg: Congress
+Categories: IXWB, NonCanon, Pages_using_infobox_country_with_syntax_problems, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links, Semi-presidential_republics
+
+[COUNTRY] Qustantistan | Gov: {{wp | Leader: N/A | Leg: Majlis
+Categories: IXWB, NonCanon, Pages_using_duplicate_arguments_in_template_calls
+
+[COUNTRY] Nanzitolclatl | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: Best_Articles, Historical_countries, IXWB, Incomplete_articles, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Federated_Republic_of_Lezaria | Gov: [[Wikipedia:Semi-presidential system | Leader: N/A | Leg: {{wpl
+Categories: Abandoned_Lore, IXWB, Pages_using_infobox_country_with_syntax_problems, Pages_with_broken_file_links
+
+[COUNTRY] North_Daxian_Republic | Gov: Republic | Leader: N/A | Leg: N/A
+Categories: Daxia, IXWB, Pages_with_broken_file_links
+
+[COUNTRY] Pelaxia | Gov: {{wp | Leader: N/A | Leg: [[Supreme Council of Palmeria
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, 2025_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, IXWB, Incomplete_articles, Major_Reconstruction, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links, Pelaxia
+
+[COUNTRY] Zwallerkad | Gov: Aristocratic Stratocratic Authoritarian Constitutional Monarchy | Leader: N/A | Leg: Pratkram and Tivvigg
+Categories: Abandoned_Lore, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Oduniyyad_Caliphate | Gov: {{wpl | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Audonia, Common_Core, Historical_countries, IXWB, Islam, Out_of_date_articles, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Slakonian | Gov: Federal Semi-presidential Republic | Leader: N/A | Leg: Sabor
+Categories: IXWB, NonCanon, Pages_with_broken_file_links, Semi-presidential_republics
+
+[COUNTRY] Adonerum | Gov: {{wp | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Canonical_Article, Caphiria, Civilisations, Common_Core, Graphics_Requested, History_of_Urcea, IXWB, Incomplete_articles, Levantia, Major_Reconstruction, Pages_with_broken_file_links, Urcea
+
+[COUNTRY] United_Provinces | Gov: {{wp | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Historical_countries, IXWB, KRV, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Albagubria | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Burgundie, Historical_countries, History, History_of_Burgundie, IXWB, Levantia, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Pages_with_broken_file_links
+
+[COUNTRY] Veltorina | Gov: {{wp | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Canonical_Article, Historical_countries, IXWB, Istroya, Major_Reconstruction, Pages_using_infobox_country_with_unknown_parameters, Sarpedon
+
+[COUNTRY] Magnolia | Gov: [https://en.wikipedia.org/wiki/Monarchy] | Leader: N/A | Leg: N/A
+Categories: IXWB, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Mid-Atrassic_Crona | Gov: Civil administration | Leader: N/A | Leg: Legislative Conference
+Categories: Crona, IXWB, KRV, Map_Completion_Project
+
+[COUNTRY] Kingdom_of_Dericania | Gov: Imperial Monarchy | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Burgundie, Canonical_Article, Dericania, Historical_countries, History_of_Burgundie, Holy_Levantine_Empire, IXWB, Incomplete_articles, Lapody, Levantia, Pages_using_country_topics_with_unknown_parameters, Pages_with_broken_file_links, Rhotia, States_of_the_Holy_Levantine_Empire
+
+[COUNTRY] Urcea | Gov: [[Federalism in Urcea | Leader: N/A | Leg: N/A
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Canonical_Article, Countries, Holy_Levantine_Empire, IXWB, Levantia, Levantine_Union, Major_Reconstruction, Pages_using_infobox_country_with_unknown_parameters, Urcea
+
+[COUNTRY] Orenstia_(Old_country) | Gov: {{wp | Leader: N/A | Leg: [[Parliament of Orenstia
+Categories: Abandoned_Lore, Articles_with_hatnote_templates_targeting_a_nonexistent_page, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Alstin | Gov: {{wp | Leader: N/A | Leg: [[United Republic Parliament
+Categories: 2022_Award_winning_pages, Alstin, Countries, IXWB
+
+[COUNTRY] Cartadania | Gov: {{wp | Leader: N/A | Leg: [[Cartadanian National Congress
+Categories: 2023_Award_winning_pages, Articles_containing_Cartadanian-language_text, Articles_containing_Latin-language_text, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Cartadania, Countries, IXWB, Pages_using_Lang-xx_templates, Sarpedon
+
+[COUNTRY] Cohe | Gov: {{wpl | Leader: N/A | Leg: N/A
+Categories: Abandoned_Lore, Cohe, NonCanon, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_largest_cities_with_class, Pages_with_broken_file_links
+
+[COUNTRY] New_Harren | Gov: Benefactor confederacy | Leader: N/A | Leg: Grand Council
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, Crona, Cusinaut, IXWB, Map_Completion_Project_(Completed), New_Harren, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, The_Deluge
+
+[COUNTRY] Yonderre | Gov: Federal parliamentary elective constitutional monarchy | Leader: N/A | Leg: Yonderian Parliament
+Categories: 2022_Award_winning_pages, 2023_Award_winning_pages, 2024_Award_winning_pages, 2025_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, IXWB, Levantia, Levantine_Union, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links, Yonderre
+
+[COUNTRY] Deric_States | Gov: Confederation | Leader: N/A | Leg: N/A
+Categories: Dericania, Future_lore, Graphics_Requested, IXWB, Incomplete_articles, Lapody, Levantia, Organizations, Rhotia
+
+[COUNTRY] Daxia | Gov: Republic | Leader: N/A | Leg: People's Assembly
+Categories: 2022_Award_winning_pages, 2023_Award_winning_pages, Articles_with_empty_listen_template, Countries, Daxia, IXWB, Pages_using_duplicate_arguments_in_template_calls, Pages_using_largest_cities_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Hendalarsk | Gov: Federal Archkingdom | Leader: N/A | Leg: Diet of Hendalarsk
+Categories: Countries, HDL, Hendalarsk, IXWB, Pages_using_infobox_country_with_unknown_parameters, Pages_using_largest_cities_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Ailbies | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Fiannria, IXWB, Incomplete_articles, Levantia, Map_Completion_Project, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Housatonic | Gov: Julian republic | Leader: N/A | Leg: Common Council
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, Algosh_War, Countries, Crona, Cusinaut, IXWB, Map_Completion_Project_(Completed), Pages_using_infobox_country_with_syntax_problems, The_Deluge
+
+[COUNTRY] Pachaug | Gov: International charter city | Leader: N/A | Leg: Communal Council
+Categories: Algosh_War, Countries, Crona, Cusinaut, IXWB, Incomplete_articles_(Urcea), Pages_with_broken_file_links, The_Deluge
+
+[COUNTRY] Yytuskia-Helvana | Gov: Dual-State Constitutional Monarchy | Leader: N/A | Leg: N/A
+Categories: Abandoned_Lore, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Great_Levantia | Gov: Constitutional republic, later Absolute Theocratic Monarchy, then Military dictatorship | Leader: N/A | Leg: N/A
+Categories: Graphics_Requested, Great_Levantia, Historical_countries, History, IXWB, Incomplete_articles, Levantia, Occidental_civilisation, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Kazirstan | Gov: Unitary dominant-party semi-presidential socialist republic | Leader: N/A | Leg: Revolutionary Assembly
+Categories: Abandoned_Lore, Convert_errors, IXWB, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Bussdaberria | Gov: Totalitarian Regency - Caretaker military government under a Federal Constitutional Monarchy | Leader: N/A | Leg: Landsmeet
+Categories: Abandoned_Lore, IXWB
+
+[COUNTRY] Eloillette | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Pages_with_broken_file_links
+
+[COUNTRY] New_Burgundie_Colony | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, IXWB, Incomplete_articles, Pages_using_country_topics_with_unknown_parameters, Vallos
+
+[COUNTRY] Aliantura | Gov: Unitary Parliamentary Republic | Leader: N/A | Leg: Parliamenti Conventus
+Categories: NonCanon
+
+[COUNTRY] Natrusca | Gov: Unitary Parliamentary Republic | Leader: N/A | Leg: Conventus Communia
+Categories: Abandoned_Lore, Pages_with_broken_file_links
+
+[COUNTRY] Zaclaria | Gov: [[Government of Zaclaria | Leader: N/A | Leg: [[National Council (Zaclaria)
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, Countries_in_Audonia, Map_Completion_Project_(Completed), Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_unknown_parameters, Pages_using_multiple_image_with_auto_scaled_images, Pages_with_broken_file_links, Zaclaria
+
+[COUNTRY] History_of_Urcea_(1798-1902) | Gov: {{wp | Leader: N/A | Leg: Conshilía Daoni
+Categories: History_of_Urcea, IXWB, Incomplete_articles_(Urcea), Major_Reconstruction, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Urcea
+
+[COUNTRY] Rusana | Gov: Unitary Republic | Leader: N/A | Leg: N/A
+Categories: 2022_Award_winning_pages, 2024_Award_winning_pages, Countries, Daxian_NPC_Countries, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links, Rusana
+
+[COUNTRY] Kiravian-Occupied_Covinia | Gov: {{wp | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: IXWB, Out_of_date_articles, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Alpachnia | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: 2023_Award_winning_pages, Abandoned_Lore, Alpachnia, IXWB
+
+[COUNTRY] Harena | Gov: {{wp | Leader: N/A | Leg: [[Parliament of Harena
+Categories: Country_articles_requiring_maintenance, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Carna | Gov: {{wp | Leader: N/A | Leg: Forgaitherin
+Categories: Abandoned_Lore, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Carna, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links
+
+[COUNTRY] The_Cape | Gov: {{wp | Leader: N/A | Leg: Supreme National Assembly
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, Crona, IXWB, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_multiple_image_with_auto_scaled_images, Pages_with_broken_file_links, The_Cape
+
+[COUNTRY] Faneria | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: 2022_Award_winning_pages, 2023_Award_winning_pages, 2024_Award_winning_pages, 2025_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Companies_of_Faneria, Countries, Faneria, IXWB, Incomplete_articles, Levantia, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Koré'hetanùa | Gov: Unitary parliamentary constitutional matrichal monarchy | Leader: N/A | Leg: Pareimeqa <small>(Parliament)</small>
+Categories: Abandoned_Lore, IXWB, Koré'hetanùa
+
+[COUNTRY] Covina | Gov: Oligarchic Republic (?) | Leader: N/A | Leg: N/A
+Categories: NonCanon, Pages_using_infoboxes_with_thumbnail_images
+
+[COUNTRY] Unnuaq_Mission_State | Gov: {{wp | Leader: N/A | Leg: All-Mission Council
+Categories: Algosh_War, Crona, Cusinaut, Historical_countries, IXWB, Incomplete_articles_(Urcea), Religion_in_Crona, The_Deluge
+
+[COUNTRY] Grand_Duchy_of_Carolina | Gov: Grand Duchy | Leader: N/A | Leg: N/A
+Categories: History_of_Urcea, Holy_Levantine_Empire, IXWB, Incomplete_articles_(Urcea), Levantia, States_of_the_Holy_Levantine_Empire
+
+[COUNTRY] Lariana | Gov: {{wp | Leader: N/A | Leg: General Curia
+Categories: 2023_Award_winning_pages, Countries, IXWB, Map_Completion_Project_(Completed), Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Sarpedon, Urcea, Urlazio
+
+[COUNTRY] Kingdom_of_Crotona | Gov: [[Crownland (Urcea) | Leader: N/A | Leg: N/A
+Categories: History_of_Urcea, IXWB, Incomplete_articles_(Urcea), Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Urcea
+
+[COUNTRY] Levantine_Union | Gov: Supranational political and economic union | Leader: N/A | Leg: <!--Name of the country/territory's governing body, e.g. "Parliament", "Congress", etc-->
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, IXWB, Incomplete_articles, Incomplete_articles_(Urcea), Levantia, Levantine_Union, Organizations, Pages_using_duplicate_arguments_in_template_calls
+
+[COUNTRY] Holy_Levantine_Empire | Gov: Electoral Confederal Monarchy | Leader: N/A | Leg: Imperial Diet
+Categories: Historical_countries, Holy_Levantine_Empire, IXWB, Incomplete_articles, Incomplete_articles_(Urcea), Levantia, Major_Reconstruction
+
+[COUNTRY] Quetzenkel | Gov: {{wp | Leader: N/A | Leg: <!--Name of the country/territory's governing body, e.g. "Parliament", "Congress", etc-->
+Categories: 2024_Award_winning_pages, Countries, Crona, IXWB, Map_Completion_Project_(Completed), The_Deluge
+
+[COUNTRY] Papal_State | Gov: {{wp | Leader: N/A | Leg: Pontifical Commission
+Categories: 2024_Award_winning_pages, Articles_containing_Latin-language_text, Catholic_Church, Countries, IXWB, Levantia, Map_Completion_Project_(Completed), Pages_using_Lang-xx_templates, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Urcepól
+
+[COUNTRY] Southern_Kingdom_of_the_Levantines | Gov: Feudal monarchy | Leader: N/A | Leg: N/A
+Categories: Historical_countries, Holy_Levantine_Empire, IXWB, Incomplete_articles_(Urcea), Pages_with_broken_file_links
+
+[COUNTRY] Pursat | Gov: Theocracy | Leader: N/A | Leg: N/A
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, Audonia, Burgoignesc_NPC_Countries, Burgundie, Countries, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_syntax_problems, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links, Pursat
+
+[COUNTRY] Battganuur | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, Audonia, Battganuur, Burgoignesc_NPC_Countries, Burgundie, Countries, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_duplicate_arguments_in_template_calls, Pages_with_broken_file_links
+
+[COUNTRY] Bulkh | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, Audonia, Bulkh, Burgoignesc_NPC_Countries, Burgundie, Countries, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Canpei | Gov: Presidential system | Leader: N/A | Leg: High Council of State
+Categories: 2023_Award_winning_pages, Canpei, Countries, IXWB, Map_Completion_Project_(Completed), Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Kandara | Gov: {{wpl | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, Audonia, Burgoignesc_NPC_Countries, Burgundie, Countries, Kandara, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Pukhgundi | Gov: Republic | Leader: N/A | Leg: N/A
+Categories: Audonia, Burgoignesc_NPC_Countries, Burgundie, Countries, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_duplicate_arguments_in_template_calls, Pukhgundi
+
+[COUNTRY] Legatation_of_Ankivara | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Abandoned_Lore, Burgundie, History_of_Burgundie, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Yanuban | Gov: Republic | Leader: N/A | Leg: N/A
+Categories: 2022_Award_winning_pages, 2023_Award_winning_pages, 2025_Award_winning_pages, Audonia, Burgoignesc_NPC_Countries, Burgundie, Countries, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_duplicate_arguments_in_template_calls, Pages_with_broken_file_links, Yanuban
+
+[COUNTRY] Hollona_and_Diorisia | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: 2023_NPC_Contest, 2024_Award_winning_pages, Countries, Dericania, Hollona_and_Diorisia, IXWB, Levantia, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Elections_in_Pelaxia | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Articles_using_infobox_templates_with_no_data_rows, Elections, IXWB, Pelaxia
+
+[COUNTRY] Cetsencalia | Gov: {{wp | Leader: N/A | Leg: <!--Name of the country/territory's governing body, e.g. "Parliament", "Congress", etc-->
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Crona, Former_countries, IXWB, Incomplete_articles_(Urcea), The_Deluge, Veltorine_people
+
+[COUNTRY] Algoquona | Gov: {{wp | Leader: N/A | Leg: <!--Name of the country/territory's governing body, e.g. "Parliament", "Congress", etc-->
+Categories: Algosh, Algosh_War, Crona, Cusinaut, Historical_countries, IXWB, Incomplete_articles_(Urcea), The_Deluge
+
+[COUNTRY] Etzil | Gov: {{wp | Leader: N/A | Leg: Federal Legislator
+Categories: Abandoned_Lore
+
+[COUNTRY] Avonia | Gov: {{wp | Leader: N/A | Leg: National Witan
+Categories: 2022_NPC_Contest, Avonia, Countries, IXWB, Levantia, Levantine_Union, Map_Completion_Project_(Completed), NPC_Countries
+
+[COUNTRY] Fiannria | Gov: {{wp | Leader: N/A | Leg: Cemot of the Commonwealth
+Categories: 2023_Award_winning_pages, 2025_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, Fiannria, IXWB, Levantia
+
+[COUNTRY] Venua'tino | Gov: League of Nations mandate under Urcean supervision | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, Crona, IXWB, League_of_Nations, Major_Reconstruction, Map_Completion_Project_(Completed), Pages_with_broken_file_links, The_Deluge, Venua'tino
+
+[COUNTRY] Nahe | Gov: Confederal parliamentary republic | Leader: N/A | Leg: Congress of Nahe
+Categories: Abandoned_Lore, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Uzdehzanistan | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: Gassavelia, Historical_countries, IXWB, Incomplete_articles_(Urcea), Levantia, Levantine_Interregnum, Pages_using_duplicate_arguments_in_template_calls
+
+[COUNTRY] Kingdom_of_Gassavelia | Gov: Monarchy | Leader: N/A | Leg: N/A
+Categories: Gassavelia, Historical_countries, Holy_Levantine_Empire, IXWB, Levantia, Pages_using_infobox_country_with_unknown_parameters, States_of_the_Holy_Levantine_Empire
+
+[COUNTRY] Western_Kingdom_of_the_Levantines | Gov: Monarchy | Leader: N/A | Leg: N/A
+Categories: Carna, Out_of_date_articles
+
+[COUNTRY] Kingdom_of_Carna | Gov: Monarchy {{small | Leader: N/A | Leg: [[Old Carnish Parliament
+Categories: Carna, Historical_countries, IXWB, Levantia, NonCanon, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Takatta_Loa | Gov: Constitutional Theocracy | Leader: N/A | Leg: Four Houses
+Categories: 2023_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, IXWB, Polynesia, Takatta_Loa, Vallos
+
+[COUNTRY] Mectanyika | Gov: {{wp | Leader: N/A | Leg: Parliament of Mectanyika
+Categories: Abandoned_Lore, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Ubunye | Gov: {{wp | Leader: N/A | Leg: Intaba Assembly
+Categories: Abandoned_Lore, Ubunye
+
+[COUNTRY] Kloistan | Gov: Federal Autocracy | Leader: N/A | Leg: Federal Congress and Senate
+Categories: Abandoned_Lore, Convert_errors, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Kiravian_Union | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, Historical_countries, IXWB, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Nysdra_Provisional_Republic | Gov: Provisional {{wp | Leader: N/A | Leg: Provisional War Council of the Provisional Republic
+Categories: Algosh, Algosh_War, Crona, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters
+
+[COUNTRY] Prevalia | Gov: Confederal parliamentary union | Leader: N/A | Leg: Congress of Prevalia
+Categories: Abandoned_Lore, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Eldmora-Regulus | Gov: {{wpl | Leader: N/A | Leg: Bundeskongress
+Categories: Abandoned_Lore, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Eldmora | Gov: {{wpl | Leader: N/A | Leg: [[Parliament of Eldmora
+Categories: Abandoned_Lore, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Eldmora, IXWB, NonCanon, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_multiple_image_with_auto_scaled_images, Pages_with_broken_file_links
+
+[COUNTRY] Brumalea | Gov: Federal parliamentary republic | Leader: N/A | Leg: Parliament
+Categories: Abandoned_Lore, Brumalea, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Timbia | Gov: {{wp | Leader: N/A | Leg: Timbian Democratic Congress
+Categories: Countries, IXWB, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links, Peratra, Polynesia, Timbia
+
+[COUNTRY] Copacaban_Republic | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: Countries, Crona, IXWB, Map_Completion_Project, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Vithinja | Gov: Unitary Syndicated Constitutional Monarchy | Leader: N/A | Leg: N/A
+Categories: 2022_Award_winning_pages, 2023_Award_winning_pages, Convert_errors, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_syntax_problems, Pages_with_broken_file_links, Vithinja
+
+[COUNTRY] Kelekona | Gov: {{wp | Leader: N/A | Leg: [[Council of the Commons (Kelekona)
+Categories: 2022_NPC_Contest, 2023_Award_winning_pages, 2023_NPC_Contest, 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, Crona, Featured_articles, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Chenango_Confederacy | Gov: {{wp | Leader: N/A | Leg: High Council of the Chenango Confederate Republic
+Categories: 2024_Award_winning_pages, Algosh_War, Countries, Crona, Cusinaut, IXWB, Map_Completion_Project_(Completed), Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Upper_Atrassic_Crona | Gov: Civil administration<br>{{wp | Leader: N/A | Leg: Assembly of Chiefs<br>Transplants' Stanora<br><small>(both advisory)</small>
+Categories: Crona, IXWB, Map_Completion_Project
+
+[COUNTRY] Caergwynn | Gov: Unitary Constitutional Republic under a theoretical regency, with democratic and aristocratic elements. | Leader: N/A | Leg: Arcyngor
+Categories: 2022_Award_winning_pages, 2024_Award_winning_pages, Caergwynn, Countries, IXWB, Incomplete_articles, Levantia, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Caracua | Gov: {{wp | Leader: N/A | Leg: Federate Council
+Categories: Algosh_War, Caracua, Countries, Crona, Cusinaut, Graphics_Requested, IXWB, Map_Completion_Project_(Completed), Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Arcerion | Gov: Federal parliamentary constitutional republic | Leader: N/A | Leg: N/A
+Categories: 2023_Award_winning_pages, Abandoned_Lore, Arcerion, Countries, Crona, IXWB
+
+[COUNTRY] Paulastra | Gov: Constitutional Monarchy | Leader: N/A | Leg: N/A
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, Crona, IXWB, Incomplete_articles, Paulastra
+
+[COUNTRY] Kingdom_of_the_Fhainn | Gov: {{plainlist | Leader: N/A | Leg: {{plainlist
+Categories: Companies_of_Faneria, Historical_countries, IXWB, Incomplete_articles, Kingdom_of_Fhainnlannachaeran, Pages_using_infobox_country_with_unknown_parameters, Pages_with_script_errors
+
+[COUNTRY] Oyashima | Gov: Elective Federal Constitutional Monarchy | Leader: N/A | Leg: Assembly of Lords (Omo no shūkai/主の集会)
+Categories: 2024_Award_winning_pages, All_stub_articles, Audonia, Burgoignesc_NPC_Countries, Burgundie, Countries, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Oyashima, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links, Stubs
+
+[COUNTRY] Copake | Gov: {{wp | Leader: N/A | Leg: Northeastern Congress
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, Countries, Crona, IXWB, Map_Completion_Project_(Completed), The_Deluge, Venua'tino
+
+[COUNTRY] New_Archduchy | Gov: {{wp | Leader: N/A | Leg: Common Council
+Categories: 2022_Award_winning_pages, 2022_NPC_Contest, 2023_Award_winning_pages, Countries, Crona, IXWB, Incomplete_articles_(Urcea), Map_Completion_Project_(Completed), NPC_Countries, New_Archduchy, Urcea
+
+[COUNTRY] Washakara | Gov: {{wp | Leader: N/A | Leg: People's Progressive Congress
+Categories: 2023_Award_winning_pages, Abandoned_Lore, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Hirxhata | Gov: {{wp | Leader: N/A | Leg: Governance Council
+Categories: Crona, IXWB, Major_Reconstruction, Map_Completion_Project
+
+[COUNTRY] Aciria | Gov: Absolute Monarchy | Leader: N/A | Leg: Grand Assembly
+Categories: Abandoned_Lore, Aciria, Articles_with_hatnote_templates_targeting_a_nonexistent_page, IXWB, Pages_using_infobox_country_with_unknown_parameters, Pages_using_largest_cities_with_unknown_parameters
+
+[COUNTRY] Grajnidar | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: Abandoned_Lore, Grajnidar
+
+[COUNTRY] Algosh_Republic | Gov: Julian republic | Leader: N/A | Leg: National Assembly
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, Algosh, Countries, Crona, Cusinaut, IXWB, Map_Completion_Project_(Completed), Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Demographics_of_Caphiria | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Caphiria, Demographics, Demographics_of_Caphiria, IXWB, Incomplete_articles
+
+[COUNTRY] Metzetta | Gov: Monarchy | Leader: N/A | Leg: N/A
+Categories: Audonia, Countries, IXWB, Metzetta, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Ehemo | Gov: Unitary parliamentary constitutional monarchy | Leader: N/A | Leg: Ehemoan Assmebly
+Categories: Abandoned_Lore, Convert_errors, IXWB, Pages_with_broken_file_links
+
+[COUNTRY] Ryeva | Gov: Autonomous parliamentary state | Leader: N/A | Leg: Congress of Nahe
+Categories: NonCanon, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Volonia | Gov: {{wp | Leader: N/A | Leg: <!--Name of the country/territory's governing body, e.g. "Parliament", "Congress", etc-->
+Categories: 2022_Award_winning_pages, 2022_NPC_Contest, 2023_Award_winning_pages, 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_multiple_image_with_auto_scaled_images, Sarpedon
+
+[COUNTRY] Whiteglen | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Countries, Faneria, Fiannria, IXWB, Levantia, Map_Completion_Project, NPC_Countries, NonCanon, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Fhainnin_Popular_Republic | Gov: {{plainlist | Leader: N/A | Leg: N/A
+Categories: Faneria, Fhainnin_Revolution, Pages_with_broken_file_links
+
+[COUNTRY] Duōmachāha | Gov: {{wp | Leader: N/A | Leg: Congress of Duōmachāha
+Categories: NonCanon, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Union_of_Sarpedonian_States | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: Articles_containing_Cartadanian-language_text, Articles_containing_Spanish-language_text, Cartadania, Incomplete_articles, Pages_using_Lang-xx_templates, Pages_with_broken_file_links, Pelaxia
+
+[COUNTRY] Free_Republic_of_Aciria | Gov: Unitary semi-presidential republic | Leader: N/A | Leg: People's Senate
+Categories: Abandoned_Lore, Aciria, IXWB
+
+[COUNTRY] Old/Palmeria-TheLevantx | Gov: Unitary Republic | Leader: N/A | Leg: N/A
+Categories: Abandoned_Lore, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Aciriano-Istroyan_Kingdom | Gov: Monarchy | Leader: N/A | Leg: N/A
+Categories: IXWB, NonCanon
+
+[COUNTRY] Asteklion | Gov: [[Government of Asteklion | Leader: N/A | Leg: Asteklian Parliament
+Categories: Abandoned_Lore, Articles_with_hatnote_templates_targeting_a_nonexistent_page
+
+[COUNTRY] Kiravian_Remnant | Gov: {{wp | Leader: N/A | Leg: [[Federal Stanora
+Categories: 2022_Award_winning_pages, 2024_Award_winning_pages, IXWB, KRV
+
+[COUNTRY] Gallawa | Gov: Confederation (to 550)<br>Monarchy (from 550) | Leader: N/A | Leg: N/A
+Categories: Award_Winning_Article, Category:2026_Award_winning_pages, Former_countries, History, Holy_Levantine_Empire, IXWB, Incomplete_articles_(Urcea), Levantia, Levantine_Interregnum, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Huoxia | Gov: <!--(often a compound multi-wikilinked term, e.g. "Federal semi-presidential constitutional republic", etc)--> | Leader: N/A | Leg: <!--Name of the country/territory's governing body, e.g. "Parliament", "Congress", etc-->National Body
+Categories: Alshar, Countries, Huoxia, IXWB, Incomplete_articles, Map_Completion_Project, NPC_Countries, Pages_using_duplicate_arguments_in_template_calls
+
+[COUNTRY] United_Cities | Gov: Plutocracy | Leader: N/A | Leg: Council of Magisters
+Categories: 2023_Award_winning_pages, Alshar, Daxia, Historical_countries, IXWB, Pages_using_duplicate_arguments_in_template_calls
+
+[COUNTRY] Veraise_colony | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Vallos
+
+[COUNTRY] Oráistír | Gov: <!-- To generate categories: "Monarchy", "Republic", etc. to generate categories --> Crowned Republic | Leader: N/A | Leg: <!-- Name of legislature -->Sennad
+Categories: Faneria, Pages_using_duplicate_arguments_in_template_calls, Pages_with_broken_file_links
+
+[COUNTRY] Zanoma | Gov: Republic | Leader: N/A | Leg: Dazga of Zanoma
+Categories: 2023_Award_winning_pages, Daxia, IXWB, Pages_with_broken_file_links, Varshan
+
+[COUNTRY] Public_Utilities_Commission_(Cartadania) | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Cartadania, Government_of_Cartadania, IXWB, Pages_actively_undergoing_construction
+
+[COUNTRY] Carto-Pelaxian_Commonwealth | Gov: {{nowrap | Leader: N/A | Leg: [[Royal Courts of Carto-Pelaxia
+Categories: 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Historical_countries, History, IXWB, Major_Reconstruction, Pelaxia, Sarpedon
+
+[COUNTRY] Enserlano | Gov: Republic | Leader: N/A | Leg: N/A
+Categories: Enserlano, IXWB, NonCanon
+
+[COUNTRY] Kagoyama | Gov: Bureaucratic, Theocra thetic Republican Bannerstate | Leader: N/A | Leg: N/A
+Categories: Abandoned_Lore, IXWB, Kagoyama
+
+[COUNTRY] Patraja | Gov: Bicameral Upper-Housed Presidential Republic | Leader: N/A | Leg: Parliament of the Republic
+Categories: 2022_Award_winning_pages, Abandoned_Lore, Countries, Countries_in_Sarpedon, IXWB, Pages_using_infobox_country_with_unknown_parameters, Patraja
+
+[COUNTRY] Grussland | Gov: Democratic Socialist Unitary Parliamentary Republic | Leader: N/A | Leg: N/A
+Categories: 2022_Award_winning_pages, Abandoned_Lore, IXWB
+
+[COUNTRY] Tashi-Daypa | Gov: Unitary Confessionalist Parliamentary Republic | Leader: N/A | Leg: N/A
+Categories: IXWB, NonCanon, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Chakailan | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: 2022_Award_winning_pages, 2022_NPC_Contest, Countries, Crona, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Porlos | Gov: {{wp | Leader: N/A | Leg: Assembly of the Woqalate
+Categories: 2022_NPC_Contest, 2023_NPC_Contest, 2024_Award_winning_pages, Countries, Crona, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Porlos
+
+[COUNTRY] Ceylonia | Gov: {{wp | Leader: N/A | Leg: [[National Assembly (Ceylonia)
+Categories: 2022_NPC_Contest, 2023_Award_winning_pages, 2023_NPC_Contest, 2024_Award_winning_pages, Ceylonia, Countries, Crona, IXWB, Map_Completion_Project_(Completed), NPC_Countries
+
+[COUNTRY] Malentina | Gov: {{wp | Leader: N/A | Leg: [[Trissembly of Malentina
+Categories: 2022_Award_winning_pages, 2022_NPC_Contest, 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, Crona, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Zeshinava | Gov: Semi-{{wp | Leader: N/A | Leg: {{wp
+Categories: 2022_Award_winning_pages, Countries, IXWB, NonCanon, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Zeshinava
+
+[COUNTRY] Demographics_of_Cartadania | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Cartadania, Cartadanians, Demographics_of_Cartadania, Incomplete_articles
+
+[COUNTRY] Ardmore | Gov: {{wp | Leader: N/A | Leg: Cooperative Legislative Assembly
+Categories: 2024_Award_winning_pages, Ardmore, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, IXWB, Levantia, Map_Completion_Project_(Completed), Pages_using_multiple_image_with_auto_scaled_images, Pages_with_broken_file_links
+
+[COUNTRY] History_of_Dericania | Gov: Provisional federal government | Leader: N/A | Leg: N/A
+Categories: 2022_Award_winning_pages, Burgundie, Dericania, History, History_of_Burgundie, Holy_Levantine_Empire, IXWB, Incomplete_articles, Lapody, Military_History_of_Burgundie, Pages_using_country_topics_with_unknown_parameters, Pages_with_broken_file_links, Rhotia, Second_Great_War
+
+[COUNTRY] Farmandie | Gov: {{wpl | Leader: N/A | Leg: Farmandie Parliament
+Categories: 2022_Award_winning_pages, Abandoned_Lore, Articles_with_hatnote_templates_targeting_a_nonexistent_page, IXWB, NonCanon
+
+[COUNTRY] Calinthia | Gov: Unitary one-party fascist state under a totalitarian dictatorship | Leader: N/A | Leg: Reichstag
+Categories: 2023_Award_winning_pages, Abandoned_Lore, IXWB, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Rhotia | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, Countries, Dericania, IXWB, Levantia, Levantine_Union, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_infobox_country_with_unknown_parameters, Rhotia
+
+[COUNTRY] Lapody | Gov: {{wp | Leader: N/A | Leg: Stat-Conferensa
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, Countries, Dericania, IXWB, Lapody, Levantia, Levantine_Union, Map_Completion_Project_(Completed), NPC_Countries, Pages_with_broken_file_links
+
+[COUNTRY] Istrenya | Gov: Democratic Republic | Leader: N/A | Leg: National Congress
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, Crona, Featured_articles, IXWB, Istrenya, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Netansett | Gov: {{wp | Leader: N/A | Leg: [[Netanic Urban Council
+Categories: 2023_Award_winning_pages, 2023_NPC_Contest, 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, Crona, Cusinaut, IXWB, Map_Completion_Project_(Completed), Pages_using_multiple_image_with_auto_scaled_images
+
+[COUNTRY] Peshabiwar_colony | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: All_stub_articles, Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Stubs
+
+[COUNTRY] Tapakdore | Gov: Monarchy | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, Audonia, Burgoignesc_NPC_Countries, Burgundie, Countries, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_syntax_problems, Pages_with_broken_file_links, Tapakdore
+
+[COUNTRY] Telecommunications_in_Cartadania | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Cartadania, Infrastructure_in_Cartadania
+
+[COUNTRY] New_Veltorina | Gov: {{wp | Leader: N/A | Leg: National Convocation of the Veltorine Nation
+Categories: 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, Crona, IXWB, Map_Completion_Project_(Completed), Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links, Veltorine_people
+
+[COUNTRY] Northern_Confederation | Gov: Initially tribal confederation; later constitutional confederacy | Leader: N/A | Leg: N/A
+Categories: 2023_Award_winning_pages, Crona, Cusinaut, Historical_countries, IXWB, Incomplete_articles_(Urcea), Northern_Confederation, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, The_Deluge
+
+[COUNTRY] Umardwal | Gov: {{wp | Leader: N/A | Leg: National Consultative Assembly
+Categories: 2023_NPC_Contest, 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Audonia, Burgoignesc_NPC_Countries, Burgundie, Countries, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_duplicate_arguments_in_template_calls, Pages_with_broken_file_links, Umardwal
+
+[COUNTRY] Kabasa | Gov: Unitary Socialist Republic | Leader: N/A | Leg: National Assembly
+Categories: 2023_Award_winning_pages, Countries, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Puertego, Sarpedon, Vallos
+
+[COUNTRY] Dectroia | Gov: Your government type | Leader: N/A | Leg: N/A
+Categories: NonCanon, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Coburia | Gov: [[Wikipedia:Unitary state | Leader: N/A | Leg: [[The Republican Senate of the Republic of Qübüj
+Categories: 2023_Award_winning_pages, Abandoned_Lore, Alshar, Coburia, Countries, IXWB, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Arona | Gov: {{wp | Leader: N/A | Leg: Proprietary Assembly
+Categories: 2023_Award_winning_pages, 2025_Award_winning_pages, Countries, IXWB, Map_Completion_Project_(Completed), NPC_Countries, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Vallos
+
+[COUNTRY] Oustec | Gov: [[Vallos#Piratocracies | Leader: N/A | Leg: N/A
+Categories: Historical_countries, IXWB, Incomplete_articles, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Vallos
+
+[COUNTRY] Cartesian_Republic | Gov: Unitary parliamentary republic | Leader: N/A | Leg: National People's Assembly
+Categories: Abandoned_Lore, IXWB, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Myanga_Ayil_Khanate | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: All_stub_articles, Common_core, Historical_countries, History, IXWB, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Stubs
+
+[COUNTRY] Unintra | Gov: Federal Republic | Leader: N/A | Leg: The Unintran Khongchel/ Grand Federal Assembly
+Categories: 2023_Award_winning_pages, Abandoned_Lore, Countries, IXWB, Levantia, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Tierrador | Gov: [[Woqalate | Leader: N/A | Leg: Qangreč
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, Crona, IXWB, Pages_using_duplicate_arguments_in_template_calls, Pages_with_broken_file_links, Tierrador
+
+[COUNTRY] Calderan_Republic | Gov: Multi-Party Republic | Leader: N/A | Leg: National House
+Categories: 2023_Award_winning_pages, Caldera, Countries, Crona, IXWB
+
+[COUNTRY] Nechaxa | Gov: {{wp | Leader: N/A | Leg: Constituent Congress
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Crona, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Locrya | Gov: Your government type | Leader: N/A | Leg: N/A
+Categories: 2023_Award_winning_pages, Abandoned_Lore, Audonia, Countries, Country_articles_requiring_maintenance, IXWB, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] South_Sakartvelos | Gov: Communist Democracy | Leader: N/A | Leg: N/A
+Categories: 2023_Award_winning_pages, Abandoned_Lore, IXWB, NonCanon, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Almadaria | Gov: {{nowrap | Leader: N/A | Leg: [[National Congress of Almadaria
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Castadilla, History_of_Castadilla, IXWB, Vallos
+
+[COUNTRY] Kujalleq | Gov: {{wp | Leader: N/A | Leg: Inatsisartut
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Australis, Countries, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Telephone_numbers_in_Tierrador | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: IXWB, Telephone_numbers, Tierrador
+
+[COUNTRY] Castadilla | Gov: {{wp | Leader: N/A | Leg: [[National Assembly of Castadilla
+Categories: 2023_Award_winning_pages, 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Castadilla, Countries, IXWB, Major_Reconstruction, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Vallos
+
+[COUNTRY] Asteria | Gov: Unitary presidential constitutional republic | Leader: N/A | Leg: Congress of Asteria
+Categories: 2023_Award_winning_pages, Asteria, Countries, Crona, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Telephone_numbers_in_Castadilla | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: 2023_Award_winning_pages, Articles_with_hAudio_microformats, Castadilla, IXWB
+
+[COUNTRY] Vallosian_Economic_Association | Gov: Economic union | Leader: N/A | Leg: <!--Name of the country/territory's governing body, e.g. "Parliament", "Congress", etc-->
+Categories: Abandoned_Lore, IXWB
+
+[COUNTRY] Duchy_of_Martilles | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: 2023_Award_winning_pages, All_stub_articles, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Burgundie, Colonial_History_of_Burgundie, Historical_countries, History, History_of_Burgundie, Holy_Levantine_Empire, IXWB, Incomplete_articles, Levantia, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, States_of_the_Holy_Levantine_Empire, Stubs
+
+[COUNTRY] Independent_Gemean_state | Gov: [[Vallos#Piratocracies | Leader: N/A | Leg: {{plainlist
+Categories: Articles_containing_Cartadanian-language_text, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Castadilla, IXWB, Incomplete_articles, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Portas_Gemeas, Vallos
+
+[COUNTRY] Boreal_Republic | Gov: {{plainlist | Leader: N/A | Leg: {{plainlist
+Categories: Abandoned_Lore, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Vithinja
+
+[COUNTRY] Arzanshahr | Gov: Plurinational Socialist Republic | Leader: N/A | Leg: Grand Committee of Nationalities
+Categories: Abandoned_Lore, Arzanshahr, IXWB, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Second_Imperium | Gov: Empire | Leader: N/A | Leg: [[Senate (Caphiria)
+Categories: Articles_containing_Latin-language_text, Articles_with_short_description, Caphiria, History_of_Caphiria, IXWB, Incomplete_articles, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Arunid_Empire | Gov: {{wpl | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: 2023_Award_winning_pages, Audonia, Common_Core, Historical_countries, IXWB, Islam, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Loa_Empire | Gov: {{plainlist | Leader: N/A | Leg: N/A
+Categories: Castadilla, Historical_countries, IXWB, Major_Reconstruction, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_with_broken_file_links, Vallos
+
+[COUNTRY] Istroya_Oriental_colony | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: 2025_Award_winning_pages, All_stub_articles, Battganuur, Bulkh, Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Stubs
+
+[COUNTRY] Kandahari-Pukhtun_colony | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: 2023_Award_winning_pages, All_stub_articles, Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Stubs
+
+[COUNTRY] Barbary_Straits_Colony | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: All_stub_articles, Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Pages_with_broken_file_links, Stubs
+
+[COUNTRY] Volinia | Gov: Dictatorship | Leader: N/A | Leg: N/A
+Categories: Caldera, Historical_countries, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_with_broken_file_links
+
+[COUNTRY] St._Nicholas_Colony | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: All_stub_articles, Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, IXWB, KRV, Pages_using_country_topics_with_unknown_parameters, Stubs
+
+[COUNTRY] Barbary_Straits_colony | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: All_stub_articles, Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Stubs, Vallos
+
+[COUNTRY] Credesia_colony | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, Pages_using_country_topics_with_unknown_parameters
+
+[COUNTRY] Chrobonsk | Gov: Mixed Monarchy | Leader: N/A | Leg: Chrobonskian Parliament
+Categories: Abandoned_Lore, Chrobonsk, IXWB
+
+[COUNTRY] Degei_Confederation | Gov: Monarchy | Leader: N/A | Leg: Koroltai
+Categories: 2024_Award_winning_pages, Daxia, Historical_countries, IXWB, Pages_using_duplicate_arguments_in_template_calls
+
+[COUNTRY] Estado_Social_(Castadilla) | Gov: {{wp | Leader: N/A | Leg: [[National Assembly of Delepasia
+Categories: 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Castadilla, Estado_Social_(Castadilla), IXWB, Major_Reconstruction, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Vallos
+
+[COUNTRY] Vilauristre_Conference | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, Burgundie, Colonial_History_of_Burgundie, Historical_countries, History, History_of_Burgundie, Holy_Levantine_Empire, IXWB, Levantia, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, States_of_the_Holy_Levantine_Empire
+
+[COUNTRY] Principality_of_Faramount | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: All_stub_articles, Burgundie, Historical_countries, History, History_of_Burgundie, Holy_Levantine_Empire, IXWB, Incomplete_articles, Levantia, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, States_of_the_Holy_Levantine_Empire, Stubs
+
+[COUNTRY] Duchy_of_Bourgondi | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: 2023_Award_winning_pages, All_stub_articles, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Burgundie, Colonial_History_of_Burgundie, Historical_countries, History, History_of_Burgundie, Holy_Levantine_Empire, IXWB, Incomplete_articles, Levantia, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Pages_with_broken_file_links, States_of_the_Holy_Levantine_Empire, Stubs
+
+[COUNTRY] Venceian_Republic | Gov: {{Wp | Leader: N/A | Leg: [[Senate (Caphiria)
+Categories: 2023_Award_winning_pages, Articles_containing_Latin-language_text, Caphiria, History_of_Caphiria, IXWB, Incomplete_articles, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Olmeria | Gov: Democratic Republic | Leader: N/A | Leg: The People's Senate
+Categories: Countries, IXWB, Incomplete_articles, Levantia, Olmeria, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Canespa | Gov: Elective & Parliamentary Monarchy | Leader: N/A | Leg: House of Union
+Categories: 2024_Award_winning_pages, Canespa, Countries, Cusinaut, IXWB, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Kingdom_of_Eshel | Gov: {{wp | Leader: N/A | Leg: Kehal
+Categories: 2023_Award_winning_pages, All_stub_articles, Audonia, Battganuur, Historical_countries, History, IXWB, Pages_using_duplicate_arguments_in_template_calls, Stubs
+
+[COUNTRY] Kōtaiyo | Gov: Federal Semi-Constitutional Democratic Monarchy | Leader: N/A | Leg: National Assembly
+Categories: Country_articles_requiring_maintenance, Incomplete_articles, NonCanon, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Western_Republic_(Crona) | Gov: Confederate republic | Leader: N/A | Leg: Western Congress
+Categories: Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters
+
+[COUNTRY] Cote_d'Or_colony | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: All_stub_articles, Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Stubs
+
+[COUNTRY] Walakee_State | Gov: {{wp | Leader: N/A | Leg: [[Bicameralism in the Qangreč
+Categories: 2025_Award_winning_pages, History_of_Tierrador, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Tierrador
+
+[COUNTRY] Vallorania | Gov: Your government type | Leader: N/A | Leg: N/A
+Categories: Country_articles_requiring_maintenance, NonCanon, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Pukhgundi_colony | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: All_stub_articles, Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Pukhgundi, Stubs, Tapakdore
+
+[COUNTRY] Fascist_Caldera | Gov: Oligarchy | Leader: N/A | Leg: Volkshaus
+Categories: Caldera, Former_countries, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Far_East_Colony | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: All_stub_articles, Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Stubs
+
+[COUNTRY] Yuganagawa_Protectorate | Gov: {{nowr | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, All_stub_articles, Burgundie, Colonial_History_of_Burgundie, History_of_Burgundie, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_duplicate_arguments_in_template_calls, Stubs
+
+[COUNTRY] Thalaia | Gov: Democratic Republic | Leader: N/A | Leg: Thalaian National Assembly
+Categories: Country_articles_requiring_maintenance, NonCanon, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Fiorano | Gov: Federal Republic | Leader: N/A | Leg: National Parliament of Fiorano
+Categories: Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Mid-Atrassic_States | Gov: Benefactor confederacy | Leader: N/A | Leg: Legislative Conference
+Categories: 2024_Award_winning_pages, Crona, IXWB, Kiravia, Map_Completion_Project, Mid-Atrassic_States, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Terazta | Gov: Classic Republic | Leader: N/A | Leg: The Senate Of The People Of Teŕazta
+Categories: Abandoned_Lore, Countries, Country_articles_requiring_maintenance, IXWB, Pages_using_infobox_country_with_unknown_parameters, Sarpedon
+
+[COUNTRY] Qabóri_Woqalate | Gov: {{wp | Leader: N/A | Leg: Qangreč
+Categories: 2024_Award_winning_pages, 2025_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, History_of_Tierrador, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links, Tierrador
+
+[COUNTRY] Matokté_Tashnacate | Gov: {{wp | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Crona, Historical_countries, IXWB, Incomplete_articles, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] The_Kingdom_of_New-Orient | Gov: Your government type | Leader: N/A | Leg: N/A
+Categories: Country_articles_requiring_maintenance, NonCanon, Pages_using_infobox_country_with_syntax_problems, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Syliria | Gov: Unitary Haqiqatist republic under a hereditary dictatorship | Leader: N/A | Leg: Peoples assembly
+Categories: Abandoned_Lore, IXWB, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_syntax_problems, Pages_using_infobox_country_with_unknown_parameters, Syliria
+
+[COUNTRY] Kemeti_civilization | Gov: {{wpl | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Audonia, Civilisations, Common_Core, Historical_countries, IXWB, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Languages_of_Castadilla | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Castadilla, IXWB, Languages, Vallos
+
+[COUNTRY] Thervala | Gov: Constitutional Monarchy | Leader: N/A | Leg: National Assembly
+Categories: 2024_Award_winning_pages, Audonia, Countries, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters, Thervala
+
+[COUNTRY] Kingdom_of_Alstin | Gov: {{wp | Leader: N/A | Leg: [[Parliament of Alsint
+Categories: Alstin, Historical_countries, IXWB, Incomplete_articles
+
+[COUNTRY] Geisenroda | Gov: Unitary Constitutional Monarchy under a One-Party Socialist Republic | Leader: N/A | Leg: Unicameral
+Categories: Countries, IXWB, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] National_Restoration_(Pelaxia) | Gov: {{wp | Leader: N/A | Leg: [[Federal Parliament of Pelaxia
+Categories: 2024_Award_winning_pages, IXWB, Major_Reconstruction, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links, Pelaxia
+
+[COUNTRY] Viceroyalty_of_Los_Rumas | Gov: {{wp | Leader: N/A | Leg: [[Supreme Courts of Los Rumas
+Categories: 2024_Award_winning_pages, Castadilla, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Vallos
+
+[COUNTRY] Caphiric_Undecimvirate_in_Vallos | Gov: Various {{wp | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Castadilla, History_of_Caphiria, History_of_Castadilla, IXWB, Vallos
+
+[COUNTRY] Vallosi_piratocracies | Gov: Various piratocracies | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, Castadilla, History_of_Castadilla, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Vallos
+
+[COUNTRY] Isurian_Kingdom | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, IXWB, Isuriana, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pelaxia, Sarpedon
+
+[COUNTRY] Second_Vallosi_Warring_States_period | Gov: Various {{wp | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, Castadilla, History_of_Castadilla, IXWB, Vallos
+
+[COUNTRY] Romany_Kingdoms | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Castadilla, History_of_Castadilla, IXWB, Takatta_Loa
+
+[COUNTRY] Ogonkai | Gov: Federal directorial republic | Leader: N/A | Leg: }}
+Categories: 2024_Award_winning_pages, Abandoned_Lore, IXWB, Ogonkai, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Ard_Aleajayib | Gov: Unitary one-party socialist republic under a totalitarian hereditary dictatorship | Leader: N/A | Leg: People's National Front
+Categories: NonCanon
+
+[COUNTRY] Kuronia | Gov: Unitary parliamentary republic | Leader: N/A | Leg: N/A
+Categories: 2024_Award_winning_pages, 2025_Award_winning_pages, Crona, IXWB, Kuronia, Pages_using_infobox_country_with_syntax_problems, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Delepasian_Federation | Gov: {{wp | Leader: N/A | Leg: [[National Assembly of Delepasia
+Categories: Castadilla, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Argyrea | Gov: One Party Bolshevi-Leninist State | Leader: N/A | Leg: N/A
+Categories: 2025_Award_winning_pages, Argyrea, Audonia, Countries, Country_articles_requiring_maintenance, IXWB, Incomplete_articles, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Central_Vallosi_Union | Gov: {{wp | Leader: N/A | Leg: [[Confederal Assembly (Central Vallos)
+Categories: 2025_Award_winning_pages, Articles_with_hatnote_templates_targeting_a_nonexistent_page, Castadilla, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links, Vallos
+
+[COUNTRY] Mehristan | Gov: {{wp | Leader: N/A | Leg: Congress of Mehristan
+Categories: Audonia, Fiannria, IXWB, Map_Completion_Project_(Completed), Mehristan, Pages_using_duplicate_arguments_in_template_calls
+
+[COUNTRY] Delepasian_Confederation | Gov: [[Foralism | Leader: N/A | Leg: Foral Assembly
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Castadilla, IXWB, Incomplete_articles, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Telokona | Gov: {{Wp | Leader: N/A | Leg: N/A
+Categories: Countries, Crona, IXWB, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Kostava | Gov: Representative Democracy | Leader: N/A | Leg: Kostavan Assembly
+Categories: Countries, IXWB, Kostava, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Sarpedon
+
+[COUNTRY] Doulan | Gov: Duumviral presidential republic | Leader: N/A | Leg: [TBD]
+Categories: Convert_errors, NonCanon, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Nunsiak | Gov: [[Unitary state | Leader: N/A | Leg: N/A
+Categories: Countries, IXWB, Levantia, Nunsiak, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Confederal_Almadaria | Gov: {{wp | Leader: N/A | Leg: [[National Congress of Almadaria
+Categories: Almadaria, Articles_with_hatnote_templates_targeting_a_nonexistent_page, IXWB, NPC_Countries, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Solgavden | Gov: Federal Parliamentary Constitutional Monarchy | Leader: N/A | Leg: Riketsdag
+Categories: NonCanon, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters, Pages_using_infoboxes_with_thumbnail_images, Pages_with_broken_file_links
+
+[COUNTRY] Atapakona | Gov: {{wp | Leader: N/A | Leg: Atapak Qangreč
+Categories: Atapakona, Countries, Crona, IXWB, Lang_and_lang-xx_template_errors, Pages_using_Lang-xx_templates, Pages_with_broken_file_links
+
+[COUNTRY] Intaria | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Award_Winning_Article, Category:2026_Award_winning_pages, Countries, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Sarpedon
+
+[COUNTRY] Nasastan | Gov: [[w:Federalism | Leader: N/A | Leg: N/A
+Categories: Audonia, Countries, Countries_in_Audonia, IXWB, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Neutrophesia | Gov: {{wp | Leader: N/A | Leg: <!--Name of the country/territory's governing body, e.g. "Parliament", "Congress", etc-->
+Categories: IXWB, Incomplete_articles
+
+[COUNTRY] Kimnin_dynasty | Gov: <!-- Rise and fall, events, years and dates --> | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Historical_countries, IXWB, Nasastan, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Shookohi_dynasty | Gov: <!-- Rise and fall, events, years and dates --> | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Historical_countries, IXWB, Nasastan, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Irani_village_states | Gov: <!-- Rise and fall, events, years and dates --> | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Historical_countries, IXWB, Nasastan, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Maresteyn | Gov: {{wp | Leader: N/A | Leg: [[States-General of Maresteyn
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Countries, IXWB, Incomplete_articles, Levantia, Maresteyn, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters, Pages_using_multiple_image_with_auto_scaled_images, Pages_with_broken_file_links
+
+[COUNTRY] Drasenia | Gov: {{wp | Leader: N/A | Leg: Curia
+Categories: Countries, Drasenia, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links, Vallos
+
+[COUNTRY] Galata | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: Galata, IXWB, Pages_using_country_topics_with_unknown_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Aghkbankty_Dynasty | Gov: <!-- Rise and fall, events, years and dates --> | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Historical_countries, IXWB, Nasastan, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Kingdom_of_Munkhot | Gov: Rotating Monarchy | Leader: N/A | Leg: Zovlol
+Categories: Audonia, Daxia, Historical_Countries, Pages_with_broken_file_links, WIP
+
+[COUNTRY] Kagazi | Gov: [[w:Federalism | Leader: N/A | Leg: Parliament
+Categories: Audonia, Award_Winning_Article, Category:2026_Award_winning_pages, Countries, Countries_in_Audonia, IXWB
+
+[COUNTRY] Demographics_of_Galata | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Demographics, Galata, IXWB, Pages_using_country_topics_with_unknown_parameters
+
+[COUNTRY] Demographics_of_Castadilla | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, Castadilla, Demographics_of_Castadilla, IXWB
+
+[COUNTRY] Bulkh_Free_State | Gov: Presidential republic (de jure)<br>Corporate protectorate (de facto) | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: All_stub_articles, Audonia, Battganuur, Bulkh, Burgundie, Countries, IXWB, Operation_Kipling, Stubs, Yonderre
+
+[COUNTRY] Boyamoor | Gov: Democracy | Leader: N/A | Leg: Houses of the Parliament
+Categories: Countries, NonCanon, Pages_using_infobox_country_with_unknown_parameters, Pages_using_infoboxes_with_thumbnail_images
+
+[COUNTRY] Alaka | Gov: Constitutional Republic | Leader: N/A | Leg: State Legislature
+Categories: Countries, IXWB, Incomplete_articles, Kostava, Pages_with_broken_file_links, Sarpedon
+
+[COUNTRY] Oguzan | Gov: {{wp | Leader: N/A | Leg: Provisional Dazga
+Categories: Countries, Crona, IXWB, Incomplete_articles_(Urcea), Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Postwar_Varshan | Gov: {{wpl | Leader: N/A | Leg: Union Dazga
+Categories: Final_War_of_the_Deluge, IXWB, Incomplete_articles_(Urcea), Major_Reconstruction, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_with_broken_file_links, The_Deluge, Varshan
+
+[COUNTRY] Republic_of_Sarzamindor | Gov: Elective monarchy styled as a republic | Leader: N/A | Leg: Daria Shrine Council
+Categories: Historical_countries, IXWB, Nasastan, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters
+
+[COUNTRY] Godam | Gov: Theocratic Militaristic Republic | Leader: N/A | Leg: N/A
+Categories: Audonia, Pages_with_broken_file_links
+
+[COUNTRY] Dahiostan | Gov: One-party Bolshevist-Livasist state | Leader: N/A | Leg: N/A
+Categories: Country_articles_requiring_maintenance, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Central_Varshani_Republic | Gov: {{wp | Leader: N/A | Leg: N/A
+Categories: Army_of_the_National_Homeland, Countries, Crona, IXWB, Incomplete_articles_(Urcea), Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters, Varshan
+
+[COUNTRY] El-Azizi_Province | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Audonia, Burjatéa, IXWB, Kagazi, Mehristan, Nasastan, Niskurstan
+
+[COUNTRY] Triune_Kingdom | Gov: {{wp | Leader: N/A | Leg: [[Federal Parliament of the Triune Kingdom
+Categories: Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Nouvelle_Rousselle | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Burgundie, Colonial_History_of_Burgundie, Godam, History_of_Burgundie, History_of_Godam, History_of_Nasastan, IXWB, Nasastan, Pages_using_country_topics_with_unknown_parameters
+
+[COUNTRY] Apostolic_Ernia | Gov: Your government type | Leader: N/A | Leg: N/A
+Categories: Country_articles_requiring_maintenance, NonCanon, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Burjatéa | Gov: Semi-absolute constitutional monarchy | Leader: N/A | Leg: N/A
+Categories: Audonia, Countries, Countries_in_Audonia
+
+[COUNTRY] Niskurstan | Gov: Unitary Neo-Resistanceist one-party presidential republic | Leader: N/A | Leg: Peoples Purokal
+Categories: Audonia, Countries, Countries_in_Audonia, Pages_using_duplicate_arguments_in_template_calls, Pages_with_broken_file_links
+
+[COUNTRY] Kingdom_of_Pumbria | Gov: Absolute Monarchy | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Burgundie, Historical_countries, History, History_of_Burgundie, IXWB, Incomplete_articles, Levantia, Levantine_Interregnum, Pages_using_country_topics_with_unknown_parameters
+
+[COUNTRY] Republic_of_Guré | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Award_Winning_Article, Category:2026_Award_winning_pages, History_of_Nasastan, IXWB, Nasastan
+
+[COUNTRY] Protectorate_of_the_Kandaran_Sahariites | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Former_country_articles_using_status_text_with_Colony_or_Exile, History_of_Kandara, IXWB, Kandara
+
+[COUNTRY] Second_Kandaran_Caliphate | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Former_country_articles_using_status_text_with_Colony_or_Exile, History_of_Kandara, IXWB, Kandara
+
+[COUNTRY] Kingdom_of_Kandara | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Former_country_articles_using_status_text_with_Colony_or_Exile, History_of_Kandara, IXWB, Kandara
+
+[COUNTRY] Vellara | Gov: Federal Directive Council | Leader: N/A | Leg: House of Councillors
+Categories: Pages_using_infobox_country_with_unknown_parameters, Pages_with_broken_file_links
+
+[COUNTRY] Sahara_Protectorate | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Former_country_articles_using_status_text_with_Colony_or_Exile, History_of_Kandara, IXWB, Kandara
+
+[COUNTRY] Demographics_of_Drasenia | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Demographics, Drasenia, IXWB, Vallos
+
+[COUNTRY] Pre-Kimnin_city-states | Gov: <!-- Rise and fall, events, years and dates --> | Leader: N/A | Leg: <!-- Name of legislature -->
+Categories: Historical_countries, IXWB, Nasastan, Pages_using_infobox_country_with_unknown_parameters
+
+[COUNTRY] Girojón_Restoration | Gov: {{wp | Leader: N/A | Leg: [[Parliament of Pelaxia
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, IXWB, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pelaxia
+
+[COUNTRY] Demographics_of_Nasastan | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: Demographics, IXWB, Nasastan
+
+[COUNTRY] Mandate_of_Kandara | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: History_of_Kandara, IXWB, Kandara, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters
+
+[COUNTRY] Republic_of_Kandara | Gov: N/A | Leader: N/A | Leg: N/A
+Categories: History_of_Kandara, IXWB, Kandara
+
+[COUNTRY] First_Buurzuun_Horde | Gov: Tribal nomadic confederation | Leader: N/A | Leg: N/A
+Categories: Audonia, History_of_Burjatéa, History_of_Huoxia, History_of_Nasastan, IXWB, Pages_using_duplicate_arguments_in_template_calls, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] Zahazaréa | Gov: Constitutional monarchy under a stratocratic democracy | Leader: N/A | Leg: Military Parliament
+Categories: Burjatéa, History_of_Burjatéa, History_of_Nasastan, IXWB, Nasastan, Pages_using_infobox_country_or_infobox_former_country_with_the_flag_caption_or_type_parameters, Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters
+
+[COUNTRY] North_Varshan | Gov: Military occupation | Leader: N/A | Leg: Civilian Consult Board
+Categories: Articles_with_hatnote_templates_targeting_a_nonexistent_page, IXWB, Incomplete_articles_(Urcea), Pages_using_infobox_country_or_infobox_former_country_with_the_symbol_caption_or_type_parameters, Pages_using_infobox_country_with_unknown_parameters, Varshan
+
+[COUNTRY] Ayase | Gov: Constitutional Monarchy | Leader: N/A | Leg: N/A
+Categories: NonCanon, Pages_using_infobox_country_with_unknown_parameters
+
+
+=== SAMPLE OF POLITICAL PARTIES (97 TOTAL) ===
+
+[PARTY] Kiro-Caphirian_Party | Party: Kiro-Caphirian Party | Country: <!-- or state --> | Ideology: N/A | Position: N/A
+
+[PARTY] Fariva | Party: Fariva | Country: [[File:KiravFlag.png | Ideology: N/A | Position: N/A
+
+[PARTY] Camchéachta | Party: Camchéachta<br>Kamxéaxta | Country: }} | Ideology: {{wp | Position: N/A
+
+[PARTY] Federalist_Republican_Alliance | Party: Federalist Republican Alliance | Country: N/A | Ideology: Shaftonist democracy<br>{{wp | Position: N/A
+
+[PARTY] Niyaska | Party: Niyaska | Country: [[File:KiravFlag.png | Ideology: N/A | Position: N/A
+
+[PARTY] Koskenkorva | Party: Koskenkorva | Country: [[File:KiravFlag.png | Ideology: N/A | Position: N/A
+
+[PARTY] New_Ardmore | Party: New_Ardmore | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Authentic_Historical_Caucus | Party: Authentic Historical Caucus | Country: N/A | Ideology: {{wp | Position: N/A
+
+[PARTY] Coscivian_National_Congress | Party: Coscivian National Congress | Country: N/A | Ideology: <br>[[Coscivian civilisation | Position: N/A
+
+[PARTY] Liberty_Group | Party: Liberty Group | Country: N/A | Ideology: Kiravian {{wp | Position: N/A
+
+[PARTY] Caritist_Social_Union | Party: Caritist Social Union | Country: N/A | Ideology: {{wp | Position: N/A
+
+[PARTY] Popular_Democratic_Front | Party: Popular_Democratic_Front | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Direct_Democratic_Front | Party: Direct Democratic Front | Country: N/A | Ideology: {{wp | Position: N/A
+
+[PARTY] Levantine_Union_Party_(Kiravia) | Party: Levantine_Union_Party_(Kiravia) | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Nation-State_Party | Party: Nation-State Party | Country: N/A | Ideology: {{wp | Position: N/A
+
+[PARTY] Atrassica | Party: Atrassica | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Saxalin_Islands | Party: Saxalin Islands | Country: [[File:KiravFlag.png | Ideology: N/A | Position: N/A
+
+[PARTY] Party_of_Kiravian_Democrats | Party: Party of Kiravian Democrats | Country: N/A | Ideology: {{wp | Position: N/A
+
+[PARTY] Island_Nation_Party | Party: Island Nation Party | Country: N/A | Ideology: [[Insularism and Ultramarinism | Position: N/A
+
+[PARTY] Agrarian_Caucus | Party: Agrarian Caucus | Country: N/A | Ideology: {{wp | Position: N/A
+
+[PARTY] Imperial_Federation_Party | Party: Imperial Federation Party | Country: N/A | Ideology: {{wp | Position: N/A
+
+[PARTY] Fíanna_Aird_Mór | Party: Fíanna Aird Mór | Country: N/A | Ideology: Ardmorean nationalism<br>{{wp | Position: N/A
+
+[PARTY] Kiravian_Free_Alliance | Party: Kiravian Free Alliance | Country: N/A | Ideology: {{wp | Position: N/A
+
+[PARTY] Regional_Kiravia_Caucus | Party: Regional Kiravia Caucus | Country: N/A | Ideology: [[Kiravian federalism#H | Position: N/A
+
+[PARTY] Free_Rivers_Party | Party: Free_Rivers_Party | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Elegia | Party: Elegia | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Minor_Kiravian_Political_Parties | Party: Monarchist Party | Country: N/A | Ideology: [http://archive.today/FkipI Traditional monarchism]<br>[[Levantine Union | Position: N/A
+
+[PARTY] National_Pact_(Urcea) | Party: National Pact | Country: Urcea | Ideology: *Crown Liberalism | Position: {{wp
+
+[PARTY] Julian_Party_(Urcea) | Party: Julian Party | Country: N/A | Ideology: Far Right-wing | Position: N/A
+
+[PARTY] Party_of_Daxian_Democrats | Party: Party_of_Daxian_Democrats | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Commonwealth_Union_(Urcea) | Party: Commonwealth Union | Country: Urcea | Ideology: {{wp | Position: N/A
+
+[PARTY] National_Reconstruction_Front_(Daxia) | Party: National Reconstruction Front | Country: Daxia | Ideology: {{wp | Position: N/A
+
+[PARTY] Republican_Nationalist_Party_(the_Cape) | Party: Republican Nationalist Party | Country: --> | Ideology: Restarkism<br>{{wp | Position: {{wp
+
+[PARTY] Nahe_Democratic_Party | Party: Nahe Democratic Party | Country: --> | Ideology: Vertrauen | Position: Far-Left
+
+[PARTY] Paraguan_Faction | Party: Paraguan Faction | Country: --> | Ideology: {{wp | Position: {{wp
+
+[PARTY] Workers'_Party_(Yonderre) | Party: Workers' Party | Country: Yonderre | Ideology: {{wp | Position: {{wp
+
+[PARTY] Party_of_Varshan_Democrats | Party: Party of Varshan Democrats | Country: Zanoma | Ideology: {{wp | Position: N/A
+
+[PARTY] Volkspartei_für_die_Republik | Party: People's Party for the Republic | Country: Eldmora | Ideology: {{wpl | Position: {{wpl
+
+[PARTY] Sydona | Party: Sydona | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Republican_Party_(Faneria) | Party: National Republican Party of Faneria | Country: N/A | Ideology: Cananachan Republicanism | Position: {{wp
+
+[PARTY] Social_Democracy_Party_(Cartadania) | Party: Social Democracy Party | Country: Cartadania | Ideology: {{ubl | Position: <!--Longstanding consensus is not to include a political position here. Do not change without talk page consensus.-->
+
+[PARTY] Hendalarskara_Social_Front | Party: Hendalarskara Social Front | Country: [[File:HendalarskFlag.png | Ideology: Democratic socialism<br>Multilateralism<br>Hendalarskara nationalism<br>Environmentalism<br>Liberal [[Hendalarskara Catholic Church | Position: N/A
+
+[PARTY] Solidarity_Party_(Urcea) | Party: Solidarity Party | Country: Urcea | Ideology: *Wittonian Socialism | Position: N/A
+
+[PARTY] Rusana_Patriotic_Alliance | Party: Rusana Patriotic Alliance | Country: N/A | Ideology: {{wp | Position: N/A
+
+[PARTY] Jamaat-e-Islami_(Rusana) | Party: Jamaat-e-Islami | Country: N/A | Ideology: {{wp | Position: N/A
+
+[PARTY] Lunsoc | Party: Lunaran Socialist Movement | Country: N/A | Ideology: Totalitarianism<br>Social Justice | Position: N/A
+
+[PARTY] Social_Renovation_Movement_(Pelaxia) | Party: Social Renovation Movement | Country: Aciria | Ideology: {{plainlist | Position: N/A
+
+[PARTY] Kirosocialist_Party | Party: Socialist Party | Country: <!-- or state --> | Ideology: <br>Kirosocialism<br> | Position: N/A
+
+[PARTY] Renaissance_Party | Party: Renaissance Party | Country: N/A | Ideology: {{wp | Position: N/A
+
+[PARTY] United_Montanarans_League | Party: United Montanarans League | Country: Pelaxia | Ideology: Majority:<br>Montanaro nationalism<br>{{nowrap | Position: {{wp
+
+[PARTY] Grajnidaren_Pride | Party: Grajnidaren Pride | Country: N/A | Ideology: <br><br><br><br><br><br> | Position: N/A
+
+[PARTY] National_Party_(Faneria) | Party: National Party of Faneria | Country: N/A | Ideology: Social Liberalism | Position: Left
+
+[PARTY] Christian_Labor_Party_(Faneria) | Party: Christian Labor Party | Country: N/A | Ideology: Christian Socialism | Position: N/A
+
+[PARTY] Fronte_Democratico | Party: Democratic Front | Country: Aciria | Ideology: Republicanism</br>Almadarian nationalism | Position: N/A
+
+[PARTY] Union_of_Democrats_&_Independents | Party: Union_of_Democrats_&_Independents | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] United_Allegiance_Society | Party: United Allegiance Society | Country: N/A | Ideology: Restarkism<small> with Kiravian characteristics</small><br>{{wp | Position: N/A
+
+[PARTY] Political_Parties_of_Rusana | Party: Rusana Patriotic Alliance | Country: N/A | Ideology: {{wp | Position: N/A
+
+[PARTY] National_Union_Party_of_the_Homeland_(Patraja) | Party: National Union Party of the Homeland | Country: Patraja | Ideology: National Conservatism<br/> | Position: N/A
+
+[PARTY] Knassania | Party: Knassania | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Social_Labor_Party_(Urcea) | Party: Social Labor Party | Country: Urcea | Ideology: *[[Urcean_socialist_philosophy#Synodalism | Position: {{wp
+
+[PARTY] Democratic_Labor_Party_v._His_Most_Christian_Majesty's_Government | Party: Democratic_Labor_Party_v._His_Most_Christian_Majesty's_Government | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Retainer_Party_(Urcea) | Party: Retainer_Party_(Urcea) | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Republican_Party_(Urcea) | Party: Republican Party | Country: N/A | Ideology: Far left-wing | Position: N/A
+
+[PARTY] Social_Democrats_KF | Party: Social_Democrats_KF | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Union_for_National_Solidarity_(Urcea) | Party: Union for National Solidarity | Country: N/A | Ideology: Wittonian Socialism | Position: N/A
+
+[PARTY] Calderan_Republic | Party: Calderan_Republic | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Green_Party_of_Canpei | Party: Green Party of Canpei | Country: N/A | Ideology: Ecopolitics<br>Green Conservatism<br>Anti-communism<br> | Position: N/A
+
+[PARTY] Volkspartei | Party: People's Party | Country: Calderan Republic | Ideology: Gothic Nationalism | Position: N/A
+
+[PARTY] People's_Democratic_Party | Party: People's Democratic Party | Country: Castadilla | Ideology: Majority:<br>{{collapsible list | Position: {{wp
+
+[PARTY] Arzanshahr_Renaissance_Front | Party: Popular Front for An Arzani Renaissance | Country: Arzanshahr | Ideology: Arzani Nationalism; | Position: Varied;
+
+[PARTY] National_Renewal_Party | Party: National Renewal Party | Country: Castadilla | Ideology: {{ubl | Position: {{ubl
+
+[PARTY] Party_of_National_Acceleration | Party: Party of National Acceleration | Country: Castadilla | Ideology: Commarcho Capitalism<br>Delepasian unremarkablism<br>Loa exceptionalism<br>Navidadian Socialism<br>Pogo Stick Totalitarianism<br>{{wp | Position: Fourth Position
+
+[PARTY] United_Yonderre | Party: United Yonderre | Country: Yonderre | Ideology: *{{wp | Position: {{wp
+
+[PARTY] Enscirya | Party: Enscirya | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Labour_Front_of_Kirav | Party: Labour_Front_of_Kirav | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Audonian_Democratic_Traditionalist_Front | Party: {{nowrap | Country: N/A | Ideology: {{Plainlist | Position: {{Wp
+
+[PARTY] Jade_Resistance_Movement | Party: Jade_Resistance_Movement | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] National_Reunification_Front | Party: National Reunification Front | Country: N/A | Ideology: Kiravian reunification<br>{{wp | Position: N/A
+
+[PARTY] Progress_Coalition_(Olmeria) | Party: Progress Coalition | Country: N/A | Ideology: Socialist | Position: Formal Opposition
+
+[PARTY] Unity_Coalition_(Olmeria) | Party: Unity Coalition | Country: N/A | Ideology: Centrist | Position: Major Coalition Partner
+
+[PARTY] Justice_League | Party: Justice League | Country: Yonderre | Ideology: *{{wp | Position: {{wp
+
+[PARTY] Saint_Kennera_&_Pribraltar | Party: Saint_Kennera_&_Pribraltar | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Haqiqatist_party | Party: Haqiqatist Party | Country: The peoples Democratic Paradise of Syliria | Ideology: Totalitarian, Socialism, Nationalism, Cult of personality, secularism, Fawazist. | Position: N/A
+
+[PARTY] Fatherland_Party_(Yonderre) | Party: Fatherland Party | Country: Yonderre | Ideology: *{{wp | Position: {{wp
+
+[PARTY] Social_Democrats_(Yonderre) | Party: Social Democratic Party | Country: Yonderre | Ideology: *{{wp | Position: {{wp
+
+[PARTY] Democratic_Progress_Party_(Ogonkai) | Party: Democratic Progress Party | Country: N/A | Ideology: {{ubl | Position: N/A
+
+[PARTY] National_Power_Party | Party: National_Power_Party | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] Great_Kirav_Independence_Party | Party: Great_Kirav_Independence_Party | Country: N/A | Ideology: N/A | Position: N/A
+
+[PARTY] National_Falangist_Party | Party: National Falangist Party | Country: Castadilla | Ideology: Falangism | Position: {{wp
+
+[PARTY] Calderan_Restoration_Party | Party: Calderan Restoration Party | Country: Calderan Republic | Ideology: Liberalism | Position: N/A
+
+[PARTY] Calderan_Unity_Party | Party: Calderan Unity Party | Country: Calderan Republic | Ideology: Populism<br>Conservatism | Position: N/A
+
+[PARTY] Gothic_People's_Party | Party: Gothic People's Party | Country: Yonderre | Ideology: *Gothic nationalism | Position: {{wp
+
+[PARTY] Workers_Party_of_Argyrea | Party: Workers Party of Argyrea | Country: De Jure international, de facto Argyrea | Ideology: Bolshevism, | Position: N/A
+
+[PARTY] Ethnofederalist_Social_Nasastani_National_Party | Party: Ethnofederalist Social Nasastani National Party | Country: Nasastan | Ideology: [[w:Left-wing_nationalism#Social_democratic_nationalism | Position: N/A
+
+[PARTY] Abazan_Peoples_Movement | Party: Abazan Peoples Movement | Country: N/A | Ideology: Doddism<br>Neo Abazanism<br>Clientelism | Position: N/A
+
+[PARTY] Party_of_Courtiers_and_Magistrates | Party: Party of Courtiers and Magistrates | Country: Castadilla | Ideology: {{ubl | Position: {{wp
+
+[PARTY] List_of_political_parties_in_Nasastan | Party: List_of_political_parties_in_Nasastan | Country: N/A | Ideology: N/A | Position: N/A

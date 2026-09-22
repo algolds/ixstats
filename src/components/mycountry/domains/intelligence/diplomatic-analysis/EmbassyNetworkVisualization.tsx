@@ -25,7 +25,7 @@ export const EmbassyNetworkVisualization = React.memo<EmbassyNetworkVisualizatio
       <Card className="facet-hierarchy-child">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Network className="h-5 w-5 text-purple-600" />
+            <Network className="h-5 w-5 text-cyan-500" />
             Embassy Network Visualization
           </CardTitle>
           <CardDescription>

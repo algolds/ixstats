@@ -90,7 +90,7 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
     <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <BarChart2 className="h-4 w-4 text-violet-600" />
+          <BarChart2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
           Political Metrics
         </CardTitle>
         <CardDescription>

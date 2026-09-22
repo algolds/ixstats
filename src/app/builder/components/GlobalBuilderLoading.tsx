@@ -360,3 +360,20 @@ export function BuilderStepLoading({
     </div>
   );
 }
+
+/**
+ * TabLoadingFallback - Skeleton loader for tab content
+ * Used as fallback for lazy-loaded tab components
+ */
+export function TabLoadingFallback() {
+  return (
+    <div className="animate-pulse space-y-4">
+      <div className="h-8 w-1/3 rounded bg-muted" />
+      <div className="space-y-3">
+        <div className="h-20 rounded bg-muted" />
+        <div className="h-20 rounded bg-muted" />
+        <div className="h-20 rounded bg-muted" />
+      </div>
+    </div>
+  );
+}

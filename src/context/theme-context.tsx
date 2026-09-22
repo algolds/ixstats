@@ -4,12 +4,15 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 
 export type Theme = "light" | "dark" | "system";
+export type TypographyPreset = "sovereign" | "national" | "swiss" | "apple";
 
 interface ThemeContextType {
   theme: Theme;
   effectiveTheme: "light" | "dark";
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
+  typographyPreset: TypographyPreset;
+  setTypographyPreset: (preset: TypographyPreset) => void;
   compactMode: boolean;
   setCompactMode: (compact: boolean) => void;
   toggleCompactMode: () => void;
@@ -51,6 +54,7 @@ export function ThemeProvider({
   const [enableTextures, setEnableTexturesState] = useState<boolean>(true);
   const [interactiveHover, setInteractiveHoverState] = useState<boolean>(true);
   const [showNsImporter, setShowNsImporterState] = useState<boolean>(false);
+  const [typographyPreset, setTypographyPresetState] = useState<TypographyPreset>("swiss");
 
   // Initialize theme and compact mode from localStorage
   useEffect(() => {
@@ -58,6 +62,13 @@ export function ThemeProvider({
       const storedTheme = localStorage.getItem(storageKey) as Theme | null;
       if (storedTheme && ["light", "dark", "system"].includes(storedTheme)) {
         setThemeState(storedTheme);
+      }
+
+      const storedTypography = localStorage.getItem("ixstats-typography") as TypographyPreset | null;
+      if (storedTypography && ["sovereign", "national", "swiss", "apple"].includes(storedTypography)) {
+        setTypographyPresetState(storedTypography);
+      } else {
+        setTypographyPresetState("swiss");
       }
 
       const storedCompactMode = localStorage.getItem("ixstats-compact-mode");
@@ -151,6 +162,7 @@ export function ThemeProvider({
 
       // Set data attributes for CSS
       root.setAttribute("data-theme", effectiveTheme);
+      root.setAttribute("data-typography", typographyPreset);
       root.setAttribute("data-compact", compactMode.toString());
       root.setAttribute("data-reduce-animations", reduceAnimations.toString());
       root.setAttribute("data-low-fidelity", lowFidelityMode.toString());
@@ -169,6 +181,7 @@ export function ThemeProvider({
     return () => clearTimeout(timeoutId);
   }, [
     effectiveTheme,
+    typographyPreset,
     compactMode,
     reduceAnimations,
     lowFidelityMode,
@@ -281,6 +294,16 @@ export function ThemeProvider({
     }
   }, []);
 
+  const setTypographyPreset = useCallback((preset: TypographyPreset) => {
+    try {
+      localStorage.setItem("ixstats-typography", preset);
+      setTypographyPresetState(preset);
+    } catch (error) {
+      console.warn("Failed to save typography preset to localStorage:", error);
+      setTypographyPresetState(preset);
+    }
+  }, []);
+
   const toggleShowNsImporter = useCallback(() => {
     setShowNsImporter(!showNsImporter);
   }, [showNsImporter, setShowNsImporter]);
@@ -292,6 +315,8 @@ export function ThemeProvider({
       effectiveTheme,
       setTheme,
       toggleTheme,
+      typographyPreset,
+      setTypographyPreset,
       compactMode,
       setCompactMode,
       toggleCompactMode,
@@ -316,6 +341,8 @@ export function ThemeProvider({
       effectiveTheme,
       setTheme,
       toggleTheme,
+      typographyPreset,
+      setTypographyPreset,
       compactMode,
       setCompactMode,
       toggleCompactMode,

@@ -8,7 +8,11 @@ import type { DemographicsConfiguration } from "~/types/economy-builder";
 
 interface AgeDistributionSectionProps {
   demographics: DemographicsConfiguration;
-  onChange: (parentField: keyof DemographicsConfiguration, field: string, value: any) => void;
+  onChange: (
+    parentField: keyof DemographicsConfiguration,
+    field: string,
+    value: number | string | boolean
+  ) => void;
   showAdvanced: boolean;
 }
 

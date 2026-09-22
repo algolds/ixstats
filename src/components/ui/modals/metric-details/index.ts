@@ -11,3 +11,4 @@ export { LaborDetailsModal } from "./LaborDetailsModal";
 export { GovernmentSpendingModal } from "./GovernmentSpendingModal";
 export { DebtAnalysisModal } from "./DebtAnalysisModal";
 export { DemographicsHealthModal } from "./DemographicsHealthModal";
+export * from "./hooks/useMetricHistoryFilter";

@@ -10,6 +10,28 @@ import { useMetricDetailsModal } from "~/hooks/useMetricDetailsModal";
 import { getWikiCache, setWikiCache } from "~/lib/wiki-os/editor/local-cache";
 import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 
+export interface MyCountryMetricView {
+  // At a Glance
+  gdp: "perCapita" | "total";
+  population: "total" | "density";
+  area: "km" | "mi";
+
+  // Economy
+  economyGdp: "total" | "perCapita";
+  fiscal: "revenue" | "balance";
+  trade: "exports" | "imports";
+
+  // Labor
+  workforce: "count" | "participation";
+  employment: "unemployed" | "employed";
+  compensation: "average" | "minimum";
+
+  // Government
+  structure: "state" | "government";
+  budget: "spending" | "percentage";
+  debt: "total" | "ratio";
+}
+
 /**
  * Aggregates all data, query, and local UI state for the MyCountry tab system:
  * country/economy data, government structure, wiki queries, the "At a Glance"
@@ -35,7 +57,7 @@ export function useMyCountryMetrics(activeTab: string) {
   );
 
   // Toggle state for all MyCountry tabs (persisted at parent level)
-  const [metricView, setMetricView] = useState({
+  const [metricView, setMetricView] = useState<MyCountryMetricView>({
     // At a Glance
     gdp: "perCapita" as "perCapita" | "total",
     population: "total" as "total" | "density",

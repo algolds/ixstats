@@ -210,23 +210,6 @@ function rewriteXFHtml(html: string): string {
 }
 
 // oxlint-disable-next-line typescript/no-unused-vars
-function normalizeNode(n: XFForum): ForumNode {
-  return {
-    nodeId: n.node_id,
-    title: n.title,
-    description: n.description,
-    parentNodeId: n.parent_node_id,
-    displayOrder: n.display_order,
-    threadCount: n.type_data?.discussion_count ?? 0,
-    messageCount: n.type_data?.message_count ?? 0,
-    lastPostDate: n.type_data?.last_post_date ?? null,
-    lastPostUsername: n.type_data?.last_post_username ?? null,
-    lastThreadTitle: n.type_data?.last_thread_title ?? null,
-    lastThreadId: n.type_data?.last_thread_id ?? null,
-    nodeType: n.node_type_id,
-  };
-}
-
 // ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------

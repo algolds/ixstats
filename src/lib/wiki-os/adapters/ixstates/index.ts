@@ -9,7 +9,10 @@ export * from "./unified-parser";
 export * from "./infobox-mapper";
 export * from "./lore-card-generator";
 export * from "./ixworld-mapper";
-export * from "./eligible-country-service";
+export {
+  type EligibleCountryResult,
+  getEligibleCountries,
+} from "./eligible-country-service";
 export {
   type WikiSection,
   type WikiTable,

@@ -97,22 +97,22 @@ export const TaxCalculator = React.memo(function TaxCalculator({
       <CardHeader>
         <div className="space-y-4">
           <CardTitle className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-950/40">
-              <Calculator className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="rounded-lg bg-indigo-500/10 p-2">
+              <Calculator className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <span>Tax Calculator</span>
             <Badge variant="outline">{taxSystem.taxSystemName}</Badge>
             {enableLiveCalculation && (
               <Badge
                 variant="secondary"
-                className="ml-auto bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+                className="ml-auto border border-indigo-500/30 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300"
               >
                 <Zap className="mr-1 h-3 w-3" />
                 Live Calculation
               </Badge>
             )}
             {state.liveTaxCalculation.isPending && (
-              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
             )}
           </CardTitle>
 

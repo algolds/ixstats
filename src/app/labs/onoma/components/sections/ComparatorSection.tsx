@@ -125,7 +125,7 @@ export default function ComparatorSection({
   const getDistanceColor = (dist: number) => {
     if (dist <= 30) return "border-emerald-500/30 bg-emerald-500/5 text-emerald-500";
     if (dist <= 60) return "border-amber-500/30 bg-amber-500/5 text-amber-500";
-    return "border-rose-500/30 bg-rose-500/5 text-rose-500";
+    return "border-red-500/30 bg-red-500/5 text-red-500";
   };
 
   return (
@@ -205,7 +205,7 @@ export default function ComparatorSection({
 
         {/* Bigram similarity card */}
         <FacetMaterial material="satin" className="border-border/20 border p-4 text-center">
-          <GitCompare className="mx-auto mb-2 h-6 w-6 text-purple-500 opacity-80" />
+          <GitCompare className="mx-auto mb-2 h-6 w-6 text-indigo-500 opacity-80" />
           <span className="text-foreground font-mono text-3xl font-extrabold tracking-tight">
             {comparison.bigramSimilarity}%
           </span>
@@ -267,14 +267,14 @@ export default function ComparatorSection({
 
             {/* Unique to B */}
             <div className="space-y-1.5">
-              <span className="text-[11px] font-bold text-purple-500 capitalize">
+              <span className="text-[11px] font-bold text-indigo-500 capitalize">
                 Unique to {corpusB.label} ({comparison.uniqueToB.length})
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {comparison.uniqueToB.map((ph) => (
                   <span
                     key={ph}
-                    className="rounded border border-purple-500/10 bg-purple-500/10 px-2 py-0.5 font-mono text-sm text-purple-600 dark:text-purple-400"
+                    className="rounded border border-indigo-500/10 bg-indigo-500/10 px-2 py-0.5 font-mono text-sm text-indigo-600 dark:text-indigo-400"
                   >
                     /{ph}/
                   </span>
@@ -327,7 +327,7 @@ export default function ComparatorSection({
                 </div>
                 <div className="bg-secondary/30 h-2 w-full overflow-hidden rounded-full">
                   <div
-                    className="h-full rounded-full bg-purple-500"
+                    className="h-full rounded-full bg-indigo-500"
                     style={{ width: `${Math.min(100, (comparison.entropyB / 4.7) * 100)}%` }}
                   />
                 </div>

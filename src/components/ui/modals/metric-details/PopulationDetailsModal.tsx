@@ -26,6 +26,9 @@ import {
   Legend,
   ResponsiveContainer,
   Area,
+  AreaChart as RechartsAreaChart,
+  Line,
+  LineChart as RechartsLineChart,
   ComposedChart,
   Bar,
   BarChart,
@@ -35,12 +38,22 @@ import {
 } from "recharts";
 import { formatPopulation } from "~/lib/utils/format-utils";
 import { IxTime } from "~/lib/ixtime";
-import { getIxCutoff } from "~/lib/ixtime/range";
 import { cn } from "~/lib/utils/cn";
 import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
 import type { TimeRange, ChartType } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
+import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "~/components/ui/hover-card";
+
+interface PopulationChartDataPoint {
+  year: number;
+  population: number;
+  populationGrowthRate: number;
+  populationDensity: number | null;
+  totalGdp: number;
+  timestamp: number;
+  date: string;
+}
 
 interface PopulationDetailsModalProps {
   isOpen: boolean;
@@ -114,31 +127,25 @@ export function PopulationDetailsModal({
 
   const isLoading = isEconomicLoading || isHistoricalLoading || isGlobalLoading;
 
-  const processChartData = (timeRange: TimeRange) => {
-    if (!historicalData?.length) return [];
-
-    // IxTime-aware cutoff (not real 30d months) - fixes X-axis showing wrong span
-    const nowIx = IxTime.getCurrentIxTime();
-    const cutoffIx = getIxCutoff(timeRange, nowIx);
-
-    return historicalData
-      .filter((point: any) => {
-        const ts = IxTime.toTimestamp(point.ixTimeTimestamp as any);
-        return ts !== null && ts >= cutoffIx;
-      })
-      .map((point: any) => {
-        const tsNum = IxTime.toTimestamp(point.ixTimeTimestamp as any) as number;
+  const processChartData = (timeRange: TimeRange): PopulationChartDataPoint[] => {
+    return filterAndSortHistory<any, PopulationChartDataPoint>(
+      historicalData,
+      timeRange,
+      (point, _, rawTimestamp) => {
+        const tsNum = IxTime.toTimestamp(rawTimestamp as string | number | Date) as number;
+        const pop = Number(point?.population ?? 0);
+        const rawGrowthRate = Number(point?.populationGrowthRate ?? 0);
         return {
           year: IxTime.getCurrentGameYear(tsNum),
-          population: point.population,
-          populationGrowthRate: (point.populationGrowthRate || 0) * 100,
-          populationDensity: point.populationDensity,
-          totalGdp: point.totalGdp,
+          population: pop,
+          populationGrowthRate: rawGrowthRate * 100,
+          populationDensity: (point?.populationDensity as number | undefined) ?? null,
+          totalGdp: (point?.totalGdp as number | undefined) ?? 0,
           timestamp: tsNum,
           date: IxTime.formatIxTime(tsNum, true),
         };
-      })
-      .sort((a: any, b: any) => (a.timestamp ?? 0) - (b.timestamp ?? 0));
+      }
+    );
   };
 
   // Overview trailing growth uses unified 5y window to match default X-axis
@@ -171,15 +178,15 @@ export function PopulationDetailsModal({
   const comparisonData = useMemo(() => {
     if (!topCountriesByPopulation || !economicData) return [];
 
-    return topCountriesByPopulation
-      .map((country: any) => ({
+    return (topCountriesByPopulation as Array<{ id: string; name: string; currentPopulation: number; populationTier: string }>)
+      .map((country) => ({
         name: country.name.length > 12 ? country.name.substring(0, 9) + "..." : country.name,
         fullName: country.name,
         population: country.currentPopulation,
         populationTier: country.populationTier,
         isCurrentCountry: country.id === countryId,
       }))
-      .sort((a: any, b: any) => b.population - a.population);
+      .sort((a, b) => b.population - a.population);
   }, [topCountriesByPopulation, economicData, countryId]);
 
   const populationTierInfo = useMemo(() => {
@@ -232,14 +239,14 @@ export function PopulationDetailsModal({
         name: "Tier 7",
         min: 350_000_000,
         max: 499_999_999,
-        color: "bg-purple-100 text-purple-800",
+        color: "bg-blue-100 text-blue-800",
         description: "350-499.99M",
       },
       {
         name: "Tier X",
         min: 500_000_000,
         max: Infinity,
-        color: "bg-pink-100 text-pink-800",
+        color: "bg-indigo-100 text-indigo-800",
         description: "500M+",
       },
     ];
@@ -322,7 +329,7 @@ export function PopulationDetailsModal({
     }
 
     if (comparisonData.length > 0) {
-      const idx = comparisonData.findIndex((c: any) => c.isCurrentCountry);
+      const idx = comparisonData.findIndex((c) => c.isCurrentCountry);
       rank = idx !== -1 ? idx + 1 : 1;
       totalCountries = comparisonData.length;
     }
@@ -339,12 +346,12 @@ export function PopulationDetailsModal({
     };
   }, [economicData, defaultChartData, globalStats, comparisonData]);
 
-  const renderTabContent = (activeTab: string, timeRange: TimeRange, _chartType: ChartType) => {
+  const renderTabContent = (activeTab: string, timeRange: TimeRange, chartType: ChartType) => {
     switch (activeTab) {
       case "overview":
         return renderOverviewTab();
       case "trends":
-        return renderTrendsTab(timeRange);
+        return renderTrendsTab(timeRange, chartType);
       case "comparison":
         return renderComparisonTab();
       default:
@@ -430,7 +437,7 @@ export function PopulationDetailsModal({
                     <div className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
                       World Ranking
                     </div>
-                    <span className="text-xl font-bold text-purple-400">
+                    <span className="text-xl font-bold text-amber-400">
                       #{performanceMetrics.rank}
                     </span>
                     <span className="text-muted-foreground mt-0.5 text-[10px]">
@@ -488,7 +495,7 @@ export function PopulationDetailsModal({
                         Population Tier System
                       </h4>
                       <div className="space-y-1.5">
-                        {populationTierInfo.allTiers.map((tier: any, idx: number) => (
+                        {populationTierInfo.allTiers.map((tier, idx) => (
                           <div
                             key={tier.name}
                             className={cn(
@@ -503,7 +510,7 @@ export function PopulationDetailsModal({
                                 "text-[11px] font-semibold",
                                 idx === populationTierInfo.currentIndex
                                   ? "text-cyan-400"
-                                  : "text-white"
+                                  : "text-white/70"
                               )}
                             >
                               {tier.name}
@@ -539,7 +546,7 @@ export function PopulationDetailsModal({
     );
   };
 
-  const renderTrendsTab = (timeRange: TimeRange) => {
+  const renderTrendsTab = (timeRange: TimeRange, chartType: ChartType = "composed") => {
     const chartData = processChartData(timeRange);
 
     if (isHistoricalLoading) {
@@ -565,6 +572,228 @@ export function PopulationDetailsModal({
         </Card>
       );
     }
+
+    const renderChartByFormat = () => {
+      if (chartType === "line") {
+        return (
+          <RechartsLineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+            <XAxis
+              dataKey="timestamp"
+              domain={["dataMin", "dataMax"]}
+              type="number"
+              scale="time"
+              name="Time"
+              tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
+              tickCount={6}
+              stroke="rgba(255, 255, 255, 0.3)"
+            />
+            <YAxis
+              yAxisId="population"
+              orientation="left"
+              tickFormatter={(value) => formatPopulation(value)}
+              stroke="rgba(255, 255, 255, 0.3)"
+            />
+            <Tooltip
+              contentStyle={{
+                background: "rgba(18, 20, 24, 0.8)",
+                backdropFilter: "blur(8px)",
+                borderColor: "rgba(255, 255, 255, 0.1)",
+                borderRadius: "8px",
+              }}
+              formatter={(value, name) => [
+                formatPopulation(value as number),
+                name === "population" ? "Population" : String(name ?? ""),
+              ]}
+              labelFormatter={(label) => `Year ${IxTime.getCurrentGameYear(label as number)}`}
+            />
+            <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />
+            <Line
+              yAxisId="population"
+              type="monotone"
+              dataKey="population"
+              stroke="#06b6d4"
+              strokeWidth={3}
+              dot={false}
+              name="Population"
+            />
+          </RechartsLineChart>
+        );
+      }
+
+      if (chartType === "area") {
+        return (
+          <RechartsAreaChart data={chartData}>
+            <defs>
+              <linearGradient id="popColor" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+            <XAxis
+              dataKey="timestamp"
+              domain={["dataMin", "dataMax"]}
+              type="number"
+              scale="time"
+              name="Time"
+              tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
+              tickCount={6}
+              stroke="rgba(255, 255, 255, 0.3)"
+            />
+            <YAxis
+              yAxisId="population"
+              orientation="left"
+              tickFormatter={(value) => formatPopulation(value)}
+              stroke="rgba(255, 255, 255, 0.3)"
+            />
+            <Tooltip
+              contentStyle={{
+                background: "rgba(18, 20, 24, 0.8)",
+                backdropFilter: "blur(8px)",
+                borderColor: "rgba(255, 255, 255, 0.1)",
+                borderRadius: "8px",
+              }}
+              formatter={(value, name) => [
+                formatPopulation(value as number),
+                name === "population" ? "Population" : String(name ?? ""),
+              ]}
+              labelFormatter={(label) => `Year ${IxTime.getCurrentGameYear(label as number)}`}
+            />
+            <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />
+            <Area
+              yAxisId="population"
+              type="monotone"
+              dataKey="population"
+              stroke="#06b6d4"
+              fillOpacity={1}
+              fill="url(#popColor)"
+              strokeWidth={3}
+              name="Population"
+            />
+          </RechartsAreaChart>
+        );
+      }
+
+      if (chartType === "bar") {
+        return (
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+            <XAxis
+              dataKey="timestamp"
+              domain={["dataMin", "dataMax"]}
+              type="number"
+              scale="time"
+              name="Time"
+              tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
+              tickCount={6}
+              stroke="rgba(255, 255, 255, 0.3)"
+            />
+            <YAxis
+              yAxisId="population"
+              orientation="left"
+              tickFormatter={(value) => formatPopulation(value)}
+              stroke="rgba(255, 255, 255, 0.3)"
+            />
+            <Tooltip
+              contentStyle={{
+                background: "rgba(18, 20, 24, 0.8)",
+                backdropFilter: "blur(8px)",
+                borderColor: "rgba(255, 255, 255, 0.1)",
+                borderRadius: "8px",
+              }}
+              formatter={(value, name) => [
+                formatPopulation(value as number),
+                name === "population" ? "Population" : String(name ?? ""),
+              ]}
+              labelFormatter={(label) => `Year ${IxTime.getCurrentGameYear(label as number)}`}
+            />
+            <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />
+            <Bar
+              yAxisId="population"
+              dataKey="population"
+              fill="#06b6d4"
+              radius={[4, 4, 0, 0]}
+              name="Population"
+            />
+          </BarChart>
+        );
+      }
+
+      // Default: Composed (Area + Bar)
+      return (
+        <ComposedChart data={chartData}>
+          <defs>
+            <linearGradient id="popColor" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
+              <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+          <XAxis
+            dataKey="timestamp"
+            domain={["dataMin", "dataMax"]}
+            type="number"
+            scale="time"
+            name="Time"
+            tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
+            tickCount={6}
+            stroke="rgba(255, 255, 255, 0.3)"
+          />
+          <YAxis
+            yAxisId="population"
+            orientation="left"
+            tickFormatter={(value) => formatPopulation(value)}
+            stroke="rgba(255, 255, 255, 0.3)"
+          />
+          <YAxis
+            yAxisId="growth"
+            orientation="right"
+            stroke="rgba(255, 255, 255, 0.3)"
+            tickFormatter={(value) => `${value.toFixed(2)}%`}
+          />
+          <Tooltip
+            contentStyle={{
+              background: "rgba(18, 20, 24, 0.8)",
+              backdropFilter: "blur(8px)",
+              borderColor: "rgba(255, 255, 255, 0.1)",
+              borderRadius: "8px",
+            }}
+            formatter={(value, name) => {
+              if (name === "population") {
+                return [formatPopulation(value as number), "Population"];
+              }
+              if (name === "populationGrowthRate") {
+                return [`${(value as number).toFixed(3)}%`, "Growth Rate"];
+              }
+              return [String(value ?? ""), String(name ?? "")];
+            }}
+            labelFormatter={(label) =>
+              `Year ${IxTime.getCurrentGameYear(label as number)}`
+            }
+          />
+          <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />
+          <Area
+            yAxisId="population"
+            type="monotone"
+            dataKey="population"
+            stroke="#06b6d4"
+            fillOpacity={1}
+            fill="url(#popColor)"
+            strokeWidth={3}
+            name="Population"
+          />
+          <Bar
+            yAxisId="growth"
+            dataKey="populationGrowthRate"
+            fill="#10b981"
+            opacity={0.4}
+            name="Growth Rate"
+            radius={[2, 2, 0, 0]}
+          />
+        </ComposedChart>
+      );
+    };
 
     return (
       <MetricModalLayout variant="social">
@@ -592,76 +821,7 @@ export function PopulationDetailsModal({
             <CardContent className="p-0">
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartData}>
-                    <defs>
-                      <linearGradient id="popColor" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis
-                      dataKey="timestamp"
-                      domain={["dataMin", "dataMax"]}
-                      type="number"
-                      scale="time"
-                      name="Time"
-                      tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
-                      tickCount={6}
-                      stroke="rgba(255, 255, 255, 0.3)"
-                    />
-                    <YAxis
-                      yAxisId="population"
-                      orientation="left"
-                      tickFormatter={(value) => formatPopulation(value)}
-                      stroke="rgba(255, 255, 255, 0.3)"
-                    />
-                    <YAxis
-                      yAxisId="growth"
-                      orientation="right"
-                      stroke="rgba(255, 255, 255, 0.3)"
-                      tickFormatter={(value) => `${value.toFixed(2)}%`}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: "rgba(18, 20, 24, 0.8)",
-                        backdropFilter: "blur(8px)",
-                        borderColor: "rgba(255, 255, 255, 0.1)",
-                        borderRadius: "8px",
-                      }}
-                      formatter={(value: any, name: any) => {
-                        if (name === "population") {
-                          return [formatPopulation(value), "Population"];
-                        }
-                        if (name === "populationGrowthRate") {
-                          return [`${value.toFixed(3)}%`, "Growth Rate"];
-                        }
-                        return [value, name];
-                      }}
-                      labelFormatter={(label) =>
-                        `Year ${IxTime.getCurrentGameYear(label as number)}`
-                      }
-                    />
-                    <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />
-                    <Area
-                      yAxisId="population"
-                      type="monotone"
-                      dataKey="population"
-                      stroke="#06b6d4"
-                      fillOpacity={1}
-                      fill="url(#popColor)"
-                      strokeWidth={3}
-                      name="Population"
-                    />
-                    <Bar
-                      yAxisId="growth"
-                      dataKey="populationGrowthRate"
-                      fill="#10b981"
-                      opacity={0.4}
-                      name="Growth Rate"
-                      radius={[2, 2, 0, 0]}
-                    />
-                  </ComposedChart>
+                  {renderChartByFormat()}
                 </ResponsiveContainer>
               </div>
             </CardContent>
@@ -676,7 +836,7 @@ export function PopulationDetailsModal({
               </span>
               <span className="text-xl font-bold text-cyan-400">
                 {chartData.length > 0
-                  ? formatPopulation(Math.max(...chartData.map((d: any) => d.population)))
+                  ? formatPopulation(Math.max(...chartData.map((d) => d.population)))
                   : "N/A"}
               </span>
             </div>
@@ -731,10 +891,10 @@ export function PopulationDetailsModal({
                           borderColor: "rgba(255, 255, 255, 0.1)",
                           borderRadius: "8px",
                         }}
-                        formatter={(value: any) => [formatPopulation(value), "Population"]}
+                        formatter={(value) => [formatPopulation(value as number), "Population"]}
                         labelFormatter={(label, payload) => {
-                          const item = payload?.[0]?.payload;
-                          return item?.fullName || label;
+                          const item = payload?.[0]?.payload as { fullName?: string } | undefined;
+                          return item?.fullName || String(label);
                         }}
                       />
                       <Bar dataKey="population" fill="#06b6d4" radius={[0, 4, 4, 0]} />
@@ -766,7 +926,7 @@ export function PopulationDetailsModal({
                       outerRadius={60}
                       fill="#8884d8"
                       dataKey="value"
-                      label={(props: any) => props.name}
+                      label={(props: { name?: string }) => props.name ?? ""}
                       labelLine={false}
                     >
                       {demographicBreakdown.map((entry, index) => (
@@ -780,7 +940,7 @@ export function PopulationDetailsModal({
                         borderColor: "rgba(255, 255, 255, 0.1)",
                         borderRadius: "8px",
                       }}
-                      formatter={(value: any) => formatPopulation(value)}
+                      formatter={(value) => formatPopulation(value as number)}
                     />
                   </PieChart>
                 </ResponsiveContainer>

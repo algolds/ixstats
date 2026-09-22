@@ -37,7 +37,10 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
   setIsPickingLocation,
 }: CityPropertyFormProps) {
   const activeCoords = form.coordinates ?? pendingCoordinates;
-  const subdivisions = (allFeatures ?? []).filter((f) => f.type === "subdivision");
+  const subdivisions = React.useMemo(
+    () => (allFeatures ?? []).filter((f) => f.type === "subdivision"),
+    [allFeatures]
+  );
 
   const sampleTerrain = api.countryGeo.sampleTerrainAt.useQuery(
     { lng: form.coordinates?.[0] ?? 0, lat: form.coordinates?.[1] ?? 0 },
@@ -83,10 +86,10 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
           <button
             type="button"
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}
-            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none ${
+            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none active:scale-[0.98] ${
               isPickingLocation
-                ? "animate-pulse font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-                : "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                ? "animate-pulse font-bold text-amber-500 hover:text-amber-400"
+                : "text-emerald-500 hover:text-emerald-400"
             }`}
           >
             <MapPin className="h-3.5 w-3.5" />

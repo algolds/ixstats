@@ -19,86 +19,6 @@ const invalidateFeeds = async () => {
   }
 };
 
-const _hydratePostDates = (post: any) => {
-  if (!post) return post;
-  return {
-    ...post,
-    createdAt: post.createdAt ? new Date(post.createdAt) : undefined,
-    ixTimeTimestamp: post.ixTimeTimestamp ? new Date(post.ixTimeTimestamp) : undefined,
-    parentPost: post.parentPost
-      ? {
-          ...post.parentPost,
-          createdAt: post.parentPost.createdAt ? new Date(post.parentPost.createdAt) : undefined,
-          ixTimeTimestamp: post.parentPost.ixTimeTimestamp
-            ? new Date(post.parentPost.ixTimeTimestamp)
-            : undefined,
-        }
-      : undefined,
-    repostOf: post.repostOf
-      ? {
-          ...post.repostOf,
-          createdAt: post.repostOf.createdAt ? new Date(post.repostOf.createdAt) : undefined,
-          ixTimeTimestamp: post.repostOf.ixTimeTimestamp
-            ? new Date(post.repostOf.ixTimeTimestamp)
-            : undefined,
-        }
-      : undefined,
-    reactions: post.reactions
-      ? post.reactions.map((r: any) => ({
-          ...r,
-          createdAt: r.createdAt ? new Date(r.createdAt) : undefined,
-        }))
-      : undefined,
-  };
-};
-
-const _SearchUnsplashImagesSchema = z.object({
-  query: z.string().min(1),
-  page: z.number().min(1).default(1),
-  per_page: z.number().min(1).max(30).default(10),
-  orientation: z.enum(["landscape", "portrait", "squarish"]).optional(),
-  color: z.string().optional(), // Unsplash API supports specific color names or hex codes
-});
-
-// Base schema for ThinkPages accounts
-const thinkpagesAccountBaseSchema = z.object({
-  countryId: z.string(),
-  accountType: z.enum(["government", "media", "citizen"]),
-  username: z
-    .string()
-    .min(3)
-    .max(20)
-    .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
-  firstName: z.string().min(1).max(50),
-  lastName: z.string().max(50).optional().default(""),
-  bio: z.string().max(500).optional().default(""),
-  verified: z.boolean().default(false),
-  postingFrequency: z.enum(["active", "moderate", "low"]).default("moderate"),
-  politicalLean: z.enum(["left", "center", "right"]).default("center"),
-  personality: z.enum(["serious", "casual", "satirical"]).default("casual"),
-  profileImageUrl: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
-});
-const _pollInclude = {
-  poll: {
-    include: {
-      options: {
-        include: {
-          _count: {
-            select: { votes: true },
-          },
-        },
-      },
-    },
-  },
-};
-
-// Create schema - all required fields with defaults
-const _CreateAccountSchema = thinkpagesAccountBaseSchema;
-
-// Update schema - all fields optional
-const _UpdateAccountSchema = thinkpagesAccountBaseSchema.partial();
-
 const CreatePostSchema = z.object({
   accountId: z.string(), // ThinkpagesAccount ID for feed posts
   content: z
@@ -173,22 +93,6 @@ const CreatePostSchema = z.object({
     .optional(),
 });
 
-const _AddReactionSchema = z.object({
-  postId: z.string(),
-  accountId: z.string(), // ThinkpagesAccount ID for reactions
-  reactionType: z.union([
-    z.enum(["like", "laugh", "angry", "sad", "fire", "thumbsup", "thumbsdown"]),
-    z.string().startsWith("discord:"), // Support Discord emoji reactions like "discord:ixnay"
-  ]),
-});
-
-const _GetFeedSchema = z.object({
-  countryId: z.string().optional(), // Feed filtered by country
-  hashtag: z.string().optional(),
-  filter: z.enum(["recent", "trending", "hot"]).default("recent"),
-  limit: z.number().min(1).max(50).default(20),
-  cursor: z.string().optional(),
-});
 export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
   // Search Unsplash images
 

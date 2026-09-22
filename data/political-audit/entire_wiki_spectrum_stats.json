@@ -1,0 +1,4692 @@
+{
+  "totalArticlesAudited": 4725,
+  "regionalDistribution": {
+    "Levantia": 975,
+    "Sarpedon": 665,
+    "Crona": 893,
+    "Audonia": 688,
+    "Orient": 868,
+    "Coscivia": 1090,
+    "Other": 2037
+  },
+  "termCounts": {
+    "monarchy": 394,
+    "republic": 1068,
+    "federation": 290,
+    "confederation": 363,
+    "empire": 885,
+    "imperium": 269,
+    "theocracy": 21,
+    "stratocracy": 13,
+    "directorate": 124,
+    "thalattocracy": 68,
+    "diarchy": 10,
+    "tetrarchy": 1,
+    "consociational": 5,
+    "unitary": 135,
+    "fueros": 1,
+    "parliament": 287,
+    "senate": 246,
+    "diet": 117,
+    "assembly": 524,
+    "synod": 18,
+    "council": 743,
+    "landsmeet": 24,
+    "corcillum": 18,
+    "pacta conventa": 2,
+    "subject": 609,
+    "citizen": 235,
+    "estate": 295,
+    "ordo": 34,
+    "caste": 109,
+    "guild": 109,
+    "nobility": 323,
+    "patrician": 59,
+    "plebeian": 27,
+    "vestiary": 1,
+    "sumptuary": 1,
+    "aristocracy": 142,
+    "commons": 173,
+    "bourgeois": 40,
+    "clans": 119,
+    "commonweal": 0,
+    "distributism": 23,
+    "socialism": 173,
+    "syndicalism": 14,
+    "capitalism": 94,
+    "mercantilism": 18,
+    "corporatism": 31,
+    "tripartism": 12,
+    "dirigisme": 13,
+    "free trade": 64,
+    "protectionism": 25,
+    "cooperative": 121,
+    "common ownership": 3,
+    "employee stock": 3,
+    "model economy": 8,
+    "sodalitates": 0,
+    "monopoly": 130,
+    "cartel": 22,
+    "catholic": 719,
+    "apostolic": 347,
+    "shaftonism": 21,
+    "devinism": 7,
+    "zmoric": 89,
+    "kallistocracy": 9,
+    "lakhe'zic": 0,
+    "organicism": 39,
+    "foralism": 16,
+    "crown liberalism": 27,
+    "nolanism": 3,
+    "kirosocialism": 120,
+    "bairdism": 5,
+    "secularism": 38,
+    "moral law": 2,
+    "divine right": 16,
+    "social contract": 12,
+    "anti-clerical": 9,
+    "levantia": 936,
+    "sarpedon": 610,
+    "crona": 776,
+    "audonia": 579,
+    "orient": 26,
+    "coscivia": 12,
+    "occident": 222,
+    "latin": 646,
+    "gothic": 295,
+    "gaelic": 243,
+    "fiannrian": 103,
+    "daxian": 313,
+    "kiravian": 645,
+    "caphirian": 457,
+    "urcean": 564,
+    "burgoignesc": 613
+  },
+  "termSamples": {
+    "monarchy": [
+      "Zurgite_Varshan",
+      "Burgundie",
+      "Qustantistan",
+      "Culture_in_Burgundie",
+      "Zhijun",
+      "Pelaxia",
+      "Zwallerkad",
+      "Adonerum",
+      "Glossary_of_Coscivian_Terms",
+      "Second_Great_War",
+      "Timeline_of_major_world_events",
+      "Faramount",
+      "United_Provinces",
+      "Veltorina",
+      "Magnolia"
+    ],
+    "republic": [
+      "Caphiria",
+      "Krasoa_Islands",
+      "Kiravia",
+      "Chappaqua",
+      "Kiravic_Coscivian",
+      "Cascada",
+      "Province_№7",
+      "Hanoram",
+      "Ilfenóra",
+      "Fariva",
+      "Metrea",
+      "Federalist_Republican_Alliance",
+      "Wintergen",
+      "Kaviska",
+      "Burgundie"
+    ],
+    "federation": [
+      "Kiravia",
+      "Verastia_Territory",
+      "Great_Kirav",
+      "Kiravic_Coscivian",
+      "Cascada",
+      "Province_№7",
+      "Hanoram",
+      "Ilfenóra",
+      "Fariva",
+      "Metrea",
+      "Federalist_Republican_Alliance",
+      "Organised_crime_in_Kiravia",
+      "Kaviska",
+      "Kastera",
+      "Ibykia"
+    ],
+    "confederation": [
+      "Krasoa_Islands",
+      "Kiravia",
+      "Chappaqua",
+      "Kartika",
+      "Cities_of_Kiravia",
+      "Kiravian_Armed_Forces",
+      "Æonara",
+      "Caritist_Social_Union",
+      ".kr",
+      "Urom",
+      "Nanzitolclatl",
+      "Atrassica",
+      "Ethnic_groups_in_Kiravia",
+      "Zhijun",
+      "Porfíria"
+    ],
+    "empire": [
+      "Caphiria",
+      "Kiravia",
+      "Hoppers",
+      "Zurgite_Varshan",
+      "Great_Kirav",
+      "Meadhrán_Érskin",
+      "Fariva",
+      "Kiʞik_language",
+      "Valēka",
+      "Kaviska",
+      "Burgundie",
+      "Kastera",
+      "Kartika",
+      "Ibykia",
+      "Federal_Stanora"
+    ],
+    "imperium": [
+      "Caphiria",
+      "Kiro-Caphirian_Party",
+      "Occidental_Cold_War",
+      "Pelaxia",
+      "Irasur_Valyrian",
+      "Stratification_in_Caphiria",
+      "Invasion_of_Ankivara_Plateau",
+      "Slakonian",
+      "Timeline_of_major_world_events",
+      "Ovetta",
+      "Provinces_(Caphiria)",
+      "Council_of_Ministers_(Caphiria)",
+      "Imperial_Armed_Forces_of_Caphiria",
+      "Culture_of_Caphiria",
+      "Government_of_Caphiria"
+    ],
+    "theocracy": [
+      "Zurgite_Varshan",
+      "List_of_Nations",
+      "Foreign_relations_of_Burgundie",
+      "Papal_State",
+      "Pursat",
+      "Takatta_Loa",
+      "Kapuhenasa",
+      "List_of_Ilaseuasa",
+      "Umardwal",
+      "Kabasa",
+      "Loa_Empire",
+      "Estado_Social_(Castadilla)",
+      "Vallejarian_Church",
+      "Gaius_Stephanus_Pictor",
+      "Doulan"
+    ],
+    "stratocracy": [
+      "List_of_Nations",
+      "Radia",
+      "Ante_Magnum",
+      "Arsyra",
+      "Equetus",
+      "Vertannia",
+      "Velvet_Revolution",
+      "Estado_Social_(Castadilla)",
+      "History_of_Castadilla",
+      "Delepasian_Federation",
+      "Delepasian_Confederation",
+      "Confederal_Almadaria",
+      "History_of_the_Holy_Levantine_Empire"
+    ],
+    "directorate": [
+      "Kiravic_Coscivian",
+      "Kiravic_Coscivian",
+      "Valēka",
+      "Valēka",
+      "Kiravian_Security_Executive",
+      "Kiravian_Security_Executive",
+      "Máirín_Óscanlon",
+      "Máirín_Óscanlon",
+      "Kiravian_Strategic_Space_Force",
+      "Kiravian_Strategic_Space_Force",
+      "List_of_Government_Agencies_Defunct_after_Kirosocialism",
+      "List_of_Government_Agencies_Defunct_after_Kirosocialism",
+      "Council_of_Ministers_(Caphiria)",
+      "Council_of_Ministers_(Caphiria)",
+      "Daxia"
+    ],
+    "thalattocracy": [
+      "Wintergen",
+      "Burgundie",
+      "Culture_in_Burgundie",
+      "Brother_Auggie",
+      "Seváronsa",
+      "Revenue_Guard",
+      "Argaea",
+      "New_Harren",
+      "Medimeria",
+      "Navy_of_Burgundie",
+      "Drinking_water_supply_and_sanitation_in_Burgundie",
+      "Pasqual_I",
+      "Geography_of_Burgundie",
+      "Army_of_Burgundie",
+      "Economy_of_Burgundie"
+    ],
+    "diarchy": [
+      "Aciriano-Istroyan_Kingdom",
+      "Castadilla",
+      "Loa_Empire",
+      "Consuls_of_Lucrecia",
+      "Mehristan",
+      "Central_Varshani_Republic",
+      "Dissolution_of_Varshan",
+      "Ajtek_Gryf",
+      "Army_of_the_National_Homeland",
+      "Yaotl_Acalan"
+    ],
+    "tetrarchy": [
+      "Kelekona"
+    ],
+    "consociational": [
+      "Burgundie",
+      "Government_of_Burgundie",
+      "Bulkh",
+      "Umardwal",
+      "Fangakana_Malalaka-Navidadia"
+    ],
+    "unitary": [
+      "Caphiria",
+      "Krasoa_Islands",
+      "Kiravic_Coscivian",
+      "Metrea",
+      "Federalist_Republican_Alliance",
+      "Kaviska",
+      "Burgundie",
+      "Coscivian_National_Congress",
+      "Caritist_Social_Union",
+      "Nation-State_Party",
+      "Federated_Republic_of_Lezaria",
+      "Pelaxia",
+      "Executive_College",
+      "Kiravian_federalism",
+      "Provinces_(Caphiria)"
+    ],
+    "fueros": [
+      "Sydona"
+    ],
+    "parliament": [
+      "Kiravia",
+      "Burgundie",
+      "Ĥeiran_Coscivians",
+      "Pelaxia",
+      "Melian_Islands",
+      "Caucus_(Kiravian_politics)",
+      "Urcea",
+      "Orenstia_(Old_country)",
+      "Culture_of_Caphiria",
+      "Government_of_Caphiria",
+      "Senate_of_Caphiria",
+      "Imperator",
+      "Alstin",
+      "Glossary_of_Caphiric_Latin_Words",
+      "Fortuna_Institute"
+    ],
+    "senate": [
+      "Caphiria",
+      "Kiravia",
+      "Federal_Stanora",
+      "Umcara",
+      "Stratification_in_Caphiria",
+      "Melian_Islands",
+      "Capital_punishment_around_the_world",
+      "Slakonian",
+      "Provinces_(Caphiria)",
+      "Orenstia_(Old_country)",
+      "Council_of_Ministers_(Caphiria)",
+      "Imperial_Armed_Forces_of_Caphiria",
+      "Culture_of_Caphiria",
+      "Government_of_Caphiria",
+      "Magistrates_of_Caphiria"
+    ],
+    "diet": [
+      "Caphiria",
+      "Hoppers",
+      "Hanoram",
+      "Burgundie",
+      "Eusa",
+      "Irovasdra",
+      "Culture_in_Burgundie",
+      "Melian_Islands",
+      "Moonlight_Keys",
+      "Glossary_of_Coscivian_Terms",
+      "Second_Great_War",
+      "Kiravian_cuisine",
+      "Kingdom_of_Dericania",
+      "Daxian_Aspic",
+      "Health_in_Caphiria"
+    ],
+    "assembly": [
+      "Caphiria",
+      "Cascada",
+      "Valēka",
+      "Wintergen",
+      "Church_of_Dodd",
+      "Kaviska",
+      "Burgundie",
+      "Ibykia",
+      "Federal_Stanora",
+      "Kexarin_Rénkédar",
+      "Kensonia",
+      "Eusa",
+      "Caritist_Social_Union",
+      "Máirín_Óscanlon",
+      "Aventurine_Bay_Colony"
+    ],
+    "synod": [
+      "Insular_Apostolic_Church",
+      "Æonara",
+      "Bérasar",
+      "List_of_Christian_primates",
+      "Asteria_(Old)",
+      "History_of_Urcea_(1943-1985)",
+      "Avonia",
+      "Ubunye",
+      "Great_Schism_of_1615",
+      "College_of_Levantine_Churches",
+      "Chantry_of_Alstin",
+      "Audonian_Christianity",
+      "Vilauristre",
+      "Urcean_Conference_of_Catholic_Bishops",
+      "1967_Urcean_political_crisis"
+    ],
+    "council": [
+      "Caphiria",
+      "Kiravia",
+      "Zurgite_Varshan",
+      "Verastia_Territory",
+      "Chappaqua",
+      "Hanoram",
+      "Metrea",
+      "Kiʞik_language",
+      "Valēka",
+      "Wintergen",
+      "Kaviska",
+      "Burgundie",
+      "Kartika",
+      "CUDA",
+      "District_of_Ksoīnvra"
+    ],
+    "landsmeet": [
+      "Social_class_in_Urcea",
+      "Bussdaberria",
+      "History_of_Urcea_(800-1098)",
+      "History_of_Urcea_(1098-1214)",
+      "History_of_Urcea_(1214-1402)",
+      "History_of_Urcea_(1402-1575)",
+      "History_of_Urcea_(1798-1902)",
+      "Conshilía_Daoni",
+      "Estates_of_Urcea",
+      "Tria_nomina_movement",
+      "Procurator",
+      "Quetzenkel",
+      "Corcillum",
+      "National_Assembly_(Caphiria)",
+      "Urcepól_(City)"
+    ],
+    "corcillum": [
+      "Caphiria",
+      "Provinces_(Caphiria)",
+      "Government_of_Caphiria",
+      "Imperator",
+      "History_of_Caphiria",
+      "Alexandus_Venio_II",
+      "Corcillum",
+      "National_Assembly_(Caphiria)",
+      "Senate_(Caphiria)",
+      "Military_Assembly_(Caphiria)",
+      "Tribunal_Assembly_(Caphiria)",
+      "Possessions_(Caphiria)",
+      "List_of_legislatures_by_country",
+      "Caetus_Legati",
+      "Administrative_divisions_of_Caphiria"
+    ],
+    "pacta conventa": [
+      "Burgundie",
+      "Government_of_Burgundie"
+    ],
+    "subject": [
+      "Caphiria",
+      "Krasoa_Islands",
+      "Kiravia",
+      "Zurgite_Varshan",
+      "Verastia_Territory",
+      "Xolkriśgir",
+      "Kiravic_Coscivian",
+      "Ilfenóra",
+      "Camchéachta",
+      "Escarda",
+      "Kiʞik_language",
+      "Federalist_Republican_Alliance",
+      "Valēka",
+      "Kaviska",
+      "Burgundie"
+    ],
+    "citizen": [
+      "Caphiria",
+      "Kiravic_Coscivian",
+      "Wintergen",
+      "Church_of_Dodd",
+      "Burgundie",
+      "Federal_Stanora",
+      "Kensonia",
+      "Koskenkorva",
+      "Eusa",
+      "Qustantistan",
+      "Culture_in_Burgundie",
+      "Settlement_Movement",
+      "Pelaxia",
+      "Stratification_in_Caphiria",
+      "Melian_Islands"
+    ],
+    "estate": [
+      "Krasoa_Islands",
+      "Zurgite_Varshan",
+      "Valēka",
+      "Kartika",
+      "District_of_Ksoīnvra",
+      "Stewardship_of_Wintergen",
+      "Cities_of_Kiravia",
+      "Kexarin_Rénkédar",
+      "Æonara",
+      "Intracity_Sporting_Rivalry_in_Valēka",
+      "Tryhstian_Littoral",
+      ".kr",
+      "Pontevedra",
+      "Culture_in_Burgundie",
+      "Marital_and_family_law_in_Kiravia"
+    ],
+    "ordo": [
+      "Stratification_in_Caphiria",
+      "Kikpari",
+      "Veltorina",
+      "Culture_of_Caphiria",
+      "Caphiric_Latin",
+      "Cartadania",
+      "Glossary_of_Caphiric_Latin_Words",
+      "Order_of_the_Obsidian_Sparrow",
+      "Alexandus_Venio_II",
+      "Suderavia",
+      "Giswi",
+      "Prokopites",
+      "Joanusaurus",
+      "Caphirosaurus",
+      "Victoria"
+    ],
+    "caste": [
+      "Kiravia",
+      "Hoppers",
+      "Zurgite_Varshan",
+      "Hanoram",
+      "Federalist_Republican_Alliance",
+      "Organised_crime_in_Kiravia",
+      "District_of_Ksoīnvra",
+      "Andrus_Candrin",
+      "Irasur_Mérovin",
+      "Coscivian_National_Congress",
+      "Ĥeiran_Coscivians",
+      "Urom",
+      "South_Coscivians",
+      "Settlement_Movement",
+      "Ethnic_groups_in_Kiravia"
+    ],
+    "guild": [
+      "Culture_in_Burgundie",
+      "Arts_and_literature_of_Urcea",
+      "Urcea",
+      "Culture_of_Urcea",
+      "Culture_of_Caphiria",
+      "Education_in_Caphiria",
+      "Caphiric_Latin",
+      "Venceia",
+      "Glossary_of_Caphiric_Latin_Words",
+      "Cohe",
+      "Economy_of_Caphiria",
+      "Yonderre",
+      "Social_class_in_Urcea",
+      "Petalstone_Group",
+      "Guild_of_Gladiators"
+    ],
+    "nobility": [
+      "Caphiria",
+      "Krasoa_Islands",
+      "Zurgite_Varshan",
+      "Province_№7",
+      "New_Ardmore",
+      "South_Coscivians",
+      "Culture_in_Burgundie",
+      "Pelaxia",
+      "Stratification_in_Caphiria",
+      "Timeline_of_major_world_events",
+      "Leonoix_family",
+      "Urcea",
+      "Government_of_Caphiria",
+      "Imperial_Naval_Fleet",
+      "Venceia"
+    ],
+    "patrician": [
+      "Caphiria",
+      "Culture_in_Burgundie",
+      "Irasur_Valyrian",
+      "Stratification_in_Caphiria",
+      "Culture_of_Caphiria",
+      "Magistrates_of_Caphiria",
+      "Senate_of_Caphiria",
+      "Health_in_Caphiria",
+      "Imperator",
+      "Caphiric_Latin",
+      "Alstin",
+      "Venceia",
+      "Fortuna_Institute",
+      "Orestes_Panther",
+      "Quicksilver_Industries"
+    ],
+    "plebeian": [
+      "Caphiria",
+      "Stratification_in_Caphiria",
+      "Dole_Madatin",
+      "Council_of_Ministers_(Caphiria)",
+      "Culture_of_Caphiria",
+      "Magistrates_of_Caphiria",
+      "Caphiric_Latin",
+      "Venceia",
+      "Glossary_of_Caphiric_Latin_Words",
+      "Economy_of_Caphiria",
+      "Quicksilver_Industries",
+      "Petalstone_Group",
+      "Corcillum",
+      "National_Assembly_(Caphiria)",
+      "Tribunal_Assembly_(Caphiria)"
+    ],
+    "vestiary": [
+      "Vestiary_Laws_(Caphiria)"
+    ],
+    "sumptuary": [
+      "Vestiary_Laws_(Caphiria)"
+    ],
+    "aristocracy": [
+      "Caphiria",
+      "Federalist_Republican_Alliance",
+      "Culture_in_Burgundie",
+      "Pelaxia",
+      "Stratification_in_Caphiria",
+      "Albagubria",
+      "Veltorina",
+      "Arts_and_literature_of_Urcea",
+      "Culture_of_Caphiria",
+      "Magasevetus",
+      "Escal_Isles",
+      "Tervarinus_Estate",
+      "Medimeria",
+      "History_of_Caphiria",
+      "Petalstone_Group"
+    ],
+    "commons": [
+      "Popular_Democratic_Front",
+      "Goidelic_Forest",
+      "Federal_Council",
+      "Minor_Kiravian_Political_Parties",
+      "Cartadania",
+      "Magenevum",
+      "Burgoignesc_Security_Forces",
+      "Social_class_in_Urcea",
+      "Bussdaberria",
+      "History_of_Urcea_(1575-1798)",
+      "Government_of_Urcea",
+      "Rosslyn",
+      "Procurator",
+      "Chancellor_and_Temporary_President",
+      "Takatta_Loa"
+    ],
+    "bourgeois": [
+      "Federalist_Republican_Alliance",
+      "Stewardship_of_Wintergen",
+      "Andrus_Candrin",
+      "Æonara",
+      "Popular_Democratic_Front",
+      "Culture_in_Burgundie",
+      "Kirav_national_soccer_team",
+      "Faramount",
+      "Kiravian_Sectarians",
+      "National_football_team_of_Burgundie",
+      "Government_of_Burgundie",
+      "Yanuban",
+      "Bairdism",
+      "Kiravian_Union",
+      "Kirosocialist_Party"
+    ],
+    "clans": [
+      "Kiravia",
+      "Hoppers",
+      "Province_№7",
+      "Metrea",
+      "Umcara",
+      "New_Ardmore",
+      "Coscivian_National_Congress",
+      "Ĥeiran_Coscivians",
+      "Ethnic_groups_in_Kiravia",
+      "Porfíria",
+      "Stratification_in_Caphiria",
+      "Oduniyyad_Caliphate",
+      "Orthodox_Arzalism",
+      "Serikorda",
+      "Revolutionary_Guerrilla_Triads"
+    ],
+    "commonweal": [],
+    "distributism": [
+      "Federalist_Republican_Alliance",
+      "Andrus_Candrin",
+      "Koskenkorva",
+      "Authentic_Historical_Caucus",
+      "Caritist_Social_Union",
+      "Settlement_Movement",
+      "Atrassica",
+      "Ethnic_groups_in_Kiravia",
+      "Kiravian_Dairy_Board",
+      "Agrarian_Caucus",
+      "Urcea",
+      "Minor_Kiravian_Political_Parties",
+      "Solidarity_Party_(Urcea)",
+      "List_of_Kiravian_academics",
+      "List_of_Urcean_political_parties"
+    ],
+    "socialism": [
+      "Hoppers",
+      "Fariva",
+      "Camchéachta",
+      "Burgundie",
+      "Æonara",
+      "Authentic_Historical_Caucus",
+      "Caritist_Social_Union",
+      "Popular_Democratic_Front",
+      "Culture_in_Burgundie",
+      "Settlement_Movement",
+      "Kirosocialism",
+      "Ethnic_groups_in_Kiravia",
+      "Pelaxia",
+      "Foreign_relations_of_Kiravia",
+      "Quds_War"
+    ],
+    "syndicalism": [
+      "History_of_Hendalarsk",
+      "Vithinja",
+      "Chakailan",
+      "Ardmore",
+      "Ardmori_Civil_War",
+      "Royal_Arcerion_Infantry_Corps",
+      "Arzanshahr",
+      "Arzanshahr_Renaissance_Front",
+      "Estado_Social_(Castadilla)",
+      "Walakee_State",
+      "Political_ideologies_in_Castadilla",
+      "National_Falangist_Party",
+      "List_of_notable_Galatans",
+      "Bocagua_Software"
+    ],
+    "capitalism": [
+      "Camchéachta",
+      "Æonara",
+      "Liberty_Group",
+      "Popular_Democratic_Front",
+      "Nation-State_Party",
+      "Kirosocialism",
+      "Brother_Auggie",
+      "Glossary_of_Coscivian_Terms",
+      "Ice_trade_in_Kiravia",
+      "Minor_Kiravian_Political_Parties",
+      "Venceia",
+      "Constantinus_I",
+      "Economy_of_Caphiria",
+      "Asteria_(Old)",
+      "Foreign_relations_of_Burgundie"
+    ],
+    "mercantilism": [
+      "Coscivian_National_Congress",
+      "Imperial_Federation_Party",
+      "Economy_of_Caphiria",
+      "Yonderre",
+      "Second_Potato_War",
+      "Audonia",
+      "Joanus_X_de_Martigueux",
+      "Sydona",
+      "Kindred_Wars",
+      "World_Guide",
+      "Viceroyalty_of_Los_Rumas",
+      "Vallosi_federalism",
+      "Delepasian_exceptionalism",
+      "Economy_of_Nasastan",
+      "Hombertos"
+    ],
+    "corporatism": [
+      "Caritist_Social_Union",
+      "Pelaxia",
+      "Second_Great_War",
+      "Yonderre",
+      "National_Reconstruction_Front_(Daxia)",
+      "Sydona",
+      "Marija_Torenvoa",
+      "Almadaria",
+      "Velvetine_Socialism",
+      "Velvet_Revolution",
+      "National_Renewal_Party",
+      "List_of_political_parties_in_Castadilla",
+      "Estado_Social_(Castadilla)",
+      "Labour_Front_of_Kirav",
+      "Walakee_State"
+    ],
+    "tripartism": [
+      "Caritist_Social_Union",
+      "Vôtaska",
+      "Pelaxia",
+      "Fiannria",
+      "Social_Democrats_KF",
+      "Castadilla",
+      "Velvetine_Socialism",
+      "People's_Democratic_Party",
+      "Velvet_Revolution",
+      "Estado_Social_(Castadilla)",
+      "Economy_of_Castadilla",
+      "Sahara_Protectorate"
+    ],
+    "dirigisme": [
+      "Pelaxia",
+      "Glossary_of_Coscivian_Terms",
+      "Second_Great_War",
+      "Canpei",
+      "National_Reconstruction_Front_(Daxia)",
+      "Republican_Nationalist_Party_(the_Cape)",
+      "Velvet_Revolution",
+      "Estado_Social_(Castadilla)",
+      "Political_ideologies_in_Castadilla",
+      "Ethnofederalist_Social_Nasastani_National_Party",
+      "Economy_of_Castadilla",
+      "RIIC",
+      "List_of_political_parties_in_Nasastan"
+    ],
+    "free trade": [
+      "Caphiria",
+      "Kiravia",
+      "Kiro-Caphirian_Party",
+      "Andrus_Candrin",
+      "Kexarin_Rénkédar",
+      "Occidental_Cold_War",
+      "Caritist_Social_Union",
+      "Pontevedra",
+      "Federated_Republic_of_Lezaria",
+      "Levantia",
+      "Alba_Concordia",
+      "Assumption_Accords",
+      "Venceia",
+      "Constantinus_I",
+      "Cohe"
+    ],
+    "protectionism": [
+      "Federalist_Republican_Alliance",
+      "Ethnic_groups_in_Kiravia",
+      "Constantinus_I",
+      "Daxia",
+      "Jamaat-e-Islami_(Rusana)",
+      "Qiu_Heng",
+      "Cursus_honorum",
+      "Politics_of_Faneria",
+      "Navidadian_Frontierism",
+      "Malentina",
+      "Political_Parties_of_Rusana",
+      "Mountaineering_in_Alstin",
+      "Banking_in_Alstin",
+      "List_of_political_parties_in_Castadilla",
+      "Estado_Social_(Castadilla)"
+    ],
+    "cooperative": [
+      "Caritist_Social_Union",
+      "Pelaxia",
+      "Foreign_relations_of_Kiravia",
+      "Kiravian_Dairy_Board",
+      "Executive_College",
+      "Kiravian_federalism",
+      "International_trading_around_the_world",
+      "Revenue_Guard",
+      "Office_of_the_National_Army_(Faneria)",
+      "Asteria_(Old)",
+      "List_of_Nations",
+      "Army_of_Burgundie",
+      "List_of_Shockwave_Industrial_products",
+      "Economy_of_Pelaxia",
+      "Party_of_Daxian_Democrats"
+    ],
+    "common ownership": [
+      "Economy_of_Pelaxia",
+      "Drasenia",
+      "Culture_of_Drasenia"
+    ],
+    "employee stock": [
+      "Kiravia",
+      "Bellegarde",
+      "Model_Economy"
+    ],
+    "model economy": [
+      "Andrus_Candrin",
+      "Caritist_Social_Union",
+      "Solidarity_Party_(Urcea)",
+      "Model_Economy",
+      "Index_of_Urcean_legislation",
+      "Knassania",
+      "2030_Urcean_elections",
+      "Economy_of_Urcea"
+    ],
+    "sodalitates": [],
+    "monopoly": [
+      "Caphiria",
+      "Krasoa_Islands",
+      "Federalist_Republican_Alliance",
+      "Cities_of_Kiravia",
+      "Culture_in_Burgundie",
+      "Ethnic_groups_in_Kiravia",
+      "Stratification_in_Caphiria",
+      "Burgo-Audonian_Colonial_Wars",
+      "Oduniyyad_Caliphate",
+      "Fíanna_Aird_Mór",
+      "MetNet",
+      "Albagubria",
+      "Pantheon_Industries",
+      "Ocaso_Agency",
+      "Lansing_Lines"
+    ],
+    "cartel": [
+      "Daxia",
+      "Federation_of_Daxian_Beef_Producers",
+      "Takatta_Loa",
+      "Kelekona",
+      "History_of_Pelaxia",
+      "Akanatoa_War",
+      "Dwarfism_in_Daxia",
+      "Arcerion_Oil_and_Gas_Company",
+      "Porlos",
+      "Drug_trade_in_Daxia",
+      "Istrenya",
+      "Tierrador",
+      "Tierradorian_Defense_Forces",
+      "Mosquito_War",
+      "Canasta_Company"
+    ],
+    "catholic": [
+      "Caphiria",
+      "Kiravia",
+      "Verastia_Territory",
+      "Great_Kirav",
+      "Chappaqua",
+      "Cascada",
+      "Province_№7",
+      "Hanoram",
+      "Ilfenóra",
+      "Fariva",
+      "Metrea",
+      "Valēka",
+      "Wintergen",
+      "Kaviska",
+      "Burgundie"
+    ],
+    "apostolic": [
+      "Kiravia",
+      "Great_Kirav",
+      "Meadhrán_Érskin",
+      "Chappaqua",
+      "Cascada",
+      "Fariva",
+      "Federalist_Republican_Alliance",
+      "Valēka",
+      "Federal_Stanora",
+      "Insular_Apostolic_Church",
+      "Cities_of_Kiravia",
+      "Andrus_Candrin",
+      "Niyaska",
+      "Occidental_Cold_War",
+      "Koskenkorva"
+    ],
+    "shaftonism": [
+      "Great_Kirav",
+      "Federalist_Republican_Alliance",
+      "Andrus_Candrin",
+      "Authentic_Historical_Caucus",
+      "Coscivian_civilisation",
+      "Glossary_of_Coscivian_Terms",
+      "Kiravian_Marxist_philosophy",
+      "Kir_people",
+      "Higher_education_in_Kiravia",
+      "Agriculture_in_Great_Kirav",
+      "Incarceration_in_Kiravia",
+      "Moral_Evolution_of_Coscivian_Spiritual_Civilisation",
+      "University_of_Belarus",
+      "Shaftonism",
+      "Dwarfism_in_Kiravia"
+    ],
+    "devinism": [
+      "Cities_of_Kiravia",
+      "Minor_Kiravian_Political_Parties",
+      "Bairdism",
+      "Devinism",
+      "Kiravian_Union",
+      "Sydona",
+      "Political_ideologies_in_Kiravia"
+    ],
+    "zmoric": [
+      "List_of_Nations",
+      "Sarpic_people",
+      "List_of_national_symbols",
+      "Sydona",
+      "List_of_religious_sites",
+      "World_Guide",
+      "Nasastan",
+      "Hubert_Ziółkowski",
+      "Guré_Island",
+      "Zmoric",
+      "Persio-Sarps",
+      "Sarpo-Persians",
+      "Ethnofederalist_Social_Nasastani_National_Party",
+      "Čyrné",
+      "Lakhe'žic"
+    ],
+    "kallistocracy": [
+      "Hubert_Ziółkowski",
+      "Majciš_Ziółkowski",
+      "Guided_democracy",
+      "Kallistocracy",
+      "Triada",
+      "Rota_system",
+      "Religion_in_Nasastan",
+      "Nekoi_Natské",
+      "Sejdzas_Sandbox"
+    ],
+    "lakhe'zic": [],
+    "organicism": [
+      "Authentic_Historical_Caucus",
+      "Urcea",
+      "National_Pact_(Urcea)",
+      "Constitution_of_Urcea",
+      "Culture_of_Faneria",
+      "Lariana",
+      "SAR-40",
+      "Urceans",
+      "Organicism",
+      "Crown_Liberalism",
+      "Commonwealth_Union_(Urcea)",
+      "2015_Urcean_political_realignment",
+      "Urcean_socialist_philosophy",
+      "Solidarity_Party_(Urcea)",
+      "Herciana"
+    ],
+    "foralism": [
+      "Privy_Council_of_Castadilla",
+      "Estado_Social_(Castadilla)",
+      "Political_ideologies_in_Castadilla",
+      "Vallosi_federalism",
+      "History_of_Castadilla",
+      "National_Falangist_Party",
+      "Delepasian_Confederation",
+      "Electronic_News_Herald",
+      "Culture_of_Castadilla",
+      "Economy_of_Castadilla",
+      "Jews_in_Castadilla",
+      "Carlos_Marx",
+      "Imperial_Castadillaan_Armed_Forces",
+      "Foralism",
+      "Jeung_family"
+    ],
+    "crown liberalism": [
+      "Urcea",
+      "Social_class_in_Urcea",
+      "National_Pact_(Urcea)",
+      "Constitution_of_Urcea",
+      "History_of_Urcea_(1575-1798)",
+      "History_of_Urcea_(1798-1902)",
+      "Government_of_Urcea",
+      "Julian_Party_(Urcea)",
+      "Procurator",
+      "Holy_Levantine_Empire",
+      "Organicism",
+      "Crown_Liberalism",
+      "Urcean_socialist_philosophy",
+      "Solidarity_Party_(Urcea)",
+      "Urcepól_(City)"
+    ],
+    "nolanism": [
+      "National_Pact_(Urcea)",
+      "Nolanism",
+      "National_Power_Party"
+    ],
+    "kirosocialism": [
+      "Krasoa_Islands",
+      "Kiravia",
+      "Hoppers",
+      "Verastia_Territory",
+      "Great_Kirav",
+      "Chappaqua",
+      "Province_№7",
+      "Hanoram",
+      "Ilfenóra",
+      "Fariva",
+      "Camchéachta",
+      "Metrea",
+      "Federalist_Republican_Alliance",
+      "Kilikas_Brutalism",
+      "Valēka"
+    ],
+    "bairdism": [
+      "Bairdism",
+      "Devinism",
+      "Ubunye",
+      "Foreign_relations_of_Carna",
+      "Political_ideologies_in_Kiravia"
+    ],
+    "secularism": [
+      "Coscivian_National_Congress",
+      "Pelaxia",
+      "Cartadania",
+      "Santiago",
+      "Ailbies",
+      "Abrigalasts",
+      "The_Cape",
+      "Battganuur",
+      "Bulkh",
+      "M'acunism",
+      "Restarkism",
+      "Catholic_Church",
+      "Republican_Nationalist_Party_(the_Cape)",
+      "Cananachan_Republicanism",
+      "Melvyn_Kalma's_cult_of_personality"
+    ],
+    "moral law": [
+      "Organicism",
+      "Sins_of_Zmoric"
+    ],
+    "divine right": [
+      "Caphiria",
+      "Government_of_Caphiria",
+      "Imperator",
+      "Glossary_of_Caphiric_Latin_Words",
+      "History_of_Urcea_(1402-1575)",
+      "Organicism",
+      "Restarkism",
+      "Coronation_of_the_Castadillaan_Emperor",
+      "Society_of_Urcea",
+      "Political_ideologies_in_Castadilla",
+      "Delepasian_exceptionalism",
+      "Maximilian_I_of_Argyrea",
+      "Confederal_Almadaria",
+      "Casimir_V_of_Argyrea",
+      "Carlos_Marx"
+    ],
+    "social contract": [
+      "Caphiria",
+      "Culture_in_Burgundie",
+      "Science_and_Technology_in_Burgundie",
+      "Verona",
+      "Organicism",
+      "Crown_Liberalism",
+      "History_of_Cartadania",
+      "Prehistory_of_Great_Kirav",
+      "Circus_in_Yonderre",
+      "Culture_of_Fiannria",
+      "Aretianism",
+      "List_of_notable_Galatans"
+    ],
+    "anti-clerical": [
+      "Restarkism",
+      "Cananachan_Republicanism",
+      "Almadaria",
+      "Castadilla",
+      "Education_in_Castadilla",
+      "Castadillaan_Catholic_Apostolic_Church",
+      "Almadarian_Civil_War",
+      "Confederal_Almadaria",
+      "Red_Flood"
+    ],
+    "levantia": [
+      "Caphiria",
+      "Kiravia",
+      "Track_gauges_around_the_world",
+      "Great_Kirav",
+      "Fariva",
+      "Escarda",
+      "Valēka",
+      "Wintergen",
+      "Organised_crime_in_Kiravia",
+      "Kaviska",
+      "Burgundie",
+      "Lebhan_language",
+      "Iselin_International_Airport",
+      "Insular_Apostolic_Church",
+      "Lithuania_Crisis"
+    ],
+    "sarpedon": [
+      "Caphiria",
+      "Krasoa_Islands",
+      "Kiravia",
+      "Burgundie",
+      "Levantia_and_Odoneru_Treaty_Association",
+      "Kiravian_Armed_Forces",
+      "Occidental_Cold_War",
+      "Eusa",
+      "Æonara",
+      "Tryhstian_Littoral",
+      "Coscivian_civilisation",
+      "Qustantistan",
+      "Kiravian_Landder",
+      "Pelaxia",
+      "Porfíria"
+    ],
+    "crona": [
+      "Kiravia",
+      "Hoppers",
+      "Zurgite_Varshan",
+      "Chappaqua",
+      "Cascada",
+      "Hanoram",
+      "Ilfenóra",
+      "Federalist_Republican_Alliance",
+      "Kilikas_Brutalism",
+      "Organised_crime_in_Kiravia",
+      "CUDA",
+      "Umcara",
+      "Lithuania_Crisis",
+      "Pan-Cronanism",
+      "Cities_of_Kiravia"
+    ],
+    "audonia": [
+      "Krasoa_Islands",
+      "Kiravia",
+      "Alshar",
+      "Wintergen",
+      "Burgundie",
+      "Burgoignesc_North_Levantine_Trading_Company",
+      "Culture_in_Burgundie",
+      "Low_Coscivian",
+      "Pelaxia",
+      "Porfíria",
+      "List_of_Christian_primates",
+      "Mérosar",
+      "Levantine_hurricane",
+      "Snowlandish_Intervention",
+      "Kiro-Audonian_SakOil"
+    ],
+    "orient": [
+      "Second_Great_War",
+      "Alstin",
+      "Revenue_Guard",
+      "Fhasen",
+      "Occidental_world",
+      "Chaukhira",
+      "Catholic_Church",
+      "Soleil",
+      "Soleil_Prestige",
+      "Soleil_Honor",
+      "Soleil_Eminence",
+      "Arcer_Army",
+      "Oshnaverci_Palace",
+      "Counter-Equatorial_Movement",
+      "Prevailing_Winds"
+    ],
+    "coscivia": [
+      "Province_№7",
+      "Kastera",
+      "Kartika",
+      "Federal_Stanora",
+      "Cities_of_Kiravia",
+      "Caritist_Social_Union",
+      "Ethnic_groups_in_Kiravia",
+      "Cartadanians",
+      "Valosian_Coscivians",
+      "Solemia",
+      "Disurbanism",
+      "Agriculture_in_Great_Kirav"
+    ],
+    "occident": [
+      "Kiravia",
+      "Zurgite_Varshan",
+      "Coscivian_National_Congress",
+      "Vespasian_Odrilaven",
+      "Coscivian_civilisation",
+      "Pelaxia",
+      "Porfíria",
+      "Levantia",
+      "Bérasar",
+      "Melian_Islands",
+      "The_Deluge",
+      "Second_Great_War",
+      "Urcea",
+      "Alstin",
+      "Cartadania"
+    ],
+    "latin": [
+      "Caphiria",
+      "Krasoa_Islands",
+      "Kiravia",
+      "Kiro-Caphirian_Party",
+      "Kiravic_Coscivian",
+      "Fariva",
+      "Kiʞik_language",
+      "Valēka",
+      "Kaviska",
+      "Burgundie",
+      "Ibykia",
+      "District_of_Ksoīnvra",
+      "Lebhan_language",
+      "Insular_Apostolic_Church",
+      "Umcara"
+    ],
+    "gothic": [
+      "Fariva",
+      "Valēka",
+      "Lebhan_language",
+      "Cities_of_Kiravia",
+      "New_Ardmore",
+      "Culture_in_Burgundie",
+      "Levantia",
+      "Bérasar",
+      "Ilánova",
+      "Odoneru_Ocean",
+      "Glossary_of_Coscivian_Terms",
+      "Timeline_of_major_world_events",
+      "Arts_and_literature_of_Urcea",
+      "KT_(news_outlet)",
+      "Burgophobia"
+    ],
+    "gaelic": [
+      "Kiravia",
+      "Hoppers",
+      "Great_Kirav",
+      "Meadhrán_Érskin",
+      "Chappaqua",
+      "Kiravic_Coscivian",
+      "Hanoram",
+      "Fariva",
+      "Camchéachta",
+      "Escarda",
+      "Federalist_Republican_Alliance",
+      "Valēka",
+      "Whiskey_Certificate",
+      "Organised_crime_in_Kiravia",
+      "Kaviska"
+    ],
+    "fiannrian": [
+      "Great_Kirav",
+      "Escarda",
+      "Federalist_Republican_Alliance",
+      "Kaviska",
+      "Kastera",
+      "Cities_of_Kiravia",
+      "Kiravian_Armed_Forces",
+      "Niyaska",
+      "Levantine_Union_Party_(Kiravia)",
+      "Vespasian_Odrilaven",
+      "Aventurine_Bay_Colony",
+      "Levantia",
+      "Bérasar",
+      "Thýstara",
+      "Second_Great_War"
+    ],
+    "daxian": [
+      "Chappaqua",
+      "Alshar",
+      "Ilfenóra",
+      "Escarda",
+      "Church_of_Dodd",
+      "Kaviska",
+      "Niyaska",
+      "Argévia",
+      "Ethnic_groups_in_Kiravia",
+      "North_Daxian_Republic",
+      "Zhijun",
+      "Foreign_relations_of_Kiravia",
+      "Mérosar",
+      "Party_of_Kiravian_Democrats",
+      "Invasion_of_Ankivara_Plateau"
+    ],
+    "kiravian": [
+      "Caphiria",
+      "Krasoa_Islands",
+      "Kiravia",
+      "Kiro-Caphirian_Party",
+      "Hoppers",
+      "Track_gauges_around_the_world",
+      "Verastia_Territory",
+      "Xolkriśgir",
+      "Great_Kirav",
+      "Boreal_Hockey_League",
+      "Narkotik_Records",
+      "Meadhrán_Érskin",
+      "Chappaqua",
+      "Kiravic_Coscivian",
+      "Cascada"
+    ],
+    "caphirian": [
+      "Caphiria",
+      "Kiravia",
+      "Kiro-Caphirian_Party",
+      "Great_Kirav",
+      "Federalist_Republican_Alliance",
+      "Valēka",
+      "Levantia_and_Odoneru_Treaty_Association",
+      "Niyaska",
+      "Occidental_Cold_War",
+      "Æonara",
+      "South_Coscivians",
+      "Pelaxia",
+      "Irasur_Valyrian",
+      "Stratification_in_Caphiria",
+      "Invasion_of_Ankivara_Plateau"
+    ],
+    "urcean": [
+      "Caphiria",
+      "Kiravia",
+      "Great_Kirav",
+      "Province_№7",
+      "Fariva",
+      "Escarda",
+      "Federalist_Republican_Alliance",
+      "Valēka",
+      "Ibykia",
+      "Lebhan_language",
+      "Cities_of_Kiravia",
+      "Occidental_Cold_War",
+      "New_Ardmore",
+      "Eusa",
+      "Æonara"
+    ],
+    "burgoignesc": [
+      "Kiravia",
+      "Wintergen",
+      "Burgundie",
+      "Cities_of_Kiravia",
+      "Burgoignesc_North_Levantine_Trading_Company",
+      "Culture_in_Burgundie",
+      "Udunaic",
+      "Haddock_Palacin",
+      "Foreign_relations_of_Kiravia",
+      "Porfíria",
+      "Levantia",
+      "Levantine_hurricane",
+      "Brother_Auggie",
+      "Disaster_sites_in_Burgundie",
+      "Quds_War"
+    ]
+  },
+  "topCooccurrences": [
+    {
+      "term": "monarchy",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 226
+        },
+        {
+          "term": "empire",
+          "count": 193
+        },
+        {
+          "term": "catholic",
+          "count": 162
+        },
+        {
+          "term": "levantia",
+          "count": 162
+        },
+        {
+          "term": "council",
+          "count": 148
+        },
+        {
+          "term": "latin",
+          "count": 139
+        },
+        {
+          "term": "subject",
+          "count": 105
+        },
+        {
+          "term": "assembly",
+          "count": 104
+        }
+      ]
+    },
+    {
+      "term": "republic",
+      "topCorrelations": [
+        {
+          "term": "empire",
+          "count": 355
+        },
+        {
+          "term": "council",
+          "count": 335
+        },
+        {
+          "term": "levantia",
+          "count": 301
+        },
+        {
+          "term": "crona",
+          "count": 298
+        },
+        {
+          "term": "catholic",
+          "count": 278
+        },
+        {
+          "term": "assembly",
+          "count": 247
+        },
+        {
+          "term": "subject",
+          "count": 240
+        },
+        {
+          "term": "sarpedon",
+          "count": 231
+        }
+      ]
+    },
+    {
+      "term": "federation",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 166
+        },
+        {
+          "term": "kiravian",
+          "count": 100
+        },
+        {
+          "term": "empire",
+          "count": 97
+        },
+        {
+          "term": "catholic",
+          "count": 93
+        },
+        {
+          "term": "council",
+          "count": 91
+        },
+        {
+          "term": "subject",
+          "count": 83
+        },
+        {
+          "term": "confederation",
+          "count": 74
+        },
+        {
+          "term": "levantia",
+          "count": 74
+        }
+      ]
+    },
+    {
+      "term": "confederation",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 200
+        },
+        {
+          "term": "empire",
+          "count": 147
+        },
+        {
+          "term": "council",
+          "count": 144
+        },
+        {
+          "term": "catholic",
+          "count": 142
+        },
+        {
+          "term": "levantia",
+          "count": 136
+        },
+        {
+          "term": "crona",
+          "count": 129
+        },
+        {
+          "term": "latin",
+          "count": 115
+        },
+        {
+          "term": "audonia",
+          "count": 106
+        }
+      ]
+    },
+    {
+      "term": "empire",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 365
+        },
+        {
+          "term": "republic",
+          "count": 355
+        },
+        {
+          "term": "audonia",
+          "count": 290
+        },
+        {
+          "term": "catholic",
+          "count": 284
+        },
+        {
+          "term": "council",
+          "count": 246
+        },
+        {
+          "term": "latin",
+          "count": 231
+        },
+        {
+          "term": "burgoignesc",
+          "count": 218
+        },
+        {
+          "term": "subject",
+          "count": 217
+        }
+      ]
+    },
+    {
+      "term": "imperium",
+      "topCorrelations": [
+        {
+          "term": "caphirian",
+          "count": 186
+        },
+        {
+          "term": "sarpedon",
+          "count": 132
+        },
+        {
+          "term": "latin",
+          "count": 129
+        },
+        {
+          "term": "republic",
+          "count": 94
+        },
+        {
+          "term": "empire",
+          "count": 89
+        },
+        {
+          "term": "council",
+          "count": 79
+        },
+        {
+          "term": "catholic",
+          "count": 79
+        },
+        {
+          "term": "levantia",
+          "count": 77
+        }
+      ]
+    },
+    {
+      "term": "theocracy",
+      "topCorrelations": [
+        {
+          "term": "empire",
+          "count": 15
+        },
+        {
+          "term": "republic",
+          "count": 14
+        },
+        {
+          "term": "catholic",
+          "count": 13
+        },
+        {
+          "term": "subject",
+          "count": 12
+        },
+        {
+          "term": "audonia",
+          "count": 10
+        },
+        {
+          "term": "monarchy",
+          "count": 9
+        },
+        {
+          "term": "levantia",
+          "count": 8
+        },
+        {
+          "term": "council",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "term": "stratocracy",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 13
+        },
+        {
+          "term": "catholic",
+          "count": 12
+        },
+        {
+          "term": "assembly",
+          "count": 10
+        },
+        {
+          "term": "council",
+          "count": 9
+        },
+        {
+          "term": "latin",
+          "count": 9
+        },
+        {
+          "term": "monarchy",
+          "count": 8
+        },
+        {
+          "term": "crona",
+          "count": 8
+        },
+        {
+          "term": "confederation",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "term": "directorate",
+      "topCorrelations": [
+        {
+          "term": "directorate",
+          "count": 124
+        },
+        {
+          "term": "republic",
+          "count": 74
+        },
+        {
+          "term": "assembly",
+          "count": 56
+        },
+        {
+          "term": "council",
+          "count": 56
+        },
+        {
+          "term": "crona",
+          "count": 42
+        },
+        {
+          "term": "subject",
+          "count": 40
+        },
+        {
+          "term": "kiravian",
+          "count": 32
+        },
+        {
+          "term": "empire",
+          "count": 32
+        }
+      ]
+    },
+    {
+      "term": "thalattocracy",
+      "topCorrelations": [
+        {
+          "term": "burgoignesc",
+          "count": 68
+        },
+        {
+          "term": "audonia",
+          "count": 34
+        },
+        {
+          "term": "levantia",
+          "count": 31
+        },
+        {
+          "term": "empire",
+          "count": 30
+        },
+        {
+          "term": "assembly",
+          "count": 27
+        },
+        {
+          "term": "catholic",
+          "count": 25
+        },
+        {
+          "term": "council",
+          "count": 22
+        },
+        {
+          "term": "republic",
+          "count": 17
+        }
+      ]
+    },
+    {
+      "term": "diarchy",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 8
+        },
+        {
+          "term": "monarchy",
+          "count": 5
+        },
+        {
+          "term": "empire",
+          "count": 5
+        },
+        {
+          "term": "assembly",
+          "count": 5
+        },
+        {
+          "term": "subject",
+          "count": 4
+        },
+        {
+          "term": "crona",
+          "count": 4
+        },
+        {
+          "term": "urcean",
+          "count": 4
+        },
+        {
+          "term": "kiravian",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "term": "tetrarchy",
+      "topCorrelations": [
+        {
+          "term": "monarchy",
+          "count": 1
+        },
+        {
+          "term": "republic",
+          "count": 1
+        },
+        {
+          "term": "federation",
+          "count": 1
+        },
+        {
+          "term": "parliament",
+          "count": 1
+        },
+        {
+          "term": "assembly",
+          "count": 1
+        },
+        {
+          "term": "council",
+          "count": 1
+        },
+        {
+          "term": "citizen",
+          "count": 1
+        },
+        {
+          "term": "aristocracy",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "term": "consociational",
+      "topCorrelations": [
+        {
+          "term": "empire",
+          "count": 5
+        },
+        {
+          "term": "republic",
+          "count": 4
+        },
+        {
+          "term": "assembly",
+          "count": 4
+        },
+        {
+          "term": "council",
+          "count": 4
+        },
+        {
+          "term": "audonia",
+          "count": 4
+        },
+        {
+          "term": "burgoignesc",
+          "count": 4
+        },
+        {
+          "term": "thalattocracy",
+          "count": 3
+        },
+        {
+          "term": "catholic",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "term": "unitary",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 107
+        },
+        {
+          "term": "council",
+          "count": 73
+        },
+        {
+          "term": "catholic",
+          "count": 68
+        },
+        {
+          "term": "empire",
+          "count": 67
+        },
+        {
+          "term": "monarchy",
+          "count": 67
+        },
+        {
+          "term": "subject",
+          "count": 62
+        },
+        {
+          "term": "assembly",
+          "count": 61
+        },
+        {
+          "term": "levantia",
+          "count": 55
+        }
+      ]
+    },
+    {
+      "term": "fueros",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 1
+        },
+        {
+          "term": "confederation",
+          "count": 1
+        },
+        {
+          "term": "imperium",
+          "count": 1
+        },
+        {
+          "term": "unitary",
+          "count": 1
+        },
+        {
+          "term": "council",
+          "count": 1
+        },
+        {
+          "term": "subject",
+          "count": 1
+        },
+        {
+          "term": "caste",
+          "count": 1
+        },
+        {
+          "term": "nobility",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "term": "parliament",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 166
+        },
+        {
+          "term": "council",
+          "count": 122
+        },
+        {
+          "term": "assembly",
+          "count": 102
+        },
+        {
+          "term": "empire",
+          "count": 97
+        },
+        {
+          "term": "levantia",
+          "count": 93
+        },
+        {
+          "term": "catholic",
+          "count": 87
+        },
+        {
+          "term": "crona",
+          "count": 86
+        },
+        {
+          "term": "monarchy",
+          "count": 78
+        }
+      ]
+    },
+    {
+      "term": "senate",
+      "topCorrelations": [
+        {
+          "term": "assembly",
+          "count": 132
+        },
+        {
+          "term": "republic",
+          "count": 122
+        },
+        {
+          "term": "council",
+          "count": 98
+        },
+        {
+          "term": "latin",
+          "count": 92
+        },
+        {
+          "term": "caphirian",
+          "count": 79
+        },
+        {
+          "term": "subject",
+          "count": 77
+        },
+        {
+          "term": "empire",
+          "count": 75
+        },
+        {
+          "term": "levantia",
+          "count": 69
+        }
+      ]
+    },
+    {
+      "term": "diet",
+      "topCorrelations": [
+        {
+          "term": "empire",
+          "count": 70
+        },
+        {
+          "term": "levantia",
+          "count": 68
+        },
+        {
+          "term": "catholic",
+          "count": 58
+        },
+        {
+          "term": "republic",
+          "count": 50
+        },
+        {
+          "term": "crona",
+          "count": 50
+        },
+        {
+          "term": "latin",
+          "count": 43
+        },
+        {
+          "term": "council",
+          "count": 42
+        },
+        {
+          "term": "sarpedon",
+          "count": 34
+        }
+      ]
+    },
+    {
+      "term": "assembly",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 247
+        },
+        {
+          "term": "council",
+          "count": 232
+        },
+        {
+          "term": "catholic",
+          "count": 167
+        },
+        {
+          "term": "latin",
+          "count": 167
+        },
+        {
+          "term": "levantia",
+          "count": 160
+        },
+        {
+          "term": "empire",
+          "count": 158
+        },
+        {
+          "term": "subject",
+          "count": 148
+        },
+        {
+          "term": "sarpedon",
+          "count": 136
+        }
+      ]
+    },
+    {
+      "term": "synod",
+      "topCorrelations": [
+        {
+          "term": "catholic",
+          "count": 15
+        },
+        {
+          "term": "apostolic",
+          "count": 14
+        },
+        {
+          "term": "levantia",
+          "count": 14
+        },
+        {
+          "term": "latin",
+          "count": 10
+        },
+        {
+          "term": "council",
+          "count": 10
+        },
+        {
+          "term": "sarpedon",
+          "count": 10
+        },
+        {
+          "term": "empire",
+          "count": 7
+        },
+        {
+          "term": "subject",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "term": "council",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 335
+        },
+        {
+          "term": "empire",
+          "count": 246
+        },
+        {
+          "term": "catholic",
+          "count": 239
+        },
+        {
+          "term": "assembly",
+          "count": 232
+        },
+        {
+          "term": "levantia",
+          "count": 211
+        },
+        {
+          "term": "subject",
+          "count": 210
+        },
+        {
+          "term": "latin",
+          "count": 205
+        },
+        {
+          "term": "crona",
+          "count": 197
+        }
+      ]
+    },
+    {
+      "term": "landsmeet",
+      "topCorrelations": [
+        {
+          "term": "urcean",
+          "count": 21
+        },
+        {
+          "term": "apostolic",
+          "count": 18
+        },
+        {
+          "term": "levantia",
+          "count": 18
+        },
+        {
+          "term": "empire",
+          "count": 15
+        },
+        {
+          "term": "estate",
+          "count": 15
+        },
+        {
+          "term": "assembly",
+          "count": 15
+        },
+        {
+          "term": "nobility",
+          "count": 14
+        },
+        {
+          "term": "council",
+          "count": 12
+        }
+      ]
+    },
+    {
+      "term": "corcillum",
+      "topCorrelations": [
+        {
+          "term": "imperium",
+          "count": 17
+        },
+        {
+          "term": "senate",
+          "count": 15
+        },
+        {
+          "term": "assembly",
+          "count": 15
+        },
+        {
+          "term": "council",
+          "count": 14
+        },
+        {
+          "term": "caphirian",
+          "count": 12
+        },
+        {
+          "term": "parliament",
+          "count": 10
+        },
+        {
+          "term": "latin",
+          "count": 8
+        },
+        {
+          "term": "republic",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "term": "pacta conventa",
+      "topCorrelations": [
+        {
+          "term": "monarchy",
+          "count": 2
+        },
+        {
+          "term": "empire",
+          "count": 2
+        },
+        {
+          "term": "consociational",
+          "count": 2
+        },
+        {
+          "term": "unitary",
+          "count": 2
+        },
+        {
+          "term": "assembly",
+          "count": 2
+        },
+        {
+          "term": "council",
+          "count": 2
+        },
+        {
+          "term": "audonia",
+          "count": 2
+        },
+        {
+          "term": "burgoignesc",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "term": "subject",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 240
+        },
+        {
+          "term": "empire",
+          "count": 217
+        },
+        {
+          "term": "council",
+          "count": 210
+        },
+        {
+          "term": "catholic",
+          "count": 208
+        },
+        {
+          "term": "levantia",
+          "count": 180
+        },
+        {
+          "term": "latin",
+          "count": 168
+        },
+        {
+          "term": "crona",
+          "count": 157
+        },
+        {
+          "term": "kiravian",
+          "count": 151
+        }
+      ]
+    },
+    {
+      "term": "citizen",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 117
+        },
+        {
+          "term": "council",
+          "count": 97
+        },
+        {
+          "term": "assembly",
+          "count": 93
+        },
+        {
+          "term": "subject",
+          "count": 83
+        },
+        {
+          "term": "empire",
+          "count": 80
+        },
+        {
+          "term": "levantia",
+          "count": 75
+        },
+        {
+          "term": "catholic",
+          "count": 74
+        },
+        {
+          "term": "crona",
+          "count": 73
+        }
+      ]
+    },
+    {
+      "term": "estate",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 118
+        },
+        {
+          "term": "republic",
+          "count": 108
+        },
+        {
+          "term": "empire",
+          "count": 105
+        },
+        {
+          "term": "latin",
+          "count": 102
+        },
+        {
+          "term": "caphirian",
+          "count": 95
+        },
+        {
+          "term": "subject",
+          "count": 94
+        },
+        {
+          "term": "catholic",
+          "count": 93
+        },
+        {
+          "term": "council",
+          "count": 91
+        }
+      ]
+    },
+    {
+      "term": "ordo",
+      "topCorrelations": [
+        {
+          "term": "latin",
+          "count": 18
+        },
+        {
+          "term": "caphirian",
+          "count": 14
+        },
+        {
+          "term": "sarpedon",
+          "count": 14
+        },
+        {
+          "term": "levantia",
+          "count": 13
+        },
+        {
+          "term": "catholic",
+          "count": 11
+        },
+        {
+          "term": "estate",
+          "count": 10
+        },
+        {
+          "term": "imperium",
+          "count": 9
+        },
+        {
+          "term": "senate",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "term": "caste",
+      "topCorrelations": [
+        {
+          "term": "kiravian",
+          "count": 55
+        },
+        {
+          "term": "republic",
+          "count": 49
+        },
+        {
+          "term": "crona",
+          "count": 49
+        },
+        {
+          "term": "catholic",
+          "count": 44
+        },
+        {
+          "term": "empire",
+          "count": 41
+        },
+        {
+          "term": "subject",
+          "count": 40
+        },
+        {
+          "term": "urcean",
+          "count": 34
+        },
+        {
+          "term": "levantia",
+          "count": 33
+        }
+      ]
+    },
+    {
+      "term": "guild",
+      "topCorrelations": [
+        {
+          "term": "urcean",
+          "count": 46
+        },
+        {
+          "term": "catholic",
+          "count": 44
+        },
+        {
+          "term": "levantia",
+          "count": 43
+        },
+        {
+          "term": "subject",
+          "count": 40
+        },
+        {
+          "term": "council",
+          "count": 38
+        },
+        {
+          "term": "caphirian",
+          "count": 38
+        },
+        {
+          "term": "empire",
+          "count": 37
+        },
+        {
+          "term": "latin",
+          "count": 34
+        }
+      ]
+    },
+    {
+      "term": "nobility",
+      "topCorrelations": [
+        {
+          "term": "empire",
+          "count": 165
+        },
+        {
+          "term": "levantia",
+          "count": 123
+        },
+        {
+          "term": "republic",
+          "count": 122
+        },
+        {
+          "term": "catholic",
+          "count": 115
+        },
+        {
+          "term": "latin",
+          "count": 103
+        },
+        {
+          "term": "council",
+          "count": 91
+        },
+        {
+          "term": "subject",
+          "count": 88
+        },
+        {
+          "term": "sarpedon",
+          "count": 88
+        }
+      ]
+    },
+    {
+      "term": "patrician",
+      "topCorrelations": [
+        {
+          "term": "caphirian",
+          "count": 45
+        },
+        {
+          "term": "imperium",
+          "count": 39
+        },
+        {
+          "term": "estate",
+          "count": 32
+        },
+        {
+          "term": "latin",
+          "count": 31
+        },
+        {
+          "term": "subject",
+          "count": 27
+        },
+        {
+          "term": "empire",
+          "count": 25
+        },
+        {
+          "term": "senate",
+          "count": 24
+        },
+        {
+          "term": "council",
+          "count": 24
+        }
+      ]
+    },
+    {
+      "term": "plebeian",
+      "topCorrelations": [
+        {
+          "term": "caphirian",
+          "count": 24
+        },
+        {
+          "term": "imperium",
+          "count": 22
+        },
+        {
+          "term": "patrician",
+          "count": 16
+        },
+        {
+          "term": "assembly",
+          "count": 15
+        },
+        {
+          "term": "senate",
+          "count": 14
+        },
+        {
+          "term": "subject",
+          "count": 14
+        },
+        {
+          "term": "council",
+          "count": 13
+        },
+        {
+          "term": "citizen",
+          "count": 12
+        }
+      ]
+    },
+    {
+      "term": "vestiary",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 1
+        },
+        {
+          "term": "imperium",
+          "count": 1
+        },
+        {
+          "term": "senate",
+          "count": 1
+        },
+        {
+          "term": "assembly",
+          "count": 1
+        },
+        {
+          "term": "estate",
+          "count": 1
+        },
+        {
+          "term": "ordo",
+          "count": 1
+        },
+        {
+          "term": "patrician",
+          "count": 1
+        },
+        {
+          "term": "plebeian",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "term": "sumptuary",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 1
+        },
+        {
+          "term": "imperium",
+          "count": 1
+        },
+        {
+          "term": "senate",
+          "count": 1
+        },
+        {
+          "term": "assembly",
+          "count": 1
+        },
+        {
+          "term": "estate",
+          "count": 1
+        },
+        {
+          "term": "ordo",
+          "count": 1
+        },
+        {
+          "term": "patrician",
+          "count": 1
+        },
+        {
+          "term": "plebeian",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "term": "aristocracy",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 70
+        },
+        {
+          "term": "catholic",
+          "count": 69
+        },
+        {
+          "term": "empire",
+          "count": 67
+        },
+        {
+          "term": "latin",
+          "count": 62
+        },
+        {
+          "term": "levantia",
+          "count": 57
+        },
+        {
+          "term": "nobility",
+          "count": 56
+        },
+        {
+          "term": "council",
+          "count": 54
+        },
+        {
+          "term": "subject",
+          "count": 51
+        }
+      ]
+    },
+    {
+      "term": "commons",
+      "topCorrelations": [
+        {
+          "term": "council",
+          "count": 71
+        },
+        {
+          "term": "republic",
+          "count": 45
+        },
+        {
+          "term": "assembly",
+          "count": 39
+        },
+        {
+          "term": "subject",
+          "count": 37
+        },
+        {
+          "term": "latin",
+          "count": 37
+        },
+        {
+          "term": "empire",
+          "count": 36
+        },
+        {
+          "term": "catholic",
+          "count": 34
+        },
+        {
+          "term": "parliament",
+          "count": 29
+        }
+      ]
+    },
+    {
+      "term": "bourgeois",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 20
+        },
+        {
+          "term": "kiravian",
+          "count": 19
+        },
+        {
+          "term": "catholic",
+          "count": 18
+        },
+        {
+          "term": "socialism",
+          "count": 18
+        },
+        {
+          "term": "empire",
+          "count": 17
+        },
+        {
+          "term": "council",
+          "count": 16
+        },
+        {
+          "term": "levantia",
+          "count": 16
+        },
+        {
+          "term": "federation",
+          "count": 14
+        }
+      ]
+    },
+    {
+      "term": "clans",
+      "topCorrelations": [
+        {
+          "term": "empire",
+          "count": 63
+        },
+        {
+          "term": "republic",
+          "count": 58
+        },
+        {
+          "term": "audonia",
+          "count": 38
+        },
+        {
+          "term": "council",
+          "count": 36
+        },
+        {
+          "term": "catholic",
+          "count": 36
+        },
+        {
+          "term": "subject",
+          "count": 33
+        },
+        {
+          "term": "latin",
+          "count": 33
+        },
+        {
+          "term": "levantia",
+          "count": 32
+        }
+      ]
+    },
+    {
+      "term": "commonweal",
+      "topCorrelations": []
+    },
+    {
+      "term": "distributism",
+      "topCorrelations": [
+        {
+          "term": "kiravian",
+          "count": 16
+        },
+        {
+          "term": "catholic",
+          "count": 15
+        },
+        {
+          "term": "socialism",
+          "count": 14
+        },
+        {
+          "term": "subject",
+          "count": 13
+        },
+        {
+          "term": "republic",
+          "count": 12
+        },
+        {
+          "term": "apostolic",
+          "count": 12
+        },
+        {
+          "term": "kirosocialism",
+          "count": 11
+        },
+        {
+          "term": "council",
+          "count": 11
+        }
+      ]
+    },
+    {
+      "term": "socialism",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 110
+        },
+        {
+          "term": "catholic",
+          "count": 80
+        },
+        {
+          "term": "council",
+          "count": 75
+        },
+        {
+          "term": "monarchy",
+          "count": 73
+        },
+        {
+          "term": "empire",
+          "count": 70
+        },
+        {
+          "term": "levantia",
+          "count": 61
+        },
+        {
+          "term": "subject",
+          "count": 53
+        },
+        {
+          "term": "capitalism",
+          "count": 52
+        }
+      ]
+    },
+    {
+      "term": "syndicalism",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 10
+        },
+        {
+          "term": "republic",
+          "count": 10
+        },
+        {
+          "term": "monarchy",
+          "count": 9
+        },
+        {
+          "term": "council",
+          "count": 8
+        },
+        {
+          "term": "federation",
+          "count": 8
+        },
+        {
+          "term": "empire",
+          "count": 7
+        },
+        {
+          "term": "subject",
+          "count": 7
+        },
+        {
+          "term": "assembly",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "term": "capitalism",
+      "topCorrelations": [
+        {
+          "term": "socialism",
+          "count": 52
+        },
+        {
+          "term": "republic",
+          "count": 51
+        },
+        {
+          "term": "empire",
+          "count": 46
+        },
+        {
+          "term": "council",
+          "count": 38
+        },
+        {
+          "term": "catholic",
+          "count": 36
+        },
+        {
+          "term": "levantia",
+          "count": 35
+        },
+        {
+          "term": "monarchy",
+          "count": 34
+        },
+        {
+          "term": "kiravian",
+          "count": 32
+        }
+      ]
+    },
+    {
+      "term": "mercantilism",
+      "topCorrelations": [
+        {
+          "term": "empire",
+          "count": 13
+        },
+        {
+          "term": "republic",
+          "count": 9
+        },
+        {
+          "term": "catholic",
+          "count": 9
+        },
+        {
+          "term": "latin",
+          "count": 8
+        },
+        {
+          "term": "audonia",
+          "count": 8
+        },
+        {
+          "term": "capitalism",
+          "count": 7
+        },
+        {
+          "term": "levantia",
+          "count": 7
+        },
+        {
+          "term": "council",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "term": "corporatism",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 25
+        },
+        {
+          "term": "socialism",
+          "count": 22
+        },
+        {
+          "term": "catholic",
+          "count": 20
+        },
+        {
+          "term": "monarchy",
+          "count": 20
+        },
+        {
+          "term": "confederation",
+          "count": 19
+        },
+        {
+          "term": "assembly",
+          "count": 17
+        },
+        {
+          "term": "empire",
+          "count": 16
+        },
+        {
+          "term": "council",
+          "count": 15
+        }
+      ]
+    },
+    {
+      "term": "tripartism",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 9
+        },
+        {
+          "term": "socialism",
+          "count": 8
+        },
+        {
+          "term": "federation",
+          "count": 7
+        },
+        {
+          "term": "assembly",
+          "count": 7
+        },
+        {
+          "term": "council",
+          "count": 7
+        },
+        {
+          "term": "catholic",
+          "count": 7
+        },
+        {
+          "term": "latin",
+          "count": 7
+        },
+        {
+          "term": "confederation",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "term": "dirigisme",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 12
+        },
+        {
+          "term": "council",
+          "count": 9
+        },
+        {
+          "term": "socialism",
+          "count": 9
+        },
+        {
+          "term": "audonia",
+          "count": 9
+        },
+        {
+          "term": "monarchy",
+          "count": 8
+        },
+        {
+          "term": "empire",
+          "count": 8
+        },
+        {
+          "term": "occident",
+          "count": 8
+        },
+        {
+          "term": "corporatism",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "term": "free trade",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 33
+        },
+        {
+          "term": "republic",
+          "count": 32
+        },
+        {
+          "term": "sarpedon",
+          "count": 32
+        },
+        {
+          "term": "crona",
+          "count": 28
+        },
+        {
+          "term": "latin",
+          "count": 26
+        },
+        {
+          "term": "empire",
+          "count": 25
+        },
+        {
+          "term": "subject",
+          "count": 24
+        },
+        {
+          "term": "audonia",
+          "count": 24
+        }
+      ]
+    },
+    {
+      "term": "protectionism",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 17
+        },
+        {
+          "term": "socialism",
+          "count": 14
+        },
+        {
+          "term": "subject",
+          "count": 11
+        },
+        {
+          "term": "confederation",
+          "count": 11
+        },
+        {
+          "term": "empire",
+          "count": 11
+        },
+        {
+          "term": "council",
+          "count": 11
+        },
+        {
+          "term": "assembly",
+          "count": 10
+        },
+        {
+          "term": "levantia",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "term": "cooperative",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 62
+        },
+        {
+          "term": "council",
+          "count": 56
+        },
+        {
+          "term": "levantia",
+          "count": 49
+        },
+        {
+          "term": "empire",
+          "count": 44
+        },
+        {
+          "term": "catholic",
+          "count": 38
+        },
+        {
+          "term": "crona",
+          "count": 37
+        },
+        {
+          "term": "assembly",
+          "count": 36
+        },
+        {
+          "term": "latin",
+          "count": 36
+        }
+      ]
+    },
+    {
+      "term": "common ownership",
+      "topCorrelations": [
+        {
+          "term": "socialism",
+          "count": 2
+        },
+        {
+          "term": "cooperative",
+          "count": 2
+        },
+        {
+          "term": "federation",
+          "count": 2
+        },
+        {
+          "term": "diet",
+          "count": 2
+        },
+        {
+          "term": "council",
+          "count": 2
+        },
+        {
+          "term": "subject",
+          "count": 2
+        },
+        {
+          "term": "aristocracy",
+          "count": 2
+        },
+        {
+          "term": "catholic",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "term": "employee stock",
+      "topCorrelations": [
+        {
+          "term": "caphirian",
+          "count": 2
+        },
+        {
+          "term": "republic",
+          "count": 1
+        },
+        {
+          "term": "federation",
+          "count": 1
+        },
+        {
+          "term": "confederation",
+          "count": 1
+        },
+        {
+          "term": "empire",
+          "count": 1
+        },
+        {
+          "term": "parliament",
+          "count": 1
+        },
+        {
+          "term": "senate",
+          "count": 1
+        },
+        {
+          "term": "council",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "term": "model economy",
+      "topCorrelations": [
+        {
+          "term": "crona",
+          "count": 6
+        },
+        {
+          "term": "catholic",
+          "count": 5
+        },
+        {
+          "term": "apostolic",
+          "count": 5
+        },
+        {
+          "term": "urcean",
+          "count": 5
+        },
+        {
+          "term": "socialism",
+          "count": 4
+        },
+        {
+          "term": "distributism",
+          "count": 3
+        },
+        {
+          "term": "free trade",
+          "count": 3
+        },
+        {
+          "term": "kiravian",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "term": "sodalitates",
+      "topCorrelations": []
+    },
+    {
+      "term": "monopoly",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 59
+        },
+        {
+          "term": "council",
+          "count": 53
+        },
+        {
+          "term": "crona",
+          "count": 52
+        },
+        {
+          "term": "subject",
+          "count": 49
+        },
+        {
+          "term": "audonia",
+          "count": 49
+        },
+        {
+          "term": "empire",
+          "count": 48
+        },
+        {
+          "term": "levantia",
+          "count": 46
+        },
+        {
+          "term": "catholic",
+          "count": 44
+        }
+      ]
+    },
+    {
+      "term": "cartel",
+      "topCorrelations": [
+        {
+          "term": "crona",
+          "count": 14
+        },
+        {
+          "term": "republic",
+          "count": 11
+        },
+        {
+          "term": "audonia",
+          "count": 10
+        },
+        {
+          "term": "confederation",
+          "count": 9
+        },
+        {
+          "term": "empire",
+          "count": 9
+        },
+        {
+          "term": "council",
+          "count": 9
+        },
+        {
+          "term": "latin",
+          "count": 9
+        },
+        {
+          "term": "monarchy",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "term": "catholic",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 317
+        },
+        {
+          "term": "empire",
+          "count": 284
+        },
+        {
+          "term": "republic",
+          "count": 278
+        },
+        {
+          "term": "latin",
+          "count": 268
+        },
+        {
+          "term": "council",
+          "count": 239
+        },
+        {
+          "term": "apostolic",
+          "count": 226
+        },
+        {
+          "term": "sarpedon",
+          "count": 220
+        },
+        {
+          "term": "urcean",
+          "count": 216
+        }
+      ]
+    },
+    {
+      "term": "apostolic",
+      "topCorrelations": [
+        {
+          "term": "catholic",
+          "count": 226
+        },
+        {
+          "term": "urcean",
+          "count": 198
+        },
+        {
+          "term": "levantia",
+          "count": 169
+        },
+        {
+          "term": "empire",
+          "count": 127
+        },
+        {
+          "term": "latin",
+          "count": 116
+        },
+        {
+          "term": "republic",
+          "count": 113
+        },
+        {
+          "term": "subject",
+          "count": 112
+        },
+        {
+          "term": "crona",
+          "count": 108
+        }
+      ]
+    },
+    {
+      "term": "shaftonism",
+      "topCorrelations": [
+        {
+          "term": "kiravian",
+          "count": 18
+        },
+        {
+          "term": "empire",
+          "count": 12
+        },
+        {
+          "term": "kirosocialism",
+          "count": 12
+        },
+        {
+          "term": "subject",
+          "count": 12
+        },
+        {
+          "term": "catholic",
+          "count": 9
+        },
+        {
+          "term": "republic",
+          "count": 9
+        },
+        {
+          "term": "crona",
+          "count": 9
+        },
+        {
+          "term": "gaelic",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "term": "devinism",
+      "topCorrelations": [
+        {
+          "term": "socialism",
+          "count": 6
+        },
+        {
+          "term": "council",
+          "count": 5
+        },
+        {
+          "term": "kirosocialism",
+          "count": 5
+        },
+        {
+          "term": "kiravian",
+          "count": 5
+        },
+        {
+          "term": "republic",
+          "count": 5
+        },
+        {
+          "term": "catholic",
+          "count": 4
+        },
+        {
+          "term": "levantia",
+          "count": 4
+        },
+        {
+          "term": "crona",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "term": "zmoric",
+      "topCorrelations": [
+        {
+          "term": "empire",
+          "count": 53
+        },
+        {
+          "term": "republic",
+          "count": 52
+        },
+        {
+          "term": "audonia",
+          "count": 43
+        },
+        {
+          "term": "council",
+          "count": 37
+        },
+        {
+          "term": "confederation",
+          "count": 23
+        },
+        {
+          "term": "federation",
+          "count": 21
+        },
+        {
+          "term": "catholic",
+          "count": 17
+        },
+        {
+          "term": "monarchy",
+          "count": 15
+        }
+      ]
+    },
+    {
+      "term": "kallistocracy",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 7
+        },
+        {
+          "term": "zmoric",
+          "count": 7
+        },
+        {
+          "term": "empire",
+          "count": 6
+        },
+        {
+          "term": "federation",
+          "count": 5
+        },
+        {
+          "term": "council",
+          "count": 5
+        },
+        {
+          "term": "estate",
+          "count": 4
+        },
+        {
+          "term": "subject",
+          "count": 4
+        },
+        {
+          "term": "audonia",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "term": "lakhe'zic",
+      "topCorrelations": []
+    },
+    {
+      "term": "organicism",
+      "topCorrelations": [
+        {
+          "term": "catholic",
+          "count": 25
+        },
+        {
+          "term": "urcean",
+          "count": 25
+        },
+        {
+          "term": "republic",
+          "count": 23
+        },
+        {
+          "term": "socialism",
+          "count": 21
+        },
+        {
+          "term": "apostolic",
+          "count": 19
+        },
+        {
+          "term": "monarchy",
+          "count": 18
+        },
+        {
+          "term": "empire",
+          "count": 17
+        },
+        {
+          "term": "levantia",
+          "count": 17
+        }
+      ]
+    },
+    {
+      "term": "foralism",
+      "topCorrelations": [
+        {
+          "term": "confederation",
+          "count": 16
+        },
+        {
+          "term": "republic",
+          "count": 11
+        },
+        {
+          "term": "catholic",
+          "count": 11
+        },
+        {
+          "term": "monarchy",
+          "count": 10
+        },
+        {
+          "term": "aristocracy",
+          "count": 9
+        },
+        {
+          "term": "socialism",
+          "count": 8
+        },
+        {
+          "term": "occident",
+          "count": 8
+        },
+        {
+          "term": "assembly",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "term": "crown liberalism",
+      "topCorrelations": [
+        {
+          "term": "urcean",
+          "count": 26
+        },
+        {
+          "term": "catholic",
+          "count": 22
+        },
+        {
+          "term": "apostolic",
+          "count": 21
+        },
+        {
+          "term": "subject",
+          "count": 18
+        },
+        {
+          "term": "empire",
+          "count": 17
+        },
+        {
+          "term": "levantia",
+          "count": 17
+        },
+        {
+          "term": "monarchy",
+          "count": 14
+        },
+        {
+          "term": "organicism",
+          "count": 12
+        }
+      ]
+    },
+    {
+      "term": "nolanism",
+      "topCorrelations": [
+        {
+          "term": "subject",
+          "count": 3
+        },
+        {
+          "term": "monarchy",
+          "count": 2
+        },
+        {
+          "term": "empire",
+          "count": 2
+        },
+        {
+          "term": "catholic",
+          "count": 2
+        },
+        {
+          "term": "apostolic",
+          "count": 2
+        },
+        {
+          "term": "crown liberalism",
+          "count": 2
+        },
+        {
+          "term": "crona",
+          "count": 2
+        },
+        {
+          "term": "urcean",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "term": "kirosocialism",
+      "topCorrelations": [
+        {
+          "term": "kiravian",
+          "count": 114
+        },
+        {
+          "term": "republic",
+          "count": 53
+        },
+        {
+          "term": "catholic",
+          "count": 51
+        },
+        {
+          "term": "subject",
+          "count": 48
+        },
+        {
+          "term": "council",
+          "count": 38
+        },
+        {
+          "term": "crona",
+          "count": 37
+        },
+        {
+          "term": "federation",
+          "count": 35
+        },
+        {
+          "term": "gaelic",
+          "count": 35
+        }
+      ]
+    },
+    {
+      "term": "bairdism",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 4
+        },
+        {
+          "term": "socialism",
+          "count": 3
+        },
+        {
+          "term": "devinism",
+          "count": 3
+        },
+        {
+          "term": "council",
+          "count": 2
+        },
+        {
+          "term": "capitalism",
+          "count": 2
+        },
+        {
+          "term": "crona",
+          "count": 2
+        },
+        {
+          "term": "monarchy",
+          "count": 2
+        },
+        {
+          "term": "audonia",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "term": "secularism",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 27
+        },
+        {
+          "term": "catholic",
+          "count": 24
+        },
+        {
+          "term": "empire",
+          "count": 17
+        },
+        {
+          "term": "assembly",
+          "count": 17
+        },
+        {
+          "term": "council",
+          "count": 16
+        },
+        {
+          "term": "occident",
+          "count": 15
+        },
+        {
+          "term": "latin",
+          "count": 15
+        },
+        {
+          "term": "audonia",
+          "count": 14
+        }
+      ]
+    },
+    {
+      "term": "moral law",
+      "topCorrelations": [
+        {
+          "term": "subject",
+          "count": 2
+        },
+        {
+          "term": "monarchy",
+          "count": 1
+        },
+        {
+          "term": "aristocracy",
+          "count": 1
+        },
+        {
+          "term": "socialism",
+          "count": 1
+        },
+        {
+          "term": "catholic",
+          "count": 1
+        },
+        {
+          "term": "organicism",
+          "count": 1
+        },
+        {
+          "term": "crown liberalism",
+          "count": 1
+        },
+        {
+          "term": "divine right",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "term": "divine right",
+      "topCorrelations": [
+        {
+          "term": "catholic",
+          "count": 14
+        },
+        {
+          "term": "republic",
+          "count": 12
+        },
+        {
+          "term": "monarchy",
+          "count": 10
+        },
+        {
+          "term": "empire",
+          "count": 9
+        },
+        {
+          "term": "nobility",
+          "count": 8
+        },
+        {
+          "term": "latin",
+          "count": 8
+        },
+        {
+          "term": "confederation",
+          "count": 8
+        },
+        {
+          "term": "subject",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "term": "social contract",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 9
+        },
+        {
+          "term": "empire",
+          "count": 8
+        },
+        {
+          "term": "catholic",
+          "count": 7
+        },
+        {
+          "term": "subject",
+          "count": 6
+        },
+        {
+          "term": "latin",
+          "count": 6
+        },
+        {
+          "term": "republic",
+          "count": 5
+        },
+        {
+          "term": "assembly",
+          "count": 5
+        },
+        {
+          "term": "urcean",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "term": "anti-clerical",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 8
+        },
+        {
+          "term": "catholic",
+          "count": 7
+        },
+        {
+          "term": "occident",
+          "count": 7
+        },
+        {
+          "term": "council",
+          "count": 7
+        },
+        {
+          "term": "empire",
+          "count": 6
+        },
+        {
+          "term": "subject",
+          "count": 6
+        },
+        {
+          "term": "latin",
+          "count": 6
+        },
+        {
+          "term": "confederation",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "term": "levantia",
+      "topCorrelations": [
+        {
+          "term": "empire",
+          "count": 365
+        },
+        {
+          "term": "sarpedon",
+          "count": 320
+        },
+        {
+          "term": "catholic",
+          "count": 317
+        },
+        {
+          "term": "republic",
+          "count": 301
+        },
+        {
+          "term": "crona",
+          "count": 291
+        },
+        {
+          "term": "urcean",
+          "count": 283
+        },
+        {
+          "term": "latin",
+          "count": 268
+        },
+        {
+          "term": "burgoignesc",
+          "count": 253
+        }
+      ]
+    },
+    {
+      "term": "sarpedon",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 320
+        },
+        {
+          "term": "republic",
+          "count": 231
+        },
+        {
+          "term": "crona",
+          "count": 228
+        },
+        {
+          "term": "catholic",
+          "count": 220
+        },
+        {
+          "term": "latin",
+          "count": 219
+        },
+        {
+          "term": "empire",
+          "count": 209
+        },
+        {
+          "term": "caphirian",
+          "count": 206
+        },
+        {
+          "term": "audonia",
+          "count": 206
+        }
+      ]
+    },
+    {
+      "term": "crona",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 298
+        },
+        {
+          "term": "levantia",
+          "count": 291
+        },
+        {
+          "term": "sarpedon",
+          "count": 228
+        },
+        {
+          "term": "catholic",
+          "count": 211
+        },
+        {
+          "term": "audonia",
+          "count": 198
+        },
+        {
+          "term": "council",
+          "count": 197
+        },
+        {
+          "term": "kiravian",
+          "count": 196
+        },
+        {
+          "term": "empire",
+          "count": 189
+        }
+      ]
+    },
+    {
+      "term": "audonia",
+      "topCorrelations": [
+        {
+          "term": "empire",
+          "count": 290
+        },
+        {
+          "term": "levantia",
+          "count": 251
+        },
+        {
+          "term": "burgoignesc",
+          "count": 213
+        },
+        {
+          "term": "republic",
+          "count": 210
+        },
+        {
+          "term": "sarpedon",
+          "count": 206
+        },
+        {
+          "term": "crona",
+          "count": 198
+        },
+        {
+          "term": "council",
+          "count": 162
+        },
+        {
+          "term": "catholic",
+          "count": 156
+        }
+      ]
+    },
+    {
+      "term": "orient",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 14
+        },
+        {
+          "term": "crona",
+          "count": 12
+        },
+        {
+          "term": "audonia",
+          "count": 12
+        },
+        {
+          "term": "sarpedon",
+          "count": 10
+        },
+        {
+          "term": "empire",
+          "count": 9
+        },
+        {
+          "term": "assembly",
+          "count": 8
+        },
+        {
+          "term": "burgoignesc",
+          "count": 8
+        },
+        {
+          "term": "catholic",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "term": "coscivia",
+      "topCorrelations": [
+        {
+          "term": "kiravian",
+          "count": 11
+        },
+        {
+          "term": "kirosocialism",
+          "count": 9
+        },
+        {
+          "term": "catholic",
+          "count": 6
+        },
+        {
+          "term": "empire",
+          "count": 6
+        },
+        {
+          "term": "subject",
+          "count": 6
+        },
+        {
+          "term": "council",
+          "count": 6
+        },
+        {
+          "term": "crona",
+          "count": 6
+        },
+        {
+          "term": "republic",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "term": "occident",
+      "topCorrelations": [
+        {
+          "term": "crona",
+          "count": 118
+        },
+        {
+          "term": "republic",
+          "count": 113
+        },
+        {
+          "term": "empire",
+          "count": 101
+        },
+        {
+          "term": "catholic",
+          "count": 95
+        },
+        {
+          "term": "levantia",
+          "count": 93
+        },
+        {
+          "term": "sarpedon",
+          "count": 92
+        },
+        {
+          "term": "audonia",
+          "count": 91
+        },
+        {
+          "term": "council",
+          "count": 81
+        }
+      ]
+    },
+    {
+      "term": "latin",
+      "topCorrelations": [
+        {
+          "term": "catholic",
+          "count": 268
+        },
+        {
+          "term": "levantia",
+          "count": 268
+        },
+        {
+          "term": "empire",
+          "count": 231
+        },
+        {
+          "term": "republic",
+          "count": 226
+        },
+        {
+          "term": "sarpedon",
+          "count": 219
+        },
+        {
+          "term": "council",
+          "count": 205
+        },
+        {
+          "term": "caphirian",
+          "count": 179
+        },
+        {
+          "term": "subject",
+          "count": 168
+        }
+      ]
+    },
+    {
+      "term": "gothic",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 162
+        },
+        {
+          "term": "burgoignesc",
+          "count": 121
+        },
+        {
+          "term": "latin",
+          "count": 112
+        },
+        {
+          "term": "empire",
+          "count": 103
+        },
+        {
+          "term": "catholic",
+          "count": 103
+        },
+        {
+          "term": "republic",
+          "count": 101
+        },
+        {
+          "term": "urcean",
+          "count": 69
+        },
+        {
+          "term": "gaelic",
+          "count": 68
+        }
+      ]
+    },
+    {
+      "term": "gaelic",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 159
+        },
+        {
+          "term": "latin",
+          "count": 105
+        },
+        {
+          "term": "empire",
+          "count": 104
+        },
+        {
+          "term": "catholic",
+          "count": 96
+        },
+        {
+          "term": "kiravian",
+          "count": 93
+        },
+        {
+          "term": "urcean",
+          "count": 91
+        },
+        {
+          "term": "republic",
+          "count": 88
+        },
+        {
+          "term": "gothic",
+          "count": 68
+        }
+      ]
+    },
+    {
+      "term": "fiannrian",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 52
+        },
+        {
+          "term": "republic",
+          "count": 51
+        },
+        {
+          "term": "empire",
+          "count": 45
+        },
+        {
+          "term": "urcean",
+          "count": 34
+        },
+        {
+          "term": "catholic",
+          "count": 33
+        },
+        {
+          "term": "gaelic",
+          "count": 32
+        },
+        {
+          "term": "council",
+          "count": 32
+        },
+        {
+          "term": "kiravian",
+          "count": 31
+        }
+      ]
+    },
+    {
+      "term": "daxian",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 135
+        },
+        {
+          "term": "audonia",
+          "count": 103
+        },
+        {
+          "term": "crona",
+          "count": 101
+        },
+        {
+          "term": "empire",
+          "count": 93
+        },
+        {
+          "term": "subject",
+          "count": 81
+        },
+        {
+          "term": "council",
+          "count": 72
+        },
+        {
+          "term": "kiravian",
+          "count": 71
+        },
+        {
+          "term": "sarpedon",
+          "count": 71
+        }
+      ]
+    },
+    {
+      "term": "kiravian",
+      "topCorrelations": [
+        {
+          "term": "republic",
+          "count": 217
+        },
+        {
+          "term": "crona",
+          "count": 196
+        },
+        {
+          "term": "subject",
+          "count": 151
+        },
+        {
+          "term": "catholic",
+          "count": 151
+        },
+        {
+          "term": "council",
+          "count": 140
+        },
+        {
+          "term": "levantia",
+          "count": 135
+        },
+        {
+          "term": "empire",
+          "count": 129
+        },
+        {
+          "term": "kirosocialism",
+          "count": 114
+        }
+      ]
+    },
+    {
+      "term": "caphirian",
+      "topCorrelations": [
+        {
+          "term": "sarpedon",
+          "count": 206
+        },
+        {
+          "term": "imperium",
+          "count": 186
+        },
+        {
+          "term": "latin",
+          "count": 179
+        },
+        {
+          "term": "republic",
+          "count": 162
+        },
+        {
+          "term": "empire",
+          "count": 140
+        },
+        {
+          "term": "levantia",
+          "count": 138
+        },
+        {
+          "term": "catholic",
+          "count": 128
+        },
+        {
+          "term": "council",
+          "count": 124
+        }
+      ]
+    },
+    {
+      "term": "urcean",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 283
+        },
+        {
+          "term": "catholic",
+          "count": 216
+        },
+        {
+          "term": "apostolic",
+          "count": 198
+        },
+        {
+          "term": "empire",
+          "count": 195
+        },
+        {
+          "term": "republic",
+          "count": 188
+        },
+        {
+          "term": "crona",
+          "count": 168
+        },
+        {
+          "term": "subject",
+          "count": 144
+        },
+        {
+          "term": "latin",
+          "count": 133
+        }
+      ]
+    },
+    {
+      "term": "burgoignesc",
+      "topCorrelations": [
+        {
+          "term": "levantia",
+          "count": 253
+        },
+        {
+          "term": "empire",
+          "count": 218
+        },
+        {
+          "term": "audonia",
+          "count": 213
+        },
+        {
+          "term": "republic",
+          "count": 162
+        },
+        {
+          "term": "catholic",
+          "count": 143
+        },
+        {
+          "term": "crona",
+          "count": 142
+        },
+        {
+          "term": "sarpedon",
+          "count": 130
+        },
+        {
+          "term": "council",
+          "count": 126
+        }
+      ]
+    }
+  ]
+}

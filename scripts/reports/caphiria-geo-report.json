@@ -1,0 +1,275 @@
+{
+  "country": "Caphiria",
+  "featureId": "Caphiria",
+  "generatedAt": "2026-09-06T19:54:49.052Z",
+  "area": {
+    "km2": 4723109,
+    "sqMi": 1823602,
+    "boundingBox": {
+      "minLng": 7.5133,
+      "minLat": -33.3499,
+      "maxLng": 45.1345,
+      "maxLat": -1.0528
+    },
+    "nsSpanKm": 3591,
+    "ewSpanKm": 3929,
+    "centroid": {
+      "lng": 26.4478,
+      "lat": -19.7241
+    },
+    "perimeterKm": 23978
+  },
+  "elevation": {
+    "zones": [
+      {
+        "zone": "Coastal Lowlands",
+        "minM": 0,
+        "maxM": 99,
+        "areaKm2": 2494078,
+        "percent": 52.8
+      },
+      {
+        "zone": "Low Hills",
+        "minM": 100,
+        "maxM": 349,
+        "areaKm2": 1354884,
+        "percent": 28.7
+      },
+      {
+        "zone": "Rolling Hills",
+        "minM": 350,
+        "maxM": 499,
+        "areaKm2": 548136,
+        "percent": 11.6
+      },
+      {
+        "zone": "Uplands",
+        "minM": 500,
+        "maxM": 999,
+        "areaKm2": 237249,
+        "percent": 5
+      },
+      {
+        "zone": "Low Mountains",
+        "minM": 1000,
+        "maxM": 1999,
+        "areaKm2": 66499,
+        "percent": 1.4
+      },
+      {
+        "zone": "Mid Mountains",
+        "minM": 2000,
+        "maxM": 2999,
+        "areaKm2": 19661,
+        "percent": 0.4
+      },
+      {
+        "zone": "High Mountains",
+        "minM": 3000,
+        "maxM": 3999,
+        "areaKm2": 2603,
+        "percent": 0.1
+      }
+    ],
+    "minElevationM": 0,
+    "maxElevationM": 3999,
+    "meanElevationM": 211,
+    "dominantTerrain": "Coastal Lowlands",
+    "terrainRoughness": 0.0032
+  },
+  "climate": {
+    "zones": [
+      {
+        "type": "Steppe or Semiarid (Bs)",
+        "areaKm2": 1586219,
+        "percent": 33.6,
+        "description": "Low rainfall with hot daytime temperatures"
+      },
+      {
+        "type": "Desert or Arid (Bw)",
+        "areaKm2": 1584904,
+        "percent": 33.6,
+        "description": "Extremely dry with intense solar radiation"
+      },
+      {
+        "type": "Subtropical Dry Summer (Cs)",
+        "areaKm2": 759740,
+        "percent": 16.1,
+        "description": "Warm with dry summers and mild wet winters"
+      },
+      {
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaKm2": 450619,
+        "percent": 9.5,
+        "description": "Tropical with distinct wet and dry seasons"
+      },
+      {
+        "type": "Tropical Wet (Ar)",
+        "areaKm2": 226907,
+        "percent": 4.8,
+        "description": "Hot and humid year-round with heavy rainfall"
+      },
+      {
+        "type": "Highland (H)",
+        "areaKm2": 73206,
+        "percent": 1.5,
+        "description": "High altitude with cold temps and orographic precipitation"
+      },
+      {
+        "type": "Subtropical Humid (Cf)",
+        "areaKm2": 37312,
+        "percent": 0.8,
+        "description": "Warm with year-round moisture"
+      },
+      {
+        "type": "Boreal (E)",
+        "areaKm2": 4203,
+        "percent": 0.1,
+        "description": "Long cold winters with brief cool summers"
+      }
+    ],
+    "dominantType": "Steppe or Semiarid (Bs)",
+    "shannonDiversity": 1.227,
+    "temperature": {
+      "meanC": 19.6,
+      "meanF": 67.3,
+      "summerDailyHighC": 30.2,
+      "winterDailyLowC": 9,
+      "seasonalRangeC": 11.9,
+      "diurnalRangeC": 9.3
+    },
+    "annualPrecipitationMm": 322
+  },
+  "hydrography": {
+    "riverCount": 58,
+    "totalRiverLengthKm": 44441,
+    "lakeCount": 26,
+    "totalLakeAreaKm2": 38476.5,
+    "drainageDensity": 0.009
+  },
+  "position": {
+    "hemisphere": "Southern",
+    "latitudeBand": "Tropical",
+    "atmosphericZone": "Tropical zone (Hadley cell)",
+    "distanceFromEquatorKm": 2193,
+    "timezone": "UTC+2"
+  },
+  "neighbors": [
+    {
+      "name": "Lariana",
+      "direction": "NNE",
+      "sharedBorderKm": 0
+    },
+    {
+      "name": "Metzetta",
+      "direction": "E",
+      "sharedBorderKm": 0
+    },
+    {
+      "name": "Xelphia",
+      "direction": "E",
+      "sharedBorderKm": 0
+    },
+    {
+      "name": "Daxia",
+      "direction": "ESE",
+      "sharedBorderKm": 0
+    },
+    {
+      "name": "Xalesia",
+      "direction": "SSE",
+      "sharedBorderKm": 0
+    },
+    {
+      "name": "Cogenia",
+      "direction": "S",
+      "sharedBorderKm": 0
+    },
+    {
+      "name": "Calto",
+      "direction": "S",
+      "sharedBorderKm": 0
+    },
+    {
+      "name": "Volonia",
+      "direction": "SSW",
+      "sharedBorderKm": 0
+    },
+    {
+      "name": "Pelaxia",
+      "direction": "SW",
+      "sharedBorderKm": 5
+    },
+    {
+      "name": "Cartadania",
+      "direction": "NW",
+      "sharedBorderKm": 130
+    }
+  ],
+  "coastline": {
+    "hasCoastline": true,
+    "isLandlocked": false,
+    "coastlineKm": 23843,
+    "landBorderKm": 135,
+    "coastlinePercent": 99.4
+  },
+  "shape": {
+    "compactnessRatio": 0.103,
+    "compactness": "Highly irregular or fragmented",
+    "elongationRatio": 1.09,
+    "elongation": "Roughly equidimensional",
+    "fragments": 61,
+    "islands": 60
+  },
+  "iceCoverage": {
+    "hasIcecaps": false,
+    "areaKm2": 0,
+    "percent": 0
+  },
+  "insights": {
+    "agriculture": {
+      "arableLandPercent": 35.2,
+      "arableLandKm2": 1661279,
+      "growingSeasonDays": 158,
+      "waterAvailability": "Limited",
+      "waterScore": 30,
+      "cropSuitability": [
+        "Pastoral grazing",
+        "Millet",
+        "Olives",
+        "Grapes",
+        "Wheat",
+        "Rice",
+        "Sugarcane",
+        "Tropical fruits"
+      ],
+      "overallRating": "Moderate"
+    },
+    "strategic": {
+      "maritimeIndex": "Maritime power (extensive coastline)",
+      "coastlineToAreaRatio": 1097.1,
+      "strategicDepthKm": 1796,
+      "borderDefensibility": "Open terrain (few natural barriers)",
+      "mountainCoveragePercent": 1.9,
+      "islandExposure": "Highly fragmented (60 islands)",
+      "accessPoints": "Extensive exposure (10 neighbors)"
+    },
+    "habitability": {
+      "score": 58,
+      "descriptor": "Moderately habitable",
+      "climateComfort": 19,
+      "waterAccess": 10,
+      "terrainAccess": 29,
+      "keyFactors": [
+        "Water scarcity",
+        "Accessible terrain"
+      ]
+    },
+    "biome": {
+      "dominantBiome": "Short grass steppe, scrubland",
+      "ecoRegionCount": 56,
+      "ecologicalDiversity": "Moderately diverse",
+      "summary": "The country features a mosaic of biomes, with short grass steppe, scrubland (Steppe or Semiarid) as the most prevalent. Significant areas of sparse xerophytes, barren sand/rock (34%) and mediterranean scrub, evergreen woodland (16%) add to the ecological variety. An extensive river network (58 rivers, 44,441 km) and 26 lakes support riparian ecosystems. Extensive coastline (23,843 km) supports rich marine and littoral biomes."
+    }
+  }
+}

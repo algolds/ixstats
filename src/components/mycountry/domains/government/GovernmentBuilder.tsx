@@ -42,7 +42,7 @@ import {
   type Step,
 } from "~/components/mycountry/domains/government/builder";
 
-import type { GovernmentBuilderState } from "~/types/government";
+import type { GovernmentBuilderState, GovernmentTemplate } from "~/types/government";
 
 interface GovernmentBuilderProps {
   initialData?: Partial<GovernmentBuilderState>;
@@ -65,11 +65,9 @@ export function GovernmentBuilder({
   initialData,
   onSave,
   onChange,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  onPreview,
+  onPreview: _onPreview,
   isReadOnly = false,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  hideSaveButton = false,
+  hideSaveButton: _hideSaveButton = false,
   countryId,
   enableAutoSync = false,
   gdpData,
@@ -106,10 +104,6 @@ export function GovernmentBuilder({
     goToNextStep,
     goToPreviousStep,
     applyTemplate: builderApplyTemplate,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    handleSave,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    triggerSync,
     clearConflicts,
     allCollapsed,
     setAllCollapsed,
@@ -148,7 +142,7 @@ export function GovernmentBuilder({
   };
 
   // ==================== TEMPLATE HANDLERS ====================
-  const handleApplyTemplate = (template: any) => {
+  const handleApplyTemplate = (template: GovernmentTemplate) => {
     builderApplyTemplate(template);
     setShowTemplates(false);
   };
@@ -158,9 +152,7 @@ export function GovernmentBuilder({
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== "true") return;
-    // oxlint-disable-next-line
-    setSuggestions(computeGovernmentSuggestions(builderState as any));
-    // oxlint-disable-next-line
+    setSuggestions(computeGovernmentSuggestions(builderState));
   }, [builderState, intel.latestUpdate]);
 
   const handleApplySuggestion = (s: SuggestionItem) => {
@@ -223,7 +215,7 @@ export function GovernmentBuilder({
       <StepProgress
         steps={steps}
         currentStep={currentStep}
-        onStepChange={(stepId) => setCurrentStep(stepId as any)}
+        onStepChange={(stepId) => setCurrentStep(stepId as "structure" | "departments" | "budget" | "revenue")}
         validationErrors={validation.errors}
         isReadOnly={isReadOnly}
       />

@@ -56,8 +56,6 @@ export const env = createEnv({
     IXWIKI_DB_NAME: z.string().optional().default("ixwiki"),
     // IxWiki image base URL (for file/image serving)
     IXWIKI_IMAGE_BASE_URL: z.string().optional().default("https://ixwiki.com/images"),
-    // Unsplash API (for country card images)
-    UNSPLASH_ACCESS_KEY: z.string().optional(),
     // Server port
     PORT: z.string().optional().default("3550"),
     // Vercel URL (auto-set by Vercel)
@@ -96,8 +94,6 @@ export const env = createEnv({
     NEXT_PUBLIC_APP_URL: z.string().url().optional(),
     // Enable intel suggestions feature flag
     NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS: z.string().optional().default("false"),
-    // Unsplash API (for country card images) - required for client-side fetching
-    NEXT_PUBLIC_UNSPLASH_ACCESS_KEY: z.string().optional(),
     // Giphy API key for ThinkPages composer
     NEXT_PUBLIC_GIPHY_API_KEY: z.string().optional(),
   },
@@ -153,10 +149,6 @@ export const env = createEnv({
     IXWIKI_DB_PASSWORD: process.env.IXWIKI_DB_PASSWORD,
     IXWIKI_DB_NAME: process.env.IXWIKI_DB_NAME,
     IXWIKI_IMAGE_BASE_URL: process.env.IXWIKI_IMAGE_BASE_URL,
-    // Unsplash
-    UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
-    NEXT_PUBLIC_UNSPLASH_ACCESS_KEY:
-      process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY || process.env.UNSPLASH_ACCESS_KEY,
     NEXT_PUBLIC_GIPHY_API_KEY: process.env.NEXT_PUBLIC_GIPHY_API_KEY,
     // Server
     PORT: process.env.PORT,

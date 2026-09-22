@@ -100,7 +100,7 @@ function RealmRoleBadge({ role }: { role: string }) {
     normalizedRole.includes("MODERATOR")
   ) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/25 bg-purple-500/10 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-purple-600 shadow-2xs dark:text-purple-400">
+      <span className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-indigo-600 shadow-2xs dark:text-indigo-400">
         <Shield className="h-3 w-3 shrink-0" />
         <span>{role.toUpperCase()}</span>
       </span>
@@ -307,7 +307,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                       </div>
 
                       <div className="flex min-w-0 items-center gap-2 border-l border-black/8 px-2 dark:border-white/10">
-                        <Scale className="h-3.5 w-3.5 shrink-0 text-violet-500 dark:text-violet-400" />
+                        <Scale className="h-3.5 w-3.5 shrink-0 text-indigo-500 dark:text-indigo-400" />
                         <div className="flex min-w-0 flex-col">
                           <span className="text-muted-foreground font-mono text-[8px] leading-none font-bold tracking-wider uppercase sm:text-[9px]">
                             STABILITY

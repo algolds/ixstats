@@ -16,7 +16,7 @@ interface GlassChartProps {
   loading?: boolean;
   error?: string;
   actions?: React.ReactNode;
-  theme?: "default" | "gold" | "blue" | "emerald" | "purple";
+  theme?: "default" | "gold" | "blue" | "emerald" | "indigo";
 }
 
 interface ChartSkeletonProps {
@@ -128,7 +128,7 @@ export function GlassChart({
     gold: "border-amber-400/30 bg-gradient-to-br from-amber-500/10 to-orange-500/5",
     blue: "border-blue-400/30 bg-gradient-to-br from-blue-500/10 to-indigo-500/5",
     emerald: "border-emerald-400/30 bg-gradient-to-br from-emerald-500/10 to-green-500/5",
-    purple: "border-purple-400/30 bg-gradient-to-br from-purple-500/10 to-pink-500/5",
+    indigo: "border-indigo-400/30 bg-gradient-to-br from-indigo-500/10 to-blue-500/5",
   };
 
   return (

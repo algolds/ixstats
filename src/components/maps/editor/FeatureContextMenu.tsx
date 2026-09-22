@@ -13,16 +13,12 @@ import {
   Cut as Scissors,
 } from "iconoir-react";
 
+import type { ContextMenuFeature } from "./types/editor-state";
+
 interface FeatureContextMenuProps {
   x: number;
   y: number;
-  feature: {
-    id: string;
-    name: string;
-    type: string;
-    wikiPageTitle?: string | null;
-    geometry?: any;
-  };
+  feature: ContextMenuFeature;
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -153,10 +149,10 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   }
 
   // Clamp position to viewport
-  const menuWidth = 192;
+  const menuWidth = 208;
   const menuHeight = (primaryItems.length + secondaryItems.length + 1) * 32 + 8;
-  const clampedX = Math.min(x, window.innerWidth - menuWidth - 8);
-  const clampedY = Math.min(y, window.innerHeight - menuHeight - 8);
+  const clampedX = typeof window !== "undefined" ? Math.min(x, window.innerWidth - menuWidth - 8) : x;
+  const clampedY = typeof window !== "undefined" ? Math.min(y, window.innerHeight - menuHeight - 8) : y;
 
   const renderItem = (item: MenuItem) => (
     <button
@@ -165,13 +161,13 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
         item.onClick();
         onClose();
       }}
-      className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors ${
+      className={`active:scale-[0.98] flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs font-medium transition-all duration-100 ${
         item.danger
-          ? "text-red-400 hover:bg-red-500/10 hover:text-red-300"
-          : "text-neutral-200 hover:bg-neutral-700 hover:text-white"
+          ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
+          : "text-foreground/90 hover:bg-accent hover:text-accent-foreground"
       }`}
     >
-      <item.icon className="h-3.5 w-3.5 shrink-0" />
+      <item.icon className="h-3.5 w-3.5 shrink-0 opacity-80" />
       <span>{item.label}</span>
     </button>
   );
@@ -179,14 +175,14 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   return createPortal(
     <div
       data-context-menu
-      className="fixed z-[9999] min-w-[192px] overflow-hidden rounded-md border border-neutral-700 bg-neutral-800 py-1 shadow-xl"
+      className="animate-in fade-in zoom-in-95 border-border bg-card/90 fixed z-[9999] min-w-[208px] origin-top-left overflow-hidden rounded-xl border py-1.5 shadow-2xl backdrop-blur-xl duration-100"
       style={{ left: clampedX, top: clampedY }}
     >
       {primaryItems.map(renderItem)}
 
       {secondaryItems.length > 0 && (
         <>
-          <div className="mx-2 my-1 h-px bg-neutral-700" />
+          <div className="bg-border/60 mx-2 my-1 h-px" />
           {secondaryItems.map(renderItem)}
         </>
       )}

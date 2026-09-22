@@ -38,6 +38,7 @@ import { api } from "~/trpc/react";
 import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
 import { MetricModalLayout } from "./MetricModalLayout";
 import type { TimeRange, ChartType } from "./types";
+import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
 
 interface LaborDetailsModalProps {
   isOpen: boolean;
@@ -88,26 +89,11 @@ export function LaborDetailsModal({
     const currentEmploymentRate = labor?.employmentRate || 94;
     const currentUnemploymentRate = labor?.unemploymentRate || 6;
 
-    const now = new Date();
-    const rangeMap: Record<TimeRange, number> = {
-      "3m": 3,
-      "6m": 6,
-      "1y": 12,
-      "2y": 24,
-      "4y": 48,
-      "5y": 60,
-      "20y": 240,
-      all: Infinity,
-    };
-
-    const monthsToShow = rangeMap[timeRange] || 12;
-    const cutoffDate = monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
-
-    return historicalData
-      .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
-      .slice(-100)
-      .map((point: any) => {
-        const gdpGrowth = point.gdpGrowthRate || point.gdpGrowth || 0;
+    return filterAndSortHistory(
+      historicalData,
+      timeRange,
+      (point, formattedDate, timestamp) => {
+        const gdpGrowth = point.gdpGrowthRate || (point as any).gdpGrowth || 0;
         const workingAgeFraction = 0.65;
         const laborForce = Math.round(
           (point.population || 0) * workingAgeFraction * (currentParticipation / 100)
@@ -117,15 +103,15 @@ export function LaborDetailsModal({
         const unemploymentRate = Math.max(1, Math.min(20, currentUnemploymentRate - empAdj));
 
         return {
-          date: format(new Date(point.ixTimeTimestamp), "MMM yyyy"),
-          timestamp: point.ixTimeTimestamp,
+          date: formattedDate,
+          timestamp,
           laborForce,
           employmentRate: parseFloat(employmentRate.toFixed(1)),
           unemploymentRate: parseFloat(unemploymentRate.toFixed(1)),
           participationRate: currentParticipation,
         };
-      })
-      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      }
+    );
   };
 
   const chartConfig = {
@@ -240,7 +226,7 @@ export function LaborDetailsModal({
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-purple-400">
+                  <div className="text-lg font-bold text-emerald-400">
                     ${(labor?.averageAnnualIncome || 0).toLocaleString()}
                   </div>
                   <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
@@ -452,7 +438,7 @@ export function LaborDetailsModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Avg Participation
               </span>
-              <span className="text-xl font-bold text-purple-400">
+              <span className="text-xl font-bold text-blue-400">
                 {laborStats?.avgParticipation
                   ? `${laborStats.avgParticipation.toFixed(1)}%`
                   : "N/A"}
@@ -575,7 +561,7 @@ export function LaborDetailsModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Job Market Health
               </span>
-              <span className="text-xl font-bold text-purple-400">
+              <span className="text-xl font-bold text-emerald-400">
                 {(labor?.unemploymentRate || 0) < 5
                   ? "Healthy"
                   : (labor?.unemploymentRate || 0) < 10
@@ -694,7 +680,7 @@ export function LaborDetailsModal({
                 <span className="text-muted-foreground text-[10px] font-semibold uppercase">
                   Productivity Index
                 </span>
-                <div className="mt-1 text-lg font-bold text-green-400">
+                <div className="mt-1 text-lg font-bold text-emerald-400">
                   {labor?.skillsAndProductivity?.laborProductivityIndex?.toFixed(2) || "1.00"}
                 </div>
               </div>
@@ -703,7 +689,7 @@ export function LaborDetailsModal({
                 <span className="text-muted-foreground text-[10px] font-semibold uppercase">
                   Avg. Education
                 </span>
-                <div className="mt-1 text-lg font-bold text-purple-400">
+                <div className="mt-1 text-lg font-bold text-indigo-400">
                   {labor?.skillsAndProductivity?.averageEducationYears?.toFixed(1) || "12.0"} Years
                 </div>
               </div>

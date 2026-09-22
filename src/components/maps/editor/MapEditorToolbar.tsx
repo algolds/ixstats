@@ -7,32 +7,20 @@
  * grouped by function, with tooltips showing name + keyboard shortcut.
  *
  * Groups:
- * 1. Selection (V) — default pointer mode
- * 2. Add Features — City (C), Region (R), POI (P)
- * 3. Import — Province import (I)
+ * 0. Selection (V, M) — Select, Lasso Select
+ * 1. Territory & Settlements — Region (R), City (C), POI (P)
+ * 2. Infrastructure — Route (T)
+ * 3. Geography Features — Peak (K), River (Y), Lake (J)
+ * 4. Measurement — Ruler (U)
  *
  * Active tool gets primary color highlight.
  */
 
-import { useCallback, useMemo, useState, useRef } from "react";
+import React, { useCallback, useMemo, useState, useRef, memo } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import {
-  CursorPointer as MousePointer2,
-  MapPin,
-  Hexagon,
-  Bank as Landmark,
-  Navigator as Route,
-  Bookmark as BookMarked,
-  Type,
-  HandBrake as Hand,
-  SelectWindow as LassoSelect,
-  Ruler,
-  ColorPicker as PaintBucket,
-  ColorPicker as Pipette,
-  MagicWand as Wand2,
-} from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { getPlugins } from "~/components/maps/editor/plugins/registry";
+import type { ToolbarItem } from "~/components/maps/editor/plugins/types";
 
 interface MapEditorToolbarProps {
   mode: EditorMode;
@@ -43,31 +31,6 @@ interface MapEditorToolbarProps {
   disabledTools?: EditorMode[];
 }
 
-interface ToolDef {
-  mode: EditorMode;
-  icon: typeof MapPin;
-  label: string;
-  shortcut: string;
-  group: number;
-}
-
-// oxlint-disable-next-line eslint/no-unused-vars
-const TOOLS: ToolDef[] = [
-  { mode: "view", icon: MousePointer2, label: "Select", shortcut: "V", group: 0 },
-  { mode: "pan", icon: Hand, label: "Hand (Pan)", shortcut: "H", group: 0 },
-  { mode: "lasso-select", icon: LassoSelect, label: "Lasso Select", shortcut: "M", group: 0 },
-  { mode: "magic-wand", icon: Wand2, label: "Magic Wand", shortcut: "W", group: 0 },
-  { mode: "add-subdivision", icon: Hexagon, label: "Region", shortcut: "R", group: 1 },
-  { mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 1 },
-  { mode: "add-city", icon: MapPin, label: "City", shortcut: "C", group: 2 },
-  { mode: "add-poi", icon: Landmark, label: "POI / Landmark", shortcut: "P", group: 2 },
-  { mode: "add-story-pin", icon: BookMarked, label: "Story", shortcut: "S", group: 2 },
-  { mode: "add-label", icon: Type, label: "Label", shortcut: "L", group: 3 },
-  { mode: "eyedropper", icon: Pipette, label: "Eyedropper", shortcut: "I", group: 3 },
-  { mode: "ruler", icon: Ruler, label: "Ruler (Measure)", shortcut: "U", group: 4 },
-  { mode: "paint-fill", icon: PaintBucket, label: "Paint Fill", shortcut: "G", group: 4 },
-];
-
 interface GroupConfig {
   id: string;
   modes: string[];
@@ -76,14 +39,9 @@ interface GroupConfig {
 
 const GROUPS_CONFIG: GroupConfig[] = [
   {
-    id: "select-pan",
-    modes: ["view", "pan"],
+    id: "select-modes",
+    modes: ["view", "lasso-select"],
     defaultMode: "view",
-  },
-  {
-    id: "lasso-wand",
-    modes: ["lasso-select", "magic-wand"],
-    defaultMode: "lasso-select",
   },
   {
     id: "geography-features",
@@ -92,7 +50,7 @@ const GROUPS_CONFIG: GroupConfig[] = [
   },
 ];
 
-export function MapEditorToolbar({
+export const MapEditorToolbar = memo(function MapEditorToolbar({
   mode,
   onModeChange,
   disabled,
@@ -109,12 +67,15 @@ export function MapEditorToolbar({
     ? "flex h-10 items-center gap-0.5 border-t border-border bg-card px-1"
     : "flex w-10 flex-col items-center gap-0.5 border-r border-border bg-card py-1";
 
-  // Dynamically resolve tools from registered plugins
-  const plugins = getPlugins();
+  // Dynamically resolve tools from registered plugins (memoized once)
   const sortedTools = useMemo(() => {
+    const plugins = getPlugins();
     const items = plugins.flatMap((p) => p.toolbarItems || []);
-    return [...items].sort((a, b) => a.group - b.group);
-  }, [plugins]);
+    return [...items].sort((a, b) => {
+      if (a.group !== b.group) return a.group - b.group;
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
+  }, []);
 
   // Grouped tools calculation
   const groupedTools = useMemo(() => {
@@ -124,13 +85,13 @@ export function MapEditorToolbar({
           id: string;
           modes: string[];
           defaultMode: string;
-          activeTool: any;
-          tools: any[];
+          activeTool: ToolbarItem | undefined;
+          tools: ToolbarItem[];
           group: number;
         }
       | {
           type: "single";
-          tool: any;
+          tool: ToolbarItem;
           group: number;
         }
     > = [];
@@ -176,7 +137,7 @@ export function MapEditorToolbar({
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setActivePopoverGroupId(groupId);
-    }, 450);
+    }, 300);
   }, []);
 
   const handleMouseUpOrLeave = useCallback(() => {
@@ -222,6 +183,7 @@ export function MapEditorToolbar({
 
         if (item.type === "group") {
           const activeTool = item.activeTool;
+          if (!activeTool) return null;
           const FallbackIcon = activeTool.icon;
           const isActive = item.modes.includes(activeMode);
           const isToolDisabled = disabled || disabledTools.includes(activeTool.mode);
@@ -252,7 +214,7 @@ export function MapEditorToolbar({
                     onMouseLeave={handleMouseUpOrLeave}
                     onContextMenu={(e) => handleContextMenu(e, item.id)}
                     disabled={isToolDisabled}
-                    className={`group relative flex items-center justify-center rounded-md transition-all duration-100 ease-out select-none active:scale-95 ${
+                    className={`group relative flex items-center justify-center rounded-md transition-all duration-100 ease-out select-none active:scale-[0.98] ${
                       horizontal ? "h-8 w-8" : "h-9 w-9"
                     } ${
                       isActive
@@ -301,7 +263,7 @@ export function MapEditorToolbar({
                             onModeChange(subTool.mode);
                             setActivePopoverGroupId(null);
                           }}
-                          className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs transition-all duration-100 active:scale-95 ${
+                          className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs transition-all duration-100 active:scale-[0.98] ${
                             isSubActive
                               ? "bg-primary text-primary-foreground font-semibold shadow-sm"
                               : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -348,7 +310,7 @@ export function MapEditorToolbar({
               <button
                 onClick={() => handleSingleClick(tool.mode)}
                 disabled={isToolDisabled}
-                className={`group relative flex items-center justify-center rounded-md transition-all duration-100 ease-out active:scale-95 ${
+                className={`group relative flex items-center justify-center rounded-md transition-all duration-100 ease-out active:scale-[0.98] ${
                   horizontal ? "h-8 w-8" : "h-9 w-9"
                 } ${
                   isActive
@@ -380,4 +342,4 @@ export function MapEditorToolbar({
       })}
     </div>
   );
-}
+});

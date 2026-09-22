@@ -27,7 +27,7 @@ interface UnifiedGlassCommandBarProps {
   mode: CommandNavMode;
   activeSection: string;
   onChangeMode: (mode: CommandNavMode) => void;
-  onNavigate?: (section: any) => void;
+  onNavigate?: (section: string) => void;
   onDeclare?: () => void;
 }
 
@@ -53,7 +53,7 @@ export function UnifiedGlassCommandBar({
       depth={2}
       interactive="none"
       enableRefraction={false}
-      className="border-border/80 bg-card/80 dark:bg-card/40 relative flex w-full flex-col gap-3.5 rounded-2xl border p-3.5 shadow-xl backdrop-blur-xl transition-all duration-200 dark:border-white/15"
+      className="border-border bg-card/70 relative flex w-full flex-col gap-3.5 rounded-2xl border p-3.5 shadow-sm backdrop-blur-md transition-all duration-200"
     >
       {/* Top Executive Navigation Row */}
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
@@ -127,7 +127,7 @@ export function UnifiedGlassCommandBar({
                 soundEffects.press();
                 onNavigate?.(id);
               }}
-              className="group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border p-2.5 shadow-xs backdrop-blur-md transition-all duration-150 select-none active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
+              className="group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border p-2.5 shadow-2xs backdrop-blur-md transition-all duration-150 select-none active:scale-[0.98]"
             >
               {/* Subtle Natural Architectural Watermark */}
               <Graphic />
@@ -174,8 +174,7 @@ export function UnifiedGlassCommandBar({
               <span>Overview</span>
             </button>
             <span className="text-muted-foreground/40 text-xs">/</span>
-            // oxlint-disable-next-line eslint/no-unused-vars
-            {DOMAIN_TILES.map(({ id, title, icon: Icon, badgeCls }) => {
+            {DOMAIN_TILES.map(({ id, title, icon: Icon }) => {
               const isActive = activeSection === id;
               return (
                 <button

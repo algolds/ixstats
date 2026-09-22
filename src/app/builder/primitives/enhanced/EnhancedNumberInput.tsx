@@ -14,7 +14,7 @@ import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import { useFormattedAnimatedValue, DEFAULT_ANIMATIONS } from "./animation-utils";
 import { parseNumberInput } from "~/lib/utils";
 import type { EnhancedInputProps } from "./types";
-import { FieldHelpTooltip } from "../../components/help/GovernmentHelpSystem";
+import { FieldHelpTooltip } from "../../components/help/FieldHelpTooltip";
 
 interface EnhancedNumberInputProps extends Omit<EnhancedInputProps, "value" | "onChange"> {
   value: number | string;
@@ -24,7 +24,7 @@ interface EnhancedNumberInputProps extends Omit<EnhancedInputProps, "value" | "o
   showReset?: boolean;
   resetValue?: number | string;
   placeholder?: string;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<{ className?: string }>;
   acceptText?: boolean; // Allow text input for names, etc.
   helpContent?: React.ReactNode;
   helpTitle?: string;
@@ -178,11 +178,16 @@ export function EnhancedNumberInput({
 
       // If value is an object, try to extract a number from it
       if (typeof value === "object" && value !== null) {
-        // Try common object properties that might contain the actual value
-        if ("value" in value) processedValue = (value as any).value;
-        else if ("amount" in value) processedValue = (value as any).amount;
-        else if ("number" in value) processedValue = (value as any).number;
-        else processedValue = 0; // fallback
+        const valRecord = value as Record<string, number | string | boolean | undefined>;
+        if (typeof valRecord.value === "number" || typeof valRecord.value === "string") {
+          processedValue = valRecord.value;
+        } else if (typeof valRecord.amount === "number" || typeof valRecord.amount === "string") {
+          processedValue = valRecord.amount;
+        } else if (typeof valRecord.number === "number" || typeof valRecord.number === "string") {
+          processedValue = valRecord.number;
+        } else {
+          processedValue = 0;
+        }
       }
 
       // Convert to number if not acceptText mode

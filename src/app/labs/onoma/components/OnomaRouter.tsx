@@ -54,15 +54,8 @@ export function OnomaRouter() {
     activePillar === "create"
       ? `${SECTION_COLORS[activeSection] || "#0091ff"}25`
       : activePillar === "studio"
-        ? "#ec489930"
-        : "#8b5cf630";
-
-  const pillarGlow =
-    activePillar === "create"
-      ? `0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 0 20px 0px ${SECTION_COLORS[activeSection] || "#0091ff"}10`
-      : activePillar === "studio"
-        ? "0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 0 20px 0px rgba(236, 72, 153, 0.12)"
-        : "0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 0 20px 0px rgba(139, 92, 246, 0.12)";
+        ? "rgba(0, 145, 255, 0.2)"
+        : "rgba(99, 102, 241, 0.2)";
 
   return (
     <div className="bg-background text-foreground min-h-screen p-3.5 antialiased transition-colors duration-300 sm:p-6">
@@ -85,13 +78,12 @@ export function OnomaRouter() {
           onNavigateExplore={handleNavigateExplore}
         />
 
-        {/* Workspace Canvas (Frosted glass with dynamic themed borders and shadow transitions) */}
+        {/* Workspace Canvas (Frosted glass with dynamic themed borders and clean elevation) */}
         <FacetMaterial
           material="satin"
-          className="relative overflow-hidden rounded-2xl border p-4.5 shadow-xl transition-all duration-300 sm:p-6"
+          className="relative overflow-hidden rounded-2xl border border-border/50 p-4.5 shadow-sm transition-all duration-300 sm:p-6"
           style={{
             borderColor: pillarBorderColor,
-            boxShadow: pillarGlow,
           }}
         >
           <AnimatePresence mode="wait" initial={false}>

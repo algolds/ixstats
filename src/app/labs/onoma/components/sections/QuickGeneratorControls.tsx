@@ -308,7 +308,7 @@ export function QuickGeneratorControls({
                 <button
                   type="button"
                   onClick={handleDeleteCurrentDict}
-                  className="flex cursor-pointer items-center rounded-lg border border-rose-500/20 bg-rose-500/10 p-1.5 text-[11px] font-medium tracking-tight text-rose-600 shadow-2xs transition-all hover:bg-rose-500/20 active:scale-95 dark:text-rose-400"
+                  className="flex cursor-pointer items-center rounded-lg border border-red-500/20 bg-red-500/10 p-1.5 text-[11px] font-medium tracking-tight text-red-600 shadow-2xs transition-all hover:bg-red-500/20 active:scale-95 dark:text-red-400"
                   title="Delete this custom dictionary"
                 >
                   <Trash2 className="h-2.5 w-2.5" />

@@ -59,40 +59,43 @@ function WeatherIcon({ icon, className }: { icon: WeatherIconType; className?: s
 
 const CANON_CHRONICLE_EVENTS = [
   {
-    year: "1894",
-    title: "Treaty of Oakhaven",
-    description: "Sovereign charter established between western continental powers.",
-    slug: "Treaty_of_Oakhaven",
+    year: "1919",
+    title: "League of Nations",
+    description: "Universal covenant for international diplomacy and global peacekeeping.",
+    slug: "League_of_Nations",
   },
   {
-    year: "1914",
-    title: "The Great Concordat",
-    description: "Multi-national maritime navigation and free commerce accords ratified.",
-    slug: "The_Great_Concordat",
+    year: "1904",
+    title: "The Great War",
+    description: "Global conflict that reshaped continental borders and sovereign doctrine.",
+    slug: "Great_War",
   },
   {
-    year: "1948",
-    title: "Urcean Economic Reform",
-    description: "Standardization of continental trade tariffs and central reserves.",
-    slug: "Economy_of_Urcea",
+    year: "1882",
+    title: "First Gothic War",
+    description: "Strategic conflict establishing northern spheres and maritime navigation.",
+    slug: "First_Gothic_War",
   },
   {
-    year: "1976",
-    title: "The Trans-Continental Line",
-    description: "First high-speed rail corridor connecting northern and southern realms.",
-    slug: "Transportation_in_Ixnay",
+    year: "1984",
+    title: "Assumption Accords",
+    description:
+      "The Framework for Peaceful Co-Existence on Urlazio and Sarpedon, more commonly known as the Assumption Accords, was an agreement reached by the governments of Caphiria and Urcea, settling long standing disputes over territorial boundaries on Urlazio as well as geopolitical and legal claims in Sarpedon.",
+    slug: "Assumption_Accords",
   },
   {
-    year: "2003",
-    title: "The Sovereign Charter",
-    description: "Founding of the modern geopolitical congress and lore repository.",
-    slug: "Ixnay",
+    year: "2008",
+    title: "The Deluge",
+    description:
+      "The Deluge describes a series of conflicts and geopolitical tumult that occurred in northern and central Crona from 2008 through 2024.",
+    slug: "The_Deluge",
   },
   {
-    year: "2028",
-    title: "Global Census & Atlas",
-    description: "Unified demographic baseline ratified across 82 sovereign nations.",
-    slug: "Countries",
+    year: "1387",
+    title: "Aster's expedition",
+    description:
+      "Aster's expedition was a naval expedition launched in the 1380s on behalf of Ardmore and lead by Ænglish mariner Paul Aster.",
+    slug: "Aster's_expedition",
   },
 ];
 
@@ -266,11 +269,11 @@ export function SculptedEmblemHero({
             "border border-black/[0.08] dark:border-white/[0.1]",
             "bg-white/65 backdrop-blur-md dark:bg-zinc-900/65",
             "shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_2px_6px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.2)]",
-            "hover:border-sky-500/40 hover:bg-sky-500/[0.06] dark:hover:bg-sky-500/[0.1]",
-            "text-muted-foreground hover:text-foreground group transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none active:scale-95"
+            "hover:border-wiki/40 hover:bg-wiki/[0.06] dark:hover:bg-wiki/[0.1]",
+            "text-muted-foreground hover:text-foreground group transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-wiki focus-visible:outline-none active:scale-95"
           )}
         >
-          <IconoirOpenBook className="h-3.5 w-3.5 text-sky-500 transition-transform group-hover:scale-110" />
+          <IconoirOpenBook className="h-3.5 w-3.5 text-wiki transition-transform group-hover:scale-110" />
           <span>Getting Started</span>
         </Link>
 
@@ -404,13 +407,13 @@ export function SculptedEmblemHero({
           >
             <TextureOverlay texture="paperGrain" opacity={0.06} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-purple-500 uppercase dark:text-purple-400">
+              <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-blue-500 uppercase dark:text-blue-400">
                 <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
               </span>
               <div className="flex items-center gap-1">
                 {activePrompt._count?.responses !== undefined &&
                 activePrompt._count.responses > 0 ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-purple-600 transition-all duration-200 group-hover:border-purple-500/30 group-hover:bg-purple-500/20 dark:bg-purple-500/15 dark:text-purple-300">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-blue-600 transition-all duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
                     <span className="tabular-nums">{activePrompt._count.responses}</span>
                     <span className="opacity-75">
                       {activePrompt._count.responses === 1 ? "response" : "responses"}
@@ -418,7 +421,7 @@ export function SculptedEmblemHero({
                     <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-purple-600 transition-all duration-200 group-hover:border-purple-500/30 group-hover:bg-purple-500/20 dark:bg-purple-500/15 dark:text-purple-300">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-blue-600 transition-all duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
                     <span>Respond now</span>
                     <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
                   </span>
@@ -451,10 +454,10 @@ export function SculptedEmblemHero({
           >
             <TextureOverlay texture="paperGrain" opacity={0.06} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-purple-500 uppercase dark:text-purple-400">
+              <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-blue-500 uppercase dark:text-blue-400">
                 <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-purple-600 transition-all duration-200 group-hover:border-purple-500/30 group-hover:bg-purple-500/20 dark:bg-purple-500/15 dark:text-purple-300">
+              <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-blue-600 transition-all duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
                 <span>View prompts</span>
                 <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
               </span>

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import { Group as Users, Heart } from "iconoir-react";
 import type { LaborSummary, DemographicsSummary } from "../utils/previewCalculations";
@@ -18,14 +18,14 @@ export function LaborDemographicsSummary({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {/* Labor Market */}
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="space-y-4 p-6">
+        <FacetCardContent className="space-y-4 p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Users className="h-5 w-5" />
             <span>Labor Market</span>
@@ -77,18 +77,18 @@ export function LaborDemographicsSummary({
               <span className="ml-1 font-medium">{laborSummary.averageHours}/week</span>
             </div>
           </div>
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
 
       {/* Demographics */}
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="space-y-4 p-6">
+        <FacetCardContent className="space-y-4 p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Heart className="h-5 w-5" />
             <span>Demographics</span>
@@ -152,8 +152,8 @@ export function LaborDemographicsSummary({
               </span>
             </div>
           </div>
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
     </div>
   );
 }

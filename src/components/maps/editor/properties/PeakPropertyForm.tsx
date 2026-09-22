@@ -31,7 +31,10 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
   setIsPickingLocation,
 }: PeakPropertyFormProps) {
   const activeCoords = form.coordinates ?? pendingCoordinates;
-  const subdivisions = (allFeatures ?? []).filter((f) => f.type === "subdivision");
+  const subdivisions = React.useMemo(
+    () => (allFeatures ?? []).filter((f) => f.type === "subdivision"),
+    [allFeatures]
+  );
 
   return (
     <div className="space-y-2">
@@ -64,17 +67,16 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
         </div>
         <div>
           <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
-            Prominence (m, optional)
+            Prominence (m)
           </label>
           <input
             type="number"
             placeholder="e.g. 500"
-            value={form.prominence ?? ""}
+            value={form.prominence === 0 ? "" : form.prominence}
             onChange={(e) =>
               onChange({
                 ...form,
-                prominence:
-                  e.target.value === "" ? undefined : parseFloat(e.target.value) || undefined,
+                prominence: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
               })
             }
             className={inputClasses}
@@ -98,10 +100,10 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
           <button
             type="button"
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}
-            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none ${
+            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none active:scale-[0.98] ${
               isPickingLocation
-                ? "animate-pulse font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-                : "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                ? "animate-pulse font-bold text-amber-500 hover:text-amber-400"
+                : "text-emerald-500 hover:text-emerald-400"
             }`}
           >
             <MapPin className="h-3.5 w-3.5" />

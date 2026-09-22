@@ -3,7 +3,7 @@
 import * as React from "react";
 import { motion, useTransform } from "motion/react";
 import { cn } from "~/lib/utils/cn";
-import type { FacetTabsProps } from "./types";
+import type { FacetTabsProps, FacetTabItem } from "./types";
 import { useTabBounds } from "./useTabBounds";
 import { useSliderPhysics } from "../hooks/useSliderPhysics";
 import {
@@ -47,14 +47,14 @@ function blendColors(c1: string, c2: string, progress: number): string {
 }
 
 interface FacetTabTriggerProps {
-  tab: any;
+  tab: FacetTabItem;
   isActive: boolean;
   useThemeColor: boolean;
-  bounds: any;
-  metrics: any;
+  bounds?: Record<string, { left: number; width: number }>;
+  metrics: (typeof sizeClasses)[keyof typeof sizeClasses];
   tone: string;
-  handlers: any;
-  handleTabClick: any;
+  handlers: ReturnType<typeof useSliderPhysics>["handlers"];
+  handleTabClick: (tabId: string, e: React.MouseEvent) => void;
 }
 
 function FacetTabTrigger({

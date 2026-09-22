@@ -10,19 +10,30 @@ import {
   Group as Users,
   Globe,
   Clock,
-  Translate as Languages,
-  Sparks as Sparkles,
+  InfoCircle,
+  CheckCircle,
+  ArrowRight,
+  ArrowLeft,
 } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { sanitizeWikiContent } from "~/lib/utils";
+import { sanitizeWikiContent, formatNumber } from "~/lib/utils";
 import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 
+export interface LoreScanStatus {
+  isScanning: boolean;
+  pagesFound?: number;
+  categoryUsed?: string | null;
+  hasCompleted?: boolean;
+}
+
 interface InteractiveInfoboxPreviewProps {
-  data: UnifiedInfoboxData & { wikiIntro?: string };
+  data: UnifiedInfoboxData & { wikiIntro?: string; categories?: string[] };
   onContinue: () => void;
+  onBack?: () => void;
   isLoading?: boolean;
+  loreScanStatus?: LoreScanStatus;
 }
 
 interface InfoboxSection {
@@ -32,22 +43,15 @@ interface InfoboxSection {
   fields: { label: string; value: string | undefined }[];
 }
 
-const formatNumber = (num: number | undefined): string => {
-  if (!num) return "Unknown";
-  if (num >= 1e12) return `${(num / 1e12).toFixed(1)}T`;
-  if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
-  if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
-  return num.toLocaleString();
-};
-
 export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps> = ({
   data,
   onContinue,
+  onBack,
   isLoading,
+  loreScanStatus,
 }) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["basic", "geography", "government"])
+    new Set(["keyinfo"])
   );
 
   const toggleSection = (id: string) => {
@@ -63,7 +67,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
     {
       id: "keyinfo",
       title: "Key Information",
-      icon: Sparkles,
+      icon: InfoCircle,
       fields: [
         { label: "Population", value: data.population ? formatNumber(data.population) : undefined },
         { label: "GDP (Nominal)", value: data.GDP_nominal },
@@ -191,97 +195,138 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
 
   return (
     <Card className="bg-card/60 relative overflow-hidden border-blue-500/20 backdrop-blur-md">
-      {/* Flag Background */}
+      {/* Cinematic Background Flag Watermark Scrim (from MyCountry National Standing) */}
       {data.flagUrl && (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="pointer-events-none absolute -top-10 -right-10 h-56 w-56 overflow-hidden opacity-[0.12] transition-opacity duration-300 select-none dark:opacity-[0.16]">
           <img
             src={data.flagUrl}
-            alt={`Flag of ${data.name}`}
-            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-10 blur-3xl"
-            style={{ filter: "blur(24px) saturate(0.7) brightness(0.5)", transform: "scale(1.2)" }}
+            alt=""
+            className="h-full w-full rounded-full object-cover object-center mix-blend-luminosity blur-[1px] filter dark:mix-blend-normal"
           />
-          <div className="from-card/90 via-card/95 to-card/90 absolute inset-0 bg-gradient-to-br backdrop-blur-sm" />
+          <div className="via-card/75 to-card absolute inset-0 bg-gradient-to-l from-transparent" />
         </div>
       )}
 
       {/* Header */}
       <CardHeader className="relative z-10 pb-4">
-        <div className="flex items-start gap-4">
-          {/* Flag + Coat of Arms */}
-          <div className="shrink-0 space-y-2">
-            {data.flagUrl ? (
-              <div className="border-border overflow-hidden rounded-lg border shadow-md">
-                <img
-                  src={data.flagUrl}
-                  alt={`Flag of ${data.name}`}
-                  className="h-20 w-32 object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = "none";
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="border-border bg-muted/50 flex h-20 w-32 items-center justify-center rounded-lg border">
-                <Flag className="text-muted-foreground h-8 w-8" />
-              </div>
-            )}
-            {data.coatOfArmsUrl && (
-              <div className="border-border overflow-hidden rounded-lg border shadow-sm">
-                <img
-                  src={data.coatOfArmsUrl}
-                  alt={`Coat of Arms of ${data.name}`}
-                  className="h-12 w-12 object-contain"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = "none";
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Name + Info */}
-          <div className="min-w-0 flex-1">
-            <CardTitle className="mb-1 text-xl">{data.name}</CardTitle>
-            {data.conventional_long_name && data.conventional_long_name !== data.name && (
-              <p className="text-muted-foreground mb-2 text-sm">{data.conventional_long_name}</p>
-            )}
-            {data.government_type && (
-              <Badge
-                variant="outline"
-                className="mb-2 border-blue-500/30 text-blue-600 dark:text-blue-400"
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
+            {/* Back Button */}
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/40 px-3 py-2 text-xs font-medium text-foreground transition-all hover:bg-accent/40 active:scale-[0.97] cursor-pointer shrink-0 mt-0.5"
+                title="Back to search"
               >
-                {data.government_type}
-              </Badge>
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Back</span>
+              </button>
             )}
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <Sparkles className="h-3.5 w-3.5 text-green-500" />
-              <span>{fieldCount} fields extracted</span>
-              {data.templateName && (
-                <>
-                  <span>·</span>
-                  <span className="font-mono text-xs">{data.templateName}</span>
-                </>
+
+            {/* Flag + Coat of Arms */}
+            <div className="shrink-0 space-y-2">
+              {data.flagUrl ? (
+                <div className="border-border overflow-hidden rounded-lg border shadow-md">
+                  <img
+                    src={data.flagUrl}
+                    alt={`Flag of ${data.name}`}
+                    className="h-16 w-24 sm:h-20 sm:w-32 object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = "none";
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="border-border bg-muted/50 flex h-16 w-24 sm:h-20 sm:w-32 items-center justify-center rounded-lg border">
+                  <Flag className="text-muted-foreground h-8 w-8" />
+                </div>
+              )}
+              {data.coatOfArmsUrl && (
+                <div className="border-border overflow-hidden rounded-lg border shadow-sm">
+                  <img
+                    src={data.coatOfArmsUrl}
+                    alt={`Coat of Arms of ${data.name}`}
+                    className="h-10 w-10 sm:h-12 sm:w-12 object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Name + Info */}
+            <div className="min-w-0 flex-1">
+              <CardTitle className="mb-1 text-xl">{data.name}</CardTitle>
+              {data.conventional_long_name && data.conventional_long_name !== data.name && (
+                <p className="text-muted-foreground mb-2 text-sm">{data.conventional_long_name}</p>
+              )}
+              {data.government_type && (
+                <Badge
+                  variant="outline"
+                  className="mb-2 border-blue-500/30 text-blue-600 dark:text-blue-400"
+                >
+                  {data.government_type}
+                </Badge>
+              )}
+              <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                  <span>{fieldCount} fields extracted</span>
+                </span>
+                {data.templateName && (
+                  <>
+                    <span>·</span>
+                    <span className="font-mono text-xs">{data.templateName}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Background LoreScanner Status Pill */}
+              {loreScanStatus && (
+                <div className="mt-2.5 flex items-center gap-2">
+                  {loreScanStatus.isScanning ? (
+                    <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 backdrop-blur-md">
+                      <div className="h-2 w-2 rounded-full bg-blue-500 animate-ping" />
+                      <span>
+                        LoreScanner: Checking Category:{loreScanStatus.categoryUsed || data.name} & subpages...
+                      </span>
+                    </div>
+                  ) : loreScanStatus.hasCompleted ? (
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 backdrop-blur-md">
+                      <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                      <span>
+                        LoreScanner: Enriched {loreScanStatus.pagesFound ?? 0} subpages
+                        {loreScanStatus.categoryUsed ? ` via Category:${loreScanStatus.categoryUsed}` : ""}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
               )}
             </div>
           </div>
 
-          {/* Continue Button */}
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          {/* Continue Action */}
+          <div className="shrink-0 flex sm:self-start">
             <Button
-              className="gap-2 bg-blue-600 text-white hover:bg-blue-700"
+              size="default"
+              className="group h-10 gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-md shadow-blue-600/25 transition-all hover:bg-blue-500 hover:shadow-blue-600/35 active:scale-[0.96] cursor-pointer w-full sm:w-auto justify-center"
               onClick={onContinue}
               disabled={isLoading}
             >
               {isLoading ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
-                <Sparkles className="h-4 w-4" />
+                <>
+                  <span>Continue</span>
+                  <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+                </>
               )}
-              Use This Data
             </Button>
-          </motion.div>
+          </div>
         </div>
       </CardHeader>
 
@@ -353,66 +398,36 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
           );
         })}
 
-        {/* Raw Infobox Toggle */}
-        {data.rawInfobox && Object.keys(data.rawInfobox).length > 0 && (
-          <RawInfoboxToggle rawInfobox={data.rawInfobox} />
-        )}
+        {/* Bottom Actions: Back & Continue */}
+        <div className="pt-4 flex items-center justify-between gap-4 border-t border-border/40">
+          {onBack ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="h-12 gap-2 rounded-xl border-border/60 bg-muted/30 px-6 text-sm font-medium text-foreground transition-all hover:bg-accent/40 active:scale-[0.98] cursor-pointer"
+              onClick={onBack}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </Button>
+          ) : <div />}
+
+          <Button
+            size="lg"
+            className="group h-12 gap-2.5 rounded-xl bg-blue-600 px-8 text-base font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-500 hover:shadow-blue-600/35 active:scale-[0.98] cursor-pointer"
+            onClick={onContinue}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : (
+              <ArrowRight className="h-5 w-5 transition-transform duration-150 group-hover:translate-x-0.5" />
+            )}
+            <span>Continue</span>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
 };
-
-function RawInfoboxToggle({ rawInfobox }: { rawInfobox: Record<string, string> }) {
-  const [showRaw, setShowRaw] = useState(false);
-  const entries = Object.entries(rawInfobox).slice(0, 20);
-
-  return (
-    <div className="border-border/50 overflow-hidden rounded-lg border">
-      <button
-        onClick={() => setShowRaw(!showRaw)}
-        className="hover:bg-muted/30 flex w-full items-center justify-between p-3 text-left transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <Languages className="text-muted-foreground h-4 w-4" />
-          <span className="text-muted-foreground text-sm font-medium">Raw Infobox Data</span>
-          <Badge variant="outline" className="h-5 px-1.5 py-0 text-xs">
-            {Object.keys(rawInfobox).length} fields
-          </Badge>
-        </div>
-        {showRaw ? (
-          <ChevronUp className="text-muted-foreground h-4 w-4" />
-        ) : (
-          <ChevronDown className="text-muted-foreground h-4 w-4" />
-        )}
-      </button>
-
-      <AnimatePresence>
-        {showRaw && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="px-3 pb-3">
-              <div className="bg-muted/30 max-h-64 space-y-1 overflow-y-auto rounded-md p-3 font-mono text-xs">
-                {entries.map(([key, value]) => (
-                  <div key={key} className="flex gap-2">
-                    <span className="shrink-0 text-blue-500">{key}:</span>
-                    <span className="text-muted-foreground truncate">{value}</span>
-                  </div>
-                ))}
-                {Object.keys(rawInfobox).length > 20 && (
-                  <div className="text-muted-foreground border-border/50 border-t pt-1">
-                    ... and {Object.keys(rawInfobox).length - 20} more fields
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}

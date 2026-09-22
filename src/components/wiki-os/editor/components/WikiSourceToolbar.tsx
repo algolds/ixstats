@@ -109,7 +109,10 @@ export function WikiSourceToolbar({
         setSummary={setSummary}
         extraActions={
           <button
-            className={`wikios-editor-btn-preview ${showPreview ? "wikios-editor-btn-active" : ""}`}
+            className={cn(
+              "wikios-editor-btn-preview active:scale-[0.97] transition-transform duration-100",
+              showPreview && "wikios-editor-btn-active"
+            )}
             onClick={() => setShowPreview(!showPreview)}
             type="button"
             title={showPreview ? "Hide preview" : "Show preview"}
@@ -193,7 +196,7 @@ export function WikiSourceToolbar({
                   onClick={() => insertAtLine("== ", " ==")}
                   className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-semibold hover:bg-[var(--wikios-border)]"
                 >
-                  <Hash className="h-3.5 w-3.5 text-purple-400" />
+                  <Hash className="h-3.5 w-3.5 text-indigo-400" />
                   <span>Heading 2</span>
                 </button>
                 <button
@@ -329,7 +332,10 @@ function FmtBtn({
   return (
     <button
       type="button"
-      className={cn("wikios-editor-format-btn", active && "wikios-editor-format-btn-active")}
+      className={cn(
+        "wikios-editor-format-btn active:scale-[0.97] transition-transform duration-100",
+        active && "wikios-editor-format-btn-active"
+      )}
       onClick={onClick}
       title={title}
     >

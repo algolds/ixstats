@@ -19,7 +19,7 @@ import { EconomicArchetypeDisplay } from "./EconomicArchetypeDisplay";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { useArchetypes } from "~/hooks/useArchetypes";
 import { api } from "~/trpc/react";
-import type { EconomicArchetype } from "~/app/builder/data/archetype-types";
+import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
 
 interface EconomicArchetypeModalProps {
   open: boolean;

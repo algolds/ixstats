@@ -43,7 +43,7 @@ export function UnifiedComposerContainer({
   // If hiding accounts tab, show only composer without tabs
   if (hideAccountsTab) {
     return (
-      <Card className="glass-hierarchy-interactive border-purple-500/30 bg-purple-500/5">
+      <Card className="glass-hierarchy-interactive border-blue-500/30 bg-blue-500/5">
         {selectedAccount ? (
           <GlassCanvasComposer
             account={selectedAccount}
@@ -71,7 +71,7 @@ export function UnifiedComposerContainer({
   }
 
   return (
-    <Card className="glass-hierarchy-interactive border-purple-500/30 bg-purple-500/5">
+    <Card className="glass-hierarchy-interactive border-blue-500/30 bg-blue-500/5">
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as "compose" | "accounts")}
@@ -81,14 +81,14 @@ export function UnifiedComposerContainer({
           <TabsList className="grid w-full grid-cols-2 bg-white/5">
             <TabsTrigger
               value="compose"
-              className="flex items-center gap-2 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400"
+              className="flex items-center gap-2 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400"
             >
               <PenSquare className="h-4 w-4" />
               <span className="hidden sm:inline">Compose</span>
             </TabsTrigger>
             <TabsTrigger
               value="accounts"
-              className="flex items-center gap-2 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400"
+              className="flex items-center gap-2 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400"
             >
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Accounts</span>

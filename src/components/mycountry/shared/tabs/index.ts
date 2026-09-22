@@ -5,4 +5,8 @@ export { LaborTab } from "./LaborTab";
 export { GovernmentTab } from "./GovernmentTab";
 export { GeographyTab } from "./GeographyTab";
 export { WikiSectionRow } from "./WikiSectionRow";
+export { EconomyTradeSection } from "./EconomyTradeSection";
+export { EconomyBusinessSection } from "./EconomyBusinessSection";
+export { GovernmentSpendingSection } from "./GovernmentSpendingSection";
+export { GovernmentFiscalSection } from "./GovernmentFiscalSection";
 export { OVERVIEW_IDENTITY_FIELDS } from "./overview-identity-fields";

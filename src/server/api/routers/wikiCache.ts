@@ -18,7 +18,12 @@ import {
   cleanWikitextForDisplay,
 } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { extractDataFromWikiSections } from "~/lib/builder/wiki-data-extractor";
-import { getArticleWikitext, getCategoryMembers } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import {
+  getArticleWikitext,
+  getCategoryMembers,
+  getBatchWikitext,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { intelligentLoreCache } from "~/lib/wiki-os/core/intelligent-lore-cache";
 import { type WikiSource } from "~/lib/wiki-os/config";
 
 export const wikiCacheRouter = createTRPCRouter({
@@ -87,10 +92,7 @@ export const wikiCacheRouter = createTRPCRouter({
     .input(
       z.object({
         countryName: z.string().min(1),
-        includePageVariants: z.boolean().default(true),
-        maxSections: z.number().min(1).max(20).default(8),
-        customPages: z.array(z.string()).default([]),
-        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
       })
     )
     .query(async ({ input }) => {
@@ -106,91 +108,237 @@ export const wikiCacheRouter = createTRPCRouter({
   /**
    * Deep scan for builder pre-population
    * Fetches multiple related pages and extracts structured builder data
+   * Powered by IntelligentLoreCache & single-flight batch requests.
    */
   builderDeepScan: publicProcedure
     .input(
       z.object({
         countryName: z.string().min(1),
         wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
+        officialName: z.string().optional(),
+        categoryTags: z.array(z.string()).default([]),
         pageVariants: z.array(z.string()).default([]),
+        mainWikitext: z.string().optional(),
       })
     )
     .query(async ({ input }) => {
-      const { countryName, wikiSource, pageVariants } = input;
+      const {
+        countryName,
+        wikiSource,
+        officialName,
+        categoryTags,
+        pageVariants,
+        mainWikitext,
+      } = input;
 
-      // Determine which pages to scan
+      // 1. Check Multi-Tier Intelligent Cache (Memory + DB: <2ms hit)
+      const cached = await intelligentLoreCache.getDeepScan(
+        wikiSource as WikiSource,
+        countryName
+      );
+      if (cached) {
+        return {
+          pagesScanned: cached.pagesScanned,
+          foundVariants: cached.foundVariants,
+          categoryUsed: cached.categoryUsed,
+          extractedData: cached.extractedData,
+          pages: cached.pages,
+          fromCache: true,
+        };
+      }
+
       let pagesToScan: string[];
+      let matchedCategory = "";
 
       if (pageVariants.length > 0) {
         pagesToScan = pageVariants;
       } else {
-        // First, try to find pages in the country's own category (Category:CountryName)
-        const membersResult = await getCategoryMembers(
-          countryName,
-          50,
-          "page",
-          wikiSource as WikiSource
+        // Collect candidate category names: strictly country-specific hubs
+        const GENERIC_CATEGORY_PATTERN =
+          /^(countries|nations|sovereign states|member states|micronations|articles with|pages with|all articles|cs1|good articles|featured articles|stubs|redirects|capitals|cities)$/i;
+
+        const nameLower = countryName.toLowerCase();
+        const officialLower = officialName?.toLowerCase();
+
+        const relevantCategoryTags = categoryTags
+          .map((c) => c.replace(/^Category:/i, "").trim())
+          .filter((c) => {
+            const cLower = c.toLowerCase();
+            if (GENERIC_CATEGORY_PATTERN.test(c)) return false;
+            return (
+              cLower.includes(nameLower) ||
+              (officialLower ? cLower.includes(officialLower) : false)
+            );
+          });
+
+        const candidateCategories = Array.from(
+          new Set([
+            countryName,
+            ...(officialName && officialLower !== nameLower ? [officialName] : []),
+            ...relevantCategoryTags,
+          ])
+        ).slice(0, 3);
+
+        let rawMembers: Array<{ title: string }> = [];
+
+        // 2. Parallel Category Probing with Single-Flight Coalesce
+        const probePromises = candidateCategories.map((cat) =>
+          intelligentLoreCache.coalesce(`probe:${wikiSource}:${cat.toLowerCase()}`, async () => {
+            const cachedMembers = await intelligentLoreCache.getCategoryMembers(
+              wikiSource as WikiSource,
+              cat
+            );
+            if (cachedMembers) return { cat, members: cachedMembers };
+
+            const membersResult = await getCategoryMembers(
+              cat,
+              50,
+              "page",
+              wikiSource as WikiSource
+            );
+            const members = Array.isArray(membersResult)
+              ? membersResult
+              : membersResult &&
+                  typeof membersResult === "object" &&
+                  "members" in membersResult &&
+                  Array.isArray(membersResult.members)
+                ? (membersResult.members as Array<{ title: string }>)
+                : [];
+
+            await intelligentLoreCache.setCategoryMembers(
+              wikiSource as WikiSource,
+              cat,
+              members
+            );
+            return { cat, members };
+          })
         );
-        const rawMembers = Array.isArray(membersResult)
-          ? membersResult
-          : ((membersResult as any)?.members ?? []);
+
+        const probeResults = await Promise.allSettled(probePromises);
+        for (const res of probeResults) {
+          if (res.status === "fulfilled" && res.value.members.length > 0) {
+            matchedCategory = res.value.cat;
+            rawMembers = res.value.members;
+            break;
+          }
+        }
+
         const categoryPages = rawMembers
-          .map((m: { title: string }) => m.title)
-          .filter((t: string) => Boolean(t) && !t.startsWith("Category:"));
+          .map((m) => m.title)
+          .filter(
+            (t) =>
+              Boolean(t) &&
+              !t.startsWith("Category:") &&
+              t.toLowerCase() !== countryName.toLowerCase()
+          );
 
-        // Filter out the main page (we add it explicitly) and deduplicate
-        const categoryRelated = categoryPages.filter(
-          (p: string) => p.toLowerCase() !== countryName.toLowerCase()
-        );
+        // Score category pages by high-value builder domain relevance
+        const TOPIC_PRIORITIES = [
+          "economy",
+          "economic",
+          "government",
+          "politics",
+          "demographics",
+          "military",
+          "armed forces",
+          "foreign relations",
+          "constitution",
+          "parliament",
+          "senate",
+          "ministry",
+          "cabinet",
+          "industry",
+          "geography",
+        ];
 
+        const scoredCategoryPages = categoryPages.sort((a, b) => {
+          const aLower = a.toLowerCase();
+          const bLower = b.toLowerCase();
+          const aScore = TOPIC_PRIORITIES.some((k) => aLower.includes(k)) ? 1 : 0;
+          const bScore = TOPIC_PRIORITIES.some((k) => bLower.includes(k)) ? 1 : 0;
+          return bScore - aScore;
+        });
+
+        // Always scan main country page, top category members, and synthetic fallbacks if needed
         pagesToScan = [
           countryName,
-          ...categoryRelated,
-          // Only add name-guessed variants if category didn't yield enough
-          ...(categoryRelated.length < 2
+          ...scoredCategoryPages.slice(0, 8),
+          ...(scoredCategoryPages.length < 3
             ? [
                 `Economy of ${countryName}`,
                 `Politics of ${countryName}`,
                 `Government of ${countryName}`,
                 `Demographics of ${countryName}`,
+                `Military of ${countryName}`,
+                `Foreign relations of ${countryName}`,
               ]
             : []),
         ];
       }
 
-      // Deduplicate while preserving order
+      // Deduplicate while preserving order and limit to top 8 distinct pages
       const seen = new Set<string>();
-      const uniquePages = pagesToScan.filter((p) => {
-        const key = p.toLowerCase();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
+      const uniquePages = pagesToScan
+        .filter((p) => {
+          const key = p.toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, 8);
 
-      // Use the same wiki-bridge pattern that parses infoboxes successfully
+      // Separate main article (if already provided in memory) from subpages needing remote fetch
       const pages: { title: string; content: string }[] = [];
-      for (const pageName of uniquePages) {
-        try {
-          const article = await getArticleWikitext(pageName, wikiSource as WikiSource);
+      const subpagesToFetch: string[] = [];
+
+      for (const p of uniquePages) {
+        if (p.toLowerCase() === countryName.toLowerCase() && mainWikitext) {
+          pages.push({
+            title: p,
+            content: cleanWikitextForDisplay(mainWikitext),
+          });
+        } else {
+          subpagesToFetch.push(p);
+        }
+      }
+
+      // 3. Single Native MediaWiki Batch Query (1 HTTP request instead of N)
+      if (subpagesToFetch.length > 0) {
+        const batchMap = await getBatchWikitext(
+          subpagesToFetch,
+          wikiSource as WikiSource
+        );
+
+        for (const title of subpagesToFetch) {
+          const article = batchMap.get(title.toLowerCase()) || batchMap.get(title);
           if (article?.wikitext) {
             pages.push({
               title: article.title,
               content: cleanWikitextForDisplay(article.wikitext),
             });
           }
-        } catch (err) {
-          console.warn(`[builderDeepScan] Failed to fetch ${pageName}:`, err);
         }
       }
 
-      // Run our heuristics on the cleaned wikitext
+      // Run heuristics on the cleaned wikitext
       const extractedData = extractDataFromWikiSections(pages);
 
-      return {
+      const result = {
         pagesScanned: pages.length,
         foundVariants: pages.map((p) => p.title),
+        categoryUsed: matchedCategory || null,
         extractedData,
+        pages,
       };
+
+      // 4. Persist in Multi-Tier Lore Cache (Memory + DB)
+      await intelligentLoreCache.setDeepScan(
+        wikiSource as WikiSource,
+        countryName,
+        result
+      );
+
+      return result;
     }),
 
   /**

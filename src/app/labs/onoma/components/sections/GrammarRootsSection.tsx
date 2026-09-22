@@ -45,7 +45,7 @@ export function GrammarRootsSection() {
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <GitFork className="h-3.5 w-3.5 text-purple-500" />
+            <GitFork className="h-3.5 w-3.5 text-indigo-500" />
             <span>Root Derivations</span>
           </button>
 
@@ -59,7 +59,7 @@ export function GrammarRootsSection() {
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-fuchsia-500" />
+            <SlidersHorizontal className="text-onoma-primary h-3.5 w-3.5" />
             <span>Sentence Grammar</span>
           </button>
         </div>

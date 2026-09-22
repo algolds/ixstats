@@ -1,0 +1,157 @@
+=== CATEGORY AUDIT ===
+Ideology subcats: [ "Political_ideologies", "Ideologies", "White_papers_and_strategies" ]
+Government subcats sample (20): [
+  "Government", "Government_agencies", "Government_of_Burgundie",
+  "Politics", "Government_agencies_of_Burgundie", "Intelligence_agencies",
+  "Politics_of_Burgundie", "Coups", "Defense_policy", "Diplomacy",
+  "Elections", "Federalism", "Law", "Legislatures", "Organizations", "Political_ideologies",
+  "Political_parties", "Politicians", "Politics_of_Caphiria",
+  "Politics_of_Faneria"
+]
+Politics subcats sample (20): [
+  "Politics", "Coups", "Defense_policy", "Diplomacy", "Elections", "Federalism", "Law", "Legislatures",
+  "Organizations", "Political_ideologies", "Political_parties",
+  "Politicians", "Politics_of_Burgundie", "Politics_of_Caphiria",
+  "Politics_of_Faneria", "Politics_of_Urcea",
+  "Politics_of_Yonderre", "Public_offices", "Spheres_of_influence",
+  "White_papers_and_strategies"
+]
+
+=== IDEOLOGY ARTICLES ===
+Found 32 ideology articles:
+- 2026_Pelaxian_Defence_White_Paper (Categories: Politics, Defense_policy, Political_ideologies, White_papers_and_strategies, Military_reform)
+- 21st_Century_Burgoignesc_Power_Projection_Stratagem (Categories: Politics, Politics_of_Burgundie, Defense_policy, Political_ideologies, White_papers_and_strategies, Military_reform, Burgundie, Economy, Burgoignesc_Security_Forces, Economy_of_Burgundie, History_of_Burgundie, Military_History_of_Burgundie)
+- Burgoignesc_Military_Compte_Rendu (Categories: Politics_of_Burgundie, Defense_policy, White_papers_and_strategies, Burgundie, Army_of_Burgundie, Burgoignesc_Security_Forces, Military_History_of_Burgundie, Navy_of_Burgundie)
+- Burgoignesc_way_of_war (Categories: Politics, Politics_of_Burgundie, Defense_policy, Diplomacy, White_papers_and_strategies, Burgundie, Army_of_Burgundie, Burgoignesc_Security_Forces, Military_History_of_Burgundie)
+- Securing_the_Cultural_Currency_of_Levantine_Union_in_the_Global_Social_Marketplace (Categories: Politics, Politics_of_Burgundie, Political_ideologies, White_papers_and_strategies, Burgundie, History_of_Burgundie)
+- Total_Economic_Engagement (Categories: Politics, Politics_of_Burgundie, Political_ideologies, Burgundie, Economy, Economy_of_Burgundie)
+- 2022_Confederate_Memo_on_Defence (Categories: Defense_policy, White_papers_and_strategies, Military_reform, Arcerion)
+- Glossary_of_Burgoignesc_Occupations (Categories: Diplomacy, White_papers_and_strategies, Burgundie, Economy_of_Burgundie)
+- Adaptivism (Categories: Political_ideologies, Fiannria)
+- Bairdism (Categories: Political_ideologies, Carna)
+- Commarcho_Capitalism (Categories: Political_ideologies, Castadilla)
+- Counter_Empire (Categories: Political_ideologies, Nasastan)
+- Crown_Liberalism (Categories: Political_ideologies, Politics_of_Urcea)
+- Devinism (Categories: Political_ideologies, Koré'hetanùa)
+- Foralism (Categories: Political_ideologies, Castadilla, History_of_Castadilla, Politics_of_Castadilla)
+- Guided_democracy (Categories: Political_ideologies)
+- Kaidoism (Categories: Political_ideologies)
+- Kallistocracy (Categories: Political_ideologies, Nasastan)
+- Kirosocialism (Categories: Political_ideologies, KRV)
+- Limited_Divinity (Categories: Political_ideologies, Nasastan)
+- Nolanism (Categories: Political_ideologies, Politics_of_Urcea)
+- Organicism (Categories: Political_ideologies, Urcea)
+- Pan-Cronanism (Categories: Political_ideologies)
+- Pelaxian_Socialism (Categories: Political_ideologies, Pelaxia)
+- Political_ideologies_in_Castadilla (Categories: Political_ideologies, Castadilla, Politics_of_Castadilla)
+- Puertegan_Path_to_Socialism (Categories: Political_ideologies, Puertego)
+- Resistanceism (Categories: Political_ideologies)
+- Restarkism (Categories: Political_ideologies)
+- Shaftonist_democracy (Categories: Political_ideologies, KRV)
+- Universal_Nationalism (Categories: Political_ideologies)
+- Urcean_socialist_philosophy (Categories: Political_ideologies, Politics_of_Urcea, Urcea)
+- Velvetine_Socialism (Categories: Political_ideologies, Castadilla, Politics_of_Castadilla)
+
+=== SAMPLE POLITICAL PARTIES ===
+Found 90 party articles:
+
+[Racism] (1 parties):
+  Counter-Equatorial_Movement
+
+[Yonderre] (6 parties):
+  Fatherland_Party_(Yonderre), Gothic_People's_Party, Justice_League, Social_Democrats_(Yonderre), United_Yonderre, Workers'_Party_(Yonderre)
+
+[HDL] (1 parties):
+  Hendalarskara_Social_Front
+
+[Caphiria] (2 parties):
+  Kiro-Caphirian_Party, Caphirian_Imperial_League
+
+[Diplomacy] (1 parties):
+  League_of_Sister_Cities_for_the_Advancement_of_Public_Policy
+
+[Kiravia] (4 parties):
+  Social_Democrats_KF, Jade_Resistance_Movement, Kirosocialist_Party, National_Power_Party
+
+[Daxia] (5 parties):
+  Abazan_Peoples_Movement, National_Reconstruction_Front_(Daxia), Party_of_Daxian_Democrats, Anti-Catholic_League, Party_of_Varshan_Democrats
+
+[KRV] (12 parties):
+  Agrarian_Caucus, Authentic_Historical_Caucus, Caritist_Social_Union, Direct_Democratic_Front, Federalist_Republican_Alliance, Great_Kirav_Independence_Party, Imperial_Federation_Party, Renaissance_Party...
+
+[Other] (7 parties):
+  Audonian_Democratic_Traditionalist_Front, Jamaat-e-Islami_(Rusana), Christian_Labor_Party_(Faneria), Levantine_Union_Party_(Kiravia), Nation-State_Party, Republican_Party_(Urcea), Retainer_Party_(Urcea)
+
+[Organizations] (4 parties):
+  Boreal_Hockey_League, League_of_Nations, Orixtal_Hockey_League, Third_International_League
+
+[Caldera] (3 parties):
+  Calderan_Restoration_Party, Calderan_Unity_Party, Volkspartei
+
+[Urcea] (7 parties):
+  Commonwealth_Union_(Urcea), Julian_Party_(Urcea), National_Pact_(Urcea), Social_Labor_Party_(Urcea), Solidarity_Party_(Urcea), Union_for_National_Solidarity_(Urcea), Tria_nomina_movement
+
+[Nasastan] (2 parties):
+  Ethnofederalist_Social_Nasastani_National_Party, List_of_political_parties_in_Nasastan
+
+[Faneria] (1 parties):
+  Fronte_Democratico
+
+[Canpei] (1 parties):
+  Green_Party_of_Canpei
+
+[Companies_of_Faneria] (2 parties):
+  National_Party_(Faneria), Republican_Party_(Faneria)
+
+[Castadilla] (6 parties):
+  Party_of_National_Acceleration, People's_Democratic_Party, 21st_State_Movement, National_Falangist_Party, National_Renewal_Party, Party_of_Courtiers_and_Magistrates
+
+[Olmeria] (2 parties):
+  Progress_Coalition_(Olmeria), Unity_Coalition_(Olmeria)
+
+[Public_offices] (1 parties):
+  Provost-General_of_the_League_of_Nations
+
+[Rusana] (1 parties):
+  Rusana_Patriotic_Alliance
+
+[Cartadania] (1 parties):
+  Social_Democracy_Party_(Cartadania)
+
+[Pelaxia] (3 parties):
+  Social_Renovation_Movement_(Pelaxia), United_Montanarans_League, Pelaxian_Liberation_Movement
+
+[League_of_Nations] (7 parties):
+  Code_of_the_League_of_Nations, League_of_Nations_Command, League_of_Nations_General_Assembly, League_of_Nations_Security_Council, League_of_Nations_Service_Medal, League_of_Nations_Wartime_Benefit_Fund, Model_League_of_Nations
+
+[Laws_of_Urcea] (1 parties):
+  Democratic_Labor_Party_v._His_Most_Christian_Majesty's_Government
+
+[International_organizations] (2 parties):
+  International_League_of_Radio_Amateurs, League_of_the_Free_Republics
+
+=== DISCOURSE & TERMINOLOGY FREQUENCY IN INTROS ===
+┌────────────────┬────────┐
+│                │ Values │
+├────────────────┼────────┤
+│      left-wing │ 11     │
+│     right-wing │ 3      │
+│       centrist │ 0      │
+│   conservative │ 23     │
+│        liberal │ 16     │
+│      socialist │ 47     │
+│    syndicalist │ 2      │
+│        fascist │ 11     │
+│    nationalist │ 21     │
+│     monarchist │ 2      │
+│    reactionary │ 1      │
+│  communitarian │ 0      │
+│  individualist │ 1      │
+│        organic │ 4      │
+│     continuist │ 0      │
+│        rupture │ 0      │
+│    corporatist │ 0      │
+│   quaternalist │ 2      │
+│    triumvirate │ 0      │
+│ traditionalist │ 9      │
+└────────────────┴────────┘

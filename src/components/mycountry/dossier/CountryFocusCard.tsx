@@ -148,11 +148,11 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
       >
         <div
           className={cn(
-            "facet-floating facet-refraction bg-background/60 relative overflow-hidden rounded-2xl border border-white/15 shadow-lg transition-all duration-300",
+            "facet-floating facet-refraction relative overflow-hidden rounded-2xl border border-white/15 bg-background/60 shadow-lg transition-all duration-300",
             isExpanded
               ? "flex h-auto flex-col border-white/25 shadow-[0_25px_60px_rgba(0,0,0,0.5)]"
               : isHovered
-                ? "h-60 border-purple-400/40 shadow-[0_20px_40px_rgba(0,0,0,0.35)] md:h-96"
+                ? "h-60 border-white/30 shadow-2xl md:h-96"
                 : "h-60 md:h-96"
           )}
         >
@@ -170,134 +170,107 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
               alt={`${country.name} flag`}
               className={cn(
                 "absolute inset-0 h-full w-full object-cover transition-all duration-500",
-                isExpanded && "scale-110 blur-md"
+                isExpanded ? "scale-110 blur-md" : isHovered ? "scale-105" : "scale-100"
               )}
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20" />
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-slate-900/60" />
           )}
 
-          {/* Content Overlay — hidden when expanded (ExpandedCardContent takes over) */}
+          {/* Permanent Ambient Contrast Scrim */}
           <div
             className={cn(
-              "absolute inset-0 flex flex-col justify-end p-6 transition-opacity duration-300",
+              "pointer-events-none absolute inset-0 transition-all duration-300",
               isExpanded
-                ? "pointer-events-none opacity-0"
-                : isHovered
-                  ? "bg-black/50 opacity-100"
-                  : "opacity-0"
+                ? "bg-card/95 backdrop-blur-xl dark:bg-slate-950/95"
+                : "bg-gradient-to-t from-black/95 via-black/50 to-transparent",
+              isHovered && !isExpanded ? "opacity-100" : "opacity-90"
+            )}
+          />
+
+          {/* Content Overlay — always legible; stats and actions reveal on hover */}
+          <div
+            className={cn(
+              "absolute inset-0 flex flex-col justify-end p-5 md:p-6 transition-all duration-300",
+              isExpanded && "pointer-events-none opacity-0"
             )}
           >
-            {/* Basic Info */}
-            <div className="space-y-4">
-              <motion.div
-                animate={{ scale: isHovered ? 1.05 : 1 }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <TextReveal
-                  className="text-xl font-medium text-white antialiased [text-shadow:0_0_10px_rgba(255,255,255,0.3)] md:text-2xl"
-                  delay={0.1}
-                >
+            {/* Basic Info (Always Visible) */}
+            <div className="space-y-2">
+              <div>
+                <h3 className="text-lg font-bold tracking-tight text-white drop-shadow-md sm:text-xl md:text-2xl">
                   {country.name}
-                </TextReveal>
-              </motion.div>
+                </h3>
+              </div>
 
-              <FadeIn
-                direction="up"
-                delay={0.2}
-                className="flex items-center gap-2 text-sm font-medium text-white/90 antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]"
-              >
-                <Globe className="h-4 w-4 drop-shadow-sm" />
+              <div className="flex items-center gap-2 text-xs font-semibold text-white/90 drop-shadow-sm sm:text-sm">
+                <Globe className="h-3.5 w-3.5 shrink-0 opacity-80" />
                 <span>{country.economicTier}</span>
-                <span>•</span>
+                <span className="opacity-60">•</span>
                 <span>{formatPopulation(country.currentPopulation)}</span>
-              </FadeIn>
+              </div>
 
-              {/* Quick Stats (hover, not expanded) */}
+              {/* Quick Stats (revealed on hover) */}
               <AnimatePresence>
                 {isHovered && !isExpanded && (
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    transition={{ duration: 0.3 }}
-                    className="mt-4 space-y-3 rounded-lg border border-white/10 bg-black/20 p-4 backdrop-blur-sm"
+                    exit={{ opacity: 0, y: 15 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="mt-3 space-y-2.5 rounded-xl border border-white/15 bg-black/40 p-3.5 backdrop-blur-md"
                   >
-                    <FadeIn
-                      direction="left"
-                      delay={0.1}
-                      className="flex items-center justify-between text-sm text-white/90"
-                    >
+                    <div className="flex items-center justify-between text-xs font-medium text-white/90">
                       <div className="flex items-center gap-2">
-                        <UsersIcon className="h-4 w-4 text-blue-400" />
-                        <span className="font-medium antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
-                          Population
-                        </span>
+                        <UsersIcon className="h-3.5 w-3.5 text-blue-400" />
+                        <span>Population</span>
                       </div>
                       <NumberFlowDisplay
                         value={country.currentPopulation}
                         format="population"
-                        className="font-semibold antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]"
+                        className="font-semibold tabular-nums"
                       />
-                    </FadeIn>
+                    </div>
 
-                    <FadeIn
-                      direction="left"
-                      delay={0.2}
-                      className="flex items-center justify-between text-sm text-white/90"
-                    >
+                    <div className="flex items-center justify-between text-xs font-medium text-white/90">
                       <div className="flex items-center gap-2">
-                        <Coins className="h-4 w-4 text-green-400 drop-shadow-sm" />
-                        <span className="font-medium antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
-                          GDP per Capita
-                        </span>
+                        <Coins className="h-3.5 w-3.5 text-emerald-400" />
+                        <span>GDP per Capita</span>
                       </div>
                       <NumberFlowDisplay
                         value={country.currentGdpPerCapita}
                         format="currency"
-                        className="font-semibold antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]"
+                        className="font-semibold tabular-nums"
                       />
-                    </FadeIn>
+                    </div>
 
-                    <FadeIn
-                      direction="left"
-                      delay={0.3}
-                      className="flex items-center justify-between text-sm text-white/90"
-                    >
+                    <div className="flex items-center justify-between text-xs font-medium text-white/90">
                       <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-purple-400 drop-shadow-sm" />
-                        <span className="font-medium antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
-                          Total GDP
-                        </span>
+                        <Globe className="h-3.5 w-3.5 text-indigo-400" />
+                        <span>Total GDP</span>
                       </div>
                       <NumberFlowDisplay
                         value={country.currentTotalGdp}
                         format="currency"
                         decimalPlaces={1}
-                        className="font-semibold antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]"
+                        className="font-semibold tabular-nums"
                       />
-                    </FadeIn>
+                    </div>
 
                     {country.adjustedGdpGrowth && (
-                      <FadeIn
-                        direction="left"
-                        delay={0.4}
-                        className="flex items-center justify-between text-sm text-white/90"
-                      >
+                      <div className="flex items-center justify-between text-xs font-medium text-white/90">
                         <div className="flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-emerald-400" />
-                          <span className="font-medium antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
-                            Growth Rate
-                          </span>
+                          <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+                          <span>Growth Rate</span>
                         </div>
                         <NumberFlowDisplay
                           value={country.adjustedGdpGrowth * 100}
                           format="percentage"
                           decimalPlaces={1}
                           trend="up"
-                          className="font-semibold text-emerald-400 antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]"
+                          className="font-semibold text-emerald-400 tabular-nums"
                         />
-                      </FadeIn>
+                      </div>
                     )}
                   </motion.div>
                 )}
@@ -307,46 +280,32 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
               <AnimatePresence>
                 {isHovered && !isExpanded && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="mt-4 flex gap-2"
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="mt-3 flex gap-2"
                   >
                     <button
                       onClick={handleCountryVisit}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-white/20 px-4 py-2 text-white backdrop-blur-sm transition-colors hover:bg-white/30"
+                      data-cuelume-press="tick"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white/20 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/30 active:scale-95"
                     >
-                      <Eye className="h-4 w-4" />
-                      <span className="text-sm font-medium">View</span>
+                      <Eye className="h-3.5 w-3.5" />
+                      <span>View</span>
                     </button>
-                    <button className="flex items-center justify-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-white backdrop-blur-sm transition-colors hover:bg-white/20">
-                      <Star className="h-4 w-4" />
+                    <button
+                      onClick={handleCardClick}
+                      data-cuelume-press="tick"
+                      className="flex items-center justify-center rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20 active:scale-95"
+                    >
+                      <span>Dossier</span>
                     </button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </div>
-
-          {/* Always Visible Country Name */}
-          <AnimatePresence>
-            {!isExpanded && !isHovered && (
-              <motion.div
-                className="absolute right-4 bottom-4 left-4"
-                initial={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <motion.div
-                  className="text-xl font-medium text-white antialiased [text-shadow:0_0_15px_rgba(255,255,255,0.4)] md:text-2xl"
-                  animate={{ textShadow: "0 0 15px rgba(255,255,255,0.4)" }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {country.name}
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Expanded: flag peek spacer + content */}
           <AnimatePresence>
@@ -358,11 +317,41 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 className="relative flex w-full flex-col"
               >
-                {/* Flag peek area with country name */}
-                <div className="relative flex h-16 shrink-0 items-end px-4 pb-2 md:h-20">
-                  <h3 className="text-lg font-semibold text-white antialiased [text-shadow:0_2px_8px_rgba(0,0,0,0.6)] md:text-xl">
-                    {country.name}
-                  </h3>
+                {/* Expanded Header with Flag, Name, and Close Action */}
+                <div className="relative flex min-h-16 shrink-0 items-center justify-between border-b border-border/80 bg-card/80 px-4 py-3 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/60 sm:px-5">
+                  <div className="flex items-center gap-3">
+                    {country.flagUrl && (
+                      <div className="relative h-7 w-10 shrink-0 overflow-hidden rounded-md border border-border/60 shadow-xs sm:h-8 sm:w-11">
+                        <img
+                          src={
+                            country.flagUrl.startsWith("http://") ||
+                            country.flagUrl.startsWith("https://") ||
+                            country.flagUrl.startsWith("data:") ||
+                            country.flagUrl.startsWith("blob:")
+                              ? country.flagUrl
+                              : withBasePath(country.flagUrl)
+                          }
+                          alt={`${country.name} flag`}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="text-base font-bold tracking-tight text-foreground sm:text-lg">
+                        {country.name}
+                      </h3>
+                      <p className="text-[11px] font-medium text-muted-foreground">
+                        {country.economicTier} • {country.continent || country.region || "Global"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleCardClick}
+                    data-cuelume-press="tick"
+                    className="rounded-lg border border-border/80 bg-muted/60 px-2.5 py-1 text-xs font-semibold text-foreground backdrop-blur-md transition-colors hover:bg-muted active:scale-95"
+                  >
+                    Close
+                  </button>
                 </div>
                 <ExpandedCardContent
                   country={country}

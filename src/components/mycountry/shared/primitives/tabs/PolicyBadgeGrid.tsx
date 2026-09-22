@@ -116,34 +116,34 @@ export const defaultPolicies: Omit<PolicyBadge, "enabled">[] = [
 // Category colors and icons
 const categoryConfig = {
   social: {
-    color: "from-pink-500 to-rose-500",
-    bgColor: "bg-pink-50 dark:bg-pink-900/20",
-    borderColor: "border-pink-200 dark:border-pink-800",
-    textColor: "text-pink-600 dark:text-pink-400",
+    solidBg: "bg-blue-500",
+    bgColor: "bg-blue-500/10",
+    borderColor: "border-blue-500/20",
+    textColor: "text-blue-600 dark:text-blue-400",
     icon: Users,
     label: "Social",
   },
   economic: {
-    color: "from-emerald-500 to-green-500",
-    bgColor: "bg-emerald-50 dark:bg-emerald-900/20",
-    borderColor: "border-emerald-200 dark:border-emerald-800",
+    solidBg: "bg-emerald-500",
+    bgColor: "bg-emerald-500/10",
+    borderColor: "border-emerald-500/20",
     textColor: "text-emerald-600 dark:text-emerald-400",
     icon: Coins,
     label: "Economic",
   },
   environmental: {
-    color: "from-cyan-500 to-teal-500",
-    bgColor: "bg-cyan-50 dark:bg-cyan-900/20",
-    borderColor: "border-cyan-200 dark:border-cyan-800",
+    solidBg: "bg-cyan-500",
+    bgColor: "bg-cyan-500/10",
+    borderColor: "border-cyan-500/20",
     textColor: "text-cyan-600 dark:text-cyan-400",
     icon: Globe,
     label: "Environmental",
   },
   infrastructure: {
-    color: "from-violet-500 to-purple-500",
-    bgColor: "bg-violet-50 dark:bg-violet-900/20",
-    borderColor: "border-violet-200 dark:border-violet-800",
-    textColor: "text-violet-600 dark:text-violet-400",
+    solidBg: "bg-indigo-500",
+    bgColor: "bg-indigo-500/10",
+    borderColor: "border-indigo-500/20",
+    textColor: "text-indigo-600 dark:text-indigo-400",
     icon: Building,
     label: "Infrastructure",
   },
@@ -206,7 +206,7 @@ export function PolicyBadgeGrid({
               className={cn(
                 "cursor-help transition-all hover:scale-105",
                 policy.enabled
-                  ? cn("bg-gradient-to-r", catConfig.color, "border-0 text-white")
+                  ? cn(catConfig.solidBg, "border-0 text-white")
                   : "opacity-50"
               )}
             >
@@ -234,7 +234,7 @@ export function PolicyBadgeGrid({
         <div
           className={cn(
             "rounded-lg p-2",
-            policy.enabled ? cn("bg-gradient-to-br", catConfig.color) : "bg-muted"
+            policy.enabled ? catConfig.solidBg : "bg-muted"
           )}
         >
           <IconComponent
@@ -339,7 +339,7 @@ export function PolicyBadgeGrid({
           <div className="flex items-center gap-1">
             <div className="bg-muted h-2 w-24 overflow-hidden rounded-full">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-500"
+                className="h-full rounded-full bg-emerald-500"
                 initial={animate ? { width: 0 } : undefined}
                 animate={{ width: `${(enabledPolicies.length / policies.length) * 100}%` }}
                 transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1], delay: 0.3 }}
@@ -359,7 +359,7 @@ export function PolicyBadgeGrid({
  * Helper function to create policy badges from spending data
  */
 export function createPoliciesFromSpending(
-  spendingData: Record<string, boolean | unknown>
+  spendingData: Record<string, boolean | number | string | null | undefined>
 ): PolicyBadge[] {
   return defaultPolicies.map((policy) => ({
     ...policy,

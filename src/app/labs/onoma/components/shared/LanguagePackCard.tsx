@@ -36,52 +36,44 @@ interface LanguagePackCardProps {
   isForking?: boolean;
 }
 
-const FAMILY_THEMES: Record<string, { border: string; glow: string; bg: string; text: string }> = {
+const FAMILY_THEMES: Record<string, { border: string; bg: string; text: string }> = {
   latin: {
     border: "border-amber-500/40",
-    glow: "rgba(245, 158, 11, 0.25)",
     bg: "from-amber-500/10 via-amber-500/5 to-transparent",
     text: "text-amber-500",
   },
   germanic: {
-    border: "border-sky-500/40",
-    glow: "rgba(14, 165, 233, 0.25)",
-    bg: "from-sky-500/10 via-sky-500/5 to-transparent",
-    text: "text-sky-400",
+    border: "border-blue-500/40",
+    bg: "from-blue-500/10 via-blue-500/5 to-transparent",
+    text: "text-blue-400",
   },
   celtic: {
     border: "border-emerald-500/40",
-    glow: "rgba(16, 185, 129, 0.25)",
     bg: "from-emerald-500/10 via-emerald-500/5 to-transparent",
     text: "text-emerald-400",
   },
   slavic: {
-    border: "border-rose-500/40",
-    glow: "rgba(244, 63, 94, 0.25)",
-    bg: "from-rose-500/10 via-rose-500/5 to-transparent",
-    text: "text-rose-400",
+    border: "border-indigo-500/40",
+    bg: "from-indigo-500/10 via-indigo-500/5 to-transparent",
+    text: "text-indigo-400",
   },
   "east-asian": {
     border: "border-red-500/40",
-    glow: "rgba(239, 68, 68, 0.25)",
     bg: "from-red-500/10 via-red-500/5 to-transparent",
     text: "text-red-400",
   },
   persian: {
-    border: "border-teal-500/40",
-    glow: "rgba(20, 184, 166, 0.25)",
-    bg: "from-teal-500/10 via-teal-500/5 to-transparent",
-    text: "text-teal-400",
+    border: "border-cyan-500/40",
+    bg: "from-cyan-500/10 via-cyan-500/5 to-transparent",
+    text: "text-cyan-400",
   },
   constructed: {
-    border: "border-purple-500/40",
-    glow: "rgba(168, 85, 247, 0.25)",
-    bg: "from-purple-500/10 via-purple-500/5 to-transparent",
-    text: "text-purple-400",
+    border: "border-indigo-500/40",
+    bg: "from-indigo-500/10 via-indigo-500/5 to-transparent",
+    text: "text-indigo-400",
   },
   default: {
     border: "border-onoma-primary/40",
-    glow: "rgba(0, 145, 255, 0.25)",
     bg: "from-onoma-primary/10 via-onoma-primary/5 to-transparent",
     text: "text-onoma-primary",
   },
@@ -143,11 +135,11 @@ export function LanguagePackCard({
         onMouseLeave={handleMouseLeave}
         onClick={() => onSelect?.(pack)}
         className={cn(
-          "relative flex h-full min-h-[300px] w-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-4.5 shadow-lg backdrop-blur-xl transition-all",
-          "bg-background/80 hover:shadow-2xl",
+          "relative flex h-full min-h-[300px] w-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-4.5 shadow-sm backdrop-blur-xl transition-all",
+          "bg-background/80 hover:shadow-md",
           theme.border,
           isSelected &&
-            "ring-offset-background shadow-[0_0_24px_var(--glow)] ring-2 ring-amber-500/60 ring-offset-2"
+            "ring-offset-background shadow-md ring-2 ring-primary ring-offset-2"
         )}
         style={{
           transformStyle: "preserve-3d",
@@ -156,7 +148,6 @@ export function LanguagePackCard({
           scale,
           y: translateY,
           perspective: "1000px",
-          ["--glow" as string]: theme.glow,
         }}
       >
         {/* Dynamic theme glow background */}

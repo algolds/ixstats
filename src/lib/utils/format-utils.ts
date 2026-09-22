@@ -148,32 +148,35 @@ function formatCustomCurrency(
     return "N/A";
   }
   const customCurrency = getCustomCurrency(currency);
-  if (!customCurrency) {
-    // Fallback to generic custom currency
-    return `${currency} ${amount.toLocaleString("en-US", {
-      minimumFractionDigits: forceDecimals ? 2 : 0,
-      maximumFractionDigits: forceDecimals ? 2 : 0,
-    })}`;
+  let symbol = customCurrency?.symbol;
+
+  if (!symbol) {
+    // If format is like "Perlasian Stollar (P$)", extract the symbol "P$"
+    const match = currency.match(/\(([^)]+)\)/);
+    if (match && match[1]) {
+      symbol = match[1].trim();
+    } else {
+      symbol = currency.trim();
+    }
   }
 
   const absAmount = Math.abs(amount);
-  // oxlint-disable-next-line typescript/no-unused-vars
-  const decimals = forceDecimals ? 2 : customCurrency.decimalPlaces;
+  const prefix = symbol ? (symbol.length <= 3 ? symbol : `${symbol} `) : "";
 
   if (absAmount >= 1e12) {
     const scaled = amount / 1e12;
-    return `${customCurrency.symbol}${scaled.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}T`;
+    return `${prefix}${scaled.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}T`;
   } else if (absAmount >= 1e9) {
     const scaled = amount / 1e9;
-    return `${customCurrency.symbol}${scaled.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}B`;
+    return `${prefix}${scaled.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}B`;
   } else if (absAmount >= 1e6) {
     const scaled = amount / 1e6;
-    return `${customCurrency.symbol}${scaled.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M`;
+    return `${prefix}${scaled.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}M`;
   } else if (absAmount >= 1e3) {
     const scaled = amount / 1e3;
-    return `${customCurrency.symbol}${scaled.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}K`;
+    return `${prefix}${scaled.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}K`;
   } else {
-    return `${customCurrency.symbol}${amount.toLocaleString("en-US", {
+    return `${prefix}${amount.toLocaleString("en-US", {
       minimumFractionDigits: forceDecimals ? 2 : 0,
       maximumFractionDigits: forceDecimals ? 2 : 0,
     })}`;

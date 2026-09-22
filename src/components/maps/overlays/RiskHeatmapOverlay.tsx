@@ -126,7 +126,9 @@ export function RiskHeatmapOverlay({
       if (activeRef.current && map.getLayer(POLITICAL_LAYER_ID)) {
         try {
           map.setPaintProperty(POLITICAL_LAYER_ID, "fill-color", ORIGINAL_FILL_COLOR as any);
-        } catch (_e) {}
+        } catch (err) {
+          console.debug("[RiskHeatmapOverlay] Non-fatal paint property reset error during unmount:", err);
+        }
       }
       removeLayerAndSource(map, CRISIS_LAYER, CRISIS_SOURCE);
       activeRef.current = false;

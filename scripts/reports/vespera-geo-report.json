@@ -1,0 +1,181 @@
+{
+  "country": "Vespera",
+  "featureId": "Vespera",
+  "generatedAt": "2026-09-06T20:08:04.857Z",
+  "area": {
+    "km2": 63518,
+    "sqMi": 24524,
+    "boundingBox": {
+      "minLng": -34.2243,
+      "minLat": -10.1091,
+      "maxLng": -28.6008,
+      "maxLat": -7.6568
+    },
+    "nsSpanKm": 273,
+    "ewSpanKm": 618,
+    "centroid": {
+      "lng": -32.1984,
+      "lat": -8.6004
+    },
+    "perimeterKm": 1528
+  },
+  "elevation": {
+    "zones": [
+      {
+        "zone": "Coastal Lowlands",
+        "minM": 0,
+        "maxM": 99,
+        "areaKm2": 46028,
+        "percent": 72.5
+      },
+      {
+        "zone": "Low Hills",
+        "minM": 100,
+        "maxM": 349,
+        "areaKm2": 12497,
+        "percent": 19.7
+      },
+      {
+        "zone": "Rolling Hills",
+        "minM": 350,
+        "maxM": 499,
+        "areaKm2": 4993,
+        "percent": 7.9
+      }
+    ],
+    "minElevationM": 0,
+    "maxElevationM": 499,
+    "meanElevationM": 113,
+    "dominantTerrain": "Coastal Lowlands",
+    "terrainRoughness": 0.0119
+  },
+  "climate": {
+    "zones": [
+      {
+        "type": "Tropical Wet (Ar)",
+        "areaKm2": 38743,
+        "percent": 61,
+        "description": "Hot and humid year-round with heavy rainfall"
+      },
+      {
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaKm2": 24775,
+        "percent": 39,
+        "description": "Tropical with distinct wet and dry seasons"
+      }
+    ],
+    "dominantType": "Tropical Wet (Ar)",
+    "shannonDiversity": 0.675,
+    "temperature": {
+      "meanC": 25.9,
+      "meanF": 78.7,
+      "summerDailyHighC": 34.4,
+      "winterDailyLowC": 17.5,
+      "seasonalRangeC": 8,
+      "diurnalRangeC": 9
+    },
+    "annualPrecipitationMm": 1898
+  },
+  "hydrography": {
+    "riverCount": 2,
+    "totalRiverLengthKm": 178,
+    "lakeCount": 1,
+    "totalLakeAreaKm2": 2387.4,
+    "drainageDensity": 0.003
+  },
+  "position": {
+    "hemisphere": "Southern",
+    "latitudeBand": "Tropical",
+    "atmosphericZone": "Equatorial zone (ITCZ dominant)",
+    "distanceFromEquatorKm": 956,
+    "timezone": "UTC-2"
+  },
+  "neighbors": [
+    {
+      "name": "Equatorial Ostiecia",
+      "direction": "NNE",
+      "sharedBorderKm": 210
+    },
+    {
+      "name": "Castadilla",
+      "direction": "SE",
+      "sharedBorderKm": 202
+    },
+    {
+      "name": "Almadaria",
+      "direction": "S",
+      "sharedBorderKm": 185
+    },
+    {
+      "name": "Daxia",
+      "direction": "SW",
+      "sharedBorderKm": 0
+    },
+    {
+      "name": "Arona",
+      "direction": "WSW",
+      "sharedBorderKm": 151
+    }
+  ],
+  "coastline": {
+    "hasCoastline": true,
+    "isLandlocked": false,
+    "coastlineKm": 780,
+    "landBorderKm": 748,
+    "coastlinePercent": 51.1
+  },
+  "shape": {
+    "compactnessRatio": 0.342,
+    "compactness": "Elongated or irregular",
+    "elongationRatio": 2.27,
+    "elongation": "Elongated E-W",
+    "fragments": 5,
+    "islands": 4
+  },
+  "iceCoverage": {
+    "hasIcecaps": false,
+    "areaKm2": 0,
+    "percent": 0
+  },
+  "insights": {
+    "agriculture": {
+      "arableLandPercent": 73.9,
+      "arableLandKm2": 46940,
+      "growingSeasonDays": 328,
+      "waterAvailability": "Abundant",
+      "waterScore": 100,
+      "cropSuitability": [
+        "Rice",
+        "Sugarcane",
+        "Tropical fruits"
+      ],
+      "overallRating": "Excellent"
+    },
+    "strategic": {
+      "maritimeIndex": "Maritime power (extensive coastline)",
+      "coastlineToAreaRatio": 309.6,
+      "strategicDepthKm": 136,
+      "borderDefensibility": "Open terrain (few natural barriers)",
+      "mountainCoveragePercent": 0,
+      "islandExposure": "Minor archipelagic (4 islands)",
+      "accessPoints": "Multiple entry points"
+    },
+    "habitability": {
+      "score": 81,
+      "descriptor": "Highly habitable",
+      "climateComfort": 26,
+      "waterAccess": 25,
+      "terrainAccess": 30,
+      "keyFactors": [
+        "Abundant water resources",
+        "Accessible terrain"
+      ]
+    },
+    "biome": {
+      "dominantBiome": "Tropical rainforest, dense canopy",
+      "ecoRegionCount": 6,
+      "ecologicalDiversity": "Low diversity",
+      "summary": "The landscape is dominated by tropical rainforest, dense canopy (Tropical Wet), covering over half the country. Significant areas of savanna, tropical grassland, open woodland (39%) add to the ecological variety."
+    }
+  }
+}

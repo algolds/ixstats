@@ -14,6 +14,7 @@ import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { useTheme } from "~/context/theme-context";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
+import type { CountryWithEconomicData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 
 export type CommandNavMode = "home" | "executive";
 export type V2Mode = CommandNavMode;
@@ -29,7 +30,7 @@ export function CommandNavToggle({
   mode?: CommandNavMode;
   activeSection?: string;
   onChangeMode?: (mode: CommandNavMode) => void;
-  onNavigate?: (section: any) => void;
+  onNavigate?: (section: string) => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -106,7 +107,7 @@ export function CommandRightPillNav({
   country,
   onNavigate,
 }: {
-  country?: any;
+  country?: CountryWithEconomicData | null;
   onNavigate?: (section: MyCountrySection) => void;
 }) {
   const pathname = usePathname();

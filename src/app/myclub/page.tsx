@@ -10,294 +10,263 @@ import { Button } from "~/components/ui/button";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { sportCoverUrl } from "~/lib/sports/league-covers";
-import { Trophy, Group as Users, ArrowRight } from "iconoir-react";
+import { Trophy, Group as Users, ArrowRight, Activity, Shield } from "iconoir-react";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
+import { SPORT_EMOJIS, SPORT_LABELS } from "~/lib/sports/theming";
+import { getSportColors, type SportPresetKey } from "~/lib/sports/presets";
 
 const MYCLUB_HELP_STEPS: HeroHelpStep[] = [
   {
     title: "Welcome to MyClub",
-    body: "MyClub is your team manager. Each card here is a franchise you own — click one to open its hub: roster, lineup, tactics, finances and season fixtures.",
+    body: "MyClub is your franchise headquarters. Inspect all the sports clubs you manage across different leagues, tune rosters, and oversee finances.",
   },
   {
-    title: "Claim a team",
-    body: "Don't own a team yet? Head to MyLeague, open a league, and claim an unclaimed club. Once claimed, it shows up here for you to manage.",
+    title: "Claim a Franchise",
+    body: "Head over to MyLeague, open a competition, and claim an available team to add it to your managerial portfolio.",
   },
   {
-    title: "Build your squad",
-    body: "Set your starting lineup and formation, choose a tactical intent, and train players to raise their ratings. Work the transfer market to buy and sell talent.",
+    title: "Squad Tactics & Lineups",
+    body: "Set starting lineups, choose tactical formations, and train athletes to boost their match ratings and physical conditioning.",
   },
   {
-    title: "Run the finances",
-    body: "Collect matchday revenue, pick a sponsor, set ticket prices and upgrade your stadium. Watch your wage bill — player wages are deducted from the club budget each season.",
+    title: "Matchday Economics",
+    body: "Upgrade stadium capacity, set ticket prices to optimize attendance revenue, and activate commercial sponsors.",
   },
 ];
 
-const SPORT_EMOJIS: Record<string, string> = {
-  soccer: "\u26BD",
-  football: "\uD83C\uDFC8",
-  hockey: "\uD83C\uDFD2",
-  basketball: "\uD83C\uDFC0",
-  baseball: "\u26BE",
-  f1: "\uD83C\uDFCE\uFE0F",
-  boxing: "\uD83E\uDD4A",
-};
-
 function ClubCardSkeleton() {
   return (
-    <Card className="facet-hierarchy-child">
-      <CardHeader>
+    <Card className="rounded-2xl border border-border/40 bg-card/40 p-4">
+      <CardHeader className="pb-3">
         <div className="flex items-center gap-3">
-          <Skeleton className="h-10 w-10 rounded-full" />
+          <Skeleton className="h-12 w-12 rounded-xl" />
           <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-5 w-32 rounded-md" />
+            <Skeleton className="h-4 w-24 rounded-md" />
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <Skeleton className="h-4 w-full" />
+      <CardContent className="space-y-3">
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-9 w-full rounded-xl" />
       </CardContent>
     </Card>
   );
 }
-import { Carousel, Card as CarouselCard } from "~/components/ui/apple-cards-carousel";
+
+interface TeamStandingsInfo {
+  position?: number | null;
+  points?: number | null;
+  wins?: number | null;
+  losses?: number | null;
+  draws?: number | null;
+}
 
 export default function MyClubPage() {
-  usePageTitle({ title: "MyClub" });
+  usePageTitle({ title: "MyClub - Franchise & Squad Management" });
   const router = useRouter();
 
   const { data: clubs, isLoading } = api.sports.getMyClubs.useQuery();
 
-  const clubCards =
-    clubs?.map((team, idx) => {
-      // oxlint-disable-next-line eslint/no-unused-vars
-      const emoji = SPORT_EMOJIS[team.league?.sportPreset ?? ""] ?? "\uD83C\uDFC6";
-      const hasActiveSeason = !!team.activeSeason;
-
-      return (
-        <CarouselCard
-          key={team.id}
-          index={idx}
-          card={{
-            src: withBasePath(
-              team.coverImage ||
-                team.logo ||
-                sportCoverUrl(team.league?.sportPreset, team.id) ||
-                sportCoverUrl("soccer", team.id)!
-            ),
-            title: team.name,
-            category: team.league?.name ?? "Custom Team",
-            description: (
-              <div className="mt-1 flex flex-wrap items-center gap-1.5 select-none">
-                <Badge
-                  variant="outline"
-                  className="rounded-md border-white/10 bg-black/50 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm"
-                >
-                  Record:{" "}
-                  {(team as any).currentStandings
-                    ? `${(team as any).currentStandings.wins}-${(team as any).currentStandings.losses}${(team as any).currentStandings.draws > 0 ? `-${(team as any).currentStandings.draws}` : ""}`
-                    : "0-0"}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="rounded-md border-white/10 bg-black/50 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm"
-                >
-                  {team.city || "Local"}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="rounded-md border-white/10 bg-black/50 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm"
-                >
-                  Cap: {((team as any).stadiumCapacity || 5000).toLocaleString()}
-                </Badge>
-                {((team as any).form?.length ?? 0) > 0 && (
-                  <div
-                    className="flex items-center gap-1"
-                    title="Last 5 results (most recent first)"
-                  >
-                    {((team as any).form as string[]).map((r, i) => (
-                      <span
-                        key={i}
-                        className={cn(
-                          "flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-black text-white shadow-sm",
-                          r === "W" && "bg-emerald-500/80",
-                          r === "L" && "bg-rose-500/80",
-                          r === "D" && "bg-neutral-500/80"
-                        )}
-                      >
-                        {r}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ),
-            footer: (
-              <div className="-mx-8 mt-auto -mb-8 flex w-[calc(100%+4rem)] items-center justify-between rounded-b-3xl border-t border-white/10 bg-black/40 p-4 pt-3 backdrop-blur-sm select-none">
-                <div className="text-left">
-                  <span className="mb-1 block text-[10px] leading-none font-bold tracking-wider text-white/50 uppercase">
-                    Current Season
-                  </span>
-                  <span className="text-xs font-semibold text-white">
-                    {hasActiveSeason ? `Season ${team.activeSeason!.seasonNumber}` : "Off-season"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {hasActiveSeason && (team as any).currentStandings && (
-                    <Badge
-                      variant="outline"
-                      className="rounded-md border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-[9px] font-bold text-amber-300 uppercase shadow-sm"
-                    >
-                      Rank: {(team as any).currentStandings.position} (
-                      {(team as any).currentStandings.points} pts)
-                    </Badge>
-                  )}
-                  {!hasActiveSeason && (
-                    <Badge
-                      variant="outline"
-                      className="rounded-md border-neutral-500/30 bg-neutral-500/20 px-2 py-0.5 text-[9px] font-bold text-neutral-300 uppercase shadow-sm"
-                    >
-                      Ready
-                    </Badge>
-                  )}
-                  <div className="ml-1 flex gap-1.5">
-                    <Button
-                      size="icon"
-                      className="h-8 w-8 rounded-full border border-white/10 bg-white/10 text-cyan-400 shadow-sm backdrop-blur-md transition-all hover:scale-105 hover:bg-white/20"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        document.body.style.overflow = "auto";
-                        router.push(withBasePath(`/myclub/${team.id}?tab=roster`));
-                      }}
-                      title="Team Roster"
-                    >
-                      <Users className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      className="h-8 w-8 rounded-full border border-white/10 bg-white/10 text-white shadow-sm backdrop-blur-md transition-all hover:scale-105 hover:bg-white/20"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        document.body.style.overflow = "auto";
-                        router.push(withBasePath(`/myclub/${team.id}`));
-                      }}
-                      title="Team Dashboard"
-                    >
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ),
-            logo: team.logo || undefined,
-            content: (
-              <div className="text-foreground space-y-4 p-6 text-left">
-                <div className="flex items-center gap-3">
-                  {team.logo && (
-                    <img
-                      src={team.logo}
-                      alt=""
-                      className="h-10 w-10 rounded-lg border object-cover"
-                    />
-                  )}
-                  <h4 className="text-xl font-bold">{team.name}</h4>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  Official hub for managing roster details, configuring pricing, scouting active
-                  sponsorships, and playing matches.
-                </p>
-                <div className="bg-muted grid grid-cols-2 gap-4 rounded-xl p-4">
-                  <div>
-                    <p className="text-muted-foreground text-xs font-semibold">CITY</p>
-                    <p className="text-sm font-semibold">{team.city || "Local"}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs font-semibold">ACTIVE SEASON</p>
-                    <p className="text-sm font-semibold">
-                      {hasActiveSeason ? `Season ${team.activeSeason!.seasonNumber}` : "Off-season"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs font-semibold">CHAMPIONSHIPS</p>
-                    <p className="text-sm font-semibold">{(team as any).championships || 0}x</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs font-semibold">CURRENT RECORD</p>
-                    <p className="text-sm font-semibold">
-                      {(team as any).currentStandings
-                        ? `${(team as any).currentStandings.wins}-${(team as any).currentStandings.losses}${(team as any).currentStandings.draws > 0 ? `-${(team as any).currentStandings.draws}` : ""}`
-                        : "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs font-semibold">STADIUM CAPACITY</p>
-                    <p className="text-sm font-semibold">{(team as any).stadiumCapacity || 5000}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs font-semibold">TICKET PRICE</p>
-                    <p className="text-sm font-semibold">₷{(team as any).ticketPrice || 15}</p>
-                  </div>
-                </div>
-                <Button
-                  className="mt-6 w-full"
-                  onClick={() => {
-                    // close modal override
-                    document.body.style.overflow = "auto";
-                    router.push(withBasePath(`/myclub/${team.id}`));
-                  }}
-                >
-                  Go to Team Dashboard
-                </Button>
-              </div>
-            ),
-          }}
-        />
-      );
-    }) || [];
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="facet-surface border-border/40 mb-8 flex items-center justify-between rounded-xl border p-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold">MyClub</h1>
-            <HeroHelpModal
-              title="MyClub guide"
-              steps={MYCLUB_HELP_STEPS}
-              accentClass="text-cyan-500"
-            />
+    <div className="container mx-auto max-w-7xl space-y-8 px-4 py-8">
+      {/* ─── FRANCHISE SUITE HEADER ─── */}
+      <div className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/60 p-6 shadow-xl backdrop-blur-xl md:p-8">
+        {/* Glow backdrop */}
+        <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-cyan-500/10 blur-[120px]" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-amber-500/10 blur-[120px]" />
+
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="border-cyan-500/30 bg-cyan-500/10 text-xs font-black uppercase tracking-wider text-cyan-400"
+              >
+                FRANCHISE MANAGEMENT
+              </Badge>
+              <HeroHelpModal
+                title="MyClub Guide"
+                steps={MYCLUB_HELP_STEPS}
+                accentClass="text-cyan-400"
+              />
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-foreground md:text-4xl">
+              MyClub <span className="text-muted-foreground font-light text-2xl">Portfolio</span>
+            </h1>
+            <p className="max-w-2xl text-xs text-muted-foreground leading-relaxed sm:text-sm">
+              Take the helm of your sports organizations: set matchday formations, manage athlete rosters, configure ticket prices, and negotiate sponsorships.
+            </p>
           </div>
-          <p className="text-muted-foreground mt-1">Manage your sports teams and franchises</p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={() => router.push(withBasePath("/myleague"))}>
-            <Trophy className="mr-2 h-4 w-4 text-amber-500" />
-            MyLeague
-          </Button>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => router.push(withBasePath("/myleague"))}
+              data-cuelume-press="subtle"
+              className="border-border/60 bg-card/80 text-foreground font-bold shadow-sm transition hover:bg-muted/40 active:scale-[0.98] cursor-pointer"
+            >
+              <Trophy className="mr-2 h-4 w-4 text-amber-400" />
+              Browse Competitions
+            </Button>
+          </div>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <ClubCardSkeleton key={i} />
-          ))}
+      {/* ─── FRANCHISE ROSTER / GRID ─── */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <span className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground">
+            <Shield className="h-4 w-4 text-cyan-400" />
+            Your Managed Clubs ({clubs?.length ?? 0})
+          </span>
         </div>
-      ) : clubCards.length === 0 ? (
-        <Card className="facet-hierarchy-parent">
-          <CardContent className="flex flex-col items-center py-16 text-center">
-            <Trophy className="text-muted-foreground mb-4 h-16 w-16" />
-            <h3 className="text-xl font-semibold">You don&apos;t own any teams yet</h3>
-            <p className="text-muted-foreground mt-2 max-w-md">Browse leagues and claim a team!</p>
-            <Button className="mt-6" onClick={() => router.push(withBasePath("/myleague"))}>
-              Browse Leagues
+
+        {isLoading ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <ClubCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : !clubs || clubs.length === 0 ? (
+          <div className="rounded-3xl border border-border/40 bg-card/40 p-16 text-center backdrop-blur-md">
+            <Shield className="mx-auto mb-4 h-14 w-14 text-muted-foreground/30" />
+            <h3 className="text-xl font-bold text-foreground">No Franchises Claimed Yet</h3>
+            <p className="mx-auto mt-2 max-w-md text-xs text-muted-foreground leading-relaxed">
+              Explore active competitions in MyLeague to claim an available team and begin your managerial journey.
+            </p>
+            <Button
+              className="mt-6 font-bold cursor-pointer"
+              onClick={() => router.push(withBasePath("/myleague"))}
+            >
+              Browse Leagues & Claim Club
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Carousel items={clubCards} />
-      )}
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {clubs.map((team) => {
+              const sportPreset = (team.league?.sportPreset ?? "soccer") as SportPresetKey;
+              const sportColors = getSportColors(sportPreset);
+              const hasActiveSeason = !!team.activeSeason;
+              const standings = (team as unknown as { currentStandings?: TeamStandingsInfo })
+                .currentStandings;
+              const form = (team as unknown as { form?: string[] }).form ?? [];
+
+              return (
+                <div
+                  key={team.id}
+                  onClick={() => router.push(withBasePath(`/myclub/${team.id}`))}
+                  className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-border/40 bg-card/60 shadow-md backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-border hover:shadow-xl active:scale-[0.98] cursor-pointer"
+                >
+                  {/* Header Banner */}
+                  <div
+                    className="relative h-28 overflow-hidden p-4 flex items-end justify-between"
+                    style={{
+                      background: team.color
+                        ? `linear-gradient(135deg, ${team.color}30 0%, hsla(${sportColors.accentColor}, 0.2) 100%)`
+                        : undefined,
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-card/30 backdrop-blur-xs" />
+
+                    <div className="relative z-10 flex items-center gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/50 bg-background/80 shadow-md">
+                        {team.logo ? (
+                          <img src={team.logo} alt={team.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-xl">
+                            {SPORT_EMOJIS[sportPreset] ?? "🏆"}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <Badge className="border-border bg-black/60 text-xs font-bold uppercase text-white backdrop-blur-md">
+                          {team.league?.name ?? "Independent"}
+                        </Badge>
+                        <h3 className="line-clamp-1 text-lg font-black text-foreground">
+                          {team.name}
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="flex flex-1 flex-col justify-between p-5 space-y-4">
+                    <div className="grid grid-cols-2 gap-2 text-xs font-bold uppercase">
+                      <div className="flex flex-col justify-center rounded-xl border border-border/30 bg-muted/20 p-2.5">
+                        <span className="text-xs text-muted-foreground font-medium">Record</span>
+                        <span className="mt-0.5 text-sm font-black text-foreground">
+                          {standings
+                            ? `${standings.wins ?? 0}-${standings.losses ?? 0}${
+                                (standings.draws ?? 0) > 0 ? `-${standings.draws}` : ""
+                              }`
+                            : "0-0"}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col justify-center rounded-xl border border-border/30 bg-muted/20 p-2.5">
+                        <span className="text-xs text-muted-foreground font-medium">Stadium</span>
+                        <span className="mt-0.5 text-sm font-black text-foreground">
+                          {(team.stadiumCapacity ?? 5000).toLocaleString()} seats
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Recent Form Pills */}
+                    {form.length > 0 && (
+                      <div className="flex items-center justify-between border-t border-border/20 pt-3">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          Recent Form
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {form.slice(0, 5).map((res, i) => (
+                            <span
+                              key={i}
+                              className={cn(
+                                "flex h-5 w-5 items-center justify-center rounded-md text-xs font-black text-white shadow-sm",
+                                res === "W" && "bg-emerald-500",
+                                res === "L" && "bg-rose-500",
+                                res === "D" && "bg-amber-500"
+                              )}
+                            >
+                              {res}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Triggers */}
+                    <div className="flex items-center gap-2 pt-2">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(withBasePath(`/myclub/${team.id}?tab=roster`));
+                        }}
+                        className="h-10 flex-1 cursor-pointer rounded-xl border border-border/60 bg-card/80 text-xs font-bold text-foreground transition hover:bg-muted/40"
+                        variant="outline"
+                      >
+                        <Users className="mr-1.5 h-3.5 w-3.5 text-cyan-400" />
+                        Roster
+                      </Button>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(withBasePath(`/myclub/${team.id}`));
+                        }}
+                        className="h-10 flex-1 cursor-pointer rounded-xl bg-foreground text-xs font-bold text-background transition hover:bg-foreground/90"
+                      >
+                        Manage Hub
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

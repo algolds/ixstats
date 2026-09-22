@@ -115,21 +115,21 @@ export const BranchCard = React.memo(function BranchCard({
               {/* Personnel Stats */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <Users className="mx-auto mb-1 h-3.5 w-3.5 text-blue-600" />
+                  <Users className="mx-auto mb-1 h-3.5 w-3.5 text-muted-foreground" />
                   <div className="text-lg font-bold">
                     <NumberFlowDisplay value={branch.activeDuty} />
                   </div>
                   <div className="text-muted-foreground text-xs">Active Duty</div>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <Users className="mx-auto mb-1 h-3.5 w-3.5 text-green-600" />
+                  <Users className="mx-auto mb-1 h-3.5 w-3.5 text-muted-foreground" />
                   <div className="text-lg font-bold">
                     <NumberFlowDisplay value={branch.reserves} />
                   </div>
                   <div className="text-muted-foreground text-xs">Reserves</div>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <Users className="mx-auto mb-1 h-3.5 w-3.5 text-purple-600" />
+                  <Users className="mx-auto mb-1 h-3.5 w-3.5 text-muted-foreground" />
                   <div className="text-lg font-bold">
                     <NumberFlowDisplay value={branch.civilianStaff} />
                   </div>

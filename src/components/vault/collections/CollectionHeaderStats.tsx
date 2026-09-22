@@ -51,14 +51,14 @@ export function CollectionHeaderStats({
               {isPublic ? (
                 <Globe className="h-5 w-5 text-blue-400" />
               ) : (
-                <Lock className="text-gold-400 h-5 w-5" />
+                <Lock className="text-amber-400 h-5 w-5" />
               )}
             </div>
             <p className="text-sm text-white/70 sm:text-base">{description || "No description"}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={onLike} className="facet-hierarchy-child">
-              <Heart className="mr-2 h-4 w-4 text-pink-400" />
+              <Heart className="mr-2 h-4 w-4 text-red-400" />
               Like
             </Button>
             <Button variant="outline" size="sm" onClick={onShare} className="facet-hierarchy-child">
@@ -89,14 +89,14 @@ export function CollectionHeaderStats({
           </div>
           <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
             <p className="mb-1 text-xs text-white/60">Total Value</p>
-            <p className="flex items-center gap-1 text-xl font-bold text-green-400 sm:text-2xl">
+            <p className="flex items-center gap-1 text-xl font-bold text-amber-400 sm:text-2xl">
               <IxCreditsSymbol className="h-5 w-5 shrink-0" />
               {stats.totalValue.toLocaleString()}
             </p>
           </div>
           <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
             <p className="mb-1 text-xs text-white/60">Likes</p>
-            <p className="text-xl font-bold text-pink-400 sm:text-2xl">{stats.likes}</p>
+            <p className="text-xl font-bold text-red-400 sm:text-2xl">{stats.likes}</p>
           </div>
           <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
             <p className="mb-1 text-xs text-white/60">Comments</p>

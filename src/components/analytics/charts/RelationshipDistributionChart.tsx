@@ -27,7 +27,7 @@ export const RelationshipDistributionChart = React.memo<RelationshipDistribution
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-purple-600" />
+              <Users className="h-5 w-5 text-indigo-600" />
               Relationship Strength Distribution
             </span>
             <div className="flex items-center gap-1">

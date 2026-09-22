@@ -87,25 +87,25 @@ export interface StepConfig {
 export const stepConfig: Record<BuilderStep, StepConfig> = {
   foundation: {
     title: "Foundation",
-    description: "Choose your starting nation",
+    description: "Choose your starting country",
     icon: Crown,
     color: BUILDER_GOLD,
     bgGradient: "from-amber-500/10 via-amber-500/5 to-transparent",
     borderColor: "border-amber-500/20",
     hoverColor: "hover:border-amber-500/40",
-    tip: "Select a real-world nation as your foundation to inherit its basic characteristics",
-    help: "Choose a country that will serve as the foundation for your new nation. You'll inherit its basic economic and demographic characteristics which you can then customize.",
+    tip: "Select a real-world country as your foundation to inherit its basic characteristics",
+    help: "Choose a country that will serve as the foundation for your new country. You'll inherit its basic economic and demographic characteristics which you can then customize.",
   },
   core: {
     title: "Core Identity",
-    description: "Define national character",
+    description: "Define country character",
     icon: Flag,
     color: BUILDER_GOLD,
     bgGradient: "from-amber-500/10 via-amber-500/5 to-transparent",
     borderColor: "border-amber-500/20",
     hoverColor: "hover:border-amber-500/40",
-    tip: "Establish your nation's identity and core economic metrics",
-    help: "Set up your nation's fundamental identity including name, symbols, and core economic indicators that will drive all other calculations.",
+    tip: "Establish your country's identity and core economic metrics",
+    help: "Set up your country's fundamental identity including name, symbols, and core economic indicators that will drive all other calculations.",
   },
   government: {
     title: "Government",
@@ -116,7 +116,7 @@ export const stepConfig: Record<BuilderStep, StepConfig> = {
     borderColor: "border-amber-500/20",
     hoverColor: "hover:border-amber-500/40",
     tip: "Build your government using atomic components that create emergent behaviors",
-    help: "Design your government structure using atomic components. Each component adds unique characteristics and behaviors to your nation.",
+    help: "Design your government structure using atomic components. Each component adds unique characteristics and behaviors to your country.",
   },
   economics: {
     title: "Economics",
@@ -137,8 +137,8 @@ export const stepConfig: Record<BuilderStep, StepConfig> = {
     bgGradient: "from-green-500/10 via-green-500/5 to-transparent",
     borderColor: "border-green-500/20",
     hoverColor: "hover:border-green-500/40",
-    tip: "Review all your configurations before creating your nation",
-    help: "Review all your selections and configurations. Make sure everything looks correct before finalizing your nation.",
+    tip: "Review all your configurations before creating your country",
+    help: "Review all your selections and configurations. Make sure everything looks correct before finalizing your country.",
   },
 };
 
@@ -151,11 +151,12 @@ export const stepOrder: BuilderStep[] = [
 ];
 
 /**
- * Get the appropriate step order based on builder mode
- * In edit mode, foundation step is excluded since you're editing an existing country
+ * Get the appropriate step order based on builder mode and creation origin.
+ * In edit mode, or when starting from scratch/import, foundation step is excluded.
  */
-export function getStepsForMode(mode: BuilderMode): BuilderStep[] {
-  return mode === "edit"
+export function getStepsForMode(mode: BuilderMode, isScratchOrImport?: boolean): BuilderStep[] {
+  return mode === "edit" || isScratchOrImport
     ? ["core", "government", "economics", "preview"]
     : ["foundation", "core", "government", "economics", "preview"];
 }
+

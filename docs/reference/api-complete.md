@@ -3,7 +3,7 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (94 Routers, 1661 Endpoints)
+### Live tRPC API Inventory (94 Routers, 1680 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -61,7 +61,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.intelligence`** | 6 | 6 | 0 | **12** | `src/server/api/routers/intelligence/index.ts` |
 | **`api.intelligenceBriefing`** | 4 | 3 | 0 | **7** | `src/server/api/routers/intelligence/index.ts` |
 | **`api.intent`** | 5 | 3 | 0 | **8** | `src/server/api/routers/intent.ts` |
-| **`api.ixnayid`** | 4 | 6 | 0 | **10** | `src/server/api/routers/ixnayid.ts` |
+| **`api.ixnayid`** | 4 | 6 | 0 | **10** | `src/server/api/routers/ixnayid/index.ts` |
 | **`api.legislation`** | 2 | 2 | 0 | **4** | `src/server/api/routers/legislation.ts` |
 | **`api.loreCards`** | 15 | 9 | 0 | **24** | `src/server/api/routers/lore-cards/index.ts` |
 | **`api.lorewards`** | 16 | 4 | 0 | **20** | `src/server/api/routers/lorewards/index.ts` |
@@ -85,14 +85,14 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.scheduledChanges`** | 3 | 5 | 0 | **8** | `src/server/api/routers/scheduledChanges.ts` |
 | **`api.security`** | 11 | 30 | 0 | **41** | `src/server/api/routers/security/index.ts` |
 | **`api.smallArmsEquipment`** | 7 | 8 | 0 | **15** | `src/server/api/routers/smallArmsEquipment/index.ts` |
-| **`api.sports`** | 30 | 40 | 0 | **70** | `src/server/api/routers/sports/index.ts` |
+| **`api.sports`** | 37 | 41 | 0 | **78** | `src/server/api/routers/sports/index.ts` |
 | **`api.studio`** | 8 | 7 | 0 | **15** | `src/server/api/routers/studio/index.ts` |
 | **`api.system`** | 1 | 0 | 0 | **1** | `src/server/api/routers/system.ts` |
 | **`api.systemValidation`** | 6 | 0 | 0 | **6** | `src/server/api/routers/system-validation.ts` |
 | **`api.taxSystem`** | 3 | 8 | 0 | **11** | `src/server/api/routers/taxSystem/index.ts` |
 | **`api.thinkpages`** | 26 | 38 | 0 | **64** | `src/server/api/routers/thinkpages/index.ts` |
 | **`api.trading`** | 4 | 4 | 0 | **8** | `src/server/api/routers/trading/index.ts` |
-| **`api.transport`** | 6 | 8 | 0 | **14** | `src/server/api/routers/transport/index.ts` |
+| **`api.transport`** | 11 | 14 | 0 | **25** | `src/server/api/routers/transport/index.ts` |
 | **`api.unifiedAtomic`** | 5 | 1 | 0 | **6** | `src/server/api/routers/unifiedAtomic.ts` |
 | **`api.userLogging`** | 8 | 3 | 0 | **11** | `src/server/api/routers/user-logging.ts` |
 | **`api.users`** | 15 | 19 | 0 | **34** | `src/server/api/routers/users/index.ts` |
@@ -101,7 +101,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.wikiCache`** | 6 | 6 | 0 | **12** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikiImporter`** | 4 | 2 | 0 | **6** | `src/server/api/routers/wikiImporter/index.ts` |
 | **`api.wikios`** | 70 | 37 | 0 | **107** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **829** | **830** | **1** | **1661** | **94 registered namespaces** |
+| **TOTALS** | **841** | **837** | **1** | **1680** | **94 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 ---

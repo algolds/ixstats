@@ -190,10 +190,10 @@ export function CardGalleryTab({
     <div className="space-y-4">
       {/* Library stats banner (NS source) */}
       {(source === "all" || source === "ns") && libraryStats && libraryStats.totalCards > 0 && (
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-purple-400/20 bg-gradient-to-r from-purple-500/5 to-blue-500/5 px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-border/40 bg-muted/20 px-4 py-2.5">
           <div className="flex items-center gap-2">
-            <Layers className="h-3.5 w-3.5 text-purple-400" />
-            <span className="text-xs font-bold text-purple-400">
+            <Layers className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+            <span className="text-xs font-bold text-foreground">
               <NumberFlow value={libraryStats.totalCards} />
             </span>
             <span className="text-muted-foreground text-[0.65rem]">cards in library</span>

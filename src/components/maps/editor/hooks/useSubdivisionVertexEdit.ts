@@ -1,16 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import type { Map as MapLibreMap } from "maplibre-gl";
-import type { Polygon, MultiPolygon, Position } from "geojson";
+import type { Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
+import type { Polygon, MultiPolygon, Position, Geometry, FeatureCollection } from "geojson";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
 import {
   getVertices,
-  getAllRings,
   moveVertex,
   addVertex,
   removeVertex,
-  clampToGeometry,
   simplifyGeometry,
-  snapPointToGeometries,
   snapToNeighborBorders,
   sanitizeRegionShape,
 } from "~/lib/maps/border-editor";
@@ -32,11 +29,22 @@ import {
   calculateOverlapGeoJson,
   EMPTY_FC,
   getFeatureCoords,
-  snapToLayerFeatures,
   snapGeometryToBackgroundLayers,
 } from "../utils/map-helpers";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { getSnapEnabled, getSnapTolerance } from "~/lib/maps/editor-prefs";
+import {
+  exceedsHysteresis,
+  detectAxis,
+  axisLock,
+  type DragAxis,
+  type ScreenPoint,
+} from "./drag-utils";
+import {
+  calculateSnapTarget,
+  buildNeighborGeometries,
+  buildMidpointFeatures,
+} from "./vertex-edit-geometry";
 
 interface UseSubdivisionVertexEditProps {
   map: MapLibreMap | null;
@@ -48,10 +56,17 @@ interface UseSubdivisionVertexEditProps {
   onGeometryUpdate?: (featureId: string, geometry: object) => void;
   worldMapLayers?: MapLayerData[];
   editorVisibleLayers?: Set<string>;
-  guides?: { id: string; type: "h" | "v"; value: number }[];
   snapEnabled?: boolean;
   snapTolerance?: number;
   snapPoint?: (coords: [number, number]) => [number, number];
+}
+
+interface DragVertexState extends VertexRef {
+  originalCoord: Position;
+  initialGeometry: Polygon | MultiPolygon;
+  startScreenPoint: ScreenPoint;
+  committed: boolean;
+  lockedAxis: DragAxis | null;
 }
 
 export function useSubdivisionVertexEdit({
@@ -64,8 +79,6 @@ export function useSubdivisionVertexEdit({
   onGeometryUpdate,
   worldMapLayers,
   editorVisibleLayers,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  guides,
   snapEnabled,
   snapTolerance,
   snapPoint,
@@ -76,7 +89,7 @@ export function useSubdivisionVertexEdit({
     currentGeometry: Polygon | MultiPolygon;
   } | null>(null);
 
-  const draggingRef = useRef<VertexRef | null>(null);
+  const draggingRef = useRef<DragVertexState | null>(null);
   const hoveredVertexRef = useRef<VertexRef | null>(null);
   const lastMousePointRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -84,7 +97,7 @@ export function useSubdivisionVertexEdit({
   const topologyIndexRef = useRef<TopologyIndex | null>(null);
   const neighborGeometriesRef = useRef<Map<string, Polygon | MultiPolygon>>(new Map());
 
-  const throttledUpdateRef = useRef<any>(null);
+  const throttledUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastUpdateRef = useRef(0);
 
   // Keep latest refs of parameters to avoid stale closure in event callbacks
@@ -106,56 +119,28 @@ export function useSubdivisionVertexEdit({
       const geo = state.currentGeometry;
 
       // Polygon fill + stroke
-      const polyFc = {
-        type: "FeatureCollection" as const,
-        features: [
-          {
-            type: "Feature" as const,
-            geometry: geo,
-            properties: {},
-          },
-        ],
-      };
-      getGeoJSONSource(map, "editor-vedit-polygon")?.setData(polyFc);
+      getGeoJSONSource(map, "editor-vedit-polygon")?.setData({
+        type: "FeatureCollection",
+        features: [{ type: "Feature", geometry: geo, properties: {} }],
+      });
 
       // Vertices
       const verts = getVertices(geo);
-      const vertFc = {
-        type: "FeatureCollection" as const,
+      getGeoJSONSource(map, "editor-vedit-vertices")?.setData({
+        type: "FeatureCollection",
         features: verts.map((v) => ({
-          type: "Feature" as const,
-          geometry: { type: "Point" as const, coordinates: v.coord },
+          type: "Feature",
+          geometry: { type: "Point", coordinates: v.coord },
           properties: { ringIndex: v.ringIndex, vertexIndex: v.vertexIndex },
         })),
-      };
-      getGeoJSONSource(map, "editor-vedit-vertices")?.setData(vertFc);
+      });
 
-      if (fastOnly) {
-        return;
-      }
+      if (fastOnly) return;
 
       // Midpoints (for adding new vertices)
-      const rings = getAllRings(geo);
-      const midFeatures: any[] = [];
-      for (let ri = 0; ri < rings.length; ri++) {
-        const ring = rings[ri]!;
-        const len = ring.length;
-        for (let i = 0; i < len - 1; i++) {
-          const a = ring[i]!;
-          const b = ring[i + 1]!;
-          midFeatures.push({
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
-            },
-            properties: { ringIndex: ri, startIndex: i },
-          });
-        }
-      }
       getGeoJSONSource(map, "editor-vedit-midpoints")?.setData({
         type: "FeatureCollection",
-        features: midFeatures,
+        features: buildMidpointFeatures(geo),
       });
 
       // Update overlap highlights
@@ -235,7 +220,6 @@ export function useSubdivisionVertexEdit({
     const { geometry: sanitized } = sanitizeRegionShape(geo, border);
     geo = sanitized;
 
-    // Snap to visible background layers first
     if (worldMapLayers && editorVisibleLayers) {
       geo = snapGeometryToBackgroundLayers(
         geo as Polygon | MultiPolygon,
@@ -248,15 +232,7 @@ export function useSubdivisionVertexEdit({
     const { geometry: clipped } = clipGeometryToBorder(geo, border);
     geo = clipped as Polygon | MultiPolygon;
 
-    const neighborGeometries: Array<{ id: string; geometry: Polygon | MultiPolygon }> = [];
-    for (const feat of featuresRef.current) {
-      if (feat.type === "subdivision" && feat.id !== state.featureId && feat.geometry) {
-        neighborGeometries.push({
-          id: feat.id,
-          geometry: feat.geometry as Polygon | MultiPolygon,
-        });
-      }
-    }
+    const neighborGeometries = buildNeighborGeometries(featuresRef.current, state.featureId);
     if (neighborGeometries.length > 0) {
       geo = snapToNeighborBorders(geo, neighborGeometries, border, 0.015);
     }
@@ -285,15 +261,7 @@ export function useSubdivisionVertexEdit({
       const { geometry } = clipGeometryToBorder(finalGeo, border);
       finalGeo = geometry as Polygon | MultiPolygon;
 
-      const neighborGeometries: Array<{ id: string; geometry: Polygon | MultiPolygon }> = [];
-      for (const feat of featuresRef.current) {
-        if (feat.type === "subdivision" && feat.id !== state.featureId && feat.geometry) {
-          neighborGeometries.push({
-            id: feat.id,
-            geometry: feat.geometry as Polygon | MultiPolygon,
-          });
-        }
-      }
+      const neighborGeometries = buildNeighborGeometries(featuresRef.current, state.featureId);
       if (neighborGeometries.length > 0) {
         finalGeo = snapToNeighborBorders(finalGeo, neighborGeometries, border, 0.015);
       }
@@ -329,7 +297,7 @@ export function useSubdivisionVertexEdit({
     }
   }, [map, clearVertexEditVis]);
 
-  // 1. enter/exit vertex editing effect
+  // 1. Enter/exit vertex editing effect
   useEffect(() => {
     if (!map || !isLoaded) return;
 
@@ -390,13 +358,13 @@ export function useSubdivisionVertexEdit({
     }
   }, [map, isLoaded, mode, selectedFeature, updateVertexEditVis, cancelVertexEdit]);
 
-  // 2. Vertex drag/click event listeners on MapLibre
+  // 2. Vertex drag/click event listeners on MapLibre & Window
   useEffect(() => {
     if (!map || !isLoaded) return;
 
     const canvas = map.getCanvas();
 
-    const onVertexMouseDown = (e: any) => {
+    const onVertexMouseDown = (e: MapLayerMouseEvent) => {
       if (!vertexEditRef.current) return;
       e.preventDefault();
       const f = e.features?.[0];
@@ -405,12 +373,22 @@ export function useSubdivisionVertexEdit({
       const ri = f.properties.ringIndex as number;
       const vi = f.properties.vertexIndex as number;
       const coord = getFeatureCoords(f.geometry) as Position;
-      draggingRef.current = { ringIndex: ri, vertexIndex: vi, coord };
-      map.dragPan.disable();
-      map.getCanvas().style.cursor = "grabbing";
+
+      draggingRef.current = {
+        ringIndex: ri,
+        vertexIndex: vi,
+        coord,
+        originalCoord: [...coord] as Position,
+        initialGeometry: JSON.parse(JSON.stringify(vertexEditRef.current.currentGeometry)) as
+          | Polygon
+          | MultiPolygon,
+        startScreenPoint: { x: e.point.x, y: e.point.y },
+        committed: false,
+        lockedAxis: null,
+      };
     };
 
-    const onMidpointClick = (e: any) => {
+    const onMidpointClick = (e: MapLayerMouseEvent) => {
       if (!vertexEditRef.current) return;
       e.preventDefault();
       const f = e.features?.[0];
@@ -420,68 +398,76 @@ export function useSubdivisionVertexEdit({
       const si = f.properties.startIndex as number;
       const midCoord = getFeatureCoords(f.geometry) as Position;
 
-      const rings = getAllRings(vertexEditRef.current.currentGeometry);
-      const ring = rings[ri];
-      if (!ring) return;
-      const ei = (si + 1) % ring.length;
-
       const newGeo = addVertex(
         vertexEditRef.current.currentGeometry,
-        { ringIndex: ri, startIndex: si, endIndex: ei, midpoint: midCoord },
+        { ringIndex: ri, startIndex: si, endIndex: si + 1, midpoint: midCoord },
         midCoord
       );
       vertexEditRef.current.currentGeometry = newGeo as Polygon | MultiPolygon;
       updateVertexEditVis();
     };
 
-    const onMouseMove = (e: any) => {
+    const onMouseMove = (e: MapLayerMouseEvent) => {
       lastMousePointRef.current = { x: e.point.x, y: e.point.y };
 
-      if (!draggingRef.current || !vertexEditRef.current) return;
-      const lngLat = e.lngLat;
-      let target: Position = [lngLat.lng, lngLat.lat];
+      const drag = draggingRef.current;
+      if (!drag || !vertexEditRef.current) return;
 
-      // Snap to visible background layers first
+      const currentScreen: ScreenPoint = { x: e.point.x, y: e.point.y };
+
+      // Hysteresis check (4px dead zone)
+      if (!drag.committed) {
+        if (!exceedsHysteresis(drag.startScreenPoint, currentScreen)) {
+          return;
+        }
+        drag.committed = true;
+        map.dragPan.disable();
+        map.getCanvas().style.cursor = "grabbing";
+
+        if (e.originalEvent.shiftKey) {
+          const dx = currentScreen.x - drag.startScreenPoint.x;
+          const dy = currentScreen.y - drag.startScreenPoint.y;
+          drag.lockedAxis = detectAxis(dx, dy);
+        }
+      }
+
+      // Shift axis locking
+      if (e.originalEvent.shiftKey) {
+        if (!drag.lockedAxis) {
+          const dx = currentScreen.x - drag.startScreenPoint.x;
+          const dy = currentScreen.y - drag.startScreenPoint.y;
+          drag.lockedAxis = detectAxis(dx, dy);
+        }
+      } else {
+        drag.lockedAxis = null;
+      }
+
+      const rawCoords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+      const lockedCoords = axisLock(
+        drag.originalCoord as [number, number],
+        rawCoords,
+        drag.lockedAxis
+      );
+
       const snapOn = snapEnabled ?? getSnapEnabled();
       const snapTol = snapTolerance ?? getSnapTolerance();
-      if (snapOn && worldMapLayers && editorVisibleLayers) {
-        target = snapToLayerFeatures(
-          target as [number, number],
-          worldMapLayers,
-          editorVisibleLayers,
-          snapTol
-        );
-      }
 
-      const border = countryGeometryRef.current;
-      if (border) {
-        target = clampToGeometry(target, border);
-      }
-      if (snapOn) {
-        const snapGeoms: (Polygon | MultiPolygon)[] = [];
-        if (border) {
-          snapGeoms.push(border);
-        }
-        const editingId = vertexEditRef.current.featureId;
-        for (const feat of featuresRef.current) {
-          if (feat.type === "subdivision" && feat.id !== editingId && feat.geometry) {
-            snapGeoms.push(feat.geometry as Polygon | MultiPolygon);
-          }
-        }
-        target = snapPointToGeometries(target, snapGeoms, snapTol);
-      }
+      const { target, didSnap, origTarget } = calculateSnapTarget({
+        coords: lockedCoords,
+        snapEnabled: snapOn,
+        snapTolerance: snapTol,
+        worldMapLayers,
+        editorVisibleLayers,
+        border: countryGeometryRef.current,
+        features: featuresRef.current,
+        editingFeatureId: vertexEditRef.current.featureId,
+        snapPointGuide: snapPoint,
+      });
 
-      // Snap to guides if enabled and guides are present
-      if (snapOn && snapPoint) {
-        target = snapPoint(target as [number, number]);
-      }
-
-      const origTarget: Position = [lngLat.lng, lngLat.lat];
-      const didSnap = target[0] !== origTarget[0] || target[1] !== origTarget[1];
       updateSnapGuide(map, didSnap ? origTarget : null, didSnap ? target : null);
 
-      const oldCoord = draggingRef.current.coord;
-      const newGeo = moveVertex(vertexEditRef.current.currentGeometry, draggingRef.current, target);
+      const oldCoord = drag.coord;
+      const newGeo = moveVertex(vertexEditRef.current.currentGeometry, drag, target);
       vertexEditRef.current.currentGeometry = newGeo as Polygon | MultiPolygon;
 
       // Cascade move to neighbors sharing this vertex via topology index
@@ -492,30 +478,33 @@ export function useSubdivisionVertexEdit({
 
         const cascaded = cascadeMoveVertex(topologyIndexRef.current, allGeoms, oldKey, target);
 
-        // Update neighbor geometries in our tracking map + visual source
+        // Update neighbor geometries in tracking map + visual source
         for (const [fid, updatedGeom] of cascaded) {
           if (fid !== vertexEditRef.current.featureId) {
             neighborGeometriesRef.current.set(fid, updatedGeom);
-            // Update the neighbor's visual on the map subdivisions source
             try {
-              const src = map?.getSource("editor-subdivisions") as any;
-              if (src && typeof src.serialize === "function") {
+              const src = map?.getSource("editor-subdivisions") as {
+                _data?: { features?: Array<{ properties?: { id?: string }; geometry?: Geometry | Polygon | MultiPolygon }> };
+                _options?: { data?: { features?: Array<{ properties?: { id?: string }; geometry?: Geometry | Polygon | MultiPolygon }> } };
+                serialize?: () => object;
+                setData?: (data: FeatureCollection) => void;
+              } | undefined;
+              if (src && typeof src.serialize === "function" && typeof src.setData === "function") {
                 const data = src._data || src._options?.data;
                 if (data?.features) {
-                  const idx = data.features.findIndex((f: any) => f.properties?.id === fid);
-                  if (idx >= 0) {
-                    data.features[idx].geometry = updatedGeom;
-                    src.setData(data);
+                  const idx = data.features.findIndex((f) => f.properties?.id === fid);
+                  if (idx >= 0 && data.features[idx]) {
+                    data.features[idx]!.geometry = updatedGeom;
+                    src.setData(data as FeatureCollection);
                   }
                 }
               }
             } catch (_e) {
-              // Non-critical: visual-only feedback, server save is authoritative
+              // Visual-only feedback
             }
           }
         }
-        // Update dragging ref coord to the new position for next frame
-        draggingRef.current = { ...draggingRef.current, coord: target };
+        draggingRef.current = { ...drag, coord: target };
       }
 
       updateVertexEditVis(true);
@@ -524,18 +513,38 @@ export function useSubdivisionVertexEdit({
     };
 
     const onMouseUp = () => {
-      if (!draggingRef.current) return;
+      const drag = draggingRef.current;
+      if (!drag) return;
       draggingRef.current = null;
-      map.dragPan.enable();
-      map.getCanvas().style.cursor = "";
-      updateSnapGuide(map, null, null);
-      if (throttledUpdateRef.current) {
-        clearTimeout(throttledUpdateRef.current);
+
+      if (drag.committed) {
+        map.dragPan.enable();
+        map.getCanvas().style.cursor = "";
+        updateSnapGuide(map, null, null);
+        if (throttledUpdateRef.current) {
+          clearTimeout(throttledUpdateRef.current);
+        }
+        updateVertexEditVis(false);
       }
-      updateVertexEditVis(false);
     };
 
-    const onVertexEnter = (e: any) => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && draggingRef.current && vertexEditRef.current) {
+        e.preventDefault();
+        const drag = draggingRef.current;
+        draggingRef.current = null;
+
+        if (drag.committed) {
+          vertexEditRef.current.currentGeometry = drag.initialGeometry;
+          updateVertexEditVis(false);
+          map.dragPan.enable();
+          map.getCanvas().style.cursor = "";
+          updateSnapGuide(map, null, null);
+        }
+      }
+    };
+
+    const onVertexEnter = (e: MapLayerMouseEvent) => {
       if (vertexEditRef.current && !draggingRef.current) {
         map.getCanvas().style.cursor = "grab";
         const f = e.features?.[0];
@@ -625,7 +634,19 @@ export function useSubdivisionVertexEdit({
         const ri = f.properties!.ringIndex as number;
         const vi = f.properties!.vertexIndex as number;
         const coord = getFeatureCoords(f.geometry) as Position;
-        draggingRef.current = { ringIndex: ri, vertexIndex: vi, coord };
+
+        draggingRef.current = {
+          ringIndex: ri,
+          vertexIndex: vi,
+          coord,
+          originalCoord: [...coord] as Position,
+          initialGeometry: JSON.parse(JSON.stringify(vertexEditRef.current.currentGeometry)) as
+            | Polygon
+            | MultiPolygon,
+          startScreenPoint: { x, y },
+          committed: true, // Touch commits immediately upon hit
+          lockedAxis: null,
+        };
         map.dragPan.disable();
 
         longPressTimer = setTimeout(() => {
@@ -665,42 +686,21 @@ export function useSubdivisionVertexEdit({
         touch.clientX - canvas.getBoundingClientRect().left,
         touch.clientY - canvas.getBoundingClientRect().top,
       ]);
-      let target: Position = [lngLat.lng, lngLat.lat];
 
-      // Snap to visible background layers first
       const snapOn = snapEnabled ?? getSnapEnabled();
       const snapTol = snapTolerance ?? getSnapTolerance();
-      if (snapOn && worldMapLayers && editorVisibleLayers) {
-        target = snapToLayerFeatures(
-          target as [number, number],
-          worldMapLayers,
-          editorVisibleLayers,
-          snapTol
-        );
-      }
 
-      const border = countryGeometryRef.current;
-      if (border) {
-        target = clampToGeometry(target, border);
-      }
-      if (snapOn) {
-        const snapGeoms: (Polygon | MultiPolygon)[] = [];
-        if (border) {
-          snapGeoms.push(border);
-        }
-        const editingId = vertexEditRef.current.featureId;
-        for (const feat of featuresRef.current) {
-          if (feat.type === "subdivision" && feat.id !== editingId && feat.geometry) {
-            snapGeoms.push(feat.geometry as Polygon | MultiPolygon);
-          }
-        }
-        target = snapPointToGeometries(target, snapGeoms, snapTol);
-      }
-
-      // Snap to guides if enabled and guides are present
-      if (snapOn && snapPoint) {
-        target = snapPoint(target as [number, number]);
-      }
+      const { target } = calculateSnapTarget({
+        coords: [lngLat.lng, lngLat.lat],
+        snapEnabled: snapOn,
+        snapTolerance: snapTol,
+        worldMapLayers,
+        editorVisibleLayers,
+        border: countryGeometryRef.current,
+        features: featuresRef.current,
+        editingFeatureId: vertexEditRef.current.featureId,
+        snapPointGuide: snapPoint,
+      });
 
       const newGeo = moveVertex(vertexEditRef.current.currentGeometry, draggingRef.current, target);
       vertexEditRef.current.currentGeometry = newGeo as Polygon | MultiPolygon;
@@ -728,12 +728,15 @@ export function useSubdivisionVertexEdit({
     map.on("mousedown", "editor-vedit-vertices-layer", onVertexMouseDown);
     map.on("click", "editor-vedit-midpoints-layer", onMidpointClick);
     map.on("mousemove", onMouseMove);
-    map.on("mouseup", onMouseUp);
     canvas.addEventListener("contextmenu", onCanvasContextMenu);
     map.on("mouseenter", "editor-vedit-vertices-layer", onVertexEnter);
     map.on("mouseleave", "editor-vedit-vertices-layer", onVertexLeave);
     map.on("mouseenter", "editor-vedit-midpoints-layer", onMidpointEnter);
     map.on("mouseleave", "editor-vedit-midpoints-layer", onMidpointLeave);
+
+    // Window listeners for reliable drag completion and cancellation
+    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("keydown", onKeyDown);
 
     canvas.addEventListener("touchstart", onTouchStart, { passive: false });
     canvas.addEventListener("touchmove", onTouchMove, { passive: false });
@@ -744,12 +747,14 @@ export function useSubdivisionVertexEdit({
       map.off("mousedown", "editor-vedit-vertices-layer", onVertexMouseDown);
       map.off("click", "editor-vedit-midpoints-layer", onMidpointClick);
       map.off("mousemove", onMouseMove);
-      map.off("mouseup", onMouseUp);
       canvas.removeEventListener("contextmenu", onCanvasContextMenu);
       map.off("mouseenter", "editor-vedit-vertices-layer", onVertexEnter);
       map.off("mouseleave", "editor-vedit-vertices-layer", onVertexLeave);
       map.off("mouseenter", "editor-vedit-midpoints-layer", onMidpointEnter);
       map.off("mouseleave", "editor-vedit-midpoints-layer", onMidpointLeave);
+
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("keydown", onKeyDown);
 
       canvas.removeEventListener("touchstart", onTouchStart);
       canvas.removeEventListener("touchmove", onTouchMove);

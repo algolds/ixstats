@@ -157,7 +157,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
   const headerTheme = isSystemThread
     ? "bg-amber-500/[0.04] dark:bg-amber-500/10 border-b border-amber-500/20"
     : isLoreBotThread
-      ? "bg-teal-500/[0.04] dark:bg-teal-500/10 border-b border-teal-500/20"
+      ? "bg-cyan-500/[0.04] dark:bg-cyan-500/10 border-b border-cyan-500/20"
       : isDiplomatic
         ? "bg-amber-500/[0.03] dark:bg-amber-500/[0.07] border-b border-amber-500/20"
         : isGroup
@@ -206,8 +206,8 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                   <Shield className="h-4.5 w-4.5 text-amber-500" />
                 </div>
               ) : isLoreBotThread ? (
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal-500/30 bg-teal-500/15 shadow-inner">
-                  <BookOpen className="h-4.5 w-4.5 text-teal-400" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/15 shadow-inner">
+                  <BookOpen className="h-4.5 w-4.5 text-cyan-400" />
                 </div>
               ) : avatarUrl ? (
                 primaryOther?.countryFlag ? (

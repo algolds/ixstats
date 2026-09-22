@@ -214,6 +214,17 @@ const rawArchetypes = [
     priority: 6,
   },
   {
+    id: "pop-very-large",
+    name: "Mega Nation",
+    description: "Population over 100 million",
+    icon: Users,
+    color: "text-rose-600",
+    filter: (country: RealCountryData) => (country.population || 0) >= 100000000,
+    gradient: "from-rose-600/20 to-red-600/10",
+    categoryId: "population-demographics",
+    priority: 4.5,
+  },
+  {
     id: "pop-small",
     name: "Small Nation",
     description: "Population under 5 million",
@@ -223,6 +234,73 @@ const rawArchetypes = [
     gradient: "from-green-600/20 to-emerald-600/10",
     categoryId: "population-demographics",
     priority: 7,
+  },
+  {
+    id: "island",
+    name: "Island Nation",
+    description: "Island countries and territories",
+    icon: Globe,
+    color: "text-cyan-600",
+    filter: (country: RealCountryData) => {
+      const islands = new Set([
+        "United Kingdom",
+        "Japan",
+        "Australia",
+        "New Zealand",
+        "Iceland",
+        "Ireland",
+        "Cuba",
+        "Madagascar",
+        "Indonesia",
+        "Philippines",
+        "Sri Lanka",
+        "Cyprus",
+        "Malta",
+        "Jamaica",
+        "Singapore",
+        "Bahamas",
+        "Fiji",
+        "Barbados",
+        "Taiwan",
+        "Haiti",
+        "Dominican Republic",
+        "Trinidad and Tobago",
+        "Bahrain",
+        "Mauritius",
+        "Cabo Verde",
+        "Seychelles",
+        "Solomon Islands",
+        "Vanuatu",
+        "Samoa",
+        "Tonga",
+      ]);
+      return islands.has(country.name) || country.name.toLowerCase().includes("island");
+    },
+    gradient: "from-cyan-600/20 to-blue-600/10",
+    categoryId: "geographical-regions",
+    priority: 15,
+  },
+  {
+    id: "g7",
+    name: "G7 Economies",
+    description: "Group of Seven leading economies",
+    icon: Building,
+    color: "text-amber-500",
+    filter: (country: RealCountryData) => {
+      const g7 = new Set([
+        "United States",
+        "Japan",
+        "Germany",
+        "United Kingdom",
+        "France",
+        "Italy",
+        "Canada",
+      ]);
+      return g7.has(country.name);
+    },
+    gradient: "from-amber-500/20 to-yellow-600/10",
+    categoryId: "economic-classifications",
+    priority: 0.5,
   },
 
   // Region
@@ -469,6 +547,38 @@ const rawArchetypes = [
     gradient: "from-orange-500/20 to-amber-500/10",
     categoryId: "geographical-regions",
     priority: 11,
+  },
+  {
+    id: "region-oceania",
+    name: "Oceanian",
+    description: "Countries from Oceania and the Pacific",
+    icon: Globe,
+    color: "text-teal-500",
+    filter: (country: RealCountryData) => {
+      const oceanianCountries = [
+        "Australia",
+        "New Zealand",
+        "Papua New Guinea",
+        "Fiji",
+        "Solomon Islands",
+        "Vanuatu",
+        "Samoa",
+        "Kiribati",
+        "Tonga",
+        "Micronesia",
+        "Palau",
+        "Marshall Islands",
+        "Nauru",
+        "Tuvalu",
+      ];
+      return (
+        oceanianCountries.includes(country.name) ||
+        (country.continent || "").toLowerCase().includes("oceania")
+      );
+    },
+    gradient: "from-teal-600/20 to-cyan-600/10",
+    categoryId: "geographical-regions",
+    priority: 12,
   },
 
   // Government - Political Systems

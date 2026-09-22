@@ -77,8 +77,8 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
         onClick={onClick}
         className={cn(
           "group cursor-pointer overflow-hidden rounded-lg border transition-all",
-          "border-white/10 bg-white/5 hover:border-[--intel-gold]/30 hover:bg-white/10",
-          isSelected && "border-[--intel-gold]/50 bg-[--intel-gold]/10"
+          "border-border/60 bg-card/60 hover:border-cyan-500/30 hover:bg-muted/40",
+          isSelected && "border-cyan-500/50 bg-cyan-500/10"
         )}
       >
         {/* Exchange Type Banner */}
@@ -337,7 +337,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
           <div className="mb-3 flex items-start justify-between gap-2">
             <div className="flex-1">
               <h4 className="text-foreground mb-1 text-sm font-semibold">{exchange.title}</h4>
-              <p className="text-xs text-[--intel-silver]">{typeConfig.label}</p>
+              <p className="text-xs text-muted-foreground">{typeConfig.label}</p>
             </div>
 
             {/* Edit Button - Only show if user owns this exchange */}
@@ -347,7 +347,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
                   e.stopPropagation();
                   onEdit();
                 }}
-                className="rounded-lg border border-[--intel-gold]/30 bg-[--intel-gold]/10 p-1.5 text-[--intel-gold] transition-colors hover:bg-[--intel-gold]/20"
+                className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-1.5 text-cyan-600 dark:text-cyan-400 transition-colors hover:bg-cyan-500/20"
                 title="Edit Exchange"
               >
                 <EditPencil className="h-3.5 w-3.5" />
@@ -357,10 +357,10 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
 
           {/* Exchange Info */}
           <div className="space-y-2">
-            <p className="line-clamp-2 text-sm text-[--intel-silver]">{exchange.description}</p>
+            <p className="line-clamp-2 text-sm text-muted-foreground">{exchange.description}</p>
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-xs text-[--intel-silver]">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <User className="h-3 w-3" />
                   <span>{exchange.metrics.participants}</span>
@@ -370,49 +370,15 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
                   <span>{exchange.metrics.culturalImpact}% impact</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <RiCalendarLine className="h-3 w-3" />
+                  <Calendar className="h-3 w-3" />
                   <span>{new Date(exchange.startDate).getFullYear()}</span>
                 </div>
-              </div>
-
-              {/* Voting Buttons */}
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onVote("up");
-                  }}
-                  disabled={votedExchanges.has(exchange.id)}
-                  className={cn(
-                    "rounded p-1 transition-colors",
-                    votedExchanges.has(exchange.id)
-                      ? "cursor-not-allowed text-[--intel-silver]"
-                      : "text-green-400 hover:bg-green-500/20"
-                  )}
-                >
-                  <ThumbsUp className="h-3 w-3" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onVote("down");
-                  }}
-                  disabled={votedExchanges.has(exchange.id)}
-                  className={cn(
-                    "rotate-180 rounded p-1 transition-colors",
-                    votedExchanges.has(exchange.id)
-                      ? "cursor-not-allowed text-[--intel-silver]"
-                      : "text-red-400 hover:bg-red-500/20"
-                  )}
-                >
-                  <ThumbsUp className="h-3 w-3" />
-                </button>
               </div>
             </div>
 
             {/* Participating Countries */}
             <div className="mt-2 flex items-center gap-2">
-              <Globe className="h-3 w-3 text-[--intel-silver]" />
+              <Globe className="h-3 w-3 text-muted-foreground" />
               <div className="flex items-center gap-1">
                 {exchange.participatingCountries.slice(0, 3).map((country) => (
                   <div
@@ -432,7 +398,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
                   </div>
                 ))}
                 {exchange.participatingCountries.length > 3 && (
-                  <span className="ml-1 text-xs text-[--intel-silver]">
+                  <span className="ml-1 text-xs text-muted-foreground">
                     +{exchange.participatingCountries.length - 3}
                   </span>
                 )}

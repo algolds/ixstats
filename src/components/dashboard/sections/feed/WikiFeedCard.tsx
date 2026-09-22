@@ -309,12 +309,12 @@ export function WikiFeedCard({ activity }: { activity: any }) {
   const descHtml = descText ? formatThinkpagesContentForDisplay(descText) : "";
 
   return (
-    <div className="group bg-card/85 hover:bg-card/95 dark:bg-card/75 dark:hover:bg-card/90 relative overflow-hidden rounded-2xl border border-teal-500/20 p-4 shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-teal-500/35 hover:shadow-md sm:p-5">
+    <div className="group bg-card/85 hover:bg-card/95 dark:bg-card/75 dark:hover:bg-card/90 relative overflow-hidden rounded-2xl border border-wiki/25 p-4 shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-wiki/40 hover:shadow-md sm:p-5 dark:border-wiki/30 dark:hover:border-wiki/50">
       {/* ── 1. Cohesive Header Row ── */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-3">
           {/* Wiki Logomark Badge */}
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-teal-500/25 bg-teal-500/10 text-teal-500 shadow-xs transition-transform duration-200 group-hover:scale-105">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-wiki/30 bg-wiki/10 text-wiki shadow-xs transition-transform duration-200 group-hover:scale-105">
             <WikiOSLogomark className="h-4.5 w-4.5" />
           </div>
 
@@ -323,12 +323,12 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             <div className="flex items-center gap-2">
               <Link
                 href={wikiHref}
-                className="text-foreground truncate text-sm font-semibold tracking-tight transition-colors hover:text-teal-400 sm:text-base"
+                className="text-foreground truncate text-sm font-semibold tracking-tight transition-colors hover:text-wiki sm:text-base"
               >
                 {cleanTitle}
               </Link>
               {activity._isNew && (
-                <span className="py-0.2 shrink-0 rounded-full border border-teal-500/30 bg-teal-500/15 px-2 text-[9px] font-semibold tracking-wider text-teal-400 uppercase">
+                <span className="py-0.2 shrink-0 rounded-full border border-wiki/30 bg-wiki/15 px-2 text-[9px] font-semibold tracking-wider text-wiki uppercase">
                   New
                 </span>
               )}
@@ -377,7 +377,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           </span>
           <Link
             href={wikiHref}
-            className="inline-flex items-center gap-1 rounded-full bg-teal-500/10 px-2.5 py-1 text-xs font-semibold text-teal-600 transition-all duration-150 hover:bg-teal-500/20 hover:text-teal-700 active:scale-95 dark:text-teal-400 dark:hover:text-teal-300"
+            className="inline-flex items-center gap-1 rounded-full bg-wiki/10 px-2.5 py-1 text-xs font-semibold text-wiki transition-all duration-150 hover:bg-wiki/20 hover:text-wiki-hover active:scale-95"
           >
             <span>Open</span>
             <ExternalLink className="h-3 w-3" />
@@ -507,8 +507,8 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                 className={cn(
                   "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none active:scale-95",
                   hasLiked
-                    ? "bg-rose-500/15 font-semibold text-rose-500"
-                    : "text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500"
+                    ? "bg-red-500/15 font-semibold text-red-500"
+                    : "text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
                 )}
                 title="React or like this article"
               >
@@ -520,7 +520,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                   <Heart
                     className={cn(
                       "h-3.5 w-3.5 transition-transform group-hover:scale-110",
-                      hasLiked && "fill-rose-500 text-rose-500"
+                      hasLiked && "fill-red-500 text-red-500"
                     )}
                   />
                 )}

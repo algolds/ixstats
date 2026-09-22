@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { Map as MapLibreMap } from "maplibre-gl";
+import type { Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import type { Position, Polygon, MultiPolygon, Feature, FeatureCollection } from "geojson";
 import type { VertexRef } from "~/lib/maps/border-editor";
 import { getVertices, getAllRings } from "~/lib/maps/border-editor";
@@ -62,7 +62,7 @@ export interface UseBorderEditorLayersProps {
   map: MapLibreMap | null;
   isActive: boolean;
   geometry: Polygon | MultiPolygon | null;
-  neighborGeometries?: Array<{ featureId: string; geometry: unknown }>;
+  neighborGeometries?: Array<{ featureId: string; geometry: Polygon | MultiPolygon | null | undefined }>;
   mode: string;
   splitLine: Position[];
   mergeTargets: string[];
@@ -268,7 +268,7 @@ export function useBorderEditorLayers({
     else map.once("styledata", onStyle);
 
     // ── Interaction handlers (named, so detach can map.off them) ──
-    const handleClick = (e: any) => {
+    const handleClick = (e: MapLayerMouseEvent) => {
       if (modeRef.current === "brush") return;
       if (modeRef.current === "merge") {
         const hits = map.queryRenderedFeatures(e.point, { layers: ["neighbors-fill"] });
@@ -283,7 +283,7 @@ export function useBorderEditorLayers({
       onMapClickRef.current(e.lngLat.lng, e.lngLat.lat);
     };
 
-    const handleVertexMousedown = (e: any) => {
+    const handleVertexMousedown = (e: MapLayerMouseEvent) => {
       if (modeRef.current !== "vertex_edit") return;
       e.preventDefault();
       const feat = e.features?.[0];
@@ -296,7 +296,7 @@ export function useBorderEditorLayers({
       map.getCanvas().style.cursor = "grabbing";
     };
 
-    const handleBrushMousedown = (e: any) => {
+    const handleBrushMousedown = (e: MapLayerMouseEvent) => {
       if (modeRef.current === "brush" && brushTargetIdRef.current) {
         isBrushing.current = true;
         brushStrokePoints.current = [[e.lngLat.lng, e.lngLat.lat]];
@@ -304,7 +304,7 @@ export function useBorderEditorLayers({
       }
     };
 
-    const handleMousemove = (e: any) => {
+    const handleMousemove = (e: MapLayerMouseEvent) => {
       if (draggingVertex.current) {
         let to: Position = [e.lngLat.lng, e.lngLat.lat];
         const neighbors = neighborGeometriesRef.current;

@@ -6,8 +6,8 @@ import { usePlateWikiCallbacks } from "./PlateRawHtmlElement";
 import type { ChipEngineEl } from "../wiki-html";
 
 const chipTone: Record<string, string> = {
-  CountryData: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-  BusinessData: "border-teal-400/30 bg-teal-400/10 text-teal-300",
+  CountryData: "border-amber-400/30 bg-amber-400/10 text-amber-300",
+  BusinessData: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
   MyCountry: "border-wiki/30 bg-wiki/10 text-wiki",
 };
 

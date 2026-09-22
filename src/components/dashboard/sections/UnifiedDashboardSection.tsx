@@ -229,9 +229,8 @@ export function UnifiedDashboardSection({
                 tabs={TABS}
                 activeTab={activeTab}
                 onChange={(tabId) => {
-                  if (tabId !== activeTab) soundEffects.tick(0.14);
+                  soundEffects.press();
                   setActiveTab(tabId as FeedTab);
-                  if (tabId === "community") soundEffects.page(0.12);
                 }}
                 tone="accent"
                 size="md"
@@ -283,7 +282,7 @@ export function UnifiedDashboardSection({
                     </div>
                     <button
                       onClick={() => setIsAccountModalOpen(true)}
-                      className="ml-2 cursor-pointer text-[11px] font-semibold text-purple-600 underline hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+                      className="ml-2 cursor-pointer text-[11px] font-semibold text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       Switch Account
                     </button>

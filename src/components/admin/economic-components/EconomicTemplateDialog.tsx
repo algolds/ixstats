@@ -42,7 +42,7 @@ export function EconomicTemplateDialog({
                     <FileText className="h-5 w-5 text-[--intel-gold]" />
                     <h3 className="text-foreground font-semibold">{template.name}</h3>
                   </div>
-                  <span className="rounded bg-purple-500/20 px-2 py-0.5 text-xs text-purple-400">
+                  <span className="rounded bg-indigo-500/20 px-2 py-0.5 text-xs text-indigo-400">
                     {template.targetTier}
                   </span>
                 </div>

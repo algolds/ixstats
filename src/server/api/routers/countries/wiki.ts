@@ -13,6 +13,7 @@ import { parseInfobox as parseInfoboxParser } from "~/lib/wiki-os/transformers/i
 import {
   parseInfoboxWithTemplates,
   resolveImageUrl,
+  type UnifiedInfoboxData,
 } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { getEligibleCountries } from "~/lib/wiki-os/adapters/ixstates/eligible-country-service";
@@ -369,7 +370,7 @@ export const wikiProcedures = {
     .query(async ({ input }) => {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
       if (names.length === 0) return {};
-      const results: Record<string, any> = {};
+      const results: Record<string, Awaited<ReturnType<typeof fetchWikiIntro>>> = {};
       await Promise.all(
         names.map(async (n) => {
           results[n] = await fetchWikiIntro(n);
@@ -390,7 +391,7 @@ export const wikiProcedures = {
     .input(z.object({ countryNames: z.array(z.string()).max(50) }))
     .query(async ({ input }) => {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, any> = {};
+      const results: Record<string, Awaited<ReturnType<typeof fetchWikiSections>>> = {};
       // Fetch concurrently (matches getBulkWikiIntros); input is capped at 50. (audit B5)
       await Promise.all(
         names.map(async (name) => {
@@ -412,7 +413,7 @@ export const wikiProcedures = {
     .input(z.object({ countryNames: z.array(z.string()).max(30) }))
     .query(async ({ input }) => {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, any> = {};
+      const results: Record<string, Awaited<ReturnType<typeof fetchWikiPageImages>>> = {};
       // Fetch concurrently (matches getBulkWikiIntros); input is capped at 30. (audit B5)
       await Promise.all(
         names.map(async (name) => {
@@ -434,7 +435,7 @@ export const wikiProcedures = {
     .input(z.object({ countryNames: z.array(z.string()).max(50) }))
     .query(async ({ input }) => {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, any> = {};
+      const results: Record<string, Awaited<ReturnType<typeof fetchWikiRichIntro>>> = {};
       // Fetch concurrently (matches getBulkWikiIntros); input is capped at 50. (audit B5)
       await Promise.all(
         names.map(async (name) => {
@@ -456,7 +457,7 @@ export const wikiProcedures = {
     .input(z.object({ countryNames: z.array(z.string()).max(30) }))
     .query(async ({ input }) => {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, any> = {};
+      const results: Record<string, Awaited<ReturnType<typeof fetchWikiInfoboxCached>>> = {};
       // Fetch concurrently (matches getBulkWikiIntros); input is capped at 30. (audit B5)
       await Promise.all(
         names.map(async (name) => {
@@ -478,7 +479,7 @@ export const wikiProcedures = {
     .input(z.object({ countryNames: z.array(z.string()).max(30) }))
     .query(async ({ input }) => {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, any> = {};
+      const results: Record<string, Awaited<ReturnType<typeof fetchWikiSectionPreviews>>> = {};
       // Fetch concurrently (matches getBulkWikiIntros); input is capped at 30. (audit B5)
       await Promise.all(
         names.map(async (name) => {
@@ -522,7 +523,9 @@ export const wikiProcedures = {
       const cacheKey = `parsed-infobox:${site}:${pageName.trim().toLowerCase()}`;
       try {
         // Try L1/L2 cache first
-        const cached = await wikiCacheService.getCustomCache<any>(cacheKey);
+        const cached = await wikiCacheService.getCustomCache<
+          UnifiedInfoboxData & { wikiIntro?: string }
+        >(cacheKey);
         if (cached) {
           return cached;
         }
@@ -559,6 +562,16 @@ export const wikiProcedures = {
         if (intro) {
           unified.wikiIntro = intro;
         }
+
+        // Extract category tags from article wikitext to guide background LoreScanner
+        const catMatches = article.wikitext.match(/\[\[Category:([^\]|]+)(?:\|[^\]]*)?\]\]/gi) || [];
+        const categories = catMatches
+          .map((c) => c.replace(/^\[\[Category:/i, "").replace(/\]\]$/, "").split("|")[0]?.trim())
+          .filter((c): c is string => Boolean(c));
+        if (categories.length > 0) {
+          unified.categories = categories;
+        }
+        unified.rawWikitext = article.wikitext;
 
         // Resolve image URLs
         const wikiSource = site as "ixwiki" | "iiwiki" | "althistory";

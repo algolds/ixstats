@@ -70,14 +70,14 @@ export const COMPONENT_CATEGORIES = {
     ComponentType.SECURITY_ALLIANCES,
   ],
   "Innovation & Development": [
-    ComponentType.RESEARCH_AND_DEVELOPMENT,
     ComponentType.INNOVATION_ECOSYSTEM,
-    ComponentType.TECHNOLOGY_TRANSFER,
     ComponentType.ENTREPRENEURSHIP_SUPPORT,
-    ComponentType.INTELLECTUAL_PROPERTY,
-    ComponentType.STARTUP_INCUBATION,
     ComponentType.DIGITAL_INFRASTRUCTURE,
     ComponentType.SMART_CITIES,
+    ComponentType.DIGITAL_GOVERNMENT,
+    ComponentType.E_GOVERNANCE,
+    ComponentType.RESEARCH_AND_DEVELOPMENT,
+    ComponentType.INTELLECTUAL_PROPERTY,
   ],
   "Crisis Management": [
     ComponentType.EMERGENCY_RESPONSE,

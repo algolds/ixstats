@@ -37,7 +37,7 @@ export const EconomicHealthRadar = React.memo<EconomicHealthRadarProps>(
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-purple-600" />
+              <Target className="h-5 w-5 text-indigo-600" />
               Economic Health Indicators
             </span>
             <div className="flex items-center gap-1">

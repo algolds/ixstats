@@ -4,45 +4,6 @@ import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
-// Helper functions for cultural exchange <-> embassy mission integration
-
-/**
- * Calculate cultural exchange bonus from completed embassy missions
- * Returns percentage boost based on number of completed missions
- * @param completedMissionCount - Number of completed cultural_outreach missions
- * @returns Object with cultural impact and diplomatic value bonus percentages
- */
-function _calculateMissionCulturalBonus(completedMissionCount: number) {
-  // 20% cultural impact bonus per mission (max 60%)
-  const culturalImpactBonus = Math.min(completedMissionCount * 20, 60);
-
-  // 15% diplomatic value bonus per mission (max 45%)
-  const diplomaticValueBonus = Math.min(completedMissionCount * 15, 45);
-
-  return {
-    culturalImpactBonus,
-    diplomaticValueBonus,
-    reasoning:
-      completedMissionCount > 0
-        ? `Embassy mission support provides +${culturalImpactBonus}% cultural impact and +${diplomaticValueBonus}% diplomatic value`
-        : "No embassy mission support",
-  };
-}
-
-/**
- * Apply cultural exchange boost when completing a cultural_outreach mission
- * Increases cultural impact and diplomatic value of linked exchange
- * @param culturalImpact - Base cultural impact boost amount (default: 15)
- * @param diplomaticValue - Base diplomatic value boost amount (default: 10)
- */
-function _getCulturalExchangeBoostValues(culturalImpact = 15, diplomaticValue = 10) {
-  return {
-    culturalImpactBoost: culturalImpact,
-    diplomaticValueBoost: diplomaticValue,
-    reasoning: `Completed embassy mission boosts exchange by +${culturalImpact} cultural impact and +${diplomaticValue} diplomatic value`,
-  };
-}
-
 export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
   // Get diplomatic relationships for a country
 

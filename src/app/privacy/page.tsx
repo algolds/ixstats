@@ -60,7 +60,7 @@ export default function PrivacyPolicyPage() {
       subtitle="Your privacy is paramount. This Privacy Policy details how IxStates collects, processes, stores, and protects your information, and how your rights are safeguarded under global privacy standards."
       badge="Privacy & Data Protection"
       lastUpdated="August 16, 2026"
-      version='1.0 "Ogma"'
+      version='1.4.0 "Lobster Crosby"'
       sections={SECTIONS}
     >
       {/* Preamble / Introduction */}

@@ -6,7 +6,7 @@ import NumberFlow from "@number-flow/react";
 import { cn, debounce } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import type { EnhancedInputProps } from "./types";
-import { FieldHelpTooltip } from "../../components/help/GovernmentHelpSystem";
+import { FieldHelpTooltip } from "../../components/help/FieldHelpTooltip";
 import { EditPencil as Edit3, ControlSlider as Sliders } from "iconoir-react";
 
 interface SliderWithDirectInputProps extends EnhancedInputProps {
@@ -17,12 +17,14 @@ interface SliderWithDirectInputProps extends EnhancedInputProps {
   showRange?: boolean;
   trackHeight?: number;
   thumbSize?: number;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<{ className?: string }>;
   helpContent?: React.ReactNode;
   helpTitle?: string;
   defaultMode?: "slider" | "input";
   allowModeToggle?: boolean;
   onCommit?: (value: number) => void;
+  valueClassName?: string;
+  labelClassName?: string;
 }
 
 export function SliderWithDirectInput({
@@ -59,6 +61,8 @@ export function SliderWithDirectInput({
   defaultMode = "input",
   allowModeToggle = true,
   onCommit,
+  valueClassName,
+  labelClassName,
 }: SliderWithDirectInputProps) {
   const [inputMode, setInputMode] = useState<"slider" | "input">(defaultMode);
   const [localValue, setLocalValue] = useState(value.toString());
@@ -182,20 +186,30 @@ export function SliderWithDirectInput({
       {/* Label and Value Header */}
       {(label || showValue || description) && (
         <div className="space-y-1">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             {label && (
-              <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-                {Icon && <Icon className="h-4 w-4" />}
-                {label}
+              <label
+                className={cn(
+                  "text-foreground flex items-center gap-2 text-sm font-medium",
+                  labelClassName
+                )}
+              >
+                {Icon && <Icon className="h-4 w-4 text-muted-foreground shrink-0" />}
+                <span>{label}</span>
                 {required && <span className="text-red-400">*</span>}
                 {helpContent && (
                   <FieldHelpTooltip content={helpContent} title={helpTitle || label} />
                 )}
               </label>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 shrink-0">
               {showValue && (
-                <motion.div className="text-foreground flex items-center gap-1 text-sm font-semibold">
+                <div
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/80 px-2.5 py-1 text-sm font-semibold tabular-nums text-foreground shadow-2xs",
+                    valueClassName
+                  )}
+                >
                   <NumberFlow
                     value={!isNaN(parseFloat(localValue)) ? parseFloat(localValue) : 0}
                     format={{
@@ -203,20 +217,24 @@ export function SliderWithDirectInput({
                       maximumFractionDigits: precision,
                     }}
                   />
-                  {unit && <span className="text-muted-foreground">{unit}</span>}
-                </motion.div>
+                  {unit && (
+                    <span className="text-muted-foreground text-xs font-normal">
+                      {unit}
+                    </span>
+                  )}
+                </div>
               )}
               {allowModeToggle && (
                 <button
                   type="button"
                   onClick={() => setInputMode(inputMode === "slider" ? "input" : "slider")}
                   className={cn(
-                    "rounded-md p-1.5 transition-colors",
-                    "hover:bg-accent/50 active:bg-accent/70",
-                    "text-muted-foreground hover:text-foreground"
+                    "rounded-lg border border-border/40 bg-muted/30 p-1.5 transition-all active:scale-[0.97]",
+                    "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                   )}
-                  title={inputMode === "slider" ? "Switch to input mode" : "Switch to slider mode"}
+                  title={inputMode === "slider" ? "Switch to direct input" : "Switch to slider"}
                   disabled={disabled}
+                  data-cuelume-press
                 >
                   {inputMode === "slider" ? (
                     <Edit3 className="h-3.5 w-3.5" />
@@ -227,7 +245,7 @@ export function SliderWithDirectInput({
               )}
             </div>
           </div>
-          {description && <p className="text-muted-foreground text-xs">{description}</p>}
+          {description && <p className="text-muted-foreground text-xs leading-relaxed">{description}</p>}
         </div>
       )}
 
@@ -251,7 +269,7 @@ export function SliderWithDirectInput({
               "w-full rounded-lg border px-4 py-3 md:py-2.5",
               "bg-card/50 backdrop-blur-sm",
               "text-foreground placeholder-muted-foreground",
-              "border-gray-200/40 dark:border-gray-700/40",
+              "border-border/40",
               "focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/20 focus:outline-none",
               "shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
               "transition-all duration-200",
@@ -279,8 +297,8 @@ export function SliderWithDirectInput({
           <div
             className={cn(
               "relative overflow-hidden rounded-full will-change-transform",
-              "bg-gray-100/80 dark:bg-gray-800/80",
-              "border border-gray-200/40 dark:border-gray-700/40",
+              "bg-muted/80",
+              "border border-border/40",
               "transition-all duration-300 ease-out",
               orientation === "horizontal" ? "w-full" : "mx-auto h-40 w-fit"
             )}

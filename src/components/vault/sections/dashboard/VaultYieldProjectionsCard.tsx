@@ -155,7 +155,7 @@ export function VaultYieldProjectionsCard({
                       budgetMultiplierPercent > 0
                         ? "text-emerald-600 dark:text-emerald-400"
                         : budgetMultiplierPercent < 0
-                          ? "text-rose-600 dark:text-rose-400"
+                          ? "text-red-600 dark:text-red-400"
                           : "text-muted-foreground"
                     )}
                   >
@@ -165,7 +165,7 @@ export function VaultYieldProjectionsCard({
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground font-medium">Tier Bonus</span>
-                  <span className="font-mono font-bold text-purple-600 tabular-nums dark:text-purple-400">
+                  <span className="font-mono font-bold text-amber-600 tabular-nums dark:text-amber-400">
                     1.{vaultLevel * 5}x
                   </span>
                 </div>
@@ -199,7 +199,7 @@ export function VaultYieldProjectionsCard({
                 </div>
                 <div className="border-border/50 bg-muted/40 h-2 w-full overflow-hidden rounded-full border p-0.5 backdrop-blur-md">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_8px_rgba(16,185,129,0.5)] transition-all duration-500"
+                    className="h-full rounded-full bg-emerald-500 transition-all duration-500"
                     style={{
                       width: `${activeCapData ? ((activeCapData.cap - activeCapData.remaining) / activeCapData.cap) * 100 : 0}%`,
                     }}
@@ -225,7 +225,7 @@ export function VaultYieldProjectionsCard({
                 </div>
                 <div className="border-border/50 bg-muted/40 h-2 w-full overflow-hidden rounded-full border p-0.5 backdrop-blur-md">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-400 shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all duration-500"
+                    className="h-full rounded-full bg-indigo-500 transition-all duration-500"
                     style={{
                       width: `${socialCapData ? ((socialCapData.cap - socialCapData.remaining) / socialCapData.cap) * 100 : 0}%`,
                     }}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { memo, useRef, useState } from "react";
 import { EditorErrorBoundary } from "../utils/editor-overlay-helpers";
 
 interface EditorWorkspaceLayoutProps {
@@ -16,7 +16,7 @@ interface EditorWorkspaceLayoutProps {
   children: React.ReactNode;
 }
 
-export function EditorWorkspaceLayout({
+export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
   panelConfigs,
   panelsLocked,
   toolsDisabled,
@@ -266,7 +266,7 @@ export function EditorWorkspaceLayout({
         <div
           ref={leftSidebarRef}
           data-testid="editor-panel-A"
-          className="hidden h-full shrink-0 sm:flex"
+          className="pointer-events-auto hidden h-full shrink-0 sm:flex"
         >
           {renderSidePanelContent("left")}
         </div>
@@ -283,7 +283,7 @@ export function EditorWorkspaceLayout({
         {(!toolsDisabled || isWorldMode) && (
           <div
             ref={bottomDockRef}
-            className="bg-card/40 hidden w-full shrink-0 flex-row backdrop-blur-md sm:flex"
+            className="bg-card/40 pointer-events-auto hidden w-full shrink-0 flex-row backdrop-blur-md sm:flex"
           >
             {renderBottomDockContent()}
           </div>
@@ -295,11 +295,12 @@ export function EditorWorkspaceLayout({
         <div
           ref={rightSidebarRef}
           data-testid="editor-panel-B"
-          className="hidden h-full shrink-0 sm:flex"
+          className="pointer-events-auto hidden h-full shrink-0 sm:flex"
         >
           {renderSidePanelContent("right")}
         </div>
       )}
     </div>
   );
-}
+});
+

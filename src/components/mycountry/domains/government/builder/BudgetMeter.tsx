@@ -25,22 +25,22 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
   const isWarning = totalAllocatedPercent >= 90 && totalAllocatedPercent <= 100;
 
   const statusColor = isOverBudget
-    ? "from-red-500 to-rose-600 shadow-red-500/20"
+    ? "bg-red-500"
     : isWarning
-      ? "from-amber-500 to-orange-600 shadow-amber-500/20"
-      : "from-cyan-500 to-blue-600 shadow-cyan-500/20";
+      ? "bg-amber-500"
+      : "bg-emerald-500";
 
   const glowColor = isOverBudget
-    ? "bg-red-500/5 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-800 dark:text-red-200"
+    ? "bg-red-500/5 border-red-500/20 text-red-700 dark:text-red-300"
     : isWarning
-      ? "bg-amber-500/5 border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-200"
-      : "bg-cyan-500/5 border-cyan-200 dark:border-cyan-500/20 text-cyan-800 dark:text-cyan-200";
+      ? "bg-amber-500/5 border-amber-500/20 text-amber-700 dark:text-amber-300"
+      : "bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-300";
 
   const textColor = isOverBudget
     ? "text-red-600 dark:text-red-400 font-bold"
     : isWarning
       ? "text-amber-600 dark:text-amber-400 font-semibold"
-      : "text-cyan-600 dark:text-cyan-400 font-semibold";
+      : "text-emerald-600 dark:text-emerald-400 font-semibold";
 
   return (
     <div
@@ -59,9 +59,9 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
             {isOverBudget ? (
               <AlertTriangle className="h-5 w-5 animate-pulse text-red-500" />
             ) : isWarning ? (
-              <TrendingUp className="h-5 w-5 text-amber-400" />
+              <TrendingUp className="h-5 w-5 text-amber-500" />
             ) : (
-              <CheckCircle className="h-5 w-5 text-cyan-400" />
+              <CheckCircle className="h-5 w-5 text-emerald-500" />
             )}
             <span className="text-sm font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
               Fiscal Allocation Status
@@ -78,7 +78,7 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
                 "mr-1 font-bold",
                 remainingPercent < 0
                   ? "text-red-600 dark:text-red-400"
-                  : "text-zinc-750 dark:text-zinc-300"
+                  : "text-zinc-700 dark:text-zinc-300"
               )}
             >
               {remainingPercent.toFixed(1)}%
@@ -91,7 +91,7 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
         <div className="relative h-3 w-full overflow-hidden rounded-full border border-zinc-200 bg-zinc-200 dark:border-white/5 dark:bg-zinc-950/60">
           <motion.div
             className={cn(
-              "h-full rounded-full bg-gradient-to-r shadow-[0_0_12px_rgba(0,0,0,0.5)]",
+              "h-full rounded-full shadow-sm",
               statusColor
             )}
             initial={{ width: 0 }}

@@ -760,3 +760,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
 
   return [state, actions];
 }
+
+export type UseBorderEditorReturn = ReturnType<typeof useBorderEditor>;
+export type BorderEditorActions = UseBorderEditorReturn[1];
+

@@ -1,15 +1,15 @@
 import {
   CursorPointer as MousePointer2,
-  HandBrake as Hand,
   SelectWindow as LassoSelect,
 } from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
+import { isKeyboardInputTarget } from "../hooks/drag-utils";
 
 export const SelectPlugin: MapEditorPlugin = {
   id: "select",
-  name: "Selection & Pan",
-  global: true, // Listens globally to V/H/M keys to switch tools
-  modes: ["view", "pan", "lasso-select"],
+  name: "Selection",
+  global: true, // Listens globally to V/M keys to switch tools
+  modes: ["view", "lasso-select"],
 
   toolbarItems: [
     {
@@ -19,8 +19,8 @@ export const SelectPlugin: MapEditorPlugin = {
       label: "Select",
       shortcut: "V",
       group: 0,
+      order: 1,
     },
-    { id: "tool-pan", mode: "pan", icon: Hand, label: "Hand (Pan)", shortcut: "H", group: 0 },
     {
       id: "tool-lasso",
       mode: "lasso-select",
@@ -28,29 +28,44 @@ export const SelectPlugin: MapEditorPlugin = {
       label: "Lasso Select",
       shortcut: "M",
       group: 0,
+      order: 2,
     },
   ],
 
   onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
-    const activeEl = document.activeElement;
-    const inInput =
-      activeEl &&
-      (activeEl.tagName === "INPUT" ||
-        activeEl.tagName === "TEXTAREA" ||
-        activeEl.tagName === "SELECT" ||
-        activeEl.getAttribute("contenteditable") === "true");
-    if (inInput) return false;
+    if (isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement)) {
+      return false;
+    }
 
+    const isMod = e.ctrlKey || e.metaKey;
     const key = e.key.toLowerCase();
+
+    // Map canvas undo / redo
+    if (isMod && key === "z") {
+      e.preventDefault();
+      if (e.shiftKey) {
+        context.state.editor.redo();
+      } else {
+        context.state.editor.undo();
+      }
+      return true;
+    }
+
+    if (isMod && key === "y") {
+      e.preventDefault();
+      context.state.editor.redo();
+      return true;
+    }
+
+    if (e.ctrlKey || e.metaKey || e.altKey) {
+      return false;
+    }
+
     if (key === "v") {
       context.onModeChange("view");
       return true;
     }
-    if (key === "h") {
-      context.onModeChange("pan");
-      return true;
-    }
-    if (key === "m" && !e.ctrlKey && !e.metaKey) {
+    if (key === "m") {
       context.onModeChange("lasso-select");
       return true;
     }

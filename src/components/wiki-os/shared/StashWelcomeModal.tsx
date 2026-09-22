@@ -76,13 +76,13 @@ const ARTICLE_STEPS = [
   },
   {
     icon: StickyNote,
-    color: "text-purple-400",
+    color: "text-indigo-400",
     title: "Personal notes",
     description: "Attach markdown notes to saved pages to record lore observations or todo items.",
   },
   {
     icon: Clock,
-    color: "text-teal-400",
+    color: "text-cyan-400",
     title: "Fast reader jumping",
     description:
       "Click any saved quote or page to open the article at that exact section in WikiOS.",
@@ -111,7 +111,7 @@ const MEDIA_STEPS = [
   },
   {
     icon: Eye,
-    color: "text-pink-400",
+    color: "text-blue-400",
     title: "Interactive lightbox",
     description: "Inspect images in full resolution with keyboard navigation and zoom.",
   },

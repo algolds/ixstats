@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Flash as Zap, Dashboard as Gauge } from "iconoir-react";
@@ -25,14 +25,14 @@ export function EffectivenessPanel({
   return (
     <>
       {/* Economic Health Card */}
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="space-y-4 p-6">
+        <FacetCardContent className="space-y-4 p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Gauge className="h-5 w-5" />
             <span>Economic Health</span>
@@ -105,18 +105,18 @@ export function EffectivenessPanel({
               </span>
             </div>
           </div>
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
 
       {/* Selected Components Card */}
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="p-6">
+        <FacetCardContent className="p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Zap className="h-5 w-5" />
             <span>Selected Atomic Components</span>
@@ -152,8 +152,8 @@ export function EffectivenessPanel({
               );
             })}
           </div>
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
     </>
   );
 }

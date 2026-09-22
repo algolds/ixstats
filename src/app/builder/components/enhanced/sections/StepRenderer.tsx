@@ -2,356 +2,27 @@
 
 import React, { memo, useCallback } from "react";
 import { motion } from "motion/react";
-import {
-  Globe,
-  WhiteFlag as Flag,
-  StatsReport as BarChart3,
-  City as Building2,
-  Settings,
-  Crown,
-  Eye,
-  HelpCircle,
-  CheckCircle,
-} from "iconoir-react";
+import { Globe } from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
 import { useBuilderContext } from "../context/BuilderStateContext";
 import { useBuilderActions } from "../../../hooks/useBuilderActions";
-
-// Help modal component
-// oxlint-disable-next-line eslint/no-unused-vars
-function HelpModal({ text, title }: { text: string; title: string }) {
-  // Core Foundation specific help content
-  if (title === "Core Foundation Help") {
-    return (
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <HelpCircle className="text-muted-foreground hover:text-foreground h-4 w-4" />
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Flag className="h-5 w-5 text-blue-500" />
-              Core Foundation Help
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {/* Overview */}
-              <div className="space-y-3">
-                <h3 className="flex items-center gap-2 text-lg font-semibold">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  What is Core Foundation?
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  The Core Foundation step establishes your nation's fundamental identity and
-                  economic indicators. These values form the baseline for all other calculations and
-                  systems.
-                </p>
-              </div>
-
-              {/* Why Core Matters */}
-              <div className="space-y-3">
-                <h3 className="flex items-center gap-2 text-lg font-semibold">
-                  <BarChart3 className="h-4 w-4 text-blue-500" />
-                  Why Core Foundation Matters
-                </h3>
-                <ul className="text-muted-foreground space-y-2 text-sm">
-                  <li>
-                    • <strong>National Identity:</strong> Name, flag, culture, and values
-                  </li>
-                  <li>
-                    • <strong>Economic Base:</strong> GDP, population, currency, and trade
-                  </li>
-                  <li>
-                    • <strong>System Integration:</strong> Influences all other builder steps
-                  </li>
-                  <li>
-                    • <strong>Realistic Foundation:</strong> Ensures coherent nation building
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Two Main Tabs */}
-            <div className="space-y-4">
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
-                <Settings className="h-4 w-4 text-purple-500" />
-                Core Foundation Components
-              </h3>
-              <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                  <h4 className="mb-3 flex items-center gap-2 font-medium text-blue-800">
-                    <Flag className="h-4 w-4" />
-                    National Identity
-                  </h4>
-                  <ul className="space-y-2 text-sm text-blue-700">
-                    <li>
-                      • <strong>Country Name:</strong> Your nation's official name
-                    </li>
-                    <li>
-                      • <strong>Flag & Symbols:</strong> Visual identity and national symbols
-                    </li>
-                    <li>
-                      • <strong>Cultural Values:</strong> Core principles and beliefs
-                    </li>
-                    <li>
-                      • <strong>Geographic Context:</strong> Location and regional characteristics
-                    </li>
-                  </ul>
-                </div>
-                <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                  <h4 className="mb-3 flex items-center gap-2 font-medium text-green-800">
-                    <BarChart3 className="h-4 w-4" />
-                    Core Indicators
-                  </h4>
-                  <ul className="space-y-2 text-sm text-green-700">
-                    <li>
-                      • <strong>GDP & Economy:</strong> Total economic output and structure
-                    </li>
-                    <li>
-                      • <strong>Population:</strong> Total population and demographics
-                    </li>
-                    <li>
-                      • <strong>Currency:</strong> Monetary system and exchange rates
-                    </li>
-                    <li>
-                      • <strong>Trade Balance:</strong> Import/export relationships
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {/* Step-by-Step Guide */}
-            <div className="space-y-4">
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
-                <Eye className="h-4 w-4 text-amber-500" />
-                How to Configure Core Foundation
-              </h3>
-              <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-                      1
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Set National Identity</h4>
-                      <p className="text-muted-foreground text-sm">
-                        Define your country's name, flag, and cultural characteristics
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-                      2
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Configure Core Indicators</h4>
-                      <p className="text-muted-foreground text-sm">
-                        Set GDP, population, currency, and economic fundamentals
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-                      3
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Review Impact</h4>
-                      <p className="text-muted-foreground text-sm">
-                        See how your choices affect other systems and calculations
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-                      4
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Adjust as Needed</h4>
-                      <p className="text-muted-foreground text-sm">
-                        Fine-tune values to achieve your desired outcomes
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Tips & Best Practices */}
-            <div className="space-y-4">
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
-                <HelpCircle className="h-4 w-4 text-purple-500" />
-                Tips & Best Practices
-              </h3>
-              <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-                <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-                  <h4 className="flex items-center gap-2 font-medium text-green-800">
-                    <CheckCircle className="h-4 w-4" />
-                    Identity Tips
-                  </h4>
-                  <ul className="mt-2 space-y-1 text-sm text-green-700">
-                    <li>• Choose a name that reflects your vision</li>
-                    <li>• Consider cultural and historical context</li>
-                    <li>• Make it memorable and meaningful</li>
-                  </ul>
-                </div>
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-                  <h4 className="flex items-center gap-2 font-medium text-blue-800">
-                    <BarChart3 className="h-4 w-4" />
-                    Economic Tips
-                  </h4>
-                  <ul className="mt-2 space-y-1 text-sm text-blue-700">
-                    <li>• Start with realistic baseline values</li>
-                    <li>• Consider your development goals</li>
-                    <li>• Balance different economic factors</li>
-                  </ul>
-                </div>
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-                  <h4 className="flex items-center gap-2 font-medium text-amber-800">
-                    <Globe className="h-4 w-4" />
-                    Integration Tips
-                  </h4>
-                  <ul className="mt-2 space-y-1 text-sm text-amber-700">
-                    <li>• Values affect all other systems</li>
-                    <li>• Changes cascade through the builder</li>
-                    <li>• Preview impact before finalizing</li>
-                  </ul>
-                </div>
-                <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
-                  <h4 className="flex items-center gap-2 font-medium text-purple-800">
-                    <Settings className="h-4 w-4" />
-                    Advanced Tips
-                  </h4>
-                  <ul className="mt-2 space-y-1 text-sm text-purple-700">
-                    <li>• Use foundation data as reference</li>
-                    <li>• Experiment with different values</li>
-                    <li>• Save configurations you like</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  // Default help modal for other steps
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-          <HelpCircle className="text-muted-foreground hover:text-foreground h-4 w-4" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-amber-500" />
-            {title}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Overview */}
-            <div className="space-y-3">
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
-                <Crown className="h-4 w-4 text-amber-500" />
-                Overview
-              </h3>
-              <p className="text-muted-foreground text-sm">{text}</p>
-            </div>
-
-            {/* Key Features */}
-            <div className="space-y-3">
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
-                <Settings className="h-4 w-4 text-blue-500" />
-                Key Features
-              </h3>
-              <ul className="text-muted-foreground space-y-2 text-sm">
-                <li>
-                  • <strong>Real-time Impact:</strong> See effects on your nation instantly
-                </li>
-                <li>
-                  • <strong>System Integration:</strong> All components work together
-                </li>
-                <li>
-                  • <strong>Validation:</strong> Automatic error checking and suggestions
-                </li>
-                <li>
-                  • <strong>Preview:</strong> Test configurations before finalizing
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Tips & Best Practices */}
-          <div className="space-y-4">
-            <h3 className="flex items-center gap-2 text-lg font-semibold">
-              <Eye className="h-4 w-4 text-purple-500" />
-              Tips & Best Practices
-            </h3>
-            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-              <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-                <h4 className="flex items-center gap-2 font-medium text-green-800">
-                  <CheckCircle className="h-4 w-4" />
-                  General Tips
-                </h4>
-                <ul className="mt-2 space-y-1 text-sm text-green-700">
-                  <li>• Start with realistic values</li>
-                  <li>• Consider your end vision</li>
-                  <li>• Use preview to test changes</li>
-                </ul>
-              </div>
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-                <h4 className="flex items-center gap-2 font-medium text-blue-800">
-                  <Settings className="h-4 w-4" />
-                  Configuration Tips
-                </h4>
-                <ul className="mt-2 space-y-1 text-sm text-blue-700">
-                  <li>• Make incremental changes</li>
-                  <li>• Monitor system feedback</li>
-                  <li>• Save successful configurations</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 import { FoundationStep } from "../steps/FoundationStep";
 import { GovernmentStep } from "../steps/GovernmentStep";
 import { NationalIdentitySection } from "../NationalIdentitySection";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { AtomicComponentSelector } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { GovernmentSpendingSection } from "../../../sections/GovernmentSpendingSection";
-import { EconomyBuilderPage } from "../index"; // Eagerly loaded from index
+import { EconomyBuilderPage } from "../index";
 import { BuilderPreviewStep } from "./BuilderPreviewStep";
 import type { RealCountryData, EconomicInputs } from "../../../lib/economy-data-service";
+import type { GovernmentBuilderState } from "~/types/government";
+import type { EconomyBuilderState } from "~/types/economy-builder";
+import type { ComponentType } from "@prisma/client";
 
 interface StepRendererProps {
   countries: RealCountryData[];
   isLoadingCountries: boolean;
   countryLoadError: string | null;
   onBackToIntro?: () => void;
-  onGovernmentStructureChange: (structure: any) => void;
-  onGovernmentStructureSave: (structure: any) => Promise<void>;
+  onGovernmentStructureChange: (structure: GovernmentBuilderState) => void;
+  onGovernmentStructureSave: (structure: GovernmentBuilderState) => Promise<void>;
 }
 
 export const StepRenderer = memo(function StepRenderer({
@@ -373,8 +44,32 @@ export const StepRenderer = memo(function StepRenderer({
     [updateEconomicInputs]
   );
 
+  const handleGovernmentComponentsChange = useCallback(
+    (components: ComponentType[]) => {
+      setBuilderState((prev) => ({
+        ...prev,
+        governmentComponents: components,
+      }));
+    },
+    [setBuilderState]
+  );
+
+  const handleGovernmentTabChange = useCallback(
+    (tab: string) => {
+      handleTabChange("government", tab);
+    },
+    [handleTabChange]
+  );
+
+  const handleEconomicsTabChange = useCallback(
+    (tab: string) => {
+      handleTabChange("economics", tab);
+    },
+    [handleTabChange]
+  );
+
   const handlePersistEconomyBuilder = useCallback(
-    (economyBuilderState: any) => {
+    (economyBuilderState: EconomyBuilderState) => {
       setBuilderState((prev) => ({ ...prev, economyBuilderState }));
     },
     [setBuilderState]
@@ -402,8 +97,13 @@ export const StepRenderer = memo(function StepRenderer({
       governmentSpending: 55000000000,
     };
 
+    setBuilderState((prev) => ({
+      ...prev,
+      creationOrigin: "scratch",
+    }));
     updateStep("foundation", scratchCountry);
-  }, [updateStep]);
+  }, [updateStep, setBuilderState]);
+
 
   // Foundation Step
   if (builderState.step === "foundation" && mode !== "edit") {
@@ -480,21 +180,17 @@ export const StepRenderer = memo(function StepRenderer({
   if (builderState.step === "government" && builderState.economicInputs) {
     return (
       <GovernmentStep
+        mode={mode}
         economicInputs={builderState.economicInputs}
         selectedCountry={builderState.selectedCountry}
         governmentComponents={builderState.governmentComponents}
         governmentStructure={builderState.governmentStructure}
         activeGovernmentTab={builderState.activeGovernmentTab}
-        onGovernmentComponentsChange={(components) => {
-          setBuilderState((prev) => ({
-            ...prev,
-            governmentComponents: components,
-          }));
-        }}
+        onGovernmentComponentsChange={handleGovernmentComponentsChange}
         onGovernmentStructureChange={onGovernmentStructureChange}
         onGovernmentStructureSave={onGovernmentStructureSave}
         onEconomicInputsChange={updateEconomicInputs}
-        onTabChange={(tab) => handleTabChange("government", tab)}
+        onTabChange={handleGovernmentTabChange}
       />
     );
   }
@@ -503,16 +199,17 @@ export const StepRenderer = memo(function StepRenderer({
   if (builderState.step === "economics" && builderState.economicInputs) {
     return (
       <EconomyBuilderPage
+        mode={mode}
         economicInputs={builderState.economicInputs}
         onEconomicInputsChange={handleEconomicInputsChange}
         governmentComponents={builderState.governmentComponents}
         governmentBuilderData={builderState.governmentStructure}
         countryId={countryId ?? builderState.selectedCountry?.countryCode}
-        showAdvanced={builderState.showAdvancedMode}
+        showAdvanced={mode === "edit" || builderState.showAdvancedMode}
         persistedEconomyBuilder={builderState.economyBuilderState}
         onPersistEconomyBuilder={handlePersistEconomyBuilder}
         activeTab={builderState.activeEconomicsTab}
-        onTabChange={(tab: string) => handleTabChange("economics", tab)}
+        onTabChange={handleEconomicsTabChange}
         selectedArchetypeId={builderState.selectedArchetypeId}
       />
     );

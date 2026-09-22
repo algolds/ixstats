@@ -68,7 +68,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
             "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold tracking-wider uppercase shadow-xs backdrop-blur-md",
             card.wikiSource === "iiwiki"
               ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-              : "border-sky-500/30 bg-sky-500/15 text-sky-600 dark:text-sky-400"
+              : "border-wiki/30 bg-wiki/15 text-wiki"
           )}
         >
           <Globe className="h-3 w-3" />
@@ -129,7 +129,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
               </div>
               <div className="border-border/40 bg-card/60 rounded-lg border p-3">
                 <div className="text-muted-foreground text-xs font-medium">Cultural Impact</div>
-                <div className="mt-1 font-mono text-xl font-bold text-purple-500 tabular-nums dark:text-purple-400">
+                <div className="mt-1 font-mono text-xl font-bold text-indigo-500 tabular-nums dark:text-indigo-400">
                   {loreStats.culturalImpact ?? 0}/100
                 </div>
               </div>

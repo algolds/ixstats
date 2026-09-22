@@ -222,7 +222,7 @@ export function NameResultCard({
         ? "emerald"
         : naturalness >= 33
           ? "amber"
-          : "rose"
+          : "red"
       : null;
 
   return (
@@ -235,7 +235,7 @@ export function NameResultCard({
         // Default border/background colors matching the fit score
         fitColor === "emerald" && "border-emerald-500/20 bg-emerald-500/[0.015]",
         fitColor === "amber" && "border-amber-500/20 bg-amber-500/[0.015]",
-        fitColor === "rose" && "border-rose-500/10 bg-rose-500/[0.01]",
+        fitColor === "red" && "border-red-500/10 bg-red-500/[0.01]",
         !fitColor && "border-border/40 bg-secondary/5",
         // Expanded details modal border styles
         showDetailsModal
@@ -244,20 +244,16 @@ export function NameResultCard({
               fitColor === "emerald" &&
                 "border-emerald-500/35 shadow-emerald-500/5 ring-emerald-500/20",
               fitColor === "amber" && "border-amber-500/35 shadow-amber-500/5 ring-amber-500/20",
-              fitColor === "rose" && "border-rose-500/25 shadow-rose-500/5 ring-rose-500/10",
+              fitColor === "red" && "border-red-500/25 shadow-red-500/5 ring-red-500/10",
               !fitColor &&
                 "border-onoma-primary/30 bg-onoma-primary/[0.01] shadow-onoma-primary/5 ring-onoma-primary/10"
             )
           : cn(
               "z-10 col-span-1",
-              fitColor === "emerald" &&
-                "hover:border-emerald-500/45 hover:shadow-[0_0_14px_rgba(16,185,129,0.12)] dark:hover:border-emerald-500/35 dark:hover:shadow-[0_0_18px_rgba(16,185,129,0.18)]",
-              fitColor === "amber" &&
-                "hover:border-amber-500/45 hover:shadow-[0_0_14px_rgba(245,158,11,0.12)] dark:hover:border-amber-500/35 dark:hover:shadow-[0_0_18px_rgba(245,158,11,0.18)]",
-              fitColor === "rose" &&
-                "hover:border-rose-500/35 hover:shadow-[0_0_14px_rgba(244,63,94,0.1)] dark:hover:border-rose-500/25 dark:hover:shadow-[0_0_18px_rgba(244,63,94,0.15)]",
-              !fitColor &&
-                "hover:border-onoma-primary/45 dark:hover:border-onoma-primary/35 hover:shadow-[0_0_12px_rgba(0,145,255,0.08)] dark:hover:shadow-[0_0_16px_rgba(0,145,255,0.15)]"
+              fitColor === "emerald" && "hover:border-emerald-500/40 hover:shadow-xs",
+              fitColor === "amber" && "hover:border-amber-500/40 hover:shadow-xs",
+              fitColor === "red" && "hover:border-red-500/30 hover:shadow-xs",
+              !fitColor && "hover:border-onoma-primary/40 hover:shadow-xs"
             )
       )}
     >
@@ -265,48 +261,6 @@ export function NameResultCard({
       <div className="pointer-events-none absolute -inset-2 opacity-[0.08] transition-all duration-500 ease-out group-hover:translate-x-1 group-hover:translate-y-1 group-hover:opacity-20 group-hover:blur-[1px] dark:opacity-45 dark:group-hover:opacity-85">
         <TextureOverlay texture="diamonds" className="mix-blend-overlay" />
       </div>
-
-      {/* Refraction Radial Glows creeping from underneath all four corners */}
-      {fitColor && (
-        <>
-          <div
-            className={cn(
-              "pointer-events-none absolute -top-10 -left-10 z-0 h-20 w-20 rounded-full blur-xl transition-all duration-700 ease-out",
-              fitColor === "emerald" && "bg-emerald-500",
-              fitColor === "amber" && "bg-amber-500",
-              fitColor === "rose" && "bg-rose-500",
-              "opacity-[0.04] group-hover:scale-125 group-hover:opacity-[0.15]"
-            )}
-          />
-          <div
-            className={cn(
-              "pointer-events-none absolute -top-10 -right-10 z-0 h-20 w-20 rounded-full blur-xl transition-all duration-700 ease-out",
-              fitColor === "emerald" && "bg-emerald-500",
-              fitColor === "amber" && "bg-amber-500",
-              fitColor === "rose" && "bg-rose-500",
-              "opacity-[0.04] group-hover:scale-125 group-hover:opacity-[0.15]"
-            )}
-          />
-          <div
-            className={cn(
-              "pointer-events-none absolute -bottom-10 -left-10 z-0 h-20 w-20 rounded-full blur-xl transition-all duration-700 ease-out",
-              fitColor === "emerald" && "bg-emerald-500",
-              fitColor === "amber" && "bg-amber-500",
-              fitColor === "rose" && "bg-rose-500",
-              "opacity-[0.04] group-hover:scale-125 group-hover:opacity-[0.15]"
-            )}
-          />
-          <div
-            className={cn(
-              "pointer-events-none absolute -right-10 -bottom-10 z-0 h-20 w-20 rounded-full blur-xl transition-all duration-700 ease-out",
-              fitColor === "emerald" && "bg-emerald-500",
-              fitColor === "amber" && "bg-amber-500",
-              fitColor === "rose" && "bg-rose-500",
-              "opacity-[0.04] group-hover:scale-125 group-hover:opacity-[0.15]"
-            )}
-          />
-        </>
-      )}
 
       {/* Main Top Row */}
       <div className="relative z-10 flex w-full min-w-0 items-start justify-between gap-3">

@@ -61,7 +61,7 @@ export default function TermsOfServicePage() {
       subtitle="These Terms of Service constitute a legally binding agreement governing your access to and use of the IxStates platform and all services operated by Alpaia Holdings."
       badge="Legal Terms"
       lastUpdated="August 24, 2026"
-      version='1.4.0 "Ogma"'
+      version='1.4.0 "Lobster Crosby"'
       sections={SECTIONS}
     >
       {/* Preamble / Introduction */}

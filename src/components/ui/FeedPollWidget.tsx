@@ -284,7 +284,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
 
       <div className="border-border/40 text-muted-foreground/60 flex items-center justify-between border-t pt-2.5 text-xs">
         <span>Total interest: {pollState.totalVotes} upvotes</span>
-        {isExpired && <span className="text-rose-500">Voting closed</span>}
+        {isExpired && <span className="text-red-500">Voting closed</span>}
       </div>
     </div>
   );

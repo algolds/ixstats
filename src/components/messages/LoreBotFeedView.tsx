@@ -172,7 +172,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Top Filter & Search Controls */}
-      <div className="border-border/40 border-b bg-teal-500/[0.02] p-3 backdrop-blur-md dark:bg-teal-500/[0.04]">
+      <div className="border-border/40 border-b bg-cyan-500/[0.02] p-3 backdrop-blur-md dark:bg-cyan-500/[0.04]">
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           {/* Spring Pills */}
           <div className="flex scrollbar-none items-center gap-1 overflow-x-auto">
@@ -189,14 +189,14 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                   className={cn(
                     "relative flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold tracking-tight transition-all duration-150 select-none active:scale-95",
                     isActive
-                      ? "text-teal-400 shadow-2xs"
+                      ? "text-cyan-400 shadow-2xs"
                       : "text-muted-foreground hover:bg-accent/15 hover:text-foreground"
                   )}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="lorebot-filter-pill"
-                      className="absolute inset-0 rounded-xl border border-teal-500/30 bg-teal-500/10 shadow-xs"
+                      className="absolute inset-0 rounded-xl border border-cyan-500/30 bg-cyan-500/10 shadow-xs"
                       transition={{ type: "spring", stiffness: 450, damping: 30 }}
                     />
                   )}
@@ -227,7 +227,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
       >
         {isLoading ? (
           <div className="flex h-64 flex-col items-center justify-center gap-3">
-            <div className="flex h-10 w-10 animate-pulse items-center justify-center rounded-2xl border border-teal-500/20 bg-teal-500/10 text-teal-400 shadow-sm">
+            <div className="flex h-10 w-10 animate-pulse items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-400 shadow-sm">
               <BookOpen className="h-5 w-5" />
             </div>
             <p className="text-muted-foreground text-xs font-semibold">
@@ -236,7 +236,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="mx-auto flex max-w-sm flex-col items-center justify-center py-16 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-teal-500/20 bg-teal-500/10 text-teal-400 shadow-sm">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-400 shadow-sm">
               <BookOpen className="h-6 w-6" />
             </div>
             <h4 className="text-foreground text-sm font-semibold">No lore activity found</h4>
@@ -247,7 +247,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
             </p>
             <Link
               href="/wikios"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-teal-500/30 bg-teal-500/10 px-3.5 py-1.5 text-xs font-semibold text-teal-400 transition-all hover:bg-teal-500/20 active:scale-95"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-1.5 text-xs font-semibold text-cyan-400 transition-all hover:bg-cyan-500/20 active:scale-95"
             >
               <span>Explore WikiOS</span>
               <ArrowUpRight className="h-3.5 w-3.5" />
@@ -262,7 +262,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                className="group border-border/50 bg-card/65 hover:bg-card/90 relative rounded-2xl border p-4 shadow-2xs backdrop-blur-xl transition-all duration-200 hover:border-teal-500/30 hover:shadow-md"
+                className="group border-border/50 bg-card/65 hover:bg-card/90 relative rounded-2xl border p-4 shadow-2xs backdrop-blur-xl transition-all duration-200 hover:border-cyan-500/30 hover:shadow-md"
               >
                 {/* Top Badge & Author Line */}
                 <div className="mb-2 flex items-center justify-between gap-2">
@@ -279,7 +279,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                         Watchlist
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-teal-500/30 bg-teal-500/10 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-teal-400 uppercase">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-cyan-400 uppercase">
                         <Edit3 className="h-3 w-3" />
                         Revision
                       </span>
@@ -317,7 +317,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
 
                 {/* Article Header & Excerpt */}
                 <div className="mb-3">
-                  <h4 className="text-foreground text-sm font-bold tracking-tight transition-colors group-hover:text-teal-400">
+                  <h4 className="text-foreground text-sm font-bold tracking-tight transition-colors group-hover:text-cyan-400">
                     <Link href={titleToWikiOSRoute(item.title)} className="hover:underline">
                       {item.title}
                     </Link>
@@ -349,7 +349,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
 
                     <Link
                       href={titleToWikiOSRoute(item.title)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-teal-600 px-3 py-1 text-[11px] font-semibold text-white shadow-2xs transition-all hover:bg-teal-500 active:scale-95"
+                      className="inline-flex items-center gap-1 rounded-lg bg-cyan-600 px-3 py-1 text-[11px] font-semibold text-white shadow-2xs transition-all hover:bg-cyan-500 active:scale-95"
                     >
                       <span>Read in WikiOS</span>
                       <ArrowUpRight className="h-3 w-3" />

@@ -38,8 +38,14 @@ interface SectorCardProps {
   effectiveGDP?: number;
   effectiveEmployment?: number;
   constraint?: SectorConstraint;
-  onChange?: (field: keyof SectorConfiguration, value: any) => void;
-  onCommit?: (field: keyof SectorConfiguration, value: any) => void;
+  onChange?: <K extends keyof SectorConfiguration>(
+    field: K,
+    value: SectorConfiguration[K]
+  ) => void;
+  onCommit?: <K extends keyof SectorConfiguration>(
+    field: K,
+    value: SectorConfiguration[K]
+  ) => void;
 }
 
 export function SectorCard({

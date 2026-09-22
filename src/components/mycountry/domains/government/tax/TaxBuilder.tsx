@@ -5,7 +5,6 @@ import { isEqual } from "~/lib/utils";
 import { Badge as UIBadge } from "~/components/ui/badge";
 import {
   Calculator,
-  WarningTriangle as AlertTriangle,
   Settings,
   StatsReport as BarChart3,
 } from "iconoir-react";
@@ -27,6 +26,7 @@ import { computeTaxSuggestions } from "~/lib/economy/tax-suggestions-engine";
 import { SettingsTab } from "./tabs/SettingsTab";
 import { PreviewTab } from "./tabs/PreviewTab";
 import { TaxCalculator } from "./atoms/TaxCalculator";
+import { TaxSystemTemplatesModal } from "./atoms/TaxSystemTemplatesModal";
 
 // Existing components
 import {
@@ -36,7 +36,6 @@ import {
 import { useIntelligenceWebSocket } from "~/hooks/useIntelligenceWebSocket";
 
 // Templates and types
-import { taxSystemTemplates } from "./TaxSystemTemplates";
 import type { TaxSystem, TaxCategory, TaxBracket } from "~/types/tax-system";
 import type { ComponentType } from "~/types/government";
 
@@ -56,10 +55,14 @@ export interface TaxBuilderProps {
   enableAutoSync?: boolean;
   economicData?: {
     gdp: number;
-    sectors: any;
+    sectors?: Record<string, number>;
     population: number;
   };
-  governmentData?: any;
+  governmentData?: {
+    structure?: {
+      budgetCurrency?: string;
+    };
+  } | null;
   componentOptimization?: {
     optimalCorporateRate: number;
     optimalIncomeRate: number;
@@ -69,14 +72,15 @@ export interface TaxBuilderProps {
   flat?: boolean;
 }
 
-const EMPTY_ARRAY: any[] = [];
+const EMPTY_STRINGS: string[] = [];
+const EMPTY_OBJECTS: never[] = [];
 
 export function TaxBuilder({
   initialData,
   onSave,
   onChange,
   // oxlint-disable-next-line eslint/no-unused-vars
-  onPreview,
+  onPreview: _onPreview,
   isReadOnly = false,
   countryId,
   showAtomicIntegration = true,
@@ -99,16 +103,6 @@ export function TaxBuilder({
   const [pendingSaveCallback, setPendingSaveCallback] = useState<(() => void) | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
   const [_selectedTaxComponents, _setSelectedTaxComponents] = useState<ComponentType[]>([]);
-  const [templateToConfirm, setTemplateToConfirm] = useState<
-    (typeof taxSystemTemplates)[number] | null
-  >(null);
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-  }, []);
 
   // State management hook
   const {
@@ -125,9 +119,7 @@ export function TaxBuilder({
     updateValidation: _updateValidation,
   } = useTaxBuilderState({ initialData, countryId });
 
-  // Auto-sync hook. It observes localBuilderState (passed below) and pushes to the
-  // server — it must NOT own the displayed editing copy, or edits made through the
-  // local handlers never reach the UI.
+  // Auto-sync hook
   const {
     builderState: _autoSyncState,
     setBuilderState: _setAutoSyncState,
@@ -144,11 +136,6 @@ export function TaxBuilder({
     },
   });
 
-  // Single source of truth: the local editing store. The auto-sync hook mirrors this
-  // (it receives localBuilderState as its initialData) and handles server pushes.
-  // ponytail: one store, not two — the dual-store split left the tax form uneditable
-  // whenever a countryId was present (auto-sync on), because edits went to localBuilderState
-  // while the UI rendered the never-updated autoSyncState.
   const builderState = localBuilderState;
   const setBuilderState = setLocalBuilderState;
   const selectedAtomicTaxComponents = builderState.selectedAtomicTaxComponents || [];
@@ -168,7 +155,7 @@ export function TaxBuilder({
     [setBuilderState]
   );
   const updateValidation = useCallback(
-    (validationVal: { isValid: boolean; errors: any }) => {
+    (validationVal: { isValid: boolean; errors: string[] | Record<string, string[]> }) => {
       setBuilderState((prev) => {
         if (prev.isValid === validationVal.isValid && isEqual(prev.errors, validationVal.errors)) {
           return prev;
@@ -214,7 +201,11 @@ export function TaxBuilder({
   );
 
   const activeComponents = useMemo(() => {
-    return atomicComponents?.filter((c) => c.isActive).map((c) => c.componentType) || EMPTY_ARRAY;
+    return (
+      atomicComponents
+        ?.filter((c) => c.isActive)
+        .map((c) => c.componentType as ComponentType) || EMPTY_STRINGS
+    );
   }, [atomicComponents]);
 
   const calculatorEconomicData = useMemo(() => {
@@ -236,12 +227,10 @@ export function TaxBuilder({
   // Validation
   const validation = useMemo(() => validateTaxBuilderState(builderState), [builderState]);
 
-  // Update validation in state when it changes
   useEffect(() => {
     updateValidation(validation);
   }, [validation, updateValidation]);
 
-  // Call onChange whenever builderState changes (stabilized with ref to prevent loops)
   const onChangeRef = useRef(onChange);
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -258,17 +247,15 @@ export function TaxBuilder({
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== "true") return;
     if (!intel.latestUpdate) return;
-    // oxlint-disable-next-line
     setSuggestions(computeTaxSuggestions(builderState));
   }, [intel.latestUpdate, builderState]);
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== "true") return;
-    // oxlint-disable-next-line
     setSuggestions(computeTaxSuggestions(builderState));
   }, [builderState]);
 
-  // Save handler - available for external use
+  // Save handler
   const _handleSave = async () => {
     const currentValidation = validateTaxBuilderState(builderState);
     updateValidation(currentValidation);
@@ -279,13 +266,15 @@ export function TaxBuilder({
         ...cat,
         calculationMethod: cat.calculationMethod as ServerCalculationMethod,
       }));
-      const submitState = {
+      const submitState: TaxBuilderState = {
         taxSystem: builderState.taxSystem,
         categories: normalizedCategories,
         brackets: builderState.brackets,
         exemptions: builderState.exemptions,
         deductions: builderState.deductions,
-        atomicComponents: selectedAtomicTaxComponents,
+        selectedAtomicTaxComponents,
+        isValid: builderState.isValid,
+        errors: builderState.errors,
       };
 
       if (enableAutoSync && countryId && syncState.conflictWarnings.length > 0) {
@@ -293,7 +282,7 @@ export function TaxBuilder({
           if (onSave) {
             setIsSaving(true);
             try {
-              await onSave(submitState as any);
+              await onSave(submitState);
               clearConflicts();
             } catch (error) {
               console.error("Save failed:", error);
@@ -306,7 +295,7 @@ export function TaxBuilder({
       } else if (onSave) {
         setIsSaving(true);
         try {
-          await onSave(submitState as any);
+          await onSave(submitState);
           notify.success("Tax system saved");
         } catch (error) {
           console.error("Save failed:", error);
@@ -317,19 +306,18 @@ export function TaxBuilder({
       } else if (countryId) {
         setIsSaving(true);
         try {
-          let _result: any;
           try {
-            _result = await updateMutation.mutateAsync({
+            await updateMutation.mutateAsync({
               countryId,
-              data: submitState as any,
+              data: submitState as Parameters<typeof updateMutation.mutateAsync>[0]["data"],
               skipConflictCheck: true,
             });
           } catch (updateErr) {
-            const notFound = (updateErr as any)?.data?.code === "NOT_FOUND";
+            const notFound = (updateErr as { data?: { code?: string } })?.data?.code === "NOT_FOUND";
             if (notFound) {
-              _result = await createMutation.mutateAsync({
+              await createMutation.mutateAsync({
                 countryId,
-                data: submitState as any,
+                data: submitState as Parameters<typeof createMutation.mutateAsync>[0]["data"],
                 skipConflictCheck: true,
               });
             } else {
@@ -394,11 +382,84 @@ export function TaxBuilder({
     { id: "calculator", label: "Tax Calculator", icon: Calculator },
   ];
 
+  // Render tab content with zero duplication
+  const renderTabContent = () => {
+    if (activeTab === "settings") {
+      return (
+        <SettingsTab
+          taxSystem={builderState.taxSystem}
+          onTaxSystemChange={handleTaxSystemChange}
+          categories={builderState.categories}
+          brackets={builderState.brackets}
+          onCategoriesChange={handleCategoriesChange}
+          onBracketsChange={handleBracketsChange}
+          onAddCategory={addCategory}
+          onRemoveCategory={removeCategory}
+          selectedAtomicTaxComponents={selectedAtomicTaxComponents}
+          onAtomicComponentsChange={setSelectedAtomicTaxComponents}
+          activeGovernmentComponents={activeComponents}
+          showAtomicIntegration={showAtomicIntegration}
+          economicData={economicData}
+          previewTaxSystem={previewTaxSystem}
+          validation={validation}
+          isReadOnly={isReadOnly}
+          countryId={countryId}
+          onOpenTemplates={() => setShowTemplates(true)}
+          revenueAutoPopulated={revenueAutoPopulated}
+          syncedCategoryIndices={syncedCategoryIndices}
+        />
+      );
+    }
+
+    if (activeTab === "preview") {
+      return (
+        <PreviewTab
+          previewTaxSystem={previewTaxSystem}
+          economicData={economicData}
+          countryId={countryId}
+          componentOptimization={componentOptimization}
+          selectedAtomicTaxComponents={selectedAtomicTaxComponents}
+          activeGovernmentComponents={activeComponents}
+          showAtomicIntegration={showAtomicIntegration}
+          currency={governmentData?.structure?.budgetCurrency || "USD"}
+        />
+      );
+    }
+
+    if (activeTab === "calculator") {
+      return (
+        <div className="w-full space-y-6">
+          {builderState.categories.length === 0 ? (
+            <div className="text-muted-foreground flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-sm backdrop-blur-sm">
+              <Calculator className="mx-auto mb-3 h-12 w-12 animate-pulse text-zinc-500 opacity-50" />
+              <p className="text-foreground font-medium">Tax Calculator Locked</p>
+              <p className="mt-1 max-w-sm text-xs">
+                Please define at least one tax category in{" "}
+                <strong>Tax Settings &rarr; Categories</strong> before using the calculator.
+              </p>
+            </div>
+          ) : (
+            <TaxCalculator
+              taxSystem={previewTaxSystem}
+              categories={previewCategories}
+              brackets={previewBrackets}
+              exemptions={EMPTY_OBJECTS}
+              deductions={EMPTY_OBJECTS}
+              economicData={calculatorEconomicData}
+              governmentData={governmentData}
+            />
+          )}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="w-full space-y-6">
-      {/* Toolbar: tab navigation + actions (header provided by parent GlassCard) */}
+      {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Tab Navigation */}
         <div className="inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-0.5">
           {tabs.map((tab) => {
             const isActive = tab.id === activeTab;
@@ -421,7 +482,6 @@ export function TaxBuilder({
           })}
         </div>
 
-        {/* Actions */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {enableAutoSync && countryId && (
             <SyncStatusIndicator
@@ -457,198 +517,19 @@ export function TaxBuilder({
 
       {/* Tab Content */}
       {flat ? (
-        <div className="space-y-6 pt-2">
-          {activeTab === "settings" && (
-            <SettingsTab
-              taxSystem={builderState.taxSystem}
-              onTaxSystemChange={handleTaxSystemChange}
-              categories={builderState.categories}
-              brackets={builderState.brackets}
-              onCategoriesChange={handleCategoriesChange}
-              onBracketsChange={handleBracketsChange}
-              onAddCategory={addCategory}
-              onRemoveCategory={removeCategory}
-              selectedAtomicTaxComponents={selectedAtomicTaxComponents}
-              onAtomicComponentsChange={setSelectedAtomicTaxComponents}
-              activeGovernmentComponents={activeComponents}
-              showAtomicIntegration={showAtomicIntegration}
-              economicData={economicData}
-              previewTaxSystem={previewTaxSystem}
-              validation={validation}
-              isReadOnly={isReadOnly}
-              countryId={countryId}
-              onOpenTemplates={() => setShowTemplates(true)}
-              revenueAutoPopulated={revenueAutoPopulated}
-              syncedCategoryIndices={syncedCategoryIndices}
-            />
-          )}
-
-          {activeTab === "preview" && (
-            <PreviewTab
-              previewTaxSystem={previewTaxSystem}
-              economicData={economicData}
-              countryId={countryId}
-              componentOptimization={componentOptimization}
-              selectedAtomicTaxComponents={selectedAtomicTaxComponents}
-              activeGovernmentComponents={activeComponents}
-              showAtomicIntegration={showAtomicIntegration}
-              currency={governmentData?.structure?.budgetCurrency || "USD"}
-            />
-          )}
-
-          {activeTab === "calculator" && (
-            <div className="w-full space-y-6 pt-2">
-              {builderState.categories.length === 0 ? (
-                <div className="text-muted-foreground flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-sm backdrop-blur-sm">
-                  <Calculator className="mx-auto mb-3 h-12 w-12 animate-pulse text-zinc-500 opacity-50" />
-                  <p className="text-foreground font-medium">Tax Calculator Locked</p>
-                  <p className="mt-1 max-w-sm text-xs">
-                    Please define at least one tax category in{" "}
-                    <strong>Tax Settings &rarr; Categories</strong> before using the calculator.
-                  </p>
-                </div>
-              ) : (
-                <TaxCalculator
-                  taxSystem={previewTaxSystem}
-                  categories={previewCategories}
-                  brackets={previewBrackets}
-                  exemptions={EMPTY_ARRAY}
-                  deductions={EMPTY_ARRAY}
-                  economicData={calculatorEconomicData}
-                  governmentData={governmentData}
-                />
-              )}
-            </div>
-          )}
-        </div>
+        <div className="space-y-6 pt-2">{renderTabContent()}</div>
       ) : (
         <Card className="border-white/10 bg-white/[0.01] shadow-2xl backdrop-blur-xl dark:bg-black/20">
-          <div className="space-y-6 p-6">
-            {activeTab === "settings" && (
-              <SettingsTab
-                taxSystem={builderState.taxSystem}
-                onTaxSystemChange={handleTaxSystemChange}
-                categories={builderState.categories}
-                brackets={builderState.brackets}
-                onCategoriesChange={handleCategoriesChange}
-                onBracketsChange={handleBracketsChange}
-                onAddCategory={addCategory}
-                onRemoveCategory={removeCategory}
-                selectedAtomicTaxComponents={selectedAtomicTaxComponents}
-                onAtomicComponentsChange={setSelectedAtomicTaxComponents}
-                activeGovernmentComponents={activeComponents}
-                showAtomicIntegration={showAtomicIntegration}
-                economicData={economicData}
-                previewTaxSystem={previewTaxSystem}
-                validation={validation}
-                isReadOnly={isReadOnly}
-                countryId={countryId}
-                onOpenTemplates={() => setShowTemplates(true)}
-                revenueAutoPopulated={revenueAutoPopulated}
-                syncedCategoryIndices={syncedCategoryIndices}
-              />
-            )}
-
-            {activeTab === "preview" && (
-              <PreviewTab
-                previewTaxSystem={previewTaxSystem}
-                economicData={economicData}
-                countryId={countryId}
-                componentOptimization={componentOptimization}
-                selectedAtomicTaxComponents={selectedAtomicTaxComponents}
-                activeGovernmentComponents={activeComponents}
-                showAtomicIntegration={showAtomicIntegration}
-                currency={governmentData?.structure?.budgetCurrency || "USD"}
-              />
-            )}
-
-            {activeTab === "calculator" && (
-              <div className="space-y-6">
-                {builderState.categories.length === 0 ? (
-                  <div className="text-muted-foreground flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-sm backdrop-blur-sm">
-                    <Calculator className="mx-auto mb-3 h-12 w-12 animate-pulse text-zinc-500 opacity-50" />
-                    <p className="text-foreground font-medium">Tax Calculator Locked</p>
-                    <p className="mt-1 max-w-sm text-xs">
-                      Please define at least one tax category in{" "}
-                      <strong>Tax Settings &rarr; Categories</strong> before using the calculator.
-                    </p>
-                  </div>
-                ) : (
-                  <TaxCalculator
-                    taxSystem={previewTaxSystem}
-                    categories={previewCategories}
-                    brackets={previewBrackets}
-                    exemptions={EMPTY_ARRAY}
-                    deductions={EMPTY_ARRAY}
-                    economicData={calculatorEconomicData}
-                    governmentData={governmentData}
-                  />
-                )}
-              </div>
-            )}
-          </div>
+          <div className="space-y-6 p-6">{renderTabContent()}</div>
         </Card>
       )}
 
       {/* Template Modal */}
-      {showTemplates && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="mx-4 max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-emerald-500/25 bg-zinc-900/90 shadow-2xl backdrop-blur-xl">
-            <div className="border-border/40 sticky top-0 z-10 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 backdrop-blur-xl dark:bg-black/[0.1]">
-              <h2 className="text-foreground text-xl font-bold">Tax System Templates</h2>
-              <button
-                type="button"
-                onClick={() => setShowTemplates(false)}
-                className="text-foreground/50 hover:text-foreground rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-white/5"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
-              {taxSystemTemplates.map((template, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]"
-                >
-                  <div>
-                    <h3 className="text-foreground text-base font-bold">{template.name}</h3>
-                    <p className="text-muted-foreground mt-1 text-sm">{template.description}</p>
-                  </div>
-                  <div>
-                    <UIBadge variant="secondary">
-                      {template.progressiveTax ? "Progressive" : "Flat"} Tax
-                    </UIBadge>
-                    <UIBadge variant="outline" className="ml-2">
-                      {template.categories.length} Categories
-                    </UIBadge>
-                  </div>
-                  <div className="text-sm">
-                    <strong className="text-foreground">Categories:</strong>
-                    <ul className="text-muted-foreground mt-1">
-                      {template.categories.slice(0, 3).map((cat) => (
-                        <li key={cat.categoryName}>
-                          • {cat.categoryName} ({cat.baseRate}%)
-                        </li>
-                      ))}
-                      {template.categories.length > 3 && (
-                        <li>• +{template.categories.length - 3} more...</li>
-                      )}
-                    </ul>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setTemplateToConfirm(template)}
-                    className="mt-auto w-full rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/20"
-                  >
-                    Use This Template
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <TaxSystemTemplatesModal
+        open={showTemplates}
+        onClose={() => setShowTemplates(false)}
+        onApplyTemplate={applyTemplate}
+      />
 
       {/* Conflict Dialog */}
       {showConflictDialog && enableAutoSync && (
@@ -669,47 +550,6 @@ export function TaxBuilder({
           }}
           builderType="tax"
         />
-      )}
-
-      {/* Template Confirmation Dialog */}
-      {templateToConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-md rounded-xl border border-emerald-500/25 bg-zinc-900/90 p-6 shadow-2xl backdrop-blur-xl">
-            <div className="flex items-start gap-4">
-              <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10">
-                <AlertTriangle className="h-5 w-5 text-amber-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-foreground text-lg font-bold">Apply Template?</h3>
-                <p className="text-muted-foreground mt-2 text-sm">
-                  This will replace your current tax configuration with{" "}
-                  <strong className="text-foreground">{templateToConfirm.name}</strong>. All
-                  existing categories, brackets, exemptions, and deductions will be overwritten.
-                </p>
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setTemplateToConfirm(null)}
-                className="text-foreground/70 hover:text-foreground rounded-lg border border-white/10 px-4 py-2 text-sm font-medium transition-colors hover:bg-white/5"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  applyTemplate(templateToConfirm);
-                  setTemplateToConfirm(null);
-                  setShowTemplates(false);
-                }}
-                className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/20"
-              >
-                Apply Template
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

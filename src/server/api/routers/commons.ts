@@ -6,9 +6,10 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 
 const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
-const USER_AGENT = "IxStats/2.0 (https://ixwiki.com; WikiOS Commons Browser)";
+const USER_AGENT = DEFAULT_USER_AGENT;
 
 // ---------------------------------------------------------------------------
 // Shared fetch helper
@@ -173,7 +174,7 @@ export const commonsRouter = createTRPCRouter({
   getCategoryTotalCounts: publicProcedure
     .input(
       z.object({
-        categories: z.array(z.string().min(1).max(300)).min(1).max(10),
+        categories: z.array(z.string().min(1).max(300)).min(1).max(25),
       })
     )
     .query(async ({ input }) => {

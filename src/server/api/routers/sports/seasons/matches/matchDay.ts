@@ -6,12 +6,14 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
+import type { Prisma } from "@prisma/client";
 import {
   resolveMatch,
   transitionToNextStage,
   simpleHash,
   computeTeamRatingVector,
   getTeamModifiers,
+  generateMatchAnalysisFacts,
 } from "~/lib/sports";
 
 export const matchDaySimulationRouter = createTRPCRouter({
@@ -19,7 +21,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
     .input(z.object({ seasonId: z.string(), matchDay: z.number().int().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const season = await (ctx.db as any).sportSeason.findUnique({
+        const season = await ctx.db.sportSeason.findUnique({
           where: { id: input.seasonId },
           include: { league: true },
         });
@@ -30,7 +32,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
 
         const activeStage = (season as any).activeStage ?? 1;
 
-        const matches = (await (ctx.db as any).sportMatch.findMany({
+        const matches = await ctx.db.sportMatch.findMany({
           where: {
             seasonId: input.seasonId,
             matchDay: input.matchDay,
@@ -51,9 +53,32 @@ export const matchDaySimulationRouter = createTRPCRouter({
               },
             },
           },
-        })) as any[];
+        });
 
         if (matches.length === 0) {
+          // Idempotency check: if all matches for this matchday were already completed, return existing results
+          const existingMatches = await ctx.db.sportMatch.findMany({
+            where: {
+              seasonId: input.seasonId,
+              matchDay: input.matchDay,
+              stage: activeStage,
+            },
+            select: { id: true, homeScore: true, awayScore: true, status: true, matchStats: true },
+          });
+
+          if (existingMatches.length > 0 && existingMatches.every((m) => m.status === "completed")) {
+            return {
+              matchDay: input.matchDay,
+              results: existingMatches.map((m) => ({
+                matchId: m.id,
+                homeScore: m.homeScore,
+                awayScore: m.awayScore,
+                status: m.status,
+              })),
+              alreadyResolved: true,
+            };
+          }
+
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "No scheduled matches for this match day in this stage",
@@ -104,7 +129,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
           const homeTeamModifiers = await getTeamModifiers(match.homeTeam, ctx.db, effectsMap);
           const awayTeamModifiers = await getTeamModifiers(match.awayTeam, ctx.db, effectsMap);
 
-          const rivalry = await (ctx.db as any).sportRivalry.findFirst({
+          const rivalry = await ctx.db.sportRivalry.findFirst({
             where: {
               OR: [
                 { team1Id: match.homeTeamId, team2Id: match.awayTeamId },
@@ -127,8 +152,8 @@ export const matchDaySimulationRouter = createTRPCRouter({
             awayRoster: match.awayTeam.players as any,
             homeTacticalIntent: match.homeTeam.tacticalIntent,
             awayTacticalIntent: match.awayTeam.tacticalIntent,
-            homeLineup: match.homeTeam.lineup,
-            awayLineup: match.awayTeam.lineup,
+            homeLineup: (match.homeTeam.lineup as Record<string, unknown> | null) ?? undefined,
+            awayLineup: (match.awayTeam.lineup as Record<string, unknown> | null) ?? undefined,
             context: { homeAdvantage },
           });
 
@@ -154,11 +179,34 @@ export const matchDaySimulationRouter = createTRPCRouter({
                 ? match.awayTeamId
                 : null;
 
-          const status = winner ? (homeScore > awayScore ? "home_win" : "away_win") : "draw";
+          const status = winner ? (homeScore > awayScore ? "home_win" : "away_win") : "draw";          const simulationSnapshot = {
+            seed,
+            resolverVersion: "2.1.0",
+            ruleVersion: "1.0.0",
+            homeRatings: { ...homeRatings },
+            awayRatings: { ...awayRatings },
+            homeAdvantage,
+            homeTacticalIntent: match.homeTeam.tacticalIntent ?? "Balanced",
+            awayTacticalIntent: match.awayTeam.tacticalIntent ?? "Balanced",
+            capturedAt: new Date().toISOString(),
+          };
+
+          const analysisFacts = generateMatchAnalysisFacts({
+            homeTeamName: match.homeTeam.name,
+            awayTeamName: match.awayTeam.name,
+            homeScore,
+            awayScore,
+            sportPreset: season.league.sportPreset,
+            events: (result.trace as any[]) || [],
+            homeRatings: homeRatings as any,
+            awayRatings: awayRatings as any,
+            homeTactics: match.homeTeam.tacticalIntent || "Balanced",
+            awayTactics: match.awayTeam.tacticalIntent || "Balanced",
+          });
 
           // Atomically claim the match: only one caller can flip scheduled→completed,
           // so a double-click / concurrent sim can't double-apply standings below.
-          const claimed = await (ctx.db as any).sportMatch.updateMany({
+          const claimed = await ctx.db.sportMatch.updateMany({
             where: { id: match.id, status: "scheduled" },
             data: {
               homeScore,
@@ -169,6 +217,8 @@ export const matchDaySimulationRouter = createTRPCRouter({
                 keyStats: result.keyStats,
                 evaluation: result.evaluation,
                 trace: result.trace,
+                simulationSnapshot,
+                analysisFacts,
               } as any,
               homeRatingBefore: { ...homeRatings },
               awayRatingBefore: { ...awayRatings },
@@ -212,18 +262,21 @@ export const matchDaySimulationRouter = createTRPCRouter({
           })();
 
           // Update team season rating vectors
-          await (ctx.db as any).sportTeamSeason.updateMany({
+          await ctx.db.sportTeamSeason.updateMany({
             where: { seasonId: input.seasonId, teamId: match.homeTeamId },
             data: { ratingVector: { ...homeRatingAfter } },
           });
-          await (ctx.db as any).sportTeamSeason.updateMany({
+          await ctx.db.sportTeamSeason.updateMany({
             where: { seasonId: input.seasonId, teamId: match.awayTeamId },
             data: { ratingVector: { ...awayRatingAfter } },
           });
 
-          // Update standings
-          if (status === "home_win") {
-            await (ctx.db as any).sportStanding.updateMany({
+          // Standings update
+          const isDraw = homeScore === awayScore;
+          const homeWin = homeScore > awayScore;
+
+          if (homeWin) {
+            await ctx.db.sportStanding.updateMany({
               where: { seasonId: input.seasonId, teamId: match.homeTeamId },
               data: {
                 wins: { increment: 1 },
@@ -232,7 +285,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
                 pointsAgainst: { increment: awayScore },
               },
             });
-            await (ctx.db as any).sportStanding.updateMany({
+            await ctx.db.sportStanding.updateMany({
               where: { seasonId: input.seasonId, teamId: match.awayTeamId },
               data: {
                 losses: { increment: 1 },
@@ -240,8 +293,8 @@ export const matchDaySimulationRouter = createTRPCRouter({
                 pointsAgainst: { increment: homeScore },
               },
             });
-          } else if (status === "away_win") {
-            await (ctx.db as any).sportStanding.updateMany({
+          } else if (!isDraw) {
+            await ctx.db.sportStanding.updateMany({
               where: { seasonId: input.seasonId, teamId: match.awayTeamId },
               data: {
                 wins: { increment: 1 },
@@ -250,7 +303,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
                 pointsAgainst: { increment: homeScore },
               },
             });
-            await (ctx.db as any).sportStanding.updateMany({
+            await ctx.db.sportStanding.updateMany({
               where: { seasonId: input.seasonId, teamId: match.homeTeamId },
               data: {
                 losses: { increment: 1 },
@@ -259,8 +312,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
               },
             });
           } else {
-            // Draw
-            await (ctx.db as any).sportStanding.updateMany({
+            await ctx.db.sportStanding.updateMany({
               where: { seasonId: input.seasonId, teamId: match.homeTeamId },
               data: {
                 draws: { increment: 1 },
@@ -269,7 +321,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
                 pointsAgainst: { increment: awayScore },
               },
             });
-            await (ctx.db as any).sportStanding.updateMany({
+            await ctx.db.sportStanding.updateMany({
               where: { seasonId: input.seasonId, teamId: match.awayTeamId },
               data: {
                 draws: { increment: 1 },
@@ -281,68 +333,51 @@ export const matchDaySimulationRouter = createTRPCRouter({
           }
 
           // Update player morale
-          const homePlayerIds = (match.homeTeam.players as any[]).map((p) => p.id);
-          const awayPlayerIds = (match.awayTeam.players as any[]).map((p) => p.id);
+          const homePlayerIds = (match.homeTeam.players as Array<{ id: string }>).map((p) => p.id);
+          const awayPlayerIds = (match.awayTeam.players as Array<{ id: string }>).map((p) => p.id);
 
-          if (status === "home_win") {
-            await (ctx.db as any).sportPlayer.updateMany({
+          if (homeWin) {
+            await ctx.db.sportPlayer.updateMany({
               where: { id: { in: homePlayerIds } },
-              data: { morale: { increment: 5 } },
+              data: { morale: { increment: 3 } },
             });
-            await (ctx.db as any).sportPlayer.updateMany({
+            await ctx.db.sportPlayer.updateMany({
               where: { id: { in: awayPlayerIds } },
-              data: { morale: { decrement: 5 } },
+              data: { morale: { decrement: 2 } },
             });
-          } else if (status === "away_win") {
-            await (ctx.db as any).sportPlayer.updateMany({
+          } else if (!isDraw) {
+            await ctx.db.sportPlayer.updateMany({
               where: { id: { in: awayPlayerIds } },
-              data: { morale: { increment: 5 } },
+              data: { morale: { increment: 3 } },
             });
-            await (ctx.db as any).sportPlayer.updateMany({
+            await ctx.db.sportPlayer.updateMany({
               where: { id: { in: homePlayerIds } },
-              data: { morale: { decrement: 5 } },
+              data: { morale: { decrement: 2 } },
             });
           }
 
-          // Cap morale at [0, 100]
-          await (ctx.db as any).sportPlayer.updateMany({
-            where: { id: { in: [...homePlayerIds, ...awayPlayerIds] }, morale: { gt: 100 } },
-            data: { morale: 100 },
-          });
-          await (ctx.db as any).sportPlayer.updateMany({
-            where: { id: { in: [...homePlayerIds, ...awayPlayerIds] }, morale: { lt: 0 } },
-            data: { morale: 0 },
-          });
-
-          // Create match stats for key player performances
-          let playerStats = resRec.playerStats as Array<Record<string, unknown>> | undefined;
-
+          // Individual player match stats
+          let playerStats = resRec.playerStats;
           if (!playerStats && Array.isArray(result.trace)) {
             const playerMap = new Map<string, { goals: number; assists: number; shots: number }>();
-            const homeIds = new Set(match.homeTeam.players.map((p: any) => p.id));
+            const homeIds = new Set(homePlayerIds);
 
             for (const event of result.trace) {
-              const actorId = event.actorId;
-              if (!actorId) continue;
-
-              if (!playerMap.has(actorId)) {
-                playerMap.set(actorId, { goals: 0, assists: 0, shots: 0 });
+              const scorerId = event.actorId;
+              if (event.type === "goal" && scorerId) {
+                if (!playerMap.has(scorerId)) {
+                  playerMap.set(scorerId, { goals: 0, assists: 0, shots: 0 });
+                }
+                playerMap.get(scorerId)!.goals++;
               }
-
-              const pStat = playerMap.get(actorId)!;
-
-              if (event.type === "goal") {
-                pStat.goals++;
-              } else if (
-                event.type === "tactic_shift" &&
-                typeof event.description === "string" &&
-                event.description.toLowerCase().includes("shot")
-              ) {
-                pStat.shots++;
+              if ((event.type as string) === "shot" && scorerId) {
+                if (!playerMap.has(scorerId)) {
+                  playerMap.set(scorerId, { goals: 0, assists: 0, shots: 0 });
+                }
+                playerMap.get(scorerId)!.shots++;
               }
             }
 
-            // Assign assists to teammates for goals
             for (let idx = 0; idx < result.trace.length; idx++) {
               const event = result.trace[idx];
               if (event.type === "goal" && event.actorId) {
@@ -371,7 +406,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
           if (Array.isArray(playerStats)) {
             for (const ps of playerStats) {
               if (ps.playerId) {
-                await (ctx.db as any).sportMatchStat.create({
+                await ctx.db.sportMatchStat.create({
                   data: {
                     matchId: match.id,
                     playerId: ps.playerId as string,
@@ -387,6 +422,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
             homeScore,
             awayScore,
             status,
+            analysisFacts,
           });
         }
 
@@ -402,8 +438,8 @@ export const matchDaySimulationRouter = createTRPCRouter({
             return {
               homeName: match.homeTeam.name as string,
               awayName: match.awayTeam.name as string,
-              homeScore: res.homeScore,
-              awayScore: res.awayScore,
+              homeScore: res?.homeScore ?? 0,
+              awayScore: res?.awayScore ?? 0,
               homeId: match.homeTeamId as string,
               awayId: match.awayTeamId as string,
             };
@@ -415,15 +451,17 @@ export const matchDaySimulationRouter = createTRPCRouter({
           await import("~/lib/sports/predictions");
         for (let i = 0; i < matches.length; i++) {
           const res = results[i] as { matchId: string; homeScore: number; awayScore: number };
-          await resolveMatchPredictions(
-            ctx.db,
-            res.matchId,
-            outcomeFromScores(res.homeScore, res.awayScore)
-          );
+          if (res) {
+            await resolveMatchPredictions(
+              ctx.db,
+              res.matchId,
+              outcomeFromScores(res.homeScore, res.awayScore)
+            );
+          }
         }
 
         // Try to transition to next stage if this stage matches are complete
-        await transitionToNextStage(ctx.db as any, input.seasonId);
+        await transitionToNextStage(ctx.db, input.seasonId);
 
         return { matchDay: input.matchDay, results };
       } catch (error) {
@@ -432,6 +470,220 @@ export const matchDaySimulationRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `Failed to simulate match day: ${error instanceof Error ? error.message : String(error)}`,
+        });
+      }
+    }),
+
+  simulateSingleMatch: protectedProcedure
+    .input(z.object({ matchId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const match = await ctx.db.sportMatch.findUnique({
+          where: { id: input.matchId },
+          include: {
+            season: { include: { league: true } },
+            homeTeam: {
+              include: {
+                players: { where: { isActive: true } },
+                coaches: { where: { isActive: true } },
+              },
+            },
+            awayTeam: {
+              include: {
+                players: { where: { isActive: true } },
+                coaches: { where: { isActive: true } },
+              },
+            },
+          },
+        });
+
+        if (!match) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
+        }
+
+        if (match.status === "completed") {
+          return {
+            matchId: match.id,
+            homeScore: match.homeScore,
+            awayScore: match.awayScore,
+            matchStats: match.matchStats,
+            alreadyResolved: true,
+          };
+        }
+
+        const season = match.season;
+        const matchIndex = Math.abs(
+          match.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
+        );
+        const seed = simpleHash(match.seasonId, match.matchDay ?? 1, matchIndex);
+
+        const homeRatings = computeTeamRatingVector(
+          match.homeTeam.players as any[],
+          match.homeTeam.coaches as any[],
+          season.league.sportPreset
+        );
+        const awayRatings = computeTeamRatingVector(
+          match.awayTeam.players as any[],
+          match.awayTeam.coaches as any[],
+          season.league.sportPreset
+        );
+
+        const effectsMap = new Map<string, any[]>();
+        const homeTeamModifiers = await getTeamModifiers(match.homeTeam, ctx.db, effectsMap);
+        const awayTeamModifiers = await getTeamModifiers(match.awayTeam, ctx.db, effectsMap);
+
+        const result = resolveMatch({
+          sport: season.league.sportPreset,
+          homeTeam: homeRatings,
+          awayTeam: awayRatings,
+          archetype: season.league.archetype,
+          seed,
+          homeTeamModifiers,
+          awayTeamModifiers,
+          homeRoster: match.homeTeam.players as any,
+          awayRoster: match.awayTeam.players as any,
+          homeTacticalIntent: match.homeTeam.tacticalIntent,
+          awayTacticalIntent: match.awayTeam.tacticalIntent,
+          homeLineup: (match.homeTeam.lineup as Record<string, unknown> | null) ?? undefined,
+          awayLineup: (match.awayTeam.lineup as Record<string, unknown> | null) ?? undefined,
+          context: { homeAdvantage: 55 },
+        });
+
+        const resRec = result as any;
+        const homeScore = (resRec.homeScore as number) ?? 0;
+        const awayScore = (resRec.awayScore as number) ?? 0;
+        const homeRatingDelta = (resRec.homeRatingDelta as number) ?? 0;
+        const awayRatingDelta = (resRec.awayRatingDelta as number) ?? 0;
+
+        const homeRatingAfter = {
+          ...homeRatings,
+          overall: Math.round(((homeRatings.overall as number) + homeRatingDelta) * 100) / 100,
+        };
+        const awayRatingAfter = {
+          ...awayRatings,
+          overall: Math.round(((awayRatings.overall as number) + awayRatingDelta) * 100) / 100,
+        };
+
+        const simulationSnapshot = {
+          seed,
+          resolverVersion: "2.1.0",
+          ruleVersion: "1.0.0",
+          homeRatings: { ...homeRatings },
+          awayRatings: { ...awayRatings },
+          homeAdvantage: 55,
+          homeTacticalIntent: match.homeTeam.tacticalIntent ?? "Balanced",
+          awayTacticalIntent: match.awayTeam.tacticalIntent ?? "Balanced",
+          capturedAt: new Date().toISOString(),
+        };
+
+        const analysisFacts = generateMatchAnalysisFacts({
+          homeTeamName: match.homeTeam.name,
+          awayTeamName: match.awayTeam.name,
+          homeScore,
+          awayScore,
+          sportPreset: season.league.sportPreset,
+          events: (result.trace as any[]) || [],
+          homeRatings: homeRatings as any,
+          awayRatings: awayRatings as any,
+          homeTactics: match.homeTeam.tacticalIntent || "Balanced",
+          awayTactics: match.awayTeam.tacticalIntent || "Balanced",
+        });
+
+        const updated = await ctx.db.sportMatch.update({
+          where: { id: match.id },
+          data: {
+            homeScore,
+            awayScore,
+            status: "completed",
+            resolvedIxTime: IxTime.getCurrentIxTime(),
+            matchStats: {
+              keyStats: result.keyStats,
+              evaluation: result.evaluation,
+              trace: result.trace,
+              simulationSnapshot,
+              analysisFacts,
+            } as unknown as Prisma.InputJsonValue,
+            homeRatingBefore: { ...homeRatings },
+            awayRatingBefore: { ...awayRatings },
+            homeRatingAfter: { ...homeRatingAfter },
+            awayRatingAfter: { ...awayRatingAfter },
+          },
+        });
+
+        // Standings update
+        const isDraw = homeScore === awayScore;
+        const homeWin = homeScore > awayScore;
+
+        if (homeWin) {
+          await ctx.db.sportStanding.updateMany({
+            where: { seasonId: match.seasonId, teamId: match.homeTeamId },
+            data: {
+              wins: { increment: 1 },
+              points: { increment: 3 },
+              pointsFor: { increment: homeScore },
+              pointsAgainst: { increment: awayScore },
+            },
+          });
+          await ctx.db.sportStanding.updateMany({
+            where: { seasonId: match.seasonId, teamId: match.awayTeamId },
+            data: {
+              losses: { increment: 1 },
+              pointsFor: { increment: awayScore },
+              pointsAgainst: { increment: homeScore },
+            },
+          });
+        } else if (!isDraw) {
+          await ctx.db.sportStanding.updateMany({
+            where: { seasonId: match.seasonId, teamId: match.awayTeamId },
+            data: {
+              wins: { increment: 1 },
+              points: { increment: 3 },
+              pointsFor: { increment: awayScore },
+              pointsAgainst: { increment: homeScore },
+            },
+          });
+          await ctx.db.sportStanding.updateMany({
+            where: { seasonId: match.seasonId, teamId: match.homeTeamId },
+            data: {
+              losses: { increment: 1 },
+              pointsFor: { increment: homeScore },
+              pointsAgainst: { increment: awayScore },
+            },
+          });
+        } else {
+          await ctx.db.sportStanding.updateMany({
+            where: { seasonId: match.seasonId, teamId: match.homeTeamId },
+            data: {
+              draws: { increment: 1 },
+              points: { increment: 1 },
+              pointsFor: { increment: homeScore },
+              pointsAgainst: { increment: awayScore },
+            },
+          });
+          await ctx.db.sportStanding.updateMany({
+            where: { seasonId: match.seasonId, teamId: match.awayTeamId },
+            data: {
+              draws: { increment: 1 },
+              points: { increment: 1 },
+              pointsFor: { increment: awayScore },
+              pointsAgainst: { increment: homeScore },
+            },
+          });
+        }
+
+        return {
+          matchId: match.id,
+          homeScore,
+          awayScore,
+          matchStats: updated.matchStats,
+          analysisFacts,
+        };
+      } catch (error) {
+        console.error("Single match simulation error:", error);
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to simulate match: ${error instanceof Error ? error.message : String(error)}`,
         });
       }
     }),

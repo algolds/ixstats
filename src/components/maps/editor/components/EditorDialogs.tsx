@@ -3,11 +3,12 @@
 import React from "react";
 import { ShieldAlert, SystemRestart as Loader2, WarningCircle as AlertCircle } from "iconoir-react";
 import { SplitMergeDialog } from "~/components/maps/editor/SplitMergeDialog";
+import type { BorderEditorState } from "../types/editor-state";
 
 interface EditorDialogsProps {
   showSplitDialog: boolean;
   setShowSplitDialog: (show: boolean) => void;
-  borderState: any;
+  borderState: BorderEditorState;
   displayName: string;
   handleSplitConfirm: (nameA: string, nameB: string) => void;
   isSubmitting: boolean;
@@ -24,7 +25,7 @@ interface EditorDialogsProps {
   onExit: () => void;
 }
 
-export function EditorDialogs({
+export const EditorDialogs = React.memo(function EditorDialogs({
   showSplitDialog,
   setShowSplitDialog,
   borderState,
@@ -89,7 +90,7 @@ export function EditorDialogs({
                 value={saveReason}
                 onChange={(e) => setSaveReason(e.target.value)}
                 placeholder="e.g. Adjusted Caphiria boundary alignment..."
-                className="border-border/40 bg-background text-foreground min-h-[80px] w-full rounded-lg border px-3 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="border-border/40 bg-background text-foreground min-h-[80px] w-full rounded-lg border px-3 py-2 text-xs focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 required
               />
             </div>
@@ -97,14 +98,14 @@ export function EditorDialogs({
             <div className="border-border/30 flex justify-end gap-2 border-t pt-3">
               <button
                 onClick={() => setShowConfirmSaveModal(false)}
-                className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-lg px-3 py-2 text-xs transition-colors"
+                className="text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] rounded-lg px-3 py-2 text-xs transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmBorderSave}
                 disabled={!saveReason.trim() || isSubmitting}
-                className="disabled:text-muted-foreground/50 bg-blue-650 flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-blue-600/40"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition-all"
               >
                 {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Confirm & Save
@@ -128,7 +129,7 @@ export function EditorDialogs({
             <div className="border-border/30 flex justify-end gap-2 border-t pt-3">
               <button
                 onClick={() => setShowExitConfirm(false)}
-                className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-lg px-3 py-2 text-xs transition-colors"
+                className="text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] rounded-lg px-3 py-2 text-xs transition-all"
               >
                 Keep Editing
               </button>
@@ -137,7 +138,7 @@ export function EditorDialogs({
                   setShowExitConfirm(false);
                   onExit();
                 }}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg px-4 py-2 text-xs font-semibold transition-colors"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-[0.98] rounded-lg px-4 py-2 text-xs font-semibold transition-all"
               >
                 Discard & Leave
               </button>
@@ -147,4 +148,4 @@ export function EditorDialogs({
       )}
     </>
   );
-}
+});

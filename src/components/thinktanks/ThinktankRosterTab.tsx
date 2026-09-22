@@ -166,7 +166,7 @@ export function ThinktankRosterTab({
               >
                 <div className="flex min-w-0 items-center gap-3">
                   {/* Avatar / Flag Icon */}
-                  <div className="border-border/50 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-gradient-to-br from-emerald-500/10 to-teal-500/10 font-bold text-emerald-600 dark:text-emerald-400">
+                  <div className="border-border/50 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-emerald-500/10 font-bold text-emerald-600 dark:text-emerald-400">
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}

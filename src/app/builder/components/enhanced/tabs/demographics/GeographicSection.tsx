@@ -19,8 +19,16 @@ import { Input } from "~/components/ui/input";
 
 interface GeographicSectionProps {
   demographics: DemographicsConfiguration;
-  onChange: (parentField: keyof DemographicsConfiguration, field: string, value: any) => void;
-  onRegionChange: (regionIndex: number, field: keyof RegionDistribution, value: any) => void;
+  onChange: (
+    parentField: keyof DemographicsConfiguration,
+    field: string,
+    value: number | string | boolean
+  ) => void;
+  onRegionChange: <K extends keyof RegionDistribution>(
+    regionIndex: number,
+    field: K,
+    value: RegionDistribution[K]
+  ) => void;
   onAddRegion: () => void;
   onRemoveRegion: (index: number) => void;
 }

@@ -1,0 +1,205 @@
+{
+  "country": "Zaclaria",
+  "featureId": "Zaclaria",
+  "generatedAt": "2026-09-06T20:07:55.797Z",
+  "area": {
+    "km2": 950753,
+    "sqMi": 367088,
+    "boundingBox": {
+      "minLng": 122.7117,
+      "minLat": -1.8187,
+      "maxLng": 133.4576,
+      "maxLat": 9.3746
+    },
+    "nsSpanKm": 1245,
+    "ewSpanKm": 1188,
+    "centroid": {
+      "lng": 129.1528,
+      "lat": 6.0551
+    },
+    "perimeterKm": 5322
+  },
+  "elevation": {
+    "zones": [
+      {
+        "zone": "Coastal Lowlands",
+        "minM": 0,
+        "maxM": 99,
+        "areaKm2": 597735,
+        "percent": 62.9
+      },
+      {
+        "zone": "Low Hills",
+        "minM": 100,
+        "maxM": 349,
+        "areaKm2": 335958,
+        "percent": 35.3
+      },
+      {
+        "zone": "Rolling Hills",
+        "minM": 350,
+        "maxM": 499,
+        "areaKm2": 10960,
+        "percent": 1.2
+      },
+      {
+        "zone": "Uplands",
+        "minM": 500,
+        "maxM": 999,
+        "areaKm2": 4976,
+        "percent": 0.5
+      },
+      {
+        "zone": "Low Mountains",
+        "minM": 1000,
+        "maxM": 1999,
+        "areaKm2": 1124,
+        "percent": 0.1
+      }
+    ],
+    "minElevationM": 0,
+    "maxElevationM": 1999,
+    "meanElevationM": 121,
+    "dominantTerrain": "Coastal Lowlands",
+    "terrainRoughness": 0.0051
+  },
+  "climate": {
+    "zones": [
+      {
+        "type": "Steppe or Semiarid (Bs)",
+        "areaKm2": 350813,
+        "percent": 36.9,
+        "description": "Low rainfall with hot daytime temperatures"
+      },
+      {
+        "type": "Tropical Wet (Ar)",
+        "areaKm2": 255407,
+        "percent": 26.9,
+        "description": "Hot and humid year-round with heavy rainfall"
+      },
+      {
+        "type": "Desert or Arid (Bw)",
+        "areaKm2": 212085,
+        "percent": 22.3,
+        "description": "Extremely dry with intense solar radiation"
+      },
+      {
+        "type": "Tropical Wet-And-Dry (Aw)",
+        "areaKm2": 131155,
+        "percent": 13.8,
+        "description": "Tropical with distinct wet and dry seasons"
+      },
+      {
+        "type": "Highland (H)",
+        "areaKm2": 1293,
+        "percent": 0.1,
+        "description": "High altitude with cold temps and orographic precipitation"
+      }
+    ],
+    "dominantType": "Steppe or Semiarid (Bs)",
+    "shannonDiversity": 1.23,
+    "temperature": {
+      "meanC": 27,
+      "meanF": 80.6,
+      "summerDailyHighC": 35.7,
+      "winterDailyLowC": 18.4,
+      "seasonalRangeC": 7.1,
+      "diurnalRangeC": 10.2
+    },
+    "annualPrecipitationMm": 734
+  },
+  "hydrography": {
+    "riverCount": 9,
+    "totalRiverLengthKm": 6275,
+    "lakeCount": 0,
+    "totalLakeAreaKm2": 0,
+    "drainageDensity": 0.007
+  },
+  "position": {
+    "hemisphere": "Northern",
+    "latitudeBand": "Tropical",
+    "atmosphericZone": "Equatorial zone (ITCZ dominant)",
+    "distanceFromEquatorKm": 673,
+    "timezone": "UTC+9"
+  },
+  "neighbors": [
+    {
+      "name": "Soirwind",
+      "direction": "NNE",
+      "sharedBorderKm": 423
+    },
+    {
+      "name": "Kandara",
+      "direction": "E",
+      "sharedBorderKm": 493
+    },
+    {
+      "name": "Metzetta",
+      "direction": "SSW",
+      "sharedBorderKm": 0
+    }
+  ],
+  "coastline": {
+    "hasCoastline": true,
+    "isLandlocked": false,
+    "coastlineKm": 4407,
+    "landBorderKm": 915,
+    "coastlinePercent": 82.8
+  },
+  "shape": {
+    "compactnessRatio": 0.422,
+    "compactness": "Moderately compact",
+    "elongationRatio": 1.05,
+    "elongation": "Roughly equidimensional",
+    "fragments": 1,
+    "islands": 0
+  },
+  "iceCoverage": {
+    "hasIcecaps": false,
+    "areaKm2": 0,
+    "percent": 0
+  },
+  "insights": {
+    "agriculture": {
+      "arableLandPercent": 42,
+      "arableLandKm2": 399343,
+      "growingSeasonDays": 204,
+      "waterAvailability": "Limited",
+      "waterScore": 40,
+      "cropSuitability": [
+        "Pastoral grazing",
+        "Millet",
+        "Rice",
+        "Sugarcane",
+        "Tropical fruits"
+      ],
+      "overallRating": "Good"
+    },
+    "strategic": {
+      "maritimeIndex": "Maritime power (extensive coastline)",
+      "coastlineToAreaRatio": 451.9,
+      "strategicDepthKm": 594,
+      "borderDefensibility": "Open terrain (few natural barriers)",
+      "mountainCoveragePercent": 0.1,
+      "islandExposure": "Continental (no islands)",
+      "accessPoints": "Limited entry points"
+    },
+    "habitability": {
+      "score": 58,
+      "descriptor": "Moderately habitable",
+      "climateComfort": 19,
+      "waterAccess": 9,
+      "terrainAccess": 30,
+      "keyFactors": [
+        "Water scarcity",
+        "Accessible terrain"
+      ]
+    },
+    "biome": {
+      "dominantBiome": "Short grass steppe, scrubland",
+      "ecoRegionCount": 25,
+      "ecologicalDiversity": "Moderately diverse",
+      "summary": "The country features a mosaic of biomes, with short grass steppe, scrubland (Steppe or Semiarid) as the most prevalent. Significant areas of tropical rainforest, dense canopy (27%) and sparse xerophytes, barren sand/rock (22%) and savanna, tropical grassland, open woodland (14%) add to the ecological variety. 9 rivers totaling 6,275 km provide freshwater corridors."
+    }
+  }
+}

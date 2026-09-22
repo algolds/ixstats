@@ -223,19 +223,19 @@ export function AutosaveHistoryPanel({
             <CardContent className="p-4">
               <p className="mb-3 text-sm font-medium">Section Breakdown</p>
               <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-                <div className="rounded bg-blue-50 p-2 dark:bg-blue-950/30">
+                <div className="rounded bg-blue-500/10 p-2">
                   <p className="text-muted-foreground">Identity</p>
                   <p className="text-lg font-bold">{stats.sectionBreakdown.identity}</p>
                 </div>
-                <div className="rounded bg-purple-50 p-2 dark:bg-purple-950/30">
+                <div className="rounded bg-indigo-500/10 p-2">
                   <p className="text-muted-foreground">Government</p>
                   <p className="text-lg font-bold">{stats.sectionBreakdown.government}</p>
                 </div>
-                <div className="rounded bg-green-50 p-2 dark:bg-green-950/30">
+                <div className="rounded bg-amber-500/10 p-2">
                   <p className="text-muted-foreground">Tax</p>
                   <p className="text-lg font-bold">{stats.sectionBreakdown.tax}</p>
                 </div>
-                <div className="rounded bg-orange-50 p-2 dark:bg-orange-950/30">
+                <div className="rounded bg-emerald-500/10 p-2">
                   <p className="text-muted-foreground">Economy</p>
                   <p className="text-lg font-bold">{stats.sectionBreakdown.economy}</p>
                 </div>

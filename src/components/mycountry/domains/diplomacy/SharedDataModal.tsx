@@ -201,10 +201,10 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
             ) : (
               <div className="space-y-6">
                 {embassy && (
-                  <Card className="facet-hierarchy-child border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-purple-500/5">
+                  <Card className="facet-hierarchy-child border-cyan-500/20 bg-cyan-500/5">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Building2 className="h-5 w-5 text-blue-500" />
+                        <Building2 className="h-5 w-5 text-cyan-500" />
                         Embassy Overview
                       </CardTitle>
                     </CardHeader>
@@ -212,19 +212,19 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                         <div className="space-y-1">
                           <div className="text-muted-foreground text-xs">Level</div>
-                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
                             {embassy.level || 1}
                           </div>
                         </div>
                         <div className="space-y-1">
                           <div className="text-muted-foreground text-xs">Influence</div>
-                          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                          <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                             {embassy.influence?.toFixed(0) || 0}
                           </div>
                         </div>
                         <div className="space-y-1">
                           <div className="text-muted-foreground text-xs">Staff</div>
-                          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                             {embassy.staffCount || 0}
                           </div>
                         </div>
@@ -440,12 +440,12 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                 </div>
                               </div>
                               <div className="bg-background/50 rounded-lg p-3 text-center">
-                                <Users className="mx-auto mb-1 h-4 w-4 text-green-500" />
+                                <Users className="mx-auto mb-1 h-4 w-4 text-emerald-500" />
                                 <div className="text-muted-foreground text-xs">Staff</div>
                                 <div className="font-semibold">{embassy?.staffCount || 0}</div>
                               </div>
                               <div className="bg-background/50 rounded-lg p-3 text-center">
-                                <BarChart3 className="mx-auto mb-1 h-4 w-4 text-purple-500" />
+                                <BarChart3 className="mx-auto mb-1 h-4 w-4 text-cyan-500" />
                                 <div className="text-muted-foreground text-xs">Influence</div>
                                 <div className="font-semibold">
                                   {embassy?.influence?.toFixed(0) || 0}
@@ -510,10 +510,10 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                             </CardContent>
                           </Card>
 
-                          <Card className="facet-hierarchy-child border-purple-500/20 transition-colors hover:border-purple-500/40">
+                          <Card className="facet-hierarchy-child border-cyan-500/20 transition-colors hover:border-cyan-500/40">
                             <CardHeader className="pb-3">
                               <CardTitle className="flex items-center gap-2 text-base">
-                                <Building2 className="h-4 w-4 text-purple-500" />
+                                <Building2 className="h-4 w-4 text-cyan-500" />
                                 {embassy.guestCountryId || "Guest Country"}
                               </CardTitle>
                               <CardDescription className="text-xs">

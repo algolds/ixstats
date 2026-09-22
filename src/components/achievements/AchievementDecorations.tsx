@@ -94,7 +94,7 @@ export function AchievementCardBackdrop({
 
       {/* Holographic foil sheen on epic/legendary */}
       {isLegendaryOrEpic && isUnlocked && (
-        <div className="pointer-events-none absolute -inset-px rounded-3xl bg-gradient-to-tr from-amber-500/15 via-transparent to-purple-500/15 opacity-60 blur-xl" />
+        <div className="pointer-events-none absolute -inset-px rounded-3xl bg-gradient-to-tr from-amber-500/15 via-transparent to-amber-500/10 opacity-60 blur-xl" />
       )}
 
       {/* 140px Ghost SVG Watermark in Bottom-Right Corner */}

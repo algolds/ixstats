@@ -77,7 +77,7 @@ export function SearchableList<T>({
     if (!q) return items;
     return items.filter((item) =>
       searchKeys.some((key) => {
-        const value = typeof key === "function" ? key(item) : (item as any)[key];
+        const value = typeof key === "function" ? key(item) : item[key];
         return typeof value === "string" && value.toLowerCase().includes(q);
       })
     );
@@ -143,11 +143,17 @@ export function SearchableList<T>({
 
           {!isEmpty && !isFilteredEmpty && (
             <div className="space-y-2">
-              {filtered.map((item, index) => (
-                <div key={(item as any).id ?? index} className={itemClassName}>
-                  {renderItem(item, index)}
-                </div>
-              ))}
+              {filtered.map((item, index) => {
+                const itemId =
+                  typeof item === "object" && item !== null && "id" in item
+                    ? String((item as { id: string | number }).id)
+                    : index;
+                return (
+                  <div key={itemId} className={itemClassName}>
+                    {renderItem(item, index)}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

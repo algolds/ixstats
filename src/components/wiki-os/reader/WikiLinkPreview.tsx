@@ -74,6 +74,17 @@ const parseStyleString = (styleStr: string): Record<string, string> => {
   return styles;
 };
 
+// HTML elements that cannot contain whitespace text nodes in React / DOM validation
+const STRICT_TABLE_ELEMENTS = new Set([
+  "table",
+  "thead",
+  "tbody",
+  "tfoot",
+  "tr",
+  "colgroup",
+  "select",
+]);
+
 function domNodeToReact(node: Node, index: number): React.ReactNode {
   if (node.nodeType === Node.TEXT_NODE) {
     return node.textContent;
@@ -107,7 +118,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
         >
           <div className="min-w-0 flex-1 text-left">
             <div className="mb-1 flex items-center gap-1.5">
-              <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
+              <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-wiki" />
               <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                 {source === "iiwiki" ? "IIWiki Article" : "IxWiki Article"}
               </span>
@@ -136,7 +147,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
     const href = element.getAttribute("href") || "";
     const className =
       element.className ||
-      "text-purple-600 dark:text-purple-400 font-semibold underline hover:text-purple-700 dark:hover:text-purple-300 transition-colors";
+      "text-wiki hover:text-wiki-hover font-semibold underline transition-colors";
 
     return (
       <a key={index} href={href} className={className}>
@@ -195,7 +206,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
           "bg-emerald-600/[0.06] border-emerald-600/20 text-emerald-700 hover:bg-emerald-600/[0.1] hover:border-emerald-600/30 dark:bg-emerald-500/[0.04] dark:border-emerald-500/15 dark:text-emerald-400/90 dark:hover:bg-emerald-500/[0.08] dark:hover:border-emerald-500/25";
       } else {
         badgeStyle +=
-          "bg-purple-600/[0.06] border-purple-600/20 text-purple-700 hover:bg-purple-600/[0.1] hover:border-purple-600/30 dark:bg-purple-500/[0.04] dark:border-purple-500/15 dark:text-purple-400/90 dark:hover:bg-purple-500/[0.08] dark:hover:border-purple-500/25";
+          "bg-wiki/10 border-wiki/30 text-wiki hover:bg-wiki/20 hover:text-wiki-hover";
       }
 
       return (
@@ -225,10 +236,18 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
     );
   }
 
-  // Standard HTML elements mapping
-  const children = Array.from(element.childNodes).map((child, childIdx) =>
-    domNodeToReact(child, childIdx)
-  );
+  // Filter out whitespace-only text nodes in strict table/form containers to prevent React hydration/DOM nesting errors
+  const childNodes = Array.from(element.childNodes).filter((child) => {
+    if (STRICT_TABLE_ELEMENTS.has(tagName) && child.nodeType === Node.TEXT_NODE) {
+      return Boolean(child.textContent && child.textContent.trim().length > 0);
+    }
+    return true;
+  });
+
+  const children = childNodes
+    .map((child, childIdx) => domNodeToReact(child, childIdx))
+    .filter((child) => child !== null && child !== undefined);
+
   const props: any = { key: index };
 
   if (element.className) props.className = element.className;
@@ -237,6 +256,14 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
   if (element.getAttribute("rel")) props.rel = element.getAttribute("rel");
   if (element.getAttribute("src")) props.src = element.getAttribute("src");
   if (element.getAttribute("alt")) props.alt = element.getAttribute("alt");
+  if (element.getAttribute("title")) props.title = element.getAttribute("title");
+  if (element.getAttribute("scope")) props.scope = element.getAttribute("scope");
+  if (element.getAttribute("colspan")) {
+    props.colSpan = Number(element.getAttribute("colspan")) || element.getAttribute("colspan");
+  }
+  if (element.getAttribute("rowspan")) {
+    props.rowSpan = Number(element.getAttribute("rowspan")) || element.getAttribute("rowspan");
+  }
 
   if (element.getAttribute("style")) {
     props.style = parseStyleString(element.getAttribute("style") || "");
@@ -246,7 +273,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
     return React.createElement(tagName, props);
   }
 
-  return React.createElement(tagName, props, children);
+  return React.createElement(tagName, props, ...children);
 }
 
 function getEntityIcon(
@@ -441,13 +468,13 @@ export function MentionPopover({
             {isUser && authorData && (
               <div className="flex flex-col gap-2 text-left">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/10">
-                    <span className="text-sm font-bold text-purple-600 dark:text-purple-300">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10">
+                    <span className="text-sm font-bold text-blue-600 dark:text-blue-300">
                       👤
                     </span>
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-purple-700 dark:text-purple-300">
+                    <h4 className="text-sm font-bold text-blue-700 dark:text-blue-300">
                       @{entityId}
                     </h4>
                     {authorData.country && (
@@ -460,7 +487,7 @@ export function MentionPopover({
                 <div className="mt-1 flex gap-2">
                   <Link
                     href={withBasePath(`/dashboard`)}
-                    className="flex-1 rounded bg-purple-500/10 py-1 text-center text-xs font-semibold text-purple-700 hover:bg-purple-500/20 dark:bg-purple-500/20 dark:text-purple-200 dark:hover:bg-purple-500/30"
+                    className="flex-1 rounded bg-blue-500/10 py-1 text-center text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-200 dark:hover:bg-blue-500/30"
                   >
                     View Feed
                   </Link>
@@ -512,7 +539,9 @@ export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiH
       const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
       const root = doc.body.firstElementChild;
       if (!root) return null;
-      return Array.from(root.childNodes).map((node, idx) => domNodeToReact(node, idx));
+      return Array.from(root.childNodes)
+        .map((node, idx) => domNodeToReact(node, idx))
+        .filter((node) => node !== null && node !== undefined);
     } catch (err) {
       console.warn("Failed to parse HTML in WikiHtmlContent:", err);
       return null;

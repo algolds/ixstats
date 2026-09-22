@@ -342,7 +342,7 @@ export function WikiOSUnifiedSidebar({
           icon: Search,
           title: "Search Wiki",
           glowClass:
-            "border-teal-500/20 bg-teal-500/5 text-teal-400 hover:bg-teal-500/15 rail-glow-teal rail-animate-spin",
+            "border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15",
           isActive: activeId === "search",
           badge: (
             <kbd className="text-muted-foreground/60 rounded border border-white/5 bg-white/5 px-1 text-[8px]">
@@ -439,7 +439,7 @@ export function WikiOSUnifiedSidebar({
           icon: ImageIcon,
           title: "Repository",
           glowClass:
-            "rail-glow-purple rail-animate-wiggle border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15",
+            "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15",
           isActive:
             pathname === "/util/repository" ||
             pathname.startsWith("/util/repository/") ||
@@ -579,7 +579,7 @@ export function WikiOSUnifiedSidebar({
                           href={withBasePath("/util")}
                           className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-medium transition-colors hover:bg-[var(--wikios-border)]/50 focus:bg-[var(--wikios-border)]/50"
                         >
-                          <Wrench className="h-3.5 w-3.5 shrink-0 text-purple-400" />
+                          <Wrench className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-[var(--wikios-text)]">
                               Utilities & Special Hub

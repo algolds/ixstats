@@ -45,9 +45,9 @@ import { IxTime } from "~/lib/ixtime";
 const EXCHANGE_TYPES = {
   festival: {
     icon: Star,
-    color: "text-purple-400",
-    bgColor: "bg-purple-500/20",
-    borderColor: "border-purple-500/40",
+    color: "text-indigo-400",
+    bgColor: "bg-indigo-500/20",
+    borderColor: "border-indigo-500/40",
     label: "Cultural Festival",
     description: "Celebration of traditions and customs",
     primary: true,
@@ -63,27 +63,27 @@ const EXCHANGE_TYPES = {
   },
   education: {
     icon: Book,
-    color: "text-green-400",
-    bgColor: "bg-green-500/20",
-    borderColor: "border-green-500/40",
+    color: "text-emerald-400",
+    bgColor: "bg-emerald-500/20",
+    borderColor: "border-emerald-500/40",
     label: "Educational Exchange",
     description: "Knowledge and academic collaboration",
     primary: true,
   },
   cuisine: {
     icon: Cutlery,
-    color: "text-orange-400",
-    bgColor: "bg-orange-500/20",
-    borderColor: "border-orange-500/40",
+    color: "text-amber-400",
+    bgColor: "bg-amber-500/20",
+    borderColor: "border-amber-500/40",
     label: "Culinary Exchange",
     description: "Food culture and traditions",
     primary: true,
   },
   arts: {
     icon: Palette,
-    color: "text-pink-400",
-    bgColor: "bg-pink-500/20",
-    borderColor: "border-pink-500/40",
+    color: "text-blue-400",
+    bgColor: "bg-blue-500/20",
+    borderColor: "border-blue-500/40",
     label: "Arts Exchange",
     description: "Visual arts and creative works",
     primary: true,
@@ -108,9 +108,9 @@ const EXCHANGE_TYPES = {
   },
   diplomacy: {
     icon: Globe,
-    color: "text-[--intel-gold]",
-    bgColor: "bg-[--intel-gold]/20",
-    borderColor: "border-[--intel-gold]/40",
+    color: "text-amber-400",
+    bgColor: "bg-amber-500/20",
+    borderColor: "border-amber-500/40",
     label: "Diplomatic Summit",
     description: "High-level dialogue",
     primary: true,
@@ -118,24 +118,24 @@ const EXCHANGE_TYPES = {
   // More options (hidden by default)
   music: {
     icon: MusicNote,
-    color: "text-violet-400",
-    bgColor: "bg-violet-500/20",
-    borderColor: "border-violet-500/40",
+    color: "text-indigo-400",
+    bgColor: "bg-indigo-500/20",
+    borderColor: "border-indigo-500/40",
     label: "Music Exchange",
     description: "Musical traditions and performances",
     primary: false,
   },
   film: {
-    icon: RiFilmLine,
+    icon: MediaVideo,
     color: "text-indigo-400",
     bgColor: "bg-indigo-500/20",
     borderColor: "border-indigo-500/40",
-    label: "MediaVideo & Media",
+    label: "Film & Media",
     description: "Cinema and media culture",
     primary: false,
   },
   environmental: {
-    icon: RiLeafLine,
+    icon: Leaf,
     color: "text-emerald-400",
     bgColor: "bg-emerald-500/20",
     borderColor: "border-emerald-500/40",
@@ -144,43 +144,43 @@ const EXCHANGE_TYPES = {
     primary: false,
   },
   science: {
-    icon: RiFlaskLine,
-    color: "text-sky-400",
-    bgColor: "bg-sky-500/20",
-    borderColor: "border-sky-500/40",
+    icon: Flask,
+    color: "text-cyan-400",
+    bgColor: "bg-cyan-500/20",
+    borderColor: "border-cyan-500/40",
     label: "Scientific Research",
     description: "Scientific collaboration",
     primary: false,
   },
   trade: {
-    icon: RiShipLine,
-    color: "text-blue-500",
-    bgColor: "bg-blue-600/20",
-    borderColor: "border-blue-600/40",
+    icon: DeliveryTruck,
+    color: "text-emerald-400",
+    bgColor: "bg-emerald-500/20",
+    borderColor: "border-emerald-500/40",
     label: "Trade Mission",
     description: "Economic and commercial ties",
     primary: false,
   },
   humanitarian: {
-    icon: RiHandHeartLine,
-    color: "text-rose-400",
-    bgColor: "bg-rose-500/20",
-    borderColor: "border-rose-500/40",
+    icon: Heart,
+    color: "text-red-400",
+    bgColor: "bg-red-500/20",
+    borderColor: "border-red-500/40",
     label: "Humanitarian Aid",
     description: "Relief and development programs",
     primary: false,
   },
   agriculture: {
-    icon: RiPlantLine,
-    color: "text-lime-400",
-    bgColor: "bg-lime-500/20",
-    borderColor: "border-lime-500/40",
+    icon: Leaf,
+    color: "text-emerald-400",
+    bgColor: "bg-emerald-500/20",
+    borderColor: "border-emerald-500/40",
     label: "Agricultural",
     description: "Farming and food security",
     primary: false,
   },
   heritage: {
-    icon: RiAncientGateLine,
+    icon: Building,
     color: "text-amber-400",
     bgColor: "bg-amber-500/20",
     borderColor: "border-amber-500/40",
@@ -189,7 +189,7 @@ const EXCHANGE_TYPES = {
     primary: false,
   },
   youth: {
-    icon: RiMedalLine,
+    icon: Medal,
     color: "text-yellow-400",
     bgColor: "bg-yellow-500/20",
     borderColor: "border-yellow-500/40",
@@ -369,7 +369,7 @@ export function CulturalExchangeWizard({
                 placeholder="e.g., Annual Cultural Festival 2025"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="bg-input border-[--intel-gold]/20 focus:border-[--intel-gold]/50"
+                className="bg-input border-border focus:border-amber-500/50"
               />
             </div>
 
@@ -395,19 +395,11 @@ export function CulturalExchangeWizard({
                         }}
                         className={cn(
                           "facet-hierarchy-child rounded-lg p-2.5 transition-all duration-200",
-                          "pointer-events-auto cursor-pointer border hover:border-[rgb(202,138,4)]/40",
+                          "pointer-events-auto cursor-pointer border hover:border-amber-500/40",
                           isSelected
-                            ? "border-[rgb(202,138,4)] bg-[rgb(202,138,4)]/10 ring-2 ring-[rgb(202,138,4)]"
+                            ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/50"
                             : "border-border/50"
                         )}
-                        style={
-                          isSelected
-                            ? {
-                                borderColor: "rgb(202,138,4)",
-                                boxShadow: "0 0 0 2px rgba(202,138,4,0.5)",
-                              }
-                            : undefined
-                        }
                       >
                         <div className="pointer-events-none flex flex-col items-center gap-1 text-center">
                           <Icon className={cn("h-4 w-4", config.color)} />
@@ -428,9 +420,9 @@ export function CulturalExchangeWizard({
                   className="text-muted-foreground hover:text-foreground flex items-center gap-2 py-1 text-xs transition-colors"
                 >
                   {showMoreTypes ? (
-                    <RiArrowUpSLine className="h-4 w-4" />
+                    <NavArrowUp className="h-4 w-4" />
                   ) : (
-                    <RiArrowDownSLine className="h-4 w-4" />
+                    <NavArrowDown className="h-4 w-4" />
                   )}
                   {showMoreTypes ? "Show Less" : "Show More Types"}
                 </button>
@@ -461,19 +453,11 @@ export function CulturalExchangeWizard({
                                 }}
                                 className={cn(
                                   "facet-hierarchy-child rounded-lg p-2.5 transition-all duration-200",
-                                  "pointer-events-auto cursor-pointer border hover:border-[rgb(202,138,4)]/40",
+                                  "pointer-events-auto cursor-pointer border hover:border-amber-500/40",
                                   isSelected
-                                    ? "border-[rgb(202,138,4)] bg-[rgb(202,138,4)]/10 ring-2 ring-[rgb(202,138,4)]"
+                                    ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/50"
                                     : "border-border/50"
                                 )}
-                                style={
-                                  isSelected
-                                    ? {
-                                        borderColor: "rgb(202,138,4)",
-                                        boxShadow: "0 0 0 2px rgba(202,138,4,0.5)",
-                                      }
-                                    : undefined
-                                }
                               >
                                 <div className="pointer-events-none flex flex-col items-center gap-1 text-center">
                                   <Icon className={cn("h-4 w-4", config.color)} />
@@ -501,7 +485,7 @@ export function CulturalExchangeWizard({
                 placeholder="Provide a brief overview of this cultural exchange..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="bg-input min-h-24 border-[--intel-gold]/20 focus:border-[--intel-gold]/50"
+                className="bg-input min-h-24 border-border focus:border-amber-500/50"
               />
             </div>
           </div>
@@ -525,7 +509,7 @@ export function CulturalExchangeWizard({
                 placeholder="Search countries..."
                 value={countrySearch}
                 onChange={(e) => setCountrySearch(e.target.value)}
-                className="bg-input border-[--intel-gold]/20 pl-10 focus:border-[--intel-gold]/50"
+                className="bg-input border-border pl-10 focus:border-amber-500/50"
               />
             </div>
 
@@ -553,10 +537,10 @@ export function CulturalExchangeWizard({
                       onClick={() => setParticipantCountryId(country.id)}
                       className={cn(
                         "facet-hierarchy-child w-full rounded-lg p-3 transition-all duration-200",
-                        "cursor-pointer border text-left hover:border-[--intel-gold]/40",
+                        "cursor-pointer border text-left hover:border-amber-500/40",
                         isSelected
-                          ? "border-[--intel-gold]/50 ring-2 ring-[--intel-gold]/50"
-                          : "border-[--intel-gold]/20"
+                          ? "border-amber-500/50 ring-2 ring-amber-500/50"
+                          : "border-border/50"
                       )}
                     >
                       <div className="flex items-center gap-2.5">
@@ -575,7 +559,7 @@ export function CulturalExchangeWizard({
                             {country.economicTier} Economy
                           </p>
                         </div>
-                        {isSelected && <Check className="h-4 w-4 shrink-0 text-[--intel-gold]" />}
+                        {isSelected && <Check className="h-4 w-4 shrink-0 text-amber-500" />}
                       </div>
                     </div>
                   );
@@ -607,7 +591,7 @@ export function CulturalExchangeWizard({
                 placeholder={narrativePlaceholder}
                 value={narrative}
                 onChange={(e) => setNarrative(e.target.value)}
-                className="bg-input min-h-32 border-[--intel-gold]/20 focus:border-[--intel-gold]/50"
+                className="bg-input min-h-32 border-border focus:border-amber-500/50"
               />
               <p className="text-muted-foreground text-xs">
                 Describe the purpose, activities, and expected outcomes of this exchange.
@@ -626,10 +610,10 @@ export function CulturalExchangeWizard({
                       onClick={() => toggleObjective(objective)}
                       className={cn(
                         "facet-hierarchy-child rounded-lg p-3 transition-all duration-200",
-                        "cursor-pointer border text-left hover:border-[--intel-gold]/40",
+                        "cursor-pointer border text-left hover:border-amber-500/40",
                         isSelected
-                          ? "border-[--intel-gold]/50 ring-2 ring-[--intel-gold]/50"
-                          : "border-[--intel-gold]/20"
+                          ? "border-amber-500/50 ring-2 ring-amber-500/50"
+                          : "border-border/50"
                       )}
                     >
                       <div className="flex items-center gap-3">
@@ -661,7 +645,7 @@ export function CulturalExchangeWizard({
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="startDate" className="text-foreground flex items-center gap-2">
-                  <RiCalendarLine className="h-4 w-4" />
+                  <Calendar className="h-4 w-4" />
                   Start Date (IxTime) *
                 </Label>
                 <Input
@@ -670,7 +654,7 @@ export function CulturalExchangeWizard({
                   value={startDate}
                   min={currentIxTimeDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-input border-[--intel-gold]/20 focus:border-[--intel-gold]/50"
+                  className="bg-input border-border focus:border-amber-500/50"
                 />
                 <p className="text-muted-foreground text-xs">
                   Today in IxTime:{" "}
@@ -684,7 +668,7 @@ export function CulturalExchangeWizard({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="endDate" className="text-foreground flex items-center gap-2">
-                  <RiCalendarLine className="h-4 w-4" />
+                  <Calendar className="h-4 w-4" />
                   End Date (IxTime) *
                 </Label>
                 <Input
@@ -693,7 +677,7 @@ export function CulturalExchangeWizard({
                   value={endDate}
                   min={startDate || currentIxTimeDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-input border-[--intel-gold]/20 focus:border-[--intel-gold]/50"
+                  className="bg-input border-border focus:border-amber-500/50"
                 />
                 <p className="text-muted-foreground text-xs">Must be after start date</p>
               </div>
@@ -702,7 +686,7 @@ export function CulturalExchangeWizard({
             {/* Max Participants */}
             <div className="space-y-2">
               <Label htmlFor="maxParticipants" className="text-foreground flex items-center gap-2">
-                <RiGroupLine className="h-4 w-4" />
+                <Group className="h-4 w-4" />
                 Maximum Participants *
               </Label>
               <Input
@@ -711,7 +695,7 @@ export function CulturalExchangeWizard({
                 min="1"
                 value={maxParticipants}
                 onChange={(e) => setMaxParticipants(Math.max(1, parseInt(e.target.value) || 1))}
-                className="bg-input border-[--intel-gold]/20 focus:border-[--intel-gold]/50"
+                className="bg-input border-border focus:border-amber-500/50"
               />
               <p className="text-muted-foreground text-xs">
                 Number of people who can participate in this exchange.
@@ -731,7 +715,7 @@ export function CulturalExchangeWizard({
                       {isPublic ? (
                         <Eye className="h-4 w-4" />
                       ) : (
-                        <RiEyeOffLine className="h-4 w-4" />
+                        <EyeClosed className="h-4 w-4" />
                       )}
                       Public Exchange
                     </p>
@@ -767,7 +751,7 @@ export function CulturalExchangeWizard({
                   <div className="flex-1">
                     <h4 className="text-foreground text-lg font-bold">{title}</h4>
                     <p className="text-muted-foreground text-sm">{EXCHANGE_TYPES[type].label}</p>
-                    <p className="mt-2 text-sm text-gray-300">{description}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{description}</p>
                   </div>
                 </div>
               </div>
@@ -810,7 +794,7 @@ export function CulturalExchangeWizard({
               {/* Narrative */}
               <div className="facet-hierarchy-child rounded-lg p-4">
                 <h5 className="text-muted-foreground mb-2 text-sm font-semibold">Narrative</h5>
-                <p className="text-sm text-gray-300">{narrative}</p>
+                <p className="text-sm text-muted-foreground">{narrative}</p>
               </div>
 
               {/* Objectives */}
@@ -820,7 +804,7 @@ export function CulturalExchangeWizard({
                   {objectives.map((obj) => (
                     <span
                       key={obj}
-                      className="rounded-full border border-[--intel-gold]/30 bg-[--intel-gold]/20 px-3 py-1 text-xs text-[--intel-gold]"
+                      className="rounded-full border border-amber-500/30 bg-amber-500/20 px-3 py-1 text-xs text-amber-600 dark:text-amber-400"
                     >
                       {obj}
                     </span>
@@ -901,7 +885,7 @@ export function CulturalExchangeWizard({
       {/* Footer */}
       <div className="border-border bg-muted/30 flex shrink-0 justify-between gap-4 border-t p-4">
         <Button variant="outline" onClick={currentStep === 1 ? onCancel : handlePrevious}>
-          <RiArrowLeftLine className="mr-2" />
+          <ArrowLeft className="mr-2" />
           {currentStep === 1 ? "Cancel" : "Previous"}
         </Button>
 

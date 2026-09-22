@@ -22,7 +22,10 @@ import {
   memo,
 } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
+import type { Map as MapLibreMap, MapLayerMouseEvent, StyleSpecification } from "maplibre-gl";
+import type { Polygon, MultiPolygon, Geometry, FeatureCollection } from "geojson";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
+import type { MapEditorEvent } from "~/components/maps/editor/plugins/types";
 import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import { acquireSurface } from "~/lib/maps/map-engine";
@@ -33,8 +36,6 @@ import { useSubdivisionDraw } from "./hooks/useSubdivisionDraw";
 import { useSubdivisionVertexEdit } from "./hooks/useSubdivisionVertexEdit";
 import { useRouteEdit } from "./hooks/useRouteEdit";
 import { usePointDrag } from "./hooks/usePointDrag";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { useEditorSnapGuide } from "./map/useEditorSnapGuide";
 
 import { useMapEditorContext } from "~/components/maps/editor/plugins/context";
 import { getPlugins } from "~/components/maps/editor/plugins/registry";
@@ -48,7 +49,8 @@ import { getFeatureCoords } from "./utils/map-helpers";
 import { transientMapStore } from "./utils/transientStore";
 import { hitTestFeatures } from "./utils/hit-test";
 
-type MapLibreMap = import("maplibre-gl").Map;
+type EditorMouseEvent = MapLayerMouseEvent & { routeClicked?: boolean };
+type MapFilterSpec = Parameters<MapLibreMap["setFilter"]>[1];
 
 export interface EditorMapRef {
   flyTo: (lng: number, lat: number, zoom?: number) => void;
@@ -69,7 +71,7 @@ const INTERACTIVE_LAYERS = [
 
 interface EditorMapProps {
   /** Country boundary GeoJSON geometry */
-  countryGeometry: object | null;
+  countryGeometry: Polygon | MultiPolygon | null;
   /** Country centroid for initial view */
   countryCentroid: { lng: number; lat: number } | null;
   /** Country bounding box */
@@ -122,13 +124,13 @@ interface EditorMapProps {
   ) => Promise<void>;
   isPickingLocation?: boolean;
   onFeatureContextMenu?: (feature: EditorFeature, screenPos: { x: number; y: number }) => void;
-  gapFeatures?: any | null;
+  gapFeatures?: FeatureCollection | null;
   showGaps?: boolean;
-  emptyRegionsFeatures?: any | null;
+  emptyRegionsFeatures?: FeatureCollection | null;
   showEmptyRegions?: boolean;
   rulerPoints?: [number, number][];
-  lassoGeometry?: any;
-  setLassoGeometry?: (geom: any) => void;
+  lassoGeometry?: Polygon | MultiPolygon | null;
+  setLassoGeometry?: (geom: Polygon | MultiPolygon | null) => void;
   onAddRulerPoint?: (coords: [number, number]) => void;
   onApplyLassoSelection?: (
     coords: [number, number][],
@@ -147,9 +149,6 @@ interface EditorMapProps {
   onToggleSelect?: (id: string) => void;
   /** Lasso tool style: freehand loop vs rectangular marquee (Plan 120 P3). */
   lassoTool?: "freehand" | "rect";
-  onApplyPaintFill?: (subdivisionId: string) => void;
-  onApplyEyedropper?: (feature: any) => void;
-  onApplyMagicWand?: (feature: any, isShift: boolean, isAlt: boolean) => void;
   guides?: { id: string; type: "h" | "v"; value: number }[];
   setGuides?: React.Dispatch<
     React.SetStateAction<{ id: string; type: "h" | "v"; value: number }[]>
@@ -157,6 +156,8 @@ interface EditorMapProps {
   showGuides?: boolean;
   snapEnabled?: boolean;
   snapTolerance?: number;
+  /** Called when the underlying MapLibre instance is ready or destroyed */
+  onMapReady?: (map: MapLibreMap | null) => void;
 }
 
 const EditorMap = memo(
@@ -200,9 +201,6 @@ const EditorMap = memo(
       onAddRulerPoint,
       onApplyLassoSelection,
       onApplyRectSelection,
-      onApplyPaintFill,
-      onApplyEyedropper,
-      onApplyMagicWand,
       lockedLayers,
       selectedIds,
       onToggleSelect,
@@ -212,6 +210,7 @@ const EditorMap = memo(
       showGuides = true,
       snapEnabled = true,
       snapTolerance = 10,
+      onMapReady,
     },
     ref
   ) {
@@ -241,7 +240,7 @@ const EditorMap = memo(
     );
 
     const routePluginEvent = useCallback(
-      (eventName: string, e: any) => {
+      (eventName: string, e: MapEditorEvent) => {
         const activeMode = modeRef.current;
         const plugins = getPlugins();
         for (const plugin of plugins) {
@@ -410,10 +409,6 @@ const EditorMap = memo(
     onMapClickRef.current = onMapClick;
     const isPickingLocationRef = useRef(isPickingLocation);
     isPickingLocationRef.current = isPickingLocation;
-    const onApplyEyedropperRef = useRef(onApplyEyedropper);
-    onApplyEyedropperRef.current = onApplyEyedropper;
-    const onApplyMagicWandRef = useRef(onApplyMagicWand);
-    onApplyMagicWandRef.current = onApplyMagicWand;
     const onToggleSelectRef = useRef(onToggleSelect);
     onToggleSelectRef.current = onToggleSelect;
     const selectedIdsRef = useRef(selectedIds);
@@ -427,8 +422,8 @@ const EditorMap = memo(
     /** Last hovered feature id, to avoid redundant setFilter/setFeatureState (Plan 120 P7). */
     const lastHoveredIdRef = useRef<string | null>(null);
     /** Cached interactive-layer list excluding locked layers (Plan 120 P1/P5). */
-    const interactiveLayersRef = useRef<string[]>(INTERACTIVE_LAYERS as unknown as string[]);
-    interactiveLayersRef.current = INTERACTIVE_LAYERS as unknown as string[];
+    const interactiveLayersRef = useRef<string[]>([...INTERACTIVE_LAYERS]);
+    interactiveLayersRef.current = [...INTERACTIVE_LAYERS];
     const lassoToolRef = useRef(lassoTool);
     lassoToolRef.current = lassoTool;
 
@@ -472,7 +467,7 @@ const EditorMap = memo(
       isLoaded,
       mode,
       features,
-      countryGeometry: countryGeometry as any,
+      countryGeometry,
       onDrawComplete,
       worldMapLayers,
       editorVisibleLayers,
@@ -495,11 +490,10 @@ const EditorMap = memo(
       mode,
       selectedFeature,
       features,
-      countryGeometry: countryGeometry as any,
+      countryGeometry,
       onGeometryUpdate,
       worldMapLayers,
       editorVisibleLayers,
-      guides,
       snapEnabled,
       snapTolerance,
       snapPoint,
@@ -511,11 +505,8 @@ const EditorMap = memo(
       isLoaded,
       mode,
       routeWaypoints,
-      editingRouteId: editingRouteId ?? null,
       editingRouteVertices,
       onRouteVerticesUpdate,
-      onRouteEditCommit,
-      onRouteEditCancel,
     });
 
     // ── 5. Hook: Manage Point Click-and-Drag ──
@@ -524,6 +515,7 @@ const EditorMap = memo(
       isLoaded,
       mode,
       features,
+      selectedFeature,
       onFeatureSelect,
       updatePointCoordinates,
     });
@@ -535,7 +527,7 @@ const EditorMap = memo(
       const newStyle = buildBaseStyle(theme);
 
       setIsLoaded(false);
-      map.setStyle(newStyle as any, { diff: true });
+      map.setStyle(newStyle as StyleSpecification, { diff: true });
 
       const onStyleLoad = () => {
         setIsLoaded(true);
@@ -553,8 +545,11 @@ const EditorMap = memo(
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !isLoaded) return;
-      if ("setProjection" in map) {
-        (map as any).setProjection({ type: "mercator" });
+      const mapWithProj = map as MapLibreMap & {
+        setProjection?: (spec: { type: string }) => void;
+      };
+      if ("setProjection" in map && mapWithProj.setProjection) {
+        mapWithProj.setProjection({ type: "mercator" });
       }
     }, [isLoaded, theme]);
 
@@ -582,11 +577,15 @@ const EditorMap = memo(
         onReady: (map) => {
           mapRef.current = map;
           // Style is loaded here (engine resolves ready post style.load), so this is safe.
-          if ("setProjection" in map) {
-            (map as any).setProjection({ type: "mercator" });
+          const mapWithProj = map as MapLibreMap & {
+            setProjection?: (spec: { type: string }) => void;
+          };
+          if ("setProjection" in map && mapWithProj.setProjection) {
+            mapWithProj.setProjection({ type: "mercator" });
           }
           setIsLoaded(true);
           context.setMap(map);
+          onMapReady?.(map);
         },
       });
 
@@ -595,6 +594,7 @@ const EditorMap = memo(
       });
 
       return () => {
+        onMapReady?.(null);
         handle.release();
         mapRef.current = null;
         context.setMap(null);
@@ -619,6 +619,18 @@ const EditorMap = memo(
         map.flyTo({ center: [countryCentroid.lng, countryCentroid.lat], zoom: 5, duration: 1000 });
       }
     }, [isLoaded, countryBbox, countryCentroid]);
+
+    // Clear subdivision hover highlight when entering tool modes
+    useEffect(() => {
+      if (mode !== "view" && mode !== "paint") {
+        const map = mapRef.current;
+        if (map && map.getLayer("editor-subdivisions-hover")) {
+          map.setFilter("editor-subdivisions-hover", ["==", ["get", "id"], ""]);
+        }
+        lastHoveredIdRef.current = null;
+        transientMapStore.setHoveredFeatureId(null);
+      }
+    }, [mode]);
 
     // Zoom end listeners for grid bucket updates and reporting
     useEffect(() => {
@@ -683,14 +695,10 @@ const EditorMap = memo(
         return out;
       };
 
-      const onMouseMove = (e: any) => {
+      const onMouseMove = (e: MapLayerMouseEvent) => {
         routePluginEvent("onMouseMove", e);
         if (e.defaultPrevented) return;
 
-        if (modeRef.current === "pan") {
-          map.getCanvas().style.cursor = "grab";
-          return;
-        }
         if (spacebarPanActiveRef.current) {
           map.getCanvas().style.cursor = "grab";
           return;
@@ -700,6 +708,20 @@ const EditorMap = memo(
           return;
         }
         if (isVertexEditing) return;
+
+        // ponytail: Suppress region hit-testing and hover highlight when tool modes are active
+        const currentMode = modeRef.current;
+        if (currentMode !== "view" && currentMode !== "paint") {
+          if (lastHoveredIdRef.current !== null) {
+            lastHoveredIdRef.current = null;
+            if (map.getLayer("editor-subdivisions-hover")) {
+              map.setFilter("editor-subdivisions-hover", ["==", ["get", "id"], ""]);
+            }
+          }
+          transientMapStore.setHoveredFeatureId(null);
+          transientMapStore.setCursorCoords([e.lngLat.lng, e.lngLat.lat]);
+          return;
+        }
 
         const { hit, locked } = hitTestFeatures(map, e.point, {
           layers: interactiveLayersRef.current,
@@ -749,13 +771,13 @@ const EditorMap = memo(
         }
       };
 
-      const onClickFeature = (e: any) => {
+      const onClickFeature = (e: EditorMouseEvent) => {
         routePluginEvent("onClick", e);
         if (e.defaultPrevented) return;
 
         if (spacebarPanActiveRef.current) return;
         if (isPickingLocationRef.current) return;
-        if (e.routeClicked) return;
+        if (e.routeClicked || (e.originalEvent as (MouseEvent & { routeClicked?: boolean }))?.routeClicked) return;
         // Post-drag clicks (map pan / feature drag) must not select (Plan 120 P2).
         if (wasDragRef.current) return;
 
@@ -765,8 +787,6 @@ const EditorMap = memo(
         if (
           currentMode === "add-city" ||
           currentMode === "add-poi" ||
-          currentMode === "add-story-pin" ||
-          currentMode === "add-label" ||
           currentMode === "add-peak" ||
           currentMode === "add-river" ||
           currentMode === "add-lake" ||
@@ -791,20 +811,6 @@ const EditorMap = memo(
               if (e.originalEvent) {
                 e.originalEvent.preventDefault();
               }
-              if (currentMode === "eyedropper") {
-                if (onApplyEyedropperRef.current) {
-                  onApplyEyedropperRef.current(match);
-                }
-                return;
-              }
-              if (currentMode === "magic-wand") {
-                if (onApplyMagicWandRef.current) {
-                  const isShift = !!e.originalEvent?.shiftKey;
-                  const isAlt = !!e.originalEvent?.altKey;
-                  onApplyMagicWandRef.current(match, isShift, isAlt);
-                }
-                return;
-              }
               // Shift/Alt click multi-select (Plan 120 P7)
               const isShift = !!e.originalEvent?.shiftKey;
               const isAlt = !!e.originalEvent?.altKey;
@@ -828,12 +834,12 @@ const EditorMap = memo(
         }
       };
 
-      const onContextMenuFeature = (e: any) => {
+      const onContextMenuFeature = (e: EditorMouseEvent) => {
         routePluginEvent("onContextMenu", e);
         if (e.defaultPrevented) return;
 
         if (isPickingLocationRef.current) return;
-        if (e.routeClicked) return;
+        if (e.routeClicked || (e.originalEvent as (MouseEvent & { routeClicked?: boolean }))?.routeClicked) return;
         if (isVertexEditing) return;
         if (wasDragRef.current) return;
 
@@ -843,8 +849,6 @@ const EditorMap = memo(
         if (
           currentMode === "add-city" ||
           currentMode === "add-poi" ||
-          currentMode === "add-story-pin" ||
-          currentMode === "add-label" ||
           currentMode === "add-peak" ||
           currentMode === "add-river" ||
           currentMode === "add-lake" ||
@@ -873,7 +877,7 @@ const EditorMap = memo(
               const canvasRect = map.getCanvas().getBoundingClientRect();
               const virtualFeature: EditorFeature = {
                 id: "gap",
-                type: "gap" as any,
+                type: "gap",
                 name: "Negative Space",
                 coordinates: [e.lngLat.lng, e.lngLat.lat],
                 geometry: hit.feature.geometry,
@@ -906,13 +910,13 @@ const EditorMap = memo(
         }
       };
 
-      const onMouseDown = (e: any) => {
+      const onMouseDown = (e: MapLayerMouseEvent) => {
         pointerDownPosRef.current = { x: e.point.x, y: e.point.y };
         wasDragRef.current = false;
         routePluginEvent("onMouseDown", e);
       };
 
-      const onMouseUp = (e: any) => {
+      const onMouseUp = (e: MapLayerMouseEvent) => {
         const down = pointerDownPosRef.current;
         if (down && e.point) {
           const dist = Math.hypot(e.point.x - down.x, e.point.y - down.y);
@@ -921,7 +925,7 @@ const EditorMap = memo(
         routePluginEvent("onMouseUp", e);
       };
 
-      const onDoubleClick = (e: any) => {
+      const onDoubleClick = (e: MapLayerMouseEvent) => {
         routePluginEvent("onDoubleClick", e);
       };
 
@@ -949,12 +953,12 @@ const EditorMap = memo(
       const map = mapRef.current;
       if (!map || !isLoaded) return;
 
-      const onClick = (e: any) => {
+      const onClick = (e: EditorMouseEvent) => {
         routePluginEvent("onClick", e);
         if (e.defaultPrevented) return;
 
         if (spacebarPanActiveRef.current) return;
-        if (e.routeClicked) return;
+        if (e.routeClicked || (e.originalEvent as (MouseEvent & { routeClicked?: boolean }))?.routeClicked) return;
         if (isVertexEditing) return;
         // Post-drag clicks (map pan) must not place/insert anything (Plan 120 P2).
         if (wasDragRef.current) return;
@@ -962,11 +966,8 @@ const EditorMap = memo(
         const currentMode = modeRef.current;
 
         if (
-          isPickingLocationRef.current ||
           currentMode === "add-city" ||
           currentMode === "add-poi" ||
-          currentMode === "add-story-pin" ||
-          currentMode === "add-label" ||
           currentMode === "add-peak" ||
           currentMode === "split-subdivision"
         ) {
@@ -976,16 +977,6 @@ const EditorMap = memo(
           if (onAddRulerPoint) {
             const snapped = snapPoint([e.lngLat.lng, e.lngLat.lat]);
             onAddRulerPoint(snapped);
-          }
-        } else if (currentMode === "paint-fill") {
-          const hits = map.queryRenderedFeatures(e.point, {
-            layers: ["editor-subdivisions-fill"],
-          });
-          if (hits.length > 0) {
-            const hitId = hits[0]!.properties?.id as string | undefined;
-            if (hitId && onApplyPaintFill) {
-              onApplyPaintFill(hitId);
-            }
           }
         } else if (currentMode === "add-route" || currentMode === "add-river") {
           let clickPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
@@ -1016,7 +1007,7 @@ const EditorMap = memo(
       return () => {
         map.off("click", onClick);
       };
-    }, [isLoaded, isVertexEditing, onAddRulerPoint, onApplyPaintFill, snapPoint, routePluginEvent]);
+    }, [isLoaded, isVertexEditing, onAddRulerPoint, snapPoint, routePluginEvent]);
 
     // Handle Lasso / Rect marquee click-and-drag selection (Plan 120 P3)
     useEffect(() => {
@@ -1030,7 +1021,7 @@ const EditorMap = memo(
       let mode: "replace" | "add" | "subtract" = "replace";
       let pts: [number, number][] = [];
 
-      const onMouseDown = (e: any) => {
+      const onMouseDown = (e: MapLayerMouseEvent) => {
         if (spacebarPanActiveRef.current) return;
         const currentMode = modeRef.current;
         const isShift = !!e.originalEvent?.shiftKey;
@@ -1058,7 +1049,7 @@ const EditorMap = memo(
         pts = [];
       };
 
-      const buildRectGeometry = (curLngLat: [number, number]): any => {
+      const buildRectGeometry = (curLngLat: [number, number]): Polygon | null => {
         if (!startLngLat) return null;
         const [slng, slat] = startLngLat;
         const [clng, clat] = curLngLat;
@@ -1076,7 +1067,7 @@ const EditorMap = memo(
         };
       };
 
-      const onMouseMove = (e: any) => {
+      const onMouseMove = (e: MapLayerMouseEvent) => {
         if (!isDrawing) return;
 
         if (isRect) {
@@ -1088,11 +1079,11 @@ const EditorMap = memo(
         pts.push([e.lngLat.lng, e.lngLat.lat]);
         setLassoGeometry?.({
           type: "Polygon" as const,
-          coordinates: [[...pts, pts[0]]],
+          coordinates: [[...pts, pts[0]!]],
         });
       };
 
-      const onMouseUp = (e: any) => {
+      const onMouseUp = (e: MapLayerMouseEvent) => {
         if (!isDrawing) return;
         isDrawing = false;
         map.dragPan.enable();
@@ -1150,7 +1141,9 @@ const EditorMap = memo(
       if (map.getLayer("editor-subdivisions-selected")) {
         map.setFilter(
           "editor-subdivisions-selected",
-          idList.length > 0 ? (["in", ["get", "id"], ...idList] as any) : noneFilter
+          idList.length > 0
+            ? (["in", ["get", "id"], ["literal", idList]] as MapFilterSpec)
+            : (noneFilter as MapFilterSpec)
         );
       }
 
@@ -1158,7 +1151,9 @@ const EditorMap = memo(
       if (map.getLayer("editor-points-selected")) {
         map.setFilter(
           "editor-points-selected",
-          idList.length > 0 ? (["in", ["get", "id"], ...idList] as any) : noneFilter
+          idList.length > 0
+            ? (["in", ["get", "id"], ["literal", idList]] as MapFilterSpec)
+            : (noneFilter as MapFilterSpec)
         );
       }
     }, [isLoaded, selectedFeature, selectedIds]);

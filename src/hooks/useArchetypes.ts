@@ -9,9 +9,9 @@
 
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
-import { modernArchetypes } from "@/app/builder/data/archetypes/modern";
-import { historicalArchetypes } from "@/app/builder/data/archetypes/historical";
-import type { EconomicArchetype } from "@/app/builder/data/archetype-types";
+import { modernArchetypes } from "~/lib/economy/archetypes/modern";
+import { historicalArchetypes } from "~/lib/economy/archetypes/historical";
+import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
 import { ComponentType } from "~/lib/enums";
 
 const GOVERNMENT_COMPONENT_LEGACY_MAP: Record<string, ComponentType[]> = {

@@ -58,6 +58,32 @@ export function astToWikitext(input: WikiBlockNode[] | WikiDocument): string {
 // ─── Direct AST ⇄ Plate Nodes (Zero-HTML Isomorphic Mapping) ─────────────────
 
 /**
+ * Ensures that all inline nodes within a Slate block are surrounded by text nodes,
+ * preserving Slate invariants and preventing caret placement crashes.
+ */
+function ensureSlateInlineSurroundings(nodes: any[]): any[] {
+  if (!nodes || nodes.length === 0) return [{ text: "" }];
+  const result: any[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    const isInline = Boolean(node && typeof node === "object" && "type" in node);
+    if (i === 0 && isInline) {
+      result.push({ text: "" });
+    }
+    result.push(node);
+    if (isInline) {
+      const nextNode = nodes[i + 1];
+      const nextIsInline = Boolean(nextNode && typeof nextNode === "object" && "type" in nextNode);
+      const isLast = i === nodes.length - 1;
+      if (nextIsInline || isLast) {
+        result.push({ text: "" });
+      }
+    }
+  }
+  return result;
+}
+
+/**
  * Converts a WikiAST Document into Slate/Plate compatible node trees.
  */
 export function astToPlateNodes(doc: WikiDocument): any[] {
@@ -174,12 +200,17 @@ export function astToPlateNodes(doc: WikiDocument): any[] {
         plateNodes.push({
           type: "table",
           caption: tb.caption,
+          attributes: tb.attributes,
           rawWikitext: tb.rawWikitext,
           children: tb.children?.map((row) => ({
             type: "tr",
+            attributes: row.attributes,
             children: row.children?.map((cell) => ({
               type: cell.isHeader ? "th" : "td",
-              children: [{ text: cell.children.map((c) => ("text" in c ? c.text : "")).join("") }],
+              attributes: cell.attributes,
+              children: ensureSlateInlineSurroundings(
+                astInlinesToPlateLeaves(cell.children as WikiInlineNode[])
+              ),
             })),
           })) || [{ type: "tr", children: [{ type: "td", children: [{ text: "" }] }] }],
         });
@@ -194,10 +225,12 @@ export function astToPlateNodes(doc: WikiDocument): any[] {
           type: lb.ordered ? "ol" : "ul",
           children: lb.children?.map((li) => ({
             type: "li",
-            children: [
-              { type: "lic", children: astInlinesToPlateLeaves(li.children as WikiInlineNode[]) },
-            ],
-          })) || [{ type: "li", children: [{ type: "lic", children: [{ text: "" }] }] }],
+            level: li.level || 1,
+            prefix: li.prefix,
+            children: ensureSlateInlineSurroundings(
+              astInlinesToPlateLeaves(li.children as WikiInlineNode[])
+            ),
+          })) || [{ type: "li", children: [{ text: "" }] }],
         });
         break;
       }
@@ -214,11 +247,19 @@ export function astToPlateNodes(doc: WikiDocument): any[] {
       case "quote":
       case "blockquote": {
         const qb = node as QuoteBlock;
+        let inlines: any[] = [];
+        if (Array.isArray(qb.children)) {
+          if (qb.children.length > 0 && typeof qb.children[0] === "object" && "type" in qb.children[0] && (qb.children[0] as any).type === "p") {
+            inlines = (qb.children as any[]).flatMap((p) => p.children || []);
+          } else {
+            inlines = qb.children as any[];
+          }
+        }
         plateNodes.push({
           type: "blockquote",
           author: qb.author,
           source: qb.source,
-          children: [{ text: "" }],
+          children: astInlinesToPlateLeaves(inlines),
         });
         break;
       }
@@ -340,10 +381,17 @@ export function plateNodesToAst(nodes: any[], title = "", slug = ""): WikiDocume
       case "ol": {
         const ordered = node.type === "ol";
         const items = (node.children || []).map((li: any) => {
-          const lic = li.children?.[0] || li;
+          let inlineLeaves = li.children || [];
+          if (inlineLeaves.length === 1 && inlineLeaves[0]?.type === "lic") {
+            inlineLeaves = inlineLeaves[0].children || [];
+          } else if (typeof li.text === "string") {
+            inlineLeaves = [li];
+          }
           return {
             type: "list-item" as const,
-            children: plateLeavesToAstInlines(lic.children || []),
+            level: li.level || 1,
+            prefix: li.prefix,
+            children: plateLeavesToAstInlines(inlineLeaves),
           };
         });
         astNodes.push({
@@ -368,6 +416,27 @@ export function plateNodesToAst(nodes: any[], title = "", slug = ""): WikiDocume
           author: node.author,
           source: node.source,
           children: plateLeavesToAstInlines(node.children),
+        });
+        break;
+      }
+
+      case "table": {
+        const rows = (node.children || []).map((tr: any) => ({
+          type: "table-row" as const,
+          attributes: tr.attributes,
+          children: (tr.children || []).map((cell: any) => ({
+            type: "table-cell" as const,
+            isHeader: cell.type === "th",
+            attributes: cell.attributes,
+            children: plateLeavesToAstInlines(cell.children || []),
+          })),
+        }));
+        astNodes.push({
+          type: "table",
+          caption: node.caption,
+          attributes: node.attributes,
+          rawWikitext: node.rawWikitext,
+          children: rows,
         });
         break;
       }
@@ -409,22 +478,25 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
   const leaves: any[] = [];
 
   for (const inline of inlines) {
-    if (!("type" in inline)) {
+    if (!("type" in inline) || (inline as any).type === "text") {
       leaves.push({
-        text: inline.text,
-        bold: inline.bold,
-        italic: inline.italic,
-        code: inline.code,
-        strikethrough: inline.strikethrough,
-        underline: inline.underline,
+        text: (inline as any).text ?? "",
+        bold: (inline as any).bold,
+        italic: (inline as any).italic,
+        code: (inline as any).code,
+        strikethrough: (inline as any).strikethrough,
+        underline: (inline as any).underline,
+        superscript: (inline as any).superscript,
+        subscript: (inline as any).subscript,
       });
     } else {
       switch (inline.type) {
         case "wiki-link":
           leaves.push({
-            type: "a",
+            type: "link",
             url: `/wiki/${encodeURIComponent(inline.target)}`,
             target: inline.target,
+            internal: true,
             children: [{ text: inline.label || inline.target }],
           });
           break;
@@ -435,8 +507,9 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
               ? firstChild.text
               : inline.url;
           leaves.push({
-            type: "a",
+            type: "link",
             url: inline.url,
+            internal: false,
             children: [{ text: textVal }],
           });
           break;
@@ -475,6 +548,17 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
           });
           break;
         }
+        case "inline-template":
+          leaves.push({
+            type: "chip-template",
+            templateName: inline.templateName || inline.name,
+            params: inline.params || {},
+            paramList: inline.paramList || [],
+            positional: inline.positional || [],
+            rawWikitext: inline.raw || inline.rawWikitext,
+            children: [{ text: "" }],
+          });
+          break;
       }
     }
   }
@@ -483,7 +567,7 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
     leaves.push({ text: "" });
   }
 
-  return leaves;
+  return ensureSlateInlineSurroundings(leaves);
 }
 
 function plateLeavesToAstInlines(leaves?: any[]): WikiInlineNode[] {
@@ -499,17 +583,28 @@ function plateLeavesToAstInlines(leaves?: any[]): WikiInlineNode[] {
         text: leaf.text,
         bold: leaf.bold,
         italic: leaf.italic,
-        code: leaf.code,
-        strikethrough: leaf.strikethrough,
+        code: leaf.code || leaf.codeMark,
+        strikethrough: leaf.strikethrough || leaf.strike,
         underline: leaf.underline,
+        superscript: leaf.superscript || leaf.sup,
+        subscript: leaf.subscript || leaf.sub,
       });
-    } else if (leaf.type === "a") {
-      if (leaf.target) {
+    } else if (leaf.type === "a" || leaf.type === "link") {
+      const isInternal =
+        leaf.internal ??
+        Boolean(leaf.target || (leaf.url ? !/^https?:/i.test(leaf.url) : true));
+      const target =
+        leaf.target ||
+        (leaf.url
+          ? decodeURIComponent(leaf.url.replace(/^\/wiki\//, "").replace(/_/g, " "))
+          : "");
+      const label = leaf.children?.[0]?.text || target;
+      if (isInternal && target) {
         inlines.push({
           type: "wiki-link",
-          target: leaf.target,
-          label: leaf.children?.[0]?.text || leaf.target,
-          children: [{ text: leaf.children?.[0]?.text || leaf.target }],
+          target,
+          label: label !== target ? label : undefined,
+          children: [{ text: label }],
         });
       } else {
         inlines.push({
@@ -542,6 +637,18 @@ function plateLeavesToAstInlines(leaves?: any[]): WikiInlineNode[] {
         name: leaf.name,
         rawWikitext: leaf.rawWikitext,
         children: [{ text: leaf.children?.[0]?.text || "" }],
+      });
+    } else if (leaf.type === "chip-template" || leaf.type === "inline-template") {
+      inlines.push({
+        type: "inline-template",
+        templateName: leaf.templateName || leaf.name || "template",
+        name: leaf.templateName || leaf.name || "template",
+        params: leaf.params || {},
+        paramList: leaf.paramList,
+        positional: leaf.positional,
+        raw: leaf.rawWikitext || "",
+        rawWikitext: leaf.rawWikitext,
+        children: [{ text: "" }],
       });
     }
   }

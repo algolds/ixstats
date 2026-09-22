@@ -1,0 +1,141 @@
+{
+  "country": "Shenendehowa Bay",
+  "featureId": "Shenendehowa_Bay",
+  "generatedAt": "2026-09-06T20:08:24.443Z",
+  "area": {
+    "km2": 8515,
+    "sqMi": 3288,
+    "boundingBox": {
+      "minLng": -124.6353,
+      "minLat": 55.3711,
+      "maxLng": -123.2742,
+      "maxLat": 57.1019
+    },
+    "nsSpanKm": 192,
+    "ewSpanKm": 84,
+    "centroid": {
+      "lng": -123.6609,
+      "lat": 56.1601
+    },
+    "perimeterKm": 531
+  },
+  "elevation": {
+    "zones": [
+      {
+        "zone": "Coastal Lowlands",
+        "minM": 0,
+        "maxM": 99,
+        "areaKm2": 8515,
+        "percent": 100
+      }
+    ],
+    "minElevationM": 0,
+    "maxElevationM": 99,
+    "meanElevationM": 50,
+    "dominantTerrain": "Coastal Lowlands",
+    "terrainRoughness": 0.0108
+  },
+  "climate": {
+    "zones": [
+      {
+        "type": "Temperate Oceanic (Do)",
+        "areaKm2": 8515,
+        "percent": 100,
+        "description": "Maritime influence with mild, wet conditions"
+      }
+    ],
+    "dominantType": "Temperate Oceanic (Do)",
+    "shannonDiversity": -0.048,
+    "temperature": {
+      "meanC": 0.3,
+      "meanF": 32.6,
+      "summerDailyHighC": 17.4,
+      "winterDailyLowC": -16.7,
+      "seasonalRangeC": 24.7,
+      "diurnalRangeC": 9.4
+    },
+    "annualPrecipitationMm": 1155
+  },
+  "hydrography": {
+    "riverCount": 0,
+    "totalRiverLengthKm": 0,
+    "lakeCount": 0,
+    "totalLakeAreaKm2": 0,
+    "drainageDensity": 0
+  },
+  "position": {
+    "hemisphere": "Northern",
+    "latitudeBand": "Subarctic/Subantarctic",
+    "atmosphericZone": "Subpolar low zone",
+    "distanceFromEquatorKm": 6245,
+    "timezone": "UTC-8"
+  },
+  "neighbors": [
+    {
+      "name": "Venua tino",
+      "direction": "NNE",
+      "sharedBorderKm": 164
+    }
+  ],
+  "coastline": {
+    "hasCoastline": true,
+    "isLandlocked": false,
+    "coastlineKm": 366,
+    "landBorderKm": 164,
+    "coastlinePercent": 69
+  },
+  "shape": {
+    "compactnessRatio": 0.38,
+    "compactness": "Elongated or irregular",
+    "elongationRatio": 2.28,
+    "elongation": "Elongated N-S",
+    "fragments": 1,
+    "islands": 0
+  },
+  "iceCoverage": {
+    "hasIcecaps": false,
+    "areaKm2": 0,
+    "percent": 0
+  },
+  "insights": {
+    "agriculture": {
+      "arableLandPercent": 85,
+      "arableLandKm2": 7238,
+      "growingSeasonDays": 250,
+      "waterAvailability": "Adequate",
+      "waterScore": 58,
+      "cropSuitability": [
+        "Wheat",
+        "Barley",
+        "Root vegetables"
+      ],
+      "overallRating": "Excellent"
+    },
+    "strategic": {
+      "maritimeIndex": "Maritime power (extensive coastline)",
+      "coastlineToAreaRatio": 396.7,
+      "strategicDepthKm": 42,
+      "borderDefensibility": "Open terrain (few natural barriers)",
+      "mountainCoveragePercent": 0,
+      "islandExposure": "Continental (no islands)",
+      "accessPoints": "Limited entry points"
+    },
+    "habitability": {
+      "score": 78,
+      "descriptor": "Very habitable",
+      "climateComfort": 36,
+      "waterAccess": 12,
+      "terrainAccess": 30,
+      "keyFactors": [
+        "Favorable climate",
+        "Accessible terrain"
+      ]
+    },
+    "biome": {
+      "dominantBiome": "Deciduous forest, lush grassland",
+      "ecoRegionCount": 1,
+      "ecologicalDiversity": "Homogeneous",
+      "summary": "The landscape is dominated by deciduous forest, lush grassland (Temperate Oceanic), covering over half the country."
+    }
+  }
+}

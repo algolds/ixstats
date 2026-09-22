@@ -107,9 +107,7 @@ export function VaultMilestonesCard({
                 <div
                   className={cn(
                     "h-full rounded-full transition-all duration-500",
-                    isComplete
-                      ? "bg-gradient-to-r from-amber-400 to-yellow-300 shadow-[0_0_8px_rgba(245,158,11,0.6)]"
-                      : "bg-gradient-to-r from-purple-500 to-indigo-400"
+                    isComplete ? "bg-amber-500" : "bg-indigo-500"
                   )}
                   style={{ width: `${progress}%` }}
                 />

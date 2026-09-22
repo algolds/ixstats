@@ -75,7 +75,7 @@ export function EditorialMastheadHeader({
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
                 )}
-                className="group/author text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-[11.5px] font-semibold transition-all hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 dark:border-white/10 dark:bg-white/5"
+                className="group/author text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-[11.5px] font-semibold transition-all hover:border-wiki/40 hover:bg-wiki/10 hover:text-wiki active:scale-95 dark:border-white/10 dark:bg-white/5"
               >
                 {creatorAvatar ? (
                   <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
@@ -87,10 +87,10 @@ export function EditorialMastheadHeader({
                         (e.currentTarget as HTMLElement).style.display = "none";
                       }}
                     />
-                    <User className="absolute inset-0 -z-10 m-auto h-2.5 w-2.5 text-purple-400" />
+                    <User className="absolute inset-0 -z-10 m-auto h-2.5 w-2.5 text-wiki" />
                   </span>
                 ) : (
-                  <User className="h-3 w-3 shrink-0 text-purple-400" />
+                  <User className="h-3 w-3 shrink-0 text-wiki" />
                 )}
                 <span>{creatorName}</span>
               </Link>
@@ -110,7 +110,7 @@ export function EditorialMastheadHeader({
                   href={withBasePath(
                     `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
                   )}
-                  className="group/editor text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-[11.5px] font-semibold transition-all hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 dark:border-white/10 dark:bg-white/5"
+                  className="group/editor text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-[11.5px] font-semibold transition-all hover:border-wiki/40 hover:bg-wiki/10 hover:text-wiki active:scale-95 dark:border-white/10 dark:bg-white/5"
                 >
                   {lastEditorAvatar ? (
                     <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
@@ -122,10 +122,10 @@ export function EditorialMastheadHeader({
                           (e.currentTarget as HTMLElement).style.display = "none";
                         }}
                       />
-                      <PenTool className="absolute inset-0 -z-10 m-auto h-2.5 w-2.5 text-purple-400" />
+                      <PenTool className="absolute inset-0 -z-10 m-auto h-2.5 w-2.5 text-wiki" />
                     </span>
                   ) : (
-                    <PenTool className="h-3 w-3 shrink-0 text-purple-400" />
+                    <PenTool className="h-3 w-3 shrink-0 text-wiki" />
                   )}
                   <span>{lastEditorName}</span>
                 </Link>

@@ -9,22 +9,25 @@ import { Search } from "iconoir-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { SPORTS_ABBREVIATIONS } from "~/lib/sports/presets";
 import { TableVirtuoso } from "react-virtuoso";
+import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
+import type { Prisma } from "@prisma/client";
 
-interface DraftPick {
+export interface DraftPick {
   id: string;
   round: number;
   pickNumber: number;
   team: {
     id: string;
     name: string;
-    color: string;
+    color?: string | null;
+    logo?: string | null;
   };
-  player: {
+  player?: {
     id: string;
     firstName: string;
     lastName: string;
     position: string;
-    ratings: any;
+    ratings?: Prisma.JsonValue;
   } | null;
 }
 
@@ -84,6 +87,7 @@ export function DraftPicksView({
   onTeamClick,
   className,
 }: DraftPicksViewProps) {
+  const { focusAthlete } = useSportsFocus();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRound, setSelectedRound] = useState<number | "all">("all");
 
@@ -122,10 +126,11 @@ export function DraftPicksView({
     return "bg-slate-500/10 text-slate-400 border-slate-500/30";
   };
 
-  const getPlayerOverall = (ratings: any): number => {
-    if (!ratings) return 50;
-    if (typeof ratings.overall === "number") return ratings.overall;
-    const values = Object.values(ratings).filter((v) => typeof v === "number") as number[];
+  const getPlayerOverall = (ratings: Prisma.JsonValue | undefined): number => {
+    if (!ratings || typeof ratings !== "object" || Array.isArray(ratings)) return 50;
+    const rec = ratings as Record<string, Prisma.JsonValue>;
+    if (typeof rec.overall === "number") return rec.overall;
+    const values = Object.values(rec).filter((v): v is number => typeof v === "number");
     if (values.length === 0) return 50;
     return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
   };
@@ -235,9 +240,14 @@ export function DraftPicksView({
                 </TableCell>
                 <TableCell>
                   {pick.player ? (
-                    <span className="text-foreground font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => pick.player?.id && focusAthlete(pick.player.id)}
+                      data-cuelume-press="subtle"
+                      className="cursor-pointer text-left font-semibold text-foreground hover:text-primary hover:underline transition active:scale-[0.98]"
+                    >
                       {pick.player.firstName} {pick.player.lastName}
-                    </span>
+                    </button>
                   ) : (
                     <span className="text-muted-foreground italic">Skipped / No Pick</span>
                   )}

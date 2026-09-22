@@ -34,7 +34,7 @@ export function SyntaxDictionaryEditor({
       className="border-border/40 space-y-4 rounded-xl border p-5 text-left shadow-sm"
     >
       <h4 className="text-foreground flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
-        <FileText className="h-4 w-4 text-fuchsia-500" /> Vocabulary Dictionary
+        <FileText className="h-4 w-4 text-indigo-500" /> Vocabulary Dictionary
       </h4>
 
       {/* Add Word Row */}
@@ -55,7 +55,7 @@ export function SyntaxDictionaryEditor({
         />
         <button
           onClick={handleAdd}
-          className="flex cursor-pointer items-center gap-1 rounded bg-fuchsia-500 px-3 py-1.5 font-bold text-white transition-colors hover:bg-fuchsia-600"
+          className="flex cursor-pointer items-center gap-1 rounded bg-indigo-600 px-3 py-1.5 font-bold text-white transition-colors hover:bg-indigo-700"
         >
           <Plus className="h-3.5 w-3.5" /> Add
         </button>

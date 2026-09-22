@@ -90,7 +90,7 @@ export function MessagesAddParticipantsModal({
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.country?.flag ?? undefined} />
-                      <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-semibold text-white">
+                      <AvatarFallback className="bg-emerald-600 text-xs font-semibold text-white">
                         {(user.country?.name ?? user.displayName ?? "?")
                           .split(" ")
                           .map((n: string) => n[0])

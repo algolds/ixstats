@@ -83,13 +83,13 @@ const DUMMY_SNAPSHOT = () => EMPTY_PLUGINS_MAP;
  *   accentColor: "#3b82f6",
  * });
  */
-export function useDIPlugin(plugin: DIPlugin) {
+export function useDIPlugin<F = unknown, C = unknown>(plugin: DIPlugin<F, C>) {
   const ctx = useContext(DIPluginContext);
   const registry = ctx?.registry;
 
   React.useEffect(() => {
     if (!registry) return;
-    registry.register(plugin);
+    registry.register(plugin as unknown as DIPlugin);
     return () => {
       registry.unregister(plugin.id);
     };

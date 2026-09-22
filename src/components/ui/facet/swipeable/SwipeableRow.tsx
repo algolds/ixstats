@@ -469,12 +469,12 @@ function SwipeableRowLeading({ children, commit: _commit, className }: Swipeable
   const childrenArray = React.Children.toArray(children);
   const total = childrenArray.length;
   const processedChildren = React.Children.map(children, (child, idx) => {
-    if (React.isValidElement(child)) {
+    if (React.isValidElement<Record<string, unknown>>(child)) {
       return React.cloneElement(child, {
         _index: idx,
         _total: total,
         _side: "leading",
-      } as any);
+      });
     }
     return child;
   });
@@ -535,12 +535,12 @@ function SwipeableRowTrailing({ children, commit: _commit, className }: Swipeabl
   const childrenArray = React.Children.toArray(children);
   const total = childrenArray.length;
   const processedChildren = React.Children.map(children, (child, idx) => {
-    if (React.isValidElement(child)) {
+    if (React.isValidElement<Record<string, unknown>>(child)) {
       return React.cloneElement(child, {
         _index: idx,
         _total: total,
         _side: "trailing",
-      } as any);
+      });
     }
     return child;
   });
@@ -932,13 +932,13 @@ export { SwipeableRow };
  * Find a specific compound child element by its component type.
  * Returns the element (with props accessible) or null.
  */
-function findChild(
+function findChild<P = Record<string, unknown>>(
   children: React.ReactNode,
-  type: React.ComponentType<any>
-): React.ReactElement<any> | null {
-  let found: React.ReactElement<any> | null = null;
+  type: React.ComponentType<P>
+): React.ReactElement<P> | null {
+  let found: React.ReactElement<P> | null = null;
   React.Children.forEach(children, (child) => {
-    if (React.isValidElement(child) && child.type === type) {
+    if (React.isValidElement<P>(child) && child.type === type) {
       found = child;
     }
   });

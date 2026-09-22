@@ -1,8 +1,9 @@
 import * as fs from "fs";
 import * as path from "path";
-import { Project, SourceFile, SyntaxKind, type Node } from "ts-morph";
-import { walk, DEFAULT_ROOT, ROUTERS_DIR } from "./audit-arch";
+import { ts } from "ts-morph";
 
+export const DEFAULT_ROOT = process.cwd();
+export const ROUTERS_DIR = "src/server/api/routers";
 export const RESIDUE_BASELINE_PATH = "scripts/audit/router-residue-baseline.json";
 
 export interface ResidueItem {
@@ -13,6 +14,25 @@ export interface ResidueItem {
 }
 
 export type ResidueBaseline = Record<string, string[]>; // file -> array of declaration names
+
+export function walkRouters(dir: string, rootDir: string): string[] {
+  const fullPath = path.resolve(rootDir, dir);
+  if (!fs.existsSync(fullPath)) return [];
+  const entries = fs.readdirSync(fullPath, { withFileTypes: true });
+  const results: string[] = [];
+  for (const entry of entries) {
+    const rel = path.join(dir, entry.name).split(path.sep).join("/");
+    if (entry.isDirectory()) {
+      results.push(...walkRouters(rel, rootDir));
+    } else if (
+      (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) &&
+      !entry.name.endsWith(".d.ts")
+    ) {
+      results.push(rel);
+    }
+  }
+  return results;
+}
 
 export function loadResidueBaseline(
   rootDir = DEFAULT_ROOT,
@@ -33,81 +53,87 @@ export function sortResidueBaseline(baseline: ResidueBaseline): ResidueBaseline 
 }
 
 export function findDeadDeclarationsInSourceFile(
-  sourceFile: SourceFile,
+  sourceFile: ts.SourceFile,
   fileRel: string
 ): ResidueItem[] {
   const dead: ResidueItem[] = [];
 
-  // 1. Functions
-  for (const fn of sourceFile.getFunctions()) {
-    if (fn.isExported() || fn.isDefaultExport()) continue;
-    const name = fn.getName();
-    if (!name) continue;
+  const topLevelDecls: {
+    name: string;
+    node: ts.Node;
+    nameNode: ts.Identifier;
+    kind: "function" | "variable" | "class";
+    line: number;
+  }[] = [];
 
-    const nameNode = fn.getNameNode();
-    if (!nameNode) continue;
+  for (const stmt of sourceFile.statements) {
+    const isExported = !!(ts.getCombinedModifierFlags(stmt as any) & ts.ModifierFlags.Export);
+    if (isExported) continue;
 
-    // Check references
-    const refs = nameNode.findReferencesAsNodes();
-    // Exclude the declaration node itself
-    const externalRefs = refs.filter((r) => {
-      const parent = r.getParent();
-      return r !== nameNode && parent !== fn;
-    });
-
-    if (externalRefs.length === 0) {
-      dead.push({
-        file: fileRel,
-        name,
+    if (ts.isFunctionDeclaration(stmt) && stmt.name) {
+      const line = sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line + 1;
+      topLevelDecls.push({
+        name: stmt.name.text,
+        node: stmt,
+        nameNode: stmt.name,
         kind: "function",
-        line: fn.getStartLineNumber(),
+        line,
+      });
+    } else if (ts.isVariableStatement(stmt)) {
+      for (const decl of stmt.declarationList.declarations) {
+        if (ts.isIdentifier(decl.name)) {
+          const line = sourceFile.getLineAndCharacterOfPosition(decl.getStart()).line + 1;
+          topLevelDecls.push({
+            name: decl.name.text,
+            node: decl,
+            nameNode: decl.name,
+            kind: "variable",
+            line,
+          });
+        }
+      }
+    } else if (ts.isClassDeclaration(stmt) && stmt.name) {
+      const line = sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line + 1;
+      topLevelDecls.push({
+        name: stmt.name.text,
+        node: stmt,
+        nameNode: stmt.name,
+        kind: "class",
+        line,
       });
     }
   }
 
-  // 2. Variables (const/let/var at top level)
-  for (const stmt of sourceFile.getVariableStatements()) {
-    if (stmt.isExported() || stmt.isDefaultExport()) continue;
-    for (const decl of stmt.getDeclarations()) {
-      const name = decl.getName();
-      const nameNode = decl.getNameNode();
-      if (!nameNode.isKind(SyntaxKind.Identifier)) continue;
-      const refs = nameNode.findReferencesAsNodes();
-      const externalRefs = refs.filter((r: Node) => {
-        const parent = r.getParent();
-        return r !== nameNode && parent !== decl;
-      });
+  if (topLevelDecls.length === 0) return [];
 
-      if (externalRefs.length === 0) {
-        dead.push({
-          file: fileRel,
-          name,
-          kind: "variable",
-          line: decl.getStartLineNumber(),
-        });
+  // Count references to each top-level declaration in this sourceFile
+  const counts = new Map<string, number>();
+  for (const decl of topLevelDecls) {
+    counts.set(decl.name, 0);
+  }
+
+  function visit(node: ts.Node) {
+    if (ts.isIdentifier(node)) {
+      const name = node.text;
+      if (counts.has(name)) {
+        const isDeclarationName = topLevelDecls.some((d) => d.nameNode === node);
+        if (!isDeclarationName) {
+          counts.set(name, counts.get(name)! + 1);
+        }
       }
     }
+    ts.forEachChild(node, visit);
   }
 
-  // 3. Classes
-  for (const cls of sourceFile.getClasses()) {
-    if (cls.isExported() || cls.isDefaultExport()) continue;
-    const name = cls.getName();
-    if (!name) continue;
-    const nameNode = cls.getNameNode();
-    if (!nameNode) continue;
-    const refs = nameNode.findReferencesAsNodes();
-    const externalRefs = refs.filter((r) => {
-      const parent = r.getParent();
-      return r !== nameNode && parent !== cls;
-    });
+  visit(sourceFile);
 
-    if (externalRefs.length === 0) {
+  for (const decl of topLevelDecls) {
+    if (counts.get(decl.name) === 0) {
       dead.push({
         file: fileRel,
-        name,
-        kind: "class",
-        line: cls.getStartLineNumber(),
+        name: decl.name,
+        kind: decl.kind,
+        line: decl.line,
       });
     }
   }
@@ -123,21 +149,16 @@ export function analyzeRouterResidue(options?: {
   const rootDir = path.resolve(options?.rootDir ?? DEFAULT_ROOT);
   const routersRelDir = options?.routersRelDir ?? ROUTERS_DIR;
 
-  const files = options?.targetFiles ?? walk(routersRelDir, rootDir);
+  const files = options?.targetFiles ?? walkRouters(routersRelDir, rootDir);
   if (files.length === 0) return [];
-
-  const project = new Project({ useInMemoryFileSystem: true });
-  for (const rel of files) {
-    const abs = path.resolve(rootDir, rel);
-    const content = fs.readFileSync(abs, "utf8");
-    project.createSourceFile(abs, content, { overwrite: true });
-  }
 
   const allDead: ResidueItem[] = [];
 
-  for (const sourceFile of project.getSourceFiles()) {
-    const fileAbs = path.resolve(sourceFile.getFilePath());
-    const fileRel = path.relative(rootDir, fileAbs).split(path.sep).join("/");
+  for (const rel of files) {
+    const abs = path.resolve(rootDir, rel);
+    const code = fs.readFileSync(abs, "utf8");
+    const sourceFile = ts.createSourceFile(abs, code, ts.ScriptTarget.Latest, true);
+    const fileRel = path.relative(rootDir, abs).split(path.sep).join("/");
     const dead = findDeadDeclarationsInSourceFile(sourceFile, fileRel);
     allDead.push(...dead);
   }
@@ -190,4 +211,26 @@ export function updateResidueBaseline(
   console.log(
     `✓ Residue baseline updated: ${Object.keys(sorted).length} files with residue → ${baselinePath}`
   );
+}
+
+// ─── CLI Execution ────────────────────────────────────────────────────────────
+const isMain =
+  Boolean(import.meta.main) ||
+  (typeof require !== "undefined" && typeof module !== "undefined" && require.main === module) ||
+  Boolean(process.argv[1]?.endsWith("router-residue.ts"));
+
+if (isMain) {
+  if (process.argv.includes("--update")) {
+    updateResidueBaseline();
+  } else {
+    const errors = checkResidue();
+    if (errors.length === 0) {
+      console.log("✓ No router residue detected (0 dead declarations across split routers).");
+      process.exit(0);
+    } else {
+      console.error(`✗ Router residue audit found ${errors.length} dead declaration(s):\n`);
+      for (const e of errors) console.error(`  • ${e}`);
+      process.exit(1);
+    }
+  }
 }

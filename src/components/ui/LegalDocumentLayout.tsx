@@ -24,7 +24,7 @@ import {
   Cookie,
   UserXmark as UserX,
   Lock,
-  Sparks as Sparkles,
+  Copyright,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -38,7 +38,7 @@ export interface LegalSectionItem {
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "acceptance-eligibility": UserCheck,
-  "intellectual-property": Sparkles,
+  "intellectual-property": Copyright,
   "acceptable-use": ShieldAlert,
   "third-party-services": Globe2,
   "virtual-assets-disclaimers": Coins,
@@ -66,7 +66,7 @@ export function LegalDocumentLayout({
   subtitle,
   badge,
   lastUpdated,
-  version = '1.0 "Ogma"',
+  version = '1.4.0 "Lobster Crosby"',
   sections,
   children,
 }: LegalDocumentLayoutProps) {

@@ -38,7 +38,7 @@ export function WikiOSBrandLockup({
           )}
         >
           {/* Ambient inner glow */}
-          <div className="absolute inset-0 bg-radial from-blue-500/10 via-purple-500/5 to-transparent opacity-60 dark:opacity-80" />
+          <div className="absolute inset-0 bg-radial from-blue-500/10 to-transparent opacity-60 dark:opacity-80" />
 
           {/* Logomark */}
           <IxWikiLogo

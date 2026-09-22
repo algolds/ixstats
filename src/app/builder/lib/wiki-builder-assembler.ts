@@ -34,6 +34,7 @@ import { parseDepartments } from "./wiki-department-parser";
 import { parseRevenueSources } from "./wiki-revenue-parser";
 import { matchComponents } from "./wiki-attribute-matcher";
 import { detectWikiImportConflicts } from "./wiki-conflict-detector";
+import { parseWikiNumericValue, normalizeGovernmentType } from "./builder-parsers";
 
 export interface WikiImportResult {
   economicInputs: EconomicInputs;
@@ -53,41 +54,6 @@ export interface WikiImportResult {
 interface AssembleInput {
   infoboxData: UnifiedInfoboxData;
   pages: { title: string; content: string }[];
-}
-
-function parseWikiNumericValue(value: unknown): number | null {
-  if (typeof value === "number") return value > 0 ? value : null;
-  if (typeof value !== "string") return null;
-  const match = value.match(/([\d,.]+)\s*(trillion|billion|million|thousand)?/i);
-  if (!match) return null;
-  let num = parseFloat(match[1]!.replace(/,/g, ""));
-  if (isNaN(num)) return null;
-  const mult = match[2]?.toLowerCase();
-  if (mult === "trillion") num *= 1e12;
-  else if (mult === "billion") num *= 1e9;
-  else if (mult === "million") num *= 1e6;
-  else if (mult === "thousand") num *= 1e3;
-  return num > 0 ? num : null;
-}
-
-function normalizeGovernmentType(raw: string): string {
-  const normalized = raw.trim();
-  const knownTypes = [
-    "Constitutional Monarchy",
-    "Federal Republic",
-    "Parliamentary Democracy",
-    "Presidential Republic",
-    "Federal Constitutional Republic",
-    "Unitary State",
-    "Federation",
-    "Confederation",
-    "Empire",
-    "City-State",
-  ];
-  for (const known of knownTypes) {
-    if (normalized.toLowerCase() === known.toLowerCase()) return known;
-  }
-  return normalized.replace(/\b\w/g, (c) => c.toUpperCase()) || "Other";
 }
 
 function getEconomicTier(
@@ -631,25 +597,26 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
         gig: 2,
         informal: 0,
       },
+      averageAnnualIncome: core.gdpPerCapita * 0.6,
       averageWorkweekHours: 40,
-      minimumWage: labor.minimumWage,
-      averageWage: core.gdpPerCapita * 0.6,
-      medianWage: core.gdpPerCapita * 0.5,
-      wageGrowthRate: 2.5,
+      averageOvertimeHours: 2,
+      paidVacationDays: 20,
+      paidSickLeaveDays: 10,
+      parentalLeaveWeeks: 12,
       unionizationRate: 20,
       collectiveBargainingCoverage: 25,
-      workersRights: tier !== "Developing" ? "Moderate" : "Basic",
-      workplaceSafety: "Standard",
-      antiDiscriminationLaws: tier !== "Developing",
-      equalPayLegislation: tier !== "Developing",
-      parentalLeaveWeeks: 12,
-      paidVacationDays: 20,
-      sickLeaveDays: 10,
-      retirementAge: 65,
-      pensionSystem: "Mixed",
-      unemploymentBenefits: tier !== "Developing",
-      jobTrainingPrograms: true,
-    } as any,
+      minimumWageHourly: labor.minimumWage > 0 ? labor.minimumWage / 2000 : 10,
+      livingWageHourly: labor.minimumWage > 0 ? (labor.minimumWage / 2000) * 1.2 : 15,
+      workplaceSafetyIndex: tier !== "Developing" ? 75 : 50,
+      laborRightsScore: tier !== "Developing" ? 70 : 45,
+      workerProtections: {
+        jobSecurity: tier !== "Developing" ? 70 : 40,
+        wageProtection: tier !== "Developing" ? 75 : 50,
+        healthSafety: tier !== "Developing" ? 80 : 50,
+        discriminationProtection: tier !== "Developing" ? 75 : 40,
+        collectiveRights: tier !== "Developing" ? 70 : 45,
+      },
+    },
     demographics: {
       totalPopulation: core.totalPopulation,
       populationGrowthRate: 1.0,

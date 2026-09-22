@@ -19,7 +19,7 @@ import {
 } from "iconoir-react";
 import { useState } from "react";
 import { MatchCommentary } from "~/components/sports/MatchCommentary";
-import MatchSchedule1 from "~/components/sports/match-schedules/MatchSchedule1";
+import { MatchSchedule } from "~/components/sports/MatchSchedule";
 import { Virtuoso } from "react-virtuoso";
 
 interface ScheduleViewProps {
@@ -185,20 +185,20 @@ export function ScheduleView({
 
         {!isCollapsed && (
           <div className="border-border/10 border-t bg-transparent p-4">
-            <MatchSchedule1
+            <MatchSchedule
               matchday={day}
               matches={mappedMatches}
               title=""
               onTeamClick={onTeamClick}
               expandedMatchId={expandedMatchId}
-              onMatchClick={(matchId) => {
+              onMatchClick={(matchId: string) => {
                 if (onMatchClick) {
                   onMatchClick(matchId);
                 } else {
                   setExpandedMatchId(expandedMatchId === matchId ? null : matchId);
                 }
               }}
-              renderMatchExtension={(match) => (
+              renderMatchExtension={(match: { id: string }) => (
                 <div className="mt-1 px-1">
                   <MatchCommentary matchId={match.id} />
                 </div>

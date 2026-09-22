@@ -10,118 +10,39 @@ import {
   Community as Handshake,
   ScaleFrameEnlarge as Scale,
   StatUp as TrendingUp,
-  Compass,
-  Hammer as Gavel,
-  Crown,
-  ShieldAlert,
   CalendarRotate as CalendarClock,
-  Filter,
   WarningCircle as AlertCircle,
 } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "~/components/ui/dialog";
-import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useIxTimeStore } from "~/stores/ixtime-store";
 import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft/calendar";
-import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
-import { soundEffects } from "~/lib/sound/cuelume";
+import {
+  type AgendaEvent,
+  type ExecutiveAgendaProps,
+  seasonFor,
+  getSeverityRank,
+  AgendaHorizonStrip,
+  AgendaEventActionDialog,
+} from "./agenda";
 
-interface AgendaEvent {
+interface StatecraftIntentItem {
   id: string;
-  dayOffset: number; // 0 = Today, 1 = Tomorrow, etc.
-  timeLabel: string;
+  goal: string;
+  status?: string;
+  category?: string;
+  tier?: string;
+}
+
+interface StatecraftIssueItem {
+  id: string;
   title: string;
-  category: "defense" | "diplomacy" | "politics" | "economy" | "directive";
-  description: string;
-  directiveGoal: string;
-  statusLabel: string;
-  icon: typeof Calendar;
-  accentCls: string;
-  badgeCls: string;
-  drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
-  intentId?: string;
-  rawIxTime?: number;
+  description?: string;
+  severity?: string;
+  urgency?: number;
+  deadlineIxTime?: number | null;
 }
-
-function seasonFor(month: number): { name: string; emoji: string } {
-  if (month <= 1 || month === 11) return { name: "Winter", emoji: "❄️" };
-  if (month <= 4) return { name: "Spring", emoji: "🌸" };
-  if (month <= 7) return { name: "Summer", emoji: "☀️" };
-  return { name: "Autumn", emoji: "🍂" };
-}
-
-function _Complication({
-  icon,
-  label,
-  value,
-  tooltip,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  tooltip?: string;
-  onClick?: () => void;
-}) {
-  const content = (
-    <motion.div
-      whileHover={{ y: -1, transition: { type: "spring", stiffness: 450, damping: 25 } }}
-      whileTap={{ scale: 0.97 }}
-      onClick={onClick}
-      className={cn(
-        "group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex flex-col items-center justify-center rounded-xl border p-2.5 text-center shadow-xs backdrop-blur-md transition-all select-none dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]",
-        onClick && "cursor-pointer active:scale-95"
-      )}
-    >
-      <div className="text-muted-foreground mb-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <div className="text-foreground text-xs font-bold tracking-tight tabular-nums">{value}</div>
-    </motion.div>
-  );
-
-  if (tooltip) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>{content}</TooltipTrigger>
-        <TooltipContent
-          side="bottom"
-          className="border-border bg-card text-card-foreground max-w-[210px] border text-[11px] shadow-xl backdrop-blur-xl"
-        >
-          {tooltip}
-        </TooltipContent>
-      </Tooltip>
-    );
-  }
-
-  return content;
-}
-
-function getSeverityRank(s: string): number {
-  const sev = String(s ?? "").toLowerCase();
-  if (sev === "critical") return 4;
-  if (sev === "high") return 3;
-  if (sev === "medium") return 2;
-  return 1;
-}
-
-export interface ExecutiveAgendaProps {
-  countryId: string;
-  onOpenDrill?: (drill: Exclude<DrillSheetKind, { kind: "intent" } | null>) => void;
-  onIssueDirective?: (goal?: string) => void;
-  onOpenIntent?: (intentId: string) => void;
-}
-
-export type V2MyAgendaProps = ExecutiveAgendaProps;
 
 function ExecutiveAgendaComponent({
   countryId,
@@ -135,7 +56,6 @@ function ExecutiveAgendaComponent({
 
   // Real-time IxTime Store Telemetry
   const now = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 15000) * 15000);
-  const gameYear = useIxTimeStore((s) => s.gameYear);
 
   // Queries for statecraft telemetry & agenda context
   const intentTree = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
@@ -148,122 +68,9 @@ function ExecutiveAgendaComponent({
     { countryId: countryId ?? "", status: "active" },
     { enabled: !!countryId, staleTime: 60_000 }
   );
-  const govStructure = api.government.getByCountryId.useQuery(
-    { countryId: countryId ?? "" },
-    { enabled: !!countryId, staleTime: 60_000 }
-  );
-  const countryDetails = api.countries.getByIdAtTime.useQuery(
-    { id: countryId ?? "" },
-    { enabled: !!countryId, staleTime: 60_000 }
-  );
 
   const currentDate = useMemo(() => new Date(now), [now]);
   const currentSeason = useMemo(() => seasonFor(currentDate.getUTCMonth()), [currentDate]);
-
-  // Governance Complication Logic
-  const resolvedTermProgress = useMemo(() => {
-    const cycle = govStructure.data?.electionCycle ?? 4;
-    const electionList = elections.data ?? [];
-
-    if (electionList.length === 0) {
-      const elapsed = gameYear % cycle;
-      return `Yr ${(elapsed + 1).toFixed(1)} / ${cycle}`;
-    }
-
-    const upcomingElection = [...electionList]
-      .filter(
-        (e) => e.status === "upcoming" || e.status === "scheduled" || e.status === "campaigning"
-      )
-      .sort((a, b) => a.scheduledIxTime - b.scheduledIxTime)[0];
-
-    if (!upcomingElection) {
-      const elapsed = gameYear % cycle;
-      return `Yr ${(elapsed + 1).toFixed(1)} / ${cycle}`;
-    }
-
-    const termEnd = upcomingElection.scheduledIxTime;
-    const TERM_LENGTH_MS = cycle * 365.25 * 24 * 60 * 60 * 1000;
-    const termStart = termEnd - TERM_LENGTH_MS;
-    const elapsedMs = Math.max(0, now - termStart);
-    const elapsedYears = elapsedMs / (365.25 * 24 * 60 * 60 * 1000);
-    return `Yr ${Math.min(cycle, parseFloat((elapsedYears + 1).toFixed(1)))} / ${cycle}`;
-  }, [govStructure.data, elections.data, now, gameYear]);
-
-  const resolvedGovType = useMemo((): "democracy" | "monarchy" | "dictatorship" => {
-    if (!govStructure.data) return "democracy";
-    const type = govStructure.data.governmentType?.toLowerCase() || "democracy";
-    if (type.includes("monarch")) return "monarchy";
-    if (
-      type.includes("dictator") ||
-      type.includes("authoritarian") ||
-      type.includes("junta") ||
-      type.includes("single-party")
-    )
-      return "dictatorship";
-    return "democracy";
-  }, [govStructure.data]);
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const governanceConfig = useMemo(() => {
-    const data = govStructure.data;
-    switch (resolvedGovType) {
-      case "democracy":
-        return {
-          label: "Term progress",
-          value: resolvedTermProgress,
-          icon: <Gavel className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />,
-          tooltip: data
-            ? `Constitutionally Limited. Head: ${data.headOfGovernment || "President"}. Mandate: Popular Vote.`
-            : "Constitutionally Limited. Mandate: Popular Vote.",
-        };
-      case "monarchy": {
-        const startMs = data?.createdAt
-          ? new Date(data.createdAt).getTime()
-          : now - 12 * 365.25 * 24 * 60 * 60 * 1000;
-        const tenureYears = ((now - startMs) / (365.25 * 24 * 60 * 60 * 1000) + 12).toFixed(1);
-        return {
-          label: "Regime Tenure",
-          value: `${tenureYears} Years`,
-          icon: <Crown className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />,
-          tooltip: data
-            ? `Absolute Power. Head: ${data.headOfState || "Monarch"}. Mandate: Divine Right.`
-            : "Absolute Dynastic Power. Mandate: Divine Right.",
-        };
-      }
-      case "dictatorship": {
-        let grip = Math.min(100, Math.max(30, Math.round(68 + Math.sin(gameYear) * 12)));
-        if (data) {
-          const demIndex = data.democracyIndex ?? 50;
-          const stability = data.politicalStability ?? 0.5;
-          grip = Math.min(
-            100,
-            Math.max(10, Math.round((1 - demIndex / 100) * 50 + stability * 50))
-          );
-        }
-        return {
-          label: "Regime Grip",
-          value: `${grip}% Grip`,
-          icon: <ShieldAlert className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />,
-          tooltip: data
-            ? `Decree Rule. Head: ${data.headOfState || "Dictator"}. Revolution Risk: ${Math.round((1 - (data.politicalStability ?? 0.5)) * 30)}%.`
-            : "Military Decree. Mandate: Force & Control.",
-        };
-      }
-    }
-  }, [resolvedGovType, gameYear, resolvedTermProgress, govStructure.data, now]);
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const resolvedApproval = useMemo(() => {
-    if (countryDetails.data?.publicApproval !== undefined) {
-      return `${Math.round(countryDetails.data.publicApproval)}%`;
-    }
-    return "68%";
-  }, [countryDetails.data]);
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const activeIssuesCount = useMemo(() => {
-    return issuesData.data?.issues?.length ?? 0;
-  }, [issuesData.data]);
 
   // Generate 7-day interactive horizon dates
   const days = useMemo(() => {
@@ -316,9 +123,9 @@ function ExecutiveAgendaComponent({
         statusLabel: "Vote Scheduled",
         icon: Scale,
         accentCls:
-          "border-violet-500/40 dark:border-violet-500/30 bg-violet-500/10 text-foreground hover:border-violet-500/60 hover:bg-violet-500/15 hover:shadow-md",
+          "border-indigo-500/40 dark:border-indigo-500/30 bg-indigo-500/10 text-foreground hover:border-indigo-500/60 hover:bg-indigo-500/15 hover:shadow-md",
         badgeCls:
-          "bg-violet-500/20 text-violet-800 dark:text-violet-300 border-violet-500/40 font-bold",
+          "bg-indigo-500/20 text-indigo-800 dark:text-indigo-300 border-indigo-500/40 font-bold",
         drillKind: { kind: "politics" },
       },
       {
@@ -333,8 +140,8 @@ function ExecutiveAgendaComponent({
         statusLabel: "Summit Pending",
         icon: Handshake,
         accentCls:
-          "border-teal-500/40 dark:border-teal-500/30 bg-teal-500/10 text-foreground hover:border-teal-500/60 hover:bg-teal-500/15 hover:shadow-md",
-        badgeCls: "bg-teal-500/20 text-teal-800 dark:text-teal-300 border-teal-500/40 font-bold",
+          "border-cyan-500/40 dark:border-cyan-500/30 bg-cyan-500/10 text-foreground hover:border-cyan-500/60 hover:bg-cyan-500/15 hover:shadow-md",
+        badgeCls: "bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 border-cyan-500/40 font-bold",
         drillKind: { kind: "relations" },
       },
       {
@@ -394,11 +201,12 @@ function ExecutiveAgendaComponent({
     });
 
     // Inject active executive directive rollouts
-    const intentsList = Array.isArray(intentTree.data)
+    const rawIntents = Array.isArray(intentTree.data)
       ? intentTree.data
       : (intentTree.data?.allIntents ?? []);
-    const activeIntents = intentsList.filter((i: any) => i.status?.toLowerCase() === "active");
-    activeIntents.forEach((it: any) => {
+    const intentsList = rawIntents as StatecraftIntentItem[];
+    const activeIntents = intentsList.filter((i) => i.status?.toLowerCase() === "active");
+    activeIntents.forEach((it) => {
       list.unshift({
         id: `intent-ev-${it.id}`,
         dayOffset: 0,
@@ -418,16 +226,16 @@ function ExecutiveAgendaComponent({
     });
 
     // Inject active national issues awaiting executive action (Priority Issues first)
-    const rawActiveIssues = issuesData.data?.issues ?? [];
-    const activeIssues = [...rawActiveIssues].sort((a: any, b: any) => {
-      const aScore = getSeverityRank(a.severity) * 100 + (a.urgency ?? 0);
-      const bScore = getSeverityRank(b.severity) * 100 + (b.urgency ?? 0);
+    const rawActiveIssues = (issuesData.data?.issues ?? []) as StatecraftIssueItem[];
+    const activeIssues = [...rawActiveIssues].sort((a, b) => {
+      const aScore = getSeverityRank(a.severity ?? "") * 100 + (a.urgency ?? 0);
+      const bScore = getSeverityRank(b.severity ?? "") * 100 + (b.urgency ?? 0);
       return bScore - aScore;
     });
 
-    activeIssues.forEach((iss: any) => {
+    activeIssues.forEach((iss) => {
       const sev = String(iss.severity ?? "").toLowerCase();
-      const urgent = sev === "critical" || sev === "high" || iss.urgency > 70;
+      const urgent = sev === "critical" || sev === "high" || (iss.urgency ?? 0) > 70;
       list.unshift({
         id: `issue-ev-${iss.id}`,
         dayOffset: 0,
@@ -441,11 +249,11 @@ function ExecutiveAgendaComponent({
         statusLabel: urgent ? "PRIORITY ISSUE" : "OPEN ISSUE",
         icon: AlertCircle,
         accentCls: urgent
-          ? "border-rose-500/50 dark:border-rose-500/40 bg-rose-500/10 text-foreground hover:border-rose-500/70 hover:bg-rose-500/20 hover:shadow-md"
-          : "border-violet-500/40 dark:border-violet-500/30 bg-violet-500/10 text-foreground hover:border-violet-500/60 hover:bg-violet-500/15 hover:shadow-md",
+          ? "border-red-500/50 dark:border-red-500/40 bg-red-500/10 text-foreground hover:border-red-500/70 hover:bg-red-500/20 hover:shadow-md"
+          : "border-indigo-500/40 dark:border-indigo-500/30 bg-indigo-500/10 text-foreground hover:border-indigo-500/60 hover:bg-indigo-500/15 hover:shadow-md",
         badgeCls: urgent
-          ? "bg-rose-500/25 text-rose-800 dark:text-rose-300 border-rose-500/40 font-extrabold animate-pulse"
-          : "bg-violet-500/20 text-violet-800 dark:text-violet-300 border-violet-500/40 font-bold",
+          ? "bg-red-500/20 text-red-800 dark:text-red-300 border-red-500/40 font-bold"
+          : "bg-indigo-500/20 text-indigo-800 dark:text-indigo-300 border-indigo-500/40 font-bold",
         drillKind: { kind: "issue", issueId: iss.id },
       });
     });
@@ -453,7 +261,7 @@ function ExecutiveAgendaComponent({
     return list;
   }, [intentTree.data, statecraftEvents, now, issuesData.data]);
 
-  // Filter events by selected day & category chip, ensuring Priority Issues sort to the top of the list
+  // Filter events by selected day & category chip
   const filteredEvents = useMemo(() => {
     const list = events.filter((e) => {
       const matchDay = e.dayOffset === selectedDayOffset;
@@ -476,22 +284,16 @@ function ExecutiveAgendaComponent({
 
   const usedSlots = status.data?.usedThisWeek ?? 0;
   const slotCap = status.data?.cap ?? 3;
-  const soonestEvent = statecraftEvents[0];
-  const _nextEventValue = soonestEvent ? formatRelativeIxDays(soonestEvent.ixTime, now) : "—";
-  const _civCapPct = Math.round(
-    Math.max(10, Math.min(100, ((slotCap - usedSlots) / slotCap) * 100))
-  );
 
   return (
     <>
       <FacetCard
+        id="executive-agenda"
         depth={1}
         className="bg-card/40 dark:bg-card/30 border-border/80 flex flex-col gap-4 p-4.5 shadow-lg backdrop-blur-md dark:border-white/10 dark:shadow-2xl"
       >
-        {/* ── StandBy Hero Clock & Telemetry Header ─────────────────── */}
+        {/* StandBy Hero Clock & Telemetry Header */}
         <div className="border-border/70 bg-card/60 relative overflow-hidden rounded-2xl border p-4 shadow-xs backdrop-blur-xl dark:border-white/10 dark:bg-gradient-to-br dark:from-white/[0.06] dark:via-white/[0.02] dark:to-transparent dark:shadow-lg dark:shadow-black/20">
-          {/* Subtle Ambient Light Glow Accent */}
-          <div className="pointer-events-none absolute -top-12 -right-12 h-36 w-36 rounded-full bg-cyan-500/5 blur-2xl dark:bg-cyan-500/10" />
 
           <div className="border-border/60 relative z-10 flex flex-wrap items-center justify-between gap-3 border-b pb-3 dark:border-white/10">
             <div className="flex items-center gap-3">
@@ -529,102 +331,17 @@ function ExecutiveAgendaComponent({
           </div>
         </div>
 
-        {/* ── 7-Day Horizon Strip (Apple Spring Motion & Fluid Selection) ────── */}
-        <div className="relative grid grid-cols-7 gap-1.5">
-          {days.map(({ offset, dayName, dayNum }) => {
-            const isSelected = selectedDayOffset === offset;
-            const hasEvent = events.some((e) => e.dayOffset === offset);
-            return (
-              <button
-                key={offset}
-                type="button"
-                onClick={() => setSelectedDayOffset(offset)}
-                className={cn(
-                  "relative flex cursor-pointer flex-col items-center justify-center rounded-xl border p-2 text-center transition-colors select-none active:scale-[0.97]",
-                  isSelected
-                    ? "border-cyan-500/50 text-cyan-950 shadow-xs dark:text-cyan-200"
-                    : "border-border/50 bg-card/40 hover:bg-card/80 text-muted-foreground dark:border-white/5 dark:bg-white/[0.02] dark:hover:bg-white/10"
-                )}
-              >
-                {isSelected && (
-                  <motion.div
-                    layoutId="agenda-day-pill"
-                    className="absolute inset-0 rounded-xl border border-cyan-500/40 bg-cyan-500/15 dark:bg-cyan-500/20"
-                    transition={{ type: "spring", stiffness: 450, damping: 30 }}
-                  />
-                )}
-                <span
-                  className={cn(
-                    "relative z-10 text-[9px] font-semibold tracking-wider uppercase opacity-90",
-                    isSelected ? "text-cyan-950 dark:text-cyan-200" : "text-muted-foreground"
-                  )}
-                >
-                  {dayName}
-                </span>
-                <span
-                  className={cn(
-                    "relative z-10 text-xs font-bold tracking-tight tabular-nums",
-                    isSelected ? "text-cyan-950 dark:text-cyan-200" : "text-foreground"
-                  )}
-                >
-                  {dayNum}
-                </span>
-                {hasEvent && (
-                  <span className="relative z-10 mt-1 h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-500 dark:bg-cyan-400" />
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {/* 7-Day Horizon Strip and Category Filter Chips */}
+        <AgendaHorizonStrip
+          days={days}
+          selectedDayOffset={selectedDayOffset}
+          onSelectDayOffset={setSelectedDayOffset}
+          categoryFilter={categoryFilter}
+          onSelectCategoryFilter={setCategoryFilter}
+          events={events}
+        />
 
-        {/* ── Category Filter Chips (Sliding Pill Selection) ─────────────────── */}
-        <div className="border-border/60 flex flex-wrap items-center gap-1.5 border-t pt-2.5 dark:border-white/5">
-          <div className="text-muted-foreground mr-1 flex items-center gap-1 text-[10px] font-semibold tracking-wider uppercase select-none">
-            <Filter className="h-3 w-3" />
-            <span>Filter:</span>
-          </div>
-          {[
-            { id: "all", label: "All" },
-            { id: "directive", label: "⚡ Directives" },
-            { id: "politics", label: "⚖️ Politics" },
-            { id: "diplomacy", label: "🤝 Diplomacy" },
-            { id: "defense", label: "🛡️ Defense" },
-            { id: "economy", label: "📈 Economy" },
-          ].map((chip) => {
-            const isActive = categoryFilter === chip.id;
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                onClick={() => setCategoryFilter(chip.id)}
-                className={cn(
-                  "relative cursor-pointer rounded-lg border px-2.5 py-1 text-[10px] font-bold transition-colors select-none active:scale-[0.97]",
-                  isActive
-                    ? "border-cyan-500/50 font-extrabold text-cyan-950 dark:text-cyan-200"
-                    : "border-border/60 bg-card/50 text-muted-foreground hover:bg-card/90 hover:text-foreground dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-                )}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="agenda-filter-pill"
-                    className="absolute inset-0 rounded-lg border border-cyan-500/40 bg-cyan-500/15 dark:bg-cyan-500/20"
-                    transition={{ type: "spring", stiffness: 450, damping: 30 }}
-                  />
-                )}
-                <span
-                  className={cn(
-                    "relative z-10",
-                    isActive ? "text-cyan-950 dark:text-cyan-200" : "text-muted-foreground"
-                  )}
-                >
-                  {chip.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ── Event Cards & Action Items (Inline Scrollable Container) ───────── */}
+        {/* Event Cards & Action Items (Inline Scrollable Container) */}
         <div className="scrollbar-thumb-muted/60 max-h-[380px] scrollbar-thin scrollbar-track-transparent space-y-2.5 overflow-y-auto pr-1.5 dark:scrollbar-thumb-white/20">
           <AnimatePresence mode="popLayout">
             {filteredEvents.length > 0 ? (
@@ -705,99 +422,18 @@ function ExecutiveAgendaComponent({
       </FacetCard>
 
       {/* Quick Action Resolution Dialog */}
-      <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-        {selectedEvent && (
-          <DialogContent className="border-border/80 bg-card/95 max-w-md space-y-4 rounded-2xl p-6 shadow-2xl backdrop-blur-2xl dark:border-white/15">
-            <DialogHeader className="space-y-2 text-left">
-              <div className="flex items-center gap-2">
-                <span
-                  className={cn(
-                    "rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider uppercase",
-                    selectedEvent.badgeCls
-                  )}
-                >
-                  {selectedEvent.statusLabel}
-                </span>
-                <span className="text-muted-foreground font-mono text-xs tabular-nums">
-                  {selectedEvent.timeLabel}
-                </span>
-              </div>
-              <DialogTitle className="text-foreground text-base font-semibold tracking-tight">
-                {selectedEvent.title}
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground text-xs leading-relaxed">
-                {selectedEvent.description}
-              </DialogDescription>
-            </DialogHeader>
-
-            {/* Directive Goal Resolution Preview Box */}
-            <div className="space-y-1 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3.5 shadow-inner">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400">
-                <Command className="h-3.5 w-3.5" />
-                <span>Recommended Resolution Directive</span>
-              </div>
-              <p className="text-foreground text-xs leading-snug font-semibold">
-                "{selectedEvent.directiveGoal}"
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  soundEffects.bloom();
-                  const goal = selectedEvent.directiveGoal;
-                  setSelectedEvent(null);
-                  onIssueDirective?.(goal);
-                }}
-                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-2.5 text-xs font-extrabold text-amber-900 shadow-md transition-all hover:bg-amber-500/30 active:scale-95 dark:text-amber-300"
-              >
-                <Command className="h-4 w-4" />
-                <span>Declare Directive to Resolve</span>
-                <ArrowUpRight className="h-4 w-4 opacity-70" />
-              </button>
-
-              {selectedEvent.drillKind ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    soundEffects.press();
-                    const drill = selectedEvent.drillKind!;
-                    setSelectedEvent(null);
-                    onOpenDrill?.(drill);
-                  }}
-                  className="border-border/70 bg-card/60 hover:bg-card/90 text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-all active:scale-98 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-                >
-                  <Compass className="h-3.5 w-3.5" />
-                  <span>
-                    {selectedEvent.drillKind.kind === "issue"
-                      ? "Open Issue Brief"
-                      : "Inspect Domain Details"}
-                  </span>
-                </button>
-              ) : selectedEvent.intentId ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    soundEffects.press();
-                    const id = selectedEvent.intentId!;
-                    setSelectedEvent(null);
-                    onOpenIntent?.(id);
-                  }}
-                  className="border-border/70 bg-card/60 hover:bg-card/90 text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-all active:scale-98 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-                >
-                  <Compass className="h-3.5 w-3.5" />
-                  <span>Inspect Directive Tree</span>
-                </button>
-              ) : null}
-            </div>
-          </DialogContent>
-        )}
-      </Dialog>
+      <AgendaEventActionDialog
+        selectedEvent={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        onIssueDirective={onIssueDirective}
+        onOpenDrill={onOpenDrill}
+        onOpenIntent={onOpenIntent}
+      />
     </>
   );
 }
 
 export const ExecutiveAgenda = React.memo(ExecutiveAgendaComponent);
 export const V2MyAgenda = ExecutiveAgenda;
+export type { V2MyAgendaProps } from "./agenda";
+export type { ExecutiveAgendaProps } from "./agenda";

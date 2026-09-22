@@ -1,0 +1,31 @@
+/home/jxsig/projects/ixstats/.env.local.dev:IXWIKI_DB_HOST="localhost"
+/home/jxsig/projects/ixstats/.env.local.dev:IXWIKI_DB_PORT="13306"
+/home/jxsig/projects/ixstats/.env.local.dev:IXWIKI_DB_USER="ixwiki"
+/home/jxsig/projects/ixstats/.env.local.dev:IXWIKI_DB_PASSWORD="Multico1!"
+/home/jxsig/projects/ixstats/.env.local.dev:IXWIKI_DB_NAME="ixwiki"
+/home/jxsig/projects/ixstats/.env:IXWIKI_DB_PASSWORD=Multico1!
+---
+LISTEN 0      128         127.0.0.1:13306      0.0.0.0:*    users:(("ssh",pid=9768,fd=5))             
+LISTEN 0      128             [::1]:13306         [::]:*    users:(("ssh",pid=9768,fd=4))             
+---ports---
+State  Recv-Q Send-Q  Local Address:Port  Peer Address:PortProcess                                    
+LISTEN 0      4096        127.0.0.1:5433       0.0.0.0:*                                              
+LISTEN 0      4096        127.0.0.1:38097      0.0.0.0:*    users:(("language_server",pid=3779,fd=22))
+LISTEN 0      4096        127.0.0.1:38017      0.0.0.0:*    users:(("language_server",pid=3779,fd=9)) 
+LISTEN 0      128         127.0.0.1:13306      0.0.0.0:*    users:(("ssh",pid=9768,fd=5))             
+LISTEN 0      128         127.0.0.1:13001      0.0.0.0:*    users:(("ssh",pid=9768,fd=7))             
+LISTEN 0      4096        127.0.0.1:33471      0.0.0.0:*                                              
+LISTEN 0      511         127.0.0.1:45535      0.0.0.0:*    users:(("node",pid=3087,fd=39))           
+LISTEN 0      4096    127.0.0.53%lo:53         0.0.0.0:*                                              
+LISTEN 0      511         127.0.0.1:40753      0.0.0.0:*    users:(("node",pid=2738,fd=22))           
+LISTEN 0      4096       127.0.0.54:53         0.0.0.0:*                                              
+LISTEN 0      1000   10.255.255.254:53         0.0.0.0:*                                              
+LISTEN 0      511         127.0.0.1:52747      0.0.0.0:*    users:(("node",pid=3087,fd=61))           
+LISTEN 0      4096        127.0.0.1:40269      0.0.0.0:*    users:(("language_server",pid=3779,fd=11))
+LISTEN 0      128         127.0.0.1:15433      0.0.0.0:*    users:(("ssh",pid=9768,fd=9))             
+LISTEN 0      4096        127.0.0.1:3004       0.0.0.0:*                                              
+LISTEN 0      128             [::1]:13001         [::]:*    users:(("ssh",pid=9768,fd=6))             
+LISTEN 0      128             [::1]:13306         [::]:*    users:(("ssh",pid=9768,fd=4))             
+LISTEN 0      4096                *:8317             *:*    users:(("cli-proxy-api",pid=860,fd=3))    
+LISTEN 0      128             [::1]:15433         [::]:*    users:(("ssh",pid=9768,fd=8))             
+DONE

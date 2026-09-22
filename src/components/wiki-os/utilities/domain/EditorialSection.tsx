@@ -23,7 +23,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
       icon: ViewGrid,
       href: "/util/templates",
       badge: "Builder Suite",
-      color: "from-purple-500/10 to-indigo-500/10 text-purple-400 border-purple-500/20",
+      color: "border-indigo-500/20 bg-indigo-500/10 text-indigo-400",
     },
     {
       id: "diff-suite",
@@ -33,7 +33,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
       icon: GitCommit,
       href: "/util/diff",
       badge: "Scrubbable",
-      color: "from-blue-500/10 to-cyan-500/10 text-blue-400 border-blue-500/20",
+      color: "border-blue-500/20 bg-blue-500/10 text-blue-400",
     },
     {
       id: "editor",
@@ -43,7 +43,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
       icon: EditPencil,
       href: "/wiki/Main_Page?action=edit",
       badge: "WYSIWYG",
-      color: "from-emerald-500/10 to-green-500/10 text-emerald-400 border-emerald-500/20",
+      color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
     },
     {
       id: "export",
@@ -55,7 +55,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
       href: "/api/wiki/export?format=json",
       isExternal: true,
       badge: "MDX / JSON",
-      color: "from-amber-500/10 to-orange-500/10 text-amber-400 border-amber-500/20",
+      color: "border-amber-500/20 bg-amber-500/10 text-amber-400",
     },
     {
       id: "search",
@@ -66,7 +66,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
       icon: PageSearch,
       href: "/util/search",
       badge: "Ranked",
-      color: "from-rose-500/10 to-pink-500/10 text-rose-400 border-rose-500/20",
+      color: "border-cyan-500/20 bg-cyan-500/10 text-cyan-400",
     },
   ];
 
@@ -83,7 +83,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 px-1">
-        <EditPencil className="h-4 w-4 text-purple-400" />
+        <EditPencil className="h-4 w-4 text-indigo-400" />
         <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Editorial & Tooling ({filtered.length})
         </h3>

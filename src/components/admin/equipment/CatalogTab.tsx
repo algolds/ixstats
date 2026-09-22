@@ -252,7 +252,7 @@ export function CatalogTab({
           <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
             Manufacturers
           </p>
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-indigo-400">
             {manufacturers?.length || 0}
           </p>
         </div>

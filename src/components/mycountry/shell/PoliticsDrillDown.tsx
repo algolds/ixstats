@@ -10,6 +10,7 @@ import {
   Crown,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 const CabinetPanel = dynamic(
   () =>
@@ -79,9 +80,9 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
   return (
     <div className="space-y-4">
       {/* Player Fiat Banner */}
-      <div className="flex items-center justify-between rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 text-xs">
+      <div className="flex items-center justify-between rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-3 text-xs">
         <div className="flex items-center gap-2">
-          <Crown className="h-4 w-4 shrink-0 text-purple-400" />
+          <Crown className="h-4 w-4 shrink-0 text-indigo-500 dark:text-indigo-400" />
           <div>
             <span className="text-foreground font-extrabold">Executive Fiat Mode</span>
             <p className="text-muted-foreground text-[11px]">
@@ -90,7 +91,7 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
             </p>
           </div>
         </div>
-        <span className="shrink-0 rounded-full border border-purple-500/40 bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold text-purple-300">
+        <span className="shrink-0 rounded-full border border-indigo-500/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-800 dark:text-indigo-300">
           Player Fiat Enabled
         </span>
       </div>
@@ -101,11 +102,15 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
           <button
             key={id}
             type="button"
-            onClick={() => setActiveTab(id)}
+            data-cuelume-press="soft"
+            onClick={() => {
+              soundEffects.press();
+              setActiveTab(id);
+            }}
             className={cn(
               "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
               activeTab === id
-                ? "border border-purple-500/40 bg-purple-500/20 text-purple-400 shadow-sm"
+                ? "border border-indigo-500/40 bg-indigo-500/20 text-indigo-900 dark:text-indigo-300 shadow-2xs"
                 : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
             )}
           >

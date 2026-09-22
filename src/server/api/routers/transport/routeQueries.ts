@@ -1,122 +1,100 @@
 /**
- * transport.ts — tRPC router for transport infrastructure.
+ * routeQueries.ts — tRPC queries for transport infrastructure.
  *
- * Provides CRUD for transport routes and hubs, plus procedural
- * route generation using terrain-aware pathfinding.
+ * Provides queries for transport routes, GeoJSON exports,
+ * network statistics, and stop resolution.
  */
 
 import { z } from "zod/v4";
+import type { Geometry } from "geojson";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { createTRPCRouter, cachedPublicProcedure } from "~/server/api/trpc";
+import {
+  calculateTAMI,
+  calculateMaintenanceDegradation,
+  calculateModalBreakdown,
+  estimateIntercityTravelTimes,
+} from "~/lib/economy/national-mobility";
+import {
+  calculateRouteTravelTime,
+  resolveRouteBaseSpeed,
+} from "~/lib/economy/travel-time";
 
-export async function syncTransportEconomicModifiers(db: any, countryId: string) {
-  const routes = await db.transportRoute.findMany({
-    where: { countryId, status: "operational" },
-  });
+type JsonPrimitive = string | number | boolean | null;
+type JsonObject = Record<string, JsonPrimitive | JsonPrimitive[] | Record<string, JsonPrimitive>>;
 
-  const hubs = await db.transportHub.findMany({
-    where: { countryId },
-  });
+type JsonGeometry = {
+  type: string;
+  coordinates?: Prisma.JsonValue;
+  geometries?: Prisma.JsonValue;
+};
 
-  let totalLengthKm = 0;
-  let totalMaintenanceCost = 0;
-
-  for (const route of routes) {
-    totalLengthKm += route.lengthKm ?? 0;
-    const props = (route.properties as Record<string, any>) || {};
-    totalMaintenanceCost += props.maintenanceCost !== undefined ? Number(props.maintenanceCost) : 0;
-  }
-
-  const gdpBonus = Math.min(0.15, totalLengthKm * 0.0001 + hubs.length * 0.01);
-  const tradeBonus = Math.min(0.2, totalLengthKm * 0.00015 + hubs.length * 0.015);
-  const syncDate = new Date();
-
-  // GDP modifier effect
-  const gdpEffectName = "transport_gdp_bonus";
-  const existingGdp = await db.storytellerEffect.findFirst({
-    where: { countryId, inputType: gdpEffectName, createdBy: "system_transport_sync" },
-  });
-  if (existingGdp) {
-    await db.storytellerEffect.update({
-      where: { id: existingGdp.id },
-      data: {
-        value: gdpBonus,
-        description: `GDP growth bonus from transport network (${totalLengthKm.toFixed(1)} km operational routes, ${hubs.length} hubs)`,
-        isActive: gdpBonus > 0,
-        ixTimeTimestamp: syncDate,
-      },
-    });
-  } else if (gdpBonus > 0) {
-    await db.storytellerEffect.create({
-      data: {
-        countryId,
-        inputType: gdpEffectName,
-        value: gdpBonus,
-        description: `GDP growth bonus from transport network (${totalLengthKm.toFixed(1)} km operational routes, ${hubs.length} hubs)`,
-        isActive: true,
-        createdBy: "system_transport_sync",
-        ixTimeTimestamp: syncDate,
-      },
-    });
-  }
-
-  // Trade modifier effect
-  const tradeEffectName = "transport_trade_bonus";
-  const existingTrade = await db.storytellerEffect.findFirst({
-    where: { countryId, inputType: tradeEffectName, createdBy: "system_transport_sync" },
-  });
-  if (existingTrade) {
-    await db.storytellerEffect.update({
-      where: { id: existingTrade.id },
-      data: {
-        value: tradeBonus,
-        description: `Trade efficiency bonus from transport network (${totalLengthKm.toFixed(1)} km operational routes, ${hubs.length} hubs)`,
-        isActive: tradeBonus > 0,
-        ixTimeTimestamp: syncDate,
-      },
-    });
-  } else if (tradeBonus > 0) {
-    await db.storytellerEffect.create({
-      data: {
-        countryId,
-        inputType: tradeEffectName,
-        value: tradeBonus,
-        description: `Trade efficiency bonus from transport network (${totalLengthKm.toFixed(1)} km operational routes, ${hubs.length} hubs)`,
-        isActive: true,
-        createdBy: "system_transport_sync",
-        ixTimeTimestamp: syncDate,
-      },
-    });
-  }
-
-  // Maintenance cost effect
-  const maintenanceEffectName = "transport_infra_maintenance";
-  const existingMaintenance = await db.storytellerEffect.findFirst({
-    where: { countryId, inputType: maintenanceEffectName, createdBy: "system_transport_sync" },
-  });
-  if (existingMaintenance) {
-    await db.storytellerEffect.update({
-      where: { id: existingMaintenance.id },
-      data: {
-        value: -totalMaintenanceCost,
-        description: `Annual transport network maintenance cost (${totalMaintenanceCost.toFixed(3)} billion IxCredits)`,
-        isActive: totalMaintenanceCost > 0,
-        ixTimeTimestamp: syncDate,
-      },
-    });
-  } else if (totalMaintenanceCost > 0) {
-    await db.storytellerEffect.create({
-      data: {
-        countryId,
-        inputType: maintenanceEffectName,
-        value: -totalMaintenanceCost,
-        description: `Annual transport network maintenance cost (${totalMaintenanceCost.toFixed(3)} billion IxCredits)`,
-        isActive: true,
-        createdBy: "system_transport_sync",
-        ixTimeTimestamp: syncDate,
-      },
-    });
-  }
+function toGeometry(val: Prisma.JsonValue): Geometry {
+  return (val as JsonGeometry) as Geometry;
 }
+
+interface RouteProperties {
+  maintenanceCost?: number | string;
+  [key: string]: JsonPrimitive | JsonPrimitive[] | Record<string, JsonPrimitive> | undefined;
+}
+
+interface ResourceMetadata {
+  isConnected?: boolean;
+  resourceType?: string;
+  quality?: number | string;
+  [key: string]: JsonPrimitive | JsonPrimitive[] | Record<string, JsonPrimitive> | undefined;
+}
+
+interface CountryEconomySelect {
+  name: string;
+  currentTotalGdp: number;
+  currentGdpPerCapita: number;
+  economicTier: string;
+  currentPopulation: number;
+}
+
+interface SegmentQueryResult {
+  id: string;
+  fromNodeId: string;
+  toNodeId: string;
+  routeType: string;
+  geometry: Prisma.JsonValue;
+  status: string;
+  lengthKm: number | null;
+  terrainDifficulty: number | null;
+  isInternational: boolean;
+  builtYear: number | null;
+  properties: Prisma.JsonValue;
+  country: CountryEconomySelect | null;
+}
+
+interface NodeQueryResult {
+  id: string;
+  coordinates: Prisma.JsonValue;
+  nodeType: string;
+  name: string | null;
+  cityId: string | null;
+  countryId: string | null;
+  city: { name: string; population: number | null } | null;
+}
+
+type SelectField = boolean | { select: Record<string, boolean> };
+
+type DynamicTransportDb = PrismaClient & {
+  transportSegment?: {
+    findMany(args: {
+      where: { worldId: string };
+      select: Record<string, SelectField>;
+    }): Promise<SegmentQueryResult[]>;
+  };
+  transportNode?: {
+    findMany(args: {
+      where: { worldId: string };
+      select: Record<string, SelectField>;
+    }): Promise<NodeQueryResult[]>;
+  };
+  transportRouteSegment?: object;
+};
 
 export const transportRouteQueriesRouter = createTRPCRouter({
   /**
@@ -135,6 +113,17 @@ export const transportRouteQueriesRouter = createTRPCRouter({
           countryId: input.countryId,
           ...(input.routeType ? { routeType: input.routeType } : {}),
         },
+        include: {
+          country: {
+            select: {
+              name: true,
+              currentTotalGdp: true,
+              currentGdpPerCapita: true,
+              economicTier: true,
+              currentPopulation: true,
+            },
+          },
+        },
         orderBy: { routeType: "asc" },
       });
 
@@ -142,7 +131,7 @@ export const transportRouteQueriesRouter = createTRPCRouter({
         type: "FeatureCollection" as const,
         features: routes.map((r) => ({
           type: "Feature" as const,
-          geometry: r.geometry as unknown as import("geojson").Geometry,
+          geometry: toGeometry(r.geometry),
           properties: {
             id: r.id,
             name: r.name,
@@ -153,7 +142,13 @@ export const transportRouteQueriesRouter = createTRPCRouter({
             isInternational: r.isInternational,
             builtYear: r.builtYear,
             stops: r.stops ?? [],
-            ...((r.properties as Record<string, unknown>) ?? {}),
+            countryName: r.country?.name ?? null,
+            totalGdp: r.country?.currentTotalGdp ?? null,
+            gdpPerCapita: r.country?.currentGdpPerCapita ?? null,
+            economicTier: r.country?.economicTier ?? null,
+            population: r.country?.currentPopulation ?? null,
+            speedKmh: (r as { speedKmh?: number | null }).speedKmh ?? (r.properties as JsonObject | null)?.speed_kmh ?? null,
+            ...((r.properties as JsonObject | null) ?? {}),
           },
         })),
       };
@@ -178,7 +173,15 @@ export const transportRouteQueriesRouter = createTRPCRouter({
           isInternational: true,
           builtYear: true,
           properties: true,
-          country: { select: { name: true } },
+          country: {
+            select: {
+              name: true,
+              currentTotalGdp: true,
+              currentGdpPerCapita: true,
+              economicTier: true,
+              currentPopulation: true,
+            },
+          },
         },
       });
 
@@ -186,18 +189,23 @@ export const transportRouteQueriesRouter = createTRPCRouter({
         type: "FeatureCollection" as const,
         features: routes.map((r) => ({
           type: "Feature" as const,
-          geometry: r.geometry as unknown as import("geojson").Geometry,
+          geometry: toGeometry(r.geometry),
           properties: {
             id: r.id,
             name: r.name,
             routeType: r.routeType,
             status: r.status,
             lengthKm: r.lengthKm,
+            speedKmh: (r as { speedKmh?: number | null }).speedKmh ?? (r.properties as JsonObject | null)?.speed_kmh ?? null,
             terrainDifficulty: r.terrainDifficulty,
             isInternational: r.isInternational,
             builtYear: r.builtYear,
             countryName: r.country?.name ?? null,
-            ...((r.properties as Record<string, unknown>) ?? {}),
+            totalGdp: r.country?.currentTotalGdp ?? null,
+            gdpPerCapita: r.country?.currentGdpPerCapita ?? null,
+            economicTier: r.country?.economicTier ?? null,
+            population: r.country?.currentPopulation ?? null,
+            ...((r.properties as JsonObject | null) ?? {}),
           },
         })),
       };
@@ -225,7 +233,7 @@ export const transportRouteQueriesRouter = createTRPCRouter({
         byType[r.routeType]!.count++;
         byType[r.routeType]!.totalKm += r.lengthKm ?? 0;
         if (r.status === "operational") {
-          const props = (r.properties as Record<string, any>) || {};
+          const props = (r.properties as RouteProperties | null) || {};
           totalMaintenanceCost +=
             props.maintenanceCost !== undefined ? Number(props.maintenanceCost) : 0;
         }
@@ -240,12 +248,12 @@ export const transportRouteQueriesRouter = createTRPCRouter({
       });
 
       const resources = rawResources.map((res) => {
-        const meta = (res.metadata as Record<string, any>) || {};
+        const meta = (res.metadata as ResourceMetadata | null) || {};
         return {
           id: res.id,
           name: res.name,
           isConnected: meta.isConnected === true,
-          resourceType: (meta.resourceType as string) || "minerals",
+          resourceType: meta.resourceType || "minerals",
           quality: meta.quality !== undefined ? Number(meta.quality) : 0.5,
         };
       });
@@ -258,6 +266,165 @@ export const transportRouteQueriesRouter = createTRPCRouter({
         byType,
         totalMaintenanceCost,
         resources,
+      };
+    }),
+
+  /**
+   * Get comprehensive National Mobility & Transit Accessibility profile (Phase 2).
+   */
+  getNationalMobilityProfile: cachedPublicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const [routes, hubs, cities, budget, country] = await Promise.all([
+        ctx.db.transportRoute.findMany({
+          where: { countryId: input.countryId },
+          select: {
+            id: true,
+            name: true,
+            routeType: true,
+            lengthKm: true,
+            terrainDifficulty: true,
+            status: true,
+            properties: true,
+          },
+        }),
+        ctx.db.transportHub.findMany({
+          where: { countryId: input.countryId },
+          select: { id: true, name: true, hubType: true, coordinates: true },
+        }),
+        ctx.db.city.findMany({
+          where: { countryId: input.countryId },
+          select: { id: true, name: true, population: true, coordinates: true },
+          orderBy: { population: "desc" },
+          take: 6,
+        }),
+        ctx.db.governmentBudget.findUnique({
+          where: { countryId: input.countryId },
+          select: { spendingCategories: true },
+        }),
+        ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          select: { id: true, name: true, currentTotalGdp: true, currentPopulation: true },
+        }),
+      ]);
+
+      let totalOperationalKm = 0;
+      let totalMaintenanceCost = 0;
+
+      const operationalRoutes = routes.filter((r) => r.status === "operational");
+
+      for (const route of operationalRoutes) {
+        totalOperationalKm += route.lengthKm ?? 0;
+        const props = (route.properties as Record<string, unknown> | null) || {};
+        totalMaintenanceCost +=
+          props.maintenanceCost !== undefined ? Number(props.maintenanceCost) : 0;
+      }
+
+      // Resolve budgeted infrastructure maintenance
+      let budgetedInfraMaintenance = 0;
+      if (budget?.spendingCategories) {
+        try {
+          const parsed = JSON.parse(budget.spendingCategories) as Array<{
+            category?: string;
+            amount?: number;
+          }>;
+          if (Array.isArray(parsed)) {
+            const infraCat = parsed.find(
+              (c) =>
+                c.category &&
+                (c.category.toLowerCase().includes("infra") ||
+                  c.category.toLowerCase().includes("transport") ||
+                  c.category.toLowerCase().includes("transit"))
+            );
+            if (infraCat && typeof infraCat.amount === "number") {
+              budgetedInfraMaintenance =
+                infraCat.amount > 100_000_000 ? infraCat.amount / 1e9 : infraCat.amount;
+            }
+          }
+        } catch {
+          // JSON parse fallback
+        }
+      }
+
+      if (budgetedInfraMaintenance <= 0 && country?.currentTotalGdp) {
+        budgetedInfraMaintenance = (country.currentTotalGdp * 0.015) / 1e9;
+      }
+
+      const mobilityRoutes = operationalRoutes.map((r) => ({
+        id: r.id,
+        name: r.name,
+        routeType: r.routeType,
+        lengthKm: r.lengthKm,
+        speedKmh: (r as { speedKmh?: number | null }).speedKmh ?? null,
+        terrainDifficulty: r.terrainDifficulty,
+        status: r.status,
+        properties: r.properties as Record<string, unknown> | null,
+      }));
+
+      const modalSummary = calculateModalBreakdown(mobilityRoutes);
+
+      const tamiResult = calculateTAMI({
+        totalLengthKm: totalOperationalKm,
+        effectiveAverageSpeedKmh: modalSummary.overallWeightedSpeedKmh,
+        totalHubs: hubs.length,
+        cityCount: cities.length,
+        operationalRouteTypes: operationalRoutes.map((r) => r.routeType),
+      });
+
+      const degradation = calculateMaintenanceDegradation({
+        budgetedMaintenance: budgetedInfraMaintenance,
+        requiredMaintenance: totalMaintenanceCost,
+      });
+
+      const topCitiesFormatted = cities.map((c) => ({
+        id: c.id,
+        name: c.name,
+        population: c.population,
+        coordinates: Array.isArray(c.coordinates)
+          ? (c.coordinates as [number, number])
+          : null,
+      }));
+
+      const intercityLinks = estimateIntercityTravelTimes(topCitiesFormatted, mobilityRoutes);
+
+      const topCorridors = [...operationalRoutes]
+        .sort((a, b) => (b.lengthKm ?? 0) - (a.lengthKm ?? 0))
+        .slice(0, 5)
+        .map((r) => {
+          const baseSpeed = resolveRouteBaseSpeed({
+            speedKmh: (r as { speedKmh?: number | null }).speedKmh,
+            properties: r.properties as Record<string, unknown> | null,
+            routeType: r.routeType,
+          });
+          const travel = calculateRouteTravelTime({
+            lengthKm: r.lengthKm ?? 0,
+            speedKmh: baseSpeed,
+            routeType: r.routeType,
+            terrainDifficulty: r.terrainDifficulty,
+          });
+          return {
+            id: r.id,
+            name: r.name ?? `${r.routeType} Link`,
+            routeType: r.routeType,
+            lengthKm: Math.round((r.lengthKm ?? 0) * 10) / 10,
+            effectiveSpeedKmh: Math.round(travel.effectiveSpeedKmh),
+            formattedTravelTime: travel.formattedTime,
+          };
+        });
+
+      return {
+        countryId: input.countryId,
+        tami: tamiResult,
+        degradation: {
+          ...degradation,
+          budgetedMaintenance: Math.round(budgetedInfraMaintenance * 1000) / 1000,
+          requiredMaintenance: Math.round(totalMaintenanceCost * 1000) / 1000,
+        },
+        modalSummary,
+        intercityLinks,
+        topCorridors,
+        totalOperationalKm: Math.round(totalOperationalKm),
+        totalHubs: hubs.length,
       };
     }),
 
@@ -303,23 +470,218 @@ export const transportRouteQueriesRouter = createTRPCRouter({
       };
     }),
 
-  // ── Hub Management ──
+  /**
+   * Get ALL transport network segments as GeoJSON for map overlay.
+   * Dual-reads: returns TransportSegment records if populated, otherwise
+   * falls back to TransportRoute for backwards compatibility.
+   */
+  getAllSegmentsGeoJSON: cachedPublicProcedure
+    .input(z.object({ worldId: z.string().default("default") }).optional())
+    .query(async ({ ctx, input }) => {
+      const worldId = input?.worldId ?? "default";
+      const dynamicDb = ctx.db as DynamicTransportDb;
+
+      if (dynamicDb.transportSegment) {
+        const segments = await dynamicDb.transportSegment.findMany({
+          where: { worldId },
+          select: {
+            id: true,
+            fromNodeId: true,
+            toNodeId: true,
+            routeType: true,
+            geometry: true,
+            status: true,
+            lengthKm: true,
+            terrainDifficulty: true,
+            isInternational: true,
+            builtYear: true,
+            properties: true,
+            country: {
+              select: {
+                name: true,
+                currentTotalGdp: true,
+                currentGdpPerCapita: true,
+                economicTier: true,
+                currentPopulation: true,
+              },
+            },
+          },
+        });
+
+        if (segments.length > 0) {
+          return {
+            type: "FeatureCollection" as const,
+            features: segments.map((s: SegmentQueryResult) => ({
+              type: "Feature" as const,
+              geometry: toGeometry(s.geometry),
+              properties: {
+                id: s.id,
+                fromNodeId: s.fromNodeId,
+                toNodeId: s.toNodeId,
+                routeType: s.routeType,
+                status: s.status,
+                lengthKm: s.lengthKm,
+                terrainDifficulty: s.terrainDifficulty,
+                isInternational: s.isInternational,
+                builtYear: s.builtYear,
+                countryName: s.country?.name ?? null,
+                totalGdp: s.country?.currentTotalGdp ?? null,
+                gdpPerCapita: s.country?.currentGdpPerCapita ?? null,
+                economicTier: s.country?.economicTier ?? null,
+                population: s.country?.currentPopulation ?? null,
+                ...((s.properties as JsonObject | null) ?? {}),
+              },
+            })),
+          };
+        }
+      }
+
+      // Fallback to legacy routes
+      const routes = await ctx.db.transportRoute.findMany({
+        where: { worldId },
+        select: {
+          id: true,
+          routeType: true,
+          name: true,
+          geometry: true,
+          status: true,
+          lengthKm: true,
+          terrainDifficulty: true,
+          isInternational: true,
+          builtYear: true,
+          properties: true,
+          country: {
+            select: {
+              name: true,
+              currentTotalGdp: true,
+              currentGdpPerCapita: true,
+              economicTier: true,
+              currentPopulation: true,
+            },
+          },
+        },
+      });
+
+      return {
+        type: "FeatureCollection" as const,
+        features: routes.map((r) => ({
+          type: "Feature" as const,
+          geometry: toGeometry(r.geometry),
+          properties: {
+            id: r.id,
+            name: r.name,
+            routeType: r.routeType,
+            status: r.status,
+            lengthKm: r.lengthKm,
+            terrainDifficulty: r.terrainDifficulty,
+            isInternational: r.isInternational,
+            builtYear: r.builtYear,
+            countryName: r.country?.name ?? null,
+            totalGdp: r.country?.currentTotalGdp ?? null,
+            gdpPerCapita: r.country?.currentGdpPerCapita ?? null,
+            economicTier: r.country?.economicTier ?? null,
+            population: r.country?.currentPopulation ?? null,
+            ...((r.properties as JsonObject | null) ?? {}),
+          },
+        })),
+      };
+    }),
+
+  /**
+   * Get transport network nodes as a GeoJSON FeatureCollection.
+   */
+  getNetworkNodes: cachedPublicProcedure
+    .input(z.object({ worldId: z.string().default("default") }).optional())
+    .query(async ({ ctx, input }) => {
+      const worldId = input?.worldId ?? "default";
+      const dynamicDb = ctx.db as DynamicTransportDb;
+
+      if (dynamicDb.transportNode) {
+        const nodes = await dynamicDb.transportNode.findMany({
+          where: { worldId },
+          select: {
+            id: true,
+            coordinates: true,
+            nodeType: true,
+            name: true,
+            cityId: true,
+            countryId: true,
+            city: { select: { name: true, population: true } },
+          },
+        });
+
+        if (nodes.length > 0) {
+          return {
+            type: "FeatureCollection" as const,
+            features: nodes.map((n: NodeQueryResult) => ({
+              type: "Feature" as const,
+              geometry: {
+                type: "Point" as const,
+                coordinates: n.coordinates as [number, number],
+              },
+              properties: {
+                id: n.id,
+                nodeType: n.nodeType,
+                name: n.name ?? n.city?.name ?? "Node",
+                cityId: n.cityId,
+                population: n.city?.population ?? null,
+              },
+            })),
+          };
+        }
+      }
+
+      // Fallback to legacy hubs
+      const hubs = await ctx.db.transportHub.findMany({
+        where: { worldId },
+        select: {
+          id: true,
+          coordinates: true,
+          hubType: true,
+          name: true,
+          connections: true,
+          city: { select: { name: true, population: true } },
+        },
+      });
+
+      return {
+        type: "FeatureCollection" as const,
+        features: hubs.map((h) => ({
+          type: "Feature" as const,
+          geometry: {
+            type: "Point" as const,
+            coordinates: h.coordinates as [number, number],
+          },
+          properties: {
+            id: h.id,
+            nodeType: h.hubType,
+            name: h.name,
+            connections: h.connections,
+            population: h.city?.population ?? null,
+          },
+        })),
+      };
+    }),
+
+  /**
+   * Get a named route with its constituent ordered segments.
+   */
+  getRouteWithSegments: cachedPublicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const dynamicDb = ctx.db as DynamicTransportDb;
+      if (!dynamicDb.transportRouteSegment) {
+        return ctx.db.transportRoute.findUnique({
+          where: { id: input.id },
+          include: { country: { select: { id: true, name: true, slug: true } } },
+        });
+      }
+
+      return ctx.db.transportRoute.findUnique({
+        where: { id: input.id },
+        include: {
+          country: { select: { id: true, name: true, slug: true } },
+        },
+      });
+    }),
 });
-
-// ── Helpers ──────────────────────────────────────────────────────
-
-// oxlint-disable-next-line typescript/no-unused-vars
-function extractBoundaryCoords(geometry: import("geojson").Geometry): [number, number][] {
-  const coords: [number, number][] = [];
-  function walk(obj: unknown): void {
-    if (coords.length >= 200) return;
-    if (!Array.isArray(obj)) return;
-    if (obj.length >= 2 && typeof obj[0] === "number" && typeof obj[1] === "number") {
-      coords.push([obj[0] as number, obj[1] as number]);
-    } else {
-      for (const item of obj) walk(item);
-    }
-  }
-  if ("coordinates" in geometry) walk(geometry.coordinates);
-  return coords;
-}

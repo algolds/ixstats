@@ -49,42 +49,47 @@ export const NAV_ITEMS: {
   href: string;
   icon: typeof Crown;
   title: string;
-  gradient: string;
-  activeGlow: string;
+  activeBg: string;
 }[] = [
   {
     id: "economy",
     href: "/mycountry/economy",
     icon: TrendingUp,
     title: "Economy",
-    gradient: "from-emerald-500 to-teal-600",
-    activeGlow: "shadow-emerald-500/20",
+    activeBg: "bg-emerald-500",
   },
   {
     id: "diplomacy",
     href: "/mycountry/diplomacy",
     icon: Users,
     title: "Diplomacy",
-    gradient: "from-cyan-500 to-cyan-600",
-    activeGlow: "shadow-cyan-500/20",
+    activeBg: "bg-cyan-500",
   },
   {
     id: "defense",
     href: "/mycountry/defense",
     icon: Shield,
     title: "Defense",
-    gradient: "from-red-500 to-red-600",
-    activeGlow: "shadow-red-500/20",
+    activeBg: "bg-red-500",
   },
   {
     id: "politics",
     href: "/mycountry/politics",
     icon: Vote,
     title: "Politics",
-    gradient: "from-indigo-500 to-indigo-600",
-    activeGlow: "shadow-indigo-500/20",
+    activeBg: "bg-indigo-500",
   },
 ];
+
+const SECTION_INDICATOR: Record<string, string> = {
+  overview: "bg-amber-300",
+  executive: "bg-amber-300",
+  diplomacy: "bg-cyan-300",
+  defense: "bg-red-300",
+  politics: "bg-indigo-300",
+  economy: "bg-emerald-300",
+  intelligence: "bg-blue-300",
+};
 
 export function getSectionFromPathname(rawPathname: string): MyCountrySection {
   const pathname = stripBasePath(rawPathname);
@@ -193,7 +198,7 @@ export function MyCountrySidebarNav({
             const cls = cn(
               "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 overflow-hidden",
               isActive
-                ? cn("bg-gradient-to-r text-white shadow-lg pl-3.5", item.gradient)
+                ? cn(item.activeBg, "text-white shadow-sm pl-3.5")
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             );
             const dot = noteCount > 0 && !isActive && (
@@ -206,17 +211,7 @@ export function MyCountrySidebarNav({
                   <span
                     className={cn(
                       "absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-r",
-                      item.id === "executive"
-                        ? "bg-amber-300"
-                        : item.id === "diplomacy"
-                          ? "bg-cyan-300"
-                          : item.id === "politics"
-                            ? "bg-indigo-300"
-                            : item.id === "intelligence"
-                              ? "bg-blue-300"
-                              : item.id === "defense"
-                                ? "bg-red-300"
-                                : "bg-slate-300"
+                      SECTION_INDICATOR[item.id] ?? "bg-white/80"
                     )}
                   />
                 )}
@@ -311,7 +306,7 @@ export function MyCountrySidebarNav({
           const cls = cn(
             "relative flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200 overflow-hidden",
             isActive
-              ? cn("bg-gradient-to-r text-white shadow-lg pl-3.5", item.gradient, item.activeGlow)
+              ? cn(item.activeBg, "text-white shadow-sm pl-3.5")
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           );
           const badge = noteCount > 0 && (
@@ -331,17 +326,7 @@ export function MyCountrySidebarNav({
                 <span
                   className={cn(
                     "absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-r",
-                    item.id === "executive"
-                      ? "bg-amber-300"
-                      : item.id === "diplomacy"
-                        ? "bg-cyan-300"
-                        : item.id === "politics"
-                          ? "bg-indigo-300"
-                          : item.id === "intelligence"
-                            ? "bg-blue-300"
-                            : item.id === "defense"
-                              ? "bg-red-300"
-                              : "bg-slate-300"
+                    SECTION_INDICATOR[item.id] ?? "bg-white/80"
                   )}
                 />
               )}
@@ -445,7 +430,7 @@ export function MyCountrySidebarNav({
             className={cn(
               "group/tip relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg transition-all duration-200",
               isActive
-                ? cn("bg-gradient-to-br pl-1 text-white shadow-lg", item.gradient, item.activeGlow)
+                ? cn(item.activeBg, "text-white shadow-sm")
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
@@ -453,17 +438,7 @@ export function MyCountrySidebarNav({
               <span
                 className={cn(
                   "absolute top-1 bottom-1 left-0 w-0.5 rounded-r-sm",
-                  item.id === "executive"
-                    ? "bg-amber-300"
-                    : item.id === "diplomacy"
-                      ? "bg-cyan-300"
-                      : item.id === "politics"
-                        ? "bg-indigo-300"
-                        : item.id === "intelligence"
-                          ? "bg-blue-300"
-                          : item.id === "defense"
-                            ? "bg-red-300"
-                            : "bg-slate-300"
+                  SECTION_INDICATOR[item.id] ?? "bg-white/80"
                 )}
               />
             )}

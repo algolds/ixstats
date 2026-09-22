@@ -288,8 +288,8 @@ export function StudioNameSets() {
                 </div>
 
                 {presetKey !== "custom" && (
-                  <div className="animate-in fade-in flex items-start gap-2 rounded-xl border border-purple-500/20 bg-purple-500/5 p-3 text-xs duration-200">
-                    <HelpCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-purple-500" />
+                  <div className="animate-in fade-in flex items-start gap-2 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 text-xs duration-200">
+                    <HelpCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-indigo-500" />
                     <div className="space-y-1">
                       <span className="text-foreground font-bold">Convention Lore & Rules:</span>
                       <p className="text-muted-foreground text-[11px] leading-relaxed">
@@ -429,7 +429,7 @@ export function StudioNameSets() {
 
                         <button
                           onClick={() => removeSlot(idx)}
-                          className="text-muted-foreground cursor-pointer rounded p-1 hover:text-rose-500"
+                          className="text-muted-foreground cursor-pointer rounded p-1 hover:text-red-500"
                           title="Remove slot"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -524,7 +524,7 @@ export function StudioNameSets() {
                                   genderMode: e.target.checked ? "aligned" : "fixed",
                                 })
                               }
-                              className="border-border/60 rounded text-purple-500 focus:ring-purple-500"
+                              className="border-border/60 rounded text-indigo-500 focus:ring-indigo-500"
                             />
                             <span className="text-muted-foreground font-bold tracking-wider uppercase">
                               Align with unified full-name gender

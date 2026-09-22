@@ -186,7 +186,7 @@ export function VaultAuctionsTab() {
           {
             label: "My Bids",
             value: myBids.length,
-            color: "text-purple-650 dark:text-purple-400",
+            color: "text-indigo-600 dark:text-indigo-400",
             icon: TrendingUp,
           },
           {

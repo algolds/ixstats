@@ -134,7 +134,7 @@ export function LanguagePacksSection({
           href="/vault/marketplace?tab=store"
           className="group border-border/50 bg-secondary/20 hover:bg-secondary/35 flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold backdrop-blur-md transition-all active:scale-95"
         >
-          <RiStore2Line className="h-4 w-4 text-amber-500" />
+          <Shop className="h-4 w-4 text-amber-500" />
           <span className="text-foreground">Browse on IxVault</span>
           <ExternalLink className="text-muted-foreground h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </Link>

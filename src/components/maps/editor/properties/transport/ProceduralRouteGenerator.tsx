@@ -9,24 +9,38 @@ import {
 import { ROUTE_STYLES } from "~/lib/maps/map-config";
 
 const GENERATABLE_ROUTE_TYPES = [
+  // Rail
   "rail",
+  "high_speed_rail",
+  "freight_rail",
+  "commuter_rail",
+  // Road
+  "motorway",
   "highway",
+  "trunk",
   "road",
+  "secondary",
+  // Maritime
   "shipping_lane",
   "canal",
-  "air_corridor",
   "ferry",
+  // Air
+  "air_corridor",
+  // Utility
   "pipeline",
   "power_grid",
   "fiber",
+  // Military
   "military_supply",
   "military_naval",
 ] as const;
 
+export type GeneratableRouteType = (typeof GENERATABLE_ROUTE_TYPES)[number];
+
 interface ProceduralRouteGeneratorProps {
   countryId?: string;
-  selectedTypes: string[];
-  setSelectedTypes: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedTypes: GeneratableRouteType[];
+  setSelectedTypes: React.Dispatch<React.SetStateAction<GeneratableRouteType[]>>;
   clearExisting: boolean;
   setClearExisting: (clear: boolean) => void;
   generateNotice: string | null;
@@ -45,7 +59,7 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
   isGenerating,
   onGenerate,
 }: ProceduralRouteGeneratorProps) {
-  const toggleType = (type: string) => {
+  const toggleType = (type: GeneratableRouteType) => {
     setSelectedTypes((prev) =>
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
@@ -71,14 +85,14 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
         <div className="grid grid-cols-2 gap-1.5">
           {GENERATABLE_ROUTE_TYPES.map((type) => {
             const isSelected = selectedTypes.includes(type);
-            const style = (ROUTE_STYLES as any)[type] ?? { label: type, color: "#94a3b8" };
+            const style = ROUTE_STYLES[type] ?? { label: type, color: "var(--color-slate-400)" };
 
             return (
               <button
                 key={type}
                 type="button"
                 onClick={() => toggleType(type)}
-                className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-[11px] font-medium transition-all ${
+                className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-[11px] font-medium transition active:scale-[0.98] ${
                   isSelected
                     ? "border-primary/50 bg-primary/10 text-foreground"
                     : "border-border/40 bg-background/50 text-muted-foreground hover:bg-muted/30"
@@ -116,7 +130,7 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
         type="button"
         disabled={isGenerating || selectedTypes.length === 0 || !countryId}
         onClick={onGenerate}
-        className="bg-primary text-primary-foreground flex w-full items-center justify-center gap-2 rounded-md py-2 text-xs font-semibold shadow transition hover:opacity-90 disabled:opacity-50"
+        className="bg-primary text-primary-foreground flex w-full items-center justify-center gap-2 rounded-md py-2 text-xs font-semibold shadow transition active:scale-[0.98] hover:opacity-90 disabled:opacity-50"
       >
         {isGenerating ? (
           <>

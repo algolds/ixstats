@@ -81,15 +81,15 @@ export function CorpusSelector({
           {/* Active Studio Lexicon */}
           {studioWords && studioWords.length > 0 && (
             <div className="border-border/30 border-b pb-1">
-              <div className="px-2.5 py-1 text-[10px] font-bold tracking-wider text-pink-500 uppercase">
+              <div className="text-onoma-primary px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
                 Active Studio Session
               </div>
               <SelectItem
                 value="studio-active"
-                className="focus:text-foreground cursor-pointer text-xs focus:bg-pink-500/10"
+                className="focus:bg-onoma-primary/10 focus:text-foreground cursor-pointer text-xs"
               >
                 <div className="flex items-center gap-2">
-                  <OnomaGlyph name="compose-lexicon" size="xs" accentColor="#ec4899" />
+                  <OnomaGlyph name="compose-lexicon" size="xs" accentColor="#0091ff" />
                   <span className="font-semibold">Active Studio Lexicon</span>
                   <span className="text-muted-foreground/70 font-mono text-[10px]">
                     ({studioWords.length} words)
@@ -144,17 +144,17 @@ export function CorpusSelector({
 
           {/* Fantasy & Lineage Templates */}
           <div className="border-border/30 border-t pt-1">
-            <div className="px-2.5 py-1 text-[10px] font-bold tracking-wider text-purple-500 uppercase">
+            <div className="px-2.5 py-1 text-[10px] font-bold tracking-wider text-indigo-500 uppercase">
               Fantasy & Lineage Templates ({templateProfiles.length})
             </div>
             {templateProfiles.map((t) => (
               <SelectItem
                 key={t.id}
                 value={t.id}
-                className="focus:text-foreground cursor-pointer text-xs focus:bg-purple-500/10"
+                className="focus:text-foreground cursor-pointer text-xs focus:bg-indigo-500/10"
               >
                 <div className="flex items-center gap-2">
-                  <OnomaGlyph name="emerge-branch" size="xs" accentColor="#8b5cf6" />
+                  <OnomaGlyph name="emerge-branch" size="xs" accentColor="#6366f1" />
                   <span>{t.name}</span>
                 </div>
               </SelectItem>

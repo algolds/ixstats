@@ -11,6 +11,7 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 // Lazy-load heavy panels per active tab
 const CommandPanel = dynamic(
@@ -113,7 +114,11 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
           <button
             key={id}
             type="button"
-            onClick={() => setActiveTab(id)}
+            data-cuelume-press="soft"
+            onClick={() => {
+              soundEffects.press();
+              setActiveTab(id);
+            }}
             className={cn(
               "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
               activeTab === id

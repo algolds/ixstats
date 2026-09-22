@@ -1,5 +1,7 @@
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { Geometry, Position, Feature, Polygon, MultiPolygon } from "geojson";
+import type { EditorFeature } from "~/hooks/useMapEditor";
+import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { intersect } from "@turf/intersect";
 import { featureCollection } from "@turf/helpers";
 import {
@@ -28,6 +30,18 @@ export function getGeoJSONSource(map: MapLibreMap | null, id: string): GeoJSONSo
 }
 
 /**
+ * Safely parses an untyped object / JsonValue into a GeoJSON Polygon or MultiPolygon.
+ */
+export function toPolygonGeometry(geom: object | null | undefined): Polygon | MultiPolygon | null {
+  if (!geom || Array.isArray(geom)) return null;
+  const obj = geom as { type?: string; coordinates?: Position[][] | Position[][][] };
+  if ((obj.type === "Polygon" || obj.type === "MultiPolygon") && Array.isArray(obj.coordinates)) {
+    return obj as Polygon | MultiPolygon;
+  }
+  return null;
+}
+
+/**
  * Helper to safely extract coordinates from a feature's geometry
  */
 export function getFeatureCoords(geometry: Geometry): Position | undefined {
@@ -39,12 +53,16 @@ export function getFeatureCoords(geometry: Geometry): Position | undefined {
 /**
  * Helper to calculate and cache bounding box recursively for any geometry type
  */
-export function getGenericBBox(geom: any): {
+export interface BoundingBox {
   minLng: number;
   minLat: number;
   maxLng: number;
   maxLat: number;
-} {
+}
+
+export function getGenericBBox(
+  geom: (Geometry & { _bbox?: BoundingBox }) | null | undefined
+): BoundingBox {
   if (!geom) return { minLng: 0, minLat: 0, maxLng: 0, maxLat: 0 };
   if (geom._bbox) return geom._bbox;
 
@@ -53,9 +71,9 @@ export function getGenericBBox(geom: any): {
   let maxLng = -Infinity;
   let maxLat = -Infinity;
 
-  const processCoords = (coords: any) => {
+  const processCoords = (coords: Position | Position[] | Position[][] | Position[][][]) => {
     if (!coords) return;
-    if (typeof coords[0] === "number") {
+    if (typeof coords[0] === "number" && typeof coords[1] === "number") {
       const lng = coords[0];
       const lat = coords[1];
       if (lng < minLng) minLng = lng;
@@ -64,13 +82,15 @@ export function getGenericBBox(geom: any): {
       if (lat > maxLat) maxLat = lat;
     } else if (Array.isArray(coords)) {
       for (let i = 0; i < coords.length; i++) {
-        processCoords(coords[i]);
+        processCoords(coords[i] as Position | Position[] | Position[][]);
       }
     }
   };
 
-  processCoords(geom.coordinates);
-  const bbox = { minLng, minLat, maxLng, maxLat };
+  if ("coordinates" in geom) {
+    processCoords(geom.coordinates as Position | Position[] | Position[][]);
+  }
+  const bbox: BoundingBox = { minLng, minLat, maxLng, maxLat };
   geom._bbox = bbox;
   return bbox;
 }
@@ -79,38 +99,45 @@ export function getGenericBBox(geom: any): {
  * Calculate overlap GeoJSON between a drawn geometry and other subdivisions
  */
 export function calculateOverlapGeoJson(
-  drawnGeom: any,
-  allFeatures: any[],
+  drawnGeom: (Geometry & { coordinates?: Position[][] | Position[][][] }) | Feature | null | undefined,
+  allFeatures: EditorFeature[],
   currentFeatureId?: string
 ) {
-  if (!drawnGeom || !drawnGeom.coordinates || drawnGeom.coordinates.length === 0) {
+  if (!drawnGeom) {
+    return EMPTY_FC;
+  }
+  const geom =
+    drawnGeom.type === "Feature"
+      ? (drawnGeom.geometry as Polygon | MultiPolygon)
+      : (drawnGeom as Polygon | MultiPolygon);
+
+  const coords = geom && "coordinates" in geom ? geom.coordinates : undefined;
+
+  if (!coords || (Array.isArray(coords) && coords.length === 0)) {
     return EMPTY_FC;
   }
 
-  const overlapFeatures: any[] = [];
+  const overlapFeatures: Feature[] = [];
   try {
-    const turfDrawn =
+    const turfDrawn: Feature<Polygon | MultiPolygon> =
       drawnGeom.type === "Feature"
-        ? drawnGeom
+        ? (drawnGeom as Feature<Polygon | MultiPolygon>)
         : {
             type: "Feature",
-            geometry: drawnGeom,
+            geometry: geom,
             properties: {},
           };
 
-    const otherSubdivisions = allFeatures.filter(
-      (f) =>
-        f.type === "subdivision" &&
-        f.id !== currentFeatureId &&
-        f.geometry &&
-        (f.geometry as any).coordinates &&
-        (f.geometry as any).coordinates.length > 0
-    );
+    const otherSubdivisions = allFeatures.filter((f) => {
+      if (f.type !== "subdivision" || f.id === currentFeatureId || !f.geometry) return false;
+      const g = f.geometry as Polygon | MultiPolygon;
+      return g.coordinates && g.coordinates.length > 0;
+    });
 
-    const drawnBBox = getGenericBBox(drawnGeom);
+    const drawnBBox = getGenericBBox(geom);
 
     for (const sub of otherSubdivisions) {
-      const subGeom = sub.geometry;
+      const subGeom = sub.geometry as Polygon | MultiPolygon;
       const subBBox = getGenericBBox(subGeom);
 
       // Skip heavy turf intersection if bounding boxes do not overlap at all
@@ -123,7 +150,7 @@ export function calculateOverlapGeoJson(
         continue;
       }
 
-      const turfSub = {
+      const turfSub: Feature<Polygon | MultiPolygon> = {
         type: "Feature",
         geometry: subGeom,
         properties: {},
@@ -221,7 +248,7 @@ export function haversineDistance(coord1: [number, number], coord2: [number, num
  */
 export function snapToLayerFeatures(
   point: [number, number],
-  worldMapLayers: any[] | undefined,
+  worldMapLayers: MapLayerData[] | undefined,
   visibleLayers: Set<string>,
   tolerance: number = 0.015
 ): [number, number] {
@@ -243,10 +270,11 @@ export function snapToLayerFeatures(
       if (!geom) continue;
 
       // Retrieve cached bbox or compute and store it on feature properties
-      let bbox = feature._bbox;
+      const featWithBBox = feature as Feature & { _bbox?: BoundingBox };
+      let bbox = featWithBBox._bbox;
       if (!bbox) {
         bbox = getGenericBBox(geom);
-        feature._bbox = bbox;
+        featWithBBox._bbox = bbox;
       }
 
       // Skip distance checks if point is not within tolerance of feature's bounding box
@@ -324,7 +352,7 @@ export function snapToLayerFeatures(
  */
 export function snapGeometryToBackgroundLayers(
   geometry: Polygon | MultiPolygon,
-  worldMapLayers: any[] | undefined,
+  worldMapLayers: MapLayerData[] | undefined,
   visibleLayers: Set<string>,
   tolerance: number = 0.015
 ): Polygon | MultiPolygon {

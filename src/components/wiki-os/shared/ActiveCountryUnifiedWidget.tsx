@@ -238,7 +238,7 @@ export function ActiveCountryUnifiedWidget({
               <div className="grid grid-cols-2 gap-1.5 text-[9px]">
                 <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Econ:</span>
-                  <span className="font-bold text-green-400">{rings.economicVitality}</span>
+                  <span className="font-bold text-emerald-400">{rings.economicVitality}</span>
                 </div>
                 <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Well:</span>
@@ -246,11 +246,11 @@ export function ActiveCountryUnifiedWidget({
                 </div>
                 <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Diplo:</span>
-                  <span className="font-bold text-purple-400">{rings.diplomaticStanding}</span>
+                  <span className="font-bold text-cyan-400">{rings.diplomaticStanding}</span>
                 </div>
                 <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Gov:</span>
-                  <span className="font-bold text-amber-400">{rings.governmentalEfficiency}</span>
+                  <span className="font-bold text-indigo-400">{rings.governmentalEfficiency}</span>
                 </div>
               </div>
             </div>

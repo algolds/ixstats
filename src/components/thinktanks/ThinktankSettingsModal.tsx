@@ -202,7 +202,7 @@ export function ThinktankSettingsModal({
                 {bannerUrl ? (
                   <img src={bannerUrl} alt="Group banner" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="text-muted-foreground flex h-full w-full items-center justify-center bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent text-xs">
+                  <div className="text-muted-foreground flex h-full w-full items-center justify-center bg-emerald-500/5 text-xs">
                     No banner set
                   </div>
                 )}
@@ -350,10 +350,10 @@ export function ThinktankSettingsModal({
             </div>
 
             {/* Multi-Persona Posting Toggle (Replaced Sparkle Icon) */}
-            <div className="space-y-2 rounded-xl border border-purple-500/20 bg-purple-500/5 p-3.5">
+            <div className="space-y-2 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Group className="h-4 w-4 text-purple-500" />
+                  <Group className="h-4 w-4 text-indigo-500" />
                   <span className="text-foreground text-xs font-bold">Multi-Persona Posting</span>
                 </div>
                 <Switch
@@ -415,7 +415,7 @@ export function ThinktankSettingsModal({
                   }
                 }}
                 disabled={deleteGroupMutation.isPending}
-                className="h-8.5 rounded-xl text-xs text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
+                className="h-8.5 rounded-xl text-xs text-red-500 hover:bg-red-500/10 hover:text-red-600"
               >
                 <Trash className="mr-1.5 h-3.5 w-3.5" />
                 Delete Group

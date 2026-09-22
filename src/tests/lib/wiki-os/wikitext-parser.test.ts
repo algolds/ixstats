@@ -7,6 +7,11 @@ import { astToWikitext, serializeTemplateToWikitext } from "~/lib/wiki-os/wikite
 import { scanTemplates } from "~/lib/wiki-os/wikitext/template-parser";
 import { splitBalancedPipes } from "~/lib/wiki-os/wikitext/parameter-parser";
 import { classifyTemplate } from "~/lib/wiki-os/wikitext/resolver";
+import {
+  parseMediaLink,
+  findMatchingClosingBrackets,
+  findMatchingClosingBraces,
+} from "~/lib/wiki-os/wikitext/link-parser";
 
 describe("WikiOS Native Wikitext Parser & Engine", () => {
   describe("1. Template & Parameter Parsing", () => {
@@ -233,6 +238,90 @@ Urcea is an ancient nation located at [[Coords:40.5,-79.8|40.5 N, 79.8 W]].
       expect(reInfobox.params["name"]).toBe(origInfobox.params["name"]);
       expect(reInfobox.params["capital"]).toBe(origInfobox.params["capital"]);
       expect(reInfobox.params["population"]).toBe(origInfobox.params["population"]);
+    });
+  });
+
+  describe("7. Media Link Bracket Balancing & Nested Links", () => {
+    it("finds matching closing double brackets even with nested brackets and pipes", () => {
+      const text = "Prefix [[File:Flag.svg|thumb|Flag of [[Urcea]]]] suffix";
+      const openIdx = text.indexOf("[[");
+      const closeIdx = findMatchingClosingBrackets(text, openIdx);
+      expect(closeIdx).toBe(text.lastIndexOf("]]"));
+      expect(text.slice(openIdx, closeIdx + 2)).toBe("[[File:Flag.svg|thumb|Flag of [[Urcea]]]]");
+    });
+
+    it("parses media link with nested wikilink caption correctly", () => {
+      const raw = "[[File:Urcea_Arms.svg|thumb|Coat of arms of the [[Kingdom of Urcea|Crown of Urcea]]|250px]]";
+      const media = parseMediaLink(raw);
+      expect(media).not.toBeNull();
+      expect(media?.filename).toBe("Urcea_Arms.svg");
+      expect(media?.align).toBe("thumb");
+      expect(media?.width).toBe(250);
+      expect(media?.caption).toBe("Coat of arms of the [[Kingdom of Urcea|Crown of Urcea]]");
+    });
+
+    it("parses paragraph with media link containing nested wikilink", () => {
+      const input = "Here is a flag [[File:Urcea.png|thumb|Flag of [[Urcea]]]] displayed proudly.";
+      const { ast } = parse(input);
+      expect(ast.nodes).toHaveLength(1);
+      const p = ast.nodes[0] as any;
+      expect(p.type).toBe("paragraph");
+      expect(p.children.length).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  describe("8. Inline vs Block Template Parsing", () => {
+    it("keeps inline templates inside running text without fragmenting paragraphs", () => {
+      const input = "Urcea ({{lang-la|Urceum}}) is a sovereign nation in the world.";
+      const { ast } = parse(input);
+
+      // Must NOT be split into 3 blocks (p, template, p). Must be 1 paragraph!
+      expect(ast.nodes).toHaveLength(1);
+      const p = ast.nodes[0] as any;
+      expect(p.type).toBe("paragraph");
+
+      // Children: "Urcea (", inline-template, ") is a sovereign nation in the world."
+      expect(p.children).toHaveLength(3);
+      expect(p.children[0].text).toBe("Urcea (");
+      expect(p.children[1].type).toBe("inline-template");
+      expect(p.children[1].templateName).toBe("lang-la");
+      expect(p.children[1].params["1"]).toBe("Urceum");
+      expect(p.children[2].text).toBe(") is a sovereign nation in the world.");
+
+      // Serialization roundtrips cleanly without unwanted newlines
+      const serialized = astToWikitext(ast);
+      expect(serialized.trim()).toBe(input);
+    });
+
+    it("preserves inline templates in bulleted list items", () => {
+      const input = "* Item 1: {{flag|Urcea}} Urceopolis\n* Item 2: {{flag|Aretia}} Aretia";
+      const { ast } = parse(input);
+
+      expect(ast.nodes).toHaveLength(1);
+      const list = ast.nodes[0] as any;
+      expect(list.type).toBe("list");
+      expect(list.children).toHaveLength(2);
+
+      const item1Inlines = list.children[0].children;
+      const flagNode = item1Inlines.find((c: any) => c.type === "inline-template");
+      expect(flagNode).toBeDefined();
+      expect(flagNode.templateName).toBe("flag");
+      expect(flagNode.params["1"]).toBe("Urcea");
+    });
+
+    it("treats templates on their own isolated lines as block templates", () => {
+      const input = `== History ==
+
+{{Main|History of Urcea}}
+
+Urcea was founded centuries ago.`;
+
+      const { ast } = parse(input);
+      expect(ast.nodes).toHaveLength(3);
+      expect(ast.nodes[0].type).toBe("heading");
+      expect(ast.nodes[1].type).toBe("template");
+      expect((ast.nodes[1] as any).templateName).toBe("Main");
+      expect(ast.nodes[2].type).toBe("paragraph");
     });
   });
 });

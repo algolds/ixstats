@@ -8,7 +8,10 @@ import type { LaborBounds } from "../utils/laborCalculations";
 
 interface WorkforceSectionProps {
   laborMarket: LaborConfiguration;
-  onChange: (field: keyof LaborConfiguration, value: any) => void;
+  onChange: <K extends keyof LaborConfiguration>(
+    field: K,
+    value: LaborConfiguration[K]
+  ) => void;
   showAdvanced: boolean;
   componentBounds?: LaborBounds;
 }

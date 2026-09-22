@@ -6,18 +6,6 @@ import { IxTime } from "~/lib/ixtime";
 import { validateNoXSS } from "~/lib/utils";
 import { globalCache } from "~/lib/cache";
 
-const _invalidateFeeds = async () => {
-  try {
-    await Promise.all([
-      globalCache.deleteByPattern("thinkpages_feed:*"),
-      globalCache.deleteByPattern("global_activity_feed:*"),
-      globalCache.deleteByPattern("user_following_feed:*"),
-    ]);
-  } catch (error) {
-    console.error("Failed to invalidate feeds:", error);
-  }
-};
-
 interface PostDateFields {
   createdAt?: string | Date | null;
   ixTimeTimestamp?: string | Date | null;
@@ -59,34 +47,6 @@ export function hydratePostDates<T extends PostDateFields | null | undefined>(po
       : undefined,
   } as T;
 }
-
-const _SearchUnsplashImagesSchema = z.object({
-  query: z.string().min(1),
-  page: z.number().min(1).default(1),
-  per_page: z.number().min(1).max(30).default(10),
-  orientation: z.enum(["landscape", "portrait", "squarish"]).optional(),
-  color: z.string().optional(), // Unsplash API supports specific color names or hex codes
-});
-
-// Base schema for ThinkPages accounts
-const thinkpagesAccountBaseSchema = z.object({
-  countryId: z.string(),
-  accountType: z.enum(["government", "media", "citizen"]),
-  username: z
-    .string()
-    .min(3)
-    .max(20)
-    .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
-  firstName: z.string().min(1).max(50),
-  lastName: z.string().max(50).optional().default(""),
-  bio: z.string().max(500).optional().default(""),
-  verified: z.boolean().default(false),
-  postingFrequency: z.enum(["active", "moderate", "low"]).default("moderate"),
-  politicalLean: z.enum(["left", "center", "right"]).default("center"),
-  personality: z.enum(["serious", "casual", "satirical"]).default("casual"),
-  profileImageUrl: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
-});
 
 function formatPollForClient(poll: any) {
   if (!poll) return null;
@@ -132,95 +92,6 @@ const pollInclude = {
     },
   },
 };
-
-// Create schema - all required fields with defaults
-const _CreateAccountSchema = thinkpagesAccountBaseSchema;
-
-// Update schema - all fields optional
-const _UpdateAccountSchema = thinkpagesAccountBaseSchema.partial();
-
-const _CreatePostSchema = z.object({
-  accountId: z.string(), // ThinkpagesAccount ID for feed posts
-  content: z
-    .string()
-    .max(10000)
-    .optional()
-    .default("")
-    .refine(
-      (content) => {
-        if (!content) return true;
-        const validation = validateNoXSS(content);
-        return validation.valid;
-      },
-      {
-        message:
-          "Content contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers.",
-      }
-    ),
-  hashtags: z.array(z.string()).optional(),
-  mentions: z.array(z.string()).optional(),
-  visibility: z.enum(["public", "private", "unlisted"]).default("public"),
-  parentPostId: z.string().optional(), // For replies
-  repostOfId: z.string().optional(), // For reposts
-  visualizations: z
-    .array(
-      z.object({
-        type: z.enum([
-          "economic_chart",
-          "diplomatic_map",
-          "trade_flow",
-          "gdp_growth",
-          "demographics",
-          "budget_debt",
-          "labor_market",
-          "national_vitality",
-        ]),
-        title: z.string(),
-        config: z
-          .object({
-            chartType: z.string().optional(),
-            dataSource: z.string().optional(),
-            timeRange: z
-              .union([
-                z.string(),
-                z.object({
-                  start: z.string().optional(),
-                  end: z.string().optional(),
-                }),
-              ])
-              .optional(),
-            metrics: z.array(z.string()).optional(),
-            countries: z.array(z.string()).optional(),
-            colors: z.array(z.string()).optional(),
-            displayOptions: z
-              .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
-              .optional(),
-          })
-          .passthrough(), // Allow additional custom properties
-      })
-    )
-    .optional(), // Data visualizations embedded in post
-  mediaUrls: z.array(z.string()).max(4).optional(), // Up to 4 images per post
-  postToDiscord: z.boolean().optional().default(true),
-  poll: z
-    .object({
-      question: z.string().min(1).max(500),
-      description: z.string().max(2000).optional(),
-      pollType: z.enum(["choice", "feature-poll"]).default("choice"),
-      multiple: z.boolean().default(false),
-      options: z.array(z.string().min(1).max(200)).min(2, "At least 2 options are required"),
-    })
-    .optional(),
-});
-
-const _AddReactionSchema = z.object({
-  postId: z.string(),
-  accountId: z.string(), // ThinkpagesAccount ID for reactions
-  reactionType: z.union([
-    z.enum(["like", "laugh", "angry", "sad", "fire", "thumbsup", "thumbsdown"]),
-    z.string().startsWith("discord:"), // Support Discord emoji reactions like "discord:ixnay"
-  ]),
-});
 
 const GetFeedSchema = z.object({
   countryId: z.string().optional(), // Feed filtered by country

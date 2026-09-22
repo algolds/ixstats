@@ -20,15 +20,15 @@ import { PreText } from "~/components/ui/pretext";
 export const SECTION_COLORS: Record<string, { accent: string; bg: string; label: string }> = {
   "/dashboard": { accent: "#10b981", bg: "bg-emerald-500/15", label: "Dashboard" },
   "/mycountry": { accent: "#f59e0b", bg: "bg-amber-500/15", label: "MyCountry" },
-  "/countries": { accent: "#8b5cf6", bg: "bg-purple-500/15", label: "Explore" },
-  "/leaderboards": { accent: "#8b5cf6", bg: "bg-purple-500/15", label: "Explore" },
+  "/countries": { accent: "#6366f1", bg: "bg-indigo-500/15", label: "Explore" },
+  "/leaderboards": { accent: "#6366f1", bg: "bg-indigo-500/15", label: "Explore" },
   "/maps": { accent: "#06b6d4", bg: "bg-cyan-500/15", label: "Maps" },
   "/w": { accent: "#3b82f6", bg: "bg-blue-500/15", label: "Wiki" },
   "/forum": { accent: "#f97316", bg: "bg-orange-500/15", label: "Forum" },
   "/vault": { accent: "#06b6d4", bg: "bg-cyan-500/15", label: "Cards" },
   "/thinkpages": { accent: "#3b82f6", bg: "bg-blue-500/15", label: "ThinkPages" },
   "/admin": { accent: "#ef4444", bg: "bg-red-500/15", label: "Admin" },
-  "/feed": { accent: "#8b5cf6", bg: "bg-purple-500/15", label: "Feed" },
+  "/feed": { accent: "#3b82f6", bg: "bg-blue-500/15", label: "Feed" },
 };
 
 export function getSectionForPath(pathname: string): { accent: string; bg: string; label: string } {

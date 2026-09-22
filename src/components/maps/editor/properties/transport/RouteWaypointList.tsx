@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import {
   Check,
   Undo as Undo2,
@@ -9,6 +9,8 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
+import { polylineLengthKm } from "~/lib/maps/geo-math";
+import { calculateRouteTravelTime } from "~/lib/economy/travel-time";
 
 interface RouteWaypointListProps {
   routeWaypoints: [number, number][];
@@ -37,6 +39,20 @@ export const RouteWaypointList = memo(function RouteWaypointList({
 }: RouteWaypointListProps) {
   const waypointCount = routeWaypoints.length;
 
+  const liveLengthKm = useMemo(() => {
+    if (routeWaypoints.length < 2) return 0;
+    return polylineLengthKm(routeWaypoints);
+  }, [routeWaypoints]);
+
+  const liveDuration = useMemo(() => {
+    if (liveLengthKm <= 0) return null;
+    return calculateRouteTravelTime({
+      lengthKm: liveLengthKm,
+      routeType: manualRouteType,
+      stopsCount: waypointCount,
+    }).formattedTime;
+  }, [liveLengthKm, manualRouteType, waypointCount]);
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -61,7 +77,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
         >
           {ROUTE_TYPE_KEYS.map((key) => (
             <option key={key} value={key}>
-              {(ROUTE_STYLES as any)[key]?.label ?? key}
+              {ROUTE_STYLES[key]?.label ?? key}
             </option>
           ))}
         </select>
@@ -69,15 +85,29 @@ export const RouteWaypointList = memo(function RouteWaypointList({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
-            Waypoints ({waypointCount})
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+              Waypoints ({waypointCount})
+            </span>
+            {waypointCount >= 2 && (
+              <div className="flex items-center gap-1">
+                <span className="border-border/40 bg-muted/40 text-foreground font-mono text-[10px] tabular-nums rounded px-1.5 py-0.5 border">
+                  {liveLengthKm.toFixed(1)} km
+                </span>
+                {liveDuration && (
+                  <span className="border-primary/20 bg-primary/10 text-primary font-mono text-[10px] tabular-nums rounded px-1.5 py-0.5 border font-medium">
+                    ~{liveDuration}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-1.5">
             {onUndoWaypoint && waypointCount > 0 && (
               <button
                 type="button"
                 onClick={onUndoWaypoint}
-                className="text-muted-foreground hover:bg-muted flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px]"
+                className="text-muted-foreground hover:bg-muted flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] transition active:scale-[0.98]"
                 title="Undo last waypoint"
               >
                 <Undo2 className="h-3 w-3" /> Undo
@@ -87,7 +117,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
               <button
                 type="button"
                 onClick={onClearWaypoints}
-                className="text-destructive hover:bg-destructive/10 flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px]"
+                className="text-destructive hover:bg-destructive/10 flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] transition active:scale-[0.98]"
                 title="Clear all waypoints"
               >
                 <Trash2 className="h-3 w-3" /> Clear
@@ -109,9 +139,9 @@ export const RouteWaypointList = memo(function RouteWaypointList({
               >
                 <div className="flex items-center gap-1.5">
                   <MapPin className="text-primary h-3 w-3 shrink-0" />
-                  <span className="text-muted-foreground font-mono">#{idx + 1}</span>
+                  <span className="text-muted-foreground font-mono tabular-nums">#{idx + 1}</span>
                 </div>
-                <span className="text-muted-foreground font-mono text-[10px]">
+                <span className="text-muted-foreground font-mono text-[10px] tabular-nums">
                   {pt[0].toFixed(4)}°, {pt[1].toFixed(4)}°
                 </span>
               </div>
@@ -131,7 +161,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
           type="button"
           disabled={waypointCount < 2 || isSavingManual}
           onClick={() => onFinishRoute(manualRouteType, routeName)}
-          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-emerald-600 py-2 text-xs font-semibold text-white shadow hover:bg-emerald-500 disabled:opacity-50"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-md py-2 text-xs font-semibold shadow transition active:scale-[0.98] disabled:opacity-50"
         >
           {isSavingManual ? (
             <>

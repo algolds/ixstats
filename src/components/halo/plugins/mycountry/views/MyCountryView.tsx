@@ -105,7 +105,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                   className="h-7 w-7 rounded-full object-cover ring-2 ring-blue-400/30 transition-all group-hover:ring-blue-400/60"
                 />
               ) : (
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 ring-2 ring-blue-400/30 transition-all group-hover:ring-blue-400/60">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 ring-2 ring-blue-400/30 transition-all group-hover:ring-blue-400/60">
                   <User className="h-3.5 w-3.5 text-blue-400" />
                 </div>
               )}
@@ -167,7 +167,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                   className={cn(
                     "h-3.5 w-3.5",
                     userProfile.membershipTier === "mycountry_premium"
-                      ? "text-amber-500 drop-shadow-[0_0_4px_rgba(245,158,11,0.3)] dark:text-amber-400"
+                      ? "text-amber-500 dark:text-amber-400"
                       : "text-muted-foreground"
                   )}
                 />
@@ -175,7 +175,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               </div>
               {/* Membership badge */}
               {userProfile.membershipTier === "mycountry_premium" ? (
-                <span className="inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-600 uppercase shadow-[0_0_8px_rgba(245,158,11,0.05)] dark:text-amber-400">
+                <span className="inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-600 uppercase shadow-xs dark:text-amber-400">
                   Premium
                 </span>
               ) : (
@@ -213,8 +213,8 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               (userProfile.role?.level !== undefined && userProfile.role.level <= 20)) && (
               <div className="mt-1 mb-2 flex flex-wrap gap-1">
                 {userProfile.role && (
-                  <span className="inline-flex items-center gap-0.5 rounded border border-purple-500/25 bg-purple-500/5 px-1.5 py-0.5 text-[9px] font-semibold text-purple-600 dark:text-purple-400">
-                    <Shield className="h-2 w-2 shrink-0 text-purple-600 dark:text-purple-400" />
+                  <span className="inline-flex items-center gap-0.5 rounded border border-indigo-500/25 bg-indigo-500/5 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-600 dark:text-indigo-400">
+                    <Shield className="h-2 w-2 shrink-0 text-indigo-600 dark:text-indigo-400" />
                     {userProfile.role.displayName}
                   </span>
                 )}
@@ -347,7 +347,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               <button
                 onClick={() => handleNavigate("/mycountry/editor")}
                 className={actionButtonClass(
-                  "border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-orange-500/5 text-amber-500/90 hover:from-amber-500/15 hover:to-orange-500/15"
+                  "border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15"
                 )}
               >
                 <Edit3 className="h-4 w-4 shrink-0" />
@@ -357,7 +357,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               <button
                 onClick={() => handleNavigate("/mycountry/map-editor")}
                 className={actionButtonClass(
-                  "border-sky-500/20 bg-gradient-to-r from-sky-500/5 to-blue-500/5 text-sky-400 hover:from-sky-500/15 hover:to-blue-500/15"
+                  "border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15"
                 )}
               >
                 <Map className="h-4 w-4 shrink-0" />
@@ -367,7 +367,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               <button
                 onClick={() => handleNavigate("/mycountry/politics")}
                 className={actionButtonClass(
-                  "border-violet-500/20 bg-gradient-to-r from-violet-500/5 to-purple-500/5 text-violet-400 hover:from-violet-500/15 hover:to-purple-500/15"
+                  "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15"
                 )}
               >
                 <Scale className="h-4 w-4 shrink-0" />
@@ -377,7 +377,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               <button
                 onClick={() => handleNavigate("/messages")}
                 className={actionButtonClass(
-                  "border-pink-500/20 bg-gradient-to-r from-pink-500/5 to-rose-500/5 text-pink-400 hover:from-pink-500/15 hover:to-rose-500/15"
+                  "border-blue-500/20 bg-blue-500/5 text-blue-400 hover:bg-blue-500/15"
                 )}
               >
                 <MessageSquare className="h-4 w-4 shrink-0" />
@@ -387,7 +387,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               <button
                 onClick={() => handleNavigate("/mycountry/diplomacy")}
                 className={actionButtonClass(
-                  "border-teal-500/20 bg-gradient-to-r from-teal-500/5 to-emerald-500/5 text-teal-400 hover:from-teal-500/15 hover:to-emerald-500/15"
+                  "border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15"
                 )}
               >
                 <Handshake className="h-4 w-4 shrink-0" />
@@ -402,7 +402,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                   handleNavigate(wikiPath);
                 }}
                 className={actionButtonClass(
-                  "border-indigo-500/20 bg-gradient-to-r from-indigo-500/5 to-blue-500/5 text-indigo-400 hover:from-indigo-500/15 hover:to-blue-500/15"
+                  "border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20 hover:text-wiki-hover"
                 )}
               >
                 <BookOpen className="h-4 w-4 shrink-0" />

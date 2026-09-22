@@ -196,7 +196,7 @@ export function MyCountryTabsList({
                     "ml-1 flex scale-95 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] leading-none font-bold",
                     isActive
                       ? "bg-foreground text-background"
-                      : "bg-black/10 text-slate-600 dark:bg-white/10 dark:text-slate-400"
+                      : "bg-muted text-muted-foreground"
                   )}
                 >
                   {tab.badge}
@@ -206,13 +206,12 @@ export function MyCountryTabsList({
                 <motion.div
                   layoutId="factbookUnderline"
                   className={cn(
-                    "absolute inset-x-2 bottom-0 h-0.5 rounded-full shadow-sm",
-                    tab.id === "overview" && "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]",
-                    tab.id === "economy" && "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]",
-                    tab.id === "labor" && "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]",
-                    tab.id === "government" &&
-                      "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]",
-                    tab.id === "geography" && "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                    "absolute inset-x-2 bottom-0 h-0.5 rounded-full",
+                    tab.id === "overview" && "bg-amber-500",
+                    tab.id === "economy" && "bg-emerald-500",
+                    tab.id === "labor" && "bg-blue-500",
+                    tab.id === "government" && "bg-indigo-500",
+                    tab.id === "geography" && "bg-emerald-500"
                   )}
                   transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
                 />

@@ -12,7 +12,7 @@ export const DOMAIN_META: Record<
   {
     title: string;
     sheetTitle: string;
-    icon: any;
+    icon: React.ComponentType<{ className?: string; strokeWidth?: number | string }>;
     accent: string;
     blurb: string;
     section: "diplomacy" | "defense" | "politics" | "economy";
@@ -24,7 +24,7 @@ export const DOMAIN_META: Record<
     title: "Diplomacy",
     sheetTitle: "Foreign Relations",
     icon: Globe2,
-    accent: "text-teal-400",
+    accent: "text-cyan-500",
     blurb:
       "Forge alliances, establish embassies, negotiate trade pacts, and project diplomatic influence",
     section: "diplomacy",
@@ -35,7 +35,7 @@ export const DOMAIN_META: Record<
     title: "Defense",
     sheetTitle: "National Security",
     icon: Shield,
-    accent: "text-red-400",
+    accent: "text-red-500",
     blurb:
       "Deploy military forces, monitor regional threat vectors, fortify defenses, and maintain strategic warfare readiness.",
     section: "defense",
@@ -46,7 +46,7 @@ export const DOMAIN_META: Record<
     title: "Politics",
     sheetTitle: "Governance Configuration",
     icon: Landmark,
-    accent: "text-purple-400",
+    accent: "text-indigo-500",
     blurb:
       "Enact legislative policies, manage political faction dynamics, shape governance structures, and secure electoral dominance.",
     section: "politics",
@@ -57,7 +57,7 @@ export const DOMAIN_META: Record<
     title: "Economy & Budget",
     sheetTitle: "Economy & Budget",
     icon: TrendingUp,
-    accent: "text-emerald-400",
+    accent: "text-emerald-500",
     blurb:
       "Manage national budget allocation, optimize trade revenue, control inflation, and build a booming powerhouse economy.",
     section: "economy",

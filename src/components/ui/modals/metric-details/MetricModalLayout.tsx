@@ -138,7 +138,7 @@ MetricModalLayout.StatCard = function MetricModalStatCard({
           <span
             className={cn(
               "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold",
-              isPositive ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
+              isPositive ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
             )}
           >
             {isPositive ? (

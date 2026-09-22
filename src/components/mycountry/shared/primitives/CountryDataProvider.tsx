@@ -12,12 +12,25 @@ import { createAbsoluteUrl } from "~/lib/utils";
 import { useDevCountryView } from "~/context/DevCountryViewContext";
 import { useDemoMode } from "~/context/DemoModeContext";
 
-interface CountryDataContextValue {
-  userProfile: any;
-  country: any;
-  economyData: any;
-  systemStatus: any;
-  activityRingsData: any;
+import type { RouterOutputs } from "~/trpc/react";
+
+export type CountryWithEconomicData = RouterOutputs["countries"]["getByIdWithEconomicData"];
+export type UserProfileOutput = RouterOutputs["users"]["getProfile"];
+export type ActivityRingsOutput = RouterOutputs["countries"]["getActivityRingsData"];
+export type MappedEconomyData = ReturnType<typeof mapCountryToEconomyData>;
+
+export interface SystemStatusData {
+  ixTime: number;
+  serverStatus: string;
+  lastUpdate: string;
+}
+
+export interface CountryDataContextValue {
+  userProfile: UserProfileOutput | null | undefined;
+  country: CountryWithEconomicData | null | undefined;
+  economyData: MappedEconomyData;
+  systemStatus: SystemStatusData;
+  activityRingsData: ActivityRingsOutput | null | undefined;
   currentIxTime: number;
   isLoading: boolean;
   error: string | null;
@@ -94,10 +107,10 @@ export function CountryDataProvider({
   const value = useMemo<CountryDataContextValue>(
     () => ({
       userProfile: userProfile ?? null,
-      country,
+      country: country ?? null,
       economyData,
       systemStatus,
-      activityRingsData,
+      activityRingsData: activityRingsData ?? null,
       currentIxTime,
       isLoading: false,
       error: (!isPublicReadOnly && profileError?.message) || countryError?.message || null,

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import { toast } from "sonner";
 import {
   DiceFive as Dice5,
   Check,
@@ -33,7 +34,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
     onSuccess: (data) => {
       setCells(null);
       setError(null);
-      alert(
+      toast.success(
         `Created ${data.created} subdivisions (${data.skipped} skipped, ${data.totalCells} total cells).`
       );
     },
@@ -53,8 +54,8 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
       } else {
         setCells(result);
       }
-    } catch (e: any) {
-      setError(e?.message || "Generation failed");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Generation failed");
     }
   }, [countryGeometry, count, seed]);
 
@@ -115,7 +116,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
             max={50}
             value={count}
             onChange={(e) => setCount(parseInt(e.target.value))}
-            className="h-1 w-full accent-blue-500"
+            className="h-1 w-full accent-primary"
           />
         </div>
 
@@ -127,7 +128,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
             type="number"
             value={seed}
             onChange={(e) => setSeed(parseInt(e.target.value) || 42)}
-            className="border-border bg-background w-20 rounded border px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+            className="border-border bg-background w-20 rounded border px-2 py-1 text-xs focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
           />
         </div>
 
@@ -140,7 +141,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
             onChange={(e) => setNames(e.target.value)}
             rows={3}
             placeholder="Province A&#10;Province B&#10;..."
-            className="border-border bg-background w-full rounded border px-2 py-1 text-[10px] focus:border-blue-500 focus:outline-none"
+            className="border-border bg-background w-full rounded border px-2 py-1 text-[10px] focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
           />
         </div>
       </div>
@@ -149,7 +150,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
       {!cells && (
         <button
           onClick={handleGenerate}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600/20 px-3 py-2 text-xs font-medium text-blue-500 hover:bg-blue-600/30"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition-all active:scale-[0.98]"
         >
           <Dice5 className="h-3.5 w-3.5" />
           Generate
@@ -189,7 +190,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
             <button
               onClick={handleCommit}
               disabled={commitMutation.isPending}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-green-600/20 px-3 py-2 text-xs font-medium text-green-500 hover:bg-green-600/30 disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-500 hover:bg-emerald-500/25 transition-all active:scale-[0.98] disabled:opacity-50"
             >
               {commitMutation.isPending ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -201,7 +202,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
             <button
               onClick={handleDiscard}
               disabled={commitMutation.isPending}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-red-600/20 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-600/30 disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-destructive/15 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/25 transition-all active:scale-[0.98] disabled:opacity-50"
             >
               <X className="h-3.5 w-3.5" />
               Discard

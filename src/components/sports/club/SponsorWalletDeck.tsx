@@ -17,14 +17,34 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 
+export interface ClubSponsor {
+  type?: string | null;
+  name?: string | null;
+  baseFee?: number | null;
+  winBonus?: number | null;
+  payoutBase?: number | null;
+  payoutBonus?: number | null;
+}
+
+export interface ClubTeamWallet {
+  id: string;
+  name: string;
+  color?: string | null;
+  budget?: number | null;
+  stadiumCapacity?: number | null;
+  ticketPrice?: number | null;
+  sponsor?: ClubSponsor | null;
+  patronSaint?: string | null;
+}
+
 interface SponsorWalletDeckProps {
-  team: any;
+  team: ClubTeamWallet;
   refetchTeam: () => void;
 }
 
 export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps) {
   const [activeCard, setActiveCard] = useState<number | null>(null);
-  const [newPrice, setNewPrice] = useState<number>((team as any).ticketPrice ?? 15);
+  const [newPrice, setNewPrice] = useState<number>(team.ticketPrice ?? 15);
   const [updatingPrice, setUpdatingPrice] = useState(false);
 
   const upgradeStadium = api.sports.upgradeStadium.useMutation({
@@ -58,7 +78,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
     },
   });
 
-  const currentSponsor = (team as any).sponsor as any;
+  const currentSponsor = team.sponsor;
 
   const cards = [
     {
@@ -93,7 +113,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                   setTicketPrice.mutate({ teamId: team.id, price: newPrice });
                 }}
                 disabled={updatingPrice || setTicketPrice.isPending}
-                style={{ backgroundColor: team.color }}
+                style={{ backgroundColor: team.color || "#3b82f6" }}
                 className="font-semibold text-white transition-all hover:opacity-90"
               >
                 {setTicketPrice.isPending ? "..." : "Save"}
@@ -113,7 +133,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
       title: "Stadium & Expansion Vouchers",
       description: "Expand seating capacity to maximize ticketing limits",
       color:
-        "from-emerald-500/10 to-emerald-600/5 border-emerald-500/30 dark:from-emerald-950 dark:to-teal-900 dark:border-emerald-800/40",
+        "from-emerald-500/10 to-emerald-600/5 border-emerald-500/30 dark:from-emerald-950 dark:to-emerald-900 dark:border-emerald-800/40",
       icon: ArrowUpRight,
       content: (
         <div className="space-y-4 pt-2">
@@ -154,7 +174,10 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
         <div className="space-y-4 pt-2">
           {currentSponsor ? (
             <div className="mb-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-              <Badge className="mb-1 font-bold text-white" style={{ backgroundColor: team.color }}>
+              <Badge
+                className="mb-1 font-bold text-white"
+                style={{ backgroundColor: team.color || "#3b82f6" }}
+              >
                 Active Partner
               </Badge>
               <h5 className="font-bold text-amber-900 dark:text-amber-200">
@@ -207,13 +230,16 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
               <button
                 key={s.type}
                 onClick={() =>
-                  selectSponsor.mutate({ teamId: team.id, sponsorType: s.type as any })
+                  selectSponsor.mutate({
+                    teamId: team.id,
+                    sponsorType: s.type as "Conservative" | "Aggressive" | "Corporate",
+                  })
                 }
                 disabled={selectSponsor.isPending}
                 style={
-                  currentSponsor?.name === s.name
+                  currentSponsor?.name === s.name && team.color
                     ? { borderColor: team.color, backgroundColor: `${team.color}20` }
-                    : {}
+                    : undefined
                 }
                 className={cn(
                   "flex items-center justify-between rounded-lg border p-3 text-left transition-all",

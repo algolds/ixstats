@@ -18,41 +18,6 @@ const activityFilterSchema = z.object({
   userId: z.string().optional(),
 });
 
-const _createActivitySchema = z.object({
-  type: z.enum(["achievement", "diplomatic", "economic", "social", "meta"]),
-  category: z.enum(["game", "platform", "social"]).default("game"),
-  userId: z.string().optional(),
-  countryId: z.string().optional(),
-  title: z.string().min(1).max(200),
-  description: z.string().min(1).max(1000),
-  metadata: z
-    .record(
-      z.string(),
-      z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.string())])
-    )
-    .optional(),
-  priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
-  visibility: z.enum(["public", "followers", "friends"]).default("public"),
-  relatedCountries: z.array(z.string()).optional(),
-});
-
-const _engagementActionSchema = z.object({
-  activityId: z.string(),
-  action: z.string(),
-  userId: z.string(),
-});
-
-const _commentActionSchema = z.object({
-  activityId: z.string(),
-  userId: z.string(),
-  content: z.string().min(1).max(2000),
-});
-
-const _getUserEngagementSchema = z.object({
-  activityIds: z.array(z.string()),
-  userId: z.string(),
-});
-
 export const activitiesFeedGlobalRouter = createTRPCRouter({
   // Test mutation to debug parameter passing
 

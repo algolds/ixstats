@@ -7,38 +7,71 @@
  * manual save action trigger, and expanded builder modal views.
  */
 
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useEffect } from "react";
 import { useDIPlugin } from "~/components/halo/plugin-context";
-import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
-import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
-import type { RealCountryData } from "~/app/builder/lib/economy-data-service";
+import { useBuilderFilter, type BuilderFilterState } from "~/app/builder/components/builder-filter-context";
+import { useBuilderContext, type BuilderContextValue } from "~/app/builder/components/enhanced/context/BuilderStateContext";
+import type { RealCountryData } from "~/app/builder/lib/economy-types";
 import { BuilderView } from "./views";
-import type { DIViewProps } from "~/components/halo/types";
+import type { DIPlugin, DIViewProps } from "~/components/halo/types";
 import { PreText } from "~/components/ui/pretext";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { notifyFromStore } from "~/hooks/useNotify";
 import { WarningCircle as AlertCircle, FloppyDisk as Save } from "iconoir-react";
 
-function BuilderCompactLabel() {
+interface BuilderCompactLabelProps {
+  step: string;
+  countryName: string;
+}
+
+function BuilderCompactLabel({ step, countryName }: BuilderCompactLabelProps) {
+  const stepLabel = useMemo(() => {
+    switch (step) {
+      case "foundation":
+        return "Template";
+      case "core":
+      case "identity":
+        return "Identity";
+      case "government":
+        return "Government";
+      case "economics":
+        return "Economics";
+      case "preview":
+        return "Verify";
+      default:
+        return "Design";
+    }
+  }, [step]);
+
+  const fullLabel = countryName ? `${countryName} (${stepLabel})` : stepLabel;
+
   return (
-    <span className="flex items-center select-none">
+    <span
+      className="flex min-w-0 max-w-[130px] items-center gap-1.5 overflow-hidden select-none sm:max-w-[180px]"
+      title={`Builder: ${fullLabel}`}
+    >
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 animate-pulse" />
       <PreText
-        className="text-foreground/80 text-xs font-semibold tracking-tight"
+        className="text-foreground/90 shrink-0 text-xs font-semibold tracking-tight"
         whiteSpace="nowrap"
       >
-        MyCountry Builder
+        Builder
       </PreText>
+      <span className="text-muted-foreground/50 shrink-0 text-[10px]">•</span>
+      <span className="text-muted-foreground min-w-0 flex-1 truncate text-xs font-medium [mask-image:linear-gradient(to_right,black_85%,transparent_100%)]">
+        {fullLabel}
+      </span>
     </span>
   );
 }
 
 interface BuilderHaloInnerProps {
-  filter: ReturnType<typeof useBuilderFilter>;
-  context: ReturnType<typeof useBuilderContext>;
+  filter: BuilderFilterState;
+  context: BuilderContextValue;
 }
 
 function BuilderHaloInner({ filter, context }: BuilderHaloInnerProps) {
-  React.useEffect(() => {
+  useEffect(() => {
     if (context.builderState.step === "foundation") {
       return;
     }
@@ -49,7 +82,7 @@ function BuilderHaloInner({ filter, context }: BuilderHaloInnerProps) {
       }
     } else if (context.builderState.economicInputs?.countryName) {
       if (filter.selectedTemplate?.name !== context.builderState.economicInputs.countryName) {
-        filter.setSelectedTemplate({
+        const syntheticCountry: RealCountryData = {
           name: context.builderState.economicInputs.countryName,
           countryCode: context.builderState.economicInputs.nationalIdentity?.isoCode || "custom",
           gdp: context.builderState.economicInputs.coreIndicators?.nominalGDP || 0,
@@ -60,41 +93,32 @@ function BuilderHaloInner({ filter, context }: BuilderHaloInnerProps) {
           continent: context.builderState.economicInputs.geography?.continent || "",
           region: context.builderState.economicInputs.geography?.region || "",
           flag: context.builderState.economicInputs.flagUrl || "",
-        } as unknown as RealCountryData);
+        };
+        filter.setSelectedTemplate(syntheticCountry);
       }
-    } else {
-      if (filter.selectedTemplate !== null) {
-        filter.setSelectedTemplate(null);
-      }
+    } else if (filter.selectedTemplate !== null) {
+      filter.setSelectedTemplate(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    context.builderState.step,
     context.builderState.selectedCountry,
     context.builderState.economicInputs?.countryName,
+    context.builderState.economicInputs?.nationalIdentity?.isoCode,
+    context.builderState.economicInputs?.coreIndicators?.nominalGDP,
+    context.builderState.economicInputs?.coreIndicators?.gdpPerCapita,
+    context.builderState.economicInputs?.laborEmployment?.unemploymentRate,
+    context.builderState.economicInputs?.coreIndicators?.totalPopulation,
+    context.builderState.economicInputs?.geography?.continent,
+    context.builderState.economicInputs?.geography?.region,
+    context.builderState.economicInputs?.flagUrl,
     filter.selectedTemplate,
     filter.setSelectedTemplate,
   ]);
 
-  const [hasTriggeredRestoreExpansion, setHasTriggeredRestoreExpansion] = React.useState(false);
 
-  React.useEffect(() => {
-    let timer: NodeJS.Timeout | undefined;
-    if (!hasTriggeredRestoreExpansion) {
-      setHasTriggeredRestoreExpansion(true);
-      timer = setTimeout(() => {
-        filter.triggerDIExpansion();
-      }, 100);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [hasTriggeredRestoreExpansion, filter]);
 
-  const toastQueue = useToastQueueStore((s) => s.queue);
-  const errorCount = useMemo(
-    () => toastQueue.filter((t) => t.type === "error").length,
-    [toastQueue]
-  );
+  // Fine-grained selector subscribing only to the error count to minimize re-renders
+  const errorCount = useToastQueueStore((s) => s.queue.filter((t) => t.type === "error").length);
   const hasError = errorCount > 0;
 
   const isSaving = context.isAutoSaving || context.isSyncing;
@@ -124,12 +148,27 @@ function BuilderHaloInner({ filter, context }: BuilderHaloInnerProps) {
     [context, isSaving]
   );
 
-  const plugin = useMemo(() => {
+  const countryName =
+    context.builderState.economicInputs?.countryName ||
+    filter.selectedTemplate?.name ||
+    context.builderState.selectedCountry?.name ||
+    "";
+
+  const isFoundationStep = context.builderState.step === "foundation";
+
+  const plugin = useMemo<DIPlugin<BuilderFilterState, BuilderContextValue>>(() => {
     return {
       id: "builder",
       priority: 20, // High priority to override mycountry/wiki default plugins
-      center: <BuilderCompactLabel />,
-      expandedViews: { builder: BuilderView as React.ComponentType<DIViewProps> },
+      center: (
+        <BuilderCompactLabel
+          step={context.builderState.step}
+          countryName={countryName}
+        />
+      ),
+      expandedViews: {
+        builder: BuilderView as React.ComponentType<DIViewProps<BuilderFilterState, BuilderContextValue>>,
+      },
       accentColor: hasError ? "#ef4444" : "#f59e0b",
       stickyLabel: "Builder",
       badge: hasError ? { color: "#ef4444", pulse: true } : undefined,
@@ -147,12 +186,21 @@ function BuilderHaloInner({ filter, context }: BuilderHaloInnerProps) {
               },
             ]
           : []),
-        saveAction,
+        ...(!isFoundationStep ? [saveAction] : []),
       ],
       filter,
       context,
     };
-  }, [filter, context, hasError, errorCount, saveAction]);
+  }, [
+    context.builderState.step,
+    countryName,
+    hasError,
+    errorCount,
+    isFoundationStep,
+    saveAction,
+    filter,
+    context,
+  ]);
 
   useDIPlugin(plugin);
   return null;

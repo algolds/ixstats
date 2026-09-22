@@ -15,9 +15,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "~/components/ui/dropdown-menu";
-import { AnimatedShinyText } from "~/components/ui/magicui/animated-shiny-text";
-import { ShineBorder } from "~/components/ui/magicui/shine-border";
-import { NAV_COLORS, DEFAULT_NAV, type NavigationItem } from "~/lib/navigation-config";
+import { cn } from "~/lib/utils";
+import type { NavigationItem } from "~/lib/navigation-config";
 
 interface DesktopNavItemProps {
   item: NavigationItem;
@@ -38,33 +37,18 @@ const DesktopNavItem = React.memo(function DesktopNavItem({
     return (
       <NavigationMenuItem key={item.name}>
         <DropdownMenu>
-          <DropdownMenuTrigger className="group hover:bg-accent/10 text-muted-foreground relative flex items-center gap-2 overflow-hidden rounded-lg px-3 py-2 transition-colors duration-200 will-change-auto">
-            <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <ShineBorder
-                shineColor={["#8b5cf6", "#7c3aed", "#a78bfa"]}
-                duration={30}
-                borderWidth={1}
-                className="rounded-lg"
-              />
-            </div>
-            <div className="relative">
-              <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
-                <Icon className="h-4 w-4 text-purple-400" />
-              </div>
-              <Icon
-                className="relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] group-hover:text-purple-400"
-                aria-hidden="true"
-              />
-            </div>
-            <span className="relative hidden overflow-hidden lg:block">
-              <span className="transition-opacity duration-300 group-hover:opacity-0">
-                {item.name}
-              </span>
-              <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <AnimatedShinyText shimmerWidth={60}>{item.name}</AnimatedShinyText>
-              </div>
-            </span>
-            <ChevronDown className="h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          <DropdownMenuTrigger
+            data-cuelume-press="tick"
+            className={cn(
+              "group relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors outline-none",
+              current
+                ? "bg-accent/50 text-foreground"
+                : "text-muted-foreground hover:bg-accent/20 hover:text-foreground"
+            )}
+          >
+            <Icon className="h-4 w-4 shrink-0 transition-colors" aria-hidden="true" />
+            <span className="hidden lg:inline">{item.name}</span>
+            <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform duration-200 group-data-[state=open]:rotate-180" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align={dropdownAlign} className="facet-panel w-56">
             {item.dropdownItems.map((subItem, index) => {
@@ -72,10 +56,10 @@ const DesktopNavItem = React.memo(function DesktopNavItem({
               const isMessages = subItem.href === "/messages";
               return (
                 <div key={subItem.name}>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link
                       href={subItem.href}
-                      className="flex cursor-pointer items-center gap-3 px-3 py-3"
+                      className="flex cursor-pointer items-center gap-3 px-3 py-2.5"
                     >
                       <div className="relative">
                         <SubIcon className="text-muted-foreground h-4 w-4" />
@@ -86,7 +70,7 @@ const DesktopNavItem = React.memo(function DesktopNavItem({
                         )}
                       </div>
                       <div className="flex flex-1 flex-col">
-                        <span className="font-medium">{subItem.name}</span>
+                        <span className="text-sm font-medium">{subItem.name}</span>
                         {subItem.description && (
                           <span className="text-muted-foreground text-xs">
                             {subItem.description}
@@ -112,102 +96,20 @@ const DesktopNavItem = React.memo(function DesktopNavItem({
 
   return (
     <NavigationMenuItem key={item.name}>
-      {current ? (
-        <Link
-          href={item.href}
-          className="group text-foreground bg-accent/20 relative flex items-center gap-2 overflow-hidden rounded-lg px-3 py-2 transition-colors duration-200 will-change-auto"
-          aria-current="page"
-        >
-          <div className="relative">
-            <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
-              <Icon
-                className={`h-4 w-4 ${
-                  item.name === "MyCountry®"
-                    ? "text-amber-400"
-                    : item.name === "ThinkPages"
-                      ? "text-blue-400"
-                      : item.name === "Dashboard"
-                        ? "text-emerald-400"
-                        : item.name === "Feed"
-                          ? "text-purple-400"
-                          : item.name === "Explore"
-                            ? "text-purple-400"
-                            : item.name === "Intelligence"
-                              ? "text-indigo-400"
-                              : item.name === "Admin"
-                                ? "text-red-400"
-                                : item.name === "Cards"
-                                  ? "text-cyan-400"
-                                  : item.name === "Help"
-                                    ? "text-orange-400"
-                                    : "text-blue-400"
-                }`}
-              />
-            </div>
-            <Icon
-              className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${
-                item.name === "MyCountry®"
-                  ? "group-hover:text-amber-400"
-                  : item.name === "ThinkPages"
-                    ? "group-hover:text-blue-400"
-                    : item.name === "Dashboard"
-                      ? "group-hover:text-emerald-400"
-                      : item.name === "Feed"
-                        ? "group-hover:text-purple-400"
-                        : item.name === "Countries" || item.name === "Explore"
-                          ? "group-hover:text-purple-400"
-                          : item.name === "Admin"
-                            ? "group-hover:text-red-400"
-                            : item.name === "Cards"
-                              ? "group-hover:text-cyan-400"
-                              : item.name === "Help"
-                                ? "group-hover:text-orange-400"
-                                : "group-hover:text-blue-400"
-              }`}
-              aria-hidden="true"
-            />
-          </div>
-          <span className="relative hidden overflow-hidden lg:block">
-            <span className="transition-opacity duration-300 group-hover:opacity-0">
-              {item.name}
-            </span>
-            <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <AnimatedShinyText shimmerWidth={60}>{item.name}</AnimatedShinyText>
-            </div>
-          </span>
-        </Link>
-      ) : (
-        <Link
-          href={item.href}
-          className="group hover:bg-accent/10 text-muted-foreground relative flex items-center gap-2 overflow-hidden rounded-lg px-3 py-2 transition-colors duration-200 will-change-auto"
-        >
-          <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            <ShineBorder
-              shineColor={(NAV_COLORS[item.name] ?? DEFAULT_NAV).shine}
-              duration={30}
-              borderWidth={1}
-              className="rounded-lg"
-            />
-          </div>
-          <div className="relative">
-            <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
-              <Icon className={`h-4 w-4 ${(NAV_COLORS[item.name] ?? DEFAULT_NAV).glow}`} />
-            </div>
-            <Icon
-              className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${(NAV_COLORS[item.name] ?? DEFAULT_NAV).hover}`}
-              aria-hidden="true"
-            />
-          </div>
-          <span className="relative hidden overflow-hidden text-sm whitespace-nowrap lg:block xl:text-base">
-            <span className="transition-opacity duration-300 group-hover:opacity-0">
-              {item.name}
-            </span>
-            <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <AnimatedShinyText shimmerWidth={60}>{item.name}</AnimatedShinyText>
-            </div>
-          </span>
-        </Link>
-      )}
+      <Link
+        href={item.href}
+        data-cuelume-press="tick"
+        className={cn(
+          "relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+          current
+            ? "bg-accent/50 text-foreground shadow-xs"
+            : "text-muted-foreground hover:bg-accent/20 hover:text-foreground"
+        )}
+        aria-current={current ? "page" : undefined}
+      >
+        <Icon className="h-4 w-4 shrink-0 transition-colors" aria-hidden="true" />
+        <span className="hidden lg:inline">{item.name}</span>
+      </Link>
     </NavigationMenuItem>
   );
 });

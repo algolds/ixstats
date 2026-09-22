@@ -4,17 +4,17 @@ import React from "react";
 import type { ImageContext } from "~/lib/media";
 import { cn } from "~/lib/utils";
 
-/** Map accent color names to gradient classes */
+/** Map accent color names to subtle background tint classes */
 const ACCENT_GRADIENTS: Record<string, string> = {
-  emerald: "from-emerald-600/12 via-emerald-600/5 to-transparent",
-  red: "from-red-600/12 via-red-600/5 to-transparent",
-  amber: "from-amber-600/12 via-amber-600/5 to-transparent",
-  cyan: "from-cyan-600/12 via-cyan-600/5 to-transparent",
-  blue: "from-blue-600/12 via-blue-600/5 to-transparent",
-  indigo: "from-indigo-600/12 via-indigo-600/5 to-transparent",
-  purple: "from-purple-600/12 via-purple-600/5 to-transparent",
-  pink: "from-pink-600/12 via-pink-600/5 to-transparent",
-  orange: "from-orange-600/12 via-orange-600/5 to-transparent",
+  emerald: "from-emerald-600/10 via-emerald-600/5 to-transparent",
+  red: "from-red-600/10 via-red-600/5 to-transparent",
+  amber: "from-amber-600/10 via-amber-600/5 to-transparent",
+  cyan: "from-cyan-600/10 via-cyan-600/5 to-transparent",
+  blue: "from-blue-600/10 via-blue-600/5 to-transparent",
+  indigo: "from-indigo-600/10 via-indigo-600/5 to-transparent",
+  purple: "from-indigo-600/10 via-indigo-600/5 to-transparent",
+  pink: "from-blue-600/10 via-blue-600/5 to-transparent",
+  orange: "from-amber-600/10 via-amber-600/5 to-transparent",
 };
 
 const ACCENT_ICON_BG: Record<string, string> = {
@@ -24,9 +24,21 @@ const ACCENT_ICON_BG: Record<string, string> = {
   cyan: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400",
   blue: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
   indigo: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
-  purple: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
-  pink: "bg-pink-500/15 text-pink-600 dark:text-pink-400",
-  orange: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
+  purple: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
+  pink: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  orange: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+};
+
+const ACCENT_BORDER: Record<string, string> = {
+  emerald: "border-b-2 border-emerald-500/30",
+  red: "border-b-2 border-red-500/30",
+  amber: "border-b-2 border-amber-500/30",
+  cyan: "border-b-2 border-cyan-500/30",
+  blue: "border-b-2 border-blue-500/30",
+  indigo: "border-b-2 border-indigo-500/30",
+  purple: "border-b-2 border-indigo-500/30",
+  pink: "border-b-2 border-blue-500/30",
+  orange: "border-b-2 border-amber-500/30",
 };
 
 interface TabHeroBannerProps {
@@ -64,7 +76,7 @@ export const TabHeroBanner = React.memo(function TabHeroBanner({
       className={cn(
         "relative mb-4 overflow-hidden rounded-lg",
         heightClass,
-        accentColor && `border-b-2 border-${accentColor}-500/30`,
+        accentColor && ACCENT_BORDER[accentColor],
         className
       )}
     >

@@ -3,7 +3,9 @@
  */
 
 /** Parse numeric values like "$1.2 trillion", "€45,000", "10 million", "1234567" */
-export function parseWikiNumericValue(value: unknown): number | null {
+export function parseWikiNumericValue(
+  value: string | number | null | undefined
+): number | null {
   if (typeof value === "number") return value > 0 ? value : null;
   if (typeof value !== "string") return null;
   const match = value.match(/([\d,.]+)\s*(trillion|billion|million|thousand)?/i);

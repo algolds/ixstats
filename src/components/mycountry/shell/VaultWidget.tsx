@@ -87,16 +87,16 @@ export function VaultWidget() {
     <CutoutCard
       className={cn(
         cutoutCardSurfaceClassName,
-        "w-48 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 shadow-xl shadow-slate-200/50 backdrop-blur-xl transition-all duration-200 dark:border-white/10 dark:bg-white/[0.02] dark:shadow-black/40"
+        "w-48 overflow-hidden rounded-2xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-xl transition-all duration-200"
       )}
       trackPointerHover={false}
       texture="dots"
       textureOpacity={0.05}
     >
       {/* Sleek Apple-style header bar */}
-      <div className="relative flex items-center justify-between border-b border-amber-500/20 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 px-3 py-2.5 backdrop-blur-md dark:border-amber-500/15 dark:from-amber-500/15 dark:via-amber-500/10 dark:to-amber-500/5">
+      <div className="relative flex items-center justify-between border-b border-amber-500/20 bg-amber-500/10 px-3 py-2.5 backdrop-blur-md">
         <div className="flex items-center gap-2">
-          <div className="flex h-5 w-5 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/20 shadow-sm shadow-amber-500/10 backdrop-blur-sm">
+          <div className="flex h-5 w-5 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/20 shadow-2xs backdrop-blur-sm">
             <Wallet className="h-3 w-3 text-amber-600 dark:text-amber-400" />
           </div>
           <span className="text-xs font-semibold tracking-tight text-amber-900 dark:text-amber-300">
@@ -117,8 +117,8 @@ export function VaultWidget() {
                   IxCredits
                 </p>
                 <div className="flex items-center gap-1.5 pt-0.5">
-                  <IxCreditsSymbol className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 dark:drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]" />
-                  <p className="text-base font-bold tracking-tight text-amber-700 tabular-nums sm:text-lg dark:text-amber-400 dark:drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                  <IxCreditsSymbol className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <p className="text-base font-bold tracking-tight text-amber-700 tabular-nums sm:text-lg dark:text-amber-400">
                     {balanceLoading ? (
                       <span className="animate-pulse">...</span>
                     ) : (
@@ -193,7 +193,7 @@ export function VaultWidget() {
 
               {/* Treasury Revenue Projection */}
               {showPassiveIncome && passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
-                <div className="animate-in fade-in slide-in-from-top-1 rounded-xl border border-blue-500/25 bg-blue-500/10 p-2.5 shadow-sm backdrop-blur-md duration-200">
+                <div className="animate-in fade-in slide-in-from-top-1 rounded-xl border border-blue-500/25 bg-blue-500/10 p-2.5 shadow-xs backdrop-blur-md duration-200">
                   <p className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-blue-700 dark:text-blue-300">
                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
@@ -264,7 +264,7 @@ export function VaultWidget() {
             <div
               className={cn(
                 "mt-1.5 space-y-1 pt-3",
-                !isMainVaultPage && "border-t border-slate-200/60 dark:border-white/10"
+                !isMainVaultPage && "border-border/60 border-t"
               )}
             >
               {[
@@ -274,11 +274,8 @@ export function VaultWidget() {
                   title: "MyVault (Wallet)",
                   icon: Wallet,
                   isActive: pathname === "/vault" || pathname === "/vault/",
-                  gradient:
-                    "from-purple-500/15 to-pink-500/15 hover:from-purple-500/25 hover:to-pink-500/25",
-                  activeBorder: "border-purple-500/30",
-                  activeGlow: "shadow-purple-500/10",
-                  activeText: "text-purple-800 dark:text-purple-300",
+                  activeClass:
+                    "bg-amber-500/15 border-amber-500/30 text-amber-900 dark:text-amber-300",
                 },
                 {
                   id: "cards" as const,
@@ -292,11 +289,8 @@ export function VaultWidget() {
                     pathname.startsWith("/vault/gallery") ||
                     pathname.startsWith("/vault/lore-gallery") ||
                     pathname.startsWith("/vault/ns-library"),
-                  gradient:
-                    "from-amber-500/15 to-yellow-500/15 hover:from-amber-500/25 hover:to-yellow-500/25",
-                  activeBorder: "border-amber-500/30",
-                  activeGlow: "shadow-amber-500/10",
-                  activeText: "text-amber-800 dark:text-amber-300",
+                  activeClass:
+                    "bg-amber-500/15 border-amber-500/30 text-amber-900 dark:text-amber-300",
                 },
                 {
                   id: "marketplace" as const,
@@ -310,11 +304,8 @@ export function VaultWidget() {
                     pathname.startsWith("/vault/packs") ||
                     pathname.startsWith("/vault/trading") ||
                     pathname.startsWith("/vault/market"),
-                  gradient:
-                    "from-blue-500/15 to-cyan-500/15 hover:from-blue-500/25 hover:to-cyan-500/25",
-                  activeBorder: "border-blue-500/30",
-                  activeGlow: "shadow-blue-500/10",
-                  activeText: "text-blue-800 dark:text-blue-300",
+                  activeClass:
+                    "bg-blue-500/15 border-blue-500/30 text-blue-900 dark:text-blue-300",
                 },
                 {
                   id: "import" as const,
@@ -322,11 +313,8 @@ export function VaultWidget() {
                   title: "NS Importer",
                   icon: Download,
                   isActive: pathname.startsWith("/vault/import"),
-                  gradient:
-                    "from-rose-500/15 to-orange-500/15 hover:from-rose-500/25 hover:to-rose-500/25",
-                  activeBorder: "border-rose-500/30",
-                  activeGlow: "shadow-rose-500/10",
-                  activeText: "text-rose-800 dark:text-rose-300",
+                  activeClass:
+                    "bg-cyan-500/15 border-cyan-500/30 text-cyan-900 dark:text-cyan-300",
                 },
                 {
                   id: "achievements" as const,
@@ -334,11 +322,8 @@ export function VaultWidget() {
                   title: "Achievements",
                   icon: Trophy,
                   isActive: pathname.startsWith("/achievements"),
-                  gradient:
-                    "from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25",
-                  activeBorder: "border-amber-500/30",
-                  activeGlow: "shadow-amber-500/10",
-                  activeText: "text-amber-800 dark:text-amber-300",
+                  activeClass:
+                    "bg-amber-500/15 border-amber-500/30 text-amber-900 dark:text-amber-300",
                 },
               ]
                 .filter((item) => {
@@ -354,14 +339,8 @@ export function VaultWidget() {
                       className={cn(
                         "flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-xs font-medium backdrop-blur-md transition-all duration-150 active:scale-[0.97]",
                         item.isActive
-                          ? cn(
-                              "bg-gradient-to-r shadow-md",
-                              item.gradient,
-                              item.activeBorder,
-                              item.activeGlow,
-                              item.activeText
-                            )
-                          : "text-muted-foreground hover:text-foreground border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                          ? cn("shadow-2xs", item.activeClass)
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent"
                       )}
                     >
                       <Icon className="h-3.5 w-3.5 shrink-0" />

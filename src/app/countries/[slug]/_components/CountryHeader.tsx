@@ -55,7 +55,6 @@ interface CountryHeaderProps {
   customBannerUrl?: string;
   onToggleGdpDisplay: () => void;
   onTogglePopulationDisplay: () => void;
-  onCountryActionsClick: () => void;
   onBannerModeChange: (mode: BannerMode, customUrl?: string) => void;
 }
 
@@ -63,7 +62,7 @@ const bannerOptions = [
   {
     mode: "dynamic",
     label: "Dynamic Image",
-    description: "Contextual photo from Unsplash",
+    description: "Contextual national landscape",
     icon: Sparkles,
   },
   {
@@ -128,14 +127,13 @@ export function CountryHeader({
   customBannerUrl,
   onToggleGdpDisplay,
   onTogglePopulationDisplay,
-  onCountryActionsClick: _onCountryActionsClick,
   onBannerModeChange,
 }: CountryHeaderProps) {
   const [showBannerPicker, setShowBannerPicker] = useState(false);
   const [showMediaSearch, setShowMediaSearch] = useState(false);
 
-  const flagColors = getFlagColors(country.name);
-  const flagThemeCSS = generateFlagThemeCSS(flagColors);
+  const flagColors = React.useMemo(() => getFlagColors(country.name), [country.name]);
+  const flagThemeCSS = React.useMemo(() => generateFlagThemeCSS(flagColors), [flagColors]);
 
   const resolvedBannerUrl = (() => {
     switch (bannerMode) {
@@ -331,7 +329,7 @@ export function CountryHeader({
               <PopoverContent
                 align="end"
                 sideOffset={8}
-                className="glass-off border-border z-[100011] w-72 rounded-xl border bg-white p-2 shadow-2xl dark:bg-zinc-900"
+                className="border-border bg-popover text-popover-foreground z-[100011] w-72 rounded-xl border p-2 shadow-2xl backdrop-blur-xl"
               >
                 <div className="space-y-1">
                   <p className="text-muted-foreground px-2 py-1.5 text-[10px] font-extrabold tracking-wider uppercase">

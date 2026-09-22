@@ -1,21 +1,14 @@
 "use client";
+
 /**
- * Synergy Display
+ * Synergy Display (Economy Domain)
  *
- * Visualization of synergies and conflicts between selected components.
- * Optimized with React.memo for performance.
+ * Backed by shared SynergyDisplay primitive.
  */
 
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
-import {
-  Flash as Zap,
-  WarningTriangle as AlertTriangle,
-  StatUp as TrendingUp,
-  StatDown as TrendingDown,
-} from "iconoir-react";
-import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/economy/atomic-data";
+import React, { useMemo } from "react";
+import { formatComponentName, type EconomicComponentType } from "~/lib/economy/atomic-data";
+import { SynergyDisplay as SharedSynergyDisplay, type SynergyItem } from "~/components/shared/atomic-picker";
 
 export interface SynergyDisplayProps {
   synergies: Array<{
@@ -33,112 +26,32 @@ export interface SynergyDisplayProps {
   components: EconomicComponentType[];
 }
 
-/**
- * Synergy Display Component
- */
-function SynergyDisplayComponent({ synergies, conflicts, components }: SynergyDisplayProps) {
-  if (components.length === 0) {
-    return null;
-  }
+export const SynergyDisplay = React.memo(function SynergyDisplay({
+  synergies,
+  conflicts,
+  components,
+}: SynergyDisplayProps) {
+  if (components.length === 0) return null;
 
-  const hasSynergies = synergies.length > 0;
-  const hasConflicts = conflicts.length > 0;
+  const synergyItems: SynergyItem[] = useMemo(() => {
+    return synergies.map((s) => ({
+      comp1Name: formatComponentName(s.component1),
+      comp2Name: formatComponentName(s.component2),
+      bonus: s.bonus,
+      description: s.description,
+      type: "synergy" as const,
+    }));
+  }, [synergies]);
 
-  if (!hasSynergies && !hasConflicts) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            Synergies & Conflicts
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="py-4 text-center text-sm text-gray-500">
-            No synergies or conflicts detected. Add more components to discover interactions.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const conflictItems: SynergyItem[] = useMemo(() => {
+    return conflicts.map((c) => ({
+      comp1Name: formatComponentName(c.component1),
+      comp2Name: formatComponentName(c.component2),
+      penalty: c.penalty,
+      description: c.description,
+      type: "conflict" as const,
+    }));
+  }, [conflicts]);
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Zap className="h-5 w-5" />
-          Synergies & Conflicts
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Synergies Section */}
-        {hasSynergies && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-emerald-600" />
-              <h4 className="text-sm font-semibold">Synergies ({synergies.length})</h4>
-            </div>
-            <div className="space-y-2">
-              {synergies.map((synergy, index) => {
-                const comp1 = ATOMIC_ECONOMIC_COMPONENTS[synergy.component1];
-                const comp2 = ATOMIC_ECONOMIC_COMPONENTS[synergy.component2];
-
-                return (
-                  <div
-                    key={index}
-                    className="rounded-lg border border-emerald-200 bg-emerald-50 p-3"
-                  >
-                    <div className="mb-1 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-emerald-900">{comp1?.name}</span>
-                        <span className="text-emerald-600">+</span>
-                        <span className="text-sm font-medium text-emerald-900">{comp2?.name}</span>
-                      </div>
-                      <Badge variant="default" className="bg-emerald-600">
-                        +{synergy.bonus}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-emerald-700">{synergy.description}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Conflicts Section */}
-        {hasConflicts && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-red-600" />
-              <h4 className="text-sm font-semibold">Conflicts ({conflicts.length})</h4>
-            </div>
-            <div className="space-y-2">
-              {conflicts.map((conflict, index) => {
-                const comp1 = ATOMIC_ECONOMIC_COMPONENTS[conflict.component1];
-                const comp2 = ATOMIC_ECONOMIC_COMPONENTS[conflict.component2];
-
-                return (
-                  <div key={index} className="rounded-lg border border-red-200 bg-red-50 p-3">
-                    <div className="mb-1 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-red-600" />
-                        <span className="text-sm font-medium text-red-900">{comp1?.name}</span>
-                        <span className="text-red-600">×</span>
-                        <span className="text-sm font-medium text-red-900">{comp2?.name}</span>
-                      </div>
-                      <Badge variant="destructive">-{conflict.penalty}</Badge>
-                    </div>
-                    <p className="text-xs text-red-700">{conflict.description}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-export const SynergyDisplay = React.memo(SynergyDisplayComponent);
+  return <SharedSynergyDisplay synergies={synergyItems} conflicts={conflictItems} />;
+});

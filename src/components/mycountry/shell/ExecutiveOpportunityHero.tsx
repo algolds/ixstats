@@ -31,13 +31,30 @@ interface Opportunity {
   metricValue?: string;
   directiveGoal: string;
   icon: typeof Shield;
-  glowCls: string;
   badgeCls: string;
   borderCls: string;
   buttonCls: string;
   bgImage?: string;
   intentId?: string;
   drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
+}
+
+interface CountryIssueItem {
+  id: string;
+  title: string;
+  description?: string | null;
+  severity?: string | null;
+  urgency?: number | null;
+  category?: string | null;
+  status?: string | null;
+}
+
+interface CountryIntentItem {
+  id: string;
+  goal?: string | null;
+  status?: string | null;
+  tier?: string | null;
+  category?: string | null;
 }
 
 export interface ExecutiveOpportunityHeroProps {
@@ -113,11 +130,11 @@ function ExecutiveOpportunityHeroComponent({
 
     // Custom country header/banner fallback if present
     const customHeader =
-      (country as any)?.headerImageUrl || (country as any)?.bannerUrl || (country as any)?.flagUrl;
+      country?.headerImageUrl || country?.flagUrl || country?.flag;
 
     // 0. Active National Issue / Crisis (Priority 0 - Critical & Urgent issues first)
-    const rawActiveIssues = issuesData.data?.issues ?? [];
-    const activeIssues = [...rawActiveIssues].sort((a: any, b: any) => {
+    const rawActiveIssues = (issuesData.data?.issues ?? []) as CountryIssueItem[];
+    const activeIssues = [...rawActiveIssues].sort((a: CountryIssueItem, b: CountryIssueItem) => {
       const aSev = String(a.severity ?? "").toLowerCase();
       const bSev = String(b.severity ?? "").toLowerCase();
       const sevRank = (s: string) =>
@@ -128,7 +145,7 @@ function ExecutiveOpportunityHeroComponent({
     });
 
     const availableIssues = activeIssues.filter(
-      (iss: any) => !dismissedIds.includes(`issue-${iss.id}`)
+      (iss: CountryIssueItem) => !dismissedIds.includes(`issue-${iss.id}`)
     );
 
     if (availableIssues.length > 0) {
@@ -146,12 +163,10 @@ function ExecutiveOpportunityHeroComponent({
           "An urgent national policy issue requires immediate executive attention and cabinet policy guidance.",
         directiveGoal: `Resolve national policy issue: ${topIssue.title}`,
         icon: AlertCircle,
-        glowCls: "from-rose-500/25 via-red-500/10 to-transparent",
-        badgeCls:
-          "bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-500/40 font-extrabold",
-        borderCls: "border-rose-500/50 dark:border-rose-500/40",
+        badgeCls: "bg-red-500/15 text-red-800 dark:text-red-300 border-red-500/30 font-bold",
+        borderCls: "border-red-500/40 dark:border-red-500/30",
         buttonCls:
-          "bg-rose-500/25 hover:bg-rose-500/35 text-rose-950 dark:text-rose-100 border-rose-500/50 shadow-rose-500/10",
+          "bg-red-500/20 hover:bg-red-500/30 text-red-950 dark:text-red-100 border-red-500/40 shadow-xs",
         bgImage:
           customHeader ||
           "https://images.unsplash.com/photo-1555848962-6e79363ec58f?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
@@ -172,7 +187,6 @@ function ExecutiveOpportunityHeroComponent({
         metricValue: `${readiness}% (${posture})`,
         directiveGoal: "Rebalance military readiness and reinforce defensive border posture",
         icon: Shield,
-        glowCls: "from-red-500/20 via-rose-500/10 to-transparent",
         badgeCls: "bg-red-500/15 text-red-900 dark:text-red-300 border-red-500/30",
         borderCls: "border-red-500/40 dark:border-red-500/30",
         buttonCls:
@@ -198,11 +212,10 @@ function ExecutiveOpportunityHeroComponent({
         directiveGoal:
           "Authorize civil service staffing expansion and administrative restructuring",
         icon: Scale,
-        glowCls: "from-amber-500/20 via-orange-500/10 to-transparent",
-        badgeCls: "bg-amber-500/15 text-amber-900 dark:text-amber-300 border-amber-500/30",
-        borderCls: "border-amber-500/40 dark:border-amber-500/30",
+        badgeCls: "bg-indigo-500/15 text-indigo-900 dark:text-indigo-300 border-indigo-500/30",
+        borderCls: "border-indigo-500/40 dark:border-indigo-500/30",
         buttonCls:
-          "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-amber-500/40",
+          "bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-950 dark:text-indigo-200 border-indigo-500/40",
         bgImage:
           customHeader ||
           "https://images.unsplash.com/photo-1555848962-6e79363ec58f?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
@@ -211,14 +224,16 @@ function ExecutiveOpportunityHeroComponent({
     }
 
     // 3. Active Intent Directive in Progress (Priority 3)
-    const intentsList = Array.isArray(intentTree.data)
-      ? intentTree.data
-      : (intentTree.data?.allIntents ?? []);
+    const intentsList = (
+      Array.isArray(intentTree.data)
+        ? intentTree.data
+        : (intentTree.data?.allIntents ?? [])
+    ) as CountryIntentItem[];
     const activeIntents = intentsList.filter(
-      (i: any) => i.status?.toLowerCase() === "active" && !dismissedIds.includes(`intent-${i.id}`)
+      (i: CountryIntentItem) => i.status?.toLowerCase() === "active" && !dismissedIds.includes(`intent-${i.id}`)
     );
     if (activeIntents.length > 0) {
-      const topIntent = activeIntents[0];
+      const topIntent = activeIntents[0]!;
       return {
         id: `intent-${topIntent.id}`,
         domain: "intent",
@@ -230,7 +245,6 @@ function ExecutiveOpportunityHeroComponent({
         metricValue: `${topIntent.tier?.toUpperCase() ?? "ACTIVE"} • ${topIntent.category ?? "Executive"}`,
         directiveGoal: `Accelerate implementation of ${topIntent.goal}`,
         icon: Command,
-        glowCls: "from-amber-500/25 via-yellow-500/10 to-transparent",
         badgeCls: "bg-amber-500/15 text-amber-900 dark:text-amber-300 border-amber-500/30",
         borderCls: "border-amber-500/40 dark:border-amber-500/30",
         buttonCls:
@@ -256,11 +270,10 @@ function ExecutiveOpportunityHeroComponent({
         directiveGoal:
           "Establish bilateral economic trade agreement and expand diplomatic alliances",
         icon: Handshake,
-        glowCls: "from-teal-500/20 via-emerald-500/10 to-transparent",
-        badgeCls: "bg-teal-500/15 text-teal-900 dark:text-teal-300 border-teal-500/30",
-        borderCls: "border-teal-500/40 dark:border-teal-500/30",
+        badgeCls: "bg-cyan-500/15 text-cyan-900 dark:text-cyan-300 border-cyan-500/30",
+        borderCls: "border-cyan-500/40 dark:border-cyan-500/30",
         buttonCls:
-          "bg-teal-500/20 hover:bg-teal-500/30 text-teal-950 dark:text-teal-200 border-teal-500/40",
+          "bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-950 dark:text-cyan-200 border-cyan-500/40",
         bgImage:
           customHeader ||
           "https://images.unsplash.com/photo-1529180979161-06b8b6d6f2be?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
@@ -282,7 +295,6 @@ function ExecutiveOpportunityHeroComponent({
         directiveGoal:
           "Implement targeted macroeconomic development directive and tax incentive package",
         icon: TrendingUp,
-        glowCls: "from-emerald-500/20 via-teal-500/10 to-transparent",
         badgeCls: "bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 border-emerald-500/30",
         borderCls: "border-emerald-500/40 dark:border-emerald-500/30",
         buttonCls:
@@ -345,13 +357,6 @@ function ExecutiveOpportunityHeroComponent({
             </div>
           )}
 
-          {/* Ambient Radial Glow Background */}
-          <div
-            className={cn(
-              "pointer-events-none absolute -top-12 -right-12 h-64 w-64 rounded-full bg-gradient-to-br opacity-30 blur-3xl select-none dark:opacity-40",
-              opportunity.glowCls
-            )}
-          />
 
           {/* Ambient Watermark Glyph */}
           <Icon className="text-foreground pointer-events-none absolute -right-6 -bottom-6 h-40 w-40 stroke-[1] opacity-[0.04] select-none" />

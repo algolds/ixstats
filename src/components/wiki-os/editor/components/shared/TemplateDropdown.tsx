@@ -68,7 +68,7 @@ export const TemplateDropdown = memo(function TemplateDropdown({
             onClick={() => handleSelect(modal.setShowBusinessStatsModal)}
             className={itemClass}
           >
-            <Sparkles className="h-3.5 w-3.5 text-teal-400" />
+            <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
             <span>Business Stats</span>
           </button>
           <button

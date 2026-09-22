@@ -33,16 +33,16 @@ const MAIN_STEPS = [
   },
   {
     icon: Database,
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
+    color: "text-indigo-400",
+    bg: "bg-indigo-500/10",
     title: "2. IxWiki Database",
     description:
       "Switch to the IxWiki tab to search and browse local images uploaded by players directly on our wiki platform.",
   },
   {
     icon: SlidersHorizontal,
-    color: "text-teal-400",
-    bg: "bg-teal-500/10",
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/10",
     title: "3. Advanced Filters",
     description:
       "Instantly narrow search results by file type (JPEG, PNG, SVG) and aspect ratio orientation (Landscape, Portrait, Square).",
@@ -81,7 +81,7 @@ const ADVANCED_TIPS = [
   },
   {
     icon: Smile,
-    color: "text-pink-400",
+    color: "text-blue-400",
     title: "Keyboard Shortcuts",
     description:
       "Close the detail panel by pressing 'Escape'. Use the standard search inputs to instantly filter categories dynamically.",

@@ -1,0 +1,134 @@
+{
+  "country": "Amaniaris",
+  "featureId": "Amaniaris",
+  "generatedAt": "2026-09-06T20:08:15.458Z",
+  "area": {
+    "km2": 1734,
+    "sqMi": 670,
+    "boundingBox": {
+      "minLng": -7.0243,
+      "minLat": -17.9617,
+      "maxLng": -4.6571,
+      "maxLat": -16.0004
+    },
+    "nsSpanKm": 218,
+    "ewSpanKm": 252,
+    "centroid": {
+      "lng": -5.8981,
+      "lat": -17.0566
+    },
+    "perimeterKm": 248
+  },
+  "elevation": {
+    "zones": [
+      {
+        "zone": "Coastal Lowlands",
+        "minM": 0,
+        "maxM": 99,
+        "areaKm2": 1734,
+        "percent": 100
+      }
+    ],
+    "minElevationM": 0,
+    "maxElevationM": 99,
+    "meanElevationM": 50,
+    "dominantTerrain": "Coastal Lowlands",
+    "terrainRoughness": 0.024
+  },
+  "climate": {
+    "zones": [
+      {
+        "type": "Steppe or Semiarid (Bs)",
+        "areaKm2": 1734,
+        "percent": 100,
+        "description": "Low rainfall with hot daytime temperatures"
+      }
+    ],
+    "dominantType": "Steppe or Semiarid (Bs)",
+    "shannonDiversity": -0.069,
+    "temperature": {
+      "meanC": 23.2,
+      "meanF": 73.8,
+      "summerDailyHighC": 36.7,
+      "winterDailyLowC": 9.7,
+      "seasonalRangeC": 11,
+      "diurnalRangeC": 16
+    },
+    "annualPrecipitationMm": 374
+  },
+  "hydrography": {
+    "riverCount": 0,
+    "totalRiverLengthKm": 0,
+    "lakeCount": 0,
+    "totalLakeAreaKm2": 0,
+    "drainageDensity": 0
+  },
+  "position": {
+    "hemisphere": "Southern",
+    "latitudeBand": "Tropical",
+    "atmosphericZone": "Tropical zone (Hadley cell)",
+    "distanceFromEquatorKm": 1897,
+    "timezone": "UTC+0"
+  },
+  "neighbors": [],
+  "coastline": {
+    "hasCoastline": true,
+    "isLandlocked": false,
+    "coastlineKm": 248,
+    "landBorderKm": 0,
+    "coastlinePercent": 100
+  },
+  "shape": {
+    "compactnessRatio": 0.355,
+    "compactness": "Elongated or irregular",
+    "elongationRatio": 1.15,
+    "elongation": "Roughly equidimensional",
+    "fragments": 2,
+    "islands": 0
+  },
+  "iceCoverage": {
+    "hasIcecaps": false,
+    "areaKm2": 0,
+    "percent": 0
+  },
+  "insights": {
+    "agriculture": {
+      "arableLandPercent": 30,
+      "arableLandKm2": 520,
+      "growingSeasonDays": 150,
+      "waterAvailability": "Scarce",
+      "waterScore": 19,
+      "cropSuitability": [
+        "Pastoral grazing",
+        "Millet"
+      ],
+      "overallRating": "Limited"
+    },
+    "strategic": {
+      "maritimeIndex": "Maritime power (extensive coastline)",
+      "coastlineToAreaRatio": 594.9,
+      "strategicDepthKm": 109,
+      "borderDefensibility": "Open terrain (few natural barriers)",
+      "mountainCoveragePercent": 0,
+      "islandExposure": "Continental (no islands)",
+      "accessPoints": "Limited entry points"
+    },
+    "habitability": {
+      "score": 52,
+      "descriptor": "Moderately habitable",
+      "climateComfort": 18,
+      "waterAccess": 4,
+      "terrainAccess": 30,
+      "keyFactors": [
+        "Water scarcity",
+        "Accessible terrain"
+      ]
+    },
+    "biome": {
+      "dominantBiome": "Short grass steppe, scrubland",
+      "ecoRegionCount": 1,
+      "ecologicalDiversity": "Homogeneous",
+      "summary": "The landscape is dominated by short grass steppe, scrubland (Steppe or Semiarid), covering over half the country."
+    }
+  }
+}

@@ -308,7 +308,7 @@ export function InlineWikiArticlePreview({
   const marginHref = `${titleToWikiOSRoute(cleanTitle)}?modal=margin`;
 
   return (
-    <div className="group/preview mt-2.5 overflow-hidden rounded-2xl border border-teal-500/20 bg-teal-500/[0.04] p-3.5 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-teal-500/35 hover:bg-teal-500/[0.07] sm:p-4 dark:bg-teal-500/[0.04] dark:hover:bg-teal-500/[0.08]">
+    <div className="group/preview mt-2.5 overflow-hidden rounded-2xl border border-wiki/20 bg-wiki/[0.04] p-3.5 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-wiki/35 hover:bg-wiki/[0.07] sm:p-4 dark:border-wiki/30 dark:bg-wiki/[0.04] dark:hover:border-wiki/50 dark:hover:bg-wiki/[0.08]">
       {/* Content & Lead Image Row */}
       <div className="flex items-start gap-3.5">
         <div className="min-w-0 flex-1 space-y-1">
@@ -340,7 +340,7 @@ export function InlineWikiArticlePreview({
       </div>
 
       {/* ── Action Toolbar Row ── */}
-      <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-teal-500/15 pt-2.5">
+      <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-wiki/15 pt-2.5 dark:border-wiki/25">
         <div className="flex flex-wrap items-center gap-1">
           {/* 1. Margin Note / Comment Button */}
           <button
@@ -383,8 +383,8 @@ export function InlineWikiArticlePreview({
                 className={cn(
                   "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none active:scale-95",
                   hasLiked
-                    ? "bg-rose-500/15 font-semibold text-rose-500"
-                    : "text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500"
+                    ? "bg-red-500/15 font-semibold text-red-500"
+                    : "text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
                 )}
                 title="React or like this article"
               >
@@ -396,7 +396,7 @@ export function InlineWikiArticlePreview({
                   <Heart
                     className={cn(
                       "h-3.5 w-3.5 transition-transform group-hover:scale-110",
-                      hasLiked && "fill-rose-500 text-rose-500"
+                      hasLiked && "fill-red-500 text-red-500"
                     )}
                   />
                 )}
@@ -544,7 +544,7 @@ export function InlineWikiArticlePreview({
         {/* Open in Wiki Link */}
         <Link
           href={wikiHref}
-          className="inline-flex items-center gap-1 rounded-full bg-teal-500/10 px-3 py-1 text-xs font-semibold text-teal-600 transition-all duration-150 hover:bg-teal-500/20 hover:text-teal-700 active:scale-95 dark:text-teal-400 dark:hover:text-teal-300"
+          className="inline-flex items-center gap-1 rounded-full bg-wiki/10 px-3 py-1 text-xs font-semibold text-wiki transition-all duration-150 hover:bg-wiki/20 hover:text-wiki-hover active:scale-95"
         >
           <span>Open in Wiki</span>
           <ExternalLink className="h-3 w-3" />

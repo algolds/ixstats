@@ -272,7 +272,7 @@ export function OnomaAdminPanel() {
                             healthData.fastapi === "up"
                               ? "text-emerald-400"
                               : healthData.fastapi === "down"
-                                ? "text-rose-400"
+                                ? "text-red-400"
                                 : "text-muted-foreground"
                           }
                         >
@@ -288,7 +288,7 @@ export function OnomaAdminPanel() {
                             healthData.web === "up"
                               ? "text-emerald-400"
                               : healthData.web === "down"
-                                ? "text-rose-400"
+                                ? "text-red-400"
                                 : "text-muted-foreground"
                           }
                         >

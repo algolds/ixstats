@@ -435,7 +435,7 @@ export function generateVersionMatrixMarkdown(): string {
     `<!-- BEGIN_DOCS:VERSION_MATRIX -->`,
     `| Capability Domain | Component / Layer | Version / Release | Channel / Granularity |`,
     `| :--- | :--- | :---: | :--- |`,
-    `| **Platform** | **IxStates (Ogma)** | **${p.major}.${p.minor}.${p.patch} "${p.release}"** | **${p.channel}** |`,
+    `| **Platform** | **IxStates (${p.release})** | **${p.major}.${p.minor}.${p.patch} "${p.release}"** | **${p.channel}** |`,
     `| **Apps** | IxWorld | v${a.ixworld} | Standalone & Embedded Maps Engine |`,
     `| | WikiOS | v${a.wikios} | Headless Wiki & Canvas Architecture |`,
     `| | IxVault | v${a.ixvault} | Cards, Credits & Marketplace |`,

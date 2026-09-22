@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import {
@@ -16,11 +16,32 @@ import { Button } from "~/components/ui/button";
 
 interface MatchCommentaryProps {
   matchId: string;
+  autoExpand?: boolean;
+  className?: string;
 }
 
-export function MatchCommentary({ matchId }: MatchCommentaryProps) {
+interface MatchEvaluation {
+  winProbability?: number;
+  dominance?: number;
+  tempo?: number;
+  volatility?: number;
+  homeExpectedGoals?: number;
+  awayExpectedGoals?: number;
+}
+
+export function MatchCommentary({
+  matchId,
+  autoExpand = false,
+  className,
+}: MatchCommentaryProps) {
+  const [isExpanded, setIsExpanded] = useState(autoExpand);
+  const [configOpen, setConfigOpen] = useState(false);
+
   const utils = api.useUtils();
-  const { data: match, isLoading, error } = api.sports.getMatchDetails.useQuery({ matchId });
+  const { data: match, isLoading, error } = api.sports.getMatchDetails.useQuery(
+    { matchId },
+    { enabled: !!matchId }
+  );
 
   const generateCommentaryMutation = api.sports.generateMatchCommentary.useMutation({
     onSuccess: () => {
@@ -42,22 +63,32 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
 
   if (error || !match) {
     return (
-      <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 py-6 text-center text-xs text-rose-400">
+      <div className="rounded-2xl border border-red-500/20 bg-red-500/5 py-6 text-center text-xs text-red-400">
         Failed to load match commentary: {error?.message ?? "Match details not found"}
       </div>
     );
   }
 
-  const evaluation = (match as any).evaluation as Record<string, any> | null;
-  const trace = (match as any).trace as Array<Record<string, any>> | null;
-  const commentary = (match as any).commentary as string[] | null;
+  const evaluation = (match.matchStats as MatchEvaluation | null) ?? null;
+  const trace = (Array.isArray(match.trace) ? match.trace : null) as Array<{
+    t: number;
+    type: string;
+    description: string;
+  }> | null;
+  const commentary = (Array.isArray(match.commentary) ? match.commentary : null) as string[] | null;
 
   const hasCommentary = commentary && commentary.length > 0;
   const isGenerating = generateCommentaryMutation.isPending;
 
   const handleGenerate = async (e: React.MouseEvent, force = false) => {
     e.stopPropagation();
-    let config: any = undefined;
+    let config: {
+      provider?: "openai" | "anthropic" | "custom" | "server";
+      apiKey?: string;
+      apiUrl?: string;
+      modelName?: string;
+      temperature?: number;
+    } | undefined = undefined;
     try {
       const saved = localStorage.getItem("ixstats:sports:ai-config");
       if (saved) {
@@ -78,9 +109,6 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
 
   return (
     <div className="relative mt-3 space-y-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-left shadow-2xl backdrop-blur-md transition-all duration-300">
-      {/* Background radial accent */}
-      <div className="pointer-events-none absolute -top-20 -left-20 h-40 w-40 rounded-full bg-cyan-500/5 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 -bottom-20 h-40 w-40 rounded-full bg-purple-500/5 blur-3xl" />
 
       {/* Volatility & Volumetric metrics */}
       {evaluation && (
@@ -153,7 +181,7 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
               </div>
             ) : !hasCommentary ? (
               <div className="group relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-black/10 p-4 py-8 text-center">
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-cyan-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <Sparkles className="mb-2.5 h-7 w-7 text-cyan-400 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12" />
                 <h4 className="text-xs font-bold text-white">No AI Commentary Generated</h4>
                 <p className="mt-1 mb-4 max-w-[280px] text-[10px] text-white/50">
@@ -178,7 +206,7 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
                   iconColor = "text-amber-300 border-amber-500/30 bg-amber-500/15";
                 } else if (step.type === "card") {
                   Icon = AlertTriangle;
-                  iconColor = "text-rose-400 border-rose-500/30 bg-rose-500/15";
+                  iconColor = "text-red-400 border-red-500/30 bg-red-500/15";
                 } else if (step.type === "tactic_shift") {
                   Icon = TrendingUp;
                   iconColor = "text-cyan-300 border-cyan-500/30 bg-cyan-500/15";

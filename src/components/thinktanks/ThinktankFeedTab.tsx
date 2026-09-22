@@ -127,7 +127,7 @@ export function ThinktankFeedTab({
             {allowPersonaPosting && accounts.length > 0 && (
               <div className="border-border/30 flex flex-wrap items-center gap-1.5 border-b pb-2">
                 <span className="text-muted-foreground mr-1 flex items-center gap-1 text-[11px] font-semibold">
-                  <Group className="h-3 w-3 text-purple-500" /> Post as:
+                  <Group className="h-3 w-3 text-blue-500" /> Post as:
                 </span>
                 {accounts.map((acc: any) => {
                   const isSelected = (selectedAccountId || accounts[0]?.id) === acc.id;
@@ -327,7 +327,7 @@ export function ThinktankFeedTab({
                           {showPersonaBadge && (
                             <Badge
                               variant="outline"
-                              className="border-purple-500/30 bg-purple-500/10 text-[9px] font-semibold text-purple-600 dark:text-purple-400"
+                              className="border-blue-500/30 bg-blue-500/10 text-[9px] font-semibold text-blue-600 dark:text-blue-400"
                             >
                               {personaAccount.accountType}
                             </Badge>

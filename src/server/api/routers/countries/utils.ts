@@ -22,34 +22,19 @@ export {
   getCountryComponentsStatsData,
 } from "~/server/shared/country-helpers";
 
-// Helper function to safely include relations that may not exist
-let _cachedRelations: Record<string, boolean> | null = null;
+// Static relation inclusion definition (PostgreSQL schema is consolidated)
+const STATIC_RELATIONS: Record<string, boolean> = {
+  economicProfile: true,
+  laborMarket: true,
+  fiscalSystem: true,
+  incomeDistribution: true,
+  governmentBudget: true,
+  demographics: true,
+  nationalIdentity: true,
+};
 
-export const safelyIncludeRelations = async (db: any) => {
-  if (_cachedRelations !== null) return _cachedRelations;
-
-  const availableRelations: Record<string, boolean> = {};
-  const modelNames = [
-    "economicProfile",
-    "laborMarket",
-    "fiscalSystem",
-    "incomeDistribution",
-    "governmentBudget",
-    "demographics",
-    "nationalIdentity",
-  ];
-
-  for (const name of modelNames) {
-    try {
-      await (db as any)[name].findFirst({ take: 1 });
-      availableRelations[name] = true;
-    } catch {
-      availableRelations[name] = false;
-    }
-  }
-
-  _cachedRelations = availableRelations;
-  return availableRelations;
+export const safelyIncludeRelations = async (_db?: any) => {
+  return STATIC_RELATIONS;
 };
 
 // Economic data schema with all optional fields

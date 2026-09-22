@@ -8,8 +8,15 @@ import type { LaborBounds } from "../utils/laborCalculations";
 
 interface EmploymentSectionProps {
   laborMarket: LaborConfiguration;
-  onChange: (field: keyof LaborConfiguration, value: any) => void;
-  onNestedChange: (parentField: keyof LaborConfiguration, field: string, value: any) => void;
+  onChange: <K extends keyof LaborConfiguration>(
+    field: K,
+    value: LaborConfiguration[K]
+  ) => void;
+  onNestedChange: (
+    parentField: keyof LaborConfiguration,
+    field: string,
+    value: number | string | boolean
+  ) => void;
   showAdvanced: boolean;
   componentBounds?: LaborBounds;
 }

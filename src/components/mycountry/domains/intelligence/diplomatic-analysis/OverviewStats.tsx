@@ -28,7 +28,7 @@ export const OverviewStats = React.memo<OverviewStatsProps>(({ stats }) => {
               <p className="text-muted-foreground text-sm">Active Relationships</p>
               <p className="text-3xl font-bold">{stats.relationshipsCount}</p>
             </div>
-            <Globe className="h-8 w-8 text-blue-600" />
+            <Globe className="h-8 w-8 text-cyan-600 dark:text-cyan-400" />
           </div>
         </CardContent>
       </Card>
@@ -40,7 +40,7 @@ export const OverviewStats = React.memo<OverviewStatsProps>(({ stats }) => {
               <p className="text-muted-foreground text-sm">Avg. Strength</p>
               <p className="text-3xl font-bold">{stats.avgStrength}</p>
             </div>
-            <TrendingUp className="h-8 w-8 text-green-600" />
+            <TrendingUp className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
           </div>
         </CardContent>
       </Card>
@@ -52,7 +52,7 @@ export const OverviewStats = React.memo<OverviewStatsProps>(({ stats }) => {
               <p className="text-muted-foreground text-sm">Active Embassies</p>
               <p className="text-3xl font-bold">{stats.embassiesCount}</p>
             </div>
-            <Network className="h-8 w-8 text-purple-600" />
+            <Network className="h-8 w-8 text-cyan-600 dark:text-cyan-400" />
           </div>
         </CardContent>
       </Card>
@@ -64,7 +64,7 @@ export const OverviewStats = React.memo<OverviewStatsProps>(({ stats }) => {
               <p className="text-muted-foreground text-sm">Recent Activity</p>
               <p className="text-3xl font-bold">{stats.recentActivityCount}</p>
             </div>
-            <Calendar className="h-8 w-8 text-orange-600" />
+            <Calendar className="h-8 w-8 text-amber-600 dark:text-amber-400" />
           </div>
         </CardContent>
       </Card>

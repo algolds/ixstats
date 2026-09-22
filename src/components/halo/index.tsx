@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
+import { stripBasePath } from "~/lib/base-path";
 import { motion, AnimatePresence, type PanInfo } from "motion/react";
 import {
   DynamicIsland,
@@ -256,87 +257,6 @@ function CommandPaletteContent({
     };
   }, [activeIsSticky, isUserInteracting, isCollapsed, activePlugin?.id]);
 
-  // Track manual close state to prevent unwanted auto-expansion
-  const wasManuallyClosedRef = useRef(true); // Start compact on mount
-
-  // Reset manual close when the URL (section/step) changes
-  const lastUrlRef = useRef("");
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const currentUrl = window.location.pathname + window.location.search;
-      if (lastUrlRef.current && currentUrl !== lastUrlRef.current) {
-        wasManuallyClosedRef.current = false;
-      }
-      lastUrlRef.current = currentUrl;
-    }
-  }, [diPathname, activePlugin]);
-
-  // Reset manual close flag when builder plugin view is manually expanded
-  useEffect(() => {
-    if (activePlugin?.id === "builder" && mode === "plugin:builder") {
-      wasManuallyClosedRef.current = false;
-    }
-  }, [mode, activePlugin]);
-
-  // Set manual close flag when leaving builder plugin mode
-  const prevModeRef = useRef(mode);
-  useEffect(() => {
-    if (activePlugin?.id === "builder") {
-      if (
-        prevModeRef.current === "plugin:builder" &&
-        (mode === "compact" ||
-          mode === "search" ||
-          mode === "settings" ||
-          mode === "notifications" ||
-          mode === "mycountry")
-      ) {
-        wasManuallyClosedRef.current = true;
-      }
-    }
-    prevModeRef.current = mode;
-  }, [mode, activePlugin]);
-
-  // Scroll-based collapse/expand for the builder hero DI
-  const prevIsStickyRef = useRef(activeIsSticky);
-  useEffect(() => {
-    if (activePlugin?.id === "builder") {
-      const selectedTemplate =
-        activePlugin.filter && typeof activePlugin.filter === "object"
-          ? (activePlugin.filter as Record<string, unknown>).selectedTemplate
-          : undefined;
-
-      if (activeIsSticky && !prevIsStickyRef.current && isExpanded) {
-        switchMode("compact");
-      } else if (!activeIsSticky && prevIsStickyRef.current && !isExpanded) {
-        if (!wasManuallyClosedRef.current && !selectedTemplate) {
-          switchMode("plugin:builder");
-        }
-      }
-    }
-    prevIsStickyRef.current = activeIsSticky;
-  }, [activeIsSticky, activePlugin, isExpanded, switchMode]);
-
-  // Trigger-based expansion (e.g. on country select, or welcome modal close)
-  const lastProcessedTriggerRef = useRef(0);
-  useEffect(() => {
-    if (activePlugin?.id === "builder") {
-      const pluginTrigger =
-        activePlugin.filter && typeof activePlugin.filter === "object"
-          ? (activePlugin.filter as Record<string, unknown>).diExpansionTrigger
-          : undefined;
-
-      if (typeof pluginTrigger === "number") {
-        if (pluginTrigger > lastProcessedTriggerRef.current) {
-          lastProcessedTriggerRef.current = pluginTrigger;
-          wasManuallyClosedRef.current = false; // Reset on trigger expansion
-          switchMode("plugin:builder");
-        } else if (pluginTrigger < lastProcessedTriggerRef.current) {
-          lastProcessedTriggerRef.current = pluginTrigger;
-        }
-      }
-    }
-  }, [activePlugin, switchMode]);
-
   // Ring + bump animation on any new toast
   const [ringActive, setRingActive] = useState(false);
   const toastQueue = useToastQueueStore((s) => s.queue);
@@ -490,9 +410,10 @@ function CommandPaletteContent({
 
 export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteProps) {
   const pathname = usePathname();
+  const normalizedPath = stripBasePath(pathname || "/");
 
-  // On /maps pages, the MapDynamicIsland provides a dedicated map-specific DI
-  if (pathname?.startsWith("/maps")) return null;
+  // On /maps pages, the MapDynamicIsland provides a dedicated map-specific DI.
+  if (normalizedPath.startsWith("/maps")) return null;
 
   return (
     <HaloTourProvider>

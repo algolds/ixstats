@@ -1,4 +1,13 @@
-export type AccentColor = "emerald" | "cyan" | "amber" | "purple" | "rose" | "teal";
+export type AccentColor =
+  | "emerald"
+  | "cyan"
+  | "amber"
+  | "indigo"
+  | "red"
+  | "blue"
+  | "purple"
+  | "rose"
+  | "teal";
 
 export interface CustomSector {
   id: string;
@@ -13,39 +22,39 @@ export interface CustomSector {
   defaultShare: number;
 }
 
-export const DEFAULT_SECTORS: CustomSector[] = [
+export const CORE_SECTORS: CustomSector[] = [
   {
-    id: "sec-hitech",
-    key: "hitech",
-    label: "High-Tech & Semiconductors",
-    shortLabel: "High-Tech",
-    defaultTariff: 2.5,
+    id: "sec-tech",
+    key: "technology",
+    label: "High-Tech & Advanced Electronics",
+    shortLabel: "Tech & Semi",
+    defaultTariff: 2.0,
     min: 0,
-    max: 30,
+    max: 50,
     step: 0.5,
-    accent: "emerald",
-    defaultShare: 35.4,
+    accent: "cyan",
+    defaultShare: 32.5,
   },
   {
-    id: "sec-machinery",
-    key: "machinery",
-    label: "Industrial Machinery & Capital Goods",
+    id: "sec-heavy",
+    key: "heavy-machinery",
+    label: "Industrial Machinery & Automotive",
     shortLabel: "Machinery",
     defaultTariff: 4.0,
     min: 0,
-    max: 35,
+    max: 50,
     step: 0.5,
-    accent: "cyan",
-    defaultShare: 28.2,
+    accent: "emerald",
+    defaultShare: 31.1,
   },
   {
-    id: "sec-energy",
-    key: "energy",
-    label: "Energy & Mineral Resources",
-    shortLabel: "Energy",
-    defaultTariff: 3.0,
+    id: "sec-raw",
+    key: "raw-materials",
+    label: "Raw Materials & Natural Resources",
+    shortLabel: "Raw Mining",
+    defaultTariff: 1.5,
     min: 0,
-    max: 40,
+    max: 50,
     step: 0.5,
     accent: "amber",
     defaultShare: 21.8,
@@ -59,43 +68,66 @@ export const DEFAULT_SECTORS: CustomSector[] = [
     min: 0,
     max: 50,
     step: 0.5,
-    accent: "purple",
+    accent: "indigo",
     defaultShare: 14.6,
   },
 ];
+
+export const DEFAULT_SECTORS = CORE_SECTORS;
 
 export const ACCENT_BORDER: Record<AccentColor, string> = {
   emerald: "border-emerald-500/30",
   cyan: "border-cyan-500/30",
   amber: "border-amber-500/30",
-  purple: "border-purple-500/30",
-  rose: "border-rose-500/30",
-  teal: "border-teal-500/30",
+  indigo: "border-indigo-500/30",
+  red: "border-red-500/30",
+  blue: "border-blue-500/30",
+  purple: "border-indigo-500/30",
+  rose: "border-red-500/30",
+  teal: "border-cyan-500/30",
 };
 
 export const ACCENT_BG: Record<AccentColor, string> = {
   emerald: "bg-emerald-500",
   cyan: "bg-cyan-500",
   amber: "bg-amber-500",
-  purple: "bg-purple-500",
-  rose: "bg-rose-500",
-  teal: "bg-teal-500",
+  indigo: "bg-indigo-500",
+  red: "bg-red-500",
+  blue: "bg-blue-500",
+  purple: "bg-indigo-500",
+  rose: "bg-red-500",
+  teal: "bg-cyan-500",
 };
 
 export const ACCENT_TEXT: Record<AccentColor, string> = {
   emerald: "text-emerald-400",
   cyan: "text-cyan-400",
   amber: "text-amber-400",
-  purple: "text-purple-400",
-  rose: "text-rose-400",
-  teal: "text-teal-400",
+  indigo: "text-indigo-400",
+  red: "text-red-400",
+  blue: "text-blue-400",
+  purple: "text-indigo-400",
+  rose: "text-red-400",
+  teal: "text-cyan-400",
 };
 
-export function formatCompact(num: number): string {
-  if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
-  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-  return (num ?? 0).toLocaleString();
+import { formatCompact } from "~/lib/format/compact";
+
+export { formatCompact };
+
+interface RawSectorItem {
+  id?: string;
+  key?: string;
+  name?: string;
+  label?: string;
+  shortName?: string;
+  shortLabel?: string;
+  percentage?: number;
+  gdpContribution?: number;
+  defaultShare?: number;
+  tariffRate?: number;
+  defaultTariff?: number;
+  accent?: AccentColor;
 }
 
 export function parseSectorBreakdownJson(raw: string | null | undefined): CustomSector[] | null {
@@ -103,8 +135,8 @@ export function parseSectorBreakdownJson(raw: string | null | undefined): Custom
   try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      const accents: AccentColor[] = ["emerald", "cyan", "amber", "purple", "rose", "teal"];
-      return parsed.map((item: any, idx: number) => {
+      const accents: AccentColor[] = ["emerald", "cyan", "amber", "indigo", "red", "blue"];
+      return (parsed as RawSectorItem[]).map((item, idx) => {
         const label = item.name ?? item.label ?? `Sector ${idx + 1}`;
         const shortLabel = item.shortName ?? item.shortLabel ?? label.slice(0, 12);
         const defaultShare = item.percentage ?? item.gdpContribution ?? item.defaultShare ?? 25;

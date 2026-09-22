@@ -59,9 +59,17 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
   const {
     data: relations,
-    isLoading,
+    isLoading: isLoadingRelations,
     error,
   } = api.diplomaticCore.getRelationships.useQuery({ countryId }, { enabled: !!countryId });
+
+  const { data: rawEmbassies, isLoading: isLoadingEmbassies } =
+    api.diplomaticEmbassies.getEmbassies.useQuery({ countryId }, { enabled: !!countryId });
+
+  const { data: alliances } = api.diplomaticPolicies.getAlliances.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
 
   const utils = api.useUtils();
   const setGoalMutation = api.diplomaticCore.setDiplomaticGoal.useMutation({
@@ -70,12 +78,55 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
     },
   });
 
-  useScrollToFocus(focusId, [relations]);
+  const allRelations = React.useMemo(() => {
+    const list: any[] = [...(relations ?? [])];
+    const seenIds = new Set<string>();
+    list.forEach((r) => {
+      if (r.targetCountryId) seenIds.add(r.targetCountryId.toLowerCase());
+      if (r.targetCountry) seenIds.add(r.targetCountry.toLowerCase());
+      if (r.targetCountryName) seenIds.add(r.targetCountryName.toLowerCase());
+    });
+
+    (rawEmbassies ?? []).forEach((e: any) => {
+      const partnerId = e.guestCountryId === countryId ? e.hostCountryId : e.guestCountryId;
+      const partnerName =
+        e.country ?? (e.guestCountryId === countryId ? e.hostCountry : e.guestCountry) ?? "Partner Nation";
+      const partnerFlag =
+        e.countryFlag ?? (e.guestCountryId === countryId ? e.hostCountryFlag : e.guestCountryFlag);
+
+      if (
+        (partnerId && !seenIds.has(partnerId.toLowerCase())) ||
+        (partnerName && !seenIds.has(partnerName.toLowerCase()))
+      ) {
+        if (partnerId) seenIds.add(partnerId.toLowerCase());
+        if (partnerName) seenIds.add(partnerName.toLowerCase());
+
+        list.push({
+          id: `embassy-rel-${e.id}`,
+          targetCountryId: partnerId,
+          targetCountryName: partnerName,
+          targetCountryFlag: partnerFlag,
+          relationship: e.status === "ACTIVE" ? "FRIENDLY" : "NEUTRAL",
+          strength: e.relationshipStrength ?? e.strength ?? 65,
+          establishedAt: e.establishedAt,
+          tradeVolume: e.tradeVolume ?? (e.economicBonus ? e.economicBonus * 1_000_000_000 : 0),
+          goalSelf: null,
+          goalTarget: null,
+          isEmbassyDerived: true,
+        });
+      }
+    });
+
+    return list;
+  }, [relations, rawEmbassies, countryId]);
+
+  useScrollToFocus(focusId, [allRelations]);
 
   const handleGoalChange = (
     relationId: string,
     goal: "ALLY" | "COEXIST" | "HEGEMONY" | "RIVAL"
   ) => {
+    if (relationId.startsWith("embassy-rel-")) return;
     setGoalMutation.mutate({ relationId, goal });
   };
 
@@ -95,6 +146,8 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
       year: "numeric",
     });
   };
+
+  const isLoading = isLoadingRelations || isLoadingEmbassies;
 
   if (isLoading) {
     return (
@@ -119,7 +172,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
     );
   }
 
-  if (!relations || relations.length === 0) {
+  if (allRelations.length === 0) {
     return (
       <div className="border-border/40 bg-muted/20 flex min-h-[200px] flex-col items-center justify-center rounded-lg border border-dashed p-6 text-center">
         <Globe className="text-muted-foreground/40 mb-3 h-10 w-10" />
@@ -134,10 +187,19 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {relations.map((rel) => {
+      {allRelations.map((rel) => {
         const statusKey = (rel.relationship || "neutral").toLowerCase();
         const theme = STATUS_THEMES[statusKey] || STATUS_THEMES.neutral;
         const targetName = rel.targetCountryName || rel.targetCountry || "Unknown Nation";
+
+        // Check if nation shares a Bloc / Alliance
+        const sharedBloc = (alliances ?? []).find((a: any) =>
+          a.members?.some(
+            (m: any) =>
+              m.country?.name?.toLowerCase() === targetName.toLowerCase() ||
+              m.countryId === rel.targetCountryId
+          )
+        );
 
         return (
           <div
@@ -162,6 +224,12 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
                   <p className="text-muted-foreground text-[10px]">
                     Established: {formatDate(rel.establishedAt)}
                   </p>
+                  {sharedBloc && (
+                    <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-cyan-400 mt-0.5" title={`Shares alliance membership in ${sharedBloc.name}`}>
+                      <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                      In Bloc ({sharedBloc.name})
+                    </span>
+                  )}
                 </div>
               </div>
 

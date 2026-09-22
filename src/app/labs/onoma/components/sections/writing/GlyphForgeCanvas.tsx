@@ -60,15 +60,15 @@ const INK_PRESETS: Record<
   },
   ruby: {
     label: "Ruby",
-    stroke: "#f43f5e",
-    glow: "rgba(244, 63, 94, 0.3)",
-    bg: "bg-rose-500",
+    stroke: "#ef4444",
+    glow: "rgba(239, 68, 68, 0.3)",
+    bg: "bg-red-500",
   },
   violet: {
-    label: "Violet",
-    stroke: "#a855f7",
-    glow: "rgba(168, 85, 247, 0.3)",
-    bg: "bg-purple-500",
+    label: "Cyan",
+    stroke: "#06b6d4",
+    glow: "rgba(6, 182, 212, 0.3)",
+    bg: "bg-cyan-500",
   },
 };
 
@@ -401,7 +401,7 @@ export function GlyphForgeCanvas({
               onClick={handleClear}
               disabled={strokes.length === 0 && !currentStroke}
               title="Clear Canvas"
-              className="text-muted-foreground flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-md transition-all hover:bg-rose-500/10 hover:text-rose-500 active:scale-90 disabled:opacity-25"
+              className="text-muted-foreground flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-md transition-all hover:bg-red-500/10 hover:text-red-500 active:scale-90 disabled:opacity-25"
             >
               <RotateCcw className="h-3 w-3" />
             </button>

@@ -54,9 +54,9 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-card rounded-lg border p-3"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="mb-2 flex items-center gap-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
                       <Badge className={getSeverityColor(event.severity)}>
                         {event.severity.toUpperCase()}
                       </Badge>
@@ -64,7 +64,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                     </div>
                     <p className="text-muted-foreground mb-3 text-sm">{event.description}</p>
 
-                    <div className="grid grid-cols-3 gap-3 text-xs">
+                    <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
                       {event.casualties > 0 && (
                         <div>
                           <span className="text-muted-foreground">Casualties:</span>
@@ -102,6 +102,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                   <Button
                     size="sm"
                     variant="outline"
+                    className="shrink-0 self-start"
                     onClick={() =>
                       resolveEvent.mutate({
                         id: event.id,

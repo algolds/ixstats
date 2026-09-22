@@ -1,943 +1,485 @@
 /* ==========================================================================
-   TYPOGRAPHY ENGINE — @FONT-FACE WEBFONTS, OPTICAL SCALES & PROSE TYPESETTING
+   IxStates Typography System — National, Modernist Swiss, WikiOS & Onoma
+   Calibrated with Optical x-Height, Cap-Height & Baseline Overrides
    ========================================================================== */
 
-/* ─── 1. Webfont @font-face Declarations ───────────────────────────────── */
-
-/* ===================================
-   EUROSTILE FONT FAMILY DECLARATIONS
-   =================================== */
-
-/* --- Eurostile (Standard) --- */
+/* --- 1. National (Klim Type Foundry / Kris Sowersby) --- */
 @font-face {
-  font-family: "Eurostile";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile.otf") format("opentype");
+  font-family: "National";
+  src: url("/fonts/National-Book.otf") format("opentype");
+  font-weight: 350;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "National";
+  src: url("/fonts/National-BookItalic.otf") format("opentype");
+  font-weight: 350;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "National";
+  src: url("/fonts/National-Regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "Eurostile";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Regular_Oblique.otf")
-    format("opentype");
+  font-family: "National";
+  src: url("/fonts/National-RegularItalic.otf") format("opentype");
   font-weight: 400;
   font-style: italic;
   font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "Eurostile";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Medium.otf") format("opentype");
+  font-family: "National";
+  src: url("/fonts/National-Medium.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "Eurostile";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Medium_Italic.otf") format("opentype");
+  font-family: "National";
+  src: url("/fonts/National-MediumItalic.otf") format("opentype");
   font-weight: 500;
   font-style: italic;
   font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "Eurostile";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Bold.otf") format("opentype");
+  font-family: "National";
+  src: url("/fonts/National-Semibold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "National";
+  src: url("/fonts/National-SemiboldItalic.otf") format("opentype");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "National";
+  src: url("/fonts/National-Bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "Eurostile";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Bold_Oblique.otf") format("opentype");
+  font-family: "National";
+  src: url("/fonts/National-BoldItalic.otf") format("opentype");
   font-weight: 700;
   font-style: italic;
   font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "Eurostile";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Heavy.otf") format("opentype");
+  font-family: "National";
+  src: url("/fonts/National-Extrabold.otf") format("opentype");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "Eurostile";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Heavy_Italic.otf") format("opentype");
+  font-family: "National";
+  src: url("/fonts/National-ExtraboldItalic.otf") format("opentype");
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
 }
 
+/* --- 2. Neutraface 2 / NeutraText (House Industries) --- */
 @font-face {
-  font-family: "Eurostile";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Black.otf") format("opentype");
-  font-weight: 900;
+  font-family: "Neutraface 2";
+  src: url("/fonts/Neutra2Display-Medium.otf") format("opentype");
+  font-weight: 500;
   font-style: normal;
   font-display: swap;
+  size-adjust: 96%;
+  ascent-override: 92%;
+  descent-override: 24%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "Eurostile";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Black_Italic.otf") format("opentype");
-  font-weight: 900;
-  font-style: italic;
-  font-display: swap;
-}
-
-/* --- Eurostile Condensed --- */
-@font-face {
-  font-family: "Eurostile Condensed";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Cond.otf") format("opentype");
-  font-weight: 400;
+  font-family: "Neutraface 2";
+  src: url("/fonts/Neutra2Display-Bold.otf") format("opentype");
+  font-weight: 700;
   font-style: normal;
   font-display: swap;
+  size-adjust: 96%;
+  ascent-override: 92%;
+  descent-override: 24%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "Eurostile Condensed";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Cond_Regular_Italic.otf")
-    format("opentype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Eurostile Condensed";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Cond_Heavy.otf") format("opentype");
+  font-family: "Neutraface 2";
+  src: url("/fonts/Neutra2Cond-Bold.otf") format("opentype");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  size-adjust: 96%;
+  ascent-override: 92%;
+  descent-override: 24%;
+  line-gap-override: 0%;
 }
 
+/* --- 3. DINPro (FontFont / German Industrial Standard) --- */
 @font-face {
-  font-family: "Eurostile Condensed";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Cond_Heavy_Italic.otf")
-    format("opentype");
-  font-weight: 800;
-  font-style: italic;
-  font-display: swap;
-}
-
-/* --- Eurostile Extended --- */
-@font-face {
-  font-family: "Eurostile Extended";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Extd.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Eurostile Extended";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Extd_Regular_Italic.otf")
-    format("opentype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Eurostile Extended";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Extd_Medium.otf") format("opentype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Eurostile Extended";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Extd_Black.otf") format("opentype");
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Eurostile Extended";
-  src: url("/fonts/Eurostile/fonnts.com-Eurostile_Extd_Black_Italic.otf")
-    format("opentype");
-  font-weight: 900;
-  font-style: italic;
-  font-display: swap;
-}
-
-/* ===================================
-   HOST GROTESK FONT FAMILY (WikiOS)
-   =================================== */
-
-@font-face {
-  font-family: "Host Grotesk";
-  src:
-    url("/fonts/HostGrotesk/HostGrotesk[wght].ttf") format("truetype-variations"),
-    url("/fonts/HostGrotesk/HostGrotesk[wght].ttf") format("truetype");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Host Grotesk";
-  src:
-    url("/fonts/HostGrotesk/HostGrotesk-Italic[wght].ttf") format("truetype-variations"),
-    url("/fonts/HostGrotesk/HostGrotesk-Italic[wght].ttf") format("truetype");
-  font-weight: 100 900;
-  font-style: italic;
-  font-display: swap;
-}
-
-
-/* ===================================
-   SANGBLEU FONT FAMILY DECLARATIONS
-   =================================== */
-
-@font-face {
-  font-family: "SangBleu Empire";
-  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Black.otf") format("opentype");
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Empire";
-  src: url("/fonts/SangBleu/SangBleuEmpireTrial-BlackItalic.otf") format("opentype");
-  font-weight: 900;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Empire";
-  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Bold.otf") format("opentype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Empire";
-  src: url("/fonts/SangBleu/SangBleuEmpireTrial-BoldItalic.otf") format("opentype");
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Empire";
-  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Medium.otf") format("opentype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Empire";
-  src: url("/fonts/SangBleu/SangBleuEmpireTrial-MediumItalic.otf") format("opentype");
-  font-weight: 500;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Empire";
-  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Regular.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Empire";
-  src: url("/fonts/SangBleu/SangBleuEmpireTrial-RegularItalic.otf") format("opentype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Kingdom";
-  src: url("/fonts/SangBleu/SangBleuKingdomTrial-Air.otf") format("opentype");
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Kingdom";
-  src: url("/fonts/SangBleu/SangBleuKingdomTrial-AirItalic.otf") format("opentype");
-  font-weight: 200;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Kingdom";
-  src: url("/fonts/SangBleu/SangBleuKingdomTrial-Bold.otf") format("opentype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Kingdom";
-  src: url("/fonts/SangBleu/SangBleuKingdomTrial-BoldItalic.otf") format("opentype");
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Kingdom";
-  src: url("/fonts/SangBleu/SangBleuKingdomTrial-Light.otf") format("opentype");
+  font-family: "DINPro";
+  src: url("/fonts/DINPro-Light.otf") format("opentype");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
+  size-adjust: 90%;
+  ascent-override: 88%;
+  descent-override: 22%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "SangBleu Kingdom";
-  src: url("/fonts/SangBleu/SangBleuKingdomTrial-LightItalic.otf") format("opentype");
-  font-weight: 300;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Kingdom";
-  src: url("/fonts/SangBleu/SangBleuKingdomTrial-Medium.otf") format("opentype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Kingdom";
-  src: url("/fonts/SangBleu/SangBleuKingdomTrial-MediumItalic.otf") format("opentype");
-  font-weight: 500;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Kingdom";
-  src: url("/fonts/SangBleu/SangBleuKingdomTrial-Regular.otf") format("opentype");
+  font-family: "DINPro";
+  src: url("/fonts/DINPro-Regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  size-adjust: 90%;
+  ascent-override: 88%;
+  descent-override: 22%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "SangBleu Kingdom";
-  src: url("/fonts/SangBleu/SangBleuKingdomTrial-RegularItalic.otf") format("opentype");
-  font-weight: 400;
-  font-style: italic;
+  font-family: "DINPro";
+  src: url("/fonts/DINPro-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
   font-display: swap;
+  size-adjust: 90%;
+  ascent-override: 88%;
+  descent-override: 22%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "SangBleu Republic";
-  src: url("/fonts/SangBleu/SangBleuRepublicTrial-Bold.otf") format("opentype");
+  font-family: "DINPro";
+  src: url("/fonts/DINPro-Bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  size-adjust: 90%;
+  ascent-override: 88%;
+  descent-override: 22%;
+  line-gap-override: 0%;
 }
 
+/* --- 4. Akzidenz-Grotesk (Berthold Foundry) --- */
 @font-face {
-  font-family: "SangBleu Republic";
-  src: url("/fonts/SangBleu/SangBleuRepublicTrial-BoldItalic.otf") format("opentype");
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Republic";
-  src: url("/fonts/SangBleu/SangBleuRepublicTrial-Book.otf") format("opentype");
+  font-family: "Akzidenz-Grotesk";
+  src: url("/fonts/AkzidGroStdReg.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  size-adjust: 96%;
+  ascent-override: 92%;
+  descent-override: 24%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "SangBleu Republic";
-  src: url("/fonts/SangBleu/SangBleuRepublicTrial-BookItalic.otf") format("opentype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Republic";
-  src: url("/fonts/SangBleu/SangBleuRepublicTrial-Medium.otf") format("opentype");
+  font-family: "Akzidenz-Grotesk";
+  src: url("/fonts/AkzidGroStdMed.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  size-adjust: 96%;
+  ascent-override: 92%;
+  descent-override: 24%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "SangBleu Republic";
-  src: url("/fonts/SangBleu/SangBleuRepublicTrial-MediumItalic.otf") format("opentype");
-  font-weight: 500;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Republic";
-  src: url("/fonts/SangBleu/SangBleuRepublicTrial-Regular.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Republic";
-  src: url("/fonts/SangBleu/SangBleuRepublicTrial-RegularItalic.otf") format("opentype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Sunrise";
-  src: url("/fonts/SangBleu/SangBleuSunriseTrial-Air.otf") format("opentype");
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Sunrise";
-  src: url("/fonts/SangBleu/SangBleuSunriseTrial-AirItalic.otf") format("opentype");
-  font-weight: 200;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Sunrise";
-  src: url("/fonts/SangBleu/SangBleuSunriseTrial-Bold.otf") format("opentype");
+  font-family: "Akzidenz-Grotesk";
+  src: url("/fonts/AkzidGroStdBol.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  size-adjust: 96%;
+  ascent-override: 92%;
+  descent-override: 24%;
+  line-gap-override: 0%;
 }
-
 @font-face {
-  font-family: "SangBleu Sunrise";
-  src: url("/fonts/SangBleu/SangBleuSunriseTrial-BoldItalic.otf") format("opentype");
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Sunrise";
-  src: url("/fonts/SangBleu/SangBleuSunriseTrial-Light.otf") format("opentype");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Sunrise";
-  src: url("/fonts/SangBleu/SangBleuSunriseTrial-LightItalic.otf") format("opentype");
-  font-weight: 300;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Sunrise";
-  src: url("/fonts/SangBleu/SangBleuSunriseTrial-Livre.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Sunrise";
-  src: url("/fonts/SangBleu/SangBleuSunriseTrial-Medium.otf") format("opentype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Sunrise";
-  src: url("/fonts/SangBleu/SangBleuSunriseTrial-MediumItalic.otf") format("opentype");
-  font-weight: 500;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Sunrise";
-  src: url("/fonts/SangBleu/SangBleuSunriseTrial-Regular.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Sunrise";
-  src: url("/fonts/SangBleu/SangBleuSunriseTrial-RegularItalic.otf") format("opentype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Versailles";
-  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-Bold.otf") format("opentype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Versailles";
-  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-BoldItalic.otf") format("opentype");
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Versailles";
-  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-Book.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Versailles";
-  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-BookItalic.otf") format("opentype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Versailles";
-  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-Medium.otf") format("opentype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Versailles";
-  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-MediumItalic.otf") format("opentype");
-  font-weight: 500;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Versailles";
-  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-Regular.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu Versailles";
-  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-RegularItalic.otf") format("opentype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-/* Generic SangBleu Alias */
-@font-face {
-  font-family: "SangBleu";
-  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Bold.otf") format("opentype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu";
-  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Black.otf") format("opentype");
-  font-weight: 800 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SangBleu";
-  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Regular.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-
-/* ─── 2. Prose Styles & Editorial Typesetting ──────────────────────────── */
-
-/* ===================================
-   PROSE STYLES FOR WIKI CONTENT
-   =================================== */
-
-.prose {
-  color: var(--color-text-primary);
-  max-width: 65ch;
-  font-size: 0.875rem;
-  line-height: 1.7142857;
-}
-
-.prose [class~="lead"] {
-  color: var(--color-text-secondary);
-  font-size: 1.125rem;
-  line-height: 1.75;
-}
-
-.prose a {
-  color: var(--color-brand-primary);
-  text-decoration: underline;
-  font-weight: 500;
-}
-
-.prose a:hover {
-  color: var(--color-brand-secondary);
-}
-
-.prose strong {
-  color: var(--color-text-primary);
-  font-weight: 600;
-}
-
-.prose ol {
-  counter-reset: list-counter;
-  margin-top: 1.25em;
-  margin-bottom: 1.25em;
-  padding-left: 1.625em;
-}
-
-.prose ol > li {
-  position: relative;
-  counter-increment: list-counter;
-  padding-left: 1.875em;
-}
-
-.prose ol > li::before {
-  content: counter(list-counter) ".";
-  position: absolute;
-  font-weight: 400;
-  color: var(--color-text-muted);
-}
-
-.prose ul {
-  margin-top: 1.25em;
-  margin-bottom: 1.25em;
-  padding-left: 1.625em;
-}
-
-.prose ul > li {
-  position: relative;
-  padding-left: 1.875em;
-}
-
-.prose ul > li::before {
-  content: "";
-  position: absolute;
-  background-color: var(--color-text-muted);
-  border-radius: 50%;
-  width: 0.375em;
-  height: 0.375em;
-  top: 0.6875em;
-  left: 0.25em;
-}
-
-.prose hr {
-  border-color: var(--color-border-primary);
-  border-top-width: 1px;
-  margin-top: 3em;
-  margin-bottom: 3em;
-}
-
-.prose blockquote {
-  font-weight: 500;
-  font-style: italic;
-  color: var(--color-text-secondary);
-  border-left-width: 0.25rem;
-  border-left-color: var(--color-border-primary);
-  quotes: "\201C""\201D""\2018""\2019";
-  margin-top: 1.6em;
-  margin-bottom: 1.6em;
-  padding-left: 1em;
-}
-
-.prose blockquote p:first-of-type::before {
-  content: open-quote;
-}
-
-.prose blockquote p:last-of-type::after {
-  content: close-quote;
-}
-
-.prose h1 {
-  color: var(--color-text-primary);
+  font-family: "Akzidenz-Grotesk";
+  src: url("/fonts/AkzidGroStdExt.otf") format("opentype");
   font-weight: 800;
-  font-size: 2.25em;
-  margin-top: 0;
-  margin-bottom: 0.8888889em;
-  line-height: 1.1111111;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 96%;
+  ascent-override: 92%;
+  descent-override: 24%;
+  line-gap-override: 0%;
 }
 
-.prose h2 {
-  color: var(--color-text-primary);
+/* --- 5. Schibsted Grotesk --- */
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Schibsted Grotesk-500.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Schibsted Grotesk-600.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Schibsted Grotesk-700.ttf") format("truetype");
   font-weight: 700;
-  font-size: 1.5em;
-  margin-top: 2em;
-  margin-bottom: 1em;
-  line-height: 1.3333333;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
 }
 
-.prose h3 {
-  color: var(--color-text-primary);
-  font-weight: 600;
-  font-size: 1.25em;
-  margin-top: 1.6em;
-  margin-bottom: 0.6em;
-  line-height: 1.6;
-}
-
-.prose h4 {
-  color: var(--color-text-primary);
-  font-weight: 600;
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
-  line-height: 1.5;
-}
-
-.prose figure figcaption {
-  color: var(--color-text-muted);
-  font-size: 0.875em;
-  line-height: 1.4285714;
-  margin-top: 0.8571429em;
-}
-
-.prose code {
-  color: var(--color-text-primary);
-  font-weight: 600;
-  font-size: 0.875em;
-}
-
-.prose code::before {
-  content: "`";
-}
-
-.prose code::after {
-  content: "`";
-}
-
-.prose a code {
-  color: var(--color-brand-primary);
-}
-
-.prose pre {
-  color: var(--color-text-secondary);
-  background-color: var(--color-bg-secondary);
-  overflow-x: auto;
+/* --- 6. Azeret Mono --- */
+@font-face {
+  font-family: "Azeret Mono";
+  src: url("/fonts/Azeret Mono-400.ttf") format("truetype");
   font-weight: 400;
-  font-size: 0.875em;
-  line-height: 1.7142857;
-  margin-top: 1.7142857em;
-  margin-bottom: 1.7142857em;
-  border-radius: 0.375rem;
-  padding-top: 0.8571429em;
-  padding-right: 1.1428571em;
-  padding-bottom: 0.8571429em;
-  padding-left: 1.1428571em;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 91%;
+  ascent-override: 90%;
+  descent-override: 22%;
+  line-gap-override: 0%;
 }
-
-.prose pre code {
-  background-color: transparent;
-  border-width: 0;
-  border-radius: 0;
-  padding: 0;
-  font-weight: 400;
-  color: inherit;
-  font-size: inherit;
-  font-family: inherit;
-  line-height: inherit;
+@font-face {
+  font-family: "Azeret Mono";
+  src: url("/fonts/Azeret Mono-500.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 91%;
+  ascent-override: 90%;
+  descent-override: 22%;
+  line-gap-override: 0%;
 }
-
-.prose pre code::before {
-  content: none;
-}
-
-.prose pre code::after {
-  content: none;
-}
-
-.prose table {
-  width: 100%;
-  table-layout: auto;
-  text-align: left;
-  margin-top: 2em;
-  margin-bottom: 2em;
-  font-size: 0.875em;
-  line-height: 1.7142857;
-}
-
-.prose thead {
-  color: var(--color-text-primary);
+@font-face {
+  font-family: "Azeret Mono";
+  src: url("/fonts/Azeret Mono-600.ttf") format("truetype");
   font-weight: 600;
-  border-bottom-width: 1px;
-  border-bottom-color: var(--color-border-primary);
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 91%;
+  ascent-override: 90%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Azeret Mono";
+  src: url("/fonts/Azeret Mono-700.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 91%;
+  ascent-override: 90%;
+  descent-override: 22%;
+  line-gap-override: 0%;
 }
 
-.prose thead th {
-  vertical-align: bottom;
-  padding-right: 0.5714286em;
-  padding-bottom: 0.5714286em;
-  padding-left: 0.5714286em;
+/* ==========================================================================
+   Typography Blueprint Presets & Fallback Chains
+   ========================================================================== */
+
+/* Blueprint 2: Modernist Swiss (Akzidenz-Grotesk + Schibsted Grotesk + Azeret Mono - Default) */
+:root,
+[data-typography="swiss"] {
+  --font-preset-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, sans-serif;
+  --font-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, sans-serif;
+  --font-display: "Akzidenz-Grotesk", "Schibsted Grotesk", ui-sans-serif, sans-serif;
+  --font-mono: "Azeret Mono", "DINPro", ui-monospace, monospace;
+  --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
+  --font-wiki-sans: "Host Grotesk", "Schibsted Grotesk", ui-sans-serif, sans-serif;
+  --font-onoma: "Schibsted Grotesk", ui-sans-serif, sans-serif;
+  --font-ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", ui-serif, serif;
 }
 
-.prose tbody tr {
-  border-bottom-width: 1px;
-  border-bottom-color: var(--color-border-secondary);
+/* Blueprint 1: Klim National (Sovereign Editorial Modernism) */
+[data-typography="national"],
+[data-typography="sovereign"] {
+  --font-preset-sans: "National", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "National", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Neutraface 2", "Neutraface Text", ui-sans-serif, sans-serif;
+  --font-mono: "DINPro", ui-monospace, monospace;
+  --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
+  --font-wiki-sans: "Host Grotesk", "National", ui-sans-serif, sans-serif;
+  --font-onoma: "National", ui-sans-serif, sans-serif;
+  --font-ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", ui-serif, serif;
 }
 
-.prose tbody tr:last-child {
-  border-bottom-width: 0;
+/* ==========================================================================
+   Scale Tokens (Composed via Custom Property --ls)
+   ========================================================================== */
+
+.text-display-hero {
+  font-size: clamp(32px, 4vw, 40px);
+  line-height: 1.10;
+  --ls: -0.015em;
 }
 
-.prose tbody td {
-  vertical-align: baseline;
-  padding: 0.5714286em;
+.text-section-title {
+  font-size: clamp(20px, 2.5vw, 24px);
+  line-height: 1.20;
+  --ls: -0.008em;
 }
 
-.prose p {
-  margin-top: 1.1428571em;
-  margin-bottom: 1.1428571em;
+.text-card-header {
+  font-size: 15px;
+  line-height: 1.30;
+  --ls: 0em;
 }
 
-.prose > :first-child {
-  margin-top: 0;
+.text-body-standard {
+  font-size: 13px;
+  line-height: 1.45;
+  --ls: 0em;
 }
 
-.prose > :last-child {
-  margin-bottom: 0;
+.text-ui-compact {
+  font-size: 11.5px;
+  line-height: 1.35;
+  --ls: 0.020em;
 }
 
-/* Dark mode prose adjustments */
-.dark .prose {
-  color: var(--color-text-primary);
+.text-micro-badge {
+  font-size: 9.5px;
+  line-height: 1.00;
+  --ls: 0.045em;
+  text-transform: uppercase;
 }
 
-.dark .prose [class~="lead"] {
-  color: var(--color-text-secondary);
+.text-telemetry {
+  font-size: 15px;
+  line-height: 1.00;
+  --ls: 0.015em;
 }
 
-.dark .prose a {
-  color: var(--color-brand-primary);
+.text-map-label {
+  font-size: 12px;
+  line-height: 1.00;
+  --ls: 0.20em;
+  text-transform: uppercase;
 }
 
-.dark .prose strong {
-  color: var(--color-text-primary);
+/* ==========================================================================
+   Family Classes (Font + Weight Defaults, Tracking from --ls)
+   ========================================================================== */
+
+body {
+  font-family: var(--font-sans);
+  letter-spacing: var(--ls, 0em);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.dark .prose ol > li::before {
-  color: var(--color-text-muted);
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: var(--ls, -0.008em);
 }
 
-.dark .prose ul > li::before {
-  background-color: var(--color-text-muted);
+.font-sans {
+  font-family: var(--font-sans);
+  letter-spacing: var(--ls, 0em);
 }
 
-.dark .prose hr {
-  border-color: var(--color-border-primary);
+.font-mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1, "zero" 1;
+  letter-spacing: var(--ls, 0.015em);
 }
 
-.dark .prose blockquote {
-  color: var(--color-text-secondary);
-  border-left-color: var(--color-border-primary);
+.font-serif {
+  font-family: var(--font-serif);
+  letter-spacing: var(--ls, 0.010em);
 }
 
-.dark .prose h1 {
-  color: var(--color-text-primary);
+.font-wiki-sans {
+  font-family: var(--font-wiki-sans);
+  letter-spacing: var(--ls, 0em);
 }
 
-.dark .prose h2 {
-  color: var(--color-text-primary);
+.font-onoma {
+  font-family: var(--font-onoma);
+  letter-spacing: var(--ls, 0em);
 }
 
-.dark .prose h3 {
-  color: var(--color-text-primary);
+.font-ipa {
+  font-family: var(--font-ipa);
+  font-style: normal;
+  letter-spacing: var(--ls, 0.02em);
 }
 
-.dark .prose h4 {
-  color: var(--color-text-primary);
-}
-
-.dark .prose figure figcaption {
-  color: var(--color-text-muted);
-}
-
-.dark .prose code {
-  color: var(--color-text-primary);
-}
-
-.dark .prose pre {
-  color: var(--color-text-secondary);
-  background-color: var(--color-bg-secondary);
-}
-
-.dark .prose thead {
-  color: var(--color-text-primary);
-  border-bottom-color: var(--color-border-primary);
-}
-
-.dark .prose tbody tr {
-  border-bottom-color: var(--color-border-secondary);
-}
-
-/* Number Ticker Enhancement */
-.number-ticker {
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum';
-}
-
-/* Domain Typography Utility Classes */
-.text-diplomatic {
-  color: var(--color-brand-primary);
-  text-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
-}
-
-.text-economic {
-  color: var(--color-success);
-  text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
-}
-
-.text-military {
-  color: var(--color-error);
-  text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
-}
-
-.text-cultural {
-  color: var(--color-chart-1);
-  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
-}
-
-.text-social {
-  color: var(--color-warning);
-  text-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
-}
-
-.text-security {
-  color: var(--color-info);
-  text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+/* Tabular Numerals Utility */
+.tabular-nums {
+  font-feature-settings: "tnum" 1, "zero" 1;
 }

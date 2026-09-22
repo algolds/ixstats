@@ -175,6 +175,8 @@ model Country {
   geographicResources         GeographicResource[]         @relation("CountryGeographicResources")
   transportRoutes             TransportRoute[]              @relation("CountryTransportRoutes")
   transportHubs               TransportHub[]                @relation("CountryTransportHubs")
+  transportNodes              TransportNode[]               @relation("CountryTransportNodes")
+  transportSegments           TransportSegment[]            @relation("CountryTransportSegments")
   peaks                       Peak[]                        @relation("CountryPeaks")
   namedRivers                 NamedRiver[]                  @relation("CountryNamedRivers")
   namedLakes                  NamedLake[]                   @relation("CountryNamedLakes")

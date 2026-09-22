@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { memo, useCallback, useState } from "react";
 import {
   Globe,
   Hexagon,
@@ -8,7 +8,7 @@ import {
   Bank as Landmark,
   Bookmark as BookMarked,
   Type as TypeIcon,
-  Navigator as Route,
+  PathArrow as Route,
   CloudSunny as CloudSun,
 } from "iconoir-react";
 import { EditorPanel } from "~/components/maps/editor/EditorPanel";
@@ -19,24 +19,21 @@ import { PropertiesPanelContent } from "./PropertiesPanelContent";
 import { HistoryPanel } from "./HistoryPanel";
 import { EditQueuePanel } from "../panels/EditQueuePanel";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
+import type { useMapEditorOverlayState } from "../hooks/useMapEditorOverlayState";
+import type {
+  PanelPlacement,
+  PanelConfig,
+  LayerStateRecord,
+  EditorFeature,
+} from "../types/editor-state";
 
-export type PanelPlacement = "left" | "right" | "bottom";
+export type { PanelPlacement, PanelConfig, LayerStateRecord };
 
-export interface PanelConfig {
-  placement: PanelPlacement;
-  collapsed: boolean;
-  tabs: TabId[];
-}
-
-export interface LayerStateRecord {
-  visible: boolean;
-  opacity: number;
-  locked?: boolean;
-}
+export type MapEditorOverlayReturnState = ReturnType<typeof useMapEditorOverlayState>;
 
 interface MapEditorSidebarPanelsProps {
   panelId: "panelA" | "panelB";
-  state: any; // The state object returned by useMapEditorOverlayState
+  state: MapEditorOverlayReturnState;
   panelConfigs: {
     panelA: PanelConfig;
     panelB: PanelConfig;
@@ -57,7 +54,7 @@ interface MapEditorSidebarPanelsProps {
   setBrushTargetId: (id: string | null) => void;
 }
 
-export function MapEditorSidebarPanels({
+export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
   panelId,
   state,
   panelConfigs,
@@ -76,15 +73,38 @@ export function MapEditorSidebarPanels({
 }: MapEditorSidebarPanelsProps) {
   const { editor, isWorldMode, panelsLocked, isAdmin } = state;
 
-  const handleSelectFeature = (feat: any) => {
+  const config = panelConfigs[panelId];
+  const isStacked = panelConfigs.panelA.placement === panelConfigs.panelB.placement;
+  // World editor: panelB must always have the properties tab — it is the primary
+  // interaction surface for the properties panel content. localStorage may have
+  // a stale config from a prior session where all tabs were dragged out.
+  let tabs: TabId[] =
+    panelId === "panelB" && isWorldMode && !config.tabs.includes("properties")
+      ? [...config.tabs, "properties" as TabId]
+      : config.tabs;
+  // World editor (admins): surface the map edit-request queue as a panel tab.
+  // Injected at render time so a stale localStorage panel config can't hide it.
+  if (panelId === "panelA" && isWorldMode && isAdmin && !tabs.includes("queue")) {
+    tabs = [...tabs, "queue" as TabId];
+  }
+
+  const [panelBActiveTab, setPanelBActiveTab] = useState<TabId>(() => {
+    return tabs.includes("properties") ? "properties" : (tabs[0] ?? "properties");
+  });
+
+  const effectiveActiveTab: TabId = panelId === "panelA" ? activeSidebarTab : panelBActiveTab;
+
+  const handleSelectFeature = useCallback((feat: EditorFeature) => {
     state.handleSelectFeature?.(feat);
-  };
-  const handleEditFeature = (feat: any) => {
+  }, [state.handleSelectFeature]);
+
+  const handleEditFeature = useCallback((feat: EditorFeature) => {
     state.handleEditFeature?.(feat);
-  };
-  const handleDeleteFeature = (feat: any) => {
+  }, [state.handleEditFeature]);
+
+  const handleDeleteFeature = useCallback((feat: EditorFeature) => {
     state.handleDeleteFeature?.(feat);
-  };
+  }, [state.handleDeleteFeature]);
 
   const renderLayersElement = () => (
     <LayerPanel
@@ -157,29 +177,29 @@ export function MapEditorSidebarPanels({
           toggleEditorLayer("climate");
           return;
         }
-        setLayerStates((prev: any) => ({
+        setLayerStates((prev) => ({
           ...prev,
           [id]: {
-            ...prev[id],
+            ...prev[id]!,
             visible: !(prev[id]?.visible ?? true),
           },
         }));
       }}
       onToggleLock={(id) => {
         if (id === "climate") return;
-        setLayerStates((prev: any) => ({
+        setLayerStates((prev) => ({
           ...prev,
           [id]: {
-            ...prev[id],
+            ...prev[id]!,
             locked: !(prev[id]?.locked ?? false),
           },
         }));
       }}
       onOpacityChange={(id, val) => {
-        setLayerStates((prev: any) => ({
+        setLayerStates((prev) => ({
           ...prev,
           [id]: {
-            ...prev[id],
+            ...prev[id]!,
             opacity: val,
           },
         }));
@@ -197,7 +217,7 @@ export function MapEditorSidebarPanels({
       showGuides={state.showGuides}
       onToggleGuidesVisibility={state.setShowGuides}
       onDeleteGuide={(id: string) =>
-        editor.setGuides((prev: any) => prev.filter((g: any) => g.id !== id))
+        editor.setGuides((prev: { id: string; type: "h" | "v"; value: number }[]) => prev.filter((g) => g.id !== id))
       }
     />
   );
@@ -205,6 +225,7 @@ export function MapEditorSidebarPanels({
   const renderRightPanelContent = () => (
     <PropertiesPanelContent
       {...state}
+      featureDetails={state.featureDetails ?? null}
       brushTargetId={brushTargetId}
       setBrushTargetId={setBrushTargetId}
     />
@@ -218,27 +239,12 @@ export function MapEditorSidebarPanels({
     />
   );
 
-  const config = panelConfigs[panelId];
-  const isStacked = panelConfigs.panelA.placement === panelConfigs.panelB.placement;
-  // World editor: panelB must always have the properties tab — it is the primary
-  // interaction surface for the properties panel content. localStorage may have
-  // a stale config from a prior session where all tabs were dragged out.
-  let tabs: TabId[] =
-    panelId === "panelB" && isWorldMode && !config.tabs.includes("properties")
-      ? [...config.tabs, "properties" as TabId]
-      : config.tabs;
-  // World editor (admins): surface the map edit-request queue as a panel tab.
-  // Injected at render time so a stale localStorage panel config can't hide it.
-  if (panelId === "panelA" && isWorldMode && isAdmin && !tabs.includes("queue")) {
-    tabs = [...tabs, "queue" as TabId];
-  }
-
   return (
     <EditorPanel
       mode={editor.mode}
       collapsed={config.collapsed}
       onToggleCollapse={() =>
-        setPanelConfigs((prev: any) => ({
+        setPanelConfigs((prev) => ({
           ...prev,
           [panelId]: { ...prev[panelId], collapsed: !prev[panelId].collapsed },
         }))
@@ -248,34 +254,39 @@ export function MapEditorSidebarPanels({
       placement={config.placement}
       onChangePlacement={(placement) => handleChangePanelPlacement(panelId, placement)}
       isWorldMode={isWorldMode}
-      activeTabOverride={panelId === "panelA" ? activeSidebarTab : undefined}
+      activeTabOverride={effectiveActiveTab}
       onTabChange={(tab) => {
-        // panelB is independent — only sync the page-level tab when panelA changes
-        if (panelId === "panelA") setActiveSidebarTab(tab as any);
+        if (panelId === "panelA") {
+          setActiveSidebarTab(tab);
+        } else {
+          setPanelBActiveTab(tab);
+        }
       }}
-      linkagesContent={<LinkageValidationPanel {...state} />}
-      sovereigntyContent={<SovereigntyPanel {...state} />}
-      historyContent={renderHistoryElement()}
-      queueContent={isWorldMode && isAdmin ? <EditQueuePanel /> : undefined}
+      linkagesContent={effectiveActiveTab === "linkages" ? <LinkageValidationPanel {...state} /> : undefined}
+      sovereigntyContent={effectiveActiveTab === "sovereignty" ? <SovereigntyPanel {...state} /> : undefined}
+      historyContent={effectiveActiveTab === "history" ? renderHistoryElement() : undefined}
+      queueContent={effectiveActiveTab === "queue" && isWorldMode && isAdmin ? <EditQueuePanel /> : undefined}
       featureCount={editor.allFeatures.length}
       featuresLoading={editor.featuresLoading}
       featureListContent={
-        <LayerPanel
-          minimal
-          features={editor.allFeatures}
-          selectedFeature={editor.selectedFeature}
-          onSelectFeature={handleSelectFeature}
-          onEditFeature={handleEditFeature}
-          onDeleteFeature={handleDeleteFeature}
-          isLoading={editor.featuresLoading}
-          selectedIds={editor.selectedIds}
-          onToggleSelect={editor.toggleSelectId}
-        />
+        effectiveActiveTab === "features" ? (
+          <LayerPanel
+            minimal
+            features={editor.allFeatures}
+            selectedFeature={editor.selectedFeature}
+            onSelectFeature={handleSelectFeature}
+            onEditFeature={handleEditFeature}
+            onDeleteFeature={handleDeleteFeature}
+            isLoading={editor.featuresLoading}
+            selectedIds={editor.selectedIds}
+            onToggleSelect={editor.toggleSelectId}
+          />
+        ) : undefined
       }
-      layersContent={renderLayersElement()}
-      propertiesContent={renderRightPanelContent()}
+      layersContent={effectiveActiveTab === "layers" ? renderLayersElement() : undefined}
+      propertiesContent={effectiveActiveTab === "properties" ? renderRightPanelContent() : undefined}
       isStacked={isStacked}
       panelsLocked={panelsLocked}
     />
   );
-}
+});

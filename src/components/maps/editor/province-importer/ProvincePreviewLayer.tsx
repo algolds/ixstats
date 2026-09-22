@@ -267,10 +267,13 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
     if (!map) return;
 
     // Skip if data hasn't actually changed (avoids expensive setData calls)
+    const geom0 = fc.features[0]?.geometry;
     const firstCoord =
-      fc.features[0]?.geometry?.type === "Polygon"
-        ? (fc.features[0].geometry as any).coordinates?.[0]?.[0]
-        : (fc.features[0]?.geometry as any)?.coordinates?.[0]?.[0]?.[0];
+      geom0?.type === "Polygon"
+        ? (geom0 as Polygon).coordinates?.[0]?.[0]
+        : geom0?.type === "MultiPolygon"
+          ? (geom0 as MultiPolygon).coordinates?.[0]?.[0]?.[0]
+          : undefined;
     const fcKey = `${fc.features.length}:${JSON.stringify(firstCoord ?? [])}`;
     if (prevFcRef.current === fcKey && map.getSource(SOURCE_ID)) {
       // Just update visibility
@@ -340,17 +343,22 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
         // Log bounds for debugging
         const bounds = fc.features.reduce(
           (acc, f) => {
-            const geom = f.geometry as any;
-            const coords =
+            const geom = f.geometry;
+            if (!geom) return acc;
+            const coords: Position[][] =
               geom.type === "Polygon"
-                ? geom.coordinates
-                : (geom.coordinates?.flatMap((c: any) => c) ?? []);
+                ? (geom as Polygon).coordinates
+                : geom.type === "MultiPolygon"
+                  ? (geom as MultiPolygon).coordinates.flat(1)
+                  : [];
             for (const ring of coords) {
-              for (const pt of ring as Position[]) {
-                acc.minLng = Math.min(acc.minLng, pt[0]!);
-                acc.minLat = Math.min(acc.minLat, pt[1]!);
-                acc.maxLng = Math.max(acc.maxLng, pt[0]!);
-                acc.maxLat = Math.max(acc.maxLat, pt[1]!);
+              for (const pt of ring) {
+                if (pt && typeof pt[0] === "number" && typeof pt[1] === "number") {
+                  acc.minLng = Math.min(acc.minLng, pt[0]);
+                  acc.minLat = Math.min(acc.minLat, pt[1]);
+                  acc.maxLng = Math.max(acc.maxLng, pt[0]);
+                  acc.maxLat = Math.max(acc.maxLat, pt[1]);
+                }
               }
             }
             return acc;

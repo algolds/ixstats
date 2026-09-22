@@ -34,7 +34,7 @@ export interface InteractiveMetricProps {
   expandedContent?: React.ReactNode;
   onClick?: () => void;
   size?: "sm" | "md" | "lg" | "xl";
-  color?: "default" | "green" | "blue" | "purple" | "red" | "amber";
+  color?: "default" | "emerald" | "green" | "blue" | "indigo" | "purple" | "red" | "amber" | "cyan";
   animate?: boolean;
   className?: string;
   currency?: string;
@@ -72,30 +72,45 @@ const colorConfig = {
     bg: "hover:bg-muted/50",
     icon: "text-muted-foreground",
   },
+  emerald: {
+    text: "text-emerald-600 dark:text-emerald-400",
+    bg: "hover:bg-emerald-500/10",
+    icon: "text-muted-foreground",
+  },
   green: {
-    text: "text-green-600 dark:text-green-400",
-    bg: "hover:bg-green-50 dark:hover:bg-green-900/20",
-    icon: "text-green-500",
+    text: "text-emerald-600 dark:text-emerald-400",
+    bg: "hover:bg-emerald-500/10",
+    icon: "text-muted-foreground",
+  },
+  cyan: {
+    text: "text-cyan-600 dark:text-cyan-400",
+    bg: "hover:bg-cyan-500/10",
+    icon: "text-muted-foreground",
   },
   blue: {
     text: "text-blue-600 dark:text-blue-400",
-    bg: "hover:bg-blue-50 dark:hover:bg-blue-900/20",
-    icon: "text-blue-500",
+    bg: "hover:bg-blue-500/10",
+    icon: "text-muted-foreground",
+  },
+  indigo: {
+    text: "text-indigo-600 dark:text-indigo-400",
+    bg: "hover:bg-indigo-500/10",
+    icon: "text-muted-foreground",
   },
   purple: {
-    text: "text-purple-600 dark:text-purple-400",
-    bg: "hover:bg-purple-50 dark:hover:bg-purple-900/20",
-    icon: "text-purple-500",
+    text: "text-indigo-600 dark:text-indigo-400",
+    bg: "hover:bg-indigo-500/10",
+    icon: "text-muted-foreground",
   },
   red: {
     text: "text-red-600 dark:text-red-400",
-    bg: "hover:bg-red-50 dark:hover:bg-red-900/20",
-    icon: "text-red-500",
+    bg: "hover:bg-red-500/10",
+    icon: "text-muted-foreground",
   },
   amber: {
     text: "text-amber-600 dark:text-amber-400",
-    bg: "hover:bg-amber-50 dark:hover:bg-amber-900/20",
-    icon: "text-amber-500",
+    bg: "hover:bg-amber-500/10",
+    icon: "text-muted-foreground",
   },
 };
 
@@ -181,7 +196,7 @@ export function InteractiveMetric({
       <span
         className={cn(
           "inline-flex items-center gap-0.5 text-xs font-medium",
-          isPositive ? "text-green-500" : "text-red-500"
+          isPositive ? "text-emerald-500" : "text-red-500"
         )}
       >
         <TrendIcon className="h-3 w-3" />

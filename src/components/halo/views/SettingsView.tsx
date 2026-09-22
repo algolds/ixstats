@@ -178,8 +178,8 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
           {/* Compact Mode */}
           <SettingsRow
-            icon={<Layout className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />}
-            iconBg="bg-purple-500/15"
+            icon={<Layout className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />}
+            iconBg="bg-indigo-500/15"
             label="Compact Mode"
             description="Denser UI layout"
           >
@@ -219,10 +219,10 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                 mediaThemeMode === "plinth" ? (
                   <Square className="h-3.5 w-3.5 text-emerald-500" />
                 ) : (
-                  <SunMoon className="h-3.5 w-3.5 text-sky-500" />
+                  <SunMoon className="h-3.5 w-3.5 text-cyan-500" />
                 )
               }
-              iconBg={mediaThemeMode === "plinth" ? "bg-emerald-500/15" : "bg-sky-500/15"}
+              iconBg={mediaThemeMode === "plinth" ? "bg-emerald-500/15" : "bg-cyan-500/15"}
               label="Image Appearance"
               description={mediaThemeMode === "plinth" ? "Light Backplate" : "Adaptive Dark"}
             >
@@ -376,8 +376,8 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
             {/* Citations */}
             <SettingsRow
-              icon={<MessageSquare className="h-3.5 w-3.5 text-purple-400" />}
-              iconBg="bg-purple-500/15"
+              icon={<MessageSquare className="h-3.5 w-3.5 text-wiki" />}
+              iconBg="bg-wiki/15"
               label="Citation Tooltips"
               description="Hover source preview cards"
             >

@@ -1,0 +1,308 @@
+
+=========================================
+PAGE: Government_of_Caphiria
+CATEGORIES: Politics, Politics_of_Caphiria, Caphiria, Government_of_Caphiria
+=========================================
+{{Infobox government
+| government_name  = Government of Caphiria
+| nativename       = 
+| image            = <!-- [[File:|px]] -->
+| caption          = 
+| date             = 1782; 252 years ago (as the Fourth Imperium)
+| country          = {{flag|Caphiria}}
+| document_type    = <!-- default is "Founding document" -->
+| document         = [[Constitution of Caphiria]]
+| url              = 
+| branch1          = 
+| branch1_label1   = 
+| branch1_data1    = 
+| branch1_label2   = 
+| branch1_data2    = 
+| branch1_label3   = 
+| branch1_data3    = 
+| branch2          = 
+| legislature      = [[Corcillum]]
+| meeting_place    = [[Forum Magnum]]
+| branch3          = 
+| leader_type      = 
+| leader_title     = [[Imperator]]
+| main_body        = 
+| leader_type2     = <!-- default is "Leader" -->
+| leader_title2    = <!-- title of head of govt -->
+| appointed        = <!-- appointer -->
+| headquarters     = 	[[Ataceris]]
+| main_organ       = The Imperium
+| departments      = <!-- executive departments -
+
+[NOT FOUND IN AUDIT: Politics_of_Caphiria]
+
+=========================================
+PAGE: Government_of_Burgundie
+CATEGORIES: Government_of_Burgundie, Politics_of_Burgundie, Burgundie
+=========================================
+{{wip}}
+{{Government of Burgundie}}
+[[Burgundie]] is a {{wp|Parliamentary system|parliamentary}} {{wp|representative democracy}} led by a {{wp|constitutional monarchy}}. It is organised as a {{wp|Decentralization|decentralised}} {{wp|unitary state}} with {{wp|consociational}} representation. [[Burgundie|Burgoignesc]] politics and governance are characterized by a common striving for broad consensus on important issues, within both of the political community and society as a whole. The nation is formed under the sovereignty of the [[Government_of_Burgundie#Executive_Branch|First Sea Lord]] of the [[Government_of_Burgundie#Executive_Branch|Antivasileis-Lord Admiralcy]], or regency council, who in turn, serves the {{wpl|Pacta conventa}} of [[The Burgundies]]. The Government of Burgundie is a {{wpl|Representative democracy}}, served by {{wpl|congresses}} at local, provincial, and constituent country level. At the national level the [[Government_of_Burgundie#Legislative_Branch|Citizens Cour
+
+[NOT FOUND IN AUDIT: Politics_of_Burgundie]
+
+[NOT FOUND IN AUDIT: Politics_of_Urcea]
+
+=========================================
+PAGE: Politics_of_Faneria
+CATEGORIES: Politics_of_Faneria, Government_of_Faneria, Companies_of_Faneria
+=========================================
+{{WIP}}
+{{Infobox political system
+| name                          = '''Politics of Faneria'''
+| native_name                   = 
+| image                         = FaneriaRoundel.png
+| image_size                    = 150
+| caption                       = 
+| government                    = {{wp|Unitary state|Unitary}} {{wp|Republic|constitutional republic}}
+| constitution                  = [[1922 Constitution of the Republic of the Fhainn]]
+| formation                     = 1922
+| dissolution                   = 
+| website                       = 
+| legislature                   = [[National Assembly of the Fhainnin Republic|National Assembly]]
+| legislature_type              = {{wp|Tricameralism|Tricameral}}
+| legislature_place             = 
+| upperhouse                    = Party Council of the National Assembly
+| upperhouse_speaker            = Name
+| upperhouse_speaker_title      = Party Speaker
+| upperhouse_appointer          = proportional vote
+| lowerhouse                    = 
+
+=========================================
+PAGE: Politics_of_Yonderre
+CATEGORIES: Politics, Politics_of_Yonderre, Yonderre, Collinebourg
+=========================================
+{{stub}}
+[[File:StormontGeneral.jpg|thumb|[[Guillaumebourg]], seat of the [[Yonderian Parliament]]]]The '''politics of Yonderre''' take place within the framework of a parliamentary representative democracy, a constitutional monarchy and a decentralised unitary state in which the [[Grand Duke of Yonderre]] is the head of state. Yonderian politics and governance are characterized by a common striving for broad consensus on important issues, within both the political community and society as a whole. [[Yonderre]] has a multi-party system, with two large parties (the [[Social Democrats (Yonderre)|Social Democratic Party]] and [[United Yonderre]]) and several other small but significant parties. No single party has held an absolute majority in the Parliament since 1901 when the [[Conservative People's Party (Yonderre)|Conservative People's Party]] held 101 of the 199 seats. Nine parties are currently represented in the [[Yonderian Parliament]]. 
+
+On many issues the political parties tend t
+
+=========================================
+PAGE: Cartadania
+CATEGORIES: Countries, Cartadania
+=========================================
+{{Infobox country
+|conventional_long_name = Federative Republic of Cartadania
+|native_name =        ''{{nobold|República Federativa da Cartadania}}''
+|image_flag =         Flag_of_Cartadania.svg
+|alt_flag =           <!--alt text for flag (text shown when pointer hovers over flag)-->
+|flag_border =        <!--set to no to disable border around the flag-->
+|image_flag2 =        <!--e.g. Second-flag of country.svg-->
+|alt_flag2 =          <!--alt text for second flag-->
+|flag2_border =       <!--set to no to disable border around the flag-->
+|image_coat =         Coat of Arms of Cartadania.svg
+|alt_coat =           <!--alt text for coat of arms-->
+|symbol_type =        <!--emblem, seal, etc (if not a coat of arms)-->
+|national_motto =     <div style="padding-bottom:0.5em;text-align:center;">"{{wp|Sic Semper Tyrannis}}"<br/><small>Thus always to tyrants</small></div>{{collapsible list
+|title=Other traditional mottos:
+|titlestyle=background:transparent;text-align:center;line-height:1.15em;
+
+=========================================
+PAGE: Caphiria
+CATEGORIES: Countries, Caphiria
+=========================================
+{{Infobox country
+|conventional_long_name = Imperium of Caphiria
+|native_name =        ''REPUBLICA IMPERIUM CAPHIRIUM''
+|image_flag =         Flag_of_Caphiria_(Small).png
+|image_coat =         Caphiria_COA.svg
+|national_motto =     Via Veritas Vita
+|englishmotto =        The Way and The Truth and The Life
+|national_anthem =    <!--in inverted commas and wikilinked if link exists-->
+|royal_anthem =       <!--in inverted commas and wikilinked if link exists-->
+|image_map =         {{Switcher
+| [[File:Caphiria_wiki_small3.png|330px]]
+| Caphiria and its [[Possession (Caphiria)|overseas possessions]] <br/> <small>Left: [[Mainland Caphiria]]; Top-left: [[Vespera]]; Top-right: [[Amaniaris]]; Middle-left: [[Cenendovia]]; Middle-right: The [[Escal Isles]]; Bottom: [[Zaclaria]]</small>
+| [[File:Caphiria wiki large2.png|330px]]
+| Caphiria in the world
+}}
+|alt_map =            <!--alt text for map-->
+|image_map2 =         <!--Another map, if required-->
+|alt_map2 =           <!--alt text for secon
+
+=========================================
+PAGE: Urcea
+CATEGORIES: Countries, Urcea
+=========================================
+{{Infobox country
+|conventional_long_name = Apostolic Kingdom of Urcea
+|native_name =        ''Regna Urciona Abóstair'' ([[Lebhan language|Lebhan]])
+|image_flag =         Flag of Urcea.svg
+|alt_flag =           <!--alt text for flag (text shown when pointer hovers over flag)-->
+|flag_border =        <!--set to no to disable border around the flag-->
+|image_flag2 =        <!--e.g. Second-flag of country.svg-->
+|alt_flag2 =          <!--alt text for second flag-->
+|flag2_border =       <!--set to no to disable border around the flag-->
+|image_coat =         File:DeWelutaNew.png
+|alt_coat =           <!--alt text for coat of arms-->
+|symbol_type =        <!--emblem, seal, etc (if not a coat of arms)-->
+|national_motto =     Ad majorem Dei gloriam
+|englishmotto =        ("For the greater glory of God")
+|national_anthem =    ''[[Te_Deum#Use_in_Urcea|Te Deum]]''
+|royal_anthem =       
+|other_symbol_type =  <!--Use if a further symbol exists, e.g. hymn-->
+|other_symbol =
+|image_map =         
+
+=========================================
+PAGE: Burgundie
+CATEGORIES: Countries, Burgundie
+=========================================
+{{Infobox country|native_name                 = Burgundie
+
+|conventional_long_name      = [[Burgoignesc Thalattocracy]]
+|common_name                 = Burgundie 
+|image_flag                  = BurgFlag.png
+|alt_flag                    = 
+|image_coat                  = [[File:Burg COA.png|120px]]
+|alt_coat                    = |symbol_type                 = Royal mantle, pavilion, and Coat of Arms
+|national_motto              = ''In Fluctus Aigean Mon Bontie Expectat''<br><small>Upon the Ocean Waves My Bounty Awaits</small>
+|national_anthem             = [[Rule, Bergendia!]]
+|royal_anthem                = |other_symbol_type           = National Symbol: </b>Marin-Estelle<br><small>Personification of Burgundie's destiny at sea</small>
+|other_symbol                = [[File: Marin Estelle.png|120px]]
+|image_map                   = Burg Ortho Map.png
+|alt_map                     = 
+|map_caption                 = Location of Burgundie (dark green)<br>In the [[Levantine Union]] (light green)<b
+
+=========================================
+PAGE: Yonderre
+CATEGORIES: Countries, Yonderre
+=========================================
+{{Infobox country
+|micronation =        <!--yes if a micronation-->
+|conventional_long_name = Most Serene Grand Duchy Yonderre
+|native_name =        ''Sérénissime Grand-Duché Yonderre'' ([[Burgoignesc language|Burgoignesc]])<br>''Heilige Großherzogtum Yonderre'' ([[East Gothic language|Gothic]])
+|common_name =        Yonderre
+|status =             <!--Status of country, especially useful for micronations-->
+|image_flag =         Yonderre_Flag.png
+|alt_flag =           <!--alt text for flag (text shown when pointer hovers over flag)-->
+|flag_border =        <!--set to no to disable border around the flag-->
+|image_flag2 =        <!--e.g. Second-flag of country.svg-->
+|alt_flag2 =          <!--alt text for second flag-->
+|flag2_border =       <!--set to no to disable border around the flag-->
+|image_coat =         Shield_of_Joanus.png
+|alt_coat =           <!--alt text for coat of arms-->
+|symbol_type =        [[Shield of Joanus|Coat of arms]]
+|national_motto =    ''Nam Claritas Dei''
+|e
+
+=========================================
+PAGE: Faneria
+CATEGORIES: Countries, Faneria, Companies_of_Faneria
+=========================================
+{{wip}}
+
+{{Infobox country
+|native_name                 = <!--e.g. France--> ''Respoblachd an Fhainn''
+|conventional_long_name      = '''Republic of the Fhainn'''
+|common_name                 = Faneria
+|image_flag                  = [[File:Fh flag 2022.png|250px|]]
+|alt_flag                    = 
+|image_coat                  = <!--* e.g. Coat of arms of country.svg-->
+|alt_coat                    = <!--alt text for coat of arms-->
+|symbol_type                 = <!--emblem/seal/... based on image_coat-->
+|national_motto              = <!--"[[motto]]"--> ''Monadh Dealach Rinn Níl''<br><small>No Mountain may Divide Us</small>
+|national_anthem             = Liberation's Fortress
+|royal_anthem                = <!--''[[name of/link to anthem]]''--> 
+|other_symbol_type           = National Symbol: <br><small>The Three Peoples</small>
+|other_symbol                = 
+|image_map                   = [[File:Fanortho.png|250px]]
+|alt_map                     = 
+|map_caption                 = Faneria
+
+[NOT FOUND IN AUDIT: Federation_of_Kiravia]
+
+=========================================
+PAGE: Kiravia
+CATEGORIES: Countries, KRV
+=========================================
+{{Infobox country
+|conventional_long_name = Kiravian Federacy
+|native_name =        <!-- '''ꅆ꒼ ꑓꐔꈕ''' -->𑨔𑨰𑨩𑨘𑨞𑨰𑨖 𑨩𑨒𑨔𑨠𑨘𑨆𑨩𑨔𑨘<br>''Kiravix Rektārka''
+|image_flag =         KiravFlag.png
+|alt_flag =           <!--alt text for flag (text shown when pointer hovers over flag)-->
+|flag_border =        <!--set to no to disable border around the flag-->
+|image_flag2 =        <!--e.g. Second-flag of country.svg-->
+|alt_flag2 =          <!--alt text for second flag-->
+|flag2_border =       <!--set to no to disable border around the flag-->
+|image_coat =         File:Kirav CoA (Downsized 300).png
+|alt_coat =           <!--alt text for coat of arms-->
+|symbol_type =        Emblem
+|national_motto =     Cia Aslovniūn ūos Lōmin
+|englishmotto =        Go Forth and Begin
+|national_anthem =    <!--in inverted commas and wikilinked if link exists-->
+|royal_anthem =       <!--in inverted commas and wikilinked if link exists-->
+|other_symbol_type =  <!--Use if a further symbol exists, e.g. hy
+
+=========================================
+PAGE: Thervala
+CATEGORIES: Countries, Thervala
+=========================================
+{{Infobox country
+|conventional_long_name = Thervala ("The Kingdom of Thervala")
+|native_name =        Ratcha-anachak Ther (Ther)
+|image_flag =         Thervala.png
+|alt_flag =           <!--alt text for flag (text shown when pointer hovers over flag)-->
+|flag_border =        <!--set to no to disable border around the flag-->
+|image_flag2 =        <!--e.g. Second-flag of country.svg-->
+|alt_flag2 =          <!--alt text for second flag-->
+|flag2_border =       <!--set to no to disable border around the flag-->
+|alt_coat =           <!--alt text for coat of arms-->
+|symbol_type =        Emblem
+|national_motto =     ชัยชนะด้วยเลือด
+|englishmotto =        ("Victory through blood")
+|national_anthem =    [[file:Bravely_We_Fight.mp3]]
+|royal_anthem =       
+|other_symbol_type =  <!--Use if a further symbol exists, e.g. hymn-->
+|other_symbol =
+|image_map =          [[File:Thervala Wiki.png|250px]]
+|loctext =            <!--text description of location of country-->
+|alt_map =            <!--a
+
+=========================================
+PAGE: Daxia
+CATEGORIES: Countries, Daxia
+=========================================
+{{Infobox country
+|conventional_long_name = Democratic Republic of Daxia
+|native_name =        ''昆仑 共和国''
+|image_flag =         Daxiaia Flag.png
+|alt_flag =           <!--alt text for flag (text shown when pointer hovers over flag)-->
+|flag_border =        <!--set to no to disable border around the flag-->
+|image_flag2 =        <!--e.g. Second-flag of country.svg-->
+|alt_flag2 =          <!--alt text for second flag-->
+|flag2_border =       <!--set to no to disable border around the flag-->
+|image_coat =         Emblem of Daxia.png
+|alt_coat =           <!--alt text for coat of arms-->
+|symbol_type =        
+|national_motto =     The sun never sets on Daxia
+|englishmotto =       
+|national_anthem =    [https://www.youtube.com/watch?v=fq3abPnEEGE March of Joy]
+|royal_anthem =       <!--in inverted commas and wikilinked if link exists-->
+|other_symbol_type =  <!--Use if a further symbol exists, e.g. hymn-->
+|other_symbol =
+|image_map =          CorGlobe1.png
+|loctext =            <!--tex
+
+=========================================
+PAGE: Pelaxia
+CATEGORIES: Countries, Pelaxia
+=========================================
+{{WIP}}
+{{MajorReconstruction}}
+{{Infobox country
+|native_name                 = ''Unión de Repúblicas Cooperativas Consejas'' ([[Pelaxian language|Pelaxian]])<br>''Unión de Repúblicas Cooperativas Consellas'' ({{wp|Galician language|Isurian}})<br>''Uniri a Ripublitslor Cooperativi Conciliari'' ({{wp|Aromanian language|Montanaran}})<br>''Wiónseque de Repúblicas Spówiperacovicas Radovicas'' ([[Oretanian language|Oretanian]])<br>''Unione delle Republiche Cooperative Conséje'' ({{wp|Venetian language|Savrian}})
+|conventional_long_name      = Union of Council Co-Operative Republics
+|common_name                 = Palmeria
+|image_flag                  = State Flag of Pelaxia.svg
+|alt_flag                    = The Flag of Pelaxia
+|flag_type                   = [[Flag of Pelaxia|Flag]]
+|image_coat                  = Coat of Arms of Pelaxia.svg 
+|alt_coat                    = National Coat of Arms
+|symbol_type                 = [[Coat of arms of Pelaxia|Coat of arms]]
+|national_motto           

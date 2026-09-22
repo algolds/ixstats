@@ -96,7 +96,7 @@ async function main() {
     "Urcea",
     "Petalstone Music",
     "Burgundie",
-    "Treaty of Oakhaven",
+    "League of Nations",
     "Main Page",
   ];
 

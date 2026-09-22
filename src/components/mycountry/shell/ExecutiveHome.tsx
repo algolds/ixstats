@@ -1,628 +1,38 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import dynamic from "next/dynamic";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   KeyCommand as Command,
-  Globe,
-  Globe as Globe2,
-  Shield,
-  HistoricShieldAlt,
-  Bank as Landmark,
-  StatUp as TrendingUp,
-  Heart,
-  WarningTriangle as AlertTriangle,
-  ScaleFrameEnlarge as Scale,
   ClockRotateRight as FileClock,
-  ArrowUpRight,
-  NavArrowDown as ChevronDown,
-  NavArrowUp as ChevronUp,
-  ArrowUp,
-  ArrowDown,
   Clock,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  Compress as Minimize2,
-  MapPin,
-  EditPencil as Edit3,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/utils";
+import { soundEffects } from "~/lib/sound/cuelume";
 import { ExecutiveOpportunityHero } from "./ExecutiveOpportunityHero";
 import { ExecutiveAgenda } from "./ExecutiveAgenda";
 import { StandingBands } from "./StandingBands";
-import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
-import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
-import { useCountryData } from "~/components/mycountry/shared/primitives";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { TerritoryMapWidget } from "./TerritoryMapWidget";
 import {
-  DiplomacyGraphic,
-  DefenseGraphic,
-  PoliticsGraphic,
-  EconomyGraphic,
-} from "./ActionCardGraphics";
+  ExecutiveActionCards,
+  DomainActionTiles,
+  DOMAIN_TILES,
+  CATEGORY_STYLE,
+} from "./ExecutiveActionCards";
+import { ExecutiveRecordFeed } from "./ExecutiveRecordFeed";
+import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
+import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 
-const CountryMapEmbed = dynamic(
-  () =>
-    import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
-      default: m.CountryMapEmbed,
-    })),
-  {
-    ssr: false,
-    loading: () => <div className="bg-muted/40 h-56 animate-pulse rounded-xl" />,
-  }
-);
-
-const CATEGORY_STYLE: Record<string, { label: string; icon: any; cls: string }> = {
-  diplomatic: {
-    label: "Diplomacy",
-    icon: Globe2,
-    cls: "border-teal-500/40 text-teal-800 dark:text-teal-400 bg-teal-500/10",
-  },
-  diplomacy: {
-    label: "Diplomacy",
-    icon: Globe2,
-    cls: "border-teal-500/40 text-teal-800 dark:text-teal-400 bg-teal-500/10",
-  },
-  military: {
-    label: "Defense",
-    icon: Shield,
-    cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10",
-  },
-  defense: {
-    label: "Defense",
-    icon: Shield,
-    cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10",
-  },
-  security: {
-    label: "Defense",
-    icon: Shield,
-    cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10",
-  },
-  governance: {
-    label: "Politics",
-    icon: Landmark,
-    cls: "border-violet-500/40 text-violet-800 dark:text-violet-400 bg-violet-500/10",
-  },
-  economic: {
-    label: "Economy",
-    icon: TrendingUp,
-    cls: "border-emerald-500/40 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10",
-  },
-  economy: {
-    label: "Economy",
-    icon: TrendingUp,
-    cls: "border-emerald-500/40 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10",
-  },
-  social: {
-    label: "Social",
-    icon: Heart,
-    cls: "border-pink-500/40 text-pink-800 dark:text-pink-400 bg-pink-500/10",
-  },
-  intent: {
-    label: "Directive",
-    icon: Command,
-    cls: "border-amber-500/40 text-amber-800 dark:text-amber-400 bg-amber-500/10",
-  },
-  crisis: {
-    label: "Crisis",
-    icon: AlertTriangle,
-    cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10",
-  },
-  ledger: {
-    label: "Ledger",
-    icon: Scale,
-    cls: "border-blue-500/40 text-blue-800 dark:text-blue-400 bg-blue-500/10",
-  },
+export {
+  ExecutiveActionCards,
+  DomainActionTiles,
+  DOMAIN_TILES,
+  CATEGORY_STYLE,
+  TerritoryMapWidget,
+  ExecutiveRecordFeed,
 };
-
-export const DOMAIN_TILES: {
-  id: MyCountrySection;
-  title: string;
-  drillKind: Exclude<V2Drill, { kind: "intent" } | null>;
-  icon: any;
-  graphic: React.ComponentType<{ className?: string }>;
-  badgeCls: string;
-  getPeek: (country: any) => string;
-}[] = [
-  {
-    id: "diplomacy",
-    title: "Diplomacy",
-    drillKind: { kind: "relations" },
-    icon: Globe,
-    graphic: DiplomacyGraphic,
-    badgeCls: "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30",
-    getPeek: (c) =>
-      `${c?.activeEmbassiesCount ?? c?.embassies?.length ?? 12} Embassies • ${c?.diplomaticStance ?? "Active Alliance"}`,
-  },
-  {
-    id: "defense",
-    title: "Defense",
-    drillKind: { kind: "defense" },
-    icon: HistoricShieldAlt,
-    graphic: DefenseGraphic,
-    badgeCls: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30",
-    getPeek: (c) =>
-      `${c?.militaryReadiness ?? c?.readiness ?? 94}% Readiness • ${c?.defensePosture ?? c?.posture ?? "Defensive"}`,
-  },
-  {
-    id: "politics",
-    title: "Politics",
-    drillKind: { kind: "politics" },
-    icon: Scale,
-    graphic: PoliticsGraphic,
-    badgeCls: "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/30",
-    getPeek: (c) => {
-      const raw = c?.currentStability ?? c?.stability ?? 0.78;
-      return `${Math.round(raw > 1 ? raw : raw * 100)}% Stability • Active Cabinet`;
-    },
-  },
-  {
-    id: "economy",
-    title: "Economy & Budget",
-    drillKind: { kind: "economy" },
-    icon: TrendingUp,
-    graphic: EconomyGraphic,
-    badgeCls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
-    getPeek: (c) => {
-      const raw = c?.gdpGrowth ?? c?.currentGdpGrowth ?? 0.034;
-      return `+${(raw > 1 ? raw : raw * 100).toFixed(1)}% Growth • Fiscal Stable`;
-    },
-  },
-];
-
-export const DomainActionTiles = React.memo(function DomainActionTiles({
-  onOpenDrill,
-  onNavigate,
-}: {
-  onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
-  onNavigate?: (section: MyCountrySection) => void;
-}) {
-  const { country } = useCountryData();
-
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {DOMAIN_TILES.map(
-        ({ id, title, icon: Icon, graphic: Graphic, badgeCls, drillKind, getPeek }) => (
-          <FacetCard
-            key={id}
-            depth={1}
-            interactive="none"
-            onClick={() => {
-              soundEffects.press();
-              if (onNavigate) {
-                onNavigate(id);
-              } else if (onOpenDrill) {
-                onOpenDrill(drillKind);
-              }
-            }}
-            className="group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border p-3 shadow-xs backdrop-blur-md transition-all duration-150 select-none active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
-          >
-            {/* Subtle Radial-Masked Architectural Watermark */}
-            <Graphic />
-
-            {/* Left: Themed Icon Badge + Text */}
-            <div className="relative z-10 flex min-w-0 items-center gap-3">
-              <div
-                className={cn(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-transform duration-150 group-hover:scale-105",
-                  badgeCls
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-              </div>
-              <div className="flex min-w-0 flex-col gap-0.5 text-left">
-                <span className="text-foreground truncate text-[13px] leading-tight font-bold tracking-tight">
-                  {title}
-                </span>
-                <span className="text-muted-foreground truncate text-[11px] leading-tight font-medium tracking-tight">
-                  {getPeek(country)}
-                </span>
-              </div>
-            </div>
-
-            {/* Right: Arrow indicator */}
-            <ArrowUpRight className="text-muted-foreground group-hover:text-foreground relative z-10 h-3.5 w-3.5 shrink-0 opacity-60 transition-all duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
-          </FacetCard>
-        )
-      )}
-    </div>
-  );
-});
-
-function relativeTime(ts: number): string {
-  const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
-  if (diffSec < 60) return "just now";
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  return `${diffDay}d ago`;
-}
-
-function formatDeltaValue(val: number | null | undefined): string {
-  if (val === null || val === undefined || !isFinite(val)) return "Updated";
-  const absVal = Math.abs(val);
-  const formatted = absVal.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 3,
-  });
-  return `${val > 0 ? "+" : val < 0 ? "-" : ""}${formatted}`;
-}
-
-function getUniqueDiagnosticNarrative(
-  item: any,
-  metaLabel: string
-): {
-  narrative: string;
-  badge?: { text: string; direction?: "up" | "down" | "neutral"; cls: string };
-} {
-  const deltaStr = formatDeltaValue(item.deltaValue);
-  const fieldName = item.targetField ?? "national indicator";
-
-  if (
-    item.description &&
-    typeof item.description === "string" &&
-    item.description.trim().length > 10
-  ) {
-    const isPositive = (item.deltaValue ?? 0) > 0;
-    const isNegative = (item.deltaValue ?? 0) < 0;
-    return {
-      narrative: item.description.trim(),
-      badge:
-        item.deltaValue !== null && item.deltaValue !== undefined
-          ? isPositive
-            ? {
-                text: `${deltaStr} Net Expansion`,
-                direction: "up",
-                cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-              }
-            : isNegative
-              ? {
-                  text: `${deltaStr} Contraction`,
-                  direction: "down",
-                  cls: "bg-red-500/10 text-red-400 border-red-500/20",
-                }
-              : {
-                  text: `Neutral Shift`,
-                  direction: "neutral",
-                  cls: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-                }
-          : undefined,
-    };
-  }
-
-  if (item.kind === "effect") {
-    return {
-      narrative: `Storyteller directive logged: "${item.title}". The Executive Command Engine calculated real-time state shifts across national ${metaLabel.toLowerCase()} subsystems.`,
-      badge: {
-        text: "Storyteller Effect",
-        cls: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-      },
-    };
-  }
-
-  if (item.kind === "diplomacy") {
-    return {
-      narrative: `Bilateral event "${item.title}" registered in global diplomatic dispatches. Foreign ministry officials report ongoing international standing alignment.`,
-      badge: { text: "Foreign Dispatch", cls: "bg-teal-500/10 text-teal-400 border-teal-500/20" },
-    };
-  }
-
-  if (item.kind === "decision") {
-    return {
-      narrative: `Executive resolution enacted: "${item.title}". Cabinet civil service departments have finalized implementation across local administrative channels.`,
-      badge: {
-        text: "Executive Resolution",
-        cls: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-      },
-    };
-  }
-
-  if (item.kind === "ledger" && item.targetField) {
-    const isPositive = (item.deltaValue ?? 0) > 0;
-    const badgeCls = isPositive
-      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-      : "bg-red-500/10 text-red-400 border-red-500/20";
-
-    const metricNarratives: Record<string, string> = {
-      currentPopulation: isPositive
-        ? `Demographic growth recorded a net addition of ${deltaStr} citizens following regional migration and baseline birth balance.`
-        : `Demographic census registered a net reduction of ${deltaStr} citizens across monitored urban sectors.`,
-      currentTotalGdp: isPositive
-        ? `National economic output expanded by ${deltaStr} total GDP, driven by active trade channels and commercial yield.`
-        : `National economic output experienced a contraction of ${deltaStr} total GDP due to fiscal adjustments and market cooling.`,
-      currentGdpPerCapita: isPositive
-        ? `Average per capita purchasing power rose by ${deltaStr}, improving household prosperity metrics.`
-        : `Average per capita income shifted by ${deltaStr} as population totals and GDP output adjusted.`,
-      economicVitality: isPositive
-        ? `Economic vitality index gained +${deltaStr} points following positive fiscal performance.`
-        : `Economic vitality index adjusted by ${deltaStr} points reflecting recent market headwinds.`,
-      populationWellbeing: isPositive
-        ? `Population wellbeing index rose by +${deltaStr} points thanks to expanded social and healthcare coverage.`
-        : `Population wellbeing index adjusted by ${deltaStr} points during administrative recalculation.`,
-      diplomaticStanding: isPositive
-        ? `Diplomatic standing index gained +${deltaStr} points following active embassy treaties and international prestige.`
-        : `Diplomatic standing index shifted by ${deltaStr} points amidst regional diplomatic negotiations.`,
-      governmentalEfficiency: isPositive
-        ? `Governmental efficiency index advanced by +${deltaStr} points due to streamlined civil service throughput.`
-        : `Governmental efficiency index adjusted by ${deltaStr} points following administrative bureau reorganizations.`,
-    };
-
-    const narrative =
-      metricNarratives[item.targetField] ??
-      `Simulation metric '${fieldName}' adjusted by ${deltaStr} under the ${metaLabel.toLowerCase()} domain ledger.`;
-
-    return {
-      narrative,
-      badge: {
-        text: `${fieldName}: ${deltaStr}`,
-        direction: isPositive ? "up" : "down",
-        cls: badgeCls,
-      },
-    };
-  }
-
-  return {
-    narrative: `Canon event '${item.title}' recorded under the ${metaLabel.toLowerCase()} domain. System state updated successfully.`,
-    badge: { text: "Canon Record", cls: "bg-muted text-muted-foreground border-border/40" },
-  };
-}
-
-function RecordFeed({
-  items,
-  countrySlug,
-  onOpenDrill,
-}: {
-  items: any[];
-  countrySlug?: string;
-  onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
-}) {
-  const [visibleCount, setVisibleCount] = useState(5);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [filterCat, setFilterCat] = useState<string>("all");
-
-  const filteredItems = useMemo(() => {
-    if (filterCat === "all") return items;
-    return items.filter((it: any) => {
-      const cat = (it.category || "").toLowerCase();
-      if (filterCat === "diplomatic") return cat.includes("diplo");
-      if (filterCat === "military")
-        return cat.includes("milit") || cat.includes("defen") || cat.includes("secur");
-      if (filterCat === "economic") return cat.includes("econ") || cat.includes("ledger");
-      if (filterCat === "political")
-        return cat.includes("polit") || cat.includes("elect") || cat.includes("gov");
-      return true;
-    });
-  }, [items, filterCat]);
-
-  const visibleItems = useMemo(
-    () => filteredItems.slice(0, visibleCount),
-    [filteredItems, visibleCount]
-  );
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    if (target.scrollHeight - target.scrollTop - target.clientHeight < 60) {
-      if (visibleCount < filteredItems.length) {
-        setVisibleCount((prev) => Math.min(filteredItems.length, prev + 10));
-      }
-    }
-  };
-
-  const getDrillForCategory = (cat: string): Exclude<V2Drill, { kind: "intent" } | null> => {
-    if (cat === "diplomatic" || cat === "diplomacy") return { kind: "relations" };
-    if (cat === "military" || cat === "defense" || cat === "security") return { kind: "defense" };
-    if (cat === "economic" || cat === "ledger") return { kind: "economy" };
-    return { kind: "politics" };
-  };
-
-  if (items.length === 0) {
-    return (
-      <p className="text-muted-foreground border-border/40 bg-muted/10 rounded-lg border border-dashed px-3 py-8 text-center text-xs">
-        No national activity recorded yet.
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      {/* Activity Filter Selectors */}
-      <div className="flex scrollbar-none items-center gap-1 overflow-x-auto pb-1">
-        {[
-          { id: "all", label: "All" },
-          { id: "diplomatic", label: "Diplomacy" },
-          { id: "military", label: "Defense" },
-          { id: "economic", label: "Economy" },
-          { id: "political", label: "Politics" },
-        ].map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setFilterCat(id)}
-            className={cn(
-              "shrink-0 cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all",
-              filterCat === id
-                ? "border border-amber-500/40 bg-amber-500/20 text-amber-400 shadow-xs"
-                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div
-        onScroll={handleScroll}
-        className="scrollbar-thumb-muted max-h-[500px] scrollbar-thin scrollbar-track-transparent space-y-2 overflow-y-auto pr-1"
-      >
-        <div className="divide-border/40 divide-y">
-          {visibleItems.map((item: any) => {
-            const meta = CATEGORY_STYLE[item.category] || CATEGORY_STYLE.ledger;
-            const Icon = meta.icon;
-            const isExpanded = expandedId === item.id;
-            const drill = getDrillForCategory(item.category);
-            const diagnostic = getUniqueDiagnosticNarrative(item, meta.label);
-
-            return (
-              <div
-                key={item.id}
-                className={cn(
-                  "group cursor-pointer rounded-xl border border-transparent p-2.5 transition-all duration-200 select-none",
-                  isExpanded ? "border-border/60 bg-muted/20 my-1.5 shadow-sm" : "hover:bg-muted/10"
-                )}
-                onClick={() => {
-                  soundEffects.droplet();
-                  setExpandedId((prev) => (prev === item.id ? null : item.id));
-                }}
-              >
-                <div className="flex items-start gap-3">
-                  <span
-                    className={cn(
-                      "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border",
-                      meta.cls
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-foreground/90 text-[13px] leading-snug font-semibold">
-                        {item.title}
-                      </p>
-                      <span className="text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 transition-colors">
-                        {isExpanded ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px]">
-                      <span className="text-muted-foreground font-semibold">{meta.label}</span>
-                      <span className="text-muted-foreground/40">•</span>
-                      <span className="text-muted-foreground">{relativeTime(item.timestamp)}</span>
-                      {item.kind === "ledger" && item.targetField && (
-                        <>
-                          <span className="text-muted-foreground/40">•</span>
-                          <span className="text-muted-foreground border-border/40 bg-muted/20 inline-flex items-center gap-1 rounded border px-1.5 py-px font-mono">
-                            {item.deltaValue && item.deltaValue > 0 ? (
-                              <ArrowUp className="h-3 w-3 animate-pulse stroke-[3] text-emerald-400" />
-                            ) : item.deltaValue && item.deltaValue < 0 ? (
-                              <ArrowDown className="h-3 w-3 animate-pulse stroke-[3] text-red-400" />
-                            ) : null}
-                            <span>
-                              {item.targetField}: {formatDeltaValue(item.deltaValue)}
-                            </span>
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Inline Expansion Drawer — Theme Compliant */}
-                {isExpanded && (
-                  <div
-                    className="border-border/60 bg-card/60 animate-in fade-in slide-in-from-top-1 mt-3 space-y-3.5 rounded-2xl border p-4 text-xs shadow-md backdrop-blur-xl duration-200"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {/* Header Metadata & Badges */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase",
-                            meta.cls
-                          )}
-                        >
-                          <Icon className="h-3 w-3" />
-                          {meta.label}
-                        </span>
-                        {diagnostic.badge && (
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold",
-                              diagnostic.badge.cls
-                            )}
-                          >
-                            {diagnostic.badge.direction === "up" && (
-                              <ArrowUp className="h-3 w-3 stroke-[3] text-emerald-400" />
-                            )}
-                            {diagnostic.badge.direction === "down" && (
-                              <ArrowDown className="h-3 w-3 stroke-[3] text-red-400" />
-                            )}
-                            <span>{diagnostic.badge.text}</span>
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-muted-foreground font-mono text-[10px]">
-                        {new Date(item.timestamp).toLocaleString(undefined, {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
-                      </span>
-                    </div>
-
-                    {/* Clean Diagnostic Briefing Text */}
-                    <div className="space-y-1 px-0.5">
-                      <span className="text-muted-foreground block text-[10px] font-bold tracking-widest uppercase">
-                        Diagnostic Briefing
-                      </span>
-                      <p className="text-foreground/90 text-xs leading-relaxed font-medium sm:text-[13px]">
-                        {diagnostic.narrative}
-                      </p>
-                    </div>
-
-                    {/* Dual Action CTAs */}
-                    <div className="border-border/40 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
-                      <Link
-                        href={createUrl(
-                          countrySlug
-                            ? `/mycountry/changelog?country=${countrySlug}`
-                            : "/mycountry/changelog"
-                        )}
-                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-[11px] font-semibold transition-colors"
-                      >
-                        Audit Full Ledger <ArrowUpRight className="h-3 w-3" />
-                      </Link>
-
-                      {onOpenDrill && (
-                        <button
-                          type="button"
-                          onClick={() => onOpenDrill(drill)}
-                          className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold shadow-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95"
-                        >
-                          Inspect {meta.label} Sheet <ArrowUpRight className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Infinite scroll loader button */}
-        {visibleCount < items.length && (
-          <button
-            type="button"
-            onClick={() => setVisibleCount((prev) => Math.min(items.length, prev + 10))}
-            className="text-muted-foreground hover:text-foreground w-full cursor-pointer rounded-lg border border-white/10 bg-white/[0.02] py-2 text-center text-xs font-semibold transition-all hover:bg-white/5 active:scale-[0.99]"
-          >
-            Load more events ({items.length - visibleCount})
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function formatCooldownTime(cooldownUntil: number | null | undefined, now = Date.now()): string {
   if (!cooldownUntil) return "Resets next weekly cycle";
@@ -651,6 +61,20 @@ export function ExecutiveHomeComponent({
   onNavigate?: (section: MyCountrySection) => void;
 }) {
   const _router = useRouter();
+  const searchParams = useSearchParams();
+  const focusParam = searchParams?.get("focus");
+
+  useEffect(() => {
+    if (focusParam === "directives") {
+      onDeclare();
+    } else if (focusParam === "agenda") {
+      const el = document.getElementById("executive-agenda");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [focusParam, onDeclare]);
+
   const feed = api.mycountry.getCanonFeed.useQuery(
     { countryId, limit: 60 },
     { enabled: !!countryId }
@@ -665,17 +89,6 @@ export function ExecutiveHomeComponent({
   }, [status?.data?.onCooldown]);
 
   const items = useMemo(() => feed.data ?? [], [feed.data]);
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const briefing = useMemo(() => {
-    if (items.length === 0) return null;
-    const latest = items[0];
-    return {
-      latest,
-      weekCount: items.length,
-    };
-  }, [items]);
-
   const canCommit = status?.data?.canCommit ?? true;
 
   return (
@@ -709,7 +122,7 @@ export function ExecutiveHomeComponent({
             <h4 className="text-muted-foreground text-xs font-bold tracking-widest uppercase">
               Recent Activity - National log
             </h4>
-            <RecordFeed items={items} onOpenDrill={onOpenDrill} />
+            <ExecutiveRecordFeed items={items} onOpenDrill={onOpenDrill} />
           </FacetCard>
         </div>
 
@@ -780,59 +193,6 @@ export function ExecutiveHomeComponent({
     </div>
   );
 }
-
-const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
-  countryId,
-}: {
-  countryId: string;
-}) {
-  const router = useRouter();
-
-  return (
-    <FacetCard
-      depth={1}
-      interactive="none"
-      className="group/map border-border/80 relative overflow-hidden rounded-2xl p-0 shadow-lg backdrop-blur-xl dark:border-white/10"
-    >
-      {/* Interactive Map Canvas (Full Bleed Edge-to-Edge) */}
-      <div className="relative h-60 w-full overflow-hidden">
-        <CountryMapEmbed
-          countryId={countryId}
-          height="h-60"
-          showNeighbors={true}
-          showCities={true}
-          showSubdivisions={false}
-          interactive={true}
-        />
-
-        {/* Floating Glass Badges (Revealed on Hover/Activation) */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between p-2.5 opacity-0 transition-opacity duration-200 group-focus-within/map:opacity-100 group-hover/map:opacity-100">
-          {/* Top-Left: Open Maps */}
-          <Link
-            href="/maps"
-            className="bg-background/90 text-foreground hover:bg-background group pointer-events-auto flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-[11px] font-bold shadow-md backdrop-blur-xl transition-all hover:scale-105 active:scale-95 dark:border-white/20 dark:bg-zinc-900/90"
-            title="Open IxWorld Maps"
-          >
-            <MapPin className="h-3.5 w-3.5 text-emerald-600 transition-transform group-hover:scale-110 dark:text-emerald-400" />
-            <span>Open Maps</span>
-            <ArrowUpRight className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </Link>
-
-          {/* Top-Right: Map Editor */}
-          <button
-            type="button"
-            onClick={() => router.push("/mycountry/editor")}
-            className="bg-background/90 text-foreground hover:bg-background group pointer-events-auto flex cursor-pointer items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-[11px] font-bold shadow-md backdrop-blur-xl transition-all hover:scale-105 active:scale-95 dark:border-white/20 dark:bg-zinc-900/90"
-            title="Open Map Editor"
-          >
-            <Edit3 className="h-3.5 w-3.5 text-emerald-600 transition-transform group-hover:scale-110 dark:text-emerald-400" />
-            <span>Map Editor</span>
-          </button>
-        </div>
-      </div>
-    </FacetCard>
-  );
-});
 
 export const ExecutiveHome = React.memo(ExecutiveHomeComponent);
 export const V2Home = ExecutiveHome;

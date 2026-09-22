@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import type { Map as MapLibreInstance, MapLayerMouseEvent } from "maplibre-gl";
 import { useUser } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/auth";
 import { useMapEditor } from "~/hooks/useMapEditor";
@@ -9,19 +10,17 @@ import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import { useBorderEditor } from "~/hooks/useBorderEditor";
 import { useWikiScanner } from "~/hooks/useWikiScanner";
-import {
-  getSnapEnabled,
-  setSnapEnabled as persistSnapEnabled,
-  getSnapTolerance,
-  setSnapTolerance as persistSnapTolerance,
-} from "~/lib/maps/editor-prefs";
-import { transientMapStore } from "~/components/maps/editor/utils/transientStore";
 import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
-import type { TabId } from "~/components/maps/editor/EditorPanel";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { useEditorModalState } from "./useEditorModalState";
+import type { EditorMode } from "~/hooks/map-editor/editor-types";
+import {
+  useEditorLayoutState,
+  useEditorToolState,
+  useEditorSelectionState,
+  useEditorGeoDataState,
+  useEditorBorderOperations,
+} from "./state";
 
 interface UseMapEditorOverlayStateProps {
   countryId?: string;
@@ -67,266 +66,110 @@ export function useMapEditorOverlayState({
   // True when a shape is selected but has no linked Country record
   const isUnclaimed = !!mapSelectedCountry && !mapSelectedCountry.countryId;
 
-  const disabledTools = useMemo(() => {
+  const disabledTools = useMemo<EditorMode[]>(() => {
     if (!isWorldMode) return [];
-    // In world editor, tools are enabled for any selected shape.
-    // Unclaimed territories just don't get country-specific tools (like subdivision import).
     if (!mapSelectedCountry) {
       return [
         "add-city",
         "add-subdivision",
         "add-poi",
         "add-route",
-        "add-story-pin",
-        "add-label",
         "import-provinces",
       ];
     }
     if (!hasGeometry) {
-      return ["add-city", "add-poi", "add-route", "add-story-pin", "add-label"];
+      return ["add-city", "add-poi", "add-route"];
     }
     return [];
   }, [isWorldMode, mapSelectedCountry, hasGeometry]);
 
-  // --- Sidebar Tabs State ---
-  const [activeSidebarTab, setActiveSidebarTab] = useState<
-    "linkages" | "sovereignty" | "layers" | "features" | "wiki"
-  >(isWorldMode ? "linkages" : "layers");
+  // Sub-hooks for decomposed concerns
+  const layout = useEditorLayoutState({
+    isWorldMode,
+    activeEditorMode,
+    editorMode: editor.mode,
+    mapSelectedCountry,
+  });
 
-  // --- Linkage / Assignment States ---
-  const [featureSearch, setFeatureSearch] = useState("");
-  const [featureFilter, setFeatureFilter] = useState<"all" | "linked" | "unlinked">("all");
-  const [assigningFeatureId, setAssigningFeatureId] = useState<string | null>(null);
-  const [assignCountryId, setAssignCountryId] = useState("");
-  const [unlinkedFeatureIdToAssign, setUnlinkedFeatureIdToAssign] = useState("");
-  const [validationTab, setValidationTab] = useState<"issues" | "linked" | "unlinked" | "features">(
-    "issues"
+  const tools = useEditorToolState();
+
+  const { data: countryRoutesData } = api.transport.getCountryRoutes.useQuery(
+    { countryId: activeCountryId ?? "" },
+    { enabled: !!activeCountryId, staleTime: 60_000, gcTime: 5 * 60_000 }
   );
 
-  // --- Inline editable Feature properties ---
-  const [editableFeatureName, setEditableFeatureName] = useState("");
-  const [editableCountryLinkageId, setEditableCountryLinkageId] = useState("");
+  const { data: worldRoutesData } = api.transport.getAllRoutesGeoJSON.useQuery(
+    {},
+    { enabled: isWorldMode || !activeCountryId, staleTime: 60_000, gcTime: 5 * 60_000 }
+  );
 
-  // --- Editable Wiki Linkage & Custom Properties ---
-  const [wikiPageTitle, setWikiPageTitle] = useState("");
-  const [propertiesJsonString, setPropertiesJsonString] = useState("");
-  const [isEditingJson, setIsEditingJson] = useState(false);
-  const [jsonError, setJsonError] = useState<string | null>(null);
+  const transportRouteData =
+    (activeCountryId ? countryRoutesData : worldRoutesData) ??
+    countryRoutesData ??
+    worldRoutesData ??
+    null;
 
-  const parsedProperties = useMemo(() => {
-    try {
-      return propertiesJsonString ? JSON.parse(propertiesJsonString) : {};
-    } catch (_e) {
-      return {};
-    }
-  }, [propertiesJsonString]);
+  const selection = useEditorSelectionState({
+    editor,
+    mapRef,
+    expandPropertiesPanel: layout.expandPropertiesPanel,
+    transportRouteData,
+  });
 
-  // Load details for the selected feature
-  const { data: featureDetails, refetch: refetchFeatureDetails } =
-    api.geoEditor.getFeatureDetails.useQuery(
-      { featureId: mapSelectedCountry?.featureId ?? "" },
-      { enabled: !!mapSelectedCountry?.featureId }
-    );
+  const geo = useEditorGeoDataState({
+    isWorldMode,
+    activeCountryId,
+    setActiveCountryId,
+    mapSelectedCountry,
+    setMapSelectedCountry,
+  });
 
-  // Admin detection for Forge Mode access
-  const { user: authUser } = useUser();
-  const isAdmin =
-    !!authUser &&
-    (isSystemOwner(authUser.id) ||
-      (typeof authUser.publicMetadata?.role === "string" &&
-        ["admin", "owner", "staff"].includes(authUser.publicMetadata.role)));
+  const borderOps = useEditorBorderOperations({
+    borderActions,
+    borderState,
+    mapSelectedCountry,
+    setActiveEditorMode,
+    refetchValidation: geo.refetchValidation,
+  });
 
-  // Admin mutations (only used in forge mode)
-  const generateTransport = api.transport.generateRoutes.useMutation();
-  const recalculateGeo = api.geoCore.recalculateGeoProfiles.useMutation();
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
+  const user = useUser();
+  const isAdmin = isSystemOwner(user.user?.id ?? "");
   const utils = api.useUtils();
 
-  const { data: featureList } = api.geoCore.listCountries.useQuery(undefined, {
-    enabled: isWorldMode,
-  });
-
-  const recalculateAreaMutation = api.geoCore.recalculateArea.useMutation({
+  const generateTransport = api.transport.generateRoutes.useMutation({
     onSuccess: () => {
-      refetchFeatureDetails();
-      alert("Area successfully recalculated!");
+      utils.transport.getCountryRoutes.invalidate();
     },
-    onError: (err) => {
-      alert(`Failed to recalculate area: ${err.message}`);
+    onError: (err: { message: string }) => {
+      editor.setMutationError?.(err.message);
     },
   });
 
-  const { data: dbCountries } = api.countries.getAll.useQuery(
-    { limit: 500 },
-    { enabled: isWorldMode, staleTime: 60_000 }
-  );
-
-  const { data: relations, isLoading: relationsLoading } =
-    api.geoSovereignty.getSovereigntyRelations.useQuery(undefined, { enabled: isWorldMode });
-
-  const { data: validationData, refetch: refetchValidation } =
-    api.geoEditor.validateLinkage.useQuery(undefined, {
-      enabled: isWorldMode,
-      staleTime: 10_000,
-      retry: false,
-    });
-
-  const assignMutation = api.geoEditor.assignCountryGeometry.useMutation({
+  const recalculateGeo = api.geoCore.recalculateGeoProfiles.useMutation({
     onSuccess: () => {
-      utils.geoCore.listCountries.invalidate();
-      utils.geoCore.getMapStats.invalidate();
-      utils.geoCore.getWorldMap.invalidate();
+      editor.refetchFeatures();
       utils.geoCore.getMapBundle.invalidate();
-      refetchValidation();
-      setAssigningFeatureId(null);
-      setAssignCountryId("");
+    },
+    onError: (err: { message: string }) => {
+      editor.setMutationError?.(err.message);
     },
   });
-
-  const unlinkMutation = api.geoEditor.unlinkCountryGeometry.useMutation({
-    onSuccess: () => {
-      utils.geoCore.listCountries.invalidate();
-      utils.geoCore.getMapStats.invalidate();
-      utils.geoCore.getWorldMap.invalidate();
-      utils.geoCore.getMapBundle.invalidate();
-      refetchValidation();
-      setMapSelectedCountry(null);
-      setActiveCountryId(null);
-    },
-  });
-
-  const syncMutation = api.geoEditor.repairLinkage.useMutation({
-    onSuccess: () => {
-      utils.geoEditor.validateLinkage.invalidate();
-      utils.geoCore.listCountries.invalidate();
-      utils.geoCore.getWorldMap.invalidate();
-      utils.geoCore.getMapBundle.invalidate();
-      refetchValidation();
-      alert("Linkages synced successfully!");
-    },
-  });
-
-  const autoMatchMutation = api.geoEditor.repairLinkage.useMutation({
-    onSuccess: () => {
-      utils.geoEditor.validateLinkage.invalidate();
-      utils.geoCore.listCountries.invalidate();
-      utils.geoCore.getWorldMap.invalidate();
-      utils.geoCore.getMapBundle.invalidate();
-      refetchValidation();
-      alert("Auto-matching complete!");
-    },
-  });
-
-  const createSovereignty = api.geoSovereignty.createSovereignty.useMutation({
-    onSuccess: () => {
-      utils.geoSovereignty.getSovereigntyRelations.invalidate();
-      utils.geoCore.getWorldMap.invalidate();
-      utils.geoCore.getMapBundle.invalidate();
-      utils.geoCore.getMapStats.invalidate();
-      resetSovereigntyForm();
-    },
-  });
-
-  const updateSovereignty = api.geoSovereignty.updateSovereignty.useMutation({
-    onSuccess: () => {
-      utils.geoSovereignty.getSovereigntyRelations.invalidate();
-      utils.geoCore.getWorldMap.invalidate();
-      utils.geoCore.getMapBundle.invalidate();
-      resetSovereigntyForm();
-    },
-  });
-
-  const deleteSovereignty = api.geoSovereignty.deleteSovereignty.useMutation({
-    onSuccess: () => {
-      utils.geoSovereignty.getSovereigntyRelations.invalidate();
-      utils.geoCore.getWorldMap.invalidate();
-      utils.geoCore.getMapBundle.invalidate();
-      utils.geoCore.getMapStats.invalidate();
-    },
-  });
-
-  const updatePropertiesMutation = api.geoEditor.updateFeatureProperties.useMutation({
-    onSuccess: () => {
-      utils.geoCore.listCountries.invalidate();
-      utils.geoCore.getWorldMap.invalidate();
-      utils.geoCore.getMapBundle.invalidate();
-      refetchValidation();
-      alert("Feature properties updated successfully!");
-    },
-    onError: (err) => {
-      alert(`Failed to save feature properties: ${err.message}`);
-    },
-  });
-
-  const createCountryFromShapeMutation = api.geoEditor.createCountryFromShape.useMutation({
-    onSuccess: () => {
-      utils.geoCore.listCountries.invalidate();
-      utils.geoCore.getWorldMap.invalidate();
-      utils.geoCore.getMapBundle.invalidate();
-      refetchValidation();
-    },
-    onError: (err) => {
-      alert(`Failed to create country: ${err.message}`);
-    },
-  });
-
-  const createCountryFromShapeAction = useCallback(
-    (name: string) => {
-      if (!mapSelectedCountry?.featureId) return;
-      createCountryFromShapeMutation.mutate({
-        featureId: mapSelectedCountry.featureId,
-        name,
-      });
-    },
-    [mapSelectedCountry, createCountryFromShapeMutation]
-  );
-
-  useEffect(() => {
-    if (featureDetails) {
-      setWikiPageTitle(featureDetails.wikiPageTitle ?? "");
-      setPropertiesJsonString(JSON.stringify(featureDetails.properties ?? {}, null, 2));
-      setIsEditingJson(false);
-      setJsonError(null);
-    } else {
-      setWikiPageTitle("");
-      setPropertiesJsonString("");
-      setIsEditingJson(false);
-      setJsonError(null);
-    }
-  }, [featureDetails]);
-
-  // Sync edits when country is selected
-  useEffect(() => {
-    if (mapSelectedCountry) {
-      setEditableFeatureName(mapSelectedCountry.displayName || "");
-      setEditableCountryLinkageId(mapSelectedCountry.countryId || "");
-    } else {
-      setEditableFeatureName("");
-      setEditableCountryLinkageId("");
-    }
-  }, [mapSelectedCountry]);
-
-  // Reset assigningFeatureId on country change
-  useEffect(() => {
-    setAssigningFeatureId(null);
-  }, [activeCountryId]);
 
   // Auto-select map feature when activeCountryId changes
   useEffect(() => {
     if (!isWorldMode || !activeCountryId || mapSelectedCountry) return;
-    if (!featureList) return;
+    if (!geo.featureList) return;
 
-    const linkedFeature = featureList.find((f) => f.countryId === activeCountryId);
+    const linkedFeature = geo.featureList.find((f) => f.countryId === activeCountryId);
     if (linkedFeature) {
       setMapSelectedCountry(linkedFeature);
       if (mapRef.current && (linkedFeature.centroidLng || linkedFeature.centroidLat)) {
         mapRef.current.flyTo(linkedFeature.centroidLng, linkedFeature.centroidLat, 5);
       }
     }
-  }, [isWorldMode, activeCountryId, mapSelectedCountry, featureList, mapRef]);
-
-  // Exit confirmation state & change detection
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  }, [isWorldMode, activeCountryId, mapSelectedCountry, geo.featureList, mapRef]);
 
   const hasUnsavedChanges = useMemo(() => {
     if (borderState.isDirty) return true;
@@ -336,15 +179,15 @@ export function useMapEditorOverlayState({
     if (mapSelectedCountry) {
       const dbFeatureName = mapSelectedCountry.displayName || "";
       const dbCountryId = mapSelectedCountry.countryId || "";
-      const dbWikiTitle = featureDetails?.wikiPageTitle || "";
-      const dbPropsJson = featureDetails?.properties
-        ? JSON.stringify(featureDetails.properties, null, 2)
+      const dbWikiTitle = geo.featureDetails?.wikiPageTitle || "";
+      const dbPropsJson = geo.featureDetails?.properties
+        ? JSON.stringify(geo.featureDetails.properties, null, 2)
         : "";
 
-      if (editableFeatureName !== dbFeatureName) return true;
-      if (editableCountryLinkageId !== dbCountryId) return true;
-      if (wikiPageTitle !== dbWikiTitle) return true;
-      if (propertiesJsonString && propertiesJsonString !== dbPropsJson) return true;
+      if (geo.editableFeatureName !== dbFeatureName) return true;
+      if (geo.editableCountryLinkageId !== dbCountryId) return true;
+      if (geo.wikiPageTitle !== dbWikiTitle) return true;
+      if (geo.propertiesJsonString && geo.propertiesJsonString !== dbPropsJson) return true;
     }
     return false;
   }, [
@@ -352,338 +195,20 @@ export function useMapEditorOverlayState({
     importer.step,
     editor.mode,
     mapSelectedCountry,
-    featureDetails,
-    editableFeatureName,
-    editableCountryLinkageId,
-    wikiPageTitle,
-    propertiesJsonString,
+    geo.editableFeatureName,
+    geo.editableCountryLinkageId,
+    geo.wikiPageTitle,
+    geo.propertiesJsonString,
+    geo.featureDetails,
   ]);
 
-  const handleExitBorderEdit = useCallback(() => {
-    if (borderState.isDirty) {
-      if (!confirm("You have unsaved changes. Discard edits and exit border editor?")) {
-        return;
-      }
-    }
-    borderActions.reset();
-    setActiveEditorMode("view");
-  }, [borderState.isDirty, borderActions]);
-
   const handleRequestExit = useCallback(() => {
-    if (activeEditorMode === "border_edit") {
-      handleExitBorderEdit();
-      return;
-    }
     if (hasUnsavedChanges) {
       setShowExitConfirm(true);
     } else {
       onExit();
     }
-  }, [activeEditorMode, handleExitBorderEdit, hasUnsavedChanges, onExit]);
-
-  // --- Sovereignty States ---
-  const [sovereigntySearch, setSovereigntySearch] = useState("");
-  const [sovereigntyTypeFilter, setSovereigntyTypeFilter] = useState("all");
-  const [showSovereigntyForm, setShowSovereigntyForm] = useState(false);
-  const [editingSovereigntyId, setEditingSovereigntyId] = useState<string | null>(null);
-  const [sovereigntyForm, setSovereigntyForm] = useState({
-    sovereignId: "",
-    subjectId: "",
-    relationshipType: "crown_possession",
-    autonomyLevel: 50,
-    description: "",
-    establishedDate: "",
-  });
-
-  // --- Border Editor States ---
-  const [displayName, setDisplayName] = useState<string | null>(null);
-  const [showSplitDialog, setShowSplitDialog] = useState(false);
-  const [showMergeDialog, setShowMergeDialog] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showConfirmSaveModal, setShowConfirmSaveModal] = useState(false);
-  const [saveReason, setSaveReason] = useState("");
-
-  // --- Flexible Panel States ---
-  const [panelConfigs, setPanelConfigs] = useState<{
-    panelA: { placement: "left" | "right" | "bottom"; tabs: TabId[]; collapsed: boolean };
-    panelB: { placement: "left" | "right" | "bottom"; tabs: TabId[]; collapsed: boolean };
-  }>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("ixworld-editor-panels-config-v4");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed && parsed.panelA && parsed.panelB) {
-            return parsed;
-          }
-        } catch (_) {}
-      }
-    }
-    return {
-      panelA: {
-        placement: "left",
-        tabs: isWorldMode ? ["linkages", "sovereignty", "layers"] : ["layers"],
-        collapsed: false,
-      },
-      panelB: {
-        placement: "right",
-        tabs: ["properties", "history"],
-        collapsed: false,
-      },
-    };
-  });
-
-  // Save config to local storage on change
-  useEffect(() => {
-    localStorage.setItem("ixworld-editor-panels-config-v4", JSON.stringify(panelConfigs));
-  }, [panelConfigs]);
-
-  // Sync tab requirements on mode shift
-  useEffect(() => {
-    setPanelConfigs((prev) => {
-      let changed = false;
-      const next = {
-        panelA: { ...prev.panelA, tabs: [...prev.panelA.tabs] },
-        panelB: { ...prev.panelB, tabs: [...prev.panelB.tabs] },
-      };
-
-      if (isWorldMode) {
-        const oldLenA = next.panelA.tabs.length;
-        const oldLenB = next.panelB.tabs.length;
-        next.panelA.tabs = next.panelA.tabs.filter((t) => t !== "features");
-        next.panelB.tabs = next.panelB.tabs.filter((t) => t !== "features");
-        if (next.panelA.tabs.length !== oldLenA || next.panelB.tabs.length !== oldLenB) {
-          changed = true;
-        }
-
-        if (!next.panelA.tabs.includes("layers") && !next.panelB.tabs.includes("layers")) {
-          next.panelA.tabs.push("layers");
-          changed = true;
-        }
-        if (!next.panelA.tabs.includes("linkages") && !next.panelB.tabs.includes("linkages")) {
-          next.panelA.tabs.push("linkages");
-          changed = true;
-        }
-        if (
-          !next.panelA.tabs.includes("sovereignty") &&
-          !next.panelB.tabs.includes("sovereignty")
-        ) {
-          next.panelA.tabs.push("sovereignty");
-          changed = true;
-        }
-      } else {
-        const oldLenA = next.panelA.tabs.length;
-        const oldLenB = next.panelB.tabs.length;
-        next.panelA.tabs = next.panelA.tabs.filter(
-          (t) => t !== "linkages" && t !== "sovereignty" && t !== "features"
-        );
-        next.panelB.tabs = next.panelB.tabs.filter(
-          (t) => t !== "linkages" && t !== "sovereignty" && t !== "features"
-        );
-        if (next.panelA.tabs.length !== oldLenA || next.panelB.tabs.length !== oldLenB) {
-          changed = true;
-        }
-        if (!next.panelA.tabs.includes("layers") && !next.panelB.tabs.includes("layers")) {
-          next.panelA.tabs.push("layers");
-          changed = true;
-        }
-      }
-
-      if (!next.panelA.tabs.includes("properties") && !next.panelB.tabs.includes("properties")) {
-        next.panelB.tabs.push("properties");
-        changed = true;
-      }
-
-      return changed ? next : prev;
-    });
-  }, [isWorldMode]);
-
-  const handleMoveTab = useCallback((tabId: TabId, targetPanelId: "panelA" | "panelB") => {
-    setPanelConfigs((prev) => {
-      const sourcePanelId = targetPanelId === "panelA" ? "panelB" : "panelA";
-      if (prev[targetPanelId].tabs.includes(tabId)) return prev;
-      return {
-        ...prev,
-        [sourcePanelId]: {
-          ...prev[sourcePanelId],
-          tabs: prev[sourcePanelId].tabs.filter((t) => t !== tabId),
-        },
-        [targetPanelId]: {
-          ...prev[targetPanelId],
-          tabs: [...prev[targetPanelId].tabs, tabId],
-          collapsed: false,
-        },
-      };
-    });
-  }, []);
-
-  const handleChangePanelPlacement = useCallback(
-    (panelId: "panelA" | "panelB", placement: "left" | "right" | "bottom") => {
-      setPanelConfigs((prev) => ({
-        ...prev,
-        [panelId]: {
-          ...prev[panelId],
-          placement,
-        },
-      }));
-    },
-    []
-  );
-
-  const expandPropertiesPanel = useCallback(() => {
-    setPanelConfigs((prev) => {
-      let changed = false;
-      const next = { ...prev };
-      if (prev.panelA.tabs.includes("properties") && prev.panelA.collapsed) {
-        next.panelA = { ...prev.panelA, collapsed: false };
-        changed = true;
-      }
-      if (prev.panelB.tabs.includes("properties") && prev.panelB.collapsed) {
-        next.panelB = { ...prev.panelB, collapsed: false };
-        changed = true;
-      }
-      return changed ? next : prev;
-    });
-  }, []);
-
-  // Auto-expand/collapse whichever panel contains "properties" tab when mode changes
-  useEffect(() => {
-    const shouldExpand = isWorldMode
-      ? activeEditorMode !== "view" || !!mapSelectedCountry
-      : editor.mode !== "view" && editor.mode !== "import-provinces";
-
-    if (shouldExpand) {
-      setPanelConfigs((prev) => {
-        let changed = false;
-        const next = { ...prev };
-        if (prev.panelA.tabs.includes("properties") && prev.panelA.collapsed) {
-          next.panelA = { ...prev.panelA, collapsed: false };
-          changed = true;
-        }
-        if (prev.panelB.tabs.includes("properties") && prev.panelB.collapsed) {
-          next.panelB = { ...prev.panelB, collapsed: false };
-          changed = true;
-        }
-        return changed ? next : prev;
-      });
-    }
-  }, [editor.mode, activeEditorMode, mapSelectedCountry, isWorldMode]);
-
-  const [cursorCoords, setCursorCoords] = useState<[number, number] | null>(null);
-  const [cursorZoom, setCursorZoom] = useState<number | undefined>(undefined);
-  const [showGrid, setShowGrid] = useState(false);
-  const [showGuides, setShowGuides] = useState(true);
-  const [snapEnabled, setSnapEnabledState] = useState(getSnapEnabled());
-  const [snapTolerance, setSnapToleranceState] = useState(getSnapTolerance());
-
-  const [panelsLocked, setPanelsLockedState] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("ixworld-editor-panels-locked");
-      return stored === "true";
-    }
-    return false;
-  });
-
-  const setPanelsLocked = useCallback((v: boolean) => {
-    setPanelsLockedState(v);
-    localStorage.setItem("ixworld-editor-panels-locked", String(v));
-  }, []);
-
-  const setSnapEnabled = useCallback((v: boolean) => {
-    setSnapEnabledState(v);
-    persistSnapEnabled(v);
-  }, []);
-  const setSnapTolerance = useCallback((v: number) => {
-    setSnapToleranceState(v);
-    persistSnapTolerance(v);
-  }, []);
-  const [hoveredFeature, setHoveredFeature] = useState<{
-    feature: (typeof editor.allFeatures)[number];
-    screenPos: { x: number; y: number };
-  } | null>(null);
-
-  const [showShortcuts, setShowShortcuts] = useState(false);
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-    feature: { id: string; name: string; type: string; wikiPageTitle?: string | null };
-  } | null>(null);
-
-  const [layerStates, setLayerStates] = useState<
-    Record<string, { visible: boolean; locked: boolean; opacity?: number }>
-  >({
-    border: { visible: true, locked: false },
-    regions: { visible: true, locked: false, opacity: 0.6 },
-    cities: { visible: true, locked: false },
-    pois: { visible: false, locked: false },
-    stories: { visible: false, locked: false },
-    labels: { visible: true, locked: false },
-    routes: { visible: false, locked: false },
-    rivers: { visible: true, locked: false },
-    altitude: { visible: true, locked: false },
-    grid: { visible: false, locked: false },
-  });
-
-  // --- Memoized Computations for World Mode ---
-  const countries = useMemo(() => {
-    const list = Array.isArray(dbCountries) ? dbCountries : ((dbCountries as any)?.countries ?? []);
-    return [...(list as any[])].sort((a: any, b: any) => a.name.localeCompare(b.name));
-  }, [dbCountries]);
-
-  const availableCountries = useMemo(() => {
-    if (!countries || !featureList) return [];
-    const assignedCountryIds = new Set(
-      featureList.filter((f) => f.countryId).map((f) => f.countryId)
-    );
-    return countries.filter((c: any) => !assignedCountryIds.has(c.id));
-  }, [countries, featureList]);
-
-  const filteredFeatures = useMemo(() => {
-    if (!featureList) return [];
-    return featureList.filter((f) => {
-      if (featureFilter === "linked" && !f.isClaimed) return false;
-      if (featureFilter === "unlinked" && f.isClaimed) return false;
-      if (
-        featureSearch &&
-        !f.displayName.toLowerCase().includes(featureSearch.toLowerCase()) &&
-        !f.featureId.toLowerCase().includes(featureSearch.toLowerCase())
-      ) {
-        return false;
-      }
-      return true;
-    });
-  }, [featureList, featureFilter, featureSearch]);
-
-  const filteredRelations = useMemo(() => {
-    if (!relations) return [];
-    return relations.filter((r) => {
-      if (sovereigntyTypeFilter !== "all" && r.relationshipType !== sovereigntyTypeFilter)
-        return false;
-      if (
-        sovereigntySearch &&
-        !r.sovereignName.toLowerCase().includes(sovereigntySearch.toLowerCase()) &&
-        !r.subjectName.toLowerCase().includes(sovereigntySearch.toLowerCase())
-      ) {
-        return false;
-      }
-      return true;
-    });
-  }, [relations, sovereigntyTypeFilter, sovereigntySearch]);
-
-  const selectedCountryName = useMemo(() => {
-    if (mapSelectedCountry?.displayName) return mapSelectedCountry.displayName;
-    if (activeCountryId) {
-      return countries.find((c: any) => c.id === activeCountryId)?.name ?? "";
-    }
-    return "";
-  }, [mapSelectedCountry, activeCountryId, countries]);
-
-  const countryRelations = useMemo(() => {
-    if (!relations || !activeCountryId) return [];
-    return relations.filter(
-      (r) => r.sovereignId === activeCountryId || r.subjectId === activeCountryId
-    );
-  }, [relations, activeCountryId]);
+  }, [hasUnsavedChanges, onExit]);
 
   const handleMapSelect = useCallback((country: SelectedCountry | null) => {
     setMapSelectedCountry(country);
@@ -693,169 +218,6 @@ export function useMapEditorOverlayState({
       setActiveCountryId(null);
     }
   }, []);
-
-  const handleAssignLink = (featureId: string) => {
-    if (!assignCountryId) return;
-    assignMutation.mutate({ featureId, countryId: assignCountryId });
-  };
-
-  const handleUnlink = (featureId: string) => {
-    if (confirm(`Unlink this feature (${featureId}) from its country?`)) {
-      unlinkMutation.mutate({ featureId });
-    }
-  };
-
-  const resetSovereigntyForm = () => {
-    setShowSovereigntyForm(false);
-    setEditingSovereigntyId(null);
-    setSovereigntyForm({
-      sovereignId: "",
-      subjectId: "",
-      relationshipType: "crown_possession",
-      autonomyLevel: 50,
-      description: "",
-      establishedDate: "",
-    });
-  };
-
-  const handleCreateSovereignty = () => {
-    if (!sovereigntyForm.sovereignId || !sovereigntyForm.subjectId) return;
-    createSovereignty.mutate({
-      sovereignId: sovereigntyForm.sovereignId,
-      subjectId: sovereigntyForm.subjectId,
-      relationshipType: sovereigntyForm.relationshipType,
-      autonomyLevel: sovereigntyForm.autonomyLevel / 100,
-      description: sovereigntyForm.description || undefined,
-      establishedDate: sovereigntyForm.establishedDate || undefined,
-    });
-  };
-
-  const handleUpdateSovereignty = () => {
-    if (!editingSovereigntyId) return;
-    updateSovereignty.mutate({
-      id: editingSovereigntyId,
-      relationshipType: sovereigntyForm.relationshipType,
-      autonomyLevel: sovereigntyForm.autonomyLevel / 100,
-      description: sovereigntyForm.description || undefined,
-      establishedDate: sovereigntyForm.establishedDate || undefined,
-    });
-  };
-
-  const handleDeleteSovereignty = (id: string) => {
-    if (confirm("Are you sure you want to delete this sovereignty relationship?")) {
-      deleteSovereignty.mutate({ id });
-    }
-  };
-
-  const handleEditSovereignty = (rel: any) => {
-    setEditingSovereigntyId(rel.id);
-    setSovereigntyForm({
-      sovereignId: rel.sovereignId,
-      subjectId: rel.subjectId,
-      relationshipType: rel.relationshipType,
-      autonomyLevel: Math.round(rel.autonomyLevel * 100),
-      description: rel.description || "",
-      establishedDate: rel.establishedDate ? rel.establishedDate.split("T")[0] : "",
-    });
-    setShowSovereigntyForm(true);
-  };
-
-  const handleSaveFeatureProperties = () => {
-    if (!mapSelectedCountry?.featureId) return;
-    updatePropertiesMutation.mutate(
-      {
-        featureId: mapSelectedCountry.featureId,
-        displayName: editableFeatureName || undefined,
-        countryId: editableCountryLinkageId || null,
-        properties: parsedProperties,
-        wikiPageTitle: wikiPageTitle || null,
-      },
-      {
-        onSuccess: () => {
-          refetchFeatureDetails();
-          setIsEditingJson(false);
-        },
-      }
-    );
-  };
-
-  const handleConfirmBorderSave = async () => {
-    try {
-      setIsSubmitting(true);
-      await borderActions.submitEdit(true, saveReason);
-      setShowConfirmSaveModal(false);
-      utils.geoCore.getWorldMap.invalidate();
-      utils.geoCore.getMapBundle.invalidate();
-      refetchValidation();
-      setActiveEditorMode("view");
-    } catch (err) {
-      console.error("Save failed:", err);
-      alert(`Save failed: ${err instanceof Error ? err.message : "Unknown error"}`);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const enterBorderEdit = useCallback(
-    (initialMode?: "select" | "vertex_edit" | "split" | "merge" | "trace" | "brush") => {
-      if (!mapSelectedCountry?.featureId) return;
-      borderActions.loadFeature(mapSelectedCountry.featureId);
-      setActiveEditorMode("border_edit");
-      if (initialMode) {
-        borderActions.setMode(initialMode);
-      }
-    },
-    [mapSelectedCountry, borderActions]
-  );
-
-  const handleSplitConfirm = useCallback(
-    async (nameA: string, nameB: string) => {
-      try {
-        setIsSubmitting(true);
-        await borderActions.executeSplit(nameA, nameB);
-        setShowSplitDialog(false);
-        utils.geoCore.getWorldMap.invalidate();
-        utils.geoCore.getMapBundle.invalidate();
-        refetchValidation();
-        setActiveEditorMode("view");
-      } catch (err) {
-        console.error("Split failed:", err);
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [borderActions, utils, refetchValidation]
-  );
-
-  const handleMergeConfirm = useCallback(
-    async (newName: string) => {
-      try {
-        setIsSubmitting(true);
-        await borderActions.executeMerge(newName);
-        setShowMergeDialog(false);
-        utils.geoCore.getWorldMap.invalidate();
-        utils.geoCore.getMapBundle.invalidate();
-        refetchValidation();
-        setActiveEditorMode("view");
-      } catch (err) {
-        console.error("Merge failed:", err);
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [borderActions, utils, refetchValidation]
-  );
-
-  const handleBorderToolbarSubmit = useCallback(() => {
-    if (borderState.mode === "split" && borderState.splitLine.length >= 2) {
-      setShowSplitDialog(true);
-    } else if (borderState.mode === "merge" && borderState.mergeTargets.length > 0) {
-      setShowMergeDialog(true);
-    } else {
-      setShowConfirmSaveModal(true);
-      setSaveReason("");
-    }
-  }, [borderState.mode, borderState.splitLine, borderState.mergeTargets]);
 
   const simplifyAll = api.geoFeatures.simplifySubdivisions.useMutation({
     onSuccess: () => {
@@ -925,7 +287,7 @@ export function useMapEditorOverlayState({
     { enabled: !!activeCountryId, staleTime: 5 * 60_000 }
   );
 
-  const [mapInstance, setMapInstance] = useState<any | null>(null);
+  const [mapInstance, setMapInstance] = useState<MapLibreInstance | null>(null);
   useEffect(() => {
     const m = mapRef.current?.getMap() ?? null;
     if (m) {
@@ -941,126 +303,56 @@ export function useMapEditorOverlayState({
 
   const {
     mapLayers: editorMapLayers,
-    toggleLayer: toggleEditorLayer,
+    toggleLayer: rawToggleEditorLayer,
     visibleLayers: editorVisibleLayers,
   } = useMapData(["background", "altitudes", "rivers", "lakes", "political", "country_labels"]);
+  const toggleEditorLayer = useCallback(
+    (layer: string) => rawToggleEditorLayer(layer as Parameters<typeof rawToggleEditorLayer>[0]),
+    [rawToggleEditorLayer]
+  );
   const worldMapLayers = editorMapLayers;
 
   // Keep border editor trace mode in sync with the latest river/coast layer data
   const setTraceLayerSource = borderActions.setTraceLayerSource;
   useEffect(() => {
-    setTraceLayerSource(worldMapLayers as any, editorVisibleLayers);
+    setTraceLayerSource(
+      worldMapLayers as Parameters<typeof borderActions.setTraceLayerSource>[0],
+      editorVisibleLayers
+    );
   }, [worldMapLayers, editorVisibleLayers, setTraceLayerSource]);
 
-  const { data: transportRouteData } = api.transport.getCountryRoutes.useQuery(
-    { countryId: activeCountryId ?? "" },
-    { enabled: !!activeCountryId, staleTime: 60_000, gcTime: 5 * 60_000 }
-  );
-
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
-  useEffect(() => {
-    if (editor.mode !== "add-route") {
-      setSelectedRouteId(null);
-    }
-  }, [editor.mode]);
-
-  const handleRouteClick = useCallback(
+  const handleEditRoute = useCallback(
     (routeId: string) => {
-      setSelectedRouteId(routeId);
-      editor.setMode("add-route");
-    },
-    [editor]
-  );
-
-  const [debouncedCoords, setDebouncedCoords] = useState<[number, number] | null>(null);
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const unsubscribe = transientMapStore.subscribe(() => {
-      const coords = transientMapStore.getSnapshot().cursorCoords;
-      if (timer) clearTimeout(timer);
-      if (!coords) {
-        setDebouncedCoords(null);
-        return;
+      if (!transportRouteData?.features) return;
+      const feature = transportRouteData.features.find(
+        (f) => String(f.properties?.id) === routeId
+      );
+      if (!feature || !feature.geometry) return;
+      let vertices: [number, number][] = [];
+      if (feature.geometry.type === "LineString") {
+        vertices = feature.geometry.coordinates as [number, number][];
+      } else if (feature.geometry.type === "MultiLineString") {
+        vertices = (feature.geometry.coordinates as [number, number][][]).flat();
       }
-      timer = setTimeout(() => {
-        setDebouncedCoords(coords);
-      }, 250);
-    });
-
-    return () => {
-      unsubscribe();
-      if (timer) clearTimeout(timer);
-    };
-  }, []);
-
-  const { data: cursorTerrainInfo } = api.geoCore.getPointInfo.useQuery(
-    { lng: debouncedCoords?.[0] ?? 0, lat: debouncedCoords?.[1] ?? 0 },
-    { enabled: !!debouncedCoords, staleTime: 30_000, gcTime: 60_000 }
+      if (vertices.length > 0) {
+        editor.startRouteEdit(routeId, vertices);
+      }
+    },
+    [transportRouteData, editor]
   );
 
+  // Auto-enable route layer visibility when route mode is entered or route is selected
   useEffect(() => {
-    if (cursorTerrainInfo) {
-      transientMapStore.setTerrainInfo({
-        elevation: cursorTerrainInfo.elevation?.zoneName ?? null,
-        elevationMeters: (cursorTerrainInfo.elevation as any)?.elevationMeters ?? null,
-        climate: cursorTerrainInfo.climate?.climateName ?? null,
-        biomeColor: (cursorTerrainInfo.climate as any)?.color ?? null,
+    if (editor.mode === "add-route" || editor.mode === "edit-route" || selection.selectedRouteId) {
+      tools.setLayerStates((prev) => {
+        if (prev.routes?.visible) return prev;
+        return {
+          ...prev,
+          routes: { ...prev.routes, visible: true, locked: false, opacity: prev.routes?.opacity ?? 1 },
+        };
       });
     }
-  }, [cursorTerrainInfo]);
-
-  const handleSelectFeature = useCallback(
-    (feature: any) => {
-      setSelectedRouteId(null);
-      editor.setSelectedFeature(feature);
-      if (!feature) {
-        editor.resetForm();
-        return;
-      }
-      editor.startEditing(feature);
-      expandPropertiesPanel();
-      if (mapRef.current) {
-        if (feature.coordinates) {
-          mapRef.current.flyTo(feature.coordinates[0], feature.coordinates[1], 8);
-        } else if (feature.geometry) {
-          const geo = feature.geometry;
-          const ring = geo.type === "Polygon" ? geo.coordinates[0] : geo.coordinates[0]?.[0];
-          if (ring && ring.length > 0) {
-            let cx = 0,
-              cy = 0;
-            for (const pt of ring) {
-              cx += pt[0]!;
-              cy += pt[1]!;
-            }
-            cx /= ring.length;
-            cy /= ring.length;
-            mapRef.current.flyTo(cx, cy, 7);
-          }
-        }
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [editor, mapRef]
-  );
-
-  const handleEditFeature = useCallback(
-    (feature: any) => {
-      editor.startEditing(feature);
-      expandPropertiesPanel();
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [editor]
-  );
-
-  const handleDeleteFeature = useCallback(
-    (feature: any) => {
-      if (confirm(`Delete "${feature.name}"? This action cannot be undone.`)) {
-        editor.handleDeleteFeature(feature);
-      }
-    },
-    [editor]
-  );
+  }, [editor.mode, selection.selectedRouteId, tools.setLayerStates]);
 
   const handleSubmit = useCallback(() => {
     switch (editor.mode) {
@@ -1081,18 +373,6 @@ export function useMapEditorOverlayState({
         break;
       case "edit-poi":
         editor.submitEditPOI();
-        break;
-      case "add-story-pin":
-        editor.submitStoryPin();
-        break;
-      case "add-label":
-        editor.submitMapLabel();
-        break;
-      case "edit-story-pin":
-        editor.submitEditStoryPin();
-        break;
-      case "edit-label":
-        editor.submitEditMapLabel();
         break;
     }
   }, [editor]);
@@ -1124,24 +404,6 @@ export function useMapEditorOverlayState({
         } else if (key === "t" || key === "4") {
           e.preventDefault();
           editor.setMode("add-route");
-        } else if (key === "s") {
-          e.preventDefault();
-          editor.setMode("add-story-pin");
-        } else if (key === "l") {
-          e.preventDefault();
-          editor.setMode("add-label");
-        } else if (key === "i") {
-          e.preventDefault();
-          editor.setMode("eyedropper");
-        } else if (key === "w") {
-          e.preventDefault();
-          editor.setMode("magic-wand");
-        } else if (key === "b") {
-          e.preventDefault();
-          editor.setMode("paint");
-        } else if (key === "g") {
-          e.preventDefault();
-          editor.setMode("paint-fill");
         }
       }
 
@@ -1187,7 +449,7 @@ export function useMapEditorOverlayState({
         } else if (editor.mode !== "view") {
           editor.resetForm();
         } else if (activeEditorMode === "border_edit") {
-          handleExitBorderEdit();
+          borderOps.handleExitBorderEdit();
         } else {
           handleRequestExit();
         }
@@ -1197,7 +459,7 @@ export function useMapEditorOverlayState({
       if ((e.key === "Delete" || e.key === "Backspace") && !inInput) {
         if (editor.selectedFeature && editor.mode === "view") {
           e.preventDefault();
-          handleDeleteFeature(editor.selectedFeature);
+          selection.handleDeleteFeature(editor.selectedFeature);
         }
         return;
       }
@@ -1209,21 +471,23 @@ export function useMapEditorOverlayState({
     editor,
     importer,
     handleSubmit,
-    handleDeleteFeature,
+    selection,
     handleRequestExit,
     activeEditorMode,
-    handleExitBorderEdit,
+    borderOps.handleExitBorderEdit,
   ]);
 
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+
   const handleMapMouseMove = useCallback(
-    (e: any) => {
+    (e: MapLayerMouseEvent) => {
       if (!mapInstance) return;
-      const latlng = e.lngLat;
-      if (latlng) {
-        setCursorCoords([latlng.lng, latlng.lat]);
-      }
 
       if (activeEditorMode !== "view" || editor.mode !== "view") {
+        if (selectionRef.current.hoveredFeature) {
+          selectionRef.current.setHoveredFeature(null);
+        }
         return;
       }
 
@@ -1231,34 +495,33 @@ export function useMapEditorOverlayState({
         layers: ["editor-subdivisions-fill"],
       });
 
+      const currentSelection = selectionRef.current;
       if (hits.length > 0) {
         const hitId = hits[0]?.properties?.id as string | undefined;
-        if (hitId && hitId !== hoveredFeature?.feature.id) {
+        if (hitId && hitId !== currentSelection.hoveredFeature?.feature.id) {
           const match = editor.allFeatures.find((f) => f.id === hitId);
           if (match) {
-            setHoveredFeature({ feature: match, screenPos: { x: e.point.x, y: e.point.y } });
+            currentSelection.setHoveredFeature({ feature: match, screenPos: { x: e.point.x, y: e.point.y } });
           }
         }
-      } else if (hoveredFeature) {
-        setHoveredFeature(null);
+      } else if (currentSelection.hoveredFeature) {
+        currentSelection.setHoveredFeature(null);
       }
     },
-    [mapInstance, editor.mode, editor.allFeatures, hoveredFeature, activeEditorMode]
+    [mapInstance, editor.mode, editor.allFeatures, activeEditorMode]
   );
 
   useEffect(() => {
     const map = mapInstance;
     if (!map) return;
     map.on("mousemove", handleMapMouseMove);
-    map.on("zoomend", () => setCursorZoom(map.getZoom()));
-    setCursorZoom(map.getZoom());
+    const onZoomEnd = () => tools.setCursorZoom(map.getZoom());
+    map.on("zoomend", onZoomEnd);
     return () => {
       map.off("mousemove", handleMapMouseMove);
+      map.off("zoomend", onZoomEnd);
     };
-  }, [mapInstance, handleMapMouseMove]);
-
-  // editor.mode transitions are surfaced via the always-available tool rail.
-  // Only border_edit needs explicit mode setting (via enterBorderEdit).
+  }, [mapInstance, handleMapMouseMove, tools.setCursorZoom]);
 
   const featureCounts = useMemo(
     () => ({
@@ -1290,149 +553,153 @@ export function useMapEditorOverlayState({
     toolsDisabled,
     disabledTools,
     isUnclaimed,
-    createCountryFromShapeAction,
-    createCountryFromShapePending: createCountryFromShapeMutation.isPending,
-    activeSidebarTab,
-    setActiveSidebarTab,
-    featureSearch,
-    setFeatureSearch,
-    featureFilter,
-    setFeatureFilter,
-    assigningFeatureId,
-    setAssigningFeatureId,
-    assignCountryId,
-    setAssignCountryId,
-    unlinkedFeatureIdToAssign,
-    setUnlinkedFeatureIdToAssign,
-    validationTab,
-    setValidationTab,
-    editableFeatureName,
-    setEditableFeatureName,
-    editableCountryLinkageId,
-    setEditableCountryLinkageId,
-    wikiPageTitle,
-    setWikiPageTitle,
-    propertiesJsonString,
-    setPropertiesJsonString,
-    isEditingJson,
-    setIsEditingJson,
-    jsonError,
-    setJsonError,
-    parsedProperties,
-    featureDetails,
-    refetchFeatureDetails,
+    createCountryFromShapeAction: geo.createCountryFromShapeAction,
+    createCountryFromShapePending: geo.createCountryFromShapeMutation.isPending,
+    activeSidebarTab: geo.activeSidebarTab,
+    setActiveSidebarTab: geo.setActiveSidebarTab,
+    featureSearch: geo.featureSearch,
+    setFeatureSearch: geo.setFeatureSearch,
+    featureFilter: geo.featureFilter,
+    setFeatureFilter: geo.setFeatureFilter,
+    assigningFeatureId: geo.assigningFeatureId,
+    setAssigningFeatureId: geo.setAssigningFeatureId,
+    assignCountryId: geo.assignCountryId,
+    setAssignCountryId: geo.setAssignCountryId,
+    unlinkedFeatureIdToAssign: geo.unlinkedFeatureIdToAssign,
+    setUnlinkedFeatureIdToAssign: geo.setUnlinkedFeatureIdToAssign,
+    validationTab: geo.validationTab,
+    setValidationTab: geo.setValidationTab,
+    editableFeatureName: geo.editableFeatureName,
+    setEditableFeatureName: geo.setEditableFeatureName,
+    editableCountryLinkageId: geo.editableCountryLinkageId,
+    setEditableCountryLinkageId: geo.setEditableCountryLinkageId,
+    wikiPageTitle: geo.wikiPageTitle,
+    setWikiPageTitle: geo.setWikiPageTitle,
+    propertiesJsonString: geo.propertiesJsonString,
+    setPropertiesJsonString: geo.setPropertiesJsonString,
+    isEditingJson: geo.isEditingJson,
+    setIsEditingJson: geo.setIsEditingJson,
+    jsonError: geo.jsonError,
+    setJsonError: geo.setJsonError,
+    parsedProperties: geo.parsedProperties,
+    featureDetails: geo.featureDetails,
+    refetchFeatureDetails: geo.refetchFeatureDetails,
     isAdmin,
     generateTransport,
     recalculateGeo,
     utils,
-    featureList,
-    recalculateAreaMutation,
-    dbCountries,
-    relations,
-    relationsLoading,
-    validationData,
-    refetchValidation,
-    assignMutation,
-    unlinkMutation,
-    syncMutation,
-    autoMatchMutation,
-    createSovereignty,
-    updateSovereignty,
-    deleteSovereignty,
-    updatePropertiesMutation,
+    featureList: geo.featureList,
+    recalculateAreaMutation: geo.recalculateAreaMutation,
+    dbCountries: geo.dbCountries,
+    relations: geo.relations,
+    relationsLoading: geo.relationsLoading,
+    validationData: geo.validationData,
+    refetchValidation: geo.refetchValidation,
+    assignMutation: geo.assignMutation,
+    unlinkMutation: geo.unlinkMutation,
+    syncMutation: geo.syncMutation,
+    autoMatchMutation: geo.autoMatchMutation,
+    createSovereignty: geo.createSovereignty,
+    updateSovereignty: geo.updateSovereignty,
+    deleteSovereignty: geo.deleteSovereignty,
+    updatePropertiesMutation: geo.updatePropertiesMutation,
     showExitConfirm,
     setShowExitConfirm,
     hasUnsavedChanges,
     handleRequestExit,
-    sovereigntySearch,
-    setSovereigntySearch,
-    sovereigntyTypeFilter,
-    setSovereigntyTypeFilter,
-    showSovereigntyForm,
-    setShowSovereigntyForm,
-    editingSovereigntyId,
-    setEditingSovereigntyId,
-    sovereigntyForm,
-    setSovereigntyForm,
-    displayName,
-    setDisplayName,
-    showSplitDialog,
-    setShowSplitDialog,
-    showMergeDialog,
-    setShowMergeDialog,
-    isSubmitting,
-    setIsSubmitting,
-    showConfirmSaveModal,
-    setShowConfirmSaveModal,
-    saveReason,
-    setSaveReason,
-    panelConfigs,
-    setPanelConfigs,
-    handleMoveTab,
-    handleChangePanelPlacement,
+    sovereigntySearch: geo.sovereigntySearch,
+    setSovereigntySearch: geo.setSovereigntySearch,
+    sovereigntyTypeFilter: geo.sovereigntyTypeFilter,
+    setSovereigntyTypeFilter: geo.setSovereigntyTypeFilter,
+    showSovereigntyForm: geo.showSovereigntyForm,
+    setShowSovereigntyForm: geo.setShowSovereigntyForm,
+    editingSovereigntyId: geo.editingSovereigntyId,
+    setEditingSovereigntyId: geo.setEditingSovereigntyId,
+    sovereigntyForm: geo.sovereigntyForm,
+    setSovereigntyForm: geo.setSovereigntyForm,
+    displayName: borderOps.displayName,
+    setDisplayName: borderOps.setDisplayName,
+    showSplitDialog: borderOps.showSplitDialog,
+    setShowSplitDialog: borderOps.setShowSplitDialog,
+    showMergeDialog: borderOps.showMergeDialog,
+    setShowMergeDialog: borderOps.setShowMergeDialog,
+    isSubmitting: borderOps.isSubmitting,
+    setIsSubmitting: borderOps.setIsSubmitting,
+    showConfirmSaveModal: borderOps.showConfirmSaveModal,
+    setShowConfirmSaveModal: borderOps.setShowConfirmSaveModal,
+    saveReason: borderOps.saveReason,
+    setSaveReason: borderOps.setSaveReason,
+    panelConfigs: layout.panelConfigs,
+    setPanelConfigs: layout.setPanelConfigs,
+    handleMoveTab: layout.handleMoveTab,
+    handleChangePanelPlacement: layout.handleChangePanelPlacement,
     showRightPanel: isWorldMode
       ? true
       : editor.mode !== "view" && editor.mode !== "import-provinces",
-    cursorTerrainInfo,
-    cursorCoords,
-    setCursorCoords,
-    cursorZoom,
-    setCursorZoom,
-    showGrid,
-    setShowGrid,
-    showGuides,
-    setShowGuides,
-    snapEnabled,
-    setSnapEnabled,
-    snapTolerance,
-    setSnapTolerance,
-    hoveredFeature,
-    setHoveredFeature,
-    showShortcuts,
-    setShowShortcuts,
-    contextMenu,
-    setContextMenu,
-    layerStates,
-    setLayerStates,
-    countries,
-    availableCountries,
-    filteredFeatures,
-    filteredRelations,
-    selectedCountryName,
-    countryRelations,
+    cursorTerrainInfo: selection.cursorTerrainInfo,
+    cursorZoom: tools.cursorZoom,
+    setCursorZoom: tools.setCursorZoom,
+    showGrid: tools.showGrid,
+    setShowGrid: tools.setShowGrid,
+    showGuides: tools.showGuides,
+    setShowGuides: tools.setShowGuides,
+    snapEnabled: tools.snapEnabled,
+    setSnapEnabled: tools.setSnapEnabled,
+    snapTolerance: tools.snapTolerance,
+    setSnapTolerance: tools.setSnapTolerance,
+    hoveredFeature: selection.hoveredFeature,
+    setHoveredFeature: selection.setHoveredFeature,
+    showShortcuts: tools.showShortcuts,
+    setShowShortcuts: tools.setShowShortcuts,
+    contextMenu: selection.contextMenu,
+    setContextMenu: selection.setContextMenu,
+    layerStates: tools.layerStates,
+    setLayerStates: tools.setLayerStates,
+    countries: geo.countries,
+    availableCountries: geo.availableCountries,
+    filteredFeatures: geo.filteredFeatures,
+    filteredRelations: geo.filteredRelations,
+    selectedCountryName:
+      countryInfo?.name ||
+      editor.countryGeo?.country?.name ||
+      editor.countryGeo?.displayName ||
+      geo.selectedCountryName,
+    countryRelations: geo.countryRelations,
     handleMapSelect,
-    handleAssignLink,
-    handleUnlink,
-    resetSovereigntyForm,
-    handleCreateSovereignty,
-    handleUpdateSovereignty,
-    handleDeleteSovereignty,
-    handleEditSovereignty,
-    handleSaveFeatureProperties,
-    handleConfirmBorderSave,
-    enterBorderEdit,
-    handleExitBorderEdit,
-    handleSplitConfirm,
-    handleMergeConfirm,
-    handleBorderToolbarSubmit,
+    handleAssignLink: geo.handleAssignLink,
+    handleUnlink: geo.handleUnlink,
+    resetSovereigntyForm: geo.resetSovereigntyForm,
+    handleCreateSovereignty: geo.handleCreateSovereignty,
+    handleUpdateSovereignty: geo.handleUpdateSovereignty,
+    handleDeleteSovereignty: geo.handleDeleteSovereignty,
+    handleEditSovereignty: geo.handleEditSovereignty,
+    handleSaveFeatureProperties: geo.handleSaveFeatureProperties,
+    handleConfirmBorderSave: borderOps.handleConfirmBorderSave,
+    enterBorderEdit: borderOps.enterBorderEdit,
+    handleExitBorderEdit: borderOps.handleExitBorderEdit,
+    handleSplitConfirm: borderOps.handleSplitConfirm,
+    handleMergeConfirm: borderOps.handleMergeConfirm,
+    handleBorderToolbarSubmit: borderOps.handleBorderToolbarSubmit,
     simplifyAll,
     handleLinkFeature,
     wikiScanner,
     countryInfo,
     mapInstance,
+    setMapInstance,
     worldMapLayers,
     editorVisibleLayers,
     toggleEditorLayer,
     transportRouteData,
-    selectedRouteId,
-    setSelectedRouteId,
-    handleRouteClick,
-    handleSelectFeature,
-    handleEditFeature,
-    handleDeleteFeature,
+    selectedRouteId: selection.selectedRouteId,
+    setSelectedRouteId: selection.setSelectedRouteId,
+    handleRouteClick: selection.handleRouteClick,
+    handleSelectFeature: selection.handleSelectFeature,
+    handleEditFeature: selection.handleEditFeature,
+    handleDeleteFeature: selection.handleDeleteFeature,
+    handleEditRoute,
     handleSubmit,
     featureCounts,
-    panelsLocked,
-    setPanelsLocked,
+    panelsLocked: layout.panelsLocked,
+    setPanelsLocked: layout.setPanelsLocked,
   };
 }

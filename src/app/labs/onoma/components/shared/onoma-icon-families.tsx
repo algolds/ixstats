@@ -35,7 +35,7 @@ export function getDomainIconByFamily(dict?: {
   category?: string;
   title?: string;
 }): IconComponent {
-  if (!dict) return RiBook2Line;
+  if (!dict) return Book;
 
   const id = (dict.id || "").toLowerCase();
   const cat = (dict.category || "").toLowerCase();
@@ -53,7 +53,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("star") ||
     title.includes("moon")
   ) {
-    return RiPlanetLine;
+    return Planet;
   }
 
   // 2. Rulers, Emperors, Monarchs, Sovereign Governance
@@ -69,7 +69,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("ruler") ||
     title.includes("caesar")
   ) {
-    return RiVipCrownLine;
+    return Crown;
   }
 
   // 3. Lineages, Gens, Clans, Dynasties (Genealogy & Family Trees)
@@ -88,7 +88,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("surname") ||
     title.includes("family")
   ) {
-    return RiNodeTree;
+    return GitFork;
   }
 
   // 4. Angels, Heralds, Celestial Messengers
@@ -99,7 +99,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("seraph") ||
     title.includes("cherub")
   ) {
-    return RiSunLine;
+    return Brightness;
   }
 
   // 5. Demons, Monsters, Fiends, Mythological Creatures, Beasts
@@ -119,7 +119,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("devil") ||
     title.includes("fiend")
   ) {
-    return RiSkull2Line;
+    return WarningTriangle;
   }
 
   // 6. Deities, Gods, Goddesses, Cults, Mythology, Temples
@@ -137,7 +137,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("pantheon") ||
     title.includes("cult")
   ) {
-    return RiAncientGateLine;
+    return Building;
   }
 
   // 7. Military, Armed Units, Regiments, Mercenaries, Operations
@@ -153,7 +153,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("brigade") ||
     title.includes("mercenary")
   ) {
-    return RiSwordLine;
+    return Shield;
   }
 
   // 8. Naval Ships, Fleets, Vessels, Submarines
@@ -168,7 +168,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("fleet") ||
     title.includes("submarine")
   ) {
-    return RiSailboatLine;
+    return Compass;
   }
 
   // 9. Taverns, Inns, Brew Houses, Establishments
@@ -180,7 +180,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("inn") ||
     title.includes("brew")
   ) {
-    return RiGobletLine;
+    return Trophy;
   }
 
   // 10. Cuisine, Foods, Traditional Dining
@@ -216,7 +216,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("mystic") ||
     title.includes("spell")
   ) {
-    return RiMagicLine;
+    return MagicWand;
   }
 
   // 13. Geography, Landmarks, Mountains, Rivers, Islands
@@ -234,7 +234,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("lake") ||
     title.includes("landmark")
   ) {
-    return RiLandscapeLine;
+    return MediaImage;
   }
 
   // 14. Cities, Towns, Settlements, Colonies, Administrative Places
@@ -251,7 +251,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("colony") ||
     title.includes("toponym")
   ) {
-    return RiBuilding4Line;
+    return Building;
   }
 
   // 15. States, Polities, Nations, Kingdoms, Empires
@@ -268,7 +268,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("republic") ||
     title.includes("nation")
   ) {
-    return RiShieldStarLine;
+    return Shield;
   }
 
   // 16. Guilds, Companies, Corporations, Trade, Merchants
@@ -284,7 +284,7 @@ export function getDomainIconByFamily(dict?: {
     title.includes("company") ||
     title.includes("merchant")
   ) {
-    return RiBriefcase4Line;
+    return Suitcase;
   }
 
   // 17. General People, Given Names, Characters
@@ -300,10 +300,10 @@ export function getDomainIconByFamily(dict?: {
     title.includes("given") ||
     title.includes("first name")
   ) {
-    return RiUser3Line;
+    return User;
   }
 
-  return RiBook2Line;
+  return Book;
 }
 
 export const getOnomaDomainIcon = getDomainIconByFamily;

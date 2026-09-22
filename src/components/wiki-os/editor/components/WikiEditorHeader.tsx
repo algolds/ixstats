@@ -17,7 +17,7 @@ import {
   DynamicIslandEffects,
   DYNAMIC_ISLAND_STYLE,
   DYNAMIC_ISLAND_BORDER_CLASS,
-} from "~/app/builder/components/glass";
+} from "~/components/halo/DynamicIslandEffects";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { AppleSwitch } from "~/components/ui/apple-switch";
 
@@ -169,7 +169,7 @@ export function WikiEditorHeader({
         {extraActions}
 
         <button
-          className="wikios-editor-btn-cancel"
+          className="wikios-editor-btn-cancel active:scale-[0.97] transition-transform duration-100"
           onClick={onCancel}
           type="button"
           title="Cancel"
@@ -178,11 +178,19 @@ export function WikiEditorHeader({
         </button>
 
         <Popover open={saveDropdownOpen} onOpenChange={setSaveDropdownOpen}>
-          <PopoverTrigger className="wikios-editor-btn-save" disabled={saving} title="Save options">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="wikios-editor-btn-save active:scale-[0.97] transition-transform duration-100"
+              disabled={saving}
+              title="Save options"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            </button>
           </PopoverTrigger>
           <PopoverContent
             align="end"
+            style={{ transformOrigin: "var(--radix-popover-content-transform-origin)" }}
             className="glass-none z-[10001] w-52 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
           >
             <div className="flex flex-col gap-0.5 text-xs">
@@ -193,7 +201,7 @@ export function WikiEditorHeader({
                   setSaveActionType("publish");
                   setShowSavePanel(true);
                 }}
-                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)] active:scale-[0.98]"
               >
                 <Save className="h-3.5 w-3.5 text-emerald-400" />
                 <span>Save and Publish</span>
@@ -204,7 +212,7 @@ export function WikiEditorHeader({
                   setSaveDropdownOpen(false);
                   handleSaveDraft();
                 }}
-                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)] active:scale-[0.98]"
               >
                 <FileText className="h-3.5 w-3.5 text-blue-400" />
                 <span>Save as Draft</span>
@@ -217,7 +225,7 @@ export function WikiEditorHeader({
                   if (!summary) setSummary("Session save");
                   setShowSavePanel(true);
                 }}
-                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)] active:scale-[0.98]"
               >
                 <Bookmark className="h-3.5 w-3.5 text-amber-400" />
                 <span>Save Session</span>

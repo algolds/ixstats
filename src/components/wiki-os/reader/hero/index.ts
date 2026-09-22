@@ -3,5 +3,4 @@
 export * from "./types";
 export * from "./FeaturedImageRefraction";
 export { WikiHeroMaster } from "./WikiHeroMaster";
-export { EditorialMastheadHero } from "./EditorialMastheadHero";
 export { SculptedEmblemHero } from "./SculptedEmblemHero";

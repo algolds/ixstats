@@ -34,16 +34,16 @@ export const DATA_TYPE_CONFIG = {
   research: {
     icon: Beaker,
     label: "Research",
-    color: "text-purple-500",
-    bgColor: "bg-purple-500/10",
-    borderColor: "border-purple-500/20",
+    color: "text-indigo-500",
+    bgColor: "bg-indigo-500/10",
+    borderColor: "border-indigo-500/20",
   },
   cultural: {
     icon: Palette,
     label: "Cultural",
-    color: "text-pink-500",
-    bgColor: "bg-pink-500/10",
-    borderColor: "border-pink-500/20",
+    color: "text-blue-500",
+    bgColor: "bg-blue-500/10",
+    borderColor: "border-blue-500/20",
   },
   policy: {
     icon: FileText,
@@ -188,10 +188,10 @@ export function ResearchDataTab({ data }: { data: any[] | undefined }) {
   return (
     <div className="space-y-4">
       {data.map((project, idx) => (
-        <Card key={idx} className="facet-hierarchy-child border-purple-500/20 bg-purple-500/5">
+        <Card key={idx} className="facet-hierarchy-child border-indigo-500/20 bg-indigo-500/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Beaker className="h-5 w-5 text-purple-500" />
+              <Beaker className="h-5 w-5 text-indigo-500" />
               {project.researchArea}
             </CardTitle>
             <CardDescription>{project.collaborators?.length || 0} collaborator(s)</CardDescription>
@@ -220,10 +220,10 @@ export function CulturalDataTab({ data }: { data: any }) {
   if (!data) return <EmptyState type="cultural" />;
 
   return (
-    <Card className="facet-hierarchy-child border-pink-500/20 bg-pink-500/5">
+    <Card className="facet-hierarchy-child border-blue-500/20 bg-blue-500/5">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Palette className="h-5 w-5 text-pink-500" />
+          <Palette className="h-5 w-5 text-blue-500" />
           Cultural Exchange
         </CardTitle>
         <CardDescription>Programs, events, and cultural impact</CardDescription>

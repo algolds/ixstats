@@ -6,6 +6,9 @@
  */
 
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
+import { transformWikiLinks } from "~/lib/wiki-os/transformers/url-compat";
+import { transformImages, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
+import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -193,27 +196,41 @@ export async function getTemplatePreview(
     text: wikitext,
     contentmodel: "wikitext",
     prop: "text",
+    pst: "1",
     disablelimitreport: "1",
+    disableeditsection: "1",
     formatversion: "2",
     format: "json",
   });
 
   try {
     const mwApi = getMediaWikiApiUrl("ixwiki");
-    const res = await fetch(`${mwApi}?${apiParams}`, {
+    const res = await fetch(mwApi, {
+      method: "POST",
       headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
         "User-Agent": DEFAULT_USER_AGENT,
         "Api-User-Agent": DEFAULT_USER_AGENT,
       },
+      body: apiParams.toString(),
       signal: AbortSignal.timeout(15000),
     });
-    const data = (await res.json()) as {
-      parse?: { text?: string };
-    };
-    return data.parse?.text ?? "";
+    if (res.ok) {
+      const data = (await res.json()) as {
+        parse?: { text?: string };
+      };
+      if (data.parse?.text) {
+        return transformWikiLinks(
+          transformImages(stripConflictingStyles(data.parse.text), "ixwiki")
+        );
+      }
+    }
   } catch {
-    return `<p class="error">Failed to render template preview</p>`;
+    // Fall through to local compiler
   }
+
+  const localHtml = parseWikitextToHtml(wikitext, "ixwiki");
+  return transformWikiLinks(transformImages(localHtml, "ixwiki"));
 }
 
 /**

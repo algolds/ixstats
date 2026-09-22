@@ -149,10 +149,10 @@ export function EconomicMetricCard(props: Omit<MetricCardProps, "theme">) {
     <MetricCard
       {...props}
       theme={{
-        primary: "from-blue-500 to-cyan-600",
-        secondary: "from-blue-500/10 to-cyan-600/10",
-        accent: "rgb(59, 130, 246)",
-        bg: "rgba(59, 130, 246, 0.05)",
+        primary: "from-emerald-500 to-emerald-600",
+        secondary: "from-emerald-500/10 to-emerald-600/10",
+        accent: "rgb(16, 185, 129)",
+        bg: "rgba(16, 185, 129, 0.05)",
       }}
     />
   );
@@ -163,10 +163,10 @@ export function PopulationMetricCard(props: Omit<MetricCardProps, "theme">) {
     <MetricCard
       {...props}
       theme={{
-        primary: "from-green-500 to-emerald-600",
-        secondary: "from-green-500/10 to-emerald-600/10",
-        accent: "rgb(34, 197, 94)",
-        bg: "rgba(34, 197, 94, 0.05)",
+        primary: "from-blue-500 to-blue-600",
+        secondary: "from-blue-500/10 to-blue-600/10",
+        accent: "rgb(59, 130, 246)",
+        bg: "rgba(59, 130, 246, 0.05)",
       }}
     />
   );
@@ -177,10 +177,10 @@ export function GovernmentMetricCard(props: Omit<MetricCardProps, "theme">) {
     <MetricCard
       {...props}
       theme={{
-        primary: "from-purple-500 to-violet-600",
-        secondary: "from-purple-500/10 to-violet-600/10",
-        accent: "rgb(168, 85, 247)",
-        bg: "rgba(168, 85, 247, 0.05)",
+        primary: "from-indigo-500 to-indigo-600",
+        secondary: "from-indigo-500/10 to-indigo-600/10",
+        accent: "rgb(99, 102, 241)",
+        bg: "rgba(99, 102, 241, 0.05)",
       }}
     />
   );
@@ -191,10 +191,10 @@ export function DiplomaticMetricCard(props: Omit<MetricCardProps, "theme">) {
     <MetricCard
       {...props}
       theme={{
-        primary: "from-amber-500 to-orange-600",
-        secondary: "from-amber-500/10 to-orange-600/10",
-        accent: "rgb(245, 158, 11)",
-        bg: "rgba(245, 158, 11, 0.05)",
+        primary: "from-cyan-500 to-cyan-600",
+        secondary: "from-cyan-500/10 to-cyan-600/10",
+        accent: "rgb(6, 182, 212)",
+        bg: "rgba(6, 182, 212, 0.05)",
       }}
     />
   );

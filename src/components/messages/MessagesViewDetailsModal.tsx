@@ -109,7 +109,7 @@ export function MessagesViewDetailsModal({
                 <span className="text-muted-foreground flex items-center gap-1 text-xs font-medium">
                   <AlertCircle className="h-3.5 w-3.5" /> Classification
                 </span>
-                <span className="text-foreground font-mono text-xs font-semibold tracking-wider text-rose-500">
+                <span className="text-foreground font-mono text-xs font-semibold tracking-wider text-red-500">
                   {conversation.diplomaticClassification}
                 </span>
               </div>
@@ -129,7 +129,7 @@ export function MessagesViewDetailsModal({
                 <div className="bg-muted/20 border-border/10 flex items-center gap-3 rounded-lg border p-2">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={currentUser.profileImageUrl ?? undefined} />
-                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-xs font-semibold text-white">
+                    <AvatarFallback className="bg-indigo-600 text-xs font-semibold text-white">
                       {(currentUser.displayName ?? currentUser.username ?? "Me")
                         .split(" ")
                         .map((n) => n[0])
@@ -165,7 +165,7 @@ export function MessagesViewDetailsModal({
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={participant.account.profileImageUrl ?? undefined} />
-                    <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-semibold text-white">
+                    <AvatarFallback className="bg-emerald-600 text-xs font-semibold text-white">
                       {participant.account.displayName
                         .split(" ")
                         .map((n) => n[0])

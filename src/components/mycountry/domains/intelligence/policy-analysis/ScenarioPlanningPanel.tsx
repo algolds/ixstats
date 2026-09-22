@@ -44,35 +44,35 @@ const scenarioData: Record<
 > = {
   baseline: {
     growth: "+3.00%",
-    growthColor: "text-green-600",
+    growthColor: "text-emerald-600 dark:text-emerald-400",
     budget: "+0.5%",
-    budgetColor: "text-green-600",
+    budgetColor: "text-emerald-600 dark:text-emerald-400",
     risk: "Low",
-    riskColor: "text-blue-600",
+    riskColor: "text-blue-600 dark:text-blue-400",
   },
   high_growth: {
     growth: "+4.20%",
-    growthColor: "text-green-600",
+    growthColor: "text-emerald-600 dark:text-emerald-400",
     budget: "-2.1%",
-    budgetColor: "text-red-600",
+    budgetColor: "text-red-600 dark:text-red-400",
     risk: "High",
-    riskColor: "text-orange-600",
+    riskColor: "text-amber-600 dark:text-amber-400",
   },
   fiscal_consolidation: {
     growth: "+2.10%",
-    growthColor: "text-yellow-600",
+    growthColor: "text-amber-600 dark:text-amber-400",
     budget: "+3.8%",
-    budgetColor: "text-green-600",
+    budgetColor: "text-emerald-600 dark:text-emerald-400",
     risk: "Medium",
-    riskColor: "text-yellow-600",
+    riskColor: "text-amber-600 dark:text-amber-400",
   },
   welfare_state: {
     growth: "+2.50%",
-    growthColor: "text-green-600",
+    growthColor: "text-emerald-600 dark:text-emerald-400",
     budget: "-1.5%",
-    budgetColor: "text-red-600",
+    budgetColor: "text-red-600 dark:text-red-400",
     risk: "Low",
-    riskColor: "text-blue-600",
+    riskColor: "text-blue-600 dark:text-blue-400",
   },
 };
 
@@ -88,7 +88,7 @@ export const ScenarioPlanningPanel = React.memo(function ScenarioPlanningPanel({
     <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-purple-600" />
+          <Activity className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           Scenario Planning Tool
         </CardTitle>
         <CardDescription>Explore what-if scenarios for policy changes</CardDescription>
@@ -111,7 +111,7 @@ export const ScenarioPlanningPanel = React.memo(function ScenarioPlanningPanel({
         </div>
 
         {selectedScenario && (
-          <div className="rounded-lg border bg-gradient-to-r from-indigo-50/50 to-purple-50/50 p-6 dark:from-indigo-950/20 dark:to-purple-950/20">
+          <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-6">
             <h4 className="mb-2 font-semibold">{currentScenario?.name}</h4>
             <p className="text-muted-foreground mb-4 text-sm">{currentScenario?.description}</p>
 

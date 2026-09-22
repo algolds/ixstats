@@ -168,7 +168,7 @@ export function MyCountryLogo({
           {showSubtitle && (
             <span
               className={cn(
-                "text-xs font-medium tracking-wider text-amber-600/80",
+                "text-xs font-medium tracking-wider text-amber-600/80 dark:text-amber-400/90",
                 size === "xl" ? "text-sm" : "text-xs"
               )}
               style={{ filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))" }}

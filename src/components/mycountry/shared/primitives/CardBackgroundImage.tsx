@@ -30,6 +30,8 @@ interface CardBackgroundImageProps {
   overlayOpacity?: number;
   // Optional override image URL (for preview before save)
   previewImageUrl?: string;
+  /** Optional batch image URL provided by parent context to skip individual query */
+  resolvedImageUrl?: string | null;
 }
 
 /**
@@ -49,21 +51,24 @@ export function CardBackgroundImage({
   onEditClick,
   overlayOpacity = 0.85,
   previewImageUrl,
+  resolvedImageUrl,
 }: CardBackgroundImageProps) {
   const [imageLoaded, setImageLoaded] = React.useState(false);
   const [imageError, setImageError] = React.useState(false);
 
-  // Fetch the card image from database
-  const { data: cardImage, isLoading } = api.cardImages.getByCountryAndType.useQuery(
+  // Fetch the card image from database only if not supplied by parent
+  const shouldFetch = !previewImageUrl && resolvedImageUrl === undefined && !!countryId;
+  const { data: cardImage, isLoading: queryLoading } = api.cardImages.getByCountryAndType.useQuery(
     { countryId, cardType },
-    { enabled: !!countryId }
+    { enabled: shouldFetch }
   );
 
   // Get preset for this card type
   const preset = getCardImagePreset(cardType);
 
   // Determine the image URL to display
-  const imageUrl = previewImageUrl || cardImage?.imageUrl || null;
+  const imageUrl = previewImageUrl || resolvedImageUrl || cardImage?.imageUrl || null;
+  const isLoading = shouldFetch && queryLoading;
   const hasImage = !!imageUrl && !imageError;
 
   // Reset image loaded state when URL changes

@@ -4,20 +4,11 @@ import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { createUrl } from "~/lib/utils";
-import { IOSActivityIndicator } from "~/components/ui/loader";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { BuilderRouter } from "~/app/builder/components/BuilderRouter";
+import { GlobalBuilderLoading } from "~/app/builder/components/GlobalBuilderLoading";
 
 export const dynamic = "force-dynamic";
-
-function LoadingFallback({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-3 py-16">
-      <IOSActivityIndicator size="md" />
-      <p className="text-muted-foreground text-sm">{message}</p>
-    </div>
-  );
-}
 
 export default function MyCountryEditor() {
   usePageTitle({ title: "Country Editor" });
@@ -27,22 +18,39 @@ export default function MyCountryEditor() {
   const { country, profileLoading, countryLoading, userProfile } = useUserCountry();
 
   if (!isLoaded || profileLoading) {
-    return <LoadingFallback message="Loading profile..." />;
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <GlobalBuilderLoading message="Loading profile..." variant="compact" />
+      </div>
+    );
   }
 
   if (!user) {
     router.push(createUrl("/sign-in"));
-    return <LoadingFallback message="Redirecting to sign in..." />;
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <GlobalBuilderLoading message="Redirecting to sign in..." variant="compact" />
+      </div>
+    );
   }
 
   if (!userProfile?.countryId) {
-    router.push(createUrl("/builder"));
-    return <LoadingFallback message="No country found. Redirecting to builder..." />;
+    router.push(createUrl("/mycountry/builder"));
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <GlobalBuilderLoading message="No country found. Redirecting to builder..." variant="compact" />
+      </div>
+    );
   }
 
   if (countryLoading || !country) {
-    return <LoadingFallback message="Loading country data..." />;
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <GlobalBuilderLoading message="Loading country data..." variant="compact" />
+      </div>
+    );
   }
 
   return <BuilderRouter mode="edit" countryId={country.id} />;
 }
+

@@ -420,7 +420,7 @@ export function LeagueCreator({
           onChange={(e) => setLeagueName(e.target.value.slice(0, 100))}
           maxLength={100}
         />
-        <p className="text-muted-foreground text-[11px]">{leagueName.length}/100 characters</p>
+        <p className="text-muted-foreground text-xs">{leagueName.length}/100 characters</p>
       </div>
 
       {/* Team Count */}
@@ -465,7 +465,7 @@ export function LeagueCreator({
               else if (e.target.value === "") setMatchIntervalDays(0);
             }}
           />
-          <p className="text-muted-foreground text-[11px]">
+          <p className="text-muted-foreground text-xs">
             Matches auto-resolve in the background on the IxTime clock. {matchIntervalDays} IxDay
             {matchIntervalDays === 1 ? "" : "s"} ≈ {(matchIntervalDays / 2).toLocaleString()}{" "}
             real-world day
@@ -491,7 +491,7 @@ export function LeagueCreator({
               else if (e.target.value === "") setDivisions(0);
             }}
           />
-          <p className="text-muted-foreground text-[11px]">
+          <p className="text-muted-foreground text-xs">
             Teams will be split across {divisions} divisions for the regular season.
           </p>
         </div>
@@ -507,7 +507,7 @@ export function LeagueCreator({
             value={weightClassesRaw}
             onChange={(e) => setWeightClassesRaw(e.target.value)}
           />
-          <p className="text-muted-foreground text-[11px]">Comma-separated weight class names.</p>
+          <p className="text-muted-foreground text-xs">Comma-separated weight class names.</p>
         </div>
       )}
 
@@ -530,7 +530,7 @@ export function LeagueCreator({
               }
             }}
           />
-          <p className="text-muted-foreground text-[11px]">
+          <p className="text-muted-foreground text-xs">
             Points championship across {raceCount} race weekends.
           </p>
         </div>

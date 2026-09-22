@@ -1,7 +1,7 @@
 # 🧪 ⟨ONOMA⟩ Linguistic Studio — Labs Brand Guide
 
 **Parent Layer:** Labs (Experimental & Incubation Studio) (`ONOMA_VERSION = 4`)  
-**Primary Action:** `SYNTHESIZE` | **Domain Accent:** Imperial Violet (`#8B5CF6` / `--color-purple-500`)  
+**Primary Action:** `SYNTHESIZE` | **Domain Accent:** Electric Azure & Deep Indigo (`#0091FF` / `#6366F1`)  
 **Route:** `/labs/onoma` | **Status:** 🧪 Labs Preview  
 
 ---
@@ -74,7 +74,7 @@ A foundational rule of Onoma design:
 | :---: | :--- | :--- | :---: | :--- |
 | **1** | **Fluid** | **Cyan** | `#06b6d4` | Broad linguistic patterns; high phonetic variation and exploratory sound combinations |
 | **2** | **Organic** *(Recommended)* | **Azure** | `#0091ff` | Natural linguistic cadence; optimal conlang sweet spot balancing novelty & cohesion |
-| **3** | **Faithful** | **Violet** | `#8b5cf6` | Strong structural fidelity; generates forms closely echoing seed language roots |
+| **3** | **Faithful** | **Indigo** | `#6366f1` | Strong structural fidelity; generates forms closely echoing seed language roots |
 | **4** | **Strict** | **Amber** | `#f59e0b` | High pattern constraints; closely preserves literal word structures from training data |
 
 ---

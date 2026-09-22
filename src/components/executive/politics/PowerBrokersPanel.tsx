@@ -26,10 +26,10 @@ const BROKER_ICONS: Record<string, React.ComponentType<any>> = {
 
 const BROKER_COLORS: Record<string, string> = {
   technocrats: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-  party: "text-purple-500 bg-purple-500/10 border-purple-500/20",
+  party: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20",
   generals: "text-red-500 bg-red-500/10 border-red-500/20",
   magnates: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-  clergy: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20",
+  clergy: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
 };
 
 export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {

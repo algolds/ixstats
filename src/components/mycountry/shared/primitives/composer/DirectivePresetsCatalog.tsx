@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { DiceSix as Dices, Label as Tag, Sparks as Sparkles, Check } from "iconoir-react";
+import { DiceSix as Dices, Label as Tag, Check } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface DomesticSuggestion {
@@ -211,6 +210,30 @@ export const DOMESTIC_SUGGESTIONS: DomesticSuggestion[] = [
     label: "Construct modern international airports",
     keywords: ["airport", "aviation", "flight", "travel"],
     icon: "✈️",
+  },
+  {
+    category: "Infrastructure",
+    label: "Accelerate High-Speed Rail Corridor velocity & throughput",
+    keywords: ["rail", "train", "hsr", "speed", "transit", "velocity"],
+    icon: "🚄",
+  },
+  {
+    category: "Infrastructure",
+    label: "Harmonize arterial freight & highway speed limits",
+    keywords: ["highway", "road", "freight", "speed", "motorway", "drayage"],
+    icon: "🛣️",
+  },
+  {
+    category: "Infrastructure",
+    label: "Emergency Transport Infrastructure Rehabilitation",
+    keywords: ["infrastructure", "repair", "maintenance", "bridge", "pothole", "rehabilitation"],
+    icon: "🛠️",
+  },
+  {
+    category: "Infrastructure",
+    label: "Automate seaport container transshipment & drayage",
+    keywords: ["port", "container", "shipping", "dock", "dwell", "maritime"],
+    icon: "🚢",
   },
 
   // Security (8 presets)
@@ -478,9 +501,10 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
           <button
             type="button"
             onClick={onSurpriseMe}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-bold text-amber-800 transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-300"
+            data-cuelume-press="tick"
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-500/20 active:scale-95 dark:text-amber-300"
           >
-            <Sparkles className="h-3.5 w-3.5" />
+            <Dices className="h-3.5 w-3.5" />
             <span>Surprise Me</span>
           </button>
         )}

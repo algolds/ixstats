@@ -5,3 +5,4 @@ export * from "./types";
 export * from "./pg-reader";
 export * from "./http-reader";
 export * from "./dispatchers";
+export * from "./batch-reader";

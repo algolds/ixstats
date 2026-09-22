@@ -1,9 +1,10 @@
 "use client";
+
 /**
- * Component Library
+ * Component Library (Economy Domain)
  *
  * Grid display of available economic components with selection functionality.
- * Optimized with React.memo for performance.
+ * Uses shared AtomicCard primitive under the hood.
  */
 
 import React from "react";
@@ -19,10 +20,7 @@ export interface ComponentLibraryProps {
   canSelectMore: boolean;
 }
 
-/**
- * Economic Component Library Component
- */
-function ComponentLibraryComponent({
+export const ComponentLibrary = React.memo(function ComponentLibrary({
   components,
   onSelect,
   selectedIds,
@@ -30,24 +28,18 @@ function ComponentLibraryComponent({
 }: ComponentLibraryProps) {
   if (components.length === 0) {
     return (
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          No components match your search criteria. Try adjusting your filters or search query.
+      <Alert className="border-border/50 bg-muted/20 text-muted-foreground">
+        <Info className="h-4 w-4 text-muted-foreground" />
+        <AlertDescription className="text-xs">
+          No economic components match your search criteria. Try adjusting your filters or search query.
         </AlertDescription>
       </Alert>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Available Components ({components.length})</h3>
-        {!canSelectMore && (
-          <span className="text-sm text-amber-600">Maximum components reached</span>
-        )}
-      </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="max-h-[640px] xl:max-h-[720px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-border/40 hover:scrollbar-thumb-border/70 scrollbar-track-transparent">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {components.map((componentType) => {
           const component = ATOMIC_ECONOMIC_COMPONENTS[componentType];
           if (!component) return null;
@@ -61,12 +53,11 @@ function ComponentLibraryComponent({
               isSelected={isSelected}
               onSelect={() => onSelect(componentType)}
               disabled={!canSelectMore && !isSelected}
+              canSelectMore={canSelectMore}
             />
           );
         })}
       </div>
     </div>
   );
-}
-
-export const ComponentLibrary = React.memo(ComponentLibraryComponent);
+});

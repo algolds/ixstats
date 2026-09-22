@@ -1,5 +1,6 @@
-import { Navigator as Route, SeaWaves as Waves } from "iconoir-react";
+import { PathArrow as Route, SeaWaves as Waves } from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
+import { isKeyboardInputTarget } from "../hooks/drag-utils";
 
 export const RouteEditPlugin: MapEditorPlugin = {
   id: "route-edit",
@@ -8,11 +9,18 @@ export const RouteEditPlugin: MapEditorPlugin = {
   modes: ["add-route", "edit-route", "add-river"],
 
   toolbarItems: [
-    { id: "tool-route", mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 1 },
-    { id: "tool-river", mode: "add-river", icon: Waves, label: "River", shortcut: "Y", group: 2 },
+    { id: "tool-route", mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 2, order: 1 },
+    { id: "tool-river", mode: "add-river", icon: Waves, label: "River", shortcut: "Y", group: 3, order: 2 },
   ],
 
   onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
+    if (isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement)) {
+      return false;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) {
+      return false;
+    }
+
     const key = e.key.toLowerCase();
     if (key === "t") {
       context.onModeChange("add-route");

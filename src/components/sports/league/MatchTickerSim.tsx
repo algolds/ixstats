@@ -140,7 +140,7 @@ export function MatchTickerSim({
                     : alertEvent.type === "card"
                       ? "border-yellow-500/30 bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
                       : alertEvent.type === "injury"
-                        ? "border-rose-500/30 bg-rose-500/20 text-rose-600 dark:text-rose-400"
+                        ? "border-red-500/30 bg-red-500/20 text-red-600 dark:text-red-400"
                         : "border-blue-500/30 bg-blue-500/20 text-blue-600 dark:text-blue-400"
                 )}
               >
@@ -149,7 +149,7 @@ export function MatchTickerSim({
                 )}
                 {alertEvent.type === "card" && <Shield className="h-4 w-4" />}
                 {alertEvent.type === "injury" && (
-                  <Activity className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                  <Activity className="h-4 w-4 text-red-600 dark:text-red-400" />
                 )}
                 {alertEvent.type === "tactic_shift" && <Users className="h-4 w-4" />}
                 <span>

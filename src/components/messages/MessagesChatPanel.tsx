@@ -63,8 +63,8 @@ function getSystemAlertStyle(content: string, type?: string) {
   }
   return {
     icon: Radio,
-    iconColor: "text-purple-500 bg-purple-500/10 ring-purple-500/20",
-    badgeClass: "text-purple-500 bg-purple-500/10",
+    iconColor: "text-indigo-500 bg-indigo-500/10 ring-indigo-500/20",
+    badgeClass: "text-indigo-500 bg-indigo-500/10",
     label: "System",
   };
 }

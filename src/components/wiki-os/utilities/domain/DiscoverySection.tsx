@@ -32,7 +32,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: Compass,
       href: "/util/recent-changes",
       badge: "Real-Time",
-      color: "from-blue-500/10 to-indigo-500/10 text-blue-400 border-blue-500/20",
+      color: "border-blue-500/20 bg-blue-500/10 text-blue-400",
     },
     {
       id: "watchlist",
@@ -42,7 +42,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: BookmarkBook,
       href: "/stashes",
       badge: "Stash Integrated",
-      color: "from-amber-500/10 to-orange-500/10 text-amber-400 border-amber-500/20",
+      color: "border-amber-500/20 bg-amber-500/10 text-amber-400",
     },
     {
       id: "contributions",
@@ -52,7 +52,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: User,
       href: "/util/contributions",
       badge: "Identity",
-      color: "from-emerald-500/10 to-teal-500/10 text-emerald-400 border-emerald-500/20",
+      color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
     },
     {
       id: "random",
@@ -62,7 +62,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: Shuffle,
       href: "/util/random",
       badge: "Serendipity",
-      color: "from-purple-500/10 to-pink-500/10 text-purple-400 border-purple-500/20",
+      color: "border-indigo-500/20 bg-indigo-500/10 text-indigo-400",
     },
     {
       id: "categories",
@@ -72,7 +72,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: Folder,
       href: "/util/categories",
       badge: "Taxonomy",
-      color: "from-cyan-500/10 to-sky-500/10 text-cyan-400 border-cyan-500/20",
+      color: "border-cyan-500/20 bg-cyan-500/10 text-cyan-400",
     },
     {
       id: "media-commons",
@@ -82,7 +82,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: MediaImage,
       href: "/util/repository",
       badge: "7,555 Assets",
-      color: "from-rose-500/10 to-pink-500/10 text-rose-400 border-rose-500/20",
+      color: "border-blue-500/20 bg-blue-500/10 text-blue-400",
     },
     {
       id: "backlinks",
@@ -93,7 +93,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: LinkIcon,
       href: "/util/whatlinkshere",
       badge: "O(1) Graph",
-      color: "from-amber-500/10 to-yellow-500/10 text-amber-400 border-amber-500/20",
+      color: "border-cyan-500/20 bg-cyan-500/10 text-cyan-400",
     },
     {
       id: "feeds",
@@ -104,7 +104,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       href: "/api/wiki/feed/recent-changes.atom",
       isExternal: true,
       badge: "Atom 1.0",
-      color: "from-orange-500/10 to-red-500/10 text-orange-400 border-orange-500/20",
+      color: "border-amber-500/20 bg-amber-500/10 text-amber-400",
     },
   ];
 

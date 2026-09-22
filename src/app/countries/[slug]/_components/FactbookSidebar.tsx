@@ -151,6 +151,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
           {vitalityRings.map((ring) => (
             <div
               key={ring.key}
+              data-cuelume-press="soft"
               onClick={() => handleRingClick(ring.key)}
               className="flex h-14 cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-2.5 backdrop-blur-md transition-all duration-150 ease-out hover:scale-[1.02] hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.98]"
             >

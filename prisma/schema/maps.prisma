@@ -115,6 +115,7 @@ model City {
   country              Country                  @relation("CountryCities", fields: [countryId], references: [id], onDelete: Cascade)
   subdivision          Subdivision?             @relation("SubdivisionCities", fields: [subdivisionId], references: [id])
   transportHubs        TransportHub[]           @relation("CityTransportHubs")
+  transportNodes       TransportNode[]          @relation("CityTransportNodes")
   nationalCapitalOf    NationalIdentity[]       @relation("NationalCapital")
   nationalLargestOf    NationalIdentity[]       @relation("NationalLargestCity")
   subdivisionCapitalOf Subdivision[]            @relation("SubdivisionCapital")
@@ -578,9 +579,12 @@ model TransportRoute {
   costBillion       Float?   // construction cost estimate
   terrainDifficulty Float?   // 0-1, computed from elevation changes along route
   lengthKm          Float?   // total route length
+  speedKmh          Float?   // design/cruising speed in km/h
   worldId           String   @default("default")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  routeSegments     TransportRouteSegment[] @relation("RouteSegments")
 
   @@index([countryId])
   @@index([routeType])
@@ -609,6 +613,79 @@ model TransportHub {
   @@index([worldId])
   @@index([cityId])
   @@map("transport_hubs")
+}
+
+/// Shared intersection or waypoint node in the transport network.
+model TransportNode {
+  id            String   @id @default(cuid())
+  coordinates   Json     // [lng, lat]
+  nodeType      String   // "city", "junction", "interchange", "waypoint", "border_crossing"
+  cityId        String?
+  city          City?    @relation("CityTransportNodes", fields: [cityId], references: [id], onDelete: SetNull)
+  countryId     String?
+  country       Country? @relation("CountryTransportNodes", fields: [countryId], references: [id], onDelete: SetNull)
+  name          String?
+  elevation     Float?
+  worldId       String   @default("default")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  segmentsFrom  TransportSegment[] @relation("SegmentFromNode")
+  segmentsTo    TransportSegment[] @relation("SegmentToNode")
+
+  @@index([countryId])
+  @@index([worldId])
+  @@index([cityId])
+  @@map("transport_nodes")
+}
+
+/// Network edge representing a physically connected segment between two nodes.
+model TransportSegment {
+  id                String   @id @default(cuid())
+  fromNodeId        String
+  fromNode          TransportNode @relation("SegmentFromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNodeId          String
+  toNode            TransportNode @relation("SegmentToNode", fields: [toNodeId], references: [id], onDelete: Cascade)
+  routeType         String   // rail, high_speed_rail, motorway, highway, road, etc.
+  geometry          Json     // GeoJSON LineString
+  status            String   @default("operational") // planned, under_construction, operational, abandoned
+  builtYear         Int?
+  lengthKm          Float?
+  terrainDifficulty Float?
+  speedKmh          Float?
+  capacity          Float?
+  properties        Json?
+  isInternational   Boolean  @default(false)
+  countryId         String?
+  country           Country? @relation("CountryTransportSegments", fields: [countryId], references: [id], onDelete: SetNull)
+  worldId           String   @default("default")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  routeSegments     TransportRouteSegment[]
+
+  @@index([countryId])
+  @@index([routeType])
+  @@index([worldId, routeType])
+  @@index([fromNodeId])
+  @@index([toNodeId])
+  @@map("transport_segments")
+}
+
+/// Ordered join linking named routes to their constituent network segments.
+model TransportRouteSegment {
+  id         String           @id @default(cuid())
+  routeId    String
+  route      TransportRoute   @relation("RouteSegments", fields: [routeId], references: [id], onDelete: Cascade)
+  segmentId  String
+  segment    TransportSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  order      Int              // 0-indexed position in route
+  direction  String           @default("forward") // "forward" | "reverse"
+
+  @@unique([routeId, segmentId])
+  @@index([routeId])
+  @@index([segmentId])
+  @@map("transport_route_segments")
 }
 
 model MapStyleOverride {

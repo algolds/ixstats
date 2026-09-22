@@ -9,6 +9,7 @@ import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { parse } from "~/lib/wiki-os/wikitext/parser";
 import { astToWikitext } from "~/lib/wiki-os/wikitext/serializer";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { saveArticleHtmlShadow } from "./article-store";
 
 export interface ParsoidArticle {
@@ -74,11 +75,15 @@ export async function getArticleHtml(title: string): Promise<ParsoidArticle> {
   if (article && (article.contentHtml || article.wikitext)) {
     let html = article.contentHtml && article.contentHtml.trim() !== "" ? article.contentHtml : "";
 
+    // Detect corrupted wikitext remnants in cached HTML (e.g. leaked table pipes or dangling image parameters)
+    const hasCorruptedMarkup =
+      Boolean(html && (/\|\d+px\|/i.test(html) || /\|\s*(?:center|left|right|thumb)\]\]/i.test(html)));
+
     // If cached HTML doesn't have an infobox but wikitext does, fetch upstream MediaWiki parse
     const wikitextHasInfobox = article.wikitext && /\{\{[Ii]nfobox/i.test(article.wikitext);
-    const htmlHasInfobox = html && (html.includes("infobox") || html.includes("aside"));
+    const htmlHasInfobox = html && !hasCorruptedMarkup && (html.includes("infobox") || html.includes("aside"));
 
-    if ((!html || (wikitextHasInfobox && !htmlHasInfobox)) && !isMainPage) {
+    if ((!html || hasCorruptedMarkup || (wikitextHasInfobox && !htmlHasInfobox)) && !isMainPage) {
       try {
         const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
         const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
@@ -102,8 +107,9 @@ export async function getArticleHtml(title: string): Promise<ParsoidArticle> {
       }
     }
 
-    if (!html && article.wikitext) {
+    if ((!html || hasCorruptedMarkup) && article.wikitext) {
       html = parseWikitextToHtml(article.wikitext, "ixwiki");
+      void saveArticleHtmlShadow(cleanTitle, html, "ixwiki").catch(() => {});
     }
 
     return {
@@ -135,8 +141,54 @@ export async function htmlToWikitext(html: string, title: string): Promise<Parso
 }
 
 /**
- * Convert wikitext to HTML in-process using native TypeScript compiler (<2ms).
+ * Convert wikitext to HTML with 100% MediaWiki compliancy.
+ * Queries MediaWiki Action API action=parse to expand all templates, parser functions (#if, #switch),
+ * Lua Scribunto modules, and wikitables. Falls back gracefully to native AST compiler.
  */
-export async function wikitextToHtml(wikitext: string, _title: string): Promise<string> {
-  return parseWikitextToHtml(wikitext, "ixwiki", { preserveUnknownTemplates: true });
+export async function wikitextToHtml(
+  wikitext: string,
+  title = "Preview",
+  options?: { preserveUnknownTemplates?: boolean }
+): Promise<string> {
+  if (!wikitext || !wikitext.trim()) return "";
+  const cleanTitle = title.replace(/^Template:/i, "").trim() || "Preview";
+
+  try {
+    const mwApi = getMediaWikiApiUrl("ixwiki");
+    const body = new URLSearchParams({
+      action: "parse",
+      text: wikitext,
+      title: cleanTitle,
+      contentmodel: "wikitext",
+      prop: "text",
+      pst: "1",
+      disablelimitreport: "1",
+      disableeditsection: "1",
+      formatversion: "2",
+      format: "json",
+    });
+    const res = await fetch(mwApi, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": DEFAULT_USER_AGENT,
+        "Api-User-Agent": DEFAULT_USER_AGENT,
+      },
+      body: body.toString(),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (res.ok) {
+      const data = (await res.json()) as { parse?: { text?: string } };
+      if (data?.parse?.text) {
+        return data.parse.text;
+      }
+    }
+  } catch {
+    // Network unavailable or offline: fall back to local in-process compiler
+  }
+
+  return parseWikitextToHtml(wikitext, "ixwiki", {
+    preserveUnknownTemplates: options?.preserveUnknownTemplates ?? false,
+  });
 }
+

@@ -97,7 +97,7 @@ export function BatchResultsTable({
                       &lt; 25: Natural & familiar
                     </span>
                     <span className="font-medium text-amber-500">25–50: Balanced</span>
-                    <span className="col-span-2 font-medium text-rose-500">
+                    <span className="col-span-2 font-medium text-red-500">
                       &gt; 50: Exotic & unusual transitions
                     </span>
                   </div>
@@ -201,7 +201,7 @@ export function BatchResultsTable({
                           &lt; 25: Natural & familiar
                         </span>
                         <span className="font-medium text-amber-500">25–50: Balanced</span>
-                        <span className="col-span-2 font-medium text-rose-500">
+                        <span className="col-span-2 font-medium text-red-500">
                           &gt; 50: Exotic & unusual transitions
                         </span>
                       </div>
@@ -240,7 +240,7 @@ export function BatchResultsTable({
                           ? "text-emerald-500"
                           : r.perplexity < 50
                             ? "text-amber-500"
-                            : "text-rose-500"
+                            : "text-red-500"
                       }`}
                     >
                       {r.perplexity.toFixed(1)}

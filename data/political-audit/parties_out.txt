@@ -1,0 +1,75 @@
+◇ injected env (17) from .env.local.dev // tip: ⌁ auth for agents [www.vestauth.com]
+Found 73 parties in PoliticalParty table:
+- [Caphiria] Kiro-Caphirian Movement (KCM) | Ideology: center | Platform: N/A | BaseSupport: 4%
+- [Castadilla] Loa Voters' Association (APL) | Ideology: center | Platform: N/A | BaseSupport: 3%
+- [Castadilla] Christian National Party (PNC) | Ideology: center_right | Platform: N/A | BaseSupport: 4%
+- [Castadilla] Christian Social Party (PSC) | Ideology: center_right | Platform: N/A | BaseSupport: 2%
+- [Castadilla] Democratic Farmers' Union (UDA) | Ideology: center | Platform: N/A | BaseSupport: 3%
+- [Castadilla] People's Democratic Party (PDP) | Ideology: left | Platform: N/A | BaseSupport: 61%
+- [Castadilla] United Taineans' League (LTI) | Ideology: center_right | Platform: N/A | BaseSupport: 2%
+- [Castadilla] Democratic Reform Party (PRD) | Ideology: right | Platform: N/A | BaseSupport: 5%
+- [Castadilla] Braivin Self-Determination League (BAL) | Ideology: center | Platform: N/A | BaseSupport: 1%
+- [Castadilla] Yes We Can! (SiP) | Ideology: left | Platform: N/A | BaseSupport: 1%
+- [Castadilla] Ecological Reform Party (PRE) | Ideology: left | Platform: N/A | BaseSupport: 1%
+- [Castadilla] Revolutionary People's Movement (MPR) | Ideology: far_left | Platform: N/A | BaseSupport: 1%
+- [Castadilla] Samalosian People's Party (PTS) | Ideology: center | Platform: N/A | BaseSupport: 4%
+- [Castadilla] Jewish Consolidation Front (Likud) | Ideology: center | Platform: N/A | BaseSupport: 4%
+- [Castadilla] Castadillaan Citizens' Party (PCC) | Ideology: center_left | Platform: N/A | BaseSupport: 5%
+- [Faneria] National Republican Party (NRP) | Ideology: center | Platform: N/A | BaseSupport: 57%
+- [Faneria] Test Party (TST) | Ideology: far_right | Platform: N/A | BaseSupport: 25%
+- [Fiannria] Garda Fiann (GFP) | Ideology: center_left | Platform: N/A | BaseSupport: 21%
+- [Fiannria] Rundale Party (RP) | Ideology: center | Platform: N/A | BaseSupport: 15%
+- [Fiannria] National Grensair Party (NGP) | Ideology: right | Platform: N/A | BaseSupport: 11%
+- [Fiannria] Free Commonwealth Party (FCP) | Ideology: center_right | Platform: N/A | BaseSupport: 8%
+- [Fiannria] Levantine Union Party (LUP) | Ideology: center | Platform: N/A | BaseSupport: 7%
+- [Fiannria] Workers Party of Fiannria (WPF) | Ideology: left | Platform: N/A | BaseSupport: 4%
+- [Fiannria] Green Party () | Ideology: center_left | Platform: N/A | BaseSupport: 6%
+- [Fiannria] Cavalier Party (CP) | Ideology: center_right | Platform: N/A | BaseSupport: 26%
+- [Kiravia] Coscivian National Congress (CNC) | Ideology: center | Platform: N/A | BaseSupport: 10%
+- [Kiravia] Kiravian Free Alliance (KFA) | Ideology: center_right | Platform: N/A | BaseSupport: 5%
+- [Kiravia] Union of Democrats & Independents (UDI) | Ideology: center | Platform: N/A | BaseSupport: 5%
+- [Kiravia] Caritist Social Union (CSU) | Ideology: center_left | Platform: N/A | BaseSupport: 20%
+- [Kiravia] Authentic Historical Caucus (AHC) | Ideology: right | Platform: N/A | BaseSupport: 5%
+- [Kiravia] Federalist Republican Alliance (FRA) | Ideology: center_right | Platform: N/A | BaseSupport: 25%
+- [Kiravia] Emperor's Strongest Soldiers (EFF) | Ideology: far_right | Platform: N/A | BaseSupport: 2%
+- [Kiravia] Popular Democratic Front (PDF) | Ideology: left | Platform: N/A | BaseSupport: 10%
+- [Maresteyn] Mizaan (MIZ) | Ideology: far_left | Platform: N/A | BaseSupport: 3%
+- [Maresteyn] Ecological People's Union (EVU) | Ideology: far_left | Platform: N/A | BaseSupport: 7%
+- [Maresteyn] Orange Party (OP) | Ideology: far_right | Platform: N/A | BaseSupport: 29%
+- [Maresteyn] Social Democratic Alliance (SDA) | Ideology: left | Platform: N/A | BaseSupport: 28%
+- [Maresteyn] Social Christian Union (SCU) | Ideology: center_left | Platform: N/A | BaseSupport: 16%
+- [Maresteyn] Sociaal Front (SF) | Ideology: left | Platform: N/A | BaseSupport: 12%
+- [Maresteyn] Socialist People's Party (SVM) | Ideology: far_left | Platform: N/A | BaseSupport: 4%
+- [Maresteyn] Digital Frontier (DF) | Ideology: center | Platform: N/A | BaseSupport: 18%
+- [Maresteyn] League for Christian Hearts (VCH) | Ideology: far_right | Platform: N/A | BaseSupport: 17%
+- [Maresteyn] People's Union of Maresteyn (MVU) | Ideology: right | Platform: N/A | BaseSupport: 31%
+- [Maresteyn] Roman Catholic State Party (RKSP) | Ideology: right | Platform: N/A | BaseSupport: 31%
+- [Maresteyn] Social Contract of Maresteyn (SCM) | Ideology: center_right | Platform: N/A | BaseSupport: 30%
+- [Maresteyn] The Citizen's Party (DBP) | Ideology: center | Platform: N/A | BaseSupport: 28%
+- [Maresteyn] Classical Liberals of Maresteyn (KLM) | Ideology: center_right | Platform: N/A | BaseSupport: 27%
+- [Maresteyn] Liberal Democrats '89 (LD) | Ideology: center_left | Platform: N/A | BaseSupport: 25%
+- [Maresteyn] Christian Democrat Union (CDU) | Ideology: center | Platform: N/A | BaseSupport: 24%
+- [Maresteyn] GreenRight (GR) | Ideology: center_right | Platform: N/A | BaseSupport: 22%
+- [Maresteyn] Patriotic State Party (SPP) | Ideology: far_right | Platform: N/A | BaseSupport: 22%
+- [Maresteyn] Field and Farmer (A&B) | Ideology: center_right | Platform: N/A | BaseSupport: 20%
+- [Maresteyn] Labour Party of Maresteyn (PvdA) | Ideology: left | Platform: N/A | BaseSupport: 19%
+- [Maresteyn] For the Future (VdT) | Ideology: center | Platform: N/A | BaseSupport: 16%
+- [Maresteyn] Party for Progress (PvVg) | Ideology: center_left | Platform: N/A | BaseSupport: 15%
+- [Maresteyn] Guild Party (DGP) | Ideology: right | Platform: N/A | BaseSupport: 13%
+- [Maresteyn] People's Party for Freedom and Fatherland (VVV) | Ideology: far_right | Platform: N/A | BaseSupport: 11%
+- [Maresteyn] Enterprising Maresteyn (OM) | Ideology: center | Platform: N/A | BaseSupport: 11%
+- [Maresteyn] Rainbow Party (RP) | Ideology: center | Platform: N/A | BaseSupport: 11%
+- [Maresteyn] Youth of Today (JvT) | Ideology: center | Platform: N/A | BaseSupport: 9%
+- [Maresteyn] Elder Citizen's Party (MOP) | Ideology: center | Platform: N/A | BaseSupport: 9%
+- [Maresteyn] Women's Interest Party (VB) | Ideology: left | Platform: N/A | BaseSupport: 9%
+- [Maresteyn] Democratic Jewish Union (DJV) | Ideology: center_right | Platform: N/A | BaseSupport: 7%
+- [Maresteyn] SPIRIT (SPIRIT) | Ideology: center | Platform: N/A | BaseSupport: 2%
+- [Tierrador] Tribunal Coalition (Tribune) | Ideology: center | Platform: N/A | BaseSupport: 22%
+- [Tierrador] Tierradorian Republicans (RT) | Ideology: right | Platform: N/A | BaseSupport: 57%
+- [Tierrador] People's Party of Tierrador (PpT) | Ideology: center_left | Platform: N/A | BaseSupport: 73%
+- [Tierrador] United Tierrador (UniTerra) | Ideology: center | Platform: N/A | BaseSupport: 10%
+- [Tierrador] Conservatives' Union (Connies) | Ideology: far_right | Platform: N/A | BaseSupport: 15%
+- [Tierrador] Social Democracy (TSD) | Ideology: left | Platform: N/A | BaseSupport: 24%
+- [Tierrador] Socialist Workers' Party (PSt) | Ideology: far_left | Platform: N/A | BaseSupport: 34%
+- [Urcea] center (cen) | Ideology: center | Platform: N/A | BaseSupport: 25%
+- [Urcea] lib (lib) | Ideology: center | Platform: N/A | BaseSupport: 25%

@@ -61,6 +61,20 @@ interface Asset {
   imageUrl?: string | null;
 }
 
+export interface EquipmentPreset {
+  key: string;
+  type: string;
+  name: string;
+  category?: string;
+  era?: string;
+  manufacturer?: string;
+  acquisitionCost?: number;
+  maintenanceCost?: number;
+  capability?: string;
+  imageUrl?: string | null;
+  [key: string]: any;
+}
+
 export interface AssetManagerProps {
   countryId?: string;
   branchId?: string;
@@ -70,18 +84,18 @@ export interface AssetManagerProps {
 }
 
 const ASSET_TYPE_CONFIG = {
-  aircraft: { icon: Plane, color: "text-sky-600", label: "Aircraft" },
-  ship: { icon: Ship, color: "text-blue-600", label: "Naval Vessel" },
-  vehicle: { icon: Truck, color: "text-green-600", label: "Vehicle" },
-  installation: { icon: Target, color: "text-purple-600", label: "Installation" },
-  weapon_system: { icon: Radio, color: "text-red-600", label: "Weapon System" },
+  aircraft: { icon: Plane, color: "text-cyan-600 dark:text-cyan-400", label: "Aircraft" },
+  ship: { icon: Ship, color: "text-blue-600 dark:text-blue-400", label: "Naval Vessel" },
+  vehicle: { icon: Truck, color: "text-emerald-600 dark:text-emerald-400", label: "Vehicle" },
+  installation: { icon: Target, color: "text-indigo-600 dark:text-indigo-400", label: "Installation" },
+  weapon_system: { icon: Radio, color: "text-red-600 dark:text-red-400", label: "Weapon System" },
 } as const;
 
 const STATUS_CONFIG = {
-  operational: { label: "Operational", color: "bg-green-500" },
-  maintenance: { label: "Maintenance", color: "bg-yellow-500" },
+  operational: { label: "Operational", color: "bg-emerald-500" },
+  maintenance: { label: "Maintenance", color: "bg-amber-500" },
   reserve: { label: "Reserve", color: "bg-blue-500" },
-  retired: { label: "Retired", color: "bg-gray-500" },
+  retired: { label: "Retired", color: "bg-muted-foreground" },
 } as const;
 
 export function AssetManager({
@@ -488,57 +502,81 @@ function AssetDialog({
   };
 
   // Filter equipment database - now includes all 150+ items from expanded database
-  const allEquipment = [
+  const allEquipment: EquipmentPreset[] = [
     // Expanded database with 250+ items and images
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.fighters_gen5 ?? {}).map(([key, value]) => ({
-      ...value,
+    ...Object.entries(
+      (EXPANDED_MILITARY_DATABASE.fighters_gen5 as Record<string, any>) ?? {}
+    ).map(([key, value]): EquipmentPreset => ({
+      ...(value as any),
       key,
       type: "aircraft",
     })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.fighters_gen4_5 ?? {}).map(([key, value]) => ({
-      ...value,
+    ...Object.entries(
+      (EXPANDED_MILITARY_DATABASE.fighters_gen4_5 as Record<string, any>) ?? {}
+    ).map(([key, value]): EquipmentPreset => ({
+      ...(value as any),
       key,
       type: "aircraft",
     })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.attack_aircraft ?? {}).map(([key, value]) => ({
-      ...value,
+    ...Object.entries(
+      (EXPANDED_MILITARY_DATABASE.attack_aircraft as Record<string, any>) ?? {}
+    ).map(([key, value]): EquipmentPreset => ({
+      ...(value as any),
       key,
       type: "aircraft",
     })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.bombers ?? {}).map(([key, value]) => ({
-      ...value,
+    ...Object.entries(
+      (EXPANDED_MILITARY_DATABASE.bombers as Record<string, any>) ?? {}
+    ).map(([key, value]): EquipmentPreset => ({
+      ...(value as any),
       key,
       type: "aircraft",
     })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.transport ?? {}).map(([key, value]) => ({
-      ...value,
+    ...Object.entries(
+      (EXPANDED_MILITARY_DATABASE.transport as Record<string, any>) ?? {}
+    ).map(([key, value]): EquipmentPreset => ({
+      ...(value as any),
       key,
       type: "aircraft",
     })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.helicopters ?? {}).map(([key, value]) => ({
-      ...value,
+    ...Object.entries(
+      (EXPANDED_MILITARY_DATABASE.helicopters as Record<string, any>) ?? {}
+    ).map(([key, value]): EquipmentPreset => ({
+      ...(value as any),
       key,
       type: "aircraft",
     })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.naval_ships ?? {}).map(([key, value]) => ({
-      ...value,
+    ...Object.entries(
+      (EXPANDED_MILITARY_DATABASE.naval_ships as Record<string, any>) ?? {}
+    ).map(([key, value]): EquipmentPreset => ({
+      ...(value as any),
       key,
       type: "ship",
     })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.ground_vehicles ?? {}).map(([key, value]) => ({
-      ...value,
+    ...Object.entries(
+      (EXPANDED_MILITARY_DATABASE.ground_vehicles as Record<string, any>) ?? {}
+    ).map(([key, value]): EquipmentPreset => ({
+      ...(value as any),
       key,
       type: "vehicle",
     })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.weapon_systems ?? {}).map(([key, value]) => ({
-      ...value,
+    ...Object.entries(
+      (EXPANDED_MILITARY_DATABASE.weapon_systems as Record<string, any>) ?? {}
+    ).map(([key, value]): EquipmentPreset => ({
+      ...(value as any),
       key,
       type: "weapon_system",
     })),
   ];
 
   const filteredEquipment = allEquipment.filter((eq) => {
-    const matchesSearch = !searchQuery || eq.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      eq.name.toLowerCase().includes(q) ||
+      eq.type.toLowerCase().includes(q) ||
+      (eq.category && eq.category.toLowerCase().includes(q)) ||
+      eq.key.toLowerCase().includes(q);
     const matchesEra = selectedEra === "all" || eq.era === selectedEra;
     const matchesManufacturer =
       selectedManufacturer === "all" || eq.manufacturer === selectedManufacturer;
@@ -649,7 +687,7 @@ function AssetDialog({
                             <span>
                               <span className="text-muted-foreground">Cost:</span> $
                               <NumberFlowDisplay
-                                value={equipment.acquisitionCost}
+                                value={equipment.acquisitionCost ?? 0}
                                 format="compact"
                               />
                             </span>

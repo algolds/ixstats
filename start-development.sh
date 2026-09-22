@@ -74,15 +74,15 @@ try {
     const deps = { ...pkg.dependencies, ...pkg.devDependencies };
     const cleanVer = (v, fb) => (v || fb || "").replace(/^[\^~]/, "");
 
-    let platform = "v1.4.0 \"Ogma\" (Release Candidate)";
+    let platform = "v1.4.0 \\\"Lobster Crosby\\\" (Release Candidate)";
     if (fs.existsSync("./src/lib/buildVersion.ts")) {
         const bv = fs.readFileSync("./src/lib/buildVersion.ts", "utf8");
         const major = bv.match(/major:\s*(\d+)/)?.[1] || "1";
         const minor = bv.match(/minor:\s*(\d+)/)?.[1] || "4";
         const patch = bv.match(/patch:\s*(\d+)/)?.[1] || "0";
-        const release = bv.match(/release:\s*"([^"]+)"/)?.[1] || "Ogma";
+        const release = bv.match(/release:\s*"([^"]+)"/)?.[1] || "Lobster Crosby";
         const channel = bv.match(/channel:\s*"([^"]+)"/)?.[1] || "Release Candidate";
-        platform = `v${major}.${minor}.${patch} "${release}" (${channel})`;
+        platform = `v${major}.${minor}.${patch} \\"${release}\\" (${channel})`;
     }
 
     console.log(`NEXT_VER="${cleanVer(deps["next"], "16.3.0")}"`);
@@ -101,9 +101,9 @@ try {
     console.log("TRPC_VER=\"11.18.0\"");
     console.log("C15T_VER=\"2.2.0\"");
     console.log("TS_VER=\"7.0.0\"");
-    console.log("PLATFORM_INFO=\"v1.4.0 \\\"Ogma\\\" (Release Candidate)\"");
+    console.log("PLATFORM_INFO=\"v1.4.0 \\\"Lobster Crosby\\\" (Release Candidate)\"");
 }
-' 2>/dev/null || echo 'NEXT_VER="16.3.0" REACT_VER="19.2.8" TS_VER="7.0.0" PLATFORM_INFO="v1.4.0 \"Ogma\""')"
+' 2>/dev/null || echo 'NEXT_VER="16.3.0" REACT_VER="19.2.8" TS_VER="7.0.0" PLATFORM_INFO="v1.4.0 \"Lobster Crosby\""')"
 
 BUN_VER=$(bun --version 2>/dev/null || echo "1.4.0")
 GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "development")

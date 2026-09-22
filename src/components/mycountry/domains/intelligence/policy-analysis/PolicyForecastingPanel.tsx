@@ -127,7 +127,7 @@ export const PolicyForecastingPanel = React.memo(function PolicyForecastingPanel
         </div>
 
         {/* Impact Preview */}
-        <div className="mt-6 rounded-lg border bg-gradient-to-r from-indigo-50/50 to-purple-50/50 p-6 dark:from-indigo-950/20 dark:to-purple-950/20">
+        <div className="mt-6 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-6">
           <h4 className="mb-4 font-semibold">Projected Impacts</h4>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -136,7 +136,9 @@ export const PolicyForecastingPanel = React.memo(function PolicyForecastingPanel
                 <span
                   className={cn(
                     "flex items-center gap-1 font-semibold",
-                    simulatedImpact.taxRevenue > 0 ? "text-green-600" : "text-red-600"
+                    simulatedImpact.taxRevenue > 0
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-red-600 dark:text-red-400"
                   )}
                 >
                   {simulatedImpact.taxRevenue > 0 ? (
@@ -156,7 +158,9 @@ export const PolicyForecastingPanel = React.memo(function PolicyForecastingPanel
                 <span
                   className={cn(
                     "flex items-center gap-1 font-semibold",
-                    simulatedImpact.gdpGrowth > 3 ? "text-green-600" : "text-yellow-600"
+                    simulatedImpact.gdpGrowth > 3
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-amber-600 dark:text-amber-400"
                   )}
                 >
                   {simulatedImpact.gdpGrowth > 3 ? (
@@ -176,7 +180,9 @@ export const PolicyForecastingPanel = React.memo(function PolicyForecastingPanel
                 <span
                   className={cn(
                     "flex items-center gap-1 font-semibold",
-                    simulatedImpact.budgetBalance > 0 ? "text-green-600" : "text-red-600"
+                    simulatedImpact.budgetBalance > 0
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-red-600 dark:text-red-400"
                   )}
                 >
                   {simulatedImpact.budgetBalance > 0 ? (

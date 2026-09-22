@@ -58,8 +58,8 @@ export function OnomaFooter({
       id: "phonology",
       label: "Acoustics & IPA",
       glyph: "sound-acoustic" as const,
-      color: "hover:text-violet-500 hover:border-violet-500/30 hover:bg-violet-500/10",
-      accent: "#8b5cf6",
+      color: "hover:text-indigo-500 hover:border-indigo-500/30 hover:bg-indigo-500/10",
+      accent: "#6366f1",
       isPro: false,
       onClick: () => {
         if (onNavigateExplore) onNavigateExplore("phonology");
@@ -70,8 +70,8 @@ export function OnomaFooter({
       id: "studio",
       label: "Language Studio",
       glyph: "emerge-branch" as const,
-      color: "hover:text-pink-500 hover:border-pink-500/30 hover:bg-pink-500/10",
-      accent: "#ec4899",
+      color: "hover:text-onoma-primary hover:border-onoma-primary/30 hover:bg-onoma-primary/10",
+      accent: "#0091ff",
       isPro: true,
       onClick: () => {
         if (onNavigateStudio) onNavigateStudio("workshop");

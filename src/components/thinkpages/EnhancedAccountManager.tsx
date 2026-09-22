@@ -224,11 +224,11 @@ export function EnhancedAccountManager({
             <div className="text-muted-foreground">Posts</div>
           </div>
           <div className="text-center">
-            <div className="font-medium text-green-400">{metrics.reach}</div>
+            <div className="font-medium text-emerald-400">{metrics.reach}</div>
             <div className="text-muted-foreground">Reach</div>
           </div>
           <div className="text-center">
-            <div className="font-medium text-purple-400">{metrics.influence}%</div>
+            <div className="font-medium text-indigo-400">{metrics.influence}%</div>
             <div className="text-muted-foreground">Influence</div>
           </div>
         </div>

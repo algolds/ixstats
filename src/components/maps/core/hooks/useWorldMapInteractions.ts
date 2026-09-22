@@ -136,7 +136,9 @@ export function useWorldMapInteractions({
         if (map.transform && typeof (map.transform as any).isPointOnMapSurface === "function") {
           return (map.transform as any).isPointOnMapSurface(pt);
         }
-      } catch (_) {}
+      } catch (err) {
+        console.debug("[useWorldMapInteractions] Point surface check error:", err);
+      }
 
       // Fallback for flat projection / high zoom or missing transform method
       if (map.getZoom() >= 4.5) return true;
@@ -303,7 +305,9 @@ export function useWorldMapInteractions({
               { source: "source-political", id: hoveredFeatureIdRef.current },
               { hover: false }
             );
-          } catch (_) {}
+          } catch (err) {
+            console.debug("[useWorldMapInteractions] Reset hover state error:", err);
+          }
         }
 
         hoveredFeatureIdRef.current = nextFeatureId;
@@ -315,7 +319,9 @@ export function useWorldMapInteractions({
                 { source: "source-political", id: nextFeatureId },
                 { hover: true }
               );
-            } catch (_) {}
+            } catch (err) {
+              console.debug("[useWorldMapInteractions] Set hover state error:", err);
+            }
           }
           if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "pointer";
 

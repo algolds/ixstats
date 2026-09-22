@@ -88,13 +88,26 @@ export interface CitationInline {
   children: WikiInlineNode[];
 }
 
+export interface WikiInlineTemplateNode {
+  type: "inline-template";
+  templateName: string;
+  name?: string;
+  params: Record<string, string>;
+  paramList?: WikiParameter[];
+  positional?: string[];
+  raw?: string;
+  rawWikitext?: string;
+  children: [{ text: "" }];
+}
+
 export type WikiInlineNode =
   | WikiTextNode
   | WikiLinkInline
   | WikiExternalLinkInline
   | CoordChipInline
   | EngineDataChipInline
-  | CitationInline;
+  | CitationInline
+  | WikiInlineTemplateNode;
 
 // ─── Template Models ───────────────────────────────────────────────────────
 
@@ -221,11 +234,13 @@ export interface MediaBlock {
 export interface TableCellNode {
   type: "table-cell" | "th" | "td";
   isHeader?: boolean;
+  attributes?: string;
   children: (WikiParagraphBlock | WikiInlineNode)[];
 }
 
 export interface TableRowNode {
   type: "table-row" | "tr";
+  attributes?: string;
   children: TableCellNode[];
 }
 
@@ -233,6 +248,7 @@ export interface WikiTableBlock {
   type: "table";
   id?: string;
   caption?: string;
+  attributes?: string;
   rawWikitext?: string;
   children: TableRowNode[];
 }
@@ -243,6 +259,8 @@ export interface ListBlock {
   ordered?: boolean;
   children: Array<{
     type: "list-item" | "li";
+    level?: number;
+    prefix?: string;
     children: (WikiParagraphBlock | WikiInlineNode)[];
   }>;
 }

@@ -33,10 +33,10 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { format, subMonths } from "date-fns";
 import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
 import { MetricModalLayout } from "./MetricModalLayout";
 import type { TimeRange, ChartType } from "./types";
+import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
 
 interface DebtAnalysisModalProps {
   isOpen: boolean;
@@ -87,37 +87,22 @@ export function DebtAnalysisModal({
     const currentDebtRatio = fiscal?.totalDebtGDPRatio || 50;
     const currentInterestRate = fiscal?.interestRates || 3.5;
 
-    const now = new Date();
-    const rangeMap: Record<TimeRange, number> = {
-      "3m": 3,
-      "6m": 6,
-      "1y": 12,
-      "2y": 24,
-      "4y": 48,
-      "5y": 60,
-      "20y": 240,
-      all: Infinity,
-    };
-
-    const monthsToShow = rangeMap[timeRange] || 12;
-    const cutoffDate = monthsToShow === Infinity ? new Date(0) : subMonths(now, monthsToShow);
-
-    return historicalData
-      .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
-      .slice(-100)
-      .map((point: any) => {
+    return filterAndSortHistory(
+      historicalData,
+      timeRange,
+      (point, formattedDate, timestamp) => {
         const gdp = point.totalGdp || 0;
         const publicDebt = gdp * (currentDebtRatio / 100);
         const interestPayments = publicDebt * (currentInterestRate / 100);
         return {
-          date: format(new Date(point.ixTimeTimestamp), "MMM yyyy"),
-          timestamp: point.ixTimeTimestamp,
+          date: formattedDate,
+          timestamp,
           publicDebt: publicDebt / 1e12,
           debtToGdp: currentDebtRatio,
           interestPayments: interestPayments / 1e9,
         };
-      })
-      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      }
+    );
   };
 
   const chartConfig = {
@@ -161,9 +146,9 @@ export function DebtAnalysisModal({
       };
     return {
       label: "High Risk",
-      color: "text-rose-400",
-      bg: "bg-rose-500/10",
-      border: "border-rose-500/20",
+      color: "text-red-400",
+      bg: "bg-red-500/10",
+      border: "border-red-500/20",
       variant: "destructive",
     };
   };
@@ -271,7 +256,7 @@ export function DebtAnalysisModal({
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-purple-400">{riskLevel.label}</div>
+                  <div className={cn("text-lg font-bold", riskLevel.color)}>{riskLevel.label}</div>
                   <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
                     Assessment
                   </div>
@@ -463,7 +448,7 @@ export function DebtAnalysisModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Data Points
               </span>
-              <span className="text-xl font-bold text-purple-400">
+              <span className="text-xl font-bold text-blue-400">
                 {debtStats?.dataPoints || 0}
               </span>
             </div>
@@ -579,7 +564,7 @@ export function DebtAnalysisModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Sustainability Status
               </span>
-              <span className="text-xl font-bold text-purple-400">
+              <span className={cn("text-xl font-bold", debtToGdp < 60 ? "text-emerald-400" : debtToGdp < 100 ? "text-amber-400" : "text-red-400")}>
                 {debtToGdp < 60 ? "Sustainable" : debtToGdp < 100 ? "Manageable" : "Critical"}
               </span>
               <span className="text-muted-foreground mt-1 text-[10px]">
@@ -630,13 +615,13 @@ export function DebtAnalysisModal({
                   <div className="text-muted-foreground mt-1 text-xs">Domestic Debt</div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-semibold text-purple-400">
+                  <div className="text-lg font-semibold text-indigo-400">
                     {externalShare.toFixed(0)}%
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">External Debt</div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-semibold text-green-400">25%</div>
+                  <div className="text-lg font-semibold text-emerald-400">25%</div>
                   <div className="text-muted-foreground mt-1 text-xs">Short-Term</div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
@@ -670,7 +655,7 @@ export function DebtAnalysisModal({
                 <span className="text-muted-foreground text-[10px] font-semibold uppercase">
                   Annual Interest
                 </span>
-                <div className="mt-1 text-lg font-bold text-rose-400">
+                <div className="mt-1 text-lg font-bold text-red-400">
                   ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
                 </div>
               </div>
@@ -688,7 +673,7 @@ export function DebtAnalysisModal({
                 <span className="text-muted-foreground text-[10px] font-semibold uppercase">
                   Average Maturity
                 </span>
-                <div className="mt-1 text-lg font-bold font-semibold text-purple-400">
+                <div className="mt-1 text-lg font-bold font-semibold text-cyan-400">
                   8.5 Years
                 </div>
               </div>

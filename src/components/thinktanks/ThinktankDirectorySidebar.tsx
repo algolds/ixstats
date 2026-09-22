@@ -334,7 +334,7 @@ export function ThinktankDirectorySidebar({
                       {g.memberCount ?? 1} {g.memberCount === 1 ? "member" : "members"}
                     </span>
                     {allowPersona && (
-                      <span className="ml-auto inline-flex items-center font-medium text-purple-600 dark:text-purple-400">
+                      <span className="ml-auto inline-flex items-center font-medium text-blue-600 dark:text-blue-400">
                         <Group className="mr-0.5 h-2.5 w-2.5" /> Personas
                       </span>
                     )}

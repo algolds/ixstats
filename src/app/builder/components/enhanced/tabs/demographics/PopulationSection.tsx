@@ -13,7 +13,10 @@ import type { DemographicsConfiguration } from "~/types/economy-builder";
 
 interface PopulationSectionProps {
   demographics: DemographicsConfiguration;
-  onChange: (field: keyof DemographicsConfiguration, value: any) => void;
+  onChange: <K extends keyof DemographicsConfiguration>(
+    field: K,
+    value: DemographicsConfiguration[K]
+  ) => void;
   showAdvanced: boolean;
 }
 

@@ -19,9 +19,6 @@ import {
   Code,
   Minus,
   Type,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
   Undo as Undo2,
   Redo as Redo2,
   Erase as RemoveFormatting,
@@ -65,8 +62,8 @@ export interface WikiVisualToolbarProps {
   insertRef: () => void;
   clearFormatting: () => void;
   insertHtmlAtCursor: (html: string) => void;
-  saveSelection: () => void;
-  restoreSelection: () => void;
+  saveSelection?: () => void;
+  restoreSelection?: () => void;
   handleInsertStashedImage: (filename: string) => void;
 }
 
@@ -161,7 +158,7 @@ export function WikiVisualToolbar({
           <VEBtn
             icon={<Strikethrough className="h-3.5 w-3.5" />}
             title="Strikethrough (Ctrl+Shift+X)"
-            active={activeFormats.has("strikethrough")}
+            active={activeFormats.has("strikethrough") || activeFormats.has("strike")}
             onClick={() => exec("strikeThrough")}
           />
         </div>
@@ -172,19 +169,20 @@ export function WikiVisualToolbar({
           <VEBtn
             icon={<Superscript className="h-3.5 w-3.5" />}
             title="Superscript"
-            active={activeFormats.has("superscript")}
+            active={activeFormats.has("superscript") || activeFormats.has("sup")}
             onClick={() => exec("superscript")}
           />
           <VEBtn
             icon={<Subscript className="h-3.5 w-3.5" />}
             title="Subscript"
-            active={activeFormats.has("subscript")}
+            active={activeFormats.has("subscript") || activeFormats.has("sub")}
             onClick={() => exec("subscript")}
           />
           <VEBtn
             icon={<Code className="h-3.5 w-3.5" />}
             title="Inline code"
-            onClick={() => insertHtmlAtCursor("<code>code</code>")}
+            active={activeFormats.has("code") || activeFormats.has("code-block")}
+            onClick={() => exec("code")}
           />
         </div>
         <span className="wikios-ve-toolbar-sep" />
@@ -194,21 +192,25 @@ export function WikiVisualToolbar({
           <VEBtn
             icon={<Type className="h-3.5 w-3.5" />}
             title="Normal paragraph"
+            active={activeFormats.has("p") || activeFormats.has("paragraph")}
             onClick={setParagraph}
           />
           <VEBtn
             icon={<span className="wikios-ve-heading-label">H2</span>}
             title="Section heading"
+            active={activeFormats.has("h2")}
             onClick={() => setHeading(2)}
           />
           <VEBtn
             icon={<span className="wikios-ve-heading-label">H3</span>}
             title="Subsection"
+            active={activeFormats.has("h3")}
             onClick={() => setHeading(3)}
           />
           <VEBtn
             icon={<span className="wikios-ve-heading-label">H4</span>}
             title="Sub-subsection"
+            active={activeFormats.has("h4")}
             onClick={() => setHeading(4)}
           />
         </div>
@@ -231,6 +233,7 @@ export function WikiVisualToolbar({
           <VEBtn
             icon={<Quote className="h-3.5 w-3.5" />}
             title="Blockquote"
+            active={activeFormats.has("blockquote")}
             onClick={() => exec("formatBlock", "blockquote")}
           />
           <VEBtn
@@ -246,36 +249,18 @@ export function WikiVisualToolbar({
         </div>
         <span className="wikios-ve-toolbar-sep" />
 
-        {/* Alignment */}
-        <div className="wikios-ve-toolbar-group">
-          <VEBtn
-            icon={<AlignLeft className="h-3.5 w-3.5" />}
-            title="Align left"
-            onClick={() => exec("justifyLeft")}
-          />
-          <VEBtn
-            icon={<AlignCenter className="h-3.5 w-3.5" />}
-            title="Align center"
-            onClick={() => exec("justifyCenter")}
-          />
-          <VEBtn
-            icon={<AlignRight className="h-3.5 w-3.5" />}
-            title="Align right"
-            onClick={() => exec("justifyRight")}
-          />
-        </div>
-        <span className="wikios-ve-toolbar-sep" />
-
         {/* Links */}
         <div className="wikios-ve-toolbar-group">
           <VEBtn
             icon={<Link2 className="h-3.5 w-3.5" />}
             title="Insert link (Ctrl+K)"
+            active={activeFormats.has("link")}
             onClick={insertLink}
           />
           <VEBtn
             icon={<Unlink className="h-3.5 w-3.5" />}
             title="Remove link"
+            active={activeFormats.has("link")}
             onClick={removeLink}
           />
         </div>
@@ -287,14 +272,14 @@ export function WikiVisualToolbar({
             icon={<ImageIcon className="h-3.5 w-3.5" />}
             title="Insert image"
             onClick={() => {
-              saveSelection();
+              saveSelection?.();
               modal.setShowImageSearch(true);
             }}
           />
 
           <StashDropdown
             onInsertImage={(filename) => {
-              restoreSelection();
+              restoreSelection?.();
               handleInsertStashedImage(filename);
             }}
             onBeforeOpen={saveSelection}
@@ -303,6 +288,7 @@ export function WikiVisualToolbar({
           <VEBtn
             icon={<Table className="h-3.5 w-3.5" />}
             title="Insert table"
+            active={activeFormats.has("table")}
             onClick={insertTable}
           />
 
@@ -357,11 +343,15 @@ function VEBtn({
   return (
     <button
       type="button"
+      data-cuelume-press="droplet"
       onMouseDown={(e) => {
         e.preventDefault();
         onClick();
       }}
-      className={cn("wikios-ve-toolbar-btn", active && "wikios-ve-toolbar-btn-active")}
+      className={cn(
+        "wikios-ve-toolbar-btn active:scale-[0.97] transition-all duration-150",
+        active && "wikios-ve-toolbar-btn-active font-semibold shadow-xs"
+      )}
       title={title}
     >
       {icon}

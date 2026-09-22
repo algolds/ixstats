@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { WikiHeroProps, WikiHeroVariant } from "./types";
-import { EditorialMastheadHero } from "./EditorialMastheadHero";
 import { SculptedEmblemHero } from "./SculptedEmblemHero";
 import {
   type RefractionMode,
@@ -79,13 +78,7 @@ export function WikiHeroMaster(props: WikiHeroProps) {
   };
 
   const renderActiveHero = () => {
-    switch (activeVariant) {
-      case "editorial-masthead":
-        return <EditorialMastheadHero {...heroProps} />;
-      case "sculpted-emblem":
-      default:
-        return <SculptedEmblemHero {...heroProps} />;
-    }
+    return <SculptedEmblemHero {...heroProps} />;
   };
 
   return (

@@ -164,7 +164,7 @@ export function MapPipelineTelemetry({
               </div>
               <div className="border-border bg-background/40 rounded-md border p-3">
                 <div className="text-muted-foreground text-[11px]">Shared Vertices</div>
-                <div className="font-mono text-lg font-bold text-purple-500">
+                <div className="font-mono text-lg font-bold text-indigo-500">
                   {stats.sharedVerticesCount}
                 </div>
               </div>

@@ -193,7 +193,7 @@ export function GeographyReportModal({
                       Coastline: {Math.round(geoProfile.derived.coastlineKm).toLocaleString()} km
                     </span>
                   )}
-                  <span className="rounded-full border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 font-medium text-purple-500">
+                  <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-0.5 font-medium text-cyan-500">
                     Borders: {geoProfile.derived.neighborCount} Neighboring Countries
                   </span>
                   <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 font-medium text-emerald-500">
@@ -210,7 +210,7 @@ export function GeographyReportModal({
               {/* Climate Zones Table */}
               <div className="space-y-1.5">
                 <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
-                  <CloudSun className="h-3.5 w-3.5 text-sky-500" />
+                  <CloudSun className="h-3.5 w-3.5 text-cyan-500" />
                   Climate Zone Distribution
                 </div>
                 <div className="border-border overflow-hidden rounded-lg border">

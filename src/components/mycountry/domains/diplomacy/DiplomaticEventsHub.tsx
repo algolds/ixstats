@@ -58,62 +58,62 @@ interface DiplomaticEventsHubProps {
 // Event type configuration
 const EVENT_TYPE_CONFIG: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
   border_dispute: {
-    color: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+    color: "bg-red-500/15 text-red-700 dark:text-red-400 dark:bg-red-500/20",
     icon: <AlertCircle className="h-4 w-4" />,
     label: "Border Dispute",
   },
   trade_renegotiation: {
-    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+    color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 dark:bg-emerald-500/20",
     icon: <TrendingUp className="h-4 w-4" />,
     label: "Trade Negotiation",
   },
   cultural_misunderstanding: {
-    color: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+    color: "bg-blue-500/15 text-blue-700 dark:text-blue-400 dark:bg-blue-500/20",
     icon: <MessageSquare className="h-4 w-4" />,
     label: "Cultural Issue",
   },
   intelligence_breach: {
-    color: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
+    color: "bg-amber-500/15 text-amber-700 dark:text-amber-400 dark:bg-amber-500/20",
     icon: <Eye className="h-4 w-4" />,
     label: "Intelligence Breach",
   },
   humanitarian_crisis: {
-    color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
+    color: "bg-amber-500/15 text-amber-700 dark:text-amber-400 dark:bg-amber-500/20",
     icon: <AlertCircle className="h-4 w-4" />,
     label: "Humanitarian Crisis",
   },
   alliance_pressure: {
-    color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400",
+    color: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 dark:bg-indigo-500/20",
     icon: <Sparkles className="h-4 w-4" />,
     label: "Alliance Pressure",
   },
   economic_sanctions_debate: {
-    color: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+    color: "bg-red-500/15 text-red-700 dark:text-red-400 dark:bg-red-500/20",
     icon: <TrendingDown className="h-4 w-4" />,
     label: "Sanctions Debate",
   },
   technology_transfer_request: {
-    color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400",
+    color: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 dark:bg-cyan-500/20",
     icon: <Sparkles className="h-4 w-4" />,
     label: "Tech Transfer",
   },
   diplomatic_incident: {
-    color: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
+    color: "bg-amber-500/15 text-amber-700 dark:text-amber-400 dark:bg-amber-500/20",
     icon: <AlertCircle className="h-4 w-4" />,
     label: "Diplomatic Incident",
   },
   mediation_opportunity: {
-    color: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+    color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 dark:bg-emerald-500/20",
     icon: <CheckCircle className="h-4 w-4" />,
     label: "Mediation Opportunity",
   },
   embassy_security_threat: {
-    color: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+    color: "bg-red-500/15 text-red-700 dark:text-red-400 dark:bg-red-500/20",
     icon: <AlertCircle className="h-4 w-4" />,
     label: "Security Threat",
   },
   treaty_renewal: {
-    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+    color: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 dark:bg-cyan-500/20",
     icon: <FileText className="h-4 w-4" />,
     label: "Treaty Renewal",
   },

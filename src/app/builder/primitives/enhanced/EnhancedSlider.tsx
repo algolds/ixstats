@@ -6,7 +6,7 @@ import { cn, debounce } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import { useAnimatedPercentage, DEFAULT_ANIMATIONS } from "./animation-utils";
 import type { EnhancedInputProps } from "./types";
-import { FieldHelpTooltip } from "../../components/help/GovernmentHelpSystem";
+import { FieldHelpTooltip } from "../../components/help/FieldHelpTooltip";
 
 interface EnhancedSliderProps extends EnhancedInputProps {
   orientation?: "horizontal" | "vertical";
@@ -16,7 +16,7 @@ interface EnhancedSliderProps extends EnhancedInputProps {
   showRange?: boolean;
   trackHeight?: number;
   thumbSize?: number;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<{ className?: string }>;
   helpContent?: React.ReactNode;
   helpTitle?: string;
   onCommit?: (value: number) => void;
@@ -304,8 +304,8 @@ export function EnhancedSlider({
           }}
           className={cn(
             "relative cursor-pointer overflow-hidden rounded-full will-change-transform",
-            "bg-gray-100/80 dark:bg-gray-800/80",
-            "border border-gray-200/40 dark:border-gray-700/40",
+            "bg-muted/80",
+            "border border-border/40",
             "transition-all duration-300 ease-out",
             isHovered && "shadow-lg",
             orientation === "horizontal" ? "w-full" : "mx-auto h-40 w-fit"
@@ -371,9 +371,9 @@ export function EnhancedSlider({
               "absolute cursor-grab rounded-full active:cursor-grabbing",
               "transform-gpu shadow-xl will-change-transform",
               // Apple-style glass effect
-              "bg-white/90 dark:bg-gray-800/90",
-              "border border-gray-200/50 dark:border-gray-600/50",
-              "hover:border-gray-300/70 dark:hover:border-gray-500/70",
+              "bg-background/90",
+              "border border-border/50",
+              "hover:border-foreground/20",
               // Smooth transitions
               "transition-[border-color,box-shadow] duration-200 ease-out"
             )}

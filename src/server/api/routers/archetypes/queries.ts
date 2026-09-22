@@ -3,38 +3,6 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/
 import { enhancedArchetypes, archetypeCategories } from "~/lib/archetypes/catalog";
 
 // Input validation schemas
-const _archetypeSelectionSchema = z.object({
-  archetypeIds: z.array(z.string()).max(5, "Maximum 5 archetypes can be selected"),
-});
-
-const _createArchetypeSchema = z.object({
-  name: z.string().min(1).max(50),
-  description: z.string().min(1).max(200),
-  categoryId: z.string(),
-  iconName: z.string(),
-  color: z.string(),
-  gradient: z.string(),
-  tags: z.array(z.string()),
-  filterRules: z.record(z.string(), z.unknown()), // JSON object
-  priority: z.number().default(0),
-  isSelectable: z.boolean().default(true),
-});
-
-const _updateArchetypeSchema = z.object({
-  id: z.string(),
-  name: z.string().min(1).max(50).optional(),
-  description: z.string().min(1).max(200).optional(),
-  categoryId: z.string().optional(),
-  iconName: z.string().optional(),
-  color: z.string().optional(),
-  gradient: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  filterRules: z.record(z.string(), z.unknown()).optional(),
-  priority: z.number().optional(),
-  isSelectable: z.boolean().optional(),
-  isActive: z.boolean().optional(),
-});
-
 export const archetypesQueriesRouter = createTRPCRouter({
   // Get all archetype categories
   getCategories: publicProcedure.query(async ({ ctx }) => {

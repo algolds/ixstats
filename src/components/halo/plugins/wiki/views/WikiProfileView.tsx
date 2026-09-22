@@ -412,7 +412,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   onClose();
                   navigateWithBasePath("/mycountry/executive", router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/15 to-violet-500/15 p-4 text-center text-xs font-semibold text-indigo-300 transition-all hover:from-indigo-500/25 hover:to-violet-500/25 active:scale-95"
+                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/15 to-indigo-600/15 p-4 text-center text-xs font-semibold text-indigo-300 transition-all hover:from-indigo-500/25 hover:to-indigo-600/25 active:scale-95"
               >
                 <ScrollText className="h-5 w-5 text-indigo-400" />
                 <span>Executive Actions</span>
@@ -423,9 +423,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   onClose();
                   navigateWithBasePath("/mycountry/diplomacy", router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-purple-500/20 bg-gradient-to-br from-purple-500/15 to-fuchsia-500/15 p-4 text-center text-xs font-semibold text-purple-300 transition-all hover:from-purple-500/25 hover:to-fuchsia-500/25 active:scale-95"
+                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-center text-xs font-semibold text-cyan-400 transition-all hover:bg-cyan-500/20 active:scale-95"
               >
-                <Handshake className="h-5 w-5 text-purple-400" />
+                <Handshake className="h-5 w-5 text-cyan-400" />
                 <span>Manage Diplomacy</span>
               </button>
 
@@ -434,9 +434,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   onClose();
                   navigateWithBasePath("/mycountry/editor", router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-500/15 to-blue-500/15 p-4 text-center text-xs font-semibold text-sky-300 transition-all hover:from-sky-500/25 hover:to-blue-500/25 active:scale-95"
+                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 p-4 text-center text-xs font-semibold text-blue-400 transition-all hover:bg-blue-500/20 active:scale-95"
               >
-                <Map className="h-5 w-5 text-sky-400" />
+                <Map className="h-5 w-5 text-blue-400" />
                 <span>Map & Editor</span>
               </button>
 
@@ -445,9 +445,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   onClose();
                   navigateWithBasePath("/vault", router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-pink-500/20 bg-gradient-to-br from-pink-500/15 to-rose-500/15 p-4 text-center text-xs font-semibold text-pink-300 transition-all hover:from-pink-500/25 hover:to-rose-500/25 active:scale-95"
+                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-center text-xs font-semibold text-amber-400 transition-all hover:bg-amber-500/20 active:scale-95"
               >
-                <Wallet className="h-5 w-5 text-pink-400" />
+                <Wallet className="h-5 w-5 text-amber-400" />
                 <span>IxVault Cards</span>
               </button>
 
@@ -456,9 +456,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   onClose();
                   navigateWithBasePath("/mycountry/politics", router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-teal-500/20 bg-gradient-to-br from-teal-500/15 to-emerald-500/15 p-4 text-center text-xs font-semibold text-teal-300 transition-all hover:from-teal-500/25 hover:to-emerald-500/25 active:scale-95"
+                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-4 text-center text-xs font-semibold text-indigo-400 transition-all hover:bg-indigo-500/20 active:scale-95"
               >
-                <Scale className="h-5 w-5 text-teal-400" />
+                <Scale className="h-5 w-5 text-indigo-400" />
                 <span>Politics & Elections</span>
               </button>
             </div>

@@ -26,19 +26,7 @@ interface TourHUDProps {
   totalSteps: number;
 }
 
-function formatPopulation(value: number | null | undefined): string {
-  if (value === null || value === undefined) return "—";
-  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
-  return value.toLocaleString();
-}
-
-function formatGDP(value: number | null | undefined): string {
-  if (value === null || value === undefined) return "—";
-  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
-  return `$${value.toLocaleString()}`;
-}
+import { formatPopulation, formatCurrency } from "~/lib/utils/format-utils";
 
 export function TourHUD({
   tourState,
@@ -189,7 +177,7 @@ export function TourHUD({
                 <div className="mx-auto mt-1 h-3 w-16 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
               ) : (
                 <p className="dark:text-foreground truncate text-xs font-semibold text-slate-900">
-                  {formatGDP(stats?.totalGdp)}
+                  {formatCurrency(stats?.totalGdp ?? 0)}
                 </p>
               )}
             </div>

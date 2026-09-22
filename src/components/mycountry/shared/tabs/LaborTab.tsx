@@ -24,6 +24,12 @@ import Link from "next/link";
 import { createUrl } from "~/lib/utils";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 import type { MetricType } from "~/hooks/useMetricDetailsModal";
+import type {
+  CountryWithEconomicData,
+  MappedEconomyData,
+} from "~/components/mycountry/shared/primitives/CountryDataProvider";
+import type { extractCountryImageData } from "~/lib/media";
+import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
 
 export function LaborTab({
   country,
@@ -34,13 +40,13 @@ export function LaborTab({
   metricView,
   setMetricViewAction,
 }: {
-  country: any;
-  economyData: any;
-  countryImageData: any;
+  country: CountryWithEconomicData;
+  economyData: MappedEconomyData;
+  countryImageData: ReturnType<typeof extractCountryImageData>;
   setImageUploadModalAction: (state: { isOpen: boolean; cardType: CardImageType }) => void;
   openMetricModalAction: (metricType: MetricType, countryId: string) => void;
-  metricView: any;
-  setMetricViewAction: React.Dispatch<React.SetStateAction<any>>;
+  metricView: MyCountryMetricView;
+  setMetricViewAction: React.Dispatch<React.SetStateAction<MyCountryMetricView>>;
 }) {
   const [expandedSection, setExpandedSection] = React.useState<string | null>("workforce");
   const currency = country?.nationalIdentity?.currency || "USD";
@@ -107,7 +113,7 @@ export function LaborTab({
               {/* Metric 1: Workforce */}
               <button
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     workforce: v.workforce === "participation" ? "count" : "participation",
                   }))
@@ -151,7 +157,7 @@ export function LaborTab({
               {/* Metric 2: Employment */}
               <button
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     employment: v.employment === "employed" ? "unemployed" : "employed",
                   }))
@@ -206,7 +212,7 @@ export function LaborTab({
               {/* Metric 3: Compensation */}
               <button
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     compensation: v.compensation === "minimum" ? "average" : "minimum",
                   }))
@@ -598,7 +604,7 @@ export function LaborTab({
                       Youth Unemp.
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {`${(economyData?.labor?.skillsAndProductivity?.youthUnemploymentRate ?? 0).toFixed(1)}%`}
+                      {`${(economyData?.labor?.youthUnemploymentRate ?? 0).toFixed(1)}%`}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
                       Age 15-24 unemployed
@@ -618,7 +624,7 @@ export function LaborTab({
                       id: "literacy",
                       name: "Adult Literacy Rate",
                       value: 0,
-                      percentage: economyData?.labor?.skillsAndProductivity?.literacyRate ?? 95,
+                      percentage: economyData?.demographics?.literacyRate ?? 95,
                       color: "emerald",
                     },
                     {
@@ -626,22 +632,22 @@ export function LaborTab({
                       name: "STEM Graduate Share",
                       value: 0,
                       percentage:
-                        economyData?.labor?.skillsAndProductivity?.stemGraduatesPercent ?? 24,
+                        economyData?.labor?.skillsAndProductivity?.tertiaryEducationRate ?? 24,
                       color: "blue",
                     },
                     {
                       id: "brain-drain",
                       name: "Brain Drain Index",
                       value: 0,
-                      percentage: economyData?.labor?.skillsAndProductivity?.brainDrainIndex ?? 32,
+                      percentage:
+                        economyData?.labor?.skillsAndProductivity?.skillsGapIndex ?? 32,
                       color: "purple",
                     },
                     {
                       id: "digital",
                       name: "Digital Literacy Rate",
                       value: 0,
-                      percentage:
-                        economyData?.labor?.skillsAndProductivity?.digitalLiteracyPercent ?? 78,
+                      percentage: economyData?.demographics?.literacyRate ?? 78,
                       color: "cyan",
                     },
                   ]}

@@ -243,8 +243,8 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
         />
 
         <ForumRow
-          icon={<MessageSquare className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />}
-          iconBg="bg-purple-500/15"
+          icon={<MessageSquare className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />}
+          iconBg="bg-blue-500/15"
           label="Messages"
           description="Private conversations and inbox"
           onClick={() => navigate("/forum/conversations")}

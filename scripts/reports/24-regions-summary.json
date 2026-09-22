@@ -1,0 +1,434 @@
+[
+  {
+    "index": 1,
+    "id": "cmn1zq2p80001rpvak5umzosu",
+    "name": "Estro",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 43974,
+    "population": 0,
+    "climates": "Tropical Wet (Ar) (11.4%), Tropical Wet-And-Dry (Aw) (88.6%)",
+    "elevations": "Coastal Lowlands (100%)",
+    "waterAccess": {
+      "hasRiver": false,
+      "riverLengthKm": 0,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 2,
+    "id": "cmn1zq2q00003rpvat2bs1ntl",
+    "name": "Netharra",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 60087,
+    "population": 8500271,
+    "climates": "Tropical Wet (Ar) (100%)",
+    "elevations": "Coastal Lowlands (94.9%), Low Hills (4.1%), Uplands (0.2%), Rolling Hills (0.9%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 645,
+      "hasLake": true,
+      "lakeAreaSqKm": 1471
+    }
+  },
+  {
+    "index": 3,
+    "id": "cmn1zq2r10005rpvazj69gflz",
+    "name": "Narico",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 59114,
+    "population": 16294450,
+    "climates": "Tropical Wet (Ar) (0%), Tropical Wet-And-Dry (Aw) (100%)",
+    "elevations": "Coastal Lowlands (100%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 720,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 4,
+    "id": "cmn1zq2s70007rpvalhbkdoea",
+    "name": "Canterra",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 83832,
+    "population": 9000215,
+    "climates": "Tropical Wet-And-Dry (Aw) (89.6%), Tropical Wet (Ar) (10.4%)",
+    "elevations": "Coastal Lowlands (52.8%), Rolling Hills (15.5%), Low Hills (26%), Uplands (5.7%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 422,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 5,
+    "id": "cmn1zq2su0009rpvam8vclpin",
+    "name": "Iscasta",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 77181,
+    "population": 10999988,
+    "climates": "Tropical Wet (Ar) (47.6%), Tropical Wet-And-Dry (Aw) (50.8%), Highland (H) (1.6%)",
+    "elevations": "Coastal Lowlands (64.5%), Uplands (5.9%), Low Mountains (1.5%), Low Hills (15.9%), Rolling Hills (12.2%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 431,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 6,
+    "id": "cmn1zq2t9000brpvaociu88hk",
+    "name": "Ovetta",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 125478,
+    "population": 5999937,
+    "climates": "Tropical Wet (Ar) (65.1%), Tropical Wet-And-Dry (Aw) (34.7%), Highland (H) (0.2%)",
+    "elevations": "Coastal Lowlands (72.8%), Rolling Hills (9.3%), Low Hills (16.6%), Uplands (1.1%), Low Mountains (0.1%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 2768,
+      "hasLake": true,
+      "lakeAreaSqKm": 572
+    }
+  },
+  {
+    "index": 7,
+    "id": "cmn1zq2ui000frpvalgbr8mjb",
+    "name": "Isuriana",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 449285,
+    "population": 32500020,
+    "climates": "Steppe or Semiarid (Bs) (42.5%), Desert or Arid (Bw) (1.1%), Subtropical Dry Summer (Cs) (43.9%), Highland (H) (0.6%), Subtropical Humid (Cf) (11.8%)",
+    "elevations": "Low Hills (36.4%), Rolling Hills (11.3%), Uplands (2.4%), Low Mountains (0.3%), Coastal Lowlands (49.6%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 6780,
+      "hasLake": true,
+      "lakeAreaSqKm": 1974
+    }
+  },
+  {
+    "index": 8,
+    "id": "cmn1zq2v6000hrpvaxqh6fffr",
+    "name": "Turiana",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 194737,
+    "population": 17499869,
+    "climates": "Steppe or Semiarid (Bs) (1.6%), Subtropical Dry Summer (Cs) (31.8%), Highland (H) (0.3%), Tropical Wet-And-Dry (Aw) (66.3%)",
+    "elevations": "Low Hills (28.5%), Rolling Hills (10.6%), Uplands (1.8%), Coastal Lowlands (58.9%), Low Mountains (0.2%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 2907,
+      "hasLake": true,
+      "lakeAreaSqKm": 3126
+    }
+  },
+  {
+    "index": 9,
+    "id": "cmn1zq2vg000jrpvan5h8mbgn",
+    "name": "Misena",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 30966,
+    "population": 27000026,
+    "climates": "Subtropical Dry Summer (Cs) (100%)",
+    "elevations": "Coastal Lowlands (100%)",
+    "waterAccess": {
+      "hasRiver": false,
+      "riverLengthKm": 0,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 10,
+    "id": "cmn1zq2vo000lrpvah4q6rw0a",
+    "name": "Ranaella",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 0,
+    "population": 26500083,
+    "climates": "Steppe or Semiarid (Bs) (76.8%), Desert or Arid (Bw) (23%), Subtropical Dry Summer (Cs) (0.2%)",
+    "elevations": "Coastal Lowlands (46.9%), Low Hills (46.9%), Rolling Hills (6.2%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 1228,
+      "hasLake": true,
+      "lakeAreaSqKm": 14803
+    }
+  },
+  {
+    "index": 11,
+    "id": "cmn1zq2wf000prpva9gpr3aib",
+    "name": "Meceria",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 154350,
+    "population": 38999901,
+    "climates": "Steppe or Semiarid (Bs) (48%), Subtropical Dry Summer (Cs) (48.5%), Highland (H) (3.5%)",
+    "elevations": "Coastal Lowlands (32.9%), Low Hills (29.9%), Uplands (11.9%), Low Mountains (1.4%), Rolling Hills (23.9%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 4123,
+      "hasLake": true,
+      "lakeAreaSqKm": 232
+    }
+  },
+  {
+    "index": 12,
+    "id": "cmn1zq2xo000rrpvaysdlxpx3",
+    "name": "Desia",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 146773,
+    "population": 18999699,
+    "climates": "Tropical Wet-And-Dry (Aw) (85.9%), Subtropical Dry Summer (Cs) (14.1%)",
+    "elevations": "Coastal Lowlands (54.8%), Low Hills (32.1%), Uplands (1.2%), Rolling Hills (11.9%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 717,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 13,
+    "id": "cmn1zq2yj000trpvaak0keifa",
+    "name": "Inosia",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 72813,
+    "population": 53000166,
+    "climates": "Subtropical Dry Summer (Cs) (100%)",
+    "elevations": "Coastal Lowlands (97.8%), Low Hills (2.2%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 1042,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 14,
+    "id": "cmn1zq2yn000vrpval1drn9aa",
+    "name": "Leonia",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 0,
+    "population": 35500298,
+    "climates": "Steppe or Semiarid (Bs) (1.3%), Subtropical Dry Summer (Cs) (98.7%)",
+    "elevations": "Coastal Lowlands (65.1%), Uplands (1.9%), Rolling Hills (10.4%), Low Hills (22.6%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 718,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 15,
+    "id": "cmn1zq2ys000xrpvarc9c37uv",
+    "name": "Amarsia",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 0,
+    "population": 43999952,
+    "climates": "Steppe or Semiarid (Bs) (2.2%), Subtropical Dry Summer (Cs) (52%), Highland (H) (0.2%), Tropical Wet-And-Dry (Aw) (45.7%)",
+    "elevations": "Coastal Lowlands (64.9%), Low Hills (22%), Uplands (1.7%), Rolling Hills (11.3%), Low Mountains (0.1%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 483,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 16,
+    "id": "cmn1zq2yy000zrpvanemzd13d",
+    "name": "Alcarca",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 103478,
+    "population": 11999875,
+    "climates": "Steppe or Semiarid (Bs) (2.4%), Subtropical Dry Summer (Cs) (97.6%)",
+    "elevations": "Coastal Lowlands (57.6%), Low Hills (30.2%), Rolling Hills (8.2%), Uplands (3.9%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 1518,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 17,
+    "id": "cmn1zq2z40011rpvag6ofcwpa",
+    "name": "Carina",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 78037,
+    "population": 48523854,
+    "climates": "Subtropical Dry Summer (Cs) (100%)",
+    "elevations": "Coastal Lowlands (67.7%), Low Hills (32.3%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 401,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 18,
+    "id": "cmn1zq2z90013rpvavjuoakky",
+    "name": "Novetra",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 121162,
+    "population": 30000304,
+    "climates": "Steppe or Semiarid (Bs) (9.8%), Boreal (E) (1.7%), Subtropical Humid (Cf) (0.1%), Subtropical Dry Summer (Cs) (81.6%), Highland (H) (6.7%)",
+    "elevations": "Coastal Lowlands (45%), Rolling Hills (14.8%), Low Mountains (4.4%), High Mountains (0.7%), Low Hills (24.2%), Uplands (8.6%), Mid Mountains (2.4%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 1895,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 19,
+    "id": "cmn1zq2zq0015rpva9e1b1y00",
+    "name": "Legenvum",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 1238694,
+    "population": 4500107,
+    "climates": "Steppe or Semiarid (Bs) (40.3%), Desert or Arid (Bw) (59.4%), Subtropical Dry Summer (Cs) (0.2%), Highland (H) (0.1%)",
+    "elevations": "Coastal Lowlands (59.2%), Low Hills (32.6%), Rolling Hills (5.9%), Uplands (2.1%), Low Mountains (0.1%), Mid Mountains (0%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 10769,
+      "hasLake": true,
+      "lakeAreaSqKm": 9985
+    }
+  },
+  {
+    "index": 20,
+    "id": "cmn1zq3080017rpvam6oyet9q",
+    "name": "Pescorto",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 342121,
+    "population": 0,
+    "climates": "Steppe or Semiarid (Bs) (40.2%), Desert or Arid (Bw) (59%), Subtropical Dry Summer (Cs) (0%), Boreal (E) (0%), Highland (H) (0.8%)",
+    "elevations": "Coastal Lowlands (55.2%), Low Hills (28.1%), Rolling Hills (11%), Uplands (4.2%), Low Mountains (1.2%), Mid Mountains (0.3%), High Mountains (0%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 3670,
+      "hasLake": true,
+      "lakeAreaSqKm": 2033
+    }
+  },
+  {
+    "index": 21,
+    "id": "cmn1zq316001brpvag8tguf0b",
+    "name": "Cesindes",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 0,
+    "population": 16200016,
+    "climates": "Steppe or Semiarid (Bs) (40%), Subtropical Dry Summer (Cs) (43.5%), Boreal (E) (1.7%), Highland (H) (14.8%)",
+    "elevations": "Coastal Lowlands (29.9%), Low Hills (24.8%), Low Mountains (6.3%), Mid Mountains (2.4%), Rolling Hills (21.3%), High Mountains (0.4%), Uplands (14.8%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 2743,
+      "hasLake": false,
+      "lakeAreaSqKm": 0
+    }
+  },
+  {
+    "index": 22,
+    "id": "cmn1zq31r001drpvampwpd5xj",
+    "name": "Santicino",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 234189,
+    "population": 14000265,
+    "climates": "Steppe or Semiarid (Bs) (48.8%), Tropical Wet (Ar) (0.3%), Subtropical Dry Summer (Cs) (18%), Highland (H) (11.1%), Tropical Wet-And-Dry (Aw) (21.8%)",
+    "elevations": "Coastal Lowlands (36.4%), Low Mountains (5.3%), Mid Mountains (1.6%), Uplands (12.5%), Low Hills (24.7%), Rolling Hills (19.5%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 5838,
+      "hasLake": true,
+      "lakeAreaSqKm": 2736
+    }
+  },
+  {
+    "index": 23,
+    "id": "cmn1zq326001frpva8mpcjl76",
+    "name": "Thessia",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 159274,
+    "population": 16999925,
+    "climates": "Steppe or Semiarid (Bs) (42.2%), Tropical Wet (Ar) (29.4%), Subtropical Humid (Cf) (3%), Highland (H) (4.7%), Tropical Wet-And-Dry (Aw) (5.3%), Subtropical Dry Summer (Cs) (15.4%)",
+    "elevations": "Coastal Lowlands (42.5%), Uplands (9.6%), Low Mountains (2.4%), Mid Mountains (0.3%), Low Hills (27.8%), Rolling Hills (17.4%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 1987,
+      "hasLake": true,
+      "lakeAreaSqKm": 1056
+    }
+  },
+  {
+    "index": 24,
+    "id": "cmqlbittc0041rp9090dqj0m3",
+    "name": "Belactrum",
+    "type": "province",
+    "level": 1,
+    "capital": null,
+    "areaSqKm": 110628,
+    "population": 0,
+    "climates": "Steppe or Semiarid (Bs) (43.7%), Highland (H) (7.5%), Subtropical Dry Summer (Cs) (48.4%), Boreal (E) (0.4%)",
+    "elevations": "Coastal Lowlands (40.8%), Low Hills (25.1%), Uplands (11.2%), Low Mountains (4.2%), Mid Mountains (1.4%), Rolling Hills (17.2%), High Mountains (0.1%)",
+    "waterAccess": {
+      "hasRiver": true,
+      "riverLengthKm": 2470,
+      "hasLake": true,
+      "lakeAreaSqKm": 365
+    }
+  }
+]

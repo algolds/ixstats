@@ -196,8 +196,8 @@ export function WikiOSHeader({
           Icon: Trophy,
           text: "Wiki Award",
           classes:
-            "border-purple-600/20 bg-purple-600/10 text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-400 dark:hover:bg-purple-500/25 hover:bg-purple-600/20",
-          iconColor: "text-purple-600 dark:text-purple-400",
+            "border-amber-600/20 bg-amber-600/10 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/25 hover:bg-amber-600/20",
+          iconColor: "text-amber-600 dark:text-amber-400",
         };
     }
   }, [primaryAward]);

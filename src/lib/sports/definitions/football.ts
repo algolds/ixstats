@@ -1,0 +1,47 @@
+import type { SportDefinition } from "./types";
+
+export const footballDefinition: SportDefinition = {
+  id: "football",
+  name: "American Football",
+  emoji: "🏈",
+  surfaceType: "gridiron",
+  terminology: {
+    athlete: "Player",
+    athletes: "Players",
+    organization: "Franchise",
+    organizations: "Franchises",
+    match: "Game",
+    matches: "Games",
+    scoringUnit: "Point",
+    scoringUnitPlural: "Points",
+    surfaceName: "Gridiron",
+    headCoach: "Head Coach",
+  },
+  periods: {
+    count: 4,
+    periodName: "Quarter",
+    periodNamePlural: "Quarters",
+    periodLengthMinutes: 15,
+    hasOvertime: true,
+    overtimeName: "Overtime (Sudden Death)",
+    hasShootout: false,
+  },
+  scoringRules: {
+    winPoints: 2,
+    drawPoints: 1,
+    lossPoints: 0,
+    pointSystemDescription: "Win percentage driven standings",
+  },
+  rosterSlots: [
+    { code: "QB", label: "Quarterback", group: "offense", isStarter: true },
+    { code: "RB", label: "Running Back", group: "offense", isStarter: true },
+    { code: "WR", label: "Wide Receiver", group: "offense", isStarter: true },
+    { code: "TE", label: "Tight End", group: "offense", isStarter: true },
+    { code: "OL", label: "Offensive Lineman", group: "offense", isStarter: true },
+    { code: "DL", label: "Defensive Lineman", group: "defense", isStarter: true },
+    { code: "LB", label: "Linebacker", group: "defense", isStarter: true },
+    { code: "CB", label: "Cornerback", group: "defense", isStarter: true },
+    { code: "S", label: "Safety", group: "defense", isStarter: true },
+    { code: "K", label: "Kicker", group: "special", isStarter: true },
+  ],
+};

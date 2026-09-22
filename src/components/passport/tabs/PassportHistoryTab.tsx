@@ -44,7 +44,7 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
         return {
           label: "WikiOS",
           icon: BookOpen,
-          className: "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
+          className: "bg-wiki/10 border-wiki/20 text-wiki",
         };
       case "forum":
         return {
@@ -62,21 +62,20 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
         return {
           label: "Realm",
           icon: Globe,
-          className: "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400",
+          className: "bg-cyan-500/10 border-cyan-500/20 text-cyan-600 dark:text-cyan-400",
         };
       case "thinkpages":
         return {
           label: "ThinkPages",
           icon: Sparkles,
-          className:
-            "bg-fuchsia-500/10 border-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400",
+          className: "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
         };
       case "vault":
         return {
           label: "Vault",
           icon: Crown,
           className:
-            "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+            "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400",
         };
       default:
         return {

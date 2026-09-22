@@ -9,6 +9,7 @@ import {
   Flash as Zap,
   Component as Layers,
   Compress as Minimize2,
+  TextSize,
 } from "iconoir-react";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow, SettingsSwitchRow } from "../primitives";
@@ -21,6 +22,8 @@ export function AppearanceThemePanel() {
   const {
     theme,
     setTheme,
+    typographyPreset,
+    setTypographyPreset,
     compactMode,
     setCompactMode,
     reduceAnimations,
@@ -40,6 +43,55 @@ export function AppearanceThemePanel() {
         category="Platform & Preferences"
         description="Interface themes, tactile animation physics, and visual density."
       />
+
+      {/* Typography Engine Selector */}
+      <SettingsGroup
+        title="Typography Engine"
+        description="Choose your active typeface system for UI, dossiers, and data telemetry."
+      >
+        <SettingsRow
+          label="Active Blueprint"
+          description="Switch between Modernist Swiss (Akzidenz-Grotesk) or Klim National (Sovereign Editorial)"
+          icon={TextSize}
+          glyphClass="bg-sky-500/15 text-sky-500"
+        >
+          <div className="border-border/60 bg-muted/40 flex items-center gap-1.5 rounded-xl border p-1">
+            <button
+              type="button"
+              onClick={() => {
+                soundEffects.press();
+                setTypographyPreset("swiss");
+              }}
+              data-cuelume-press="soft"
+              className={cn(
+                "facet-interactive flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all active:scale-[0.98]",
+                typographyPreset === "swiss"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <span>Modernist Swiss (Akzidenz)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                soundEffects.press();
+                setTypographyPreset("national");
+              }}
+              data-cuelume-press="soft"
+              className={cn(
+                "facet-interactive flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all active:scale-[0.98]",
+                typographyPreset === "national" || typographyPreset === "sovereign"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <span>Klim National (Sovereign)</span>
+            </button>
+          </div>
+        </SettingsRow>
+      </SettingsGroup>
 
       {/* Theme Mode Selector */}
       <SettingsGroup

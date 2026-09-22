@@ -1,0 +1,3435 @@
+[
+  {
+    "id": "cmgn9d82900464kyxzyaivwmy",
+    "name": "Alba Concordia",
+    "slug": "alba-concordia",
+    "governmentType": "League of Nations headquarters",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "Provost-General Brenna Daenlaine",
+    "wikiPageTitle": "Alba Concordia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zic9o000hrp3azq1tniab",
+    "name": "Alcairet",
+    "slug": "alcairet",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Alcairet",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7ve003f4kyx3mh043x7",
+    "name": "Algosh Republic",
+    "slug": "algosh-republic",
+    "governmentType": "Federal Julian republic",
+    "religion": "M'acunist",
+    "leader": "Hierarch Paka-antini & Chancellor Jala-meni",
+    "wikiPageTitle": "Algosh Republic",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d86d004g4kyx8c9z8zzp",
+    "name": "Almadaria",
+    "slug": "almadaria",
+    "governmentType": "Unitary Valverdist one-party state",
+    "religion": "Catholic Apostolic (Vallosi Rite)",
+    "leader": "President Ernesto Allende",
+    "wikiPageTitle": "Almadaria",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7rk002z4kyxzmszxm6e",
+    "name": "Alstin",
+    "slug": "alstin",
+    "governmentType": "republic",
+    "religion": "Chantrist",
+    "leader": "President James Hickel",
+    "wikiPageTitle": "Alstin",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": {
+      "governmentName": "Government of Alstin",
+      "governmentType": "Federal Republic",
+      "headOfState": null,
+      "headOfGovernment": null,
+      "legislatureName": null,
+      "executiveName": null,
+      "judicialName": null,
+      "branches": [
+        {
+          "name": "Executive",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "Legislature",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Judiciary",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zjhtm001lrp3avbiiqsep",
+    "name": "Amaniaris",
+    "slug": "amaniaris",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Amaniaris",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zies8000irp3am4a6nfdm",
+    "name": "Antilles",
+    "slug": "antilles",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Antilles",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d81n00444kyxzu1bh85a",
+    "name": "Ardmore",
+    "slug": "ardmore",
+    "governmentType": "Unitary dominant-party syndicalist parliamentary republic",
+    "religion": "Fellowist",
+    "leader": "Chairman Kellen Melns",
+    "wikiPageTitle": "Ardmore",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zi982000crp3arhk0b9xj",
+    "name": "Argaea",
+    "slug": "argaea",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Argaea",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7my002d4kyxdbyv8eyd",
+    "name": "Argyrea",
+    "slug": "argyrea",
+    "governmentType": "Federal Bolshevist-Livasist one-party socialist republic",
+    "religion": "Irreligious",
+    "leader": "Chairwoman Zoe Alafouzos",
+    "wikiPageTitle": "Argyrea",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d876004j4kyx9tpp5dat",
+    "name": "Arona",
+    "slug": "arona",
+    "governmentType": "Unitary Julian republic",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "President Alfons Elan",
+    "wikiPageTitle": "Arona",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zip9q000trp3aqpqo53fw",
+    "name": "Arsesia",
+    "slug": "arsesia",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Arsesia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7tl00384kyxqikqlf48",
+    "name": "Asteria",
+    "slug": "asteria",
+    "governmentType": "Unitary presidential constitutional republic",
+    "religion": "Chantrist (Episcopalian)",
+    "leader": "President Katja Stark",
+    "wikiPageTitle": "Asteria",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7sx00354kyx6rg8byjm",
+    "name": "Atapakona",
+    "slug": "atapakona",
+    "governmentType": "Unitary semi-constitutional woqalate",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "Woqali Tahináása VI",
+    "wikiPageTitle": "Atapakona",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zim9e000orp3a79lnfar6",
+    "name": "Atavia",
+    "slug": "atavia",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Atavia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zis75000wrp3a57s2uuwz",
+    "name": "Atrassica",
+    "slug": "atrassica",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Atrassica",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d81y00454kyxi7t4niee",
+    "name": "Avonia",
+    "slug": "avonia",
+    "governmentType": "Federal elective constitutional monarchy",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "Prince Andrew IV",
+    "wikiPageTitle": "Avonia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7nd002f4kyx26v0iusv",
+    "name": "Battganuur",
+    "slug": "battganuur",
+    "governmentType": "Unitary presidential republic",
+    "religion": "Islamic (Sunni)",
+    "leader": "Chief of Ministers Faisal-Jallal Asayesh Aslani",
+    "wikiPageTitle": "Battganuur",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9ziy320011rp3afrlglqkd",
+    "name": "Betlands",
+    "slug": "betlands",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Betlands",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zimwk000qrp3axr8vhd4q",
+    "name": "Borealia",
+    "slug": "borealia",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Borealia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7qb002t4kyx5h8aicel",
+    "name": "Bulkh",
+    "slug": "bulkh",
+    "governmentType": "Federal consociational presidential republic",
+    "religion": "Islamic (Sunni)",
+    "leader": "Most Elected Minister Rahani Bintuta",
+    "wikiPageTitle": "Bulkh",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7yv003u4kyxan5et7ji",
+    "name": "Burgundie",
+    "slug": "burgundie",
+    "governmentType": "Unitary thalattocractic parliamentary constitutional monarchy",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "Chief Minister Ermengarde-Cecil de Pristoria",
+    "wikiPageTitle": "Burgundie",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": {
+      "governmentName": "Government of Burgundie",
+      "governmentType": "Constitutional Monarchy",
+      "headOfState": "Grand Prince",
+      "headOfGovernment": "Chief Minister",
+      "legislatureName": "Citizens Court of the National Assembly",
+      "executiveName": "Court of St. Alphador",
+      "judicialName": "Lazarine Court",
+      "branches": [
+        {
+          "name": "Court of St. Alphador",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "Citizens Court of the National Assembly",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Lazarine Court",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d80j00404kyxocrxvq2u",
+    "name": "Caergwynn",
+    "slug": "caergwynn",
+    "governmentType": "Unitary constitutional republic",
+    "religion": "Protestant (Caergwynnist)",
+    "leader": "Arlywydd Seisyll ap Morgan ap Ieuan",
+    "wikiPageTitle": "Caergwynn",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7w0003i4kyx4hf3s8xe",
+    "name": "Caldera",
+    "slug": "caldera",
+    "governmentType": "Unitary presidential republic",
+    "religion": "Volinist",
+    "leader": "President Ben Goodstein",
+    "wikiPageTitle": "Caldera",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7s100314kyx7zv4k92n",
+    "name": "Canespa",
+    "slug": "canespa",
+    "governmentType": "Unitary parliamentary elective constitutional monarchy",
+    "religion": "M'acunism",
+    "leader": "Wasi King III",
+    "wikiPageTitle": "Canespa",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7ow002m4kyxf78uf72g",
+    "name": "Canpei",
+    "slug": "canpei",
+    "governmentType": "Unitary presidential republic",
+    "religion": "Tianist",
+    "leader": "President Dong Bao",
+    "wikiPageTitle": "Canpei",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zima8000prp3a7hqmf7e4",
+    "name": "Cao",
+    "slug": "cao",
+    "governmentType": null,
+    "religion": null,
+    "leader": "Lei Shen",
+    "wikiPageTitle": "Cao",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d82v00484kyx3mjv9b8q",
+    "name": "Caphiria",
+    "slug": "caphiria",
+    "governmentType": "Imperium of Caphiria",
+    "religion": "Catholic (Caphiric Rite)",
+    "leader": "Imperator Constantinus I",
+    "wikiPageTitle": "Caphiria",
+    "politicalParties": [
+      {
+        "id": "cmn82fnd5005frp5zdpn2nui6",
+        "name": "Kiro-Caphirian Movement",
+        "shortName": "KCM",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 4,
+        "currentSupport": 49.16
+      }
+    ],
+    "legislature": {
+      "id": "cmn829ykw002lrp5zea1drhs7",
+      "name": "National Assembly",
+      "chamberType": "unicameral|National Assembly:100:proportional",
+      "totalSeats": 100,
+      "electoralSystem": "proportional"
+    },
+    "governmentStructure": {
+      "governmentName": "Government of Caphiria",
+      "governmentType": "Federal Republic",
+      "headOfState": "Imperator",
+      "headOfGovernment": "Prime Minister",
+      "legislatureName": "Corcillum",
+      "executiveName": "Council of Ministers",
+      "judicialName": "Supreme Court",
+      "branches": [
+        {
+          "name": "Council of Ministers",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "Corcillum",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Supreme Court",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7vm003g4kyxe3hmz0tb",
+    "name": "Caracua",
+    "slug": "caracua",
+    "governmentType": "Federal parliamentary republic",
+    "religion": "M'acunist",
+    "leader": "President Cornamale of Toposa",
+    "wikiPageTitle": "Caracua",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d83800494kyx7y2j22d3",
+    "name": "Cartadania",
+    "slug": "cartadania",
+    "governmentType": "Federal presidential republic",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "President Anteros Ballas",
+    "wikiPageTitle": "Cartadania",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": {
+      "governmentName": "Government of Cartadania",
+      "governmentType": "Federal Constitutional Republic",
+      "headOfState": "President",
+      "headOfGovernment": "President",
+      "legislatureName": "National Congress",
+      "executiveName": "President",
+      "judicialName": "Supreme Court",
+      "branches": [
+        {
+          "name": "President",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "National Congress",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Supreme Court",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d841004b4kyxp1azudgn",
+    "name": "Castadilla",
+    "slug": "castadilla",
+    "governmentType": "Sovereign State",
+    "religion": "Catholic Apostolic (Vallosi Rite)",
+    "leader": "Interregnum",
+    "wikiPageTitle": null,
+    "politicalParties": [
+      {
+        "id": "cmq72wine02wcrp7s7f6u3t1y",
+        "name": "Jewish Consolidation Front",
+        "shortName": "Likud",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 4,
+        "currentSupport": 7.71
+      },
+      {
+        "id": "cmq7352qv0041rp7q6daek813",
+        "name": "Castadillaan Citizens' Party",
+        "shortName": "PCC",
+        "ideology": "center_left",
+        "platform": null,
+        "baseSupport": 5,
+        "currentSupport": 4.36
+      },
+      {
+        "id": "cmq73gzoc005lrp7qcko1lidy",
+        "name": "Samalosian People's Party",
+        "shortName": "PTS",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 4,
+        "currentSupport": 1.98
+      },
+      {
+        "id": "cmq73f9n5005hrp7qcrohiq6e",
+        "name": "Loa Voters' Association",
+        "shortName": "APL",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 3,
+        "currentSupport": 5.65
+      },
+      {
+        "id": "cmq7302rq02wgrp7sof44brry",
+        "name": "Christian National Party",
+        "shortName": "PNC",
+        "ideology": "center_right",
+        "platform": null,
+        "baseSupport": 4,
+        "currentSupport": 0.69
+      },
+      {
+        "id": "cmq731qya02wkrp7svix64q1v",
+        "name": "Christian Social Party",
+        "shortName": "PSC",
+        "ideology": "center_right",
+        "platform": null,
+        "baseSupport": 2,
+        "currentSupport": 7.77
+      },
+      {
+        "id": "cmq736f1k004crp7qwn21b0m0",
+        "name": "Democratic Farmers' Union",
+        "shortName": "UDA",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 3,
+        "currentSupport": 0.81
+      },
+      {
+        "id": "cmq73be4r004yrp7qv1pjyhsg",
+        "name": "United Taineans' League",
+        "shortName": "LTI",
+        "ideology": "center_right",
+        "platform": null,
+        "baseSupport": 2,
+        "currentSupport": 0.69
+      },
+      {
+        "id": "cmq7339zw02worp7seuovipzl",
+        "name": "Democratic Reform Party",
+        "shortName": "PRD",
+        "ideology": "right",
+        "platform": null,
+        "baseSupport": 5,
+        "currentSupport": 7.09
+      },
+      {
+        "id": "cmq73cgcl0059rp7q2r5fb8lz",
+        "name": "Braivin Self-Determination League",
+        "shortName": "BAL",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 1,
+        "currentSupport": 3.36
+      },
+      {
+        "id": "cmq739w07004srp7qmy0ljysb",
+        "name": "Yes We Can!",
+        "shortName": "SiP",
+        "ideology": "left",
+        "platform": null,
+        "baseSupport": 1,
+        "currentSupport": 6.84
+      },
+      {
+        "id": "cmq738avf004krp7qgjpbegrz",
+        "name": "Ecological Reform Party",
+        "shortName": "PRE",
+        "ideology": "left",
+        "platform": null,
+        "baseSupport": 1,
+        "currentSupport": 6.6
+      },
+      {
+        "id": "cmq73dnn7005drp7qydvvz8tt",
+        "name": "Revolutionary People's Movement",
+        "shortName": "MPR",
+        "ideology": "far_left",
+        "platform": null,
+        "baseSupport": 1,
+        "currentSupport": 0.69
+      },
+      {
+        "id": "cmq6b6dnx01czrpo29bjbp8z0",
+        "name": "People's Democratic Party",
+        "shortName": "PDP",
+        "ideology": "left",
+        "platform": null,
+        "baseSupport": 61,
+        "currentSupport": 45.76
+      }
+    ],
+    "legislature": {
+      "id": "cmq72gh8w00k2rp7snlm6w6so",
+      "name": "National Assembly",
+      "chamberType": "tetracameral|Congress of the Commons:2320:proportional:elected;Congress of the Regions:385:proportional:elected;Congress of the States:210:fptp:elected;Congress of the Peerage:125:mixed:elected",
+      "totalSeats": 3040,
+      "electoralSystem": "proportional"
+    },
+    "governmentStructure": {
+      "governmentName": "Government of Castadilla",
+      "governmentType": "Federal Republic",
+      "headOfState": null,
+      "headOfGovernment": null,
+      "legislatureName": null,
+      "executiveName": null,
+      "judicialName": null,
+      "branches": [
+        {
+          "name": "Executive",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "Legislature",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Judiciary",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": [
+      {
+        "componentType": "RULE_OF_LAW",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "STRATEGIC_PLANNING",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "MERIT_BASED_SYSTEM",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "FEDERAL_SYSTEM",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "TECHNOCRATIC_PROCESS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "DIGITAL_GOVERNMENT",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "E_GOVERNANCE",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ADMINISTRATIVE_DECENTRALIZATION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "WELFARE_STATE",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "UNIVERSAL_HEALTHCARE",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "PUBLIC_EDUCATION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ENVIRONMENTAL_PROTECTION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "WORKER_PROTECTION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "MINORITY_RIGHTS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "INDEPENDENT_JUDICIARY",
+        "effectivenessScore": 50
+      }
+    ]
+  },
+  {
+    "id": "cmgn9d7sa00324kyxdvhapuwm",
+    "name": "Ceylonia",
+    "slug": "ceylonia",
+    "governmentType": "Unitary semi-presidential constitutional republic",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "President Miguel Sousa",
+    "wikiPageTitle": "Ceylonia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7xb003o4kyxw1if8mam",
+    "name": "Chakailan",
+    "slug": "chakailan",
+    "governmentType": "Federal semi-presidential republic",
+    "religion": "Solar Arzalist",
+    "leader": "President Lursa T'artok",
+    "wikiPageTitle": "Chakailan",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zic93000grp3albv10lg6",
+    "name": "Chaukhira",
+    "slug": "chaukhira",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Chaukhira",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7w6003j4kyx2739ly5k",
+    "name": "Chenango Confederacy",
+    "slug": "chenango-confederacy",
+    "governmentType": "Confederal presidential republic",
+    "religion": "M'acunist",
+    "leader": "President Helki Adohy",
+    "wikiPageTitle": "Chenango Confederacy",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7wn003l4kyxxvw72mnn",
+    "name": "Copake",
+    "slug": "copake",
+    "governmentType": "Federal presidential republic",
+    "religion": "Venua",
+    "leader": "President Melun Alacantan",
+    "wikiPageTitle": "Copake",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7mi002c4kyxnkd51303",
+    "name": "Daxia",
+    "slug": "daxia",
+    "governmentType": "Unitary one-party presidential republic",
+    "religion": "Irreligious",
+    "leader": "Chancellor Prib Dodd",
+    "wikiPageTitle": "Daxia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": {
+      "governmentName": "Government of Daxia",
+      "governmentType": "Federal Republic",
+      "headOfState": null,
+      "headOfGovernment": null,
+      "legislatureName": null,
+      "executiveName": null,
+      "judicialName": null,
+      "branches": [
+        {
+          "name": "Executive",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "Legislature",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Judiciary",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": [
+      {
+        "componentType": "UNITARY_SYSTEM",
+        "effectivenessScore": 50
+      }
+    ]
+  },
+  {
+    "id": "cmgn9d86m004h4kyx5vijwzes",
+    "name": "Drasenia",
+    "slug": "drasenia",
+    "governmentType": "custom",
+    "religion": "Catholic Apostolic (Vallosi Rite)",
+    "leader": "Prior Marcu Arbore",
+    "wikiPageTitle": "Drasenia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": {
+      "governmentName": "Government of Drasenia",
+      "governmentType": "Federal Republic",
+      "headOfState": null,
+      "headOfGovernment": null,
+      "legislatureName": null,
+      "executiveName": null,
+      "judicialName": null,
+      "branches": [
+        {
+          "name": "Executive",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "Legislature",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Judiciary",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": [
+      {
+        "componentType": "CULTURAL_PRESERVATION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "FEDERAL_SYSTEM",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "TRADITIONAL_LEGITIMACY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "RULE_OF_LAW",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ADMINISTRATIVE_DECENTRALIZATION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "CONSENSUS_PROCESS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "SOCIAL_PRESSURE",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ENVIRONMENTAL_PROTECTION",
+        "effectivenessScore": 50
+      }
+    ]
+  },
+  {
+    "id": "cmrtt746600a1rp5jcsrj5o6i",
+    "name": "Dushina (test)",
+    "slug": "dushina-test",
+    "governmentType": "Empire",
+    "religion": "Secular",
+    "leader": "Unknown",
+    "wikiPageTitle": null,
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": {
+      "governmentName": "Government of Dushina (test)",
+      "governmentType": "Federal Republic",
+      "headOfState": null,
+      "headOfGovernment": null,
+      "legislatureName": null,
+      "executiveName": null,
+      "judicialName": null,
+      "branches": []
+    },
+    "governmentComponents": [
+      {
+        "componentType": "ENTREPRENEURSHIP_SUPPORT",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "DEMOCRATIC_PROCESS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "FEDERAL_SYSTEM",
+        "effectivenessScore": 50
+      }
+    ]
+  },
+  {
+    "id": "cmgn9d7x2003n4kyxzyc8y4t6",
+    "name": "East Arctic Mandate",
+    "slug": "east-arctic-mandate",
+    "governmentType": "League of Nations Mandate",
+    "religion": "Animist",
+    "leader": "Administratrix Máire Cinnéad",
+    "wikiPageTitle": "East Arctic Mandate",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zjcya001grp3a1x2wafv7",
+    "name": "Eileada",
+    "slug": "eileada",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Eileada",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zjcbh001frp3areaje7ym",
+    "name": "Equatorial Ostiecia",
+    "slug": "equatorial-ostiecia",
+    "governmentType": null,
+    "religion": null,
+    "leader": "Patience-Evisan Estienne de Viersir",
+    "wikiPageTitle": "Equatorial Ostiecia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zi24d0003rp3aqpsp2acw",
+    "name": "Escal Isles",
+    "slug": "escal-isles",
+    "governmentType": null,
+    "religion": null,
+    "leader": "Veniciar Pertunata",
+    "wikiPageTitle": "Escal Isles",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7z4003v4kyx02cmwz7b",
+    "name": "Faneria",
+    "slug": "faneria",
+    "governmentType": "custom",
+    "religion": "Catholic (Northern Rite)",
+    "leader": "Director Cían Walaerin",
+    "wikiPageTitle": "Faneria",
+    "politicalParties": [
+      {
+        "id": "cmqhpn260005vrpycnbff5vjb",
+        "name": "Test Party",
+        "shortName": "TST",
+        "ideology": "far_right",
+        "platform": null,
+        "baseSupport": 25,
+        "currentSupport": 29.75
+      },
+      {
+        "id": "cmpi2hqw9007rrpjzmf8c7m44",
+        "name": "National Republican Party",
+        "shortName": "NRP",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 57,
+        "currentSupport": 70.25
+      }
+    ],
+    "legislature": {
+      "id": "cmpi2glqh004wrpjzbxm89vn9",
+      "name": "National Assembly",
+      "chamberType": "tetracameral|Congress of the Commons:200:proportional;Senate:200:proportional;Chamber of Regions:200:proportional;Council of State:200:proportional",
+      "totalSeats": 800,
+      "electoralSystem": "proportional"
+    },
+    "governmentStructure": {
+      "governmentName": "Government of Faneria",
+      "governmentType": "Federal Republic",
+      "headOfState": "Madison Corwyn",
+      "headOfGovernment": "Brenna Daenlaine",
+      "legislatureName": "National Assembly",
+      "executiveName": "Directorate",
+      "judicialName": "National Audit Council",
+      "branches": [
+        {
+          "name": "Directorate",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "National Assembly",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "National Audit Council",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": [
+      {
+        "componentType": "UNITARY_SYSTEM",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "TECHNOCRATIC_AGENCIES",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "CRISIS_COMMUNICATION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "MULTILATERAL_DIPLOMACY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "TRADE_AGREEMENTS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "CENTRALIZED_POWER",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "CYBERSECURITY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "DIGITAL_GOVERNMENT",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "DIGITAL_INFRASTRUCTURE",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "TECHNOCRATIC_PROCESS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "STRATEGIC_PLANNING",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "PERFORMANCE_LEGITIMACY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "RESEARCH_AND_DEVELOPMENT",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "WORKER_PROTECTION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ENVIRONMENTAL_PROTECTION",
+        "effectivenessScore": 50
+      }
+    ]
+  },
+  {
+    "id": "cmgn9d7yl003t4kyxu5fjf50l",
+    "name": "Fiannria",
+    "slug": "fiannria",
+    "governmentType": "Commonwealth",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "President Colm Brennan",
+    "wikiPageTitle": "Fiannria",
+    "politicalParties": [
+      {
+        "id": "cmqfo844i0is9rpkwwuyzsqsh",
+        "name": "Green Party",
+        "shortName": null,
+        "ideology": "center_left",
+        "platform": null,
+        "baseSupport": 6,
+        "currentSupport": 6
+      },
+      {
+        "id": "cmqfo8s1b0isdrpkwljkkww78",
+        "name": "Workers Party of Fiannria",
+        "shortName": "WPF",
+        "ideology": "left",
+        "platform": null,
+        "baseSupport": 4,
+        "currentSupport": 4
+      },
+      {
+        "id": "cmqfo3sg90irlrpkwphowx2o7",
+        "name": "Cavalier Party",
+        "shortName": "CP",
+        "ideology": "center_right",
+        "platform": null,
+        "baseSupport": 26,
+        "currentSupport": 26
+      },
+      {
+        "id": "cmqfo4i7g0irprpkwf7diwzxo",
+        "name": "Garda Fiann",
+        "shortName": "GFP",
+        "ideology": "center_left",
+        "platform": null,
+        "baseSupport": 21,
+        "currentSupport": 21
+      },
+      {
+        "id": "cmqfo57gv0irtrpkw89fb2s0g",
+        "name": "Rundale Party",
+        "shortName": "RP",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 15,
+        "currentSupport": 15
+      },
+      {
+        "id": "cmqfo5x530irxrpkwrjw3mkm6",
+        "name": "National Grensair Party",
+        "shortName": "NGP",
+        "ideology": "right",
+        "platform": null,
+        "baseSupport": 11,
+        "currentSupport": 11
+      },
+      {
+        "id": "cmqfo6ulu0is1rpkwfoijxnvt",
+        "name": "Free Commonwealth Party",
+        "shortName": "FCP",
+        "ideology": "center_right",
+        "platform": null,
+        "baseSupport": 8,
+        "currentSupport": 8
+      },
+      {
+        "id": "cmqfo7fmh0is5rpkwd9a4ynpa",
+        "name": "Levantine Union Party",
+        "shortName": "LUP",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 7,
+        "currentSupport": 7
+      }
+    ],
+    "legislature": {
+      "id": "cmqfo20oo0ibprpkwcsguknfw",
+      "name": "Cemot of the Commonwealth",
+      "chamberType": "unicameral|Cemot of the Commonwealth:563:proportional",
+      "totalSeats": 563,
+      "electoralSystem": "proportional"
+    },
+    "governmentStructure": {
+      "governmentName": "Government of Fiannria",
+      "governmentType": "Federal Republic",
+      "headOfState": null,
+      "headOfGovernment": null,
+      "legislatureName": null,
+      "executiveName": null,
+      "judicialName": null,
+      "branches": [
+        {
+          "name": "Executive",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "Legislature",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Judiciary",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": [
+      {
+        "componentType": "FEDERAL_SYSTEM",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "WELFARE_STATE",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "WORKER_PROTECTION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ENVIRONMENTAL_PROTECTION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ADMINISTRATIVE_DECENTRALIZATION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "DEMOCRATIC_PROCESS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ELECTORAL_LEGITIMACY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "PROFESSIONAL_BUREAUCRACY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "RULE_OF_LAW",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "MULTILATERAL_DIPLOMACY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "DEVELOPMENT_AID",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "TRADE_AGREEMENTS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "RESEARCH_AND_DEVELOPMENT",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "INNOVATION_ECOSYSTEM",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "SECURITY_ALLIANCES",
+        "effectivenessScore": 50
+      }
+    ]
+  },
+  {
+    "id": "cmm9zhzqx0000rp3akr77lg72",
+    "name": "Freda Island",
+    "slug": "freda-island",
+    "governmentType": "parliamentary}}",
+    "religion": null,
+    "leader": "Otello Marcos",
+    "wikiPageTitle": "Freda Island",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7zd003w4kyxj0uc7sif",
+    "name": "Galata",
+    "slug": "galata",
+    "governmentType": "Unitary parliamentary council republic",
+    "religion": "Galatan Church",
+    "leader": "Remos Segomāros Uoreton",
+    "wikiPageTitle": "Galata",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zj6p90019rp3argh5cg3l",
+    "name": "Halfway",
+    "slug": "halfway",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Halfway",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d81300424kyxkajov8si",
+    "name": "Hendalarsk",
+    "slug": "hendalarsk",
+    "governmentType": "Federal parliamentary constitutional republic",
+    "religion": "National Catholic (Hendalarsker Rite)",
+    "leader": "Primarch Judka Haller",
+    "wikiPageTitle": "Hendalarsk",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zj9x6001crp3afznsw2ul",
+    "name": "Herciana",
+    "slug": "herciana",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Herciana",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zifg8000jrp3asgotwhmo",
+    "name": "Hezikian Isles",
+    "slug": "hezikian-isles",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Hezikian Isles",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d81c00434kyxkhy4ck1l",
+    "name": "Hollona and Diorisia",
+    "slug": "hollona-and-diorisia",
+    "governmentType": "Federal parliamentary republic",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "Speaker-President Ioannes Marcellino",
+    "wikiPageTitle": "Hollona and Diorisia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7wu003m4kyx74rm70o3",
+    "name": "Housatonic",
+    "slug": "housatonic",
+    "governmentType": "Unitary Julian republic",
+    "religion": "M'acunist",
+    "leader": "Chief of State Chilinash Wempa & Paramount Councilor Tiegale Hamis",
+    "wikiPageTitle": "Housatonic",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zic90000frp3ao7b7jheg",
+    "name": "Huadao",
+    "slug": "huadao",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Huadao",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7pc002o4kyx26sp7h9t",
+    "name": "Huoxia",
+    "slug": "huoxia",
+    "governmentType": "Unitary semi-presidential republic",
+    "religion": "Confucian",
+    "leader": "President Eje Tsaka",
+    "wikiPageTitle": "Huoxia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9ziirn000lrp3a256rh064",
+    "name": "Iles Evangeline",
+    "slug": "iles-evangeline",
+    "governmentType": "Pre-democratic military governorate",
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Iles Evangeline",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zj3gk0016rp3atbjunqyj",
+    "name": "International Canal Zone",
+    "slug": "international-canal-zone",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "International Canal Zone",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7xk003p4kyxnlrxd6r8",
+    "name": "International Nature Preserve",
+    "slug": "international-nature-preserve",
+    "governmentType": "League of Nations administration",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "Deputy Commissioner Patrice Cesco",
+    "wikiPageTitle": "International Nature Preserve",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9ziflb000krp3aml2c93b0",
+    "name": "Isidar",
+    "slug": "isidar",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Isidar",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7te00374kyx8jnuzppb",
+    "name": "Istrenya",
+    "slug": "istrenya",
+    "governmentType": "Unitary presidential constitutional republic",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "President M'Kole Tysh'le",
+    "wikiPageTitle": "Istrenya",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zhzre0001rp3a9x1pkoq6",
+    "name": "Jinju",
+    "slug": "jinju",
+    "governmentType": null,
+    "religion": "Chulcheo",
+    "leader": "Dong Mami",
+    "wikiPageTitle": "Jinju",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d86x004i4kyx6rd0nscv",
+    "name": "Kabasa",
+    "slug": "kabasa",
+    "governmentType": "Unitary one-party socialist republic",
+    "religion": "Voodoo (Kabasan Rite)",
+    "leader": "President Paul Laguerre",
+    "wikiPageTitle": "Kabasa",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7qi002u4kyx9c790aqf",
+    "name": "Kandara",
+    "slug": "kandara",
+    "governmentType": "Unitary stratocratic republic",
+    "religion": "Islamic (Shi'ite)",
+    "leader": "Admiral-General Stephan Mojalefa",
+    "wikiPageTitle": "Kandara",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7un003c4kyxibxpgsji",
+    "name": "Kelekona",
+    "slug": "kelekona",
+    "governmentType": "Federal parliamentary tetrarchic semi-constitutional co-qhapaqate",
+    "religion": "Nahibian",
+    "leader": "Umalliq Tupaq Caian IV",
+    "wikiPageTitle": "Kelekona",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7xu003q4kyx9k2t26ee",
+    "name": "Kiravia",
+    "slug": "kiravia",
+    "governmentType": "Federal crowned republic",
+    "religion": "Catholic (Coscivian Rite)",
+    "leader": "Prime Executive Adheritus Ilkaśvar",
+    "wikiPageTitle": "Kiravia",
+    "politicalParties": [
+      {
+        "id": "cmqy0r80500q9rpohhh5cv1pc",
+        "name": "Federalist Republican Alliance",
+        "shortName": "FRA",
+        "ideology": "center_right",
+        "platform": null,
+        "baseSupport": 25,
+        "currentSupport": 25
+      },
+      {
+        "id": "cmqy0u6bg00qhrpohy9bgtnbf",
+        "name": "Authentic Historical Caucus",
+        "shortName": "AHC",
+        "ideology": "right",
+        "platform": null,
+        "baseSupport": 5,
+        "currentSupport": 5
+      },
+      {
+        "id": "cmqy0s4jf00qdrpohpw395yzl",
+        "name": "Caritist Social Union",
+        "shortName": "CSU",
+        "ideology": "center_left",
+        "platform": null,
+        "baseSupport": 20,
+        "currentSupport": 20
+      },
+      {
+        "id": "cmqy0wywa00qnrpohe4pehdqw",
+        "name": "Union of Democrats & Independents",
+        "shortName": "UDI",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 5,
+        "currentSupport": 5
+      },
+      {
+        "id": "cmqy0y7dz00qrrpohpklifu1m",
+        "name": "Kiravian Free Alliance",
+        "shortName": "KFA",
+        "ideology": "center_right",
+        "platform": null,
+        "baseSupport": 5,
+        "currentSupport": 5
+      },
+      {
+        "id": "cmqy0zts500qvrpohp3tuml7e",
+        "name": "Popular Democratic Front",
+        "shortName": "PDF",
+        "ideology": "left",
+        "platform": null,
+        "baseSupport": 10,
+        "currentSupport": 10
+      },
+      {
+        "id": "cmqy10p5r00qzrpoh0tg4qe0z",
+        "name": "Coscivian National Congress",
+        "shortName": "CNC",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 10,
+        "currentSupport": 10
+      },
+      {
+        "id": "cmqy15a4500r4rpoh2chel64s",
+        "name": "Emperor's Strongest Soldiers",
+        "shortName": "EFF",
+        "ideology": "far_right",
+        "platform": null,
+        "baseSupport": 2,
+        "currentSupport": 2
+      }
+    ],
+    "legislature": {
+      "id": "cmqy0nssl00arrpohdoeikb1g",
+      "name": "Federal Stanora",
+      "chamberType": "unicameral|Federal Stanora:554:fptp:elected",
+      "totalSeats": 554,
+      "electoralSystem": "fptp"
+    },
+    "governmentStructure": {
+      "governmentName": "Government of Kiravia",
+      "governmentType": "Federal Republic",
+      "headOfState": null,
+      "headOfGovernment": null,
+      "legislatureName": null,
+      "executiveName": null,
+      "judicialName": null,
+      "branches": [
+        {
+          "name": "Executive",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "Legislature",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Judiciary",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": [
+      {
+        "componentType": "FEDERAL_SYSTEM",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "INDEPENDENT_JUDICIARY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ADMINISTRATIVE_DECENTRALIZATION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "CULTURAL_PRESERVATION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "DEVELOPMENT_AID",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "RULE_OF_LAW",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "INTELLECTUAL_PROPERTY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "TRADITIONAL_LEGITIMACY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "CONSENSUS_PROCESS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "SOCIAL_PRESSURE",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "RESEARCH_AND_DEVELOPMENT",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ECONOMIC_INCENTIVES",
+        "effectivenessScore": 50
+      }
+    ]
+  },
+  {
+    "id": "cmgn9d87q004k4kyxrzwgsjoc",
+    "name": "Kostava",
+    "slug": "kostava",
+    "governmentType": "Unitary semi-presidential republic",
+    "religion": "Irreligious",
+    "leader": "President Mikhail Kevartli",
+    "wikiPageTitle": "Kostava",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zjk7a001orp3adveehyfs",
+    "name": "Krasoa Islands",
+    "slug": "krasoa-islands",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Krasoa Islands",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7zm003x4kyx8f3rygrx",
+    "name": "Lapody",
+    "slug": "lapody",
+    "governmentType": "Unitary parliamentary constitutional monarchy",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "President Dumini o-Matia",
+    "wikiPageTitle": "Lapody",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d85j004e4kyxu7n6wa8w",
+    "name": "Lariana",
+    "slug": "lariana",
+    "governmentType": "Unitary constitutional monarchy",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "King Riordan I",
+    "wikiPageTitle": "Lariana",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zhzrw0002rp3awxse4mvp",
+    "name": "League of Nations",
+    "slug": "league-of-nations",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "League of Nations",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zi4iy0008rp3aw7r56m9v",
+    "name": "Lotoa",
+    "slug": "lotoa",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Lotoa",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d84j004c4kyx7o1ipjs1",
+    "name": "Lucrecia",
+    "slug": "lucrecia",
+    "governmentType": "Federal semi-presidential diarchic semi-aristocratic directorial republic",
+    "religion": "Catholic (Caphiric Rite)",
+    "leader": "Consuls Maruxa Estévez & Juana Igea",
+    "wikiPageTitle": "Lucrecia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7u2003a4kyxxr6p1z29",
+    "name": "Malentina",
+    "slug": "malentina",
+    "governmentType": "Confederal presidential directorial republic",
+    "religion": "Neo-Ænglican (Malentine Rite)",
+    "leader": "Presidents Siwasyan T'ukri, Daniel Duke, & Pedro Čivok",
+    "wikiPageTitle": "Malentina",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7wf003k4kyxnepgurpo",
+    "name": "Mandatory Venua'tino",
+    "slug": "mandatory-venua-tino",
+    "governmentType": "League of Nations Mandate",
+    "religion": "Venua",
+    "leader": "Commissioner Phillip Danicetus",
+    "wikiPageTitle": "Mandatory Venua'tino",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7zw003y4kyxhsxfyviv",
+    "name": "Maresteyn",
+    "slug": "maresteyn",
+    "governmentType": "Empire",
+    "religion": "National Catholic (Maresteyner Rite)",
+    "leader": "Emperor Willem-Alexander II",
+    "wikiPageTitle": "Maresteyn",
+    "politicalParties": [
+      {
+        "id": "cmqnr0kpl00jqrpgqpg301bd8",
+        "name": "Ecological People's Union",
+        "shortName": "EVU",
+        "ideology": "far_left",
+        "platform": null,
+        "baseSupport": 7,
+        "currentSupport": 0.19
+      },
+      {
+        "id": "cmqnr491d00kqrpgqwk82us16",
+        "name": "Orange Party",
+        "shortName": "OP",
+        "ideology": "far_right",
+        "platform": null,
+        "baseSupport": 29,
+        "currentSupport": 6.93
+      },
+      {
+        "id": "cmqnn8smh02mlrp8eob8ra7wp",
+        "name": "Social Democratic Alliance",
+        "shortName": "SDA",
+        "ideology": "left",
+        "platform": null,
+        "baseSupport": 28,
+        "currentSupport": 5.8
+      },
+      {
+        "id": "cmqnqzgm500jfrpgqb5i9dybz",
+        "name": "Social Christian Union",
+        "shortName": "SCU",
+        "ideology": "center_left",
+        "platform": null,
+        "baseSupport": 16,
+        "currentSupport": 3.08
+      },
+      {
+        "id": "cmqnn6pgp02m5rp8ed54fgoq0",
+        "name": "Sociaal Front",
+        "shortName": "SF",
+        "ideology": "left",
+        "platform": null,
+        "baseSupport": 12,
+        "currentSupport": 4.29
+      },
+      {
+        "id": "cmqnn9ndi02mwrp8eng83xa4n",
+        "name": "Socialist People's Party",
+        "shortName": "SVM",
+        "ideology": "far_left",
+        "platform": null,
+        "baseSupport": 4,
+        "currentSupport": 0.19
+      },
+      {
+        "id": "cmqns0g2t025nrpgqqcqmmbdp",
+        "name": "Digital Frontier",
+        "shortName": "DF",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 18,
+        "currentSupport": 4.19
+      },
+      {
+        "id": "cmqnrvh9301q8rpgqbfljlwnz",
+        "name": "League for Christian Hearts",
+        "shortName": "VCH",
+        "ideology": "far_right",
+        "platform": null,
+        "baseSupport": 17,
+        "currentSupport": 1.77
+      },
+      {
+        "id": "cmqnr356900kfrpgqiu61y524",
+        "name": "People's Union of Maresteyn",
+        "shortName": "MVU",
+        "ideology": "right",
+        "platform": null,
+        "baseSupport": 31,
+        "currentSupport": 8.71
+      },
+      {
+        "id": "cmqnrabr500mmrpgqsg3hw2no",
+        "name": "Roman Catholic State Party",
+        "shortName": "RKSP",
+        "ideology": "right",
+        "platform": null,
+        "baseSupport": 31,
+        "currentSupport": 6.56
+      },
+      {
+        "id": "cmqnr6s5e00lfrpgq8ajgp02a",
+        "name": "Social Contract of Maresteyn",
+        "shortName": "SCM",
+        "ideology": "center_right",
+        "platform": null,
+        "baseSupport": 30,
+        "currentSupport": 5
+      },
+      {
+        "id": "cmqnr89v600lxrpgqujitof8m",
+        "name": "The Citizen's Party",
+        "shortName": "DBP",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 28,
+        "currentSupport": 6.06
+      },
+      {
+        "id": "cmqnrqc2r00w1rpgq0oddt6t8",
+        "name": "Classical Liberals of Maresteyn",
+        "shortName": "KLM",
+        "ideology": "center_right",
+        "platform": null,
+        "baseSupport": 27,
+        "currentSupport": 3.85
+      },
+      {
+        "id": "cmqnri1ck00ocrpgqiqfh10ti",
+        "name": "Liberal Democrats '89",
+        "shortName": "LD",
+        "ideology": "center_left",
+        "platform": null,
+        "baseSupport": 25,
+        "currentSupport": 4.18
+      },
+      {
+        "id": "cmqnrc6fh00nbrpgq96btkhq3",
+        "name": "Christian Democrat Union",
+        "shortName": "CDU",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 24,
+        "currentSupport": 5.92
+      },
+      {
+        "id": "cmqnrsxzh016irpgqgeamq2ao",
+        "name": "GreenRight",
+        "shortName": "GR",
+        "ideology": "center_right",
+        "platform": null,
+        "baseSupport": 22,
+        "currentSupport": 3.19
+      },
+      {
+        "id": "cmqnrwyl101qwrpgqmny1mxe6",
+        "name": "Patriotic State Party",
+        "shortName": "SPP",
+        "ideology": "far_right",
+        "platform": null,
+        "baseSupport": 22,
+        "currentSupport": 4.88
+      },
+      {
+        "id": "cmqnrnz0q00pirpgqmcsshx6v",
+        "name": "Field and Farmer",
+        "shortName": "A&B",
+        "ideology": "center_right",
+        "platform": null,
+        "baseSupport": 20,
+        "currentSupport": 2.14
+      },
+      {
+        "id": "cmqnrfzte00nsrpgq9wxy6kyj",
+        "name": "Labour Party of Maresteyn",
+        "shortName": "PvdA",
+        "ideology": "left",
+        "platform": null,
+        "baseSupport": 19,
+        "currentSupport": 3.39
+      },
+      {
+        "id": "cmqnrypjg01r9rpgquvpwk8b4",
+        "name": "For the Future",
+        "shortName": "VdT",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 16,
+        "currentSupport": 1.35
+      },
+      {
+        "id": "cmqnrznl901w3rpgqu4um0nqo",
+        "name": "Party for Progress",
+        "shortName": "PvVg",
+        "ideology": "center_left",
+        "platform": null,
+        "baseSupport": 15,
+        "currentSupport": 2.66
+      },
+      {
+        "id": "cmqnrp1ax00r0rpgq1qvrhi4g",
+        "name": "Guild Party",
+        "shortName": "DGP",
+        "ideology": "right",
+        "platform": null,
+        "baseSupport": 13,
+        "currentSupport": 1.95
+      },
+      {
+        "id": "cmqnrucmt01j5rpgq27osmz3w",
+        "name": "People's Party for Freedom and Fatherland",
+        "shortName": "VVV",
+        "ideology": "far_right",
+        "platform": null,
+        "baseSupport": 11,
+        "currentSupport": 3.28
+      },
+      {
+        "id": "cmqnrred100ztrpgqwv5ur2i6",
+        "name": "Enterprising Maresteyn",
+        "shortName": "OM",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 11,
+        "currentSupport": 1.88
+      },
+      {
+        "id": "cmqnrjhct00oorpgq0o0h0kyp",
+        "name": "Rainbow Party",
+        "shortName": "RP",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 11,
+        "currentSupport": 2.57
+      },
+      {
+        "id": "cmqnrmznd00perpgq9mxv5p70",
+        "name": "Youth of Today",
+        "shortName": "JvT",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 9,
+        "currentSupport": 1.91
+      },
+      {
+        "id": "cmqnrlqv100parpgqmhjrqvhq",
+        "name": "Elder Citizen's Party",
+        "shortName": "MOP",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 9,
+        "currentSupport": 0.19
+      },
+      {
+        "id": "cmqnrkfki00oyrpgqvib3a1yn",
+        "name": "Women's Interest Party",
+        "shortName": "VB",
+        "ideology": "left",
+        "platform": null,
+        "baseSupport": 9,
+        "currentSupport": 2.01
+      },
+      {
+        "id": "cmqnrd8xz00nfrpgqp0q4i6ay",
+        "name": "Democratic Jewish Union",
+        "shortName": "DJV",
+        "ideology": "center_right",
+        "platform": null,
+        "baseSupport": 7,
+        "currentSupport": 1.05
+      },
+      {
+        "id": "cmqnreeab00nmrpgqtk1drror",
+        "name": "Mizaan",
+        "shortName": "MIZ",
+        "ideology": "far_left",
+        "platform": null,
+        "baseSupport": 3,
+        "currentSupport": 0.65
+      },
+      {
+        "id": "cmqns13vr02curpgqhjqy89bd",
+        "name": "SPIRIT",
+        "shortName": "SPIRIT",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 2,
+        "currentSupport": 0.19
+      }
+    ],
+    "legislature": {
+      "id": "cmqnn527e01s4rp8e00wantk1",
+      "name": "States-General",
+      "chamberType": "bicameral|House of Representatives:718:proportional;Senate:359:mixed",
+      "totalSeats": 1077,
+      "electoralSystem": "proportional"
+    },
+    "governmentStructure": {
+      "governmentName": "Government of Maresteyn",
+      "governmentType": "Federal Republic",
+      "headOfState": "Emperor",
+      "headOfGovernment": "Imperial Chancellor",
+      "legislatureName": "States-General",
+      "executiveName": "Imperial Cabinet",
+      "judicialName": "Imperial High Court",
+      "branches": [
+        {
+          "name": "Imperial Cabinet",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "States-General",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Imperial High Court",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": [
+      {
+        "componentType": "UNIVERSAL_HEALTHCARE",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "WELFARE_STATE",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "INDEPENDENT_JUDICIARY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "MERIT_BASED_SYSTEM",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "PROFESSIONAL_BUREAUCRACY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "PANDEMIC_MANAGEMENT",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "CRISIS_COMMUNICATION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "EMERGENCY_RESPONSE",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "CULTURAL_PRESERVATION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "BILATERAL_RELATIONS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "DEVELOPMENT_AID",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "TRADE_AGREEMENTS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ENTREPRENEURSHIP_SUPPORT",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "UNITARY_SYSTEM",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "DEMOCRATIC_PROCESS",
+        "effectivenessScore": 50
+      }
+    ]
+  },
+  {
+    "id": "cmm9zjhts001mrp3as9drsc5f",
+    "name": "Maristella",
+    "slug": "maristella",
+    "governmentType": "Provinciarum",
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Maristella",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7pp002q4kyxxj60qh7a",
+    "name": "Mehristan",
+    "slug": "mehristan",
+    "governmentType": "Federal presidential constitutional republic",
+    "religion": "Islamic (Sunni)",
+    "leader": "Marshall Ramana Medres",
+    "wikiPageTitle": "Mehristan",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zj9y7001drp3ae2x2c5zi",
+    "name": "Melian Islands",
+    "slug": "melian-islands",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Melian Islands",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7nl002g4kyx85xwc6e0",
+    "name": "Metzetta",
+    "slug": "metzetta",
+    "governmentType": "Unitary absolute monarchy",
+    "religion": "Chulcheoist",
+    "leader": "Emperor Hachi",
+    "wikiPageTitle": "Metzetta",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7t600364kyx2oui0nmc",
+    "name": "Mid-Atrassic States",
+    "slug": "mid-atrassic-states",
+    "governmentType": "Confederal crowned republic",
+    "religion": "Chulcheoist",
+    "leader": "Governor-General Ivoŕ Arolian",
+    "wikiPageTitle": "Mid-Atrassic States",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9ziv6e000zrp3a8algvdt6",
+    "name": "Mierria",
+    "slug": "mierria",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Mierria",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zi9va000drp3afn8vu2do",
+    "name": "Moonlight Keys",
+    "slug": "moonlight-keys",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Moonlight Keys",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7q5002s4kyxokv3bqxb",
+    "name": "Nasastan",
+    "slug": "nasastan",
+    "governmentType": "Federal parliamentary republic",
+    "religion": "Islamic (Brewer-Alawist)",
+    "leader": "Stantop Wojnek Kréstofer Dógén & Načelnik Tadeuš Ewéartič",
+    "wikiPageTitle": "Nasastan",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7v5003e4kyxhwnxhxd9",
+    "name": "Netansett",
+    "slug": "netansett",
+    "governmentType": "Semi-federal assembly-independent republic",
+    "religion": "M'acunist",
+    "leader": "Autocrat Maitsoi Taphanso",
+    "wikiPageTitle": "Netansett",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7ue003b4kyxgjk6e2sm",
+    "name": "New Archduchy",
+    "slug": "new-archduchy",
+    "governmentType": "Unitary parliamentary republic",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "Chancellor Marius Felen",
+    "wikiPageTitle": "New Archduchy",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zj7kd001brp3ah3l0gljp",
+    "name": "New Ardmore",
+    "slug": "new-ardmore",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "New Ardmore",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7tt00394kyxjcy8jsh7",
+    "name": "New Harren",
+    "slug": "new-harren",
+    "governmentType": "Confederal constitutional monarchy",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "King Riordan I",
+    "wikiPageTitle": "New Harren",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgofbj4j00074k1s1dui9tq0",
+    "name": "New Spelferland",
+    "slug": "new-spelferland",
+    "governmentType": "Republic",
+    "religion": "Secular",
+    "leader": "Unknown",
+    "wikiPageTitle": "New Spelferland",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7vt003h4kyxedouorye",
+    "name": "New Veltorina",
+    "slug": "new-veltorina",
+    "governmentType": "Unitary Julian republic",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "State-Overseer Niko Meletine & Majority Leader Makis Lucerna",
+    "wikiPageTitle": "New Veltorina",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7y3003r4kyxlz23daxa",
+    "name": "Olmeria",
+    "slug": "olmeria",
+    "governmentType": "Unitary presidential republic",
+    "religion": "Protestant (Lindberghist)",
+    "leader": "President Këil Frieden",
+    "wikiPageTitle": "Olmeria",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zip9o000srp3amjxltmht",
+    "name": "Otisco",
+    "slug": "otisco",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Otisco",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7oe002k4kyxmu8mm4ay",
+    "name": "Oyashima",
+    "slug": "oyashima",
+    "governmentType": "Federal elective constitutional monarchy",
+    "religion": "Shinto",
+    "leader": "Lord of Lords Koshamain Itakshir",
+    "wikiPageTitle": "Oyashima",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d82k00474kyxaanmw0z8",
+    "name": "Papal State",
+    "slug": "papal-state",
+    "governmentType": "Unitary theocratic Catholic elective absolute monarchy",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "Pope Gregory XVII",
+    "wikiPageTitle": "Papal State",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7rc002y4kyxzndupfne",
+    "name": "Paulastra",
+    "slug": "paulastra",
+    "governmentType": "Unitary constitutional monarchy",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "King Paul III",
+    "wikiPageTitle": "Paulastra",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d83k004a4kyx695fbb56",
+    "name": "Pelaxia",
+    "slug": "pelaxia",
+    "governmentType": "Federal parliamentary republic",
+    "religion": "Irreligious",
+    "leader": "Prime Minister Pedro Meireles",
+    "wikiPageTitle": "Pelaxia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmpa5ilvd0000rpkv1h6jrrbk",
+    "name": "PerfTest Country 1779045096501",
+    "slug": "perftest-1779045096501",
+    "governmentType": "Test Republic",
+    "religion": "None",
+    "leader": "Test Leader",
+    "wikiPageTitle": "PerfTest Country 1779045096501",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": {
+      "governmentName": "Test Government",
+      "governmentType": "Federal Republic",
+      "headOfState": null,
+      "headOfGovernment": null,
+      "legislatureName": null,
+      "executiveName": null,
+      "judicialName": null,
+      "branches": [
+        {
+          "name": "Executive",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "Legislature",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Judiciary",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7si00334kyx3vtru3ns",
+    "name": "Porlos",
+    "slug": "porlos",
+    "governmentType": "Unitary semi-constitutional Woqalate",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "Woqali Furtado II",
+    "wikiPageTitle": "Porlos",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zjhtt001nrp3a52zlabw5",
+    "name": "Port de Vent",
+    "slug": "port-de-vent",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Port de Vent",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zjfgy001krp3aufmt4vqy",
+    "name": "Porta Bianca",
+    "slug": "porta-bianca",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Porta Bianca",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7pi002p4kyxmn77cbji",
+    "name": "Pukhgundi",
+    "slug": "pukhgundi",
+    "governmentType": "Unitary parliamentary republic",
+    "religion": "Hindu",
+    "leader": "Prime Minister K. P. Yadav",
+    "wikiPageTitle": "Pukhgundi",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9ziv4l000xrp3aqzpamkt7",
+    "name": "Purepec",
+    "slug": "purepec",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Purepec",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7ny002i4kyxpbk3ao6l",
+    "name": "Pursat",
+    "slug": "pursat",
+    "governmentType": "Unitary Druze theocracy",
+    "religion": "Druze",
+    "leader": "Supreme Professor Amin al-Atrash",
+    "wikiPageTitle": "Pursat",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7sp00344kyxqzy4n3ah",
+    "name": "Quetzenkel",
+    "slug": "quetzenkel",
+    "governmentType": "Unitary parliamentary constitutional monarchy",
+    "religion": "M'acunist",
+    "leader": "King Telucti I",
+    "wikiPageTitle": "Quetzenkel",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zi6vf0009rp3aa3b6r73u",
+    "name": "Rapa Rapa",
+    "slug": "rapa-rapa",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Rapa Rapa",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d80s00414kyxuavt0nl7",
+    "name": "Rhotia",
+    "slug": "rhotia",
+    "governmentType": "Federal presidential constitutional republic",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "President Alexandru Lash",
+    "wikiPageTitle": "Rhotia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7ns002h4kyxnermif9q",
+    "name": "Rusana",
+    "slug": "rusana",
+    "governmentType": "Unitary presidential republic",
+    "religion": "Islamic (Shi'ite)",
+    "leader": "President Rostam Khosa",
+    "wikiPageTitle": "Rusana",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zi9vc000erp3aei742kk0",
+    "name": "Sakhalins",
+    "slug": "sakhalins",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Sakhalins",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zi24k0005rp3anp560p9l",
+    "name": "Samalosi",
+    "slug": "samalosi",
+    "governmentType": null,
+    "religion": null,
+    "leader": "Councilors' Chamber",
+    "wikiPageTitle": "Samalosi",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zj41r0017rp3axbs9u325",
+    "name": "Scapa",
+    "slug": "scapa",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Scapa",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zirm7000urp3ax06q2cg6",
+    "name": "Seneca Islands",
+    "slug": "seneca-islands",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Seneca Islands",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9ziy3p0012rp3a61itzs9u",
+    "name": "Sevaronsa",
+    "slug": "sevaronsa",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Sevaronsa",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zip9f000rrp3a0hl521sy",
+    "name": "Shenendehowa Bay",
+    "slug": "shenendehowa-bay",
+    "governmentType": "Executive Board of Special Governance",
+    "religion": null,
+    "leader": "Caran Cacello",
+    "wikiPageTitle": "Shenendehowa Bay",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d85v004f4kyxxj82auxi",
+    "name": "Slaconia",
+    "slug": "slaconia",
+    "governmentType": "Unitary parliamentary republic",
+    "religion": "Catholic (Caphiric Rite)",
+    "leader": "Regent Lozan Razumikhin",
+    "wikiPageTitle": "Slaconia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zixjl0010rp3asmotnih6",
+    "name": "Solemia",
+    "slug": "solemia",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Solemia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zj41u0018rp3a9bymunyi",
+    "name": "Sorhaithe",
+    "slug": "sorhaithe",
+    "governmentType": null,
+    "religion": null,
+    "leader": "Eirlys Lleulu",
+    "wikiPageTitle": "Sorhaithe",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zijws000nrp3ak062dy88",
+    "name": "Sotsial",
+    "slug": "sotsial",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Sotsial",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zjd14001hrp3apreu89gq",
+    "name": "St. Kennera & Pribalter",
+    "slug": "st-kennera-pribalter",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "St. Kennera & Pribalter",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zj11y0014rp3af7mqofpk",
+    "name": "Suderavia",
+    "slug": "suderavia",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Suderavia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zi4hw0007rp3an848snov",
+    "name": "Sudmoll",
+    "slug": "sudmoll",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Sudmoll",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zj9yz001erp3a2qu3mw8p",
+    "name": "Sydona Islands",
+    "slug": "sydona-islands",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Sydona Islands",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7on002l4kyxlbbz2oas",
+    "name": "Tapakdore",
+    "slug": "tapakdore",
+    "governmentType": "Unitary absolute monarchy",
+    "religion": "Buddhist (Mahayana)",
+    "leader": "Queen Chandrika IV",
+    "wikiPageTitle": "Tapakdore",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zi6vj000arp3aze80adhs",
+    "name": "Tapkoii",
+    "slug": "tapkoii",
+    "governmentType": null,
+    "religion": null,
+    "leader": "Seth Qalis",
+    "wikiPageTitle": "Tapkoii",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7uw003d4kyxqekmz1rc",
+    "name": "Telokona",
+    "slug": "telokona",
+    "governmentType": "Unitary absolute monarchy",
+    "religion": "Nahibian",
+    "leader": "King Akbal III",
+    "wikiPageTitle": "Telokona",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zi24g0004rp3aaciz9cz9",
+    "name": "Teschego",
+    "slug": "teschego",
+    "governmentType": null,
+    "religion": null,
+    "leader": "Iaka Wihone",
+    "wikiPageTitle": "Teschego",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7ru00304kyxarp6ooly",
+    "name": "The Cape",
+    "slug": "the-cape",
+    "governmentType": "Federal parliamentary constitutional republic",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "Prime Executive Taresa Lanerā",
+    "wikiPageTitle": "The Cape",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7py002r4kyxz811pr9u",
+    "name": "Thervala",
+    "slug": "thervala",
+    "governmentType": "Unitary parliamentary constitutional monarchy",
+    "religion": "Buddhist (Vattaya)",
+    "leader": "Prime Minister Chatchai Suriyawan",
+    "wikiPageTitle": "Thervala",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zijtu000mrp3a5pv617gk",
+    "name": "Thystara",
+    "slug": "thystara",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Thystara",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7qx002w4kyxb5vbycau",
+    "name": "Tierrador",
+    "slug": "tierrador",
+    "governmentType": "custom",
+    "religion": "Catholic (Coscivian Rite)",
+    "leader": "Woqali Mokhar III",
+    "wikiPageTitle": "Tierrador",
+    "politicalParties": [
+      {
+        "id": "cmq8ecml900pdrpmef07hw6t5",
+        "name": "Tribunal Coalition",
+        "shortName": "Tribune",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 22,
+        "currentSupport": 22
+      },
+      {
+        "id": "cmq8e7vsk00owrpmezetemot7",
+        "name": "People's Party of Tierrador",
+        "shortName": "PpT",
+        "ideology": "center_left",
+        "platform": null,
+        "baseSupport": 73,
+        "currentSupport": 30.34
+      },
+      {
+        "id": "cmq8e6qpj00orrpmeofj0lqtr",
+        "name": "Tierradorian Republicans",
+        "shortName": "RT",
+        "ideology": "right",
+        "platform": null,
+        "baseSupport": 57,
+        "currentSupport": 26.24
+      },
+      {
+        "id": "cmq8e6c9v00onrpmeaipbhbbg",
+        "name": "Socialist Workers' Party",
+        "shortName": "PSt",
+        "ideology": "far_left",
+        "platform": null,
+        "baseSupport": 34,
+        "currentSupport": 19.54
+      },
+      {
+        "id": "cmq8e8v4h00p0rpmeddt1qo4k",
+        "name": "Social Democracy",
+        "shortName": "TSD",
+        "ideology": "left",
+        "platform": null,
+        "baseSupport": 24,
+        "currentSupport": 11.95
+      },
+      {
+        "id": "cmq8e9par00p4rpme86isvg08",
+        "name": "Conservatives' Union",
+        "shortName": "Connies",
+        "ideology": "far_right",
+        "platform": null,
+        "baseSupport": 15,
+        "currentSupport": 5
+      },
+      {
+        "id": "cmq8easun00p8rpmeqzs9xcpk",
+        "name": "United Tierrador",
+        "shortName": "UniTerra",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 10,
+        "currentSupport": 6.93
+      }
+    ],
+    "legislature": {
+      "id": "cmq8e3iu200cdrpmei8dyhijq",
+      "name": "Qangreč",
+      "chamberType": "unicameral|Qangreč:438:mixed",
+      "totalSeats": 438,
+      "electoralSystem": "mixed"
+    },
+    "governmentStructure": {
+      "governmentName": "Government of Tierrador",
+      "governmentType": "Federal Republic",
+      "headOfState": "Woqali",
+      "headOfGovernment": null,
+      "legislatureName": null,
+      "executiveName": null,
+      "judicialName": null,
+      "branches": [
+        {
+          "name": "Executive",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "Legislature",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Judiciary",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": [
+      {
+        "componentType": "CENTRALIZED_POWER",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "RULE_OF_LAW",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "TECHNOCRATIC_PROCESS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "STRATEGIC_PLANNING",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "MERIT_BASED_SYSTEM",
+        "effectivenessScore": 50
+      }
+    ]
+  },
+  {
+    "id": "cmgn9d7qp002v4kyxl5jfm8t6",
+    "name": "Timbia",
+    "slug": "timbia",
+    "governmentType": "Federal presidential constitutional republic",
+    "religion": "Irreligious",
+    "leader": "President Iakopo Hsin",
+    "wikiPageTitle": "Timbia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zj6r6001arp3a2nba80o2",
+    "name": "Torlen",
+    "slug": "torlen",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Torlen",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zi6vk000brp3avnky9fma",
+    "name": "Truk",
+    "slug": "truk",
+    "governmentType": null,
+    "religion": "Islam",
+    "leader": "Abdurrahman Mokhtar",
+    "wikiPageTitle": "Truk",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7p4002n4kyxwwfmk9pl",
+    "name": "Umardwal",
+    "slug": "umardwal",
+    "governmentType": "Unitary theocratic Islamic republic",
+    "religion": "Islamic (Sunni)",
+    "leader": "Ayatollah Fener Jîlwan",
+    "wikiPageTitle": "Umardwal",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7yc003s4kyxi4t9anua",
+    "name": "Urcea",
+    "slug": "urcea",
+    "governmentType": "Federal parliamentary constitutional monarchy",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "Procurator Caelian Agricola & Chancellor Cassia Mac-Niall",
+    "wikiPageTitle": "Urcea",
+    "politicalParties": [
+      {
+        "id": "cmq9puvjk01clrpgwd41xfr86",
+        "name": "center",
+        "shortName": "cen",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 25,
+        "currentSupport": 25
+      },
+      {
+        "id": "cmq9pv66w01cprpgw2km0xfuh",
+        "name": "lib",
+        "shortName": "lib",
+        "ideology": "center",
+        "platform": null,
+        "baseSupport": 25,
+        "currentSupport": 25
+      }
+    ],
+    "legislature": {
+      "id": "cmq9pujto016vrpgwlvhacqh5",
+      "name": "National Assembly",
+      "chamberType": "unicameral|National Assembly:100:proportional",
+      "totalSeats": 100,
+      "electoralSystem": "proportional"
+    },
+    "governmentStructure": {
+      "governmentName": "Government of Urcea",
+      "governmentType": "Federal Republic",
+      "headOfState": "Apo",
+      "headOfGovernment": null,
+      "legislatureName": null,
+      "executiveName": null,
+      "judicialName": null,
+      "branches": [
+        {
+          "name": "Executive",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "Legislature",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Judiciary",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": [
+      {
+        "componentType": "FEDERAL_SYSTEM",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ENTREPRENEURSHIP_SUPPORT",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ECONOMIC_INCENTIVES",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "WORKER_PROTECTION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "STRATEGIC_PLANNING",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "PROFESSIONAL_BUREAUCRACY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "INDEPENDENT_JUDICIARY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "MERIT_BASED_SYSTEM",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "EMERGENCY_RESPONSE",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "DISASTER_PREPAREDNESS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "CULTURAL_PRESERVATION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "MULTILATERAL_DIPLOMACY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "REGIONAL_INTEGRATION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "DEVELOPMENT_AID",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ENVIRONMENTAL_PROTECTION",
+        "effectivenessScore": 50
+      }
+    ]
+  },
+  {
+    "id": "cmgn9d7r4002x4kyxwqipi7fr",
+    "name": "Varshan",
+    "slug": "varshan",
+    "governmentType": "Federal presidential constitutional republic",
+    "religion": "State Arzalist",
+    "leader": "King-among-Citizens Yananzak",
+    "wikiPageTitle": "Varshan",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zjff1001jrp3a7fspfy7g",
+    "name": "Ventotene",
+    "slug": "ventotene",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Ventotene",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9ziv4q000yrp3asx8aao15",
+    "name": "Veraise",
+    "slug": "veraise",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Veraise",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zjfet001irp3a7oe5a8cf",
+    "name": "Vespera",
+    "slug": "vespera",
+    "governmentType": "Provinciarum",
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Vespera",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d84x004d4kyxitorx0hv",
+    "name": "Volonia",
+    "slug": "volonia",
+    "governmentType": "Unitary presidential republic",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "National Tribune Serghei Predoiu",
+    "wikiPageTitle": "Volonia",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zj0gn0013rp3aqvl86cdp",
+    "name": "Wintergen",
+    "slug": "wintergen",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Wintergen",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zirmb000vrp3assgxqv76",
+    "name": "Xisheng",
+    "slug": "xisheng",
+    "governmentType": null,
+    "religion": null,
+    "leader": "Qin Gang",
+    "wikiPageTitle": "Xisheng",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d7n6002e4kyxr9nyqcfh",
+    "name": "Yanuban",
+    "slug": "yanuban",
+    "governmentType": "Unitary presidential republic",
+    "religion": "Islamic (Sunni)",
+    "leader": "President Simone al Zayd",
+    "wikiPageTitle": "Yanuban",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmgn9d806003z4kyx0gje8lp6",
+    "name": "Yonderre",
+    "slug": "yonderre",
+    "governmentType": "Federal parliamentary elective constitutional monarchy",
+    "religion": "Catholic (Latin Rite)",
+    "leader": "Steward Hercule d'Arcaneaux",
+    "wikiPageTitle": "Yonderre",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": {
+      "governmentName": "Government of Yonderre",
+      "governmentType": "Federal Republic",
+      "headOfState": null,
+      "headOfGovernment": null,
+      "legislatureName": null,
+      "executiveName": null,
+      "judicialName": null,
+      "branches": [
+        {
+          "name": "Executive",
+          "branchType": "executive",
+          "description": null
+        },
+        {
+          "name": "Legislature",
+          "branchType": "legislative",
+          "description": null
+        },
+        {
+          "name": "Judiciary",
+          "branchType": "judicial",
+          "description": null
+        }
+      ]
+    },
+    "governmentComponents": [
+      {
+        "componentType": "WELFARE_STATE",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "SOCIAL_SAFETY_NET",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "PROFESSIONAL_BUREAUCRACY",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "DEMOCRATIC_PROCESS",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "ENVIRONMENTAL_PROTECTION",
+        "effectivenessScore": 50
+      },
+      {
+        "componentType": "FEDERAL_SYSTEM",
+        "effectivenessScore": 50
+      }
+    ]
+  },
+  {
+    "id": "cmgn9d7o5002j4kyxfds59dqf",
+    "name": "Zaclaria",
+    "slug": "zaclaria",
+    "governmentType": "Unitary Islamic crowned republic",
+    "religion": "Islamic (Nizari Shi'ite)",
+    "leader": "Sultana Arabella IX",
+    "wikiPageTitle": "Zaclaria",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zi4hp0006rp3aq25r8drq",
+    "name": "Zhijun",
+    "slug": "zhijun",
+    "governmentType": null,
+    "religion": null,
+    "leader": "Deng Darro",
+    "wikiPageTitle": "Zhijun",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  },
+  {
+    "id": "cmm9zj13y0015rp3auzuanwkd",
+    "name": "Æonara",
+    "slug": "onara",
+    "governmentType": null,
+    "religion": null,
+    "leader": null,
+    "wikiPageTitle": "Æonara",
+    "politicalParties": [],
+    "legislature": null,
+    "governmentStructure": null,
+    "governmentComponents": []
+  }
+]

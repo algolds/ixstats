@@ -170,6 +170,17 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
 
       const navZoneHeight = window.innerWidth >= 1024 ? 64 : 56;
 
+      // In hidden immersion mode, do not trigger top navbar peek on normal workspace interaction
+      if (isHiddenModeRef.current) {
+        if (e.clientY <= 2) {
+          clearAutoHideTimer();
+          setIsMouseNearTop(true);
+        } else if (e.clientY > navZoneHeight && isMouseNearTop && !isNavHoveredRef.current) {
+          startAutoHideTimer(200);
+        }
+        return;
+      }
+
       // Mouse reached top activation threshold (or Halo pill top area)
       if (e.clientY <= 48) {
         clearAutoHideTimer();
@@ -203,13 +214,20 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
     };
   }, [clearAutoHideTimer, startAutoHideTimer, isMouseNearTop]);
 
+  useEffect(() => {
+    setScrollNavVisible(!isHiddenMode);
+    setIsMouseNearTop(false);
+  }, [isHiddenMode]);
+
   // Determine final visibility
   let isNavVisible: boolean;
   if (isLocked) {
     isNavVisible = true;
+  } else if (isHiddenMode) {
+    isNavVisible = isMouseNearTop;
   } else if (isMouseNearTop) {
     isNavVisible = true;
-  } else if (scrollY <= 8 && !isHiddenMode) {
+  } else if (scrollY <= 8) {
     isNavVisible = true;
   } else {
     isNavVisible = scrollNavVisible;

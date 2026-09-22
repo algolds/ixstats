@@ -1,5 +1,5 @@
 # IxStates System Status & Public Launch Readiness Audit
-## Operating Topology & Production Status (Platform 1.4.0 "Ogma" Release Candidate)
+## Operating Topology & Production Status (Platform 1.4.0 "Lobster Crosby" Release Candidate)
 
 **Last updated:** August 2026  
 **Auditor:** Senior System Review (`/improve`) · Architecture Guard (`/apple-design`) · Anti-Slop Audit (`/unslop`)  

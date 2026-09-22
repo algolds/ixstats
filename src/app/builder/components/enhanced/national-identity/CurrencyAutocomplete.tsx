@@ -1,27 +1,14 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Coins } from "iconoir-react";
-import { CurrencySelector, CurrencyInput } from "./CurrencySelector";
+import { Coins, EditPencil as Edit2, List, Check } from "iconoir-react";
+import { CurrencySelector, CurrencyInput, UNIFIED_CURRENCIES } from "./CurrencySelector";
+import { CurrencyIcon } from "./CurrencyIcon";
 import { api } from "~/trpc/react";
-import { getAvailableCurrencies, getCurrencyInfo, isValidCurrency } from "~/lib/utils";
-
-const QUICK_CURRENCIES = [
-  { code: "USD", symbol: "$", label: "US Dollar" },
-  { code: "EUR", symbol: "€", label: "Euro" },
-  { code: "GBP", symbol: "£", label: "Pound Sterling" },
-  { code: "JPY", symbol: "¥", label: "Japanese Yen" },
-  { code: "Taler", symbol: "₮", label: "Taler" },
-  { code: "Crown", symbol: "©", label: "Crown" },
-  { code: "Mark", symbol: "ℳ", label: "Mark" },
-];
-
-function getSymbolForCurrency(code: string): string | undefined {
-  const quick = QUICK_CURRENCIES.find((c) => c.code === code);
-  if (quick) return quick.symbol;
-  const info = getCurrencyInfo(code);
-  return info.symbol;
-}
+import { getCurrencyInfo, isValidCurrency } from "~/lib/utils";
+import { POPULAR_CURRENCIES } from "./identityUtils";
+import { soundEffects } from "~/lib/sound/cuelume";
+import { Badge } from "~/components/ui/badge";
 
 interface CurrencyAutocompleteProps {
   fieldName: string;
@@ -43,26 +30,22 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
   showValidation = true,
   allowCustom = true,
 }: CurrencyAutocompleteProps) {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [isOpen, setIsOpen] = useState(false);
   const [inputMode, setInputMode] = useState<"selector" | "input">("selector");
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data, isLoading } = api.customTypes.getFieldSuggestions.useQuery(
+  const { data } = api.customTypes.getFieldSuggestions.useQuery(
     { fieldName, limit: 20 },
-    { enabled: isOpen }
+    { enabled: inputMode === "input" }
   );
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const handleBlur = useCallback(() => {
-    if (value.trim() && onSave) {
-      onSave(fieldName, value.trim());
-    }
-  }, [value, onSave, fieldName]);
 
   const handleValueChange = useCallback(
     (newValue: string) => {
-      const symbol = newValue ? getSymbolForCurrency(newValue) : undefined;
+      soundEffects.press();
+      const unified = UNIFIED_CURRENCIES.find(
+        (c) => c.code.toLowerCase() === newValue.toLowerCase()
+      );
+      const quick = POPULAR_CURRENCIES.find((c) => c.code === newValue);
+      const info = getCurrencyInfo(newValue);
+      const symbol = unified ? unified.symbol : (quick ? quick.symbol : info.symbol);
       onChange(newValue, symbol);
       if (onSave && newValue.trim()) {
         onSave(fieldName, newValue.trim());
@@ -71,117 +54,75 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
     [onChange, onSave, fieldName]
   );
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const availableCurrencies = getAvailableCurrencies();
   const currencyInfo = getCurrencyInfo(value);
-  // oxlint-disable-next-line eslint/no-unused-vars
   const isValid = !value || isValidCurrency(value);
 
   return (
-    <div className="space-y-2">
-      <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-        <Coins className="h-4 w-4" />
-        Currency
-      </label>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <label className="text-foreground flex items-center gap-2 text-sm font-medium">
+          <Coins className="text-muted-foreground h-4 w-4" />
+          <span>National Currency</span>
+        </label>
+        <button
+          type="button"
+          onClick={() => {
+            soundEffects.toggle();
+            setInputMode(inputMode === "selector" ? "input" : "selector");
+          }}
+          className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground active:scale-[0.97] transition-[color,transform] duration-150 ease-out"
+          data-cuelume-press
+        >
+          {inputMode === "selector" ? (
+            <>
+              <Edit2 className="h-3 w-3" />
+              <span>Type Custom Currency</span>
+            </>
+          ) : (
+            <>
+              <List className="h-3 w-3" />
+              <span>Select from Standard List</span>
+            </>
+          )}
+        </button>
+      </div>
 
-      <div className="space-y-2">
-        {/* Mode Toggle */}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setInputMode("selector")}
-            className={`rounded-md px-3 py-1 text-xs transition-colors ${
-              inputMode === "selector"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            Select Currency
-          </button>
-          <button
-            type="button"
-            onClick={() => setInputMode("input")}
-            className={`rounded-md px-3 py-1 text-xs transition-colors ${
-              inputMode === "input"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            Custom Entry
-          </button>
-        </div>
-
+      <div className="space-y-2.5">
         {/* Currency Selector Mode */}
-        {inputMode === "selector" && (
+        {inputMode === "selector" ? (
           <div className="space-y-2">
-            <div className="flex items-start gap-2">
-              <div className="min-w-0 flex-1">
-                <CurrencySelector
-                  value={value}
-                  onValueChange={handleValueChange}
-                  placeholder={placeholder}
-                />
-              </div>
-            </div>
-
-            {/* Show current currency info */}
-            {value && currencyInfo && (
-              <div className="text-muted-foreground text-xs">
-                {currencyInfo.isISO ? (
-                  <span className="text-green-600 dark:text-green-400">
-                    ✓ Standard ISO currency
-                  </span>
-                ) : (
-                  <div className="space-y-1">
-                    <span className="text-blue-600 dark:text-blue-400">✓ Custom currency</span>
-                    {currencyInfo.symbol && (
-                      <div className="flex items-center gap-1">
-                        <span>Symbol:</span>
-                        <span className="bg-muted rounded px-1 font-mono">
-                          {currencyInfo.symbol}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+            <CurrencySelector
+              value={value}
+              onValueChange={handleValueChange}
+              placeholder={placeholder}
+            />
           </div>
-        )}
-
-        {/* Custom Input Mode */}
-        {inputMode === "input" && (
+        ) : (
+          /* Custom Input Mode */
           <div className="space-y-2">
-            <div className="flex items-start gap-2">
-              <div className="min-w-0 flex-1">
-                <CurrencyInput
-                  value={value}
-                  onValueChange={handleValueChange}
-                  placeholder="Enter custom currency name"
-                  showValidation={showValidation}
-                  allowCustom={allowCustom}
-                />
-              </div>
-            </div>
+            <CurrencyInput
+              value={value}
+              onValueChange={handleValueChange}
+              placeholder="Enter sovereign currency name (e.g. Solar, Denar)"
+              showValidation={showValidation}
+              allowCustom={allowCustom}
+            />
 
-            {/* Show suggestions from database */}
-            {isOpen && ((data?.global?.length ?? 0) > 0 || (data?.user?.length ?? 0) > 0) && (
-              <div className="bg-muted/50 mt-2 rounded-md p-2 text-xs">
-                <div className="mb-1 font-medium">Recent entries:</div>
-                <div className="space-y-1">
-                  {data?.user?.slice(0, 3).map((suggestion) => (
+            {/* Suggestions from database */}
+            {((data?.global?.length ?? 0) > 0 || (data?.user?.length ?? 0) > 0) && (
+              <div className="rounded-lg border border-border/40 bg-muted/30 p-2 text-xs">
+                <div className="text-muted-foreground mb-1 text-[10px] font-bold uppercase tracking-wider">
+                  Community Currencies:
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {data?.user?.slice(0, 5).map((suggestion) => (
                     <button
                       key={suggestion.id}
                       type="button"
                       onClick={() => handleValueChange(suggestion.value)}
-                      className="hover:bg-background block w-full rounded px-2 py-1 text-left"
+                      className="rounded-md border border-border/50 bg-background/80 px-2 py-0.5 text-xs hover:bg-accent active:scale-95 transition-all"
                     >
                       {suggestion.value}
-                      {suggestion.usageCount > 1 && (
-                        <span className="text-muted-foreground ml-1">
-                          ({suggestion.usageCount}x)
-                        </span>
-                      )}
                     </button>
                   ))}
                 </div>
@@ -190,25 +131,63 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
           </div>
         )}
 
-        {/* Quick Access to Common Currencies */}
-        {!value && (
-          <div className="space-y-2">
-            <div className="text-muted-foreground text-xs">Quick select:</div>
-            <div className="flex flex-wrap gap-1">
-              {QUICK_CURRENCIES.map(({ code, symbol }) => (
+        {/* Currency Meta Pill Badges */}
+        {value && currencyInfo && (
+          <div className="flex items-center gap-2 text-xs">
+            {currencyInfo.isISO ? (
+              <Badge variant="secondary" className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <Check className="h-3 w-3" />
+                <span>Standard ISO</span>
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="border-border/60 bg-muted/30 text-foreground">
+                Custom Sovereign Currency
+              </Badge>
+            )}
+            {currencyInfo.symbol && (
+              <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
+                <span>Symbol:</span>
+                <span className="inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-1.5 py-0.5 text-foreground font-mono font-bold text-xs">
+                  <CurrencyIcon code={value} symbol={currencyInfo.symbol} className="h-3.5 w-3.5 shrink-0" />
+                  <span>{currencyInfo.symbol}</span>
+                </span>
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Quick Access Badges for Popular Currencies */}
+        <div className="space-y-1.5 pt-1">
+          <div className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">
+            Quick Select:
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {POPULAR_CURRENCIES.map(({ code, symbol, label }) => {
+              const isSelected = value === code;
+              return (
                 <button
                   key={code}
                   type="button"
                   onClick={() => handleValueChange(code)}
-                  className="bg-muted hover:bg-muted/80 inline-flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors"
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,transform,box-shadow] duration-150 ease-out active:scale-[0.97] ${
+                    isSelected
+                      ? "border-amber-500/50 bg-amber-500/15 text-amber-500 dark:text-amber-400 shadow-xs"
+                      : "border-border/40 bg-background/60 text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground"
+                  }`}
+                  title={label}
+                  data-cuelume-press
                 >
-                  <span className="font-medium">{symbol}</span>
+                  <CurrencyIcon
+                    code={code}
+                    symbol={symbol}
+                    className="h-3.5 w-3.5 shrink-0 opacity-80 group-hover:opacity-100"
+                  />
                   <span>{code}</span>
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

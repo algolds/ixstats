@@ -252,7 +252,34 @@ export const sportsStandingsRouter = createTRPCRouter({
       }
     }),
 
-  // ═══ MyClub ══════════════════════════════════════════════════════════════════
+  getLiveMatches: publicProcedure.query(async ({ ctx }) => {
+    try {
+      const matches = await ctx.db.sportMatch.findMany({
+        where: { status: { in: ["in_progress", "completed", "scheduled"] } },
+        include: {
+          homeTeam: { select: { id: true, name: true, shortName: true, color: true } },
+          awayTeam: { select: { id: true, name: true, shortName: true, color: true } },
+        },
+        orderBy: { resolvedIxTime: "desc" },
+        take: 10,
+      });
 
-  // ═══ Utility ═════════════════════════════════════════════════════════════════
+      return matches.map((m) => {
+        const stats = (m.matchStats as Record<string, unknown> | null) ?? {};
+        return {
+          id: m.id,
+          homeTeamId: m.homeTeamId,
+          awayTeamId: m.awayTeamId,
+          homeTeam: m.homeTeam,
+          awayTeam: m.awayTeam,
+          trace: stats.trace ?? [],
+          finalHomeScore: m.homeScore,
+          finalAwayScore: m.awayScore,
+          status: m.status,
+        };
+      });
+    } catch (_err) {
+      return [];
+    }
+  }),
 });

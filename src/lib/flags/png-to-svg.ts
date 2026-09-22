@@ -8,6 +8,7 @@
  */
 
 import { Buffer } from "node:buffer";
+import { hslToHex, hexToRgbArray } from "~/lib/color";
 
 export interface PngToSvgConfig {
   /** Color map: hex color → feature ID. If not provided, auto-detects colors. */
@@ -80,7 +81,7 @@ export async function createColorMask(
 ): Promise<Buffer> {
   const sharp = (await import("sharp")).default;
 
-  const target = hexToRgb(targetHex);
+  const target = hexToRgbArray(targetHex);
   const image = sharp(pngBuffer).removeAlpha().raw();
   const { data, info } = await image.toBuffer({ resolveWithObject: true });
 
@@ -590,27 +591,4 @@ function generatePalette(n: number): string[] {
     colors.push(hslToHex(hue, sat, lit));
   }
   return colors;
-}
-
-function hslToHex(h: number, s: number, l: number): string {
-  s /= 100;
-  l /= 100;
-  const a = s * Math.min(l, 1 - l);
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return Math.round(255 * color)
-      .toString(16)
-      .padStart(2, "0");
-  };
-  return `#${f(0)}${f(8)}${f(4)}`;
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace("#", "").slice(0, 6);
-  return [
-    parseInt(h.substring(0, 2), 16),
-    parseInt(h.substring(2, 4), 16),
-    parseInt(h.substring(4, 6), 16),
-  ];
 }

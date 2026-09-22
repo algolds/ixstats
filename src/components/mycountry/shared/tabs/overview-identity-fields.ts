@@ -9,6 +9,7 @@ import {
 } from "iconoir-react";
 
 import { toTitleCase } from "~/lib/utils";
+import type { NationalIdentityData } from "~/app/builder/lib/economy-types";
 
 /**
  * Identity field config rendered as pills in the MyCountry overview tab.
@@ -21,7 +22,7 @@ export const OVERVIEW_IDENTITY_FIELDS: Array<{
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
-  getValue: (ni: any) => string | null;
+  getValue: (ni: Partial<NationalIdentityData>) => string | null | undefined;
 }> = [
   {
     key: "governmentType",
@@ -41,7 +42,7 @@ export const OVERVIEW_IDENTITY_FIELDS: Array<{
     key: "officialLanguages",
     label: "Languages",
     icon: Globe2,
-    color: "text-purple-600 dark:text-purple-400",
+    color: "text-indigo-600 dark:text-indigo-400",
     getValue: (ni) => ni.officialLanguages,
   },
   {
@@ -56,7 +57,7 @@ export const OVERVIEW_IDENTITY_FIELDS: Array<{
     key: "demonym",
     label: "Demonym",
     icon: Users,
-    color: "text-rose-600 dark:text-rose-400",
+    color: "text-red-600 dark:text-red-400",
     getValue: (ni) => ni.demonym,
   },
   {
@@ -77,7 +78,7 @@ export const OVERVIEW_IDENTITY_FIELDS: Array<{
     key: "internetTLD",
     label: "Internet TLD",
     icon: Globe,
-    color: "text-orange-600 dark:text-orange-400",
+    color: "text-amber-600 dark:text-amber-400",
     getValue: (ni) => ni.internetTLD,
   },
 ];

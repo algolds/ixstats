@@ -39,41 +39,43 @@ export const CategoryFilter = React.memo<CategoryFilterProps>(
     ];
 
     // Theme color mappings matching the section accents
-    const categoryColors: Record<string, { active: string; border: string; glow: string }> = {
+    const categoryColors: Record<string, { active: string; border: string }> = {
       all: {
         active: "text-cyan-400 border-cyan-500/40 bg-cyan-500/10",
         border:
-          "border-slate-200 bg-slate-50/45 text-slate-500 hover:text-cyan-600 hover:border-cyan-500/20 hover:bg-cyan-500/5 dark:border-white/5 dark:bg-white/[0.02] dark:text-zinc-400 dark:hover:text-cyan-400 dark:hover:border-cyan-500/30 dark:hover:bg-cyan-500/10",
-        glow: "shadow-[0_0_8px_rgba(6,182,212,0.15)]",
+          "border-border/60 bg-card/45 text-muted-foreground hover:text-cyan-600 hover:border-cyan-500/20 hover:bg-cyan-500/5 dark:border-white/5 dark:bg-white/[0.02] dark:text-muted-foreground dark:hover:text-cyan-400 dark:hover:border-cyan-500/30 dark:hover:bg-cyan-500/10",
       },
       governance: {
         active: "text-amber-400 border-amber-500/40 bg-amber-500/10",
         border:
-          "border-slate-200 bg-slate-50/45 text-slate-500 hover:text-amber-600 hover:border-amber-500/20 hover:bg-amber-500/5 dark:border-white/5 dark:bg-white/[0.02] dark:text-zinc-400 dark:hover:text-amber-400 dark:hover:border-amber-500/30 dark:hover:bg-amber-500/10",
-        glow: "shadow-[0_0_8px_rgba(245,158,11,0.15)]",
+          "border-border/60 bg-card/45 text-muted-foreground hover:text-amber-600 hover:border-amber-500/20 hover:bg-amber-500/5 dark:border-white/5 dark:bg-white/[0.02] dark:text-muted-foreground dark:hover:text-amber-400 dark:hover:border-amber-500/30 dark:hover:bg-amber-500/10",
       },
       administration: {
-        active: "text-teal-400 border-teal-500/40 bg-teal-500/10",
+        active: "text-indigo-400 border-indigo-500/40 bg-indigo-500/10",
         border:
-          "border-slate-200 bg-slate-50/45 text-slate-500 hover:text-teal-600 hover:border-teal-500/20 hover:bg-teal-500/5 dark:border-white/5 dark:bg-white/[0.02] dark:text-zinc-400 dark:hover:text-teal-400 dark:hover:border-teal-500/30 dark:hover:bg-teal-500/10",
-        glow: "shadow-[0_0_8px_rgba(20,184,166,0.15)]",
+          "border-border/60 bg-card/45 text-muted-foreground hover:text-indigo-600 hover:border-indigo-500/20 hover:bg-indigo-500/5 dark:border-white/5 dark:bg-white/[0.02] dark:text-muted-foreground dark:hover:text-indigo-400 dark:hover:border-indigo-500/30 dark:hover:bg-indigo-500/10",
       },
       economic: {
         active: "text-emerald-400 border-emerald-500/40 bg-emerald-500/10",
         border:
-          "border-slate-200 bg-slate-50/45 text-slate-500 hover:text-emerald-600 hover:border-emerald-500/20 hover:bg-emerald-500/5 dark:border-white/5 dark:bg-white/[0.02] dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:border-emerald-500/30 dark:hover:bg-emerald-500/10",
-        glow: "shadow-[0_0_8px_rgba(16,185,129,0.15)]",
+          "border-border/60 bg-card/45 text-muted-foreground hover:text-emerald-600 hover:border-emerald-500/20 hover:bg-emerald-500/5 dark:border-white/5 dark:bg-white/[0.02] dark:text-muted-foreground dark:hover:text-emerald-400 dark:hover:border-emerald-500/30 dark:hover:bg-emerald-500/10",
       },
       process: {
         active: "text-blue-400 border-blue-500/40 bg-blue-500/10",
         border:
-          "border-slate-200 bg-slate-50/45 text-slate-500 hover:text-blue-600 hover:border-blue-500/20 hover:bg-blue-500/5 dark:border-white/5 dark:bg-white/[0.02] dark:text-zinc-400 dark:hover:text-blue-400 dark:hover:border-blue-500/30 dark:hover:bg-blue-500/10",
-        glow: "shadow-[0_0_8px_rgba(59,130,246,0.15)]",
+          "border-border/60 bg-card/45 text-muted-foreground hover:text-blue-600 hover:border-blue-500/20 hover:bg-blue-500/5 dark:border-white/5 dark:bg-white/[0.02] dark:text-muted-foreground dark:hover:text-blue-400 dark:hover:border-blue-500/30 dark:hover:bg-blue-500/10",
       },
     };
 
     return (
-      <div className="flex w-full scrollbar-none flex-wrap items-center gap-1.5 overflow-x-auto pb-1 select-none">
+      <div
+        onWheel={(e) => {
+          if (e.deltaY !== 0 && !e.deltaX) {
+            e.currentTarget.scrollLeft += e.deltaY;
+          }
+        }}
+        className="flex w-full items-center gap-1.5 overflow-x-auto pb-2 pt-0.5 scrollbar-thin scrollbar-thumb-border/40 hover:scrollbar-thumb-border/70 scrollbar-track-transparent scroll-smooth touch-pan-x select-none"
+      >
         {filterItems.map((item) => {
           const isSelected = selectedCategory === item.id;
           const key = item.id || "all";
@@ -87,7 +89,7 @@ export const CategoryFilter = React.memo<CategoryFilterProps>(
               className={cn(
                 "relative flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-1 text-[10px] font-bold tracking-wider uppercase shadow-xs backdrop-blur-md transition-all duration-200",
                 isSelected
-                  ? `${colors.active} ${colors.glow} shadow-md`
+                  ? `${colors.active} shadow-sm`
                   : hasSelection
                     ? "border-dashed border-zinc-300 bg-zinc-100/10 text-zinc-400 opacity-60 hover:text-zinc-500 hover:opacity-100 dark:border-zinc-800/50 dark:bg-zinc-950/20 dark:text-zinc-500 dark:hover:text-zinc-400"
                     : colors.border

@@ -42,7 +42,7 @@ export const TradeImpactSummary = React.memo(function TradeImpactSummary({
           <Ship className="h-4 w-4 text-cyan-400" />
         </div>
         <p
-          className={`text-xl font-bold tracking-tight ${tradeBalance >= 0 ? "text-emerald-400" : "text-rose-400"}`}
+          className={`text-xl font-bold tracking-tight ${tradeBalance >= 0 ? "text-emerald-400" : "text-red-400"}`}
         >
           {tradeBalance >= 0 ? "+" : ""}
           {currencySymbol}

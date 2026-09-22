@@ -38,7 +38,7 @@ export const ComparativeBenchmarkingCard = React.memo<ComparativeBenchmarkingCar
                 <div className="flex items-center gap-2">
                   <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                     <motion.div
-                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                      className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
                       initial={{ width: 0 }}
                       animate={{ width: `${item.value}%` }}
                       transition={{ delay: index * 0.1, duration: 0.5 }}

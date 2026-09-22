@@ -29,7 +29,7 @@ describe("Reference Docs Synchronizer (Plan 169)", () => {
       const md = generateVersionMatrixMarkdown();
       expect(md).toContain("<!-- BEGIN_DOCS:VERSION_MATRIX -->");
       expect(md).toContain("<!-- END_DOCS:VERSION_MATRIX -->");
-      expect(md).toContain("IxStates (Ogma)");
+      expect(md).toContain("IxStates (Lobster Crosby)");
       expect(md).toContain("Release Candidate");
     });
 

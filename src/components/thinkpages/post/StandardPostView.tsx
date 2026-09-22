@@ -250,13 +250,13 @@ export function StandardPostView({
       )}
 
       {blurbMeta.isBlurb && (
-        <div className="mb-3 flex items-center gap-2 text-sm text-purple-400">
+        <div className="mb-3 flex items-center gap-2 text-sm text-blue-400">
           <BookOpen className="h-4 w-4" />
           <span className="font-medium">{blurbMeta.promptTitle ?? "Topic Tuesday"}</span>
           {blurbMeta.promptSlug && (
             <Link
               href={withBasePath(`/blurbs/${blurbMeta.promptSlug}`)}
-              className="text-purple-400/70 transition-colors hover:text-purple-300"
+              className="text-blue-400/70 transition-colors hover:text-blue-300"
             >
               View prompt →
             </Link>

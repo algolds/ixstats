@@ -200,14 +200,14 @@ export default function EtymologySection() {
             )}
           </div>
 
-          <div className="bg-secondary/5 border-border/10 hover:bg-secondary/10 flex-1 rounded border p-2.5 transition-colors hover:border-violet-500/20">
+          <div className="bg-secondary/5 border-border/10 hover:bg-secondary/10 flex-1 rounded border p-2.5 transition-colors hover:border-indigo-500/20">
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-foreground font-bold">{node.word}</span>
                 {node.ipa && (
                   <span className="text-muted-foreground ml-2 text-[10px]">/{node.ipa}/</span>
                 )}
-                <span className="ml-2 rounded bg-violet-500/10 px-1.5 py-0.5 text-xs font-medium text-violet-400 capitalize">
+                <span className="ml-2 rounded bg-indigo-500/10 px-1.5 py-0.5 text-xs font-medium text-indigo-400 capitalize">
                   {node.derivationType}
                 </span>
                 {node.morphemeAdded && (
@@ -220,7 +220,7 @@ export default function EtymologySection() {
                 <button
                   onClick={() => setAddingToParentId(node.id)}
                   title="Add child derivation"
-                  className="cursor-pointer rounded p-1 text-violet-400 hover:bg-violet-500/20"
+                  className="cursor-pointer rounded p-1 text-indigo-400 hover:bg-indigo-500/20"
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </button>
@@ -260,7 +260,7 @@ export default function EtymologySection() {
         <div className="space-y-4 lg:col-span-4">
           <FacetMaterial material="satin" className="border-border/20 space-y-4 border p-4">
             <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
-              <Network className="h-4 w-4 text-violet-500" />
+              <Network className="h-4 w-4 text-indigo-500" />
               Roots Directory
             </h3>
 
@@ -268,7 +268,7 @@ export default function EtymologySection() {
               <div className="text-muted-foreground py-8 text-center text-xs">Loading roots...</div>
             ) : roots?.length === 0 ? (
               <div className="border-border/40 bg-secondary/5 space-y-2 rounded-xl border border-dashed p-5 text-center text-xs">
-                <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-violet-500/10 text-violet-400">
+                <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400">
                   <GitFork className="h-4 w-4" />
                 </div>
                 <div className="space-y-0.5">
@@ -289,7 +289,7 @@ export default function EtymologySection() {
                     }}
                     className={`flex w-full items-center justify-between rounded px-3 py-2 text-left text-xs transition-colors ${
                       selectedRootId === r.id
-                        ? "border border-violet-500/30 bg-violet-500/10 text-violet-400"
+                        ? "border border-indigo-500/30 bg-indigo-500/10 text-indigo-400"
                         : "hover:bg-secondary/15 text-foreground border border-transparent"
                     }`}
                   >
@@ -325,7 +325,7 @@ export default function EtymologySection() {
                     value={newRootWord}
                     onChange={(e) => setNewRootWord(e.target.value)}
                     placeholder="e.g. log-"
-                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-violet-500/50 focus:outline-none"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-indigo-500/50 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -337,7 +337,7 @@ export default function EtymologySection() {
                     value={newRootIpa}
                     onChange={(e) => setNewRootIpa(e.target.value)}
                     placeholder="e.g. lɔɡ"
-                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-violet-500/50 focus:outline-none"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-indigo-500/50 focus:outline-none"
                   />
                 </div>
               </div>
@@ -351,7 +351,7 @@ export default function EtymologySection() {
                   value={newRootMeaning}
                   onChange={(e) => setNewRootMeaning(e.target.value)}
                   placeholder="e.g. word, reason, speech"
-                  className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-violet-500/50 focus:outline-none"
+                  className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-indigo-500/50 focus:outline-none"
                 />
               </div>
               <div>
@@ -368,7 +368,7 @@ export default function EtymologySection() {
               <button
                 type="submit"
                 disabled={createRootMutation.isPending}
-                className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded bg-violet-600 py-1.5 text-xs font-bold text-white transition-all hover:bg-violet-700 active:scale-95"
+                className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded bg-indigo-600 py-1.5 text-xs font-bold text-white transition-all hover:bg-indigo-700 active:scale-95"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Root Word
@@ -382,7 +382,7 @@ export default function EtymologySection() {
           {activeRoot ? (
             <div className="space-y-4">
               {/* Root Details Header */}
-              <FacetMaterial material="satin" className="border border-violet-500/20 p-4">
+              <FacetMaterial material="satin" className="border border-indigo-500/20 p-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="text-foreground flex items-baseline gap-2 text-lg font-extrabold">
@@ -393,7 +393,7 @@ export default function EtymologySection() {
                         </span>
                       )}
                     </h3>
-                    <p className="mt-0.5 text-sm font-medium text-violet-400">
+                    <p className="mt-0.5 text-sm font-medium text-indigo-400">
                       {activeRoot.meaning}
                     </p>
                     {activeRoot.notes && (
@@ -423,12 +423,12 @@ export default function EtymologySection() {
               >
                 <div className="border-border/10 flex items-center justify-between border-b pb-2">
                   <h4 className="text-foreground flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
-                    <GitFork className="text-violet-500Rotate h-4 w-4" />
+                    <GitFork className="h-4 w-4 text-indigo-500" />
                     Derivation Tree Graph
                   </h4>
                   <button
                     onClick={() => setAddingToParentId(null)}
-                    className="flex cursor-pointer items-center gap-1 rounded border border-violet-500/20 bg-violet-500/5 px-2 py-1 text-[10px] font-bold text-violet-400 hover:text-violet-300"
+                    className="flex cursor-pointer items-center gap-1 rounded border border-indigo-500/20 bg-indigo-500/5 px-2 py-1 text-[10px] font-bold text-indigo-400 hover:text-indigo-300"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add Direct Derivation
@@ -445,8 +445,8 @@ export default function EtymologySection() {
                   </div>
                 ) : (
                   <div className="space-y-2 select-none">
-                    <div className="inline-block rounded border border-violet-500/20 bg-violet-500/5 p-2">
-                      <span className="font-bold text-violet-400">{activeRoot.root}</span>
+                    <div className="inline-block rounded border border-indigo-500/20 bg-indigo-500/5 p-2">
+                      <span className="font-bold text-indigo-400">{activeRoot.root}</span>
                       <span className="text-muted-foreground ml-2 text-[10px]">
                         /{activeRoot.ipa}/
                       </span>
@@ -455,7 +455,7 @@ export default function EtymologySection() {
                       </span>
                     </div>
 
-                    <div className="space-y-2 border-l border-violet-500/10 pl-4">
+                    <div className="space-y-2 border-l border-indigo-500/10 pl-4">
                       {derivationTree.map((node) => (
                         <RenderNode key={node.id} node={node} />
                       ))}
@@ -491,7 +491,7 @@ export default function EtymologySection() {
                         value={newDerivWord}
                         onChange={(e) => setNewDerivWord(e.target.value)}
                         placeholder="e.g. biology"
-                        className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-violet-500/50 focus:outline-none"
+                        className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-indigo-500/50 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -503,7 +503,7 @@ export default function EtymologySection() {
                         value={newDerivIpa}
                         onChange={(e) => setNewDerivIpa(e.target.value)}
                         placeholder="e.g. baɪˈɒlədʒi"
-                        className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-violet-500/50 focus:outline-none"
+                        className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-indigo-500/50 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -531,7 +531,7 @@ export default function EtymologySection() {
                         value={newDerivMorpheme}
                         onChange={(e) => setNewDerivMorpheme(e.target.value)}
                         placeholder="e.g. -ology"
-                        className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-violet-500/50 focus:outline-none"
+                        className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-indigo-500/50 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -577,7 +577,7 @@ export default function EtymologySection() {
                     <button
                       type="submit"
                       disabled={addDerivMutation.isPending}
-                      className="cursor-pointer rounded bg-violet-600 px-6 py-1.5 text-xs font-bold text-white transition-all hover:bg-violet-700 active:scale-95"
+                      className="cursor-pointer rounded bg-indigo-600 px-6 py-1.5 text-xs font-bold text-white transition-all hover:bg-indigo-700 active:scale-95"
                     >
                       Create Derivation
                     </button>
@@ -591,8 +591,8 @@ export default function EtymologySection() {
               className="border-border/20 h-full min-h-[460px] border"
             >
               <div className="flex h-full min-h-[460px] w-full flex-col items-center justify-center space-y-3 p-8 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 shadow-lg shadow-violet-500/5">
-                  <Network className="h-7 w-7 text-violet-400" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10 shadow-sm">
+                  <Network className="h-7 w-7 text-indigo-400" />
                 </div>
                 <div className="max-w-sm space-y-1">
                   <h4 className="text-foreground text-sm font-bold tracking-tight">
@@ -608,7 +608,7 @@ export default function EtymologySection() {
                   <button
                     type="button"
                     onClick={() => setSelectedRootId(roots[0].id)}
-                    className="mt-2 flex cursor-pointer items-center gap-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3.5 py-1.5 text-xs font-semibold text-violet-400 transition-all hover:bg-violet-500/20 active:scale-95"
+                    className="mt-2 flex cursor-pointer items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-1.5 text-xs font-semibold text-indigo-400 transition-all hover:bg-indigo-500/20 active:scale-95"
                   >
                     <span>Open &quot;{roots[0].root}&quot; Tree</span>
                   </button>

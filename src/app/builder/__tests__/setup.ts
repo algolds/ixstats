@@ -121,20 +121,23 @@ Object.defineProperty(window, "localStorage", {
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
+  readonly root: Element | Document | null = null;
+  readonly rootMargin: string = "";
+  readonly thresholds: ReadonlyArray<number> = [];
   disconnect() {}
   observe() {}
-  takeRecords() {
+  takeRecords(): IntersectionObserverEntry[] {
     return [];
   }
   unobserve() {}
-} as any;
+};
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
   disconnect() {}
   observe() {}
   unobserve() {}
-} as any;
+};
 
 // Mock window.matchMedia
 Object.defineProperty(window, "matchMedia", {
@@ -154,7 +157,7 @@ Object.defineProperty(window, "matchMedia", {
 // Suppress console errors in tests (optional - remove if you want to see all errors)
 const originalError = console.error;
 beforeAll(() => {
-  console.error = (...args: any[]) => {
+  console.error = (...args: (string | Error | object | number | boolean | null | undefined)[]) => {
     if (
       typeof args[0] === "string" &&
       (args[0].includes("Warning: ReactDOM.render") ||

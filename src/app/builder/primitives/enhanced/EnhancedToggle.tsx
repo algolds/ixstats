@@ -21,7 +21,7 @@ interface EnhancedToggleProps {
   variant?: "switch" | "checkbox" | "button";
   showIcons?: boolean;
   className?: string;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<{ className?: string }>;
 }
 
 export function EnhancedToggle({

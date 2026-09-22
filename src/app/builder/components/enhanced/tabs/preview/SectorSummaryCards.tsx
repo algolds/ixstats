@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Reports as PieChart, StatsReport as BarChart3, Group as Users } from "iconoir-react";
 import { GlassBarChart, GlassPieChart } from "~/components/ui/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
@@ -42,14 +42,14 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {/* Sector Composition */}
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="p-6">
+        <FacetCardContent className="p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <PieChart className="h-5 w-5" />
             <span>Sector Composition</span>
@@ -61,18 +61,18 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
             height={250}
             colors={DEFAULT_CHART_COLORS}
           />
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
 
       {/* Employment Types */}
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="p-6">
+        <FacetCardContent className="p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <BarChart3 className="h-5 w-5" />
             <span>Employment Types</span>
@@ -85,18 +85,18 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
             valueFormatter={(value) => `${value.toFixed(1)}%`}
             colors={DEFAULT_CHART_COLORS}
           />
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
 
       {/* Age Distribution */}
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="p-6">
+        <FacetCardContent className="p-6">
           <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Users className="h-5 w-5" />
             <span>Age Distribution</span>
@@ -108,8 +108,8 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
             height={250}
             colors={DEFAULT_CHART_COLORS}
           />
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
     </div>
   );
 }

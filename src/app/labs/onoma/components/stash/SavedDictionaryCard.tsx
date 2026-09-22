@@ -155,7 +155,7 @@ export function SavedDictionaryCard({
               </span>
             )}
             {dict.setName && (
-              <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-bold text-violet-600 dark:text-violet-400">
+              <span className="rounded bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
                 ⚇ {dict.setName}
               </span>
             )}
@@ -216,7 +216,7 @@ export function SavedDictionaryCard({
             {onNavigateExplore && (
               <button
                 onClick={() => onNavigateExplore("phonology", dict.values, dict.title)}
-                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-violet-500/10 px-2 text-[11px] font-semibold text-violet-600 transition-all hover:bg-violet-500/20 active:scale-[0.97] dark:text-violet-400"
+                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-indigo-500/10 px-2 text-[11px] font-semibold text-indigo-600 transition-all hover:bg-indigo-500/20 active:scale-[0.97] dark:text-indigo-400"
                 title="Inspect IPA acoustics & compare profile"
               >
                 <AudioLines className="h-3 w-3" />
@@ -227,7 +227,7 @@ export function SavedDictionaryCard({
             {onNavigateStudio && (
               <button
                 onClick={() => onNavigateStudio("shifts", dict.values, dict.title)}
-                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-pink-500/10 px-2 text-[11px] font-semibold text-pink-600 transition-all hover:bg-pink-500/20 active:scale-[0.97] dark:text-pink-400"
+                className="bg-onoma-primary/10 text-onoma-primary hover:bg-onoma-primary/20 dark:text-onoma-primary-light flex h-7 cursor-pointer items-center gap-1.5 rounded px-2 text-[11px] font-semibold transition-all active:scale-[0.97]"
                 title="Evolve words in Historical Sound Shifts"
               >
                 <GitFork className="h-3 w-3" />
