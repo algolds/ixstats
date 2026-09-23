@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { enhancedArchetypes, archetypeCategories } from "~/lib/archetypes/catalog";
 
@@ -50,7 +50,7 @@ export const archetypesAdminRouter = createTRPCRouter({
   // Get countries matching selected archetypes
 
   // Recalculate archetype matches for all countries
-  recalculateArchetypeMatches: protectedProcedure.mutation(async ({ ctx }) => {
+  recalculateArchetypeMatches: adminProcedure.mutation(async ({ ctx }) => {
     try {
       // Get all countries
       const countries = await ctx.db.country.findMany();
@@ -140,7 +140,7 @@ export const archetypesAdminRouter = createTRPCRouter({
   }),
 
   // Admin: Create new archetype
-  createArchetype: protectedProcedure
+  createArchetype: adminProcedure
     .input(createArchetypeSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -163,7 +163,7 @@ export const archetypesAdminRouter = createTRPCRouter({
     }),
 
   // Admin: Update archetype
-  updateArchetype: protectedProcedure
+  updateArchetype: adminProcedure
     .input(updateArchetypeSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, categoryId, tags, filterRules, ...updateData } = input;
@@ -190,7 +190,7 @@ export const archetypesAdminRouter = createTRPCRouter({
     }),
 
   // Admin: Delete/deactivate archetype
-  deleteArchetype: protectedProcedure
+  deleteArchetype: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -210,7 +210,7 @@ export const archetypesAdminRouter = createTRPCRouter({
     }),
 
   // Admin: Initialize archetype system with default data
-  initializeArchetypeSystem: protectedProcedure.mutation(async ({ ctx }) => {
+  initializeArchetypeSystem: adminProcedure.mutation(async ({ ctx }) => {
     try {
       // Create categories
       const createdCategories = [];

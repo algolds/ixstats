@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, adminProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { updateCardStats, transferCard } from "~/lib/cards/card-service";
 import { CardRarity } from "@prisma/client";
 import { globalCache } from "~/lib/cache";
@@ -167,7 +167,7 @@ export const cardsAdminRouter = createTRPCRouter({
   /**
    * Fetch category members from Wikimedia Commons API
    */
-  fetchCommonsCategoryMembers: protectedProcedure
+  fetchCommonsCategoryMembers: adminProcedure
     .input(
       z.object({
         category: z.string().min(1),
@@ -209,7 +209,7 @@ export const cardsAdminRouter = createTRPCRouter({
   /**
    * Import selected Wikimedia Commons flags as COMMONS_IMPORT cards
    */
-  importCommonsFlags: protectedProcedure
+  importCommonsFlags: adminProcedure
     .input(
       z.object({
         items: z.array(
@@ -257,20 +257,12 @@ export const cardsAdminRouter = createTRPCRouter({
               },
             });
             imported++;
-          } else {
-            skipped++;
-          }
 
-          // Create CardOwnership for admin importer so it appears in inventory & deck
-          if (card && ctx.user?.id) {
-            const existingOwnership = await ctx.db.cardOwnership.findFirst({
-              where: {
-                ownerId: ctx.user.id,
-                cardId: card.id,
-              },
-            });
-
-            if (!existingOwnership) {
+            // Grant the importer ownership of newly-created cards only — a freshly created card
+            // can't already be owned, so no existing-ownership lookup is needed here. Pre-existing
+            // cards (the `skipped` branch) are left alone: importing shouldn't grant ownership of
+            // cards someone else may already own.
+            if (ctx.user?.id) {
               await ctx.db.cardOwnership.create({
                 data: {
                   id: `card_own_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
@@ -282,6 +274,8 @@ export const cardsAdminRouter = createTRPCRouter({
                 },
               });
             }
+          } else {
+            skipped++;
           }
         }
 
