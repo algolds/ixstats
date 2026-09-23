@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  rateLimitedPublicProcedure,
+  adminProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 // Import the wiki search service
@@ -392,7 +397,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
   // Get posts by Clerk User ID - shows all posts from all accounts owned by this user
 
   // Trigger citizen reaction to a post
-  triggerCitizenReaction: publicProcedure
+  triggerCitizenReaction: adminProcedure
     .input(z.object({ postId: z.string() }))
     .mutation(async ({ input }) => {
       const { generateAndPostCitizenReaction } = await import("~/lib/activity");
@@ -401,7 +406,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
     }),
 
   // Calculate and store country mood metrics
-  calculateCountryMoodMetrics: publicProcedure.mutation(async ({ ctx }) => {
+  calculateCountryMoodMetrics: adminProcedure.mutation(async ({ ctx }) => {
     const { db } = ctx;
     const { analyzePostSentiment } = await import("~/lib/ai");
     const currentIxTime = IxTime.getCurrentIxTime();

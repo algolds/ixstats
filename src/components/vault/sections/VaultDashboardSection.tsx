@@ -50,15 +50,13 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
     enabled: !!user,
   });
 
-  const { data: balanceData, refetch: refetchBalance } = api.vault.getBalance.useQuery(
-    { userId: user?.id ?? "" },
-    { enabled: !!user?.id }
-  );
+  const { data: balanceData, refetch: refetchBalance } = api.vault.getBalance.useQuery(undefined, {
+    enabled: !!user?.id,
+  });
 
-  const { data: levelData } = api.vault.getVaultLevel.useQuery(
-    { userId: user?.id ?? "" },
-    { enabled: !!user?.id }
-  );
+  const { data: levelData } = api.vault.getVaultLevel.useQuery(undefined, {
+    enabled: !!user?.id,
+  });
 
   const { data: topCardsData, isLoading: topCardsLoading } = api.cards.getMyCards.useQuery(
     { sortBy: "value" },

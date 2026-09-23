@@ -50,7 +50,7 @@ export function VaultWidget() {
   });
 
   const { data: balanceData, isLoading: balanceLoading } = api.vault.getBalance.useQuery(
-    { userId: userId ?? "" },
+    undefined,
     {
       enabled: !!userId && !!userData?.countryId,
       refetchInterval: 30000, // Auto-refresh every 30s

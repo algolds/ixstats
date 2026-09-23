@@ -37,26 +37,22 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
   /**
    * Get vault balance and stats for a user
    */
-  getBalance: protectedProcedure
-    .input(
-      z.object({
-        userId: z.string().min(1, "User ID is required"),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const cacheKey = `user_vault_balance:${input.userId}`;
-        const cached = await globalCache.get<any>(cacheKey);
-        if (cached) return cached;
+  getBalance: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      // Guaranteed non-null by protectedProcedure's authMiddleware.
+      const userId = ctx.auth.userId;
+      const cacheKey = `user_vault_balance:${userId}`;
+      const cached = await globalCache.get<any>(cacheKey);
+      if (cached) return cached;
 
-        const balance = await vaultService.getBalance(input.userId, ctx.db as any);
-        await globalCache.set(cacheKey, balance, { ttl: 30 });
-        return balance;
-      } catch (error) {
-        console.error("[Vault Router] Error getting balance:", error);
-        throw new Error("Failed to retrieve vault balance", { cause: error });
-      }
-    }),
+      const balance = await vaultService.getBalance(userId, ctx.db as any);
+      await globalCache.set(cacheKey, balance, { ttl: 30 });
+      return balance;
+    } catch (error) {
+      console.error("[Vault Router] Error getting balance:", error);
+      throw new Error("Failed to retrieve vault balance", { cause: error });
+    }
+  }),
 
   /**
    * Get transaction history with pagination
@@ -114,27 +110,23 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
   /**
    * Get vault level
    */
-  getVaultLevel: protectedProcedure
-    .input(
-      z.object({
-        userId: z.string().min(1, "User ID is required"),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const balance = await vaultService.getBalance(input.userId, ctx.db as any);
+  getVaultLevel: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      // Guaranteed non-null by protectedProcedure's authMiddleware.
+      const userId = ctx.auth.userId;
+      const balance = await vaultService.getBalance(userId, ctx.db as any);
 
-        return {
-          vaultLevel: balance.vaultLevel,
-          vaultXp: balance.vaultXp,
-          nextLevelXp: balance.vaultLevel * 1000,
-          progress: (balance.vaultXp % 1000) / 1000,
-        };
-      } catch (error) {
-        console.error("[Vault Router] Error getting vault level:", error);
-        throw new Error("Failed to retrieve vault level", { cause: error });
-      }
-    }),
+      return {
+        vaultLevel: balance.vaultLevel,
+        vaultXp: balance.vaultXp,
+        nextLevelXp: balance.vaultLevel * 1000,
+        progress: (balance.vaultXp % 1000) / 1000,
+      };
+    } catch (error) {
+      console.error("[Vault Router] Error getting vault level:", error);
+      throw new Error("Failed to retrieve vault level", { cause: error });
+    }
+  }),
 
   /**
    * Get today's earnings summary

@@ -20,15 +20,12 @@ export function useVaultBalance() {
     data: balanceData,
     isLoading,
     refetch,
-  } = api.vault.getBalance.useQuery(
-    { userId: userId ?? "" },
-    {
-      enabled: !!userId,
-      refetchInterval,
-      refetchOnWindowFocus: true,
-      staleTime: 30000,
-    }
-  );
+  } = api.vault.getBalance.useQuery(undefined, {
+    enabled: !!userId,
+    refetchInterval,
+    refetchOnWindowFocus: true,
+    staleTime: 30000,
+  });
 
   return {
     balance: balanceData?.credits ?? 0,

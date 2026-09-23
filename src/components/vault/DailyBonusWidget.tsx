@@ -42,10 +42,9 @@ export const DailyBonusWidget: React.FC = () => {
     message?: string;
   } | null>(null);
 
-  const { data: balanceData, isLoading } = api.vault.getBalance.useQuery(
-    { userId: userId ?? "" },
-    { enabled: !!userId }
-  );
+  const { data: balanceData, isLoading } = api.vault.getBalance.useQuery(undefined, {
+    enabled: !!userId,
+  });
 
   // Auto-open modal on first load if claim is available
   useEffect(() => {

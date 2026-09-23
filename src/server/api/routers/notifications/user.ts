@@ -436,57 +436,50 @@ export const notificationsUserRouter = createTRPCRouter({
     }),
 
   // Get unread count (for badge display)
-  // Changed from readOnlyProcedure to publicProcedure to prevent auth errors
-  // This endpoint is called before auth completes and should gracefully handle unauthenticated users
-  getUnreadCount: publicProcedure
-    .input(
-      z
-        .object({
-          userId: z.string().optional(),
-        })
-        .optional()
-    )
-    .query(async ({ ctx, input }) => {
-      const { db } = ctx;
-      const userId = input?.userId || ctx.auth?.userId;
+  // Stays publicProcedure — called before auth completes and must gracefully handle
+  // unauthenticated users. Identity comes from ctx only (never input): an attacker-supplied
+  // userId would otherwise let anyone read another user's unread notification count.
+  getUnreadCount: publicProcedure.query(async ({ ctx }) => {
+    const { db } = ctx;
+    const userId = ctx.auth?.userId;
 
-      // Gracefully return 0 for unauthenticated users
-      if (!userId) {
-        return { count: 0 };
-      }
+    // Gracefully return 0 for unauthenticated users
+    if (!userId) {
+      return { count: 0 };
+    }
 
-      // Get user profile to find their country
-      const userProfile = await db.user.findFirst({
-        where: {
-          OR: [{ clerkUserId: userId }, { id: userId }],
-        },
-        include: { country: true },
-      });
+    // Get user profile to find their country
+    const userProfile = await db.user.findFirst({
+      where: {
+        OR: [{ clerkUserId: userId }, { id: userId }],
+      },
+      include: { country: true },
+    });
 
-      const matchedUserId = userProfile?.id ?? userId;
-      const matchedClerkId = userProfile?.clerkUserId ?? userId;
+    const matchedUserId = userProfile?.id ?? userId;
+    const matchedClerkId = userProfile?.clerkUserId ?? userId;
 
-      // Build OR conditions - include all user id variations and countryId
-      const orConditions: any[] = [
-        { userId: matchedUserId },
-        { userId: matchedClerkId },
-        {
-          AND: [{ userId: null }, { countryId: null }],
-        },
-      ];
+    // Build OR conditions - include all user id variations and countryId
+    const orConditions: any[] = [
+      { userId: matchedUserId },
+      { userId: matchedClerkId },
+      {
+        AND: [{ userId: null }, { countryId: null }],
+      },
+    ];
 
-      if (userProfile?.countryId) {
-        orConditions.push({ countryId: userProfile.countryId });
-      }
+    if (userProfile?.countryId) {
+      orConditions.push({ countryId: userProfile.countryId });
+    }
 
-      const count = await db.notification.count({
-        where: {
-          AND: [{ OR: orConditions }, { read: false }, { dismissed: false }],
-        },
-      });
+    const count = await db.notification.count({
+      where: {
+        AND: [{ OR: orConditions }, { read: false }, { dismissed: false }],
+      },
+    });
 
-      return { count };
-    }),
+    return { count };
+  }),
 
   // Get user notification preferences
 

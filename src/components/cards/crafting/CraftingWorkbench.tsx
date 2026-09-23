@@ -75,10 +75,9 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
   );
 
   // Fetch user vault balance
-  const { data: vaultBalance } = api.vault.getBalance.useQuery(
-    { userId: "" }, // Will be filled by protectedProcedure
-    { enabled: !!recipeId }
-  );
+  const { data: vaultBalance } = api.vault.getBalance.useQuery(undefined, {
+    enabled: !!recipeId,
+  });
 
   const craftMutation = api.crafting.craftCard.useMutation({
     onSuccess: (result) => {
