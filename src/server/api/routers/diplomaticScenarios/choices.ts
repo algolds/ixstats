@@ -3,8 +3,9 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 /**
  * Diplomatic Scenarios Router
@@ -28,7 +29,7 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
    * Record player choice and update scenario status
    * Creates ScenarioGeneration record for historical tracking
    */
-  recordChoice: publicProcedure
+  recordChoice: protectedProcedure
     .input(
       z.object({
         scenarioId: z.string().cuid(),
@@ -38,6 +39,8 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       try {
         const scenario = await ctx.db.culturalScenario.findUnique({
           where: { id: input.scenarioId },
@@ -50,7 +53,18 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
           });
         }
 
+        if (
+          input.countryId !== scenario.country1Id &&
+          input.countryId !== scenario.country2Id
+        ) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "This scenario does not involve your country",
+          });
+        }
+
         // Check if scenario is still active
+        // NOTE: status check + update is not atomic; fixed in plan 331.
         if (scenario.status !== "active" && scenario.status !== "pending") {
           throw new TRPCError({
             code: "BAD_REQUEST",
