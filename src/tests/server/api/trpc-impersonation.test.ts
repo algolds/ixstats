@@ -340,17 +340,12 @@ describe("TRPC Context Impersonation", () => {
         impersonatorId: "admin_a_id",
       } as any);
 
-      let caught: any;
-      try {
-        await caller.adminOnly();
-        throw new Error("should have thrown");
-      } catch (e) {
-        caught = e;
-      }
-      expect(caught).toBeInstanceOf(TRPCError);
       // adminMiddleware throws a ForbiddenError (~/lib/app-error), which the tRPC caller wraps
       // as TRPCError{code: INTERNAL_SERVER_ERROR, cause: ForbiddenError{code: "FORBIDDEN"}}.
-      expect(caught.cause?.code).toBe("FORBIDDEN");
+      await expect(caller.adminOnly()).rejects.toBeInstanceOf(TRPCError);
+      await expect(caller.adminOnly()).rejects.toMatchObject({
+        cause: { code: "FORBIDDEN" },
+      });
     });
 
     it("resolves normally for an admin who is not impersonating anyone", async () => {

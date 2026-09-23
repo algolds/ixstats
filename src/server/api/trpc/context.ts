@@ -10,6 +10,7 @@ import { Cache } from "~/lib/cache";
 import { UnauthorizedError } from "~/lib/app-error";
 import { UserManagementService, isSystemOwner } from "~/lib/auth";
 import { decidePlayAs, isRequesterStaff, recordPlayAsAudit } from "./impersonation";
+import { resolveRateLimitIdentifier } from "./rate-limit-identity";
 
 const VERBOSE = process.env.TRPC_VERBOSE === "true";
 
@@ -112,7 +113,9 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
             isSystemOwner,
           });
 
-          const auditIp = opts.headers.get("x-forwarded-for") || opts.headers.get("x-real-ip");
+          // Trusted IP sources only (see resolveRateLimitIdentifier) — never a client-controlled
+          // forwarding header, so a spoofed value can't pollute the audit trail either.
+          const auditIp = opts.headers.get("cf-connecting-ip") || opts.headers.get("x-real-ip");
           const auditUserAgent = opts.headers.get("user-agent");
 
           if (decision.kind === "granted") {
@@ -212,12 +215,13 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
     console.warn("[TRPC Context] Auth extraction failed:", error);
   }
 
-  // Get rate limit identifier from headers (set by middleware)
-  const rateLimitIdentifier =
-    opts.headers.get("x-ratelimit-identifier") ||
-    opts.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    opts.headers.get("x-real-ip") ||
-    "anonymous";
+  // Rate limit identity comes from trusted sources only (never a client-supplied header) — see
+  // resolveRateLimitIdentifier for the trust model. Keyed on the *real* (pre-impersonation)
+  // identity so play-as can't give an admin a fresh rate-limit bucket.
+  const rateLimitIdentifier = resolveRateLimitIdentifier(
+    opts.headers,
+    impersonatorId ?? auth?.userId ?? null
+  );
 
   return {
     db,
