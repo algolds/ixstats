@@ -39,15 +39,18 @@ describe("resolveRateLimitIdentifier (pure function)", () => {
 // deliberately NOT imported from "@jest/globals" — see the note in trpc-impersonation.test.ts:
 // jest.mock() factories below call jest.fn() inline, and importing `jest` under that same name
 // would shadow the ambient global those hoisted factories rely on.
+interface MockClerkRequest {
+  auth?: { userId: string } | null;
+}
 jest.mock("@clerk/nextjs/server", () => ({
   __esModule: true,
-  getAuth: (req: any) => req?.auth ?? null,
+  getAuth: (req: MockClerkRequest | null) => req?.auth ?? null,
   verifyToken: jest.fn(),
   clerkClient: jest.fn(),
 }));
 jest.mock("@clerk/nextjs", () => ({
   __esModule: true,
-  getAuth: (req: any) => req?.auth ?? null,
+  getAuth: (req: MockClerkRequest | null) => req?.auth ?? null,
   verifyToken: jest.fn(),
   clerkClient: jest.fn(),
 }));
