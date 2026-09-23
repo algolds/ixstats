@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "lib": ["dom", "dom.iterable", "ES2022"],
+    "allowJs": false,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "checkJs": false,
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "importHelpers": true,
+    "paths": {
+      "*": ["./*"],
+      "~/*": ["./src/*"],
+      "~/components/*": ["./src/components/*"],
+      "~/lib/utils": ["./src/lib/utils"],
+      "~/components/ui/*": ["./src/components/ui/*"],
+      "~/lib/*": ["./src/lib/*"],
+      "~/hooks/*": ["./src/hooks/*"],
+      "~/server/*": ["./src/server/*"],
+      "@/*": ["./src/*"],
+      "@turf/turf": ["./node_modules/@turf/turf/index.d.ts"]
+    },
+    "types": ["node"],
+    "assumeChangesOnlyAffectDirectDependencies": true,
+    "disableSourceOfProjectReferenceRedirect": true,
+    "skipDefaultLibCheck": true,
+    "noPropertyAccessFromIndexSignature": false
+  }
+}
