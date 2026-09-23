@@ -15,6 +15,7 @@ import { Button } from "~/components/ui/button";
 // Tree-shakeable Turf imports for containment checks
 import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
+import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
 export interface MapPickerModalProps {
   isOpen: boolean;
@@ -82,7 +83,7 @@ export function MapPickerModal({
 
     // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
     // named exports (Map, Popup, …).
-    const maplibregl = await import("maplibre-gl");
+    const maplibregl = await loadMaplibre();
     await import("maplibre-gl/dist/maplibre-gl.css");
 
     if (mapRef.current) {

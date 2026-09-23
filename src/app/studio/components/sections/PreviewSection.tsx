@@ -3,6 +3,7 @@
 import React, { useCallback, useRef, useEffect } from "react";
 import { useStudioState } from "../../context/StudioStateContext";
 import { api } from "~/trpc/react";
+import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
 export function PreviewSection() {
   const { state, dispatch, navigateTo } = useStudioState();
@@ -71,7 +72,7 @@ export function PreviewSection() {
     (async () => {
       // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
       // named exports (Map, Popup, …).
-      const maplibregl = await import("maplibre-gl");
+      const maplibregl = await loadMaplibre();
       if (!mounted || !mapContainerRef.current) return;
 
       // Clean up previous map

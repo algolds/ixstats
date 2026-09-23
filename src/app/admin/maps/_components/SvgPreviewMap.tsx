@@ -10,6 +10,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { buildBaseStyle } from "~/lib/maps/map-config";
 import type { FeatureCollection } from "geojson";
 import type { Map as MapLibreMap } from "maplibre-gl";
+import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
 interface SvgPreviewMapProps {
   geojson: FeatureCollection | null;
@@ -32,7 +33,7 @@ export function SvgPreviewMap({
 
     // Dynamic import for MapLibre (browser-only). maplibre-gl 6 is ESM-only,
     // so the module namespace itself carries the named exports (Map, Popup, …).
-    const maplibregl = await import("maplibre-gl");
+    const maplibregl = await loadMaplibre();
     await import("maplibre-gl/dist/maplibre-gl.css");
 
     // Clean up existing map

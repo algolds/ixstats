@@ -106,7 +106,7 @@
     "load:rate-limiting": "bun scripts/load-testing/test-rate-limiting.ts",
     "post:deploy:validate": "bun scripts/deployment/post-deployment-validation.ts",
     "postbuild": "./scripts/post-build.sh",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && mkdir -p public/maplibre && cp node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs node_modules/maplibre-gl/dist/maplibre-gl-shared.mjs public/maplibre/",
     "prebuild": "node ./scripts/write-build-version.js",
     "preproduction": "bun run load:all && bun run verify:production",
     "preview": "bun run build && bun run start:next",

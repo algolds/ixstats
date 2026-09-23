@@ -6,6 +6,7 @@ import { api } from "~/trpc/react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
 import { Portal, type BaseModalProps } from "./types";
+import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
 type MapCoordsTab = "coords" | "mapembed";
 
@@ -106,7 +107,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
 
     // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
     // named exports (Map, Popup, …).
-    const maplibregl = await import("maplibre-gl");
+    const maplibregl = await loadMaplibre();
     await import("maplibre-gl/dist/maplibre-gl.css");
 
     if (mapRef.current) {

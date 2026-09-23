@@ -23,6 +23,7 @@
 
 import { buildBaseStyle, type ProjectionMode } from "./map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
+import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
 export type MapRole = "world" | "editor";
 
@@ -100,7 +101,7 @@ function ensureRole(role: MapRole, opts: AcquireOpts): RoleState {
   const t0 = typeof performance !== "undefined" ? performance.now() : 0;
 
   st.base = (async () => {
-    const mod = await import("maplibre-gl");
+    const mod = await loadMaplibre();
     const maplibregl = ("Map" in mod ? mod : (mod as any).default) as any;
 
     const map = new maplibregl.Map({

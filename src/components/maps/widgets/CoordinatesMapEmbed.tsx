@@ -12,6 +12,7 @@ import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { buildBaseStyle, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { api } from "~/trpc/react";
 import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
+import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
 export interface CoordinatesMapEmbedProps {
   lat: number;
@@ -88,7 +89,7 @@ export function CoordinatesMapEmbed({
 
     // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
     // named exports (Map, Popup, …).
-    const maplibregl = await import("maplibre-gl");
+    const maplibregl = await loadMaplibre();
     await import("maplibre-gl/dist/maplibre-gl.css");
 
     // Clean up existing
