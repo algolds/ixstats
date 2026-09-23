@@ -37,9 +37,9 @@ export const managementCreateProcedures = {
         foundationCountry: z.string().nullable(),
         economicInputs: countryEconomicInputsSchema,
         governmentComponents: z.array(countryGovernmentComponentSchema).optional(),
-        taxSystemData: countryTaxSystemInputSchema.optional(),
-        governmentStructure: countryGovernmentStructureInputSchema.optional(),
-        economyBuilderState: countryEconomyBuilderStateSchema.optional(),
+        taxSystemData: countryTaxSystemInputSchema.nullish(),
+        governmentStructure: countryGovernmentStructureInputSchema.nullish(),
+        economyBuilderState: countryEconomyBuilderStateSchema.nullish(),
         archetypeId: z.string().optional(),
       })
     )

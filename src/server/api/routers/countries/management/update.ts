@@ -35,9 +35,9 @@ export const managementUpdateProcedures = {
         name: z.string(),
         economicInputs: countryEconomicInputsSchema,
         governmentComponents: z.array(countryGovernmentComponentSchema).optional(),
-        taxSystemData: countryTaxSystemInputSchema.optional(),
-        governmentStructure: countryGovernmentStructureInputSchema.optional(),
-        economyBuilderState: countryEconomyBuilderStateSchema.optional(),
+        taxSystemData: countryTaxSystemInputSchema.nullish(),
+        governmentStructure: countryGovernmentStructureInputSchema.nullish(),
+        economyBuilderState: countryEconomyBuilderStateSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
