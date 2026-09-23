@@ -1268,12 +1268,10 @@ export function htmlToDiscordMarkdown(html: string): string {
 
   try {
     const parser = new DOMParser({
-      errorHandler: {
-        warning: () => {},
-        error: () => {},
-        fatalError: (err) => {
-          throw err;
-        },
+      onError: (level, message) => {
+        if (level === "fatalError") {
+          throw new Error(message);
+        }
       },
     });
 

@@ -209,7 +209,7 @@
     "@tsparticles/react": "^4.3.2",
     "@tsparticles/slim": "^4.3.2",
     "@turf/turf": "^7.4.0",
-    "@xmldom/xmldom": "^0.8.14",
+    "@xmldom/xmldom": "^0.9.12",
     "@xyflow/react": "^12.11.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
