@@ -69,7 +69,8 @@ export function PreviewSection() {
     let mounted = true;
 
     (async () => {
-      const maplibregl = (await import("maplibre-gl")).default;
+      const mlglMod = await import("maplibre-gl");
+      const maplibregl = ("Map" in mlglMod ? mlglMod : (mlglMod as any).default) as any;
       if (!mounted || !mapContainerRef.current) return;
 
       // Clean up previous map

@@ -133,8 +133,13 @@ export function useWorldMapInteractions({
     (pt: { x: number; y: number }): boolean => {
       if (!map) return false;
       try {
-        if (map.transform && typeof (map.transform as any).isPointOnMapSurface === "function") {
-          return (map.transform as any).isPointOnMapSurface(pt);
+        // `transform` is an undocumented internal that MapLibre 6 no longer
+        // exposes on the public Map type (removed along with the Camera
+        // refactor); still probed defensively at runtime, with the geometric
+        // fallback below covering both the "missing" and "removed" cases.
+        const mapTransform = (map as any).transform;
+        if (mapTransform && typeof mapTransform.isPointOnMapSurface === "function") {
+          return mapTransform.isPointOnMapSurface(pt);
         }
       } catch (err) {
         console.debug("[useWorldMapInteractions] Point surface check error:", err);

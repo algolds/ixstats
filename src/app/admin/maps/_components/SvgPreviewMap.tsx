@@ -9,6 +9,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { buildBaseStyle } from "~/lib/maps/map-config";
 import type { FeatureCollection } from "geojson";
+import type { Map as MapLibreMap } from "maplibre-gl";
 
 interface SvgPreviewMapProps {
   geojson: FeatureCollection | null;
@@ -24,13 +25,15 @@ export function SvgPreviewMap({
   className = "",
 }: SvgPreviewMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
 
   const initMap = useCallback(async () => {
     if (!containerRef.current || !geojson || geojson.features.length === 0) return;
 
-    // Dynamic import for MapLibre (browser-only)
-    const maplibregl = (await import("maplibre-gl")).default;
+    // Dynamic import for MapLibre (browser-only). maplibre-gl 6 is ESM-only and
+    // no longer ships a `default` export; fall back to it only for older shapes.
+    const mlglMod = await import("maplibre-gl");
+    const maplibregl = ("Map" in mlglMod ? mlglMod : (mlglMod as any).default) as any;
     await import("maplibre-gl/dist/maplibre-gl.css");
 
     // Clean up existing map

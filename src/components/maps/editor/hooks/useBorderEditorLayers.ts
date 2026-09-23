@@ -393,12 +393,18 @@ export function useBorderEditorLayers({
       if (!draggingVertex.current) map.getCanvas().style.cursor = "";
     };
 
+    // MapLibre 6 requires a layer id for the "mouseenter"/"mouseleave" map
+    // events (they are layer-hover events, not canvas-hover events); this
+    // handler tracks the cursor leaving the whole map canvas, so it's wired
+    // to the container's native DOM "mouseleave" instead.
+    const mapContainer = map.getContainer();
+
     map.on("click", handleClick);
     map.on("mousedown", "vertices-circles", handleVertexMousedown);
     map.on("mousedown", handleBrushMousedown);
     map.on("mousemove", handleMousemove);
     map.on("mouseup", handleMouseup);
-    map.on("mouseleave", handleMouseleave);
+    mapContainer.addEventListener("mouseleave", handleMouseleave);
     map.on("mouseenter", "vertices-circles", handleVertexEnter);
     map.on("mouseleave", "vertices-circles", handleVertexLeave);
 
@@ -409,7 +415,7 @@ export function useBorderEditorLayers({
       map.off("mousedown", handleBrushMousedown);
       map.off("mousemove", handleMousemove);
       map.off("mouseup", handleMouseup);
-      map.off("mouseleave", handleMouseleave);
+      mapContainer.removeEventListener("mouseleave", handleMouseleave);
       map.off("mouseenter", "vertices-circles", handleVertexEnter);
       map.off("mouseleave", "vertices-circles", handleVertexLeave);
 

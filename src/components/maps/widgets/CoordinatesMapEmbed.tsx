@@ -86,7 +86,10 @@ export function CoordinatesMapEmbed({
   const initMap = useCallback(async () => {
     if (!containerRef.current) return;
 
-    const maplibregl = (await import("maplibre-gl")).default;
+    // maplibre-gl 6 is ESM-only and no longer ships a `default` export; fall
+    // back to it only for older shapes.
+    const mlglMod = await import("maplibre-gl");
+    const maplibregl = ("Map" in mlglMod ? mlglMod : (mlglMod as any).default) as any;
     await import("maplibre-gl/dist/maplibre-gl.css");
 
     // Clean up existing
