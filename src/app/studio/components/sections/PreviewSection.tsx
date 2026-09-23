@@ -69,8 +69,9 @@ export function PreviewSection() {
     let mounted = true;
 
     (async () => {
-      const mlglMod = await import("maplibre-gl");
-      const maplibregl = ("Map" in mlglMod ? mlglMod : (mlglMod as any).default) as any;
+      // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
+      // named exports (Map, Popup, …).
+      const maplibregl = await import("maplibre-gl");
       if (!mounted || !mapContainerRef.current) return;
 
       // Clean up previous map

@@ -30,10 +30,9 @@ export function SvgPreviewMap({
   const initMap = useCallback(async () => {
     if (!containerRef.current || !geojson || geojson.features.length === 0) return;
 
-    // Dynamic import for MapLibre (browser-only). maplibre-gl 6 is ESM-only and
-    // no longer ships a `default` export; fall back to it only for older shapes.
-    const mlglMod = await import("maplibre-gl");
-    const maplibregl = ("Map" in mlglMod ? mlglMod : (mlglMod as any).default) as any;
+    // Dynamic import for MapLibre (browser-only). maplibre-gl 6 is ESM-only,
+    // so the module namespace itself carries the named exports (Map, Popup, …).
+    const maplibregl = await import("maplibre-gl");
     await import("maplibre-gl/dist/maplibre-gl.css");
 
     // Clean up existing map
