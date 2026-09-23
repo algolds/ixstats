@@ -10,6 +10,11 @@
  *   | 0 0 1 |
  */
 
+// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
+// global lib.dom Element (it was in 0.8). All "XmlElement" values in this file are
+// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
+type XmlElement = import("@xmldom/xmldom").Element;
+
 // ──────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────
@@ -159,10 +164,10 @@ function rotateMatrix(radians: number): SvgMatrix {
  *
  * Also handles `viewBox` on inner `<svg>` elements.
  */
-export function getAccumulatedTransform(el: Element, stopAt: Element): SvgMatrix {
+export function getAccumulatedTransform(el: XmlElement, stopAt: XmlElement): SvgMatrix {
   let result: SvgMatrix = { ...IDENTITY_SVG_MATRIX };
 
-  let current: Element | null = el;
+  let current: XmlElement | null = el;
   while (current && current !== stopAt) {
     const transformAttr = current.getAttribute("transform");
     if (transformAttr) {
@@ -179,7 +184,7 @@ export function getAccumulatedTransform(el: Element, stopAt: Element): SvgMatrix
       }
     }
 
-    current = current.parentNode as Element | null;
+    current = current.parentNode as XmlElement | null;
   }
 
   return result;
@@ -189,7 +194,7 @@ export function getAccumulatedTransform(el: Element, stopAt: Element): SvgMatrix
  * Compute the implicit transform from a <svg> element's viewBox to its
  * width/height (preserveAspectRatio is assumed to be default "xMidYMid meet").
  */
-function viewBoxTransform(svgEl: Element): SvgMatrix | null {
+function viewBoxTransform(svgEl: XmlElement): SvgMatrix | null {
   const vb = svgEl.getAttribute("viewBox");
   if (!vb) return null;
 

@@ -31,6 +31,13 @@ export interface PreprocessResult {
 // oxlint-disable-next-line typescript/no-unused-vars
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+// @xmldom/xmldom@0.9's Element/Node types are no longer structurally assignable to
+// the global lib.dom Element/Node (they were in 0.8, minus EventTarget methods).
+// All "XmlElement"/"XmlNode" values in this file are xmldom-parsed nodes, never
+// real DOM nodes, so alias to the package's own types.
+type XmlElement = import("@xmldom/xmldom").Element;
+type XmlNode = import("@xmldom/xmldom").Node;
+
 /** Tags that carry no visible shape data and can be stripped. */
 const STRIP_TAGS = new Set([
   "metadata",
@@ -142,12 +149,12 @@ export function preprocessSvg(svgContent: string): PreprocessResult {
 // ──────────────────────────────────────────────
 
 /** Strip non-visual elements from the SVG DOM. */
-function stripNonVisualElements(root: Element): number {
+function stripNonVisualElements(root: XmlElement): number {
   let removed = 0;
-  const toRemove: Node[] = [];
+  const toRemove: XmlNode[] = [];
 
   // Collect all elements to remove
-  function walk(el: Element) {
+  function walk(el: XmlElement) {
     for (let i = 0; i < el.childNodes.length; i++) {
       const child = el.childNodes[i];
       if (child.nodeType === 8) {
@@ -156,7 +163,7 @@ function stripNonVisualElements(root: Element): number {
         continue;
       }
       if (child.nodeType !== 1) continue;
-      const childEl = child as Element;
+      const childEl = child as XmlElement;
       const tag = (childEl.localName ?? childEl.tagName?.split(":").pop() ?? "").toLowerCase();
 
       if (STRIP_TAGS.has(tag)) {
@@ -187,11 +194,11 @@ function stripNonVisualElements(root: Element): number {
 }
 
 /** Within a <defs>, keep clipPath and mask elements, strip everything else. */
-function stripDefsContent(defs: Element, toRemove: Node[]) {
+function stripDefsContent(defs: XmlElement, toRemove: XmlNode[]) {
   for (let i = 0; i < defs.childNodes.length; i++) {
     const child = defs.childNodes[i];
     if (child.nodeType !== 1) continue;
-    const tag = ((child as Element).localName ?? "").toLowerCase();
+    const tag = ((child as XmlElement).localName ?? "").toLowerCase();
     // Keep clipPath, mask, and style (CSS classes define fills/strokes in AI exports)
     if (tag !== "clippath" && tag !== "mask" && tag !== "style") {
       toRemove.push(child);
@@ -205,12 +212,12 @@ function stripDefsContent(defs: Element, toRemove: Node[]) {
  * Adobe Illustrator / Affinity Designer exports where fill, stroke, etc.
  * are defined entirely via CSS classes (e.g., .cls-1 { fill: #ccebc5 }).
  */
-function inlineCssClasses(root: Element, _log: string[]): number {
+function inlineCssClasses(root: XmlElement, _log: string[]): number {
   // Find all <style> elements in the SVG
-  const styleEls: Element[] = [];
-  const walk = (el: Element) => {
+  const styleEls: XmlElement[] = [];
+  const walk = (el: XmlElement) => {
     for (let i = 0; i < el.childNodes.length; i++) {
-      const child = el.childNodes[i] as Element;
+      const child = el.childNodes[i] as XmlElement;
       if (!child || child.nodeType !== 1) continue;
       const tag = (child.localName ?? child.tagName?.split(":").pop() ?? "").toLowerCase();
       if (tag === "style") {
@@ -299,7 +306,7 @@ function inlineCssClasses(root: Element, _log: string[]): number {
 
   let inlinedCount = 0;
 
-  const applyToElement = (el: Element) => {
+  const applyToElement = (el: XmlElement) => {
     const classAttr = el.getAttribute("class");
     if (classAttr) {
       const classes = classAttr.split(/\s+/);
@@ -330,7 +337,7 @@ function inlineCssClasses(root: Element, _log: string[]): number {
 
     // Recurse into children
     for (let i = 0; i < el.childNodes.length; i++) {
-      const child = el.childNodes[i] as Element;
+      const child = el.childNodes[i] as XmlElement;
       if (child?.nodeType === 1) applyToElement(child);
     }
   };
@@ -340,7 +347,7 @@ function inlineCssClasses(root: Element, _log: string[]): number {
 }
 
 /** Ensure the SVG has a valid viewBox. */
-function normalizeViewBox(root: Element, log: string[]) {
+function normalizeViewBox(root: XmlElement, log: string[]) {
   const viewBox = root.getAttribute("viewBox");
   if (viewBox) return; // Already has viewBox
 
@@ -354,15 +361,15 @@ function normalizeViewBox(root: Element, log: string[]) {
 }
 
 /** Remove decorative elements: very thin strokes with no fill, display:none. */
-function removeDecorativeElements(root: Element): number {
+function removeDecorativeElements(root: XmlElement): number {
   let removed = 0;
-  const toRemove: Element[] = [];
+  const toRemove: XmlElement[] = [];
 
-  function walk(el: Element) {
+  function walk(el: XmlElement) {
     for (let i = 0; i < el.childNodes.length; i++) {
       const child = el.childNodes[i];
       if (child.nodeType !== 1) continue;
-      const childEl = child as Element;
+      const childEl = child as XmlElement;
       const tag = (childEl.localName ?? "").toLowerCase();
 
       if (SHAPE_TAGS.has(tag)) {
@@ -388,7 +395,7 @@ function removeDecorativeElements(root: Element): number {
 }
 
 /** Check if a shape element is purely decorative (thin border, no fill, invisible). */
-function isDecorativeShape(el: Element): boolean {
+function isDecorativeShape(el: XmlElement): boolean {
   const style = el.getAttribute("style") ?? "";
   const display = el.getAttribute("display") ?? "";
 
@@ -425,16 +432,16 @@ function isDecorativeShape(el: Element): boolean {
  * Remove shapes with very few points (likely artifacts or borders).
  * Threshold: shapes with < 4 points in their path data.
  */
-function removeTinyFragments(root: Element): number {
+function removeTinyFragments(root: XmlElement): number {
   let removed = 0;
-  const shapes: Array<{ el: Element; pointCount: number }> = [];
+  const shapes: Array<{ el: XmlElement; pointCount: number }> = [];
 
   // Collect all shapes with their approximate point counts
-  function walk(el: Element) {
+  function walk(el: XmlElement) {
     for (let i = 0; i < el.childNodes.length; i++) {
       const child = el.childNodes[i];
       if (child.nodeType !== 1) continue;
-      const childEl = child as Element;
+      const childEl = child as XmlElement;
       const tag = (childEl.localName ?? "").toLowerCase();
 
       if (SHAPE_TAGS.has(tag)) {
@@ -466,7 +473,7 @@ function removeTinyFragments(root: Element): number {
 }
 
 /** Estimate the number of coordinate points in a shape element. */
-function estimatePointCount(el: Element): number {
+function estimatePointCount(el: XmlElement): number {
   const tag = (el.localName ?? "").toLowerCase();
 
   switch (tag) {
@@ -493,13 +500,13 @@ function estimatePointCount(el: Element): number {
 }
 
 /** Count all shape elements in the DOM tree. */
-function countShapes(root: Element): number {
+function countShapes(root: XmlElement): number {
   let count = 0;
-  function walk(el: Element) {
+  function walk(el: XmlElement) {
     for (let i = 0; i < el.childNodes.length; i++) {
       const child = el.childNodes[i];
       if (child.nodeType !== 1) continue;
-      const childEl = child as Element;
+      const childEl = child as XmlElement;
       const tag = (childEl.localName ?? "").toLowerCase();
       if (SHAPE_TAGS.has(tag)) count++;
       else walk(childEl);

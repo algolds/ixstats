@@ -17,6 +17,11 @@ import { extractAllTextLabels } from "~/lib/maps/province-importer/svg-text-matc
 const SVG_NS = "http://www.w3.org/2000/svg";
 const INKSCAPE_NS = "http://www.inkscape.org/namespaces/inkscape";
 
+// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
+// global lib.dom Element (it was in 0.8). All "XmlElement" values in this file are
+// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
+type XmlElement = import("@xmldom/xmldom").Element;
+
 export interface SvgLayerInfo {
   id: string; // element id or a synthesized id (e.g. "layer-3")
   name: string; // inkscape:label / id / "Layer N"
@@ -66,7 +71,7 @@ function sanitizeSvg(svgContent: string): string {
     .replace(/xlink:href\s*=\s*'https?:\/\/[^']*'/gi, "");
 }
 
-function extractViewBox(svgRoot: Element): { width: number; height: number } {
+function extractViewBox(svgRoot: XmlElement): { width: number; height: number } {
   const viewBoxAttr = svgRoot.getAttribute("viewBox");
   let w = 0;
   let h = 0;
@@ -84,7 +89,7 @@ function extractViewBox(svgRoot: Element): { width: number; height: number } {
   return { width: w || 800, height: h || 600 };
 }
 
-function isPointLikeElement(el: Element, viewBoxWidth: number, _viewBoxHeight: number): boolean {
+function isPointLikeElement(el: XmlElement, viewBoxWidth: number, _viewBoxHeight: number): boolean {
   const tag = el.localName ?? el.tagName?.split(":").pop() ?? "";
   if (tag === "circle" || tag === "ellipse") {
     const r = parseFloat(el.getAttribute("r") ?? el.getAttribute("rx") ?? "0");
@@ -119,12 +124,12 @@ function isPointLikeElement(el: Element, viewBoxWidth: number, _viewBoxHeight: n
 // lack an inline fill= (city dots are usually styled via CSS class / default fill),
 // which is exactly the case collectShapeElements wrongly discards.
 function countPointLikeDescendants(
-  el: Element,
+  el: XmlElement,
   viewBoxWidth: number,
   viewBoxHeight: number
 ): number {
   let count = 0;
-  const walk = (node: Element) => {
+  const walk = (node: XmlElement) => {
     const tag = node.localName ?? node.tagName?.split(":").pop() ?? "";
     if (tag === "circle" || tag === "ellipse" || tag === "use") {
       count++;
@@ -137,20 +142,20 @@ function countPointLikeDescendants(
     if (tag === "g") {
       const children = node.childNodes;
       for (let i = 0; i < children.length; i++) {
-        const child = children[i] as Element;
+        const child = children[i] as XmlElement;
         if (child && child.nodeType === 1) walk(child);
       }
     }
   };
   const children = el.childNodes;
   for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Element;
+    const child = children[i] as XmlElement;
     if (child && child.nodeType === 1) walk(child);
   }
   return count;
 }
 
-function findLayerByIdOrName(svgRoot: Element, idOrName: string): Element | null {
+function findLayerByIdOrName(svgRoot: XmlElement, idOrName: string): XmlElement | null {
   if (idOrName === "root") return svgRoot;
   const allG = svgRoot.getElementsByTagNameNS(SVG_NS, "g");
   for (let i = 0; i < allG.length; i++) {
@@ -164,7 +169,7 @@ function findLayerByIdOrName(svgRoot: Element, idOrName: string): Element | null
   return null;
 }
 
-function isDescendantOfIdOrName(el: Element, idOrName: string): boolean {
+function isDescendantOfIdOrName(el: XmlElement, idOrName: string): boolean {
   let current: any = el;
   while (current) {
     if (current.nodeType === 1 && typeof current.getAttribute === "function") {
@@ -180,7 +185,7 @@ function isDescendantOfIdOrName(el: Element, idOrName: string): boolean {
   return false;
 }
 
-function hasCapitalAncestor(el: Element): boolean {
+function hasCapitalAncestor(el: XmlElement): boolean {
   let current: any = el;
   while (current) {
     if (current.nodeType === 1 && typeof current.getAttribute === "function") {
@@ -212,7 +217,7 @@ function normalizeLayerName(name: string): string {
     .toLowerCase();
 }
 
-function detectProvinceName(el: Element, fallbackId: string): { name: string } {
+function detectProvinceName(el: XmlElement, fallbackId: string): { name: string } {
   const label = el.getAttributeNS(INKSCAPE_NS, "label") || el.getAttribute("inkscape:label");
   if (label) return { name: label };
   const dataName =
@@ -241,10 +246,10 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
   const seenIds = new Set<string>();
   let syntheticIdx = 0;
 
-  const enumerateGroups = (parent: Element, depth: number) => {
+  const enumerateGroups = (parent: XmlElement, depth: number) => {
     const ch = parent.childNodes;
     for (let i = 0; i < ch.length; i++) {
-      const child = ch[i] as Element;
+      const child = ch[i] as XmlElement;
       if (!child || child.nodeType !== 1) continue;
       const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
       if (tag !== "g") continue;
@@ -288,7 +293,7 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
   let rootDirectShapes = 0;
   let rootDirectTexts = 0;
   for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Element;
+    const child = children[i] as XmlElement;
     if (child && child.nodeType === 1) {
       const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
       if (SHAPE_TAGS.has(tag)) rootDirectShapes++;
@@ -372,7 +377,7 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
   const targetGroup = findLayerByIdOrName(svgRoot, targetLayerId) || svgRoot;
 
   // 3. Extract points from target group
-  const rawPoints: { x: number; y: number; el: Element; refIcon?: string; name?: string }[] = [];
+  const rawPoints: { x: number; y: number; el: XmlElement; refIcon?: string; name?: string }[] = [];
 
   // If the layer has explicit point primitives (circle/ellipse/use dots), those
   // ARE the cities — ignore stray point-like <path>s, which are usually label
@@ -382,7 +387,7 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
     targetGroup.getElementsByTagName("ellipse").length > 0 ||
     targetGroup.getElementsByTagName("use").length > 0;
 
-  const scanGroupForPoints = (el: Element) => {
+  const scanGroupForPoints = (el: XmlElement) => {
     const tag = el.localName ?? el.tagName?.split(":").pop() ?? "";
 
     if (tag === "circle" || tag === "ellipse") {
@@ -436,7 +441,7 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
     if (tag === "g") {
       const gChildren = el.childNodes;
       for (let i = 0; i < gChildren.length; i++) {
-        const child = gChildren[i] as Element;
+        const child = gChildren[i] as XmlElement;
         if (child && child.nodeType === 1) {
           scanGroupForPoints(child);
         }
@@ -446,7 +451,7 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
 
   const targetChildren = targetGroup.childNodes;
   for (let i = 0; i < targetChildren.length; i++) {
-    const child = targetChildren[i] as Element;
+    const child = targetChildren[i] as XmlElement;
     if (child && child.nodeType === 1) {
       scanGroupForPoints(child);
     }

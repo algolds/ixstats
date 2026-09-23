@@ -107,6 +107,11 @@ export interface SvgParseResult {
 const SVG_NS = "http://www.w3.org/2000/svg";
 const INKSCAPE_NS = "http://www.inkscape.org/namespaces/inkscape";
 
+// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
+// global lib.dom Element (it was in 0.8). All "Element" values in this file are
+// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
+type XmlElement = import("@xmldom/xmldom").Element;
+
 /**
  * Main entry point: parse SVG content string into GeoJSON.
  */
@@ -252,7 +257,7 @@ export function parseSvgToGeoJson(
   const layersFound: string[] = [];
   const topGroups = svgRoot.getElementsByTagNameNS(SVG_NS, "g");
 
-  let targetGroup: Element | null = null;
+  let targetGroup: XmlElement | null = null;
 
   for (let i = 0; i < topGroups.length; i++) {
     const g = topGroups[i]!;
@@ -279,7 +284,7 @@ export function parseSvgToGeoJson(
   // Fallback for single-layer SVGs (e.g., exporting from Inkscape or Illustrator)
   if (!targetGroup) {
     // Strategy 1: Top-level <g> elements that contain paths (at any depth)
-    const groupsWithPaths: { el: Element; pathCount: number }[] = [];
+    const groupsWithPaths: { el: XmlElement; pathCount: number }[] = [];
     for (let i = 0; i < topGroups.length; i++) {
       const g = topGroups[i]!;
       if (g.parentNode !== svgRoot) continue;

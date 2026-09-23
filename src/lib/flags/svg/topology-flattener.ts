@@ -1,5 +1,10 @@
 import type { Position } from "geojson";
 
+// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
+// global lib.dom Element (it was in 0.8). All "XmlElement" values in this file are
+// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
+type XmlElement = import("@xmldom/xmldom").Element;
+
 /**
  * Calculate the signed area of a ring (in WGS84 coordinates).
  * Positive = counter-clockwise (outer ring in GeoJSON), negative = clockwise (hole).
@@ -83,7 +88,7 @@ export function calculateApproxArea(rings: Position[][]): number {
 /**
  * Extract fill color from an SVG element.
  */
-export function extractFillColor(el: Element, style: string): string | undefined {
+export function extractFillColor(el: XmlElement, style: string): string | undefined {
   const styleMatch = style.match(/(?:^|;)\s*fill\s*:\s*([^;]+)/i);
   if (styleMatch?.[1]) {
     const val = normalizeColor(styleMatch[1]);
@@ -98,7 +103,7 @@ export function extractFillColor(el: Element, style: string): string | undefined
 
   let parent = el.parentNode;
   while (parent && parent.nodeType === 1) {
-    const parentEl = parent as Element;
+    const parentEl = parent as XmlElement;
     const parentStyle = parentEl.getAttribute("style") ?? "";
     const pMatch = parentStyle.match(/(?:^|;)\s*fill\s*:\s*([^;]+)/i);
     if (pMatch?.[1]) {
@@ -119,7 +124,7 @@ export function extractFillColor(el: Element, style: string): string | undefined
 /**
  * Extract stroke color from an SVG element.
  */
-export function extractStrokeColor(el: Element, style: string): string | undefined {
+export function extractStrokeColor(el: XmlElement, style: string): string | undefined {
   const styleMatch = style.match(/(?:^|;)\s*stroke\s*:\s*([^;]+)/i);
   if (styleMatch?.[1]) {
     const val = normalizeColor(styleMatch[1]);

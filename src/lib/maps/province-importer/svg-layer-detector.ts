@@ -13,12 +13,17 @@ import { SHAPE_TAGS } from "./svg-element-converter";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const INKSCAPE_NS = "http://www.inkscape.org/namespaces/inkscape";
 
+// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
+// global lib.dom Element (it was in 0.8). All "XmlElement" values in this file are
+// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
+type XmlElement = import("@xmldom/xmldom").Element;
+
 // ──────────────────────────────────────────────
 // Layer detection
 // ──────────────────────────────────────────────
 
 interface LayerCandidate {
-  element: Element;
+  element: XmlElement;
   name: string;
   score: number;
   shapeCount: number;
@@ -39,8 +44,8 @@ const EXCLUDED_CONTAINERS = new Set(["defs", "clipPath", "mask", "symbol", "mark
  * Detect the most likely province layer in the SVG.
  * Returns the best candidate group, or null if no clear winner.
  */
-export function detectProvinceLayer(svgRoot: Element): {
-  layer: Element | null;
+export function detectProvinceLayer(svgRoot: XmlElement): {
+  layer: XmlElement | null;
   confidence: number;
   log: string[];
 } {
@@ -209,15 +214,15 @@ const PROVINCE_FILL_PATTERNS = [
  * Returns only the elements that look like province fills.
  */
 export function filterProvinceShapes(
-  shapes: Element[],
-  svgRoot: Element,
+  shapes: XmlElement[],
+  svgRoot: XmlElement,
   log: string[] = []
-): Element[] {
+): XmlElement[] {
   if (shapes.length === 0) return [];
 
   // Collect fill and stroke info for all shapes
   const shapeInfo: Array<{
-    el: Element;
+    el: XmlElement;
     fill: string;
     stroke: string;
     strokeWidth: number;
@@ -308,7 +313,7 @@ export function filterProvinceShapes(
     strokeCounts.size > 0 ? [...strokeCounts.entries()].sort((a, b) => b[1] - a[1])[0]![0] : null;
 
   // Filter shapes
-  const result: Element[] = [];
+  const result: XmlElement[] = [];
   for (const s of shapeInfo) {
     // Always exclude stroke-only (no fill)
     if (s.fillNone) continue;
@@ -414,8 +419,8 @@ export function normalizeColor(color: string): string {
  * Excludes elements inside <defs>, <clipPath>, <mask>, <symbol>.
  * Excludes elements with display:none or visibility:hidden (including CSS class-based hiding).
  */
-export function collectShapeElements(container: Element, svgRoot?: Element): Element[] {
-  const shapes: Element[] = [];
+export function collectShapeElements(container: XmlElement, svgRoot?: XmlElement): XmlElement[] {
+  const shapes: XmlElement[] = [];
   const hiddenClasses = extractHiddenCssClasses(
     svgRoot ?? container.ownerDocument?.documentElement ?? container
   );
@@ -423,11 +428,11 @@ export function collectShapeElements(container: Element, svgRoot?: Element): Ele
   return shapes;
 }
 
-function collectShapesRecursive(el: Element, result: Element[], hiddenClasses: Set<string>): void {
+function collectShapesRecursive(el: XmlElement, result: XmlElement[], hiddenClasses: Set<string>): void {
   const children = el.childNodes;
   for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Element;
-    if (!child || child.nodeType !== 1) continue; // Element nodes only
+    const child = children[i] as XmlElement;
+    if (!child || child.nodeType !== 1) continue; // XmlElement nodes only
 
     const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
 
@@ -453,7 +458,7 @@ function collectShapesRecursive(el: Element, result: Element[], hiddenClasses: S
  * Check if an element is likely decorative (thin border, invisible, etc.).
  * Province shapes MUST have a visible fill — stroke-only elements are borders/lines.
  */
-export function isDecorativeElement(el: Element): boolean {
+export function isDecorativeElement(el: XmlElement): boolean {
   const style = el.getAttribute("style") || "";
   const fill = el.getAttribute("fill") || "";
   const stroke = el.getAttribute("stroke") || "";
@@ -564,7 +569,7 @@ export function isDecorativeElement(el: Element): boolean {
 // Helpers
 // ──────────────────────────────────────────────
 
-function getGroupName(g: Element): string {
+function getGroupName(g: XmlElement): string {
   return (
     g.getAttributeNS(INKSCAPE_NS, "label") ||
     g.getAttribute("inkscape:label") ||
@@ -574,11 +579,11 @@ function getGroupName(g: Element): string {
   );
 }
 
-function countDirectShapeChildren(g: Element): number {
+function countDirectShapeChildren(g: XmlElement): number {
   let count = 0;
   const children = g.childNodes;
   for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Element;
+    const child = children[i] as XmlElement;
     if (!child || child.nodeType !== 1) continue;
     const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
     if (SHAPE_TAGS.has(tag)) count++;
@@ -590,11 +595,11 @@ function countDirectShapeChildren(g: Element): number {
  * Count total vertices across all direct shape children.
  * Used to distinguish complex province boundaries from simple markers/icons.
  */
-function countTotalVertices(g: Element): number {
+function countTotalVertices(g: XmlElement): number {
   let total = 0;
   const children = g.childNodes;
   for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Element;
+    const child = children[i] as XmlElement;
     if (!child || child.nodeType !== 1) continue;
     const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
     if (!SHAPE_TAGS.has(tag)) continue;
@@ -618,11 +623,11 @@ function countTotalVertices(g: Element): number {
   return total;
 }
 
-function countDirectGroupChildren(g: Element): number {
+function countDirectGroupChildren(g: XmlElement): number {
   let count = 0;
   const children = g.childNodes;
   for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Element;
+    const child = children[i] as XmlElement;
     if (!child || child.nodeType !== 1) continue;
     const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
     if (tag === "g") count++;
@@ -630,11 +635,11 @@ function countDirectGroupChildren(g: Element): number {
   return count;
 }
 
-function hasDistinctFillColors(g: Element): boolean {
+function hasDistinctFillColors(g: XmlElement): boolean {
   const colors = new Set<string>();
   const children = g.childNodes;
   for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Element;
+    const child = children[i] as XmlElement;
     if (!child || child.nodeType !== 1) continue;
     const fill = child.getAttribute("fill") || extractFillFromStyle(child);
     if (fill && fill !== "none") colors.add(fill.toLowerCase());
@@ -643,17 +648,17 @@ function hasDistinctFillColors(g: Element): boolean {
   return false;
 }
 
-function extractFillFromStyle(el: Element): string {
+function extractFillFromStyle(el: XmlElement): string {
   const style = el.getAttribute("style") || "";
   const match = style.match(/fill\s*:\s*([^;]+)/);
   return match ? match[1]!.trim() : "";
 }
 
-function hasOnlyTextChildren(g: Element): boolean {
+function hasOnlyTextChildren(g: XmlElement): boolean {
   const children = g.childNodes;
   let hasAny = false;
   for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Element;
+    const child = children[i] as XmlElement;
     if (!child || child.nodeType !== 1) continue;
     hasAny = true;
     const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
@@ -662,7 +667,7 @@ function hasOnlyTextChildren(g: Element): boolean {
   return hasAny;
 }
 
-function isHiddenElement(el: Element): boolean {
+function isHiddenElement(el: XmlElement): boolean {
   const display = el.getAttribute("display");
   if (display === "none") return true;
   const visibility = el.getAttribute("visibility");
@@ -673,22 +678,22 @@ function isHiddenElement(el: Element): boolean {
   return false;
 }
 
-function isInsideExcludedContainer(el: Element): boolean {
-  let current = el.parentNode as Element | null;
+function isInsideExcludedContainer(el: XmlElement): boolean {
+  let current = el.parentNode as XmlElement | null;
   while (current) {
     const tag = current.localName ?? current.tagName?.split(":").pop() ?? "";
     if (EXCLUDED_CONTAINERS.has(tag)) return true;
-    current = current.parentNode as Element | null;
+    current = current.parentNode as XmlElement | null;
   }
   return false;
 }
 
-function getDepthFromRoot(el: Element, root: Element): number {
+function getDepthFromRoot(el: XmlElement, root: XmlElement): number {
   let depth = 0;
-  let current = el.parentNode as Element | null;
+  let current = el.parentNode as XmlElement | null;
   while (current && current !== root) {
     depth++;
-    current = current.parentNode as Element | null;
+    current = current.parentNode as XmlElement | null;
   }
   return depth;
 }
@@ -703,7 +708,7 @@ function parseStrokeWidthFromStyle(style: string): number {
  * Parse <style> blocks inside the SVG to find CSS classes with display:none.
  * Returns a Set of class names (without the leading dot).
  */
-function extractHiddenCssClasses(svgRoot: Element): Set<string> {
+function extractHiddenCssClasses(svgRoot: XmlElement): Set<string> {
   const hiddenClasses = new Set<string>();
   const styleElements = svgRoot.getElementsByTagName("style");
 
@@ -734,7 +739,7 @@ function extractHiddenCssClasses(svgRoot: Element): Set<string> {
 /**
  * Check if an element has any CSS class that is marked display:none in the stylesheet.
  */
-function isHiddenByClass(el: Element, hiddenClasses: Set<string>): boolean {
+function isHiddenByClass(el: XmlElement, hiddenClasses: Set<string>): boolean {
   if (hiddenClasses.size === 0) return false;
   const className = el.getAttribute("class") ?? "";
   if (!className) return false;

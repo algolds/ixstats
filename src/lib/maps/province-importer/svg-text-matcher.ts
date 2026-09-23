@@ -9,6 +9,11 @@ import { getAccumulatedTransform, applyMatrixToPoint } from "./svg-transform";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
+// global lib.dom Element (it was in 0.8). All "XmlElement" values in this file are
+// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
+type XmlElement = import("@xmldom/xmldom").Element;
+
 // ──────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────
@@ -30,7 +35,7 @@ export interface TextLabel {
  * @param svgRoot - The SVG root element or target layer
  * @param stopAt - Ancestor to stop transform accumulation at (usually SVG root)
  */
-export function extractAllTextLabels(svgRoot: Element, stopAt?: Element): TextLabel[] {
+export function extractAllTextLabels(svgRoot: XmlElement, stopAt?: XmlElement): TextLabel[] {
   const transformRoot = stopAt ?? svgRoot;
   const labels: TextLabel[] = [];
   const textEls = svgRoot.getElementsByTagNameNS(SVG_NS, "text");
