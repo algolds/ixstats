@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import {
   getArticleWikitext,
   getPageProps,
@@ -151,7 +151,7 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
   /**
    * Sync recent changes from MediaWiki into local shadow store.
    */
-  syncRecentChanges: publicProcedure
+  syncRecentChanges: adminProcedure
     .input(z.object({ limit: z.number().min(1).max(100).default(50) }).optional())
     .mutation(async ({ input }) => {
       return syncWikiRecentChanges(input?.limit ?? 50);

@@ -6,7 +6,13 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { TRPCError } from "@trpc/server";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+} from "~/server/api/trpc";
 import { searchTemplates as searchTemplatesDB } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import {
   fetchTemplateData,
@@ -14,6 +20,7 @@ import {
   isNoiseTemplate,
 } from "~/lib/wiki-os/templates/template-registry";
 import { renderTemplateWithRedisCache } from "~/lib/wiki-os/templates/preview-service.server";
+import { isWikiAdmin } from "~/lib/wiki-os/auth";
 import { db } from "~/server/db";
 import type { Prisma } from "@prisma/client";
 
@@ -1341,7 +1348,7 @@ export const wikiosTemplatesRouter = createTRPCRouter({
   /**
    * Save, create, or update a custom user-defined template / infobox.
    */
-  saveCustomTemplate: publicProcedure
+  saveCustomTemplate: protectedProcedure
     .input(
       z.object({
         name: z.string().min(1).max(200),
@@ -1361,8 +1368,31 @@ export const wikiosTemplatesRouter = createTRPCRouter({
         wikitextTemplate: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const cleanName = input.name.replace(/^Template:/i, "").trim();
+
+      // Ordinary users may only *create* new templates. Overwriting an existing custom template,
+      // an existing published article at Template:<name> (e.g. an imported MediaWiki template
+      // with no WikiTemplate row), or any canonical template is wiki-admin only.
+      const existing = await db.wikiTemplate.findUnique({ where: { name: cleanName } });
+      const existingArticle = await db.wikiArticle.findUnique({
+        where: { source_title: { source: "ixwiki", title: `Template:${cleanName}` } },
+        select: { id: true },
+      });
+
+      if (existing?.isCanonical) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Canonical templates cannot be overwritten.",
+        });
+      }
+      if ((existing || existingArticle) && !isWikiAdmin(ctx)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only a wiki admin can overwrite an existing template.",
+        });
+      }
+
       const paramMap: Record<string, any> = {};
       for (const p of input.params) {
         paramMap[p.name] = {
@@ -1444,7 +1474,7 @@ export const wikiosTemplatesRouter = createTRPCRouter({
   /**
    * Delete a custom user-defined template.
    */
-  deleteCustomTemplate: publicProcedure
+  deleteCustomTemplate: adminProcedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ input }) => {
       const cleanName = input.name.replace(/^Template:/i, "").trim();

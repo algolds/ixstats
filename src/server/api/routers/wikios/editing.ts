@@ -6,7 +6,12 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
 import { htmlToWikitext, wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { transformWikiLinks } from "~/lib/wiki-os/transformers/url-compat";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
@@ -28,10 +33,10 @@ export const wikiosEditingRouter = createTRPCRouter({
   /**
    * Preview wikitext by converting it to HTML via Parsoid.
    */
-  previewWikitext: publicProcedure
+  previewWikitext: rateLimitedPublicProcedure
     .input(
       z.object({
-        wikitext: z.string(),
+        wikitext: z.string().max(200_000),
         title: z.string().min(1).max(500),
       })
     )
