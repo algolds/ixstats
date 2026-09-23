@@ -1,20 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import * as fs from "fs";
 
-// Candidate connection strings
-const candidates = [
-  // 1. From .env.local.dev
-  "postgresql://postgres:kxslIz4cICVDon%2FqwP2yrUzOKjtsryQDt9d28hmMjlk%3D@localhost:5433/ixstats?connect_timeout=5",
-  // 2. From .env
-  "postgresql://postgres:kxslIz4cICVDon%2FqwP2yrUzOKjtsryQDt9d28hmMjlk%3D@localhost:5433/ixstats?connect_timeout=5",
-  // 3. Port 5432
-  "postgresql://postgres:kxslIz4cICVDon%2FqwP2yrUzOKjtsryQDt9d28hmMjlk%3D@localhost:5432/ixstats?connect_timeout=5",
-  // 4. Fallback default postgres
-  "postgresql://postgres:postgres@localhost:5433/ixstats?connect_timeout=5",
-  "postgresql://postgres:postgres@localhost:5432/ixstats?connect_timeout=5",
-  // 5. 127.0.0.1 explicitly
-  "postgresql://postgres:kxslIz4cICVDon%2FqwP2yrUzOKjtsryQDt9d28hmMjlk%3D@127.0.0.1:5433/ixstats?connect_timeout=5",
-];
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is not set. Export it (or load your .env) before running this script.");
+}
+const candidates = [databaseUrl];
 
 async function tryConnect(url: string) {
   const client = new PrismaClient({

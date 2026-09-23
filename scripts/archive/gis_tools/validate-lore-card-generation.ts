@@ -9,15 +9,15 @@
  *   tsx scripts/validate-lore-card-generation.ts [--wiki ixwiki|iiwiki] [--count 5]
  *
  * Environment:
- *   DATABASE_URL    - Optional (defaults to local dev postgres)
+ *   DATABASE_URL    - Required (no default; export it or load your .env before running)
  *   SKIP_ENV_VALIDATION - set automatically
  */
 
 // Set env before any imports to bypass validation
 process.env.SKIP_ENV_VALIDATION = "1";
-process.env.DATABASE_URL =
-  process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5433/ixstats";
-
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not set. Export it (or load your .env) before running this script.");
+}
 import { wikiLoreCardGenerator } from "../../../src/lib/cards/lore-card-generator";
 import { LORE_CATEGORIES } from "../../../src/lib/lorewards";
 import { CardRarity } from "@prisma/client";

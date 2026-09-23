@@ -1,11 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is not set. Export it (or load your .env) before running this script.");
+}
+
 const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: "postgresql://postgres:kxslIz4cICVDon%2FqwP2yrUzOKjtsryQDt9d28hmMjlk%3D@localhost:5433/ixstats?connection_limit=5",
-    },
-  },
+  datasources: { db: { url: databaseUrl } },
 });
 
 async function main() {
