@@ -104,7 +104,7 @@ openssl rand -hex 32
 > **Migration Note (October 2025)**: IxStats has migrated from SQLite to PostgreSQL for all environments.
 
 **Development:**
-- `DATABASE_URL="postgresql://ixstats:ixstats@localhost:5433/ixstats?schema=public"`
+- `DATABASE_URL="postgresql://ixstats:PASSWORD@localhost:5433/ixstats?schema=public"`
 
 **Production:**
 - `DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"`

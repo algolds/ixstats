@@ -171,7 +171,7 @@ To create countries, manage sports clubs, trade cards, or save stashes, configur
 1. Create or edit `.env.local` (or modify `.env.local.dev`) in the repository root:
    ```ini
    DATABASE_READONLY="false"
-   DATABASE_URL="postgresql://postgres:kxslIz4cICVDon%2FqwP2yrUzOKjtsryQDt9d28hmMjlk%3D@localhost:5433/ixstats?connection_limit=5"
+   DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5433/ixstats?connection_limit=5"
    ```
    *(Note: The password is URL-encoded and connects as the `postgres` superuser on your local Docker container).*
 2. Under this mode, any database updates and codebase schema changes (like `v2` additions) are automatically pushed and synchronized on server boot.

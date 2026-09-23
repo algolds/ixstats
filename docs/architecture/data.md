@@ -13,7 +13,7 @@ The database backend is PostgreSQL with PostGIS extensions running inside Docker
 ```
 Container: ixstats-postgres
 Port: 5433
-Connection: postgresql://postgres:postgres@localhost:5433/ixstats
+Connection: postgresql://postgres:PASSWORD@localhost:5433/ixstats
 Spatial Engine: PostGIS 3.x (ST_AsGeoJSON, ST_Touches, ST_Centroid, ST_Area)
 ```
 

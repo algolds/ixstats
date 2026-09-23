@@ -249,7 +249,7 @@ bun run dev
 Configure `.env.local.dev` with your local database and service endpoints:
 
 ```dotenv
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/ixstats"
+DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5433/ixstats"
 NEXT_PUBLIC_MEDIAWIKI_URL="https://ixwiki.com/"
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."   # Optional in dev (demo auth active)
 CLERK_SECRET_KEY="sk_test_..."                    # Optional in dev

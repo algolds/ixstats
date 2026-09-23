@@ -52,7 +52,7 @@ Document any hosting-specific steps (containerisation, CI/CD pipelines) in an ap
 ### Minimum Development Setup
 
 ```dotenv
-DATABASE_URL="postgresql://ixstats:ixstats@localhost:5433/ixstats?schema=public"
+DATABASE_URL="postgresql://ixstats:PASSWORD@localhost:5433/ixstats?schema=public"
 NEXT_PUBLIC_MEDIAWIKI_URL="https://ixwiki.com/"
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_your_key"   # optional for Clerk-auth flows
 CLERK_SECRET_KEY="sk_test_your_key"                    # optional
