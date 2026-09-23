@@ -74,6 +74,10 @@ export const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) =
     throw new Error("UNAUTHORIZED: Authentication required");
   }
 
+  // No impersonation-specific handling needed here: while playing as another user this
+  // evaluates the *target* (the intended play-as behavior), `ctx.auth.userId` is the target's ID
+  // (impersonation.ts rebuilds `auth` without spreading), and decidePlayAs already guarantees the
+  // target cannot outrank the impersonator or carry the impersonator's session claims.
   const userRole = getRoleName(ctx.user, (ctx.auth as any)?.sessionClaims);
   const isAdmin = isPrivilegedCountryWriter(ctx.auth.userId, userRole);
   if (isAdmin) {
@@ -283,6 +287,15 @@ export const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
 export const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   if (!ctx.auth?.userId || !ctx.user) {
     throw new UnauthorizedError("Authentication required");
+  }
+
+  // Admin rights are dropped while impersonating another user (play-as mode). The impersonated
+  // user's own role/permissions are still evaluated normally by everything below this check —
+  // only *admin*-gated procedures are blocked outright. See src/server/api/trpc/impersonation.ts.
+  if (ctx.impersonatorId) {
+    throw new ForbiddenError(
+      "Admin actions are disabled while playing as another user. Exit play-as mode first."
+    );
   }
 
   let user = ctx.user;
