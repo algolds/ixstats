@@ -170,9 +170,6 @@ export function useDossier({
     refetch,
   } = api.wikiCache.getCountryProfile.useQuery({
     countryName,
-    includePageVariants: wikiSettings.autoDiscovery,
-    maxSections: wikiSettings.maxSections,
-    customPages: wikiSettings.customPages,
     wikiSource,
   });
 

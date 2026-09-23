@@ -21,7 +21,7 @@ interface ComponentOptimization {
 
 interface PreviewTabProps {
   previewTaxSystem: TaxSystem;
-  economicData?: { gdp: number; sectors: any; population: number };
+  economicData?: { gdp: number; sectors?: Record<string, number>; population: number };
   countryId?: string;
   componentOptimization?: ComponentOptimization | null;
   selectedAtomicTaxComponents: string[];

@@ -37,7 +37,7 @@ interface SettingsTabProps {
   onAtomicComponentsChange: (components: string[]) => void;
   activeGovernmentComponents: ComponentType[];
   showAtomicIntegration: boolean;
-  economicData?: { gdp: number; sectors: any; population: number };
+  economicData?: { gdp: number; sectors?: Record<string, number>; population: number };
   previewTaxSystem: TaxSystem;
   validation: { isValid: boolean; errors: Record<string, any> };
   isReadOnly: boolean;

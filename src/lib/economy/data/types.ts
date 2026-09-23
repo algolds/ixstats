@@ -98,7 +98,6 @@ export enum EconomicComponentType {
   // Real Estate & Property Components
   REAL_ESTATE_FOCUSED = "REAL_ESTATE_FOCUSED",
   RULE_OF_LAW = "RULE_OF_LAW",
-  HIGH_TAX_BURDEN = "HIGH_TAX_BURDEN",
 }
 
 /**

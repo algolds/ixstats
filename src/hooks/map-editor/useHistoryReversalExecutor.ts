@@ -84,7 +84,10 @@ export function useHistoryReversalExecutor({
   );
 
   const recreateFeature = useCallback(
-    async (featureType: FeatureType, data: Record<string, string | number | boolean | object | null | undefined>) => {
+    async (
+      featureType: FeatureType,
+      data: Record<string, string | number | boolean | object | null | undefined>
+    ) => {
       if (!countryId) return;
       switch (featureType) {
         case "city":
@@ -105,7 +108,9 @@ export function useHistoryReversalExecutor({
             name: (data.name as string) || "Restored Region",
             type: (data.type as string) || "region",
             level: typeof data.level === "number" ? data.level : 1,
-            geometry: data.geometry as Parameters<typeof createSubdivision.mutateAsync>[0]["geometry"],
+            geometry: data.geometry as Parameters<
+              typeof createSubdivision.mutateAsync
+            >[0]["geometry"],
             capital: (data.capital as string) || undefined,
             population: typeof data.population === "number" ? data.population : undefined,
           });
@@ -135,7 +140,6 @@ export function useHistoryReversalExecutor({
             countryId,
             name: (data.name as string) || "Restored River",
             geometry: data.geometry as Parameters<typeof createRiver.mutateAsync>[0]["geometry"],
-            lengthKm: typeof data.lengthKm === "number" ? data.lengthKm : 10,
           });
           break;
         case "lake":
@@ -143,7 +147,6 @@ export function useHistoryReversalExecutor({
             countryId,
             name: (data.name as string) || "Restored Lake",
             geometry: data.geometry as Parameters<typeof createLake.mutateAsync>[0]["geometry"],
-            areaKm2: typeof data.areaKm2 === "number" ? data.areaKm2 : 5,
           });
           break;
         case "route":
@@ -226,7 +229,9 @@ export function useHistoryReversalExecutor({
             await updateRouteGeometry.mutateAsync({
               countryId,
               id: featureId,
-              geometry: data.geometry as Parameters<typeof updateRouteGeometry.mutateAsync>[0]["geometry"],
+              geometry: data.geometry as Parameters<
+                typeof updateRouteGeometry.mutateAsync
+              >[0]["geometry"],
             });
           }
           break;

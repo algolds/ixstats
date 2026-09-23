@@ -75,7 +75,7 @@ export function FactbookSectionContent({ section }: { section: FactbookSection }
           country={country}
           economyData={economyData}
           countryImageData={countryImageData}
-          governmentStructure={governmentStructure}
+          governmentStructure={governmentStructure ?? null}
           setImageUploadModalAction={setImageUploadModal}
           openMetricModalAction={openMetricModal}
           metricView={metricView}

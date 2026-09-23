@@ -25,7 +25,8 @@ import { SportsShell } from "~/components/sports/core/SportsShell";
 import { SportsCommandBar } from "~/components/sports/core/SportsCommandBar";
 import { type SportsNavSection, CLUB_NAV_ITEMS } from "~/components/sports/core/SportsSidebarNav";
 import { TeamSettingsModal } from "~/components/sports/league/TeamSettingsModal";
-import { SPORT_EMOJIS, getSportTheme } from "~/lib/sports/theming";
+import { getSportTheme } from "~/lib/sports/theming";
+import { SPORT_EMOJIS, type SportPresetKey } from "~/lib/sports/presets";
 import {
   ArrowLeft,
   Trophy,
@@ -38,7 +39,10 @@ import {
 
 // Modular Sections
 import { ClubOverviewSection } from "~/components/sports/club/sections/ClubOverviewSection";
-import { ClubRosterSection, type RosterPlayerItem } from "~/components/sports/club/sections/ClubRosterSection";
+import {
+  ClubRosterSection,
+  type RosterPlayerItem,
+} from "~/components/sports/club/sections/ClubRosterSection";
 import { ClubTacticsSection } from "~/components/sports/club/sections/ClubTacticsSection";
 import { ClubTransfersSection } from "~/components/sports/club/sections/ClubTransfersSection";
 import { ClubManagementSection } from "~/components/sports/club/sections/ClubManagementSection";
@@ -53,7 +57,8 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
   const { user } = useUser();
   const notify = useNotify();
 
-  const sectionParam = (searchParams.get("section") || searchParams.get("tab")) as SportsNavSection | null;
+  const sectionParam = (searchParams.get("section") ||
+    searchParams.get("tab")) as SportsNavSection | null;
   const [activeSection, setActiveSection] = useState<SportsNavSection>(sectionParam || "overview");
 
   const [selectedPlayer, setSelectedPlayer] = useState<RosterPlayerItem | null>(null);
@@ -162,31 +167,36 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
   if (overviewLoading) {
     return (
-      <div className="container mx-auto max-w-7xl px-4 py-8 space-y-6">
+      <div className="container mx-auto max-w-7xl space-y-6 px-4 py-8">
         <Skeleton className="h-10 w-48 rounded-xl" />
         <Skeleton className="h-44 w-full rounded-2xl" />
         <div className="grid gap-6 sm:grid-cols-4">
           <Skeleton className="h-64 rounded-2xl" />
-          <Skeleton className="h-64 sm:col-span-3 rounded-2xl" />
+          <Skeleton className="h-64 rounded-2xl sm:col-span-3" />
         </div>
       </div>
     );
   }
 
   if (!overview && teamPublic) {
-    const publicEmoji = SPORT_EMOJIS[teamPublic.league?.sportPreset ?? ""] ?? "🏆";
+    const publicEmoji =
+      SPORT_EMOJIS[(teamPublic.league?.sportPreset ?? "") as SportPresetKey] ?? "🏆";
     const isClaimed = !!teamPublic.ownerUserId;
     const isOwnedByMe = isClaimed && teamPublic.ownerUserId === user?.id;
 
     return (
       <div className="container mx-auto max-w-2xl px-4 py-16">
-        <Card className="facet-hierarchy-parent rounded-3xl border border-border/40 p-8 text-center backdrop-blur-2xl">
+        <Card className="facet-hierarchy-parent border-border/40 rounded-3xl border p-8 text-center backdrop-blur-2xl">
           <div
-            className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl border border-border/50 text-4xl shadow-inner"
+            className="border-border/50 mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl border text-4xl shadow-inner"
             style={{ backgroundColor: `${teamPublic.color}25` }}
           >
             {teamPublic.logo ? (
-              <img src={teamPublic.logo} alt={teamPublic.name} className="h-full w-full object-cover rounded-3xl" />
+              <img
+                src={teamPublic.logo}
+                alt={teamPublic.name}
+                className="h-full w-full rounded-3xl object-cover"
+              />
             ) : (
               publicEmoji
             )}
@@ -199,10 +209,11 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
           {!isClaimed ? (
             <div className="mt-6 space-y-4">
               <p className="text-muted-foreground text-sm leading-relaxed">
-                This franchise is currently unclaimed. Take ownership of {teamPublic.name} to set lineups, hire talent, and compete for league honors.
+                This franchise is currently unclaimed. Take ownership of {teamPublic.name} to set
+                lineups, hire talent, and compete for league honors.
               </p>
               <Button
-                className="font-bold cursor-pointer rounded-xl px-6 py-2.5 active:scale-[0.98]"
+                className="cursor-pointer rounded-xl px-6 py-2.5 font-bold active:scale-[0.98]"
                 onClick={() => claimTeam.mutate({ teamId })}
                 disabled={claimTeam.isPending}
               >
@@ -224,7 +235,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
             </div>
           ) : (
             <div className="mt-6 space-y-4">
-              <Shield className="mx-auto h-8 w-8 text-muted-foreground/50" />
+              <Shield className="text-muted-foreground/50 mx-auto h-8 w-8" />
               <p className="text-muted-foreground text-sm">
                 This club is managed by another registered director.
               </p>
@@ -238,7 +249,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
   if (!overview) {
     return (
       <div className="container mx-auto max-w-lg px-4 py-16">
-        <Card className="facet-hierarchy-parent text-center p-8 rounded-3xl">
+        <Card className="facet-hierarchy-parent rounded-3xl p-8 text-center">
           <CardContent className="space-y-4">
             <Trophy className="text-muted-foreground/40 mx-auto h-12 w-12" />
             <h3 className="text-foreground text-lg font-bold">Club not found</h3>
@@ -246,7 +257,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
               The franchise you are looking for does not exist or has been relocated.
             </p>
             <Button
-              className="mt-4 cursor-pointer font-semibold rounded-xl"
+              className="mt-4 cursor-pointer rounded-xl font-semibold"
               onClick={() => router.push(withBasePath("/myclub"))}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -260,15 +271,18 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
   const { team, activeSeason, currentStandings, upcomingMatches } = overview;
   const liveMatch =
-    liveActivities?.find((m: { homeTeamId: string; awayTeamId: string }) => m.homeTeamId === teamId || m.awayTeamId === teamId) ?? null;
-  const emoji = SPORT_EMOJIS[team.league?.sportPreset ?? ""] ?? "🏆";
+    liveActivities?.find(
+      (m: { homeTeamId: string; awayTeamId: string }) =>
+        m.homeTeamId === teamId || m.awayTeamId === teamId
+    ) ?? null;
+  const emoji = SPORT_EMOJIS[(team.league?.sportPreset ?? "") as SportPresetKey] ?? "🏆";
   const sportPresetAttrs =
     SPORT_PRESETS.find((p) => p.key === team.league?.sportPreset)?.ratingVector ?? [];
 
   const sportTheme = getSportTheme(team.league?.sportPreset);
 
   const heroSection = (
-    <div className="facet-hierarchy-parent relative overflow-hidden rounded-2xl border border-border/40 bg-card/60 shadow-lg backdrop-blur-xl">
+    <div className="facet-hierarchy-parent border-border/40 bg-card/60 relative overflow-hidden rounded-2xl border shadow-lg backdrop-blur-xl">
       {team.coverImage && (
         <div className="absolute inset-0 z-0">
           <img
@@ -280,10 +294,10 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
         </div>
       )}
 
-      <div className="relative z-10 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="relative z-10 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex items-center gap-4">
           <div
-            className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border/50 text-3xl shadow-inner"
+            className="border-border/50 flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border text-3xl shadow-inner"
             style={{ backgroundColor: team.color ? `${team.color}25` : "rgba(255,255,255,0.05)" }}
           >
             {team.logo ? (
@@ -293,7 +307,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
             )}
           </div>
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-foreground text-2xl font-black tracking-tight">{team.name}</h1>
               {team.shortName && (
                 <Badge variant="outline" className="border-border/60 text-xs font-bold">
@@ -327,7 +341,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
             size="sm"
             onClick={() => setSettingsOpen(true)}
             data-cuelume-press="subtle"
-            className="h-8 border-border/50 bg-card/60 text-xs font-medium hover:bg-muted/40 active:scale-[0.98]"
+            className="border-border/50 bg-card/60 hover:bg-muted/40 h-8 text-xs font-medium active:scale-[0.98]"
           >
             <Settings className="mr-1.5 h-3.5 w-3.5" />
             Manage Club
@@ -349,9 +363,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
             history={history}
             liveMatch={liveMatch}
             isUpdatingNotifications={setClubNotifications.isPending}
-            onUpdateNotifications={(enabled) =>
-              setClubNotifications.mutate({ teamId, enabled })
-            }
+            onUpdateNotifications={(enabled) => setClubNotifications.mutate({ teamId, enabled })}
             onTrained={() => void refetchOverview()}
           />
         );
@@ -388,7 +400,11 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
           <ClubTransfersSection
             teamId={team.id}
             teamColor={team.color ?? "#3b82f6"}
-            squadPlayers={(team.players ?? []) as unknown as Parameters<typeof ClubTransfersSection>[0]["squadPlayers"]}
+            squadPlayers={
+              (team.players ?? []) as unknown as Parameters<
+                typeof ClubTransfersSection
+              >[0]["squadPlayers"]
+            }
             onRefreshOverview={() => void refetchOverview()}
           />
         );
@@ -445,7 +461,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
           </DialogHeader>
           <div className="my-4 space-y-4">
             <div>
-              <label className="text-muted-foreground mb-1.5 block text-xs font-bold uppercase tracking-wider">
+              <label className="text-muted-foreground mb-1.5 block text-xs font-bold tracking-wider uppercase">
                 Asking Valuation (Sovereigns)
               </label>
               <Input
@@ -460,7 +476,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
           <div className="flex justify-end gap-2 pt-2">
             <Button
               variant="ghost"
-              className="text-muted-foreground hover:text-foreground text-xs font-semibold rounded-xl"
+              className="text-muted-foreground hover:text-foreground rounded-xl text-xs font-semibold"
               onClick={() => setSelectedPlayer(null)}
             >
               Cancel
@@ -473,7 +489,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
               }}
               disabled={listPlayer.isPending}
               style={{ backgroundColor: team.color ?? "#3b82f6" }}
-              className="font-bold text-xs text-white rounded-xl shadow-md transition-all hover:opacity-90 active:scale-[0.98]"
+              className="rounded-xl text-xs font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-[0.98]"
             >
               {listPlayer.isPending ? "Listing..." : "Confirm Listing"}
             </Button>

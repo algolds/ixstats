@@ -32,6 +32,8 @@ const SECTION_TITLES: Record<MyCountrySection, string> = {
   "map-editor": "Map Editor",
 };
 
+const isMyCountrySection = (s: string): s is MyCountrySection => s in SECTION_TITLES;
+
 /**
  * MyCountryRouter - Single-page hub for all MyCountry sections.
  * Renders CommandSurface as the sole production command shell.
@@ -100,8 +102,8 @@ function MyCountryRouterInner() {
 
   // Navigate to a section (instant client-side switch)
   const handleNavigate = useCallback(
-    (section: MyCountrySection) => {
-      if (section === activeSection) return;
+    (section: string) => {
+      if (!isMyCountrySection(section) || section === activeSection) return;
 
       setActiveSection(section);
 

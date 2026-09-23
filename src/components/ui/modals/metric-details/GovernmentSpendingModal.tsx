@@ -15,6 +15,7 @@ import {
 } from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
+import { cn } from "~/lib/utils/cn";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 // oxlint-disable-next-line eslint/no-unused-vars
@@ -107,22 +108,18 @@ export function GovernmentSpendingModal({
       spending?.spendingGDPPercent || fiscal?.governmentBudgetGDPPercent || 30;
     const currentRevenuePct = fiscal?.taxRevenueGDPPercent || 25;
 
-    return filterAndSortHistory(
-      historicalData,
-      timeRange,
-      (point, formattedDate, timestamp) => {
-        const gdp = point.totalGdp || 0;
-        const totalSpending = gdp * (currentSpendingPct / 100);
-        const totalRevenue = gdp * (currentRevenuePct / 100);
-        return {
-          date: formattedDate,
-          timestamp,
-          totalSpending: totalSpending / 1e9,
-          spendingGdpPercent: currentSpendingPct,
-          budgetBalance: (totalRevenue - totalSpending) / 1e9,
-        };
-      }
-    );
+    return filterAndSortHistory(historicalData, timeRange, (point, formattedDate, timestamp) => {
+      const gdp = point.totalGdp || 0;
+      const totalSpending = gdp * (currentSpendingPct / 100);
+      const totalRevenue = gdp * (currentRevenuePct / 100);
+      return {
+        date: formattedDate,
+        timestamp,
+        totalSpending: totalSpending / 1e9,
+        spendingGdpPercent: currentSpendingPct,
+        budgetBalance: (totalRevenue - totalSpending) / 1e9,
+      };
+    });
   };
 
   const chartConfig = {
@@ -416,9 +413,7 @@ export function GovernmentSpendingModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Data Points
               </span>
-              <span className="text-xl font-bold text-blue-400">
-                {spendStats?.dataPoints || 0}
-              </span>
+              <span className="text-xl font-bold text-blue-400">{spendStats?.dataPoints || 0}</span>
             </div>
           </div>
         </MetricModalLayout.Sidebar>
@@ -531,7 +526,12 @@ export function GovernmentSpendingModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Budget Status
               </span>
-              <span className={cn("text-xl font-bold", budgetBalance >= 0 ? "text-emerald-400" : "text-red-400")}>
+              <span
+                className={cn(
+                  "text-xl font-bold",
+                  budgetBalance >= 0 ? "text-emerald-400" : "text-red-400"
+                )}
+              >
                 {budgetBalance >= 0 ? "Surplus" : "Deficit"}
               </span>
               <span className="text-muted-foreground mt-1 text-[10px]">
@@ -562,11 +562,13 @@ export function GovernmentSpendingModal({
     const spendingCategories = spending?.spendingCategories;
     const categories: Array<{ name: string; value: number; color: string }> =
       spendingCategories && spendingCategories.length > 0
-        ? (spendingCategories as Array<{ category: string; percent?: number; gdpPercent?: number }>).slice(0, 6).map((cat, i) => ({
-            name: cat.category,
-            value: cat.percent || cat.gdpPercent || 0,
-            color: SPENDING_COLORS[i % SPENDING_COLORS.length] ?? "#3b82f6",
-          }))
+        ? (spendingCategories as Array<{ category: string; percent?: number; gdpPercent?: number }>)
+            .slice(0, 6)
+            .map((cat, i) => ({
+              name: cat.category,
+              value: cat.percent || cat.gdpPercent || 0,
+              color: SPENDING_COLORS[i % SPENDING_COLORS.length] ?? "#3b82f6",
+            }))
         : [
             {
               name: "Education",

@@ -36,7 +36,7 @@ interface UseTaxDataSyncOptions {
   countryId?: string;
   economicData?: {
     gdp: number;
-    sectors: any;
+    sectors?: Record<string, number>;
     population: number;
   };
   governmentData?: any;
@@ -112,9 +112,7 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
       devLog("Auto-populating tax categories from government revenue sources...");
 
       // Convert revenue sources to tax categories
-      const taxCategories = revenueSourcesToTaxCategories(
-        governmentData.revenueSources
-      );
+      const taxCategories = revenueSourcesToTaxCategories(governmentData.revenueSources);
 
       if (taxCategories.length === 0) {
         devLog("No tax categories generated from revenue sources");
@@ -185,8 +183,6 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
     setBuilderState,
     countryId,
   ]);
-
-
 
   return {
     parsedDataApplied,

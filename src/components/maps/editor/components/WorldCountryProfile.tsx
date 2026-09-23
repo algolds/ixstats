@@ -12,10 +12,7 @@ import { JsonViewer } from "~/components/ui/json-viewer";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import type { Polygon, MultiPolygon } from "geojson";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
-import type {
-  EditorFeatureDetails,
-  PropertiesPanelCountry,
-} from "../types/editor-state";
+import type { EditorFeatureDetails, PropertiesPanelCountry } from "../types/editor-state";
 
 interface WorldCountryProfileProps {
   mapSelectedCountry: SelectedCountry;
@@ -52,7 +49,7 @@ interface WorldCountryProfileProps {
   handleAssignLink?: (featureId: string) => void;
   assignMutation?: {
     isPending: boolean;
-    mutateAsync: (args: { countryId: string; featureId: string }) => Promise<{ success?: boolean } | void>;
+    mutateAsync: (args: { countryId: string; featureId: string }) => Promise<object | void>;
   };
   availableCountries?: PropertiesPanelCountry[];
   createCountryFromShapeAction?: (name: string) => void;
@@ -111,9 +108,9 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
         <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
           {isUnclaimed ? "Unclaimed Territory" : "Country Profile"}
         </span>
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex min-w-0 items-center gap-1.5">
           {!isUnclaimed && (
-            <div className="relative h-4 w-6 shrink-0 overflow-hidden rounded-xs border border-border/60 bg-muted/40 shadow-2xs">
+            <div className="border-border/60 bg-muted/40 relative h-4 w-6 shrink-0 overflow-hidden rounded-xs border shadow-2xs">
               <UnifiedCountryFlag
                 countryName={
                   selectedCountryName ||
@@ -133,9 +130,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                 : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
             }`}
           >
-            {selectedCountryName ||
-              mapSelectedCountry.displayName ||
-              mapSelectedCountry.featureId}
+            {selectedCountryName || mapSelectedCountry.displayName || mapSelectedCountry.featureId}
           </span>
         </div>
       </div>
@@ -162,7 +157,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
             <select
               value={editableCountryLinkageId}
               onChange={(e) => setEditableCountryLinkageId(e.target.value)}
-              className="border-border bg-background text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:border-primary focus:outline-none"
+              className="border-border bg-background text-foreground focus:border-primary w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
             >
               <option value="">None</option>
               {countries &&
@@ -193,7 +188,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
             <button
               onClick={() => handleSaveFeatureProperties()}
               disabled={updatePropertiesMutation.isPending}
-              className="mt-2 w-full cursor-pointer rounded-lg bg-primary py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 mt-2 w-full cursor-pointer rounded-lg py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
             >
               {updatePropertiesMutation.isPending ? "Saving..." : "Save changes"}
             </button>
@@ -290,7 +285,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                 setIsEditingJson(true);
               }
             }}
-            className="text-[10px] font-semibold text-primary hover:underline"
+            className="text-primary text-[10px] font-semibold hover:underline"
           >
             {isEditingJson ? "Save" : "Edit JSON"}
           </button>
@@ -301,9 +296,9 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
               value={propertiesJsonString}
               onChange={(e) => setPropertiesJsonString(e.target.value)}
               rows={6}
-              className="border-border bg-background w-full rounded-lg border px-3 py-2 font-mono text-[10px] leading-relaxed focus:border-primary focus:outline-none"
+              className="border-border bg-background focus:border-primary w-full rounded-lg border px-3 py-2 font-mono text-[10px] leading-relaxed focus:outline-none"
             />
-            {jsonError && <p className="text-[10px] text-destructive">{jsonError}</p>}
+            {jsonError && <p className="text-destructive text-[10px]">{jsonError}</p>}
           </div>
         ) : (
           <JsonViewer data={parsedProperties} />
@@ -326,7 +321,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                 <select
                   value={assignCountryId ?? ""}
                   onChange={(e) => setAssignCountryId(e.target.value)}
-                  className="border-border bg-background text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:border-primary focus:outline-none"
+                  className="border-border bg-background text-foreground focus:border-primary w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
                 >
                   <option value="">— select country —</option>
                   {availableCountries.map((c: PropertiesPanelCountry) => (
@@ -346,10 +341,10 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
             </div>
           )}
 
-          {createCountryFromShapeAction && (
-            isCreatingCountry ? (
-              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2 space-y-2">
-                <label className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
+          {createCountryFromShapeAction &&
+            (isCreatingCountry ? (
+              <div className="space-y-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2">
+                <label className="block text-[10px] font-semibold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
                   New Country Name
                 </label>
                 <input
@@ -358,7 +353,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                   onChange={(e) => setNewCountryName(e.target.value)}
                   placeholder="Enter country name..."
                   autoFocus
-                  className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="border-border bg-background text-foreground w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && newCountryName.trim()) {
                       createCountryFromShapeAction(newCountryName.trim());
@@ -376,7 +371,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                       setIsCreatingCountry(false);
                       setNewCountryName("");
                     }}
-                    className="rounded px-2 py-1 text-xs text-muted-foreground hover:text-foreground active:scale-[0.98]"
+                    className="text-muted-foreground hover:text-foreground rounded px-2 py-1 text-xs active:scale-[0.98]"
                   >
                     Cancel
                   </button>
@@ -402,12 +397,11 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                   setIsCreatingCountry(true);
                 }}
                 disabled={createCountryFromShapePending}
-                className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium active:scale-[0.98] disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-500/25 active:scale-[0.98] disabled:opacity-50 dark:text-emerald-400"
               >
                 {createCountryFromShapePending ? "Creating…" : "+ Create new country from shape"}
               </button>
-            )
-          )}
+            ))}
         </div>
       )}
 
@@ -425,7 +419,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
         {enterBorderEdit && (
           <button
             onClick={() => enterBorderEdit("brush")}
-            className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium active:scale-[0.98]"
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-500/25 active:scale-[0.98] dark:text-emerald-400"
           >
             <Paintbrush className="h-3.5 w-3.5" />
             Brush Territory…

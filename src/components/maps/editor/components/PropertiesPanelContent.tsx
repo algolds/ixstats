@@ -71,7 +71,7 @@ interface PropertiesPanelContentProps {
   handleAssignLink?: (featureId: string) => void;
   assignMutation?: {
     isPending: boolean;
-    mutateAsync: (args: { countryId: string; featureId: string }) => Promise<{ success?: boolean } | void>;
+    mutateAsync: (args: { countryId: string; featureId: string }) => Promise<object | void>;
   };
   availableCountries?: PropertiesPanelCountry[];
   brushTargetId?: string | null;
@@ -210,7 +210,8 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
         if (editor.submitEditPeak) {
           await editor.submitEditPeak({
             name: typeof updates.name === "string" ? updates.name : undefined,
-            elevation: typeof updates.elevationMeters === "number" ? updates.elevationMeters : undefined,
+            elevation:
+              typeof updates.elevationMeters === "number" ? updates.elevationMeters : undefined,
           });
         }
       } else if (feat.type === "river") {
@@ -227,8 +228,7 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
         }
       } else if (feat.type === "route") {
         const effectiveCountryId =
-          activeCountryId ??
-          (feat.properties?.countryId as string | undefined);
+          activeCountryId ?? (feat.properties?.countryId as string | undefined);
         if (effectiveCountryId) {
           await updateRouteMutation.mutateAsync({
             id: feat.id,
@@ -477,7 +477,9 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
       <DocumentInspector
         countryName={resolvedCountryName}
         countryId={activeCountryId ?? undefined}
-        countryGeoDisplayName={editor.countryGeo?.country?.name || editor.countryGeo?.displayName || null}
+        countryGeoDisplayName={
+          editor.countryGeo?.country?.name || editor.countryGeo?.displayName || null
+        }
         allFeatures={editor.allFeatures}
         areaKm2={editor.countryGeo?.areaSqKm ?? null}
         onModeChange={editor.setMode}
@@ -492,16 +494,15 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
 
   // 5. Empty-state: Canvas Document Inspector
   const resolvedFlagUrl =
-    countryInfo?.flagUrl ||
-    countryInfo?.flag ||
-    editor.countryGeo?.country?.flag ||
-    null;
+    countryInfo?.flagUrl || countryInfo?.flag || editor.countryGeo?.country?.flag || null;
 
   return (
     <DocumentInspector
       countryName={resolvedCountryName}
       countryId={activeCountryId ?? undefined}
-      countryGeoDisplayName={editor.countryGeo?.country?.name || editor.countryGeo?.displayName || null}
+      countryGeoDisplayName={
+        editor.countryGeo?.country?.name || editor.countryGeo?.displayName || null
+      }
       flagUrl={resolvedFlagUrl}
       allFeatures={editor.allFeatures}
       areaKm2={editor.countryGeo?.areaSqKm ?? null}

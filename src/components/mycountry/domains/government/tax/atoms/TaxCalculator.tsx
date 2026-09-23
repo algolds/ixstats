@@ -17,7 +17,6 @@ import type {
   TaxCalculationResult,
 } from "~/types/tax-system";
 import type { CoreEconomicIndicatorsData } from "~/types/economics";
-import type { GovernmentBuilderState } from "~/types/government";
 import { ComponentType } from "~/lib/enums";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 
@@ -37,7 +36,7 @@ export interface TaxCalculatorProps {
   deductions: TaxDeduction[];
   onCalculationChange?: (result: TaxCalculationResult | null) => void;
   economicData?: CoreEconomicIndicatorsData;
-  governmentData?: GovernmentBuilderState;
+  governmentData?: { structure?: { budgetCurrency?: string } } | null;
   calculationMode?: "individual" | "corporate" | "both";
   governmentComponents?: ComponentType[];
   economicComponents?: EconomicComponentType[];

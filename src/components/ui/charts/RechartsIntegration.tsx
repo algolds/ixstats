@@ -32,7 +32,7 @@ interface BaseChartProps<T = Record<string, unknown>> {
   className?: string;
   loading?: boolean;
   error?: string;
-  theme?: "default" | "gold" | "blue" | "emerald" | "purple";
+  theme?: "default" | "gold" | "blue" | "emerald" | "purple" | "cyan" | "red";
   hideLegend?: boolean;
   hideGrid?: boolean;
   hideXAxis?: boolean;
@@ -64,13 +64,7 @@ interface PieChartProps<T = Record<string, unknown>> extends BaseChartProps<T> {
 }
 
 // Custom Glass Tooltip Component
-function GlassTooltip({
-  active,
-  payload,
-  label,
-  labelFormatter,
-  formatter,
-}: ChartTooltipProps) {
+function GlassTooltip({ active, payload, label, labelFormatter, formatter }: ChartTooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
 
   return (
@@ -154,6 +148,8 @@ export function GlassBarChart({
     purple: ["#C084FC", "#7C3AED"],
     emerald: ["#34D399", "#059669"],
     gold: ["#FBBF24", "#D97706"],
+    cyan: ["#22D3EE", "#0891B2"],
+    red: ["#F87171", "#DC2626"],
   }[theme] || ["#94A3B8", "#475569"];
 
   return (
@@ -286,6 +282,8 @@ export function GlassLineChart({
       purple: "#A855F7",
       emerald: "#10B981",
       gold: "#F59E0B",
+      cyan: "#06B6D4",
+      red: "#EF4444",
     }[theme] || "#94A3B8";
 
   return (
@@ -405,6 +403,8 @@ export function GlassPieChart({
       purple: ["#C084FC", "#9333EA", "#7C3AED", "#581C87"],
       emerald: ["#34D399", "#10B981", "#059669", "#064E3B"],
       gold: ["#FBBF24", "#F59E0B", "#D97706", "#78350F"],
+      cyan: ["#22D3EE", "#06B6D4", "#0891B2", "#164E63"],
+      red: ["#F87171", "#EF4444", "#DC2626", "#7F1D1D"],
     };
     const palette = palettes[theme] || palettes.default;
     return palette;

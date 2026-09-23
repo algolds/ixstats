@@ -32,6 +32,10 @@ export const TaxCalculatorSummary = React.memo(function TaxCalculatorSummary({
     );
   }
 
+  // adjustedGrossIncome = income - exemptions (see lib/economy/tax-calculator.ts)
+  const grossIncome = result.adjustedGrossIncome + result.totalExemptions;
+  const netIncome = grossIncome - result.taxOwed;
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <Card className="border-emerald-500/20 bg-emerald-500/5">
@@ -62,7 +66,7 @@ export const TaxCalculatorSummary = React.memo(function TaxCalculatorSummary({
             {formatCurrency(result.taxableIncome)}
           </p>
           <span className="text-muted-foreground text-[10px]">
-            Gross: {formatCurrency(result.grossIncome)}
+            Gross: {formatCurrency(grossIncome)}
           </span>
         </CardContent>
       </Card>
@@ -74,7 +78,7 @@ export const TaxCalculatorSummary = React.memo(function TaxCalculatorSummary({
             <TrendingUp className="h-4 w-4 text-indigo-500" />
           </div>
           <p className="text-foreground text-2xl font-bold tracking-tight">
-            {formatCurrency(result.netIncome)}
+            {formatCurrency(netIncome)}
           </p>
           <span className="text-muted-foreground text-[10px]">
             Keep Rate: {formatPercentage(100 - result.effectiveRate)}

@@ -15,6 +15,7 @@ import {
 } from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
+import { cn } from "~/lib/utils/cn";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 // oxlint-disable-next-line eslint/no-unused-vars
@@ -87,22 +88,18 @@ export function DebtAnalysisModal({
     const currentDebtRatio = fiscal?.totalDebtGDPRatio || 50;
     const currentInterestRate = fiscal?.interestRates || 3.5;
 
-    return filterAndSortHistory(
-      historicalData,
-      timeRange,
-      (point, formattedDate, timestamp) => {
-        const gdp = point.totalGdp || 0;
-        const publicDebt = gdp * (currentDebtRatio / 100);
-        const interestPayments = publicDebt * (currentInterestRate / 100);
-        return {
-          date: formattedDate,
-          timestamp,
-          publicDebt: publicDebt / 1e12,
-          debtToGdp: currentDebtRatio,
-          interestPayments: interestPayments / 1e9,
-        };
-      }
-    );
+    return filterAndSortHistory(historicalData, timeRange, (point, formattedDate, timestamp) => {
+      const gdp = point.totalGdp || 0;
+      const publicDebt = gdp * (currentDebtRatio / 100);
+      const interestPayments = publicDebt * (currentInterestRate / 100);
+      return {
+        date: formattedDate,
+        timestamp,
+        publicDebt: publicDebt / 1e12,
+        debtToGdp: currentDebtRatio,
+        interestPayments: interestPayments / 1e9,
+      };
+    });
   };
 
   const chartConfig = {
@@ -448,9 +445,7 @@ export function DebtAnalysisModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Data Points
               </span>
-              <span className="text-xl font-bold text-blue-400">
-                {debtStats?.dataPoints || 0}
-              </span>
+              <span className="text-xl font-bold text-blue-400">{debtStats?.dataPoints || 0}</span>
             </div>
           </div>
         </MetricModalLayout.Sidebar>
@@ -564,7 +559,16 @@ export function DebtAnalysisModal({
               <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Sustainability Status
               </span>
-              <span className={cn("text-xl font-bold", debtToGdp < 60 ? "text-emerald-400" : debtToGdp < 100 ? "text-amber-400" : "text-red-400")}>
+              <span
+                className={cn(
+                  "text-xl font-bold",
+                  debtToGdp < 60
+                    ? "text-emerald-400"
+                    : debtToGdp < 100
+                      ? "text-amber-400"
+                      : "text-red-400"
+                )}
+              >
                 {debtToGdp < 60 ? "Sustainable" : debtToGdp < 100 ? "Manageable" : "Critical"}
               </span>
               <span className="text-muted-foreground mt-1 text-[10px]">
@@ -673,9 +677,7 @@ export function DebtAnalysisModal({
                 <span className="text-muted-foreground text-[10px] font-semibold uppercase">
                   Average Maturity
                 </span>
-                <div className="mt-1 text-lg font-bold font-semibold text-cyan-400">
-                  8.5 Years
-                </div>
+                <div className="mt-1 text-lg font-bold font-semibold text-cyan-400">8.5 Years</div>
               </div>
             </CardContent>
           </Card>

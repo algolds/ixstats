@@ -1,11 +1,16 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Card, CardContent } from "./card";
-import { Skeleton } from "./skeleton";
-import { NumberFlowDisplay } from "./number-flow";
-import { HealthRing } from "./health-ring";
+import { Card, CardContent } from "~/components/ui/card";
+import { Skeleton } from "~/components/ui/skeleton";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { HealthRing } from "~/components/ui/health-ring";
 
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./accordion";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "~/components/ui/accordion";
 import {
   NavArrowDown as ChevronDown,
   NavArrowUp as ChevronUp,

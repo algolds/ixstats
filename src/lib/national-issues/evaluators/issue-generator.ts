@@ -1,26 +1,26 @@
 import type { PrismaClient } from "@prisma/client";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
-import type { CountrySnapshot, EvaluationResult } from "../engine";
+import type { CountrySnapshot, EvaluationResult, ConsequenceDefinition } from "../engine";
 
 export interface ResponseOptionTemplate {
   id: string;
   label: string;
   description: string;
-  consequences: Array<{
-    targetType: string;
-    targetField: string;
-    operation: "add" | "subtract" | "multiply" | "set";
-    value: number | string | boolean;
-    durationDays?: number;
-    delayDays?: number;
-  }>;
+  consequences: ConsequenceDefinition[];
   previewEffects: {
+    publicApproval?: number;
     economicImpact?: string;
     stabilityImpact?: string;
-    socialImpact?: string;
+    diplomaticImpact?: string;
   };
   outcomeText: string;
   isAutoResolveDefault?: boolean;
+  triggersFollowUp?: string[];
+  isRisky?: boolean;
+  partyAlignment?: string;
+  brokerAlignment?: string;
+  costMessage?: string;
+  recommendedDirective?: string;
 }
 
 export interface TemplateCandidate {
@@ -195,8 +195,7 @@ export async function maybeTriggerStaffingShortage(
       {
         id: "expand_civil_service",
         label: "Expand the civil service",
-        description:
-          "Fund additional administrative staff to meet the demands of active programs.",
+        description: "Fund additional administrative staff to meet the demands of active programs.",
         consequences: [],
         previewEffects: {
           economicImpact: "Higher payroll costs",

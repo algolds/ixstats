@@ -3,11 +3,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { isEqual } from "~/lib/utils";
 import { Badge as UIBadge } from "~/components/ui/badge";
-import {
-  Calculator,
-  Settings,
-  StatsReport as BarChart3,
-} from "iconoir-react";
+import { Calculator, Settings, StatsReport as BarChart3 } from "iconoir-react";
 import { Card } from "~/components/ui/card";
 import { useTaxBuilderAutoSync } from "~/hooks/useBuilderAutoSync";
 import {
@@ -72,7 +68,7 @@ export interface TaxBuilderProps {
   flat?: boolean;
 }
 
-const EMPTY_STRINGS: string[] = [];
+const EMPTY_COMPONENTS: ComponentType[] = [];
 const EMPTY_OBJECTS: never[] = [];
 
 export function TaxBuilder({
@@ -202,9 +198,8 @@ export function TaxBuilder({
 
   const activeComponents = useMemo(() => {
     return (
-      atomicComponents
-        ?.filter((c) => c.isActive)
-        .map((c) => c.componentType as ComponentType) || EMPTY_STRINGS
+      atomicComponents?.filter((c) => c.isActive).map((c) => c.componentType as ComponentType) ||
+      EMPTY_COMPONENTS
     );
   }, [atomicComponents]);
 
@@ -313,7 +308,8 @@ export function TaxBuilder({
               skipConflictCheck: true,
             });
           } catch (updateErr) {
-            const notFound = (updateErr as { data?: { code?: string } })?.data?.code === "NOT_FOUND";
+            const notFound =
+              (updateErr as { data?: { code?: string } })?.data?.code === "NOT_FOUND";
             if (notFound) {
               await createMutation.mutateAsync({
                 countryId,

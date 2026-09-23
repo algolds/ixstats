@@ -11,7 +11,6 @@ import type {
   TaxExemptionAmount,
 } from "~/types/tax-system";
 import type { CoreEconomicIndicatorsData } from "~/types/economics";
-import type { GovernmentBuilderState } from "~/types/government";
 import { TaxCalculatorEngine } from "~/lib/economy/tax-calculator";
 import { ComponentType } from "~/lib/enums";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
@@ -26,7 +25,7 @@ export interface UseTaxCalculatorStateProps {
   deductions: TaxDeduction[];
   onCalculationChange?: (result: TaxCalculationResult | null) => void;
   economicData?: CoreEconomicIndicatorsData;
-  governmentData?: GovernmentBuilderState;
+  governmentData?: { structure?: { budgetCurrency?: string } } | null;
   calculationMode?: "individual" | "corporate" | "both";
   governmentComponents?: ComponentType[];
   economicComponents?: EconomicComponentType[];

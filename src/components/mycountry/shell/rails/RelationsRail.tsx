@@ -13,12 +13,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
-import {
-  DomainKpiGrid,
-  DomainActivityCard,
-  type Kpi,
-  type ActivityEntry,
-} from "./shared";
+import { DomainKpiGrid, DomainActivityCard, type Kpi, type ActivityEntry } from "./shared";
 
 interface EmbassyItem {
   id: string;
@@ -141,7 +136,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
         list.push({
           id: `embassy-rel-${e.id}`,
           targetName: partnerName,
-          targetFlag: partnerFlag,
+          targetFlag: partnerFlag ?? null,
           strength,
           stance: getStrengthLabel(strength),
         });
@@ -260,10 +255,13 @@ export function RelationsRail({ countryId }: { countryId: string }) {
             </p>
           ) : (
             activeEmbassies.slice(0, 3).map((emb) => {
-              const partnerCountryObj = emb.guestCountryId === countryId ? emb.hostCountry : emb.guestCountry;
+              const partnerCountryObj =
+                emb.guestCountryId === countryId ? emb.hostCountry : emb.guestCountry;
               const partnerName =
                 (typeof emb.country === "string" ? emb.country : emb.country?.name) ??
-                (typeof partnerCountryObj === "string" ? partnerCountryObj : partnerCountryObj?.name) ??
+                (typeof partnerCountryObj === "string"
+                  ? partnerCountryObj
+                  : partnerCountryObj?.name) ??
                 "Partner Nation";
 
               const partnerFlag =

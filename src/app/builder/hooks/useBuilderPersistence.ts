@@ -1,14 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { isEqual } from "~/lib/utils";
-import {
-  safeSetItemSync,
-} from "~/lib/system/local-storage-mutex";
-import { api } from "~/trpc/react";
-import {
-  type BuilderState,
-  getInitialState,
-  sanitizeEconomicInputs,
-} from "./builderStateTypes";
+import { safeSetItemSync } from "~/lib/system/local-storage-mutex";
+import { api, type RouterInputs } from "~/trpc/react";
+import { asJsonPayload } from "../lib/json-payload";
+import { type BuilderState, getInitialState, sanitizeEconomicInputs } from "./builderStateTypes";
 
 interface UseBuilderPersistenceProps {
   mode: "create" | "edit";
@@ -138,7 +133,7 @@ export function useBuilderPersistence({
       return;
     }
 
-    const currentSyncPayload = {
+    const currentSyncPayload = asJsonPayload<RouterInputs["countries"]["updateCountry"]>({
       id: countryId,
       name:
         builderState.economicInputs?.countryName ||
@@ -152,7 +147,7 @@ export function useBuilderPersistence({
       taxSystemData: builderState.taxSystemData || undefined,
       governmentStructure: builderState.governmentStructure || undefined,
       economyBuilderState: builderState.economyBuilderState || undefined,
-    };
+    });
 
     if (!lastSyncedStateRef.current) {
       lastSyncedStateRef.current = currentSyncPayload;
@@ -225,7 +220,15 @@ export function useBuilderPersistence({
     if (serverDraftQuery.data?.updatedAt) {
       setLastSaved(new Date(serverDraftQuery.data.updatedAt));
     }
-  }, [serverDraftQuery.isLoading, serverDraftQuery.data, mode, localHadDataRef, setBuilderState, setHasRestoredState, setLastSaved]);
+  }, [
+    serverDraftQuery.isLoading,
+    serverDraftQuery.data,
+    mode,
+    localHadDataRef,
+    setBuilderState,
+    setHasRestoredState,
+    setLastSaved,
+  ]);
 
   useEffect(() => {
     if (mode === "edit") return;
@@ -233,7 +236,9 @@ export function useBuilderPersistence({
     if (!hasBuilderProgress(builderState)) return;
 
     const timer = setTimeout(() => {
-      saveDraftMutation.mutate({ data: builderStateRef.current });
+      saveDraftMutation.mutate({
+        data: asJsonPayload<RouterInputs["builderDraft"]["save"]["data"]>(builderStateRef.current),
+      });
     }, 2500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -254,7 +259,7 @@ export function useBuilderPersistence({
     }
 
     if (mode === "edit" && countryId && !isLoadingCountry) {
-      const currentSyncPayload = {
+      const currentSyncPayload = asJsonPayload<RouterInputs["countries"]["updateCountry"]>({
         id: countryId,
         name:
           builderStateRef.current.economicInputs?.countryName ||
@@ -271,7 +276,7 @@ export function useBuilderPersistence({
         taxSystemData: builderStateRef.current.taxSystemData || undefined,
         governmentStructure: builderStateRef.current.governmentStructure || undefined,
         economyBuilderState: builderStateRef.current.economyBuilderState || undefined,
-      };
+      });
       lastSyncedStateRef.current = currentSyncPayload;
       await updateMutation.mutateAsync(currentSyncPayload);
     }

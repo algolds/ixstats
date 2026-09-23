@@ -84,7 +84,7 @@ export function useMyCountryMetrics(activeTab: string) {
   const profileCacheKey = wikiTargetName ? `wiki-profile:${wikiTargetName}` : null;
 
   const { data: profileData, isLoading: wikiLoading } = api.wikiCache.getCountryProfile.useQuery(
-    { countryName: wikiTargetName, includePageVariants: false, maxSections: 1 },
+    { countryName: wikiTargetName },
     {
       enabled: !!wikiTargetName,
       staleTime: 24 * 60 * 60_000,

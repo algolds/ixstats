@@ -294,7 +294,6 @@ function ExecutiveAgendaComponent({
       >
         {/* StandBy Hero Clock & Telemetry Header */}
         <div className="border-border/70 bg-card/60 relative overflow-hidden rounded-2xl border p-4 shadow-xs backdrop-blur-xl dark:border-white/10 dark:bg-gradient-to-br dark:from-white/[0.06] dark:via-white/[0.02] dark:to-transparent dark:shadow-lg dark:shadow-black/20">
-
           <div className="border-border/60 relative z-10 flex flex-wrap items-center justify-between gap-3 border-b pb-3 dark:border-white/10">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 shadow-2xs backdrop-blur-md dark:border-cyan-400/20">
@@ -435,5 +434,4 @@ function ExecutiveAgendaComponent({
 
 export const ExecutiveAgenda = React.memo(ExecutiveAgendaComponent);
 export const V2MyAgenda = ExecutiveAgenda;
-export type { V2MyAgendaProps } from "./agenda";
 export type { ExecutiveAgendaProps } from "./agenda";

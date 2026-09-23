@@ -142,16 +142,6 @@ export const SPORT_LABELS: Record<string, string> = {
   boxing: "Boxing",
 };
 
-export const SPORT_EMOJIS: Record<SportPresetKey, string> = {
-  soccer: "⚽",
-  football: "🏈",
-  hockey: "🏒",
-  basketball: "🏀",
-  baseball: "⚾",
-  f1: "🏎️",
-  boxing: "🥊",
-};
-
 export const ARCHETYPE_LABELS: Record<ArchetypeType | string, string> = {
   league: "League",
   division_conference: "Division / Conference",

@@ -3,7 +3,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "~/context/auth-context";
-import { api } from "~/trpc/react";
+import { api, type RouterInputs } from "~/trpc/react";
+import { asJsonPayload } from "../../../lib/json-payload";
 import { useNotify } from "~/hooks/useNotify";
 import { createUrl } from "~/lib/utils";
 import { sanitizeEconomicInputs } from "../../../hooks/useBuilderState";
@@ -147,15 +148,17 @@ export function useBuilderSubmit({
           "Applying your changes to the country, government, and economic systems..."
         );
 
-        await updateCountryMutation.mutateAsync({
-          id: countryId,
-          name: economicInputs.countryName || "Updated Nation",
-          economicInputs: sanitizeEconomicInputs(economicInputs),
-          governmentComponents: formattedGovComps,
-          taxSystemData: builderState.taxSystemData,
-          governmentStructure: builderState.governmentStructure,
-          economyBuilderState: builderState.economyBuilderState || undefined,
-        });
+        await updateCountryMutation.mutateAsync(
+          asJsonPayload<RouterInputs["countries"]["updateCountry"]>({
+            id: countryId,
+            name: economicInputs.countryName || "Updated Nation",
+            economicInputs: sanitizeEconomicInputs(economicInputs),
+            governmentComponents: formattedGovComps,
+            taxSystemData: builderState.taxSystemData,
+            governmentStructure: builderState.governmentStructure,
+            economyBuilderState: builderState.economyBuilderState || undefined,
+          })
+        );
       } else {
         console.log("[Builder] Creating country:", economicInputs.countryName);
 
@@ -164,17 +167,21 @@ export function useBuilderSubmit({
           "Setting up your country, government, and economic systems..."
         );
 
-        await createCountryMutation.mutateAsync({
-          name: economicInputs.countryName || "New Nation",
-          foundationCountry:
-            builderState.selectedCountry?.name || builderState.selectedCountry?.countryCode || null,
-          economicInputs: sanitizeEconomicInputs(economicInputs),
-          governmentComponents: formattedGovComps,
-          taxSystemData: builderState.taxSystemData,
-          governmentStructure: builderState.governmentStructure,
-          economyBuilderState: builderState.economyBuilderState || undefined,
-          archetypeId: builderState.selectedArchetypeId || undefined,
-        });
+        await createCountryMutation.mutateAsync(
+          asJsonPayload<RouterInputs["countries"]["createCountry"]>({
+            name: economicInputs.countryName || "New Nation",
+            foundationCountry:
+              builderState.selectedCountry?.name ||
+              builderState.selectedCountry?.countryCode ||
+              null,
+            economicInputs: sanitizeEconomicInputs(economicInputs),
+            governmentComponents: formattedGovComps,
+            taxSystemData: builderState.taxSystemData,
+            governmentStructure: builderState.governmentStructure,
+            economyBuilderState: builderState.economyBuilderState || undefined,
+            archetypeId: builderState.selectedArchetypeId || undefined,
+          })
+        );
       }
       setIsConfirmModalOpen(false);
     } catch {
@@ -220,9 +227,7 @@ export function useBuilderSubmit({
     }
 
     const hasWarnings = Boolean(
-      warnings?.deltaWarning ||
-      warnings?.currencyChangeWarning ||
-      warnings?.gdpCapWarning
+      warnings?.deltaWarning || warnings?.currencyChangeWarning || warnings?.gdpCapWarning
     );
 
     if (!isEditMode && !hasWarnings) {
