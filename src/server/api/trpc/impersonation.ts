@@ -102,7 +102,7 @@ interface AuditDb {
         details: string;
         success: boolean;
       };
-    }) => Promise<unknown>;
+    }) => Promise<object>;
   };
 }
 
