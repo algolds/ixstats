@@ -1,13 +1,9 @@
 /**
- * Intelligence router — domain-split into subdirs and recombined here via mergeRouters.
- * Preserves the exact public API shape:
- * - api.intelligence.*
- * - api.intelligenceBriefing.*
+ * Intelligence router.
+ * Only the templates sub-router remains: feed, briefings, core, alerts and
+ * analytics had zero callers and were removed (plan 341, 2026-09-25).
+ * Public API shape: api.intelligence.*
  */
-import { mergeRouters } from "~/server/api/trpc";
-import { intelFeedRouter } from "./feed";
 import { intelTemplatesRouter } from "./templates";
-import { intelligenceBriefingRouter } from "./briefings";
 
-export const intelligenceRouter = mergeRouters(intelFeedRouter, intelTemplatesRouter);
-export { intelligenceBriefingRouter };
+export const intelligenceRouter = intelTemplatesRouter;

@@ -309,60 +309,65 @@ export function extractApiInventory(rootDir = DEFAULT_ROOT): ApiInventoryResult 
                 procedures: new Map<string, ProcedureInfo>(),
               };
 
-            // Inspect safeRouter("name", () => routerExpression)
-            if (propInit && propInit.isKind(SyntaxKind.CallExpression)) {
-              const safeArgs = propInit.getArguments();
-              if (safeArgs.length >= 2) {
-                const fnArg = safeArgs[1];
-                if (
-                  fnArg &&
-                  (fnArg.isKind(SyntaxKind.ArrowFunction) ||
-                    fnArg.isKind(SyntaxKind.FunctionExpression))
-                ) {
-                  const body = fnArg.getBody();
-                  if (body) {
-                    const bodyText = body
-                      .getText()
-                      .replace(/^{?\s*return\s+|\s*}?$/g, "")
-                      .trim();
+            // The initializer is a bare router identifier or `mergeRouters(a, b)`.
+            // (The legacy `safeRouter("name", () => expr)` wrapper is still unwrapped
+            // for older checkouts.)
+            let bodyText: string | null = null;
+            if (
+              propInit &&
+              propInit.isKind(SyntaxKind.CallExpression) &&
+              propInit.getExpression().getText() === "safeRouter"
+            ) {
+              const fnArg = propInit.getArguments()[1];
+              if (
+                fnArg &&
+                (fnArg.isKind(SyntaxKind.ArrowFunction) ||
+                  fnArg.isKind(SyntaxKind.FunctionExpression))
+              ) {
+                const body = fnArg.getBody();
+                if (body) {
+                  bodyText = body
+                    .getText()
+                    .replace(/^{?\s*return\s+|\s*}?$/g, "")
+                    .trim();
+                }
+              }
+            } else if (propInit) {
+              bodyText = propInit.getText().trim();
+            }
 
-                    // Check if body is mergeRouters(a, b)
-                    const mergeMatch = bodyText.match(/^mergeRouters\((.+)\)$/);
-                    const symbolsToResolve = mergeMatch
-                      ? mergeMatch[1]!.split(",").map((s) => s.trim())
-                      : [bodyText];
+            if (bodyText) {
+              // Check if body is mergeRouters(a, b)
+              const mergeMatch = bodyText.match(/^mergeRouters\((.+)\)$/);
+              const symbolsToResolve = mergeMatch
+                ? mergeMatch[1]!.split(",").map((s) => s.trim())
+                : [bodyText];
 
-                    for (const sym of symbolsToResolve) {
-                      const targetFile = importMap.get(sym);
-                      if (targetFile) {
-                        routerInfo.sourceFiles.add(
-                          path.relative(rootDir, targetFile).replace(/\\/g, "/")
-                        );
-                        const sf =
-                          proj.getSourceFile(targetFile) ?? proj.addSourceFileAtPath(targetFile);
-                        const fileProcs = resolveSymbolProcedures(sym, sf);
-                        if (fileProcs.length === 0) {
-                          // Fallback to resolving entire file
-                          const allInFile = resolveRouterFile(targetFile);
-                          for (const p of allInFile) {
-                            if (routerInfo.procedures.has(p.name)) {
-                              duplicates.push(`${routerKey}.${p.name}`);
-                            }
-                            routerInfo.procedures.set(p.name, p);
-                          }
-                        } else {
-                          for (const p of fileProcs) {
-                            if (routerInfo.procedures.has(p.name)) {
-                              duplicates.push(`${routerKey}.${p.name}`);
-                            }
-                            routerInfo.procedures.set(p.name, p);
-                          }
-                        }
-                      } else {
-                        unresolved.push(`${routerKey} -> ${sym}`);
+              for (const sym of symbolsToResolve) {
+                const targetFile = importMap.get(sym);
+                if (targetFile) {
+                  routerInfo.sourceFiles.add(path.relative(rootDir, targetFile).replace(/\\/g, "/"));
+                  const sf = proj.getSourceFile(targetFile) ?? proj.addSourceFileAtPath(targetFile);
+                  const fileProcs = resolveSymbolProcedures(sym, sf);
+                  if (fileProcs.length === 0) {
+                    // Fallback to resolving entire file
+                    const allInFile = resolveRouterFile(targetFile);
+                    for (const p of allInFile) {
+                      if (routerInfo.procedures.has(p.name)) {
+                        duplicates.push(`${routerKey}.${p.name}`);
                       }
+                      routerInfo.procedures.set(p.name, p);
+                    }
+                  } else {
+                    for (const p of fileProcs) {
+                      if (routerInfo.procedures.has(p.name)) {
+                        duplicates.push(`${routerKey}.${p.name}`);
+                      }
+                      routerInfo.procedures.set(p.name, p);
                     }
                   }
+                } else {
+                  unresolved.push(`${routerKey} -> ${sym}`);
                 }
               }
             }

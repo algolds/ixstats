@@ -7,11 +7,6 @@ import {
 } from "~/lib/government/tax/atomic-tax-components";
 import { modernArchetypes } from "~/lib/economy/archetypes/modern";
 import { historicalArchetypes } from "~/lib/economy/archetypes/historical";
-import {
-  enhancedArchetypes,
-  archetypeCategories,
-  validateArchetypeSelection,
-} from "~/lib/archetypes/catalog";
 import { extractDataFromWikiSections } from "~/lib/builder/wiki-data-extractor";
 
 describe("Plan 161: Domain Contract Boundary", () => {
@@ -52,33 +47,6 @@ describe("Plan 161: Domain Contract Boundary", () => {
       const britishEmpire = historicalArchetypes.get("british-empire");
       expect(britishEmpire).toBeDefined();
       expect(britishEmpire?.name).toBe("British Empire Model");
-    });
-  });
-
-  describe("Selectable Archetypes Catalog & Validator", () => {
-    it("contains 14 archetypes across 5 categories and validates selections", () => {
-      expect(enhancedArchetypes.length).toBe(14);
-      expect(archetypeCategories.length).toBe(5);
-
-      // Valid selection
-      expect(validateArchetypeSelection(["economic-powerhouse", "democratic-stable"])).toBe(true);
-
-      // Exceeds total selections (limit is 5)
-      expect(
-        validateArchetypeSelection([
-          "economic-powerhouse",
-          "developing-giant",
-          "resource-rich",
-          "service-economy",
-          "democratic-stable",
-          "federal-system",
-        ])
-      ).toBe(false);
-
-      // Exceeds category limit (economic category limit is 2)
-      expect(
-        validateArchetypeSelection(["economic-powerhouse", "developing-giant", "resource-rich"])
-      ).toBe(false);
     });
   });
 

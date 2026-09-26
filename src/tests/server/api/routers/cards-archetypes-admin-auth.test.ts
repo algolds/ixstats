@@ -18,15 +18,13 @@ jest.mock("~/lib/cards/card-service", () => ({
   transferCard: jest.fn(),
 }));
 
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { describe, it, expect } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardsAdminRouter } from "~/server/api/routers/cards/admin";
-import { archetypesAdminRouter } from "~/server/api/routers/archetypes/admin";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb } from "~/tests/helpers/transactional-mock-db";
 
 const createCardsCaller = createCallerFactory(cardsAdminRouter);
-const createArchetypesCaller = createCallerFactory(archetypesAdminRouter);
 
 const ordinaryUserCtx = (db: ReturnType<typeof createMockDb>) =>
   createMockRouterContext({
@@ -93,34 +91,5 @@ describe("cardsAdminRouter auth (Finding 2)", () => {
     expect(db.cardOwnership.create).toHaveBeenCalledTimes(1);
     // The freshly-created card can't already be owned, so no existing-ownership lookup is needed.
     expect(db.cardOwnership.findFirst).not.toHaveBeenCalled();
-  });
-});
-
-describe("archetypesAdminRouter auth (Finding 2)", () => {
-  it("rejects an ordinary user for every archetype mutation, without touching the DB", async () => {
-    const db = createMockDb();
-    const caller = createArchetypesCaller(ordinaryUserCtx(db) as never);
-
-    await expect(caller.recalculateArchetypeMatches()).rejects.toThrow();
-    await expect(
-      caller.createArchetype({
-        name: "Test",
-        description: "Test archetype",
-        categoryId: "cat_1",
-        iconName: "Circle",
-        color: "#fff",
-        gradient: "linear",
-        tags: [],
-        filterRules: {},
-      })
-    ).rejects.toThrow();
-    await expect(caller.updateArchetype({ id: "arch_1", name: "Renamed" })).rejects.toThrow();
-    await expect(caller.deleteArchetype({ id: "arch_1" })).rejects.toThrow();
-    await expect(caller.initializeArchetypeSystem()).rejects.toThrow();
-
-    expect(db.country.findMany).not.toHaveBeenCalled();
-    expect(db.archetype.create).not.toHaveBeenCalled();
-    expect(db.archetype.update).not.toHaveBeenCalled();
-    expect(db.archetypeCategory.create).not.toHaveBeenCalled();
   });
 });

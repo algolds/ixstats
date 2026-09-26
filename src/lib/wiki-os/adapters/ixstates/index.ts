@@ -20,7 +20,6 @@ export {
   type WikiExtractedContent,
   extractWikiContent,
 } from "./content-extractor";
-export * from "./content-analyzer";
 export * from "./entity-parser";
 export * from "./user-sync";
 export * from "./integration";
