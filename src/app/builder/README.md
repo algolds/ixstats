@@ -41,7 +41,7 @@ On commit, `api.countries.createCountry` (create mode) or `api.countries.updateC
 | `import/_components/` | `EligibleCountryGrid`, `WikiDeepScanPanel`, and related import UI |
 | `sections/` | Step section components (CoreIndicators, Economy, Labor, Demographics, FiscalSystem, GovernmentStructure) |
 | `components/` | Sidebar layout, notch bar, step nav, preview widget, vitality rings, welcome modal |
-| `hooks/` | `useBuilderActions`, `useBuilderAlerts`, `useBuilderState`, `useEconomyBuilderSync` |
+| `hooks/` | `useBuilderActions`, `useBuilderAlerts`, `useBuilderState` |
 | `lib/builder-theme.ts` | Section/step definitions, theming, section↔legacy-step mapping |
 | `data/archetypes/` | Archetype/preset data |
 
@@ -53,7 +53,7 @@ State is provided by `BuilderStateContext` (`components/enhanced/context/`) with
 | --- | --- |
 | `countries` | `createCountry`, `updateCountry`, `getByIdAtTime`, `getEligibleCountries`, `searchWiki`, `parseInfobox`, `getWikiPageImages` |
 | `mycountry` | `updateCountry` |
-| `economics` | `getEconomyBuilderState`, `saveEconomyBuilderState`, `syncEconomyWithGovernment`, `syncEconomyWithTax` |
+| `economics` | `getEconomyBuilderState`, `saveEconomyBuilderState` |
 | `government` | `getByCountryId`, `getComponents` |
 | `taxSystem` | `getByCountryId` |
 | `policies` | `calculatePolicyEffects`, `savePolicySelections` |

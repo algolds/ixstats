@@ -16,7 +16,7 @@ import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { stripBasePath } from "~/lib/base-path";
 import { PreText } from "~/components/ui/pretext";
 
-// ─── Section color mapping (matches NAV_COLORS from navigation.tsx) ──────────
+// ─── Section color mapping ─────────────────────────────────────────────────────
 export const SECTION_COLORS: Record<string, { accent: string; bg: string; label: string }> = {
   "/dashboard": { accent: "#10b981", bg: "bg-emerald-500/15", label: "Dashboard" },
   "/mycountry": { accent: "#f59e0b", bg: "bg-amber-500/15", label: "MyCountry" },

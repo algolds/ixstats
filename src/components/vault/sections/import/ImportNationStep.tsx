@@ -4,7 +4,6 @@ import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Globe,
-  Sparks as Sparkles,
   OpenNewWindow as ExternalLink,
   ShieldCheck,
   Download,

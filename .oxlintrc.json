@@ -195,8 +195,7 @@
         "src/app/builder/utils/governmentValidation.ts",
         "src/lib/flags/png-to-svg.ts",
         "src/lib/maps/story-pin-icons.ts",
-        "src/lib/maps/map-engine.ts",
-        "src/hooks/useGeoWorker.ts"
+        "src/lib/maps/map-engine.ts"
       ],
       "rules": {
         "import/no-named-as-default": "off",

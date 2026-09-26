@@ -27,7 +27,6 @@ import { useWorldMapLayers } from "./hooks/useWorldMapLayers";
 import { useWorldMapInteractions } from "./hooks/useWorldMapInteractions";
 import { useWorldMapOverlayFeatures } from "./hooks/useWorldMapOverlayFeatures";
 import { useWorldMapDataOverlays } from "./hooks/useWorldMapDataOverlays";
-import { useGeoWorker } from "~/hooks/useGeoWorker";
 
 // MapLibre types imported dynamically since the module requires browser APIs
 type MapLibreMap = import("maplibre-gl").Map;
@@ -159,9 +158,6 @@ const IxWorldMap = memo(
     ref
   ) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const { filterByArea: workerFilterByArea } = useGeoWorker();
-    const workerFilterRef = useRef(workerFilterByArea);
-    workerFilterRef.current = workerFilterByArea;
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [debugError, setDebugError] = useState<string | null>(null);

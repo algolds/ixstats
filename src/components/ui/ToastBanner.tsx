@@ -12,7 +12,7 @@ import {
 } from "iconoir-react";
 import type { ToastQueueItem } from "~/stores/toastQueueStore";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 interface ToastBannerProps {
   toast: ToastQueueItem;

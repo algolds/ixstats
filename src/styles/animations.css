@@ -1,13 +1,4 @@
 /* Marquee animations - optimized for performance */
-@keyframes marquee-legacy {
-  from {
-    transform: translate3d(0%, 0, 0);
-  }
-  to {
-    transform: translate3d(-100%, 0, 0);
-  }
-}
-
 @keyframes marqueeY {
   from {
     transform: translate3d(0, 0%, 0);
@@ -47,16 +38,6 @@
   /* Improve text rendering during animation */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-.marquee-content {
-  display: flex;
-  animation: marquee-legacy linear infinite;
-  will-change: transform;
-  backface-visibility: hidden;
-  perspective: 1000px;
-  /* Optimize for GPU */
-  transform: translateZ(0);
 }
 
 /* Performance optimizations for marquee items */
@@ -375,7 +356,6 @@
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .marquee-content,
   .animate-optimized,
   .infinite-scroll,
   .animated-flag,

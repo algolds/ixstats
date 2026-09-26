@@ -17,7 +17,6 @@ import type { EconomyBuilderState, EconomicHealthMetrics } from "~/types/economy
 import type { EconomicInputs } from "../../lib/economy-data-service";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import type { GovernmentBuilderState, RevenueSource } from "~/types/government";
-import { useEconomyBuilderSync } from "../../hooks/useEconomyBuilderSync";
 
 import { Suspense } from "react";
 import { EconomySectorsTab, WorkforceSocietyTab } from "./tabs";
@@ -187,24 +186,13 @@ export function EconomyBuilderPage({
     governmentSizeIndicator: "Medium",
   });
 
-  const taxSystemData = builderContext?.builderState?.taxSystemData ?? null;
-
-
-
-  const {
-    economyBuilderRef,
-    economicInputsRef,
-  } = useEconomyBuilderSync({
-    countryId,
-    enabled: !builderContext,
-    economyBuilder,
-    economicInputs,
-    governmentComponents,
-    taxSystemData,
-    onEconomicInputsChange,
-    onPersistEconomyBuilder,
-    setEconomyBuilder,
-  });
+  // Stable refs to the latest values for callbacks that must not re-subscribe.
+  const economyBuilderRef = useRef(economyBuilder);
+  const economicInputsRef = useRef(economicInputs);
+  useEffect(() => {
+    economyBuilderRef.current = economyBuilder;
+    economicInputsRef.current = economicInputs;
+  }, [economyBuilder, economicInputs]);
 
   const lastProcessedRevenueSourcesRef = useRef<string | null>(null);
 
