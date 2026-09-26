@@ -14,7 +14,7 @@ import {
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import Image from "next/image";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
-import { getRarityTheme } from "~/components/vault/vault-theme";
+import { getRarityTheme } from "~/lib/cards/display-utils";
 
 export default function NSDeckPage() {
   const params = useParams();

@@ -23,6 +23,7 @@ import {
   type TransportSegmentInput,
   type VehicleTrip,
 } from "~/lib/maps/transport-vehicle-sim";
+import { distanceKm } from "~/lib/maps/geo-math";
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -69,22 +70,7 @@ interface HubPillarData {
 
 // ── Math Helpers ────────────────────────────────────────────────────
 
-function haversineDistKm(a: [number, number], b: [number, number]): number {
-  const [lng1, lat1] = a;
-  const [lng2, lat2] = b;
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const sinHalfLat = Math.sin(dLat / 2);
-  const sinHalfLng = Math.sin(dLng / 2);
-  const aVal =
-    sinHalfLat * sinHalfLat +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      sinHalfLng *
-      sinHalfLng;
-  return 2 * R * Math.atan2(Math.sqrt(aVal), Math.sqrt(1 - aVal));
-}
+const haversineDistKm = distanceKm;
 
 // ── Typed Control Adapter (MapLibre <-> MapboxOverlay) ───────────────
 

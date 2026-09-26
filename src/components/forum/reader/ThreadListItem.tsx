@@ -8,6 +8,7 @@ import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import * as IconoirIcons from "iconoir-react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
+import { timeAgo } from "~/lib/format/compact";
 
 interface ThreadListItemProps {
   threadId: number;
@@ -24,16 +25,7 @@ interface ThreadListItemProps {
   isOpen: boolean;
 }
 
-function formatTimeAgo(unixTimestamp: number): string {
-  const now = Date.now() / 1000;
-  const diff = now - unixTimestamp;
-
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-  return new Date(unixTimestamp * 1000).toLocaleDateString();
-}
+const formatTimeAgo = (unixTimestamp: number) => timeAgo(unixTimestamp * 1000);
 
 export function ThreadListItem({
   threadId,

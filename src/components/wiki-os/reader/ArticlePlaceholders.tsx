@@ -4,6 +4,7 @@ import { MapPin } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { withBasePath } from "~/lib/base-path";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
+import { distanceKmLatLng } from "~/lib/maps/geo-math";
 
 export function injectPlaceholderElements(html: string): string {
   let processed = html;
@@ -102,17 +103,8 @@ export function calculateDistanceAndBearing(
   lat2: number,
   lng2: number
 ): { distanceKm: number; bearing: string } {
-  const R = 6371; // Earth radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distanceKm = Math.round(R * c);
+  const distanceKm = Math.round(distanceKmLatLng(lat1, lng1, lat2, lng2));
 
   const y = Math.sin(dLng) * Math.cos((lat2 * Math.PI) / 180);
   const x =

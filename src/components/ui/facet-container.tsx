@@ -1,6 +1,6 @@
 "use client";
 
-import React, { forwardRef, useEffect, useRef, useState } from "react";
+import React, { forwardRef, useRef, useState } from "react";
 import { cn } from "~/lib/utils/cn";
 import { TextureOverlay, type TextureType } from "./texture-overlay";
 
@@ -109,29 +109,25 @@ export const FacetContainer = forwardRef<HTMLDivElement, FacetContainerProps>(
     },
     ref
   ) => {
-    const initialDepth = normalizeFacetDepth(depth);
-    const [currentDepth, setCurrentDepth] = useState<1 | 2 | 3 | 4>(initialDepth);
+    // The rendered depth is derived: the `depth` prop plus a transient interaction offset.
+    // (No prop→state mirror effect; a prop change is reflected on the next render.)
+    const baseDepth = normalizeFacetDepth(depth);
+    const [depthOffset, setDepthOffset] = useState(0);
     const [isInteracting, setIsInteracting] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const clampDepth = (d: number) => Math.max(1, Math.min(4, d)) as 1 | 2 | 3 | 4;
+    const currentDepth = clampDepth(baseDepth + depthOffset);
 
-    // Track active depth state changes
-    useEffect(() => {
-      const normalized = normalizeFacetDepth(depth);
-      if (currentDepth !== normalized) {
-        setCurrentDepth(normalized);
-        onDepthChange?.(normalized);
-      }
-    }, [depth, currentDepth, onDepthChange]);
+    const applyOffset = (offset: number) => {
+      setDepthOffset(offset);
+      onDepthChange?.(clampDepth(baseDepth + offset));
+    };
 
     // Handle user interaction spring responses
     const handleInteractionStart = (event: React.MouseEvent | React.FocusEvent) => {
       setIsInteracting(true);
 
-      if (interactive === "hover" || interactive === "focus") {
-        const newDepth = Math.min(4, currentDepth + 1) as 1 | 2 | 3 | 4;
-        setCurrentDepth(newDepth);
-        onDepthChange?.(newDepth);
-      }
+      if (interactive === "hover" || interactive === "focus") applyOffset(1);
 
       if (event.type === "mouseenter" && onMouseEnter) {
         onMouseEnter(event as React.MouseEvent<HTMLDivElement>);
@@ -143,11 +139,7 @@ export const FacetContainer = forwardRef<HTMLDivElement, FacetContainerProps>(
     const handleInteractionEnd = (event: React.MouseEvent | React.FocusEvent) => {
       setIsInteracting(false);
 
-      if (interactive === "hover" || interactive === "focus") {
-        const normalized = normalizeFacetDepth(depth);
-        setCurrentDepth(normalized);
-        onDepthChange?.(normalized);
-      }
+      if (interactive === "hover" || interactive === "focus") applyOffset(0);
 
       if (event.type === "mouseleave" && onMouseLeave) {
         onMouseLeave(event as React.MouseEvent<HTMLDivElement>);
@@ -158,9 +150,9 @@ export const FacetContainer = forwardRef<HTMLDivElement, FacetContainerProps>(
 
     const handleClick = (event: React.MouseEvent) => {
       if (interactive === "click") {
-        const newDepth = currentDepth === 4 ? 1 : ((Math.min(4, currentDepth + 1)) as 1 | 2 | 3 | 4);
-        setCurrentDepth(newDepth);
-        onDepthChange?.(newDepth);
+        // Cycle 1→2→3→4→1 relative to the base depth.
+        const next = currentDepth === 4 ? 1 : currentDepth + 1;
+        applyOffset(next - baseDepth);
       }
 
       onClick?.(event as React.MouseEvent<HTMLDivElement>);

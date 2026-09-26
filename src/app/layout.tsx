@@ -9,7 +9,8 @@ import { facetClerkAppearance } from "~/lib/clerk/theme";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
-import { Navigation, NavigationTransitionHandler, RackFocusBlurWrapper } from "~/app/_components";
+import { MotionConfig } from "motion/react";
+import { Navigation, NavigationTransitionHandler } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/ui/webgl-error-handler";
 import {
@@ -71,42 +72,33 @@ function AppContent({
     <TRPCReactProvider>
       <GlobalLinkTooltipProvider>
         <ThemeProvider>
-          <AbilityProvider>
-            <IxTimeProvider>
-              <ExecutiveNotificationProvider>
-                <WikiContextProvider>
-                  <MediaThemeProvider>
-                    <CuelumeSoundProvider>
+          {/* One switch honours prefers-reduced-motion for every `motion` element in the tree. */}
+          <MotionConfig reducedMotion="user">
+            <AbilityProvider>
+              <IxTimeProvider>
+                <ExecutiveNotificationProvider>
+                  <WikiContextProvider>
+                    <MediaThemeProvider>
                       <ToastProvider>
                         <LazyGameProviders>
                           <WebGLErrorHandler />
                           <MapPrefetcher />
                           <NavigationTransitionHandler />
-                          {isStandalone ? (
-                            <div className="flex min-h-screen flex-col">
-                              <Navigation />
-                              <main className="flex flex-1 flex-col">
-                                <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                              </main>
-                            </div>
-                          ) : (
-                            <div className="flex min-h-screen flex-col">
-                              <Navigation />
-                              <SetupRedirect />
-                              <main className="flex flex-1 flex-col">
-                                <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                              </main>
-                              <MiniPlayer />
-                            </div>
-                          )}
+                          <CuelumeSoundProvider />
+                          <div className="flex min-h-screen flex-col">
+                            <Navigation />
+                            {!isStandalone && <SetupRedirect />}
+                            <main className="flex flex-1 flex-col">{children}</main>
+                            {!isStandalone && <MiniPlayer />}
+                          </div>
                         </LazyGameProviders>
                       </ToastProvider>
-                    </CuelumeSoundProvider>
-                  </MediaThemeProvider>
-                </WikiContextProvider>
-              </ExecutiveNotificationProvider>
-            </IxTimeProvider>
-          </AbilityProvider>
+                    </MediaThemeProvider>
+                  </WikiContextProvider>
+                </ExecutiveNotificationProvider>
+              </IxTimeProvider>
+            </AbilityProvider>
+          </MotionConfig>
         </ThemeProvider>
       </GlobalLinkTooltipProvider>
     </TRPCReactProvider>

@@ -17,6 +17,8 @@
  * src/lib/procedural/climate-system.ts.
  */
 
+import { distanceKm as haversineKm } from "~/lib/maps/geo-math";
+
 // ─────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────
@@ -818,22 +820,7 @@ export function buildGeoProfile(raw: {
 /**
  * Calculates Great-Circle distance between two [lng, lat] coordinates in kilometers using Haversine formula.
  */
-export function calculateHaversineDistance(
-  coord1: [number, number],
-  coord2: [number, number]
-): number {
-  const R = 6371; // Earth's mean radius in km
-  const dLat = ((coord2[1] - coord1[1]) * Math.PI) / 180;
-  const dLon = ((coord2[0] - coord1[0]) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((coord1[1] * Math.PI) / 180) *
-      Math.cos((coord2[1] * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
+export const calculateHaversineDistance = haversineKm;
 
 /**
  * Calculates total cumulative distance for a series of polyline coordinates in kilometers.

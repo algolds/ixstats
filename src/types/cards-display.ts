@@ -240,4 +240,8 @@ export interface RarityConfig {
   glowIntensity: string;
   borderColor: string;
   label: string;
+  /** "r,g,b" of the rarity hue, for inline rgba() glows and borders. */
+  rgb: string;
+  /** Outline badge classes (border + text + tint). */
+  badgeStyle: string;
 }

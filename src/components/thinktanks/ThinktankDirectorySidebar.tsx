@@ -8,6 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
+import { timeAgo } from "~/lib/format/compact";
 
 interface ThinktankDirectorySidebarProps {
   groups: any[];
@@ -18,22 +19,8 @@ interface ThinktankDirectorySidebarProps {
   onCreateGroup: () => void;
 }
 
-function formatRelativeTime(date?: string | Date | null): string {
-  if (!date) return "";
-  const now = Date.now();
-  const diffMs = now - new Date(date).getTime();
-  if (isNaN(diffMs) || diffMs < 0) return "";
-  const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 60) return "Just now";
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m`;
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours}h`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays === 1) return "1d";
-  if (diffDays < 7) return `${diffDays}d`;
-  return `${Math.floor(diffDays / 7)}w`;
-}
+const formatRelativeTime = (date?: string | Date | null) =>
+  date ? timeAgo(date, { suffix: false }) : "";
 
 export function ThinktankDirectorySidebar({
   groups,

@@ -1,6 +1,8 @@
 // src/components/halo/plugins/wiki/types.ts
 // Shared types, constants, and utilities for the Halo Wiki plugin.
 
+import { timeAgo } from "~/lib/format/compact";
+
 export const NARRATOR_ACCENT = "#3b82f6";
 
 export const NARRATOR_SPEEDS = [0.8, 1.0, 1.25, 1.5, 2.0];
@@ -29,13 +31,4 @@ export interface PausedSession {
   updatedAt: number;
 }
 
-export function formatTimeAgo(timestamp: number): string {
-  const diff = Date.now() - timestamp;
-  if (diff < 60000) return "just now";
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
+export const formatTimeAgo = (timestamp: number): string => timeAgo(timestamp);

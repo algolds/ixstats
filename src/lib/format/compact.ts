@@ -9,15 +9,23 @@ export function formatCompact(num: number): string {
 }
 
 /**
- * Format a Date into a relative time string (e.g. "5m ago", "2h ago", "3d ago").
+ * Format a timestamp as a relative time string: "just now", "5m ago", "2h ago", "3d ago",
+ * then a short date after 30 days. `{ suffix: false }` drops " ago" for compact list rows.
+ *
+ * The single relative-time formatter in the codebase (13 hand-rolled copies were folded
+ * into it on 2026-09-25, plan 345). Accepts a Date, ISO string or epoch milliseconds.
  */
-export function timeAgo(date: Date): string {
-  const diffMin = Math.floor((Date.now() - date.getTime()) / 60000);
+export function timeAgo(input: Date | string | number, opts: { suffix?: boolean } = {}): string {
+  const date = input instanceof Date ? input : new Date(input);
+  const diffMs = Date.now() - date.getTime();
+  if (!Number.isFinite(diffMs)) return "";
+  const suffix = opts.suffix === false ? "" : " ago";
+  const diffMin = Math.floor(diffMs / 60000);
   if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 60) return `${diffMin}m${suffix}`;
   const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffHr < 24) return `${diffHr}h${suffix}`;
   const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 30) return `${diffDay}d ago`;
+  if (diffDay < 30) return `${diffDay}d${suffix}`;
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }

@@ -9,6 +9,7 @@
 
 import { useState, useCallback, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
+import { distanceKm } from "~/lib/maps/geo-math";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 
 // ── Types ──
@@ -68,17 +69,7 @@ function delay(ms: number): Promise<void> {
 }
 
 /** Haversine distance in km between two [lng, lat] points. */
-function haversineKm(coords1: [number, number], coords2: [number, number]): number {
-  const R = 6371;
-  const dLat = ((coords2[1] - coords1[1]) * Math.PI) / 180;
-  const dLng = ((coords2[0] - coords1[0]) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((coords1[1] * Math.PI) / 180) *
-      Math.cos((coords2[1] * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+const haversineKm = distanceKm;
 
 // ── Hook ──
 

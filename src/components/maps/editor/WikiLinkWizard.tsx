@@ -23,6 +23,7 @@ import {
 } from "iconoir-react";
 import { useDebounce } from "~/hooks/useDebounce";
 import { api } from "~/trpc/react";
+import { distanceKm } from "~/lib/maps/geo-math";
 
 export interface WikiImportableFields {
   population?: number;
@@ -134,15 +135,7 @@ export function WikiLinkWizard({
   // Coordinate distance warning
   const coordDistance = (() => {
     if (!infobox?.coordinates || !currentCoords) return null;
-    const [lng1, lat1] = currentCoords;
-    const [lng2, lat2] = infobox.coordinates;
-    const R = 6371;
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLng = ((lng2 - lng1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-    return Math.round(2 * R * Math.asin(Math.sqrt(a)));
+    return Math.round(distanceKm(currentCoords, infobox.coordinates));
   })();
 
   // Linked state — show linked page with unlink option

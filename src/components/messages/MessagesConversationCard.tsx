@@ -8,20 +8,9 @@ import { cn } from "~/lib/utils";
 import type { MessageFolder } from "~/types/messages";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { timeAgo } from "~/lib/format/compact";
 
-function formatRelativeTime(date: Date | string): string {
-  const now = new Date();
-  const d = new Date(date);
-  const diffMs = now.getTime() - d.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "now";
-  if (diffMin < 60) return `${diffMin}m`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 7) return `${diffDay}d`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
+const formatRelativeTime = (date: Date | string) => timeAgo(date, { suffix: false });
 
 interface MessagesConversationCardProps {
   conversation: any;

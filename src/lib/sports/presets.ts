@@ -249,76 +249,17 @@ export function getPreset(key: SportPresetKey): SportPreset {
   return preset;
 }
 
-export function getPresetsByArchetype(archetype: ArchetypeType): SportPreset[] {
-  return SPORT_PRESETS.filter((p) => p.archetype === archetype);
-}
-
 export function getAllPresets(): SportPreset[] {
   return SPORT_PRESETS;
 }
 
-export interface ArchetypeConfig {
-  type: ArchetypeType;
-  name: string;
-  usesDivisions: boolean;
-  usesPlayoffs: boolean;
-  usesPoints: boolean;
-  pointsForWin: number;
-  pointsForDraw: number;
-  postseasonType:
-    "none" | "optional_playoff" | "seeded_bracket" | "elimination_bracket" | "points_championship";
-}
-
-export const ARCHETYPE_CONFIGS: ArchetypeConfig[] = [
-  {
-    type: "league",
-    name: "League",
-    usesDivisions: false,
-    usesPlayoffs: true,
-    usesPoints: true,
-    pointsForWin: 3,
-    pointsForDraw: 1,
-    postseasonType: "optional_playoff",
-  },
-  {
-    type: "division_conference",
-    name: "Division / Conference",
-    usesDivisions: true,
-    usesPlayoffs: true,
-    usesPoints: true,
-    pointsForWin: 2,
-    pointsForDraw: 1,
-    postseasonType: "seeded_bracket",
-  },
-  {
-    type: "bracket",
-    name: "Bracket",
-    usesDivisions: false,
-    usesPlayoffs: true,
-    usesPoints: false,
-    pointsForWin: 1,
-    pointsForDraw: 0,
-    postseasonType: "elimination_bracket",
-  },
-  {
-    type: "circuit",
-    name: "Circuit",
-    usesDivisions: false,
-    usesPlayoffs: false,
-    usesPoints: true,
-    pointsForWin: 25,
-    pointsForDraw: 0,
-    postseasonType: "points_championship",
-  },
-];
-
-export function getArchetypeConfig(type: ArchetypeType): ArchetypeConfig {
-  const config = ARCHETYPE_CONFIGS.find((c) => c.type === type);
-  if (!config) {
-    throw new Error(`Archetype config not found for type: ${type}`);
-  }
-  return config;
-}
+/**
+ * Standings points for a win / draw. Every simulation path (match-day, full-season,
+ * playoff and the cron tick) awards the same amount; the cron used to award 2 for
+ * non-league archetypes, so the same league scored differently by code path.
+ */
+export const POINTS_FOR_WIN = 3;
+export const POINTS_FOR_DRAW = 1;
 
 export const SPORTS_ABBREVIATIONS: Record<string, string> = {
   // Soccer

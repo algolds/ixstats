@@ -9,7 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { IxCreditsSymbol } from "../../../IxCreditsSymbol";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
-import { getRarityTheme } from "~/components/vault/vault-theme";
+import { getRarityTheme } from "~/lib/cards/display-utils";
 import type { MarketAuctionItem } from "./types";
 
 export function AuctionCardItem({

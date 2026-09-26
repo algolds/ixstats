@@ -25,20 +25,7 @@ import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { cn, createUrl } from "~/lib/utils";
-
-function formatRelativeTime(date: Date | string | number): string {
-  const d = new Date(date);
-  const now = new Date();
-  const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
-  if (diffSec < 60) return "just now";
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
+import { timeAgo as formatRelativeTime } from "~/lib/format/compact";
 
 export function BlurbSection() {
   const [modalOpen, setModalOpen] = useState(false);

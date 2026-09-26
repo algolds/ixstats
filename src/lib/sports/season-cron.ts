@@ -15,6 +15,7 @@ import { transitionToNextStage } from "./transition";
 import { postMatchDayBulletin } from "./feed-post";
 import { notifyClubMatchResult } from "./club-notify";
 import { resolveMatchPredictions, outcomeFromScores } from "./predictions";
+import { POINTS_FOR_DRAW, POINTS_FOR_WIN } from "./presets";
 import type { MatchDayResultLine } from "./feed-bulletins";
 
 type Prisma = PrismaClient;
@@ -446,8 +447,7 @@ async function advanceLeagueMatchDay(
     });
 
     if (existing) {
-      const pointsForWin = season.league.archetype === "league" ? 3 : 2;
-      const newPoints = existing.points + rec.wins * pointsForWin + rec.draws;
+      const newPoints = existing.points + rec.wins * POINTS_FOR_WIN + rec.draws * POINTS_FOR_DRAW;
 
       await prisma.sportStanding.update({
         where: { id: existing.id },
@@ -459,7 +459,6 @@ async function advanceLeagueMatchDay(
         },
       });
     } else {
-      const pointsForWin = season.league.archetype === "league" ? 3 : 2;
       await prisma.sportStanding.create({
         data: {
           seasonId: season.id,
@@ -467,7 +466,7 @@ async function advanceLeagueMatchDay(
           wins: rec.wins,
           losses: rec.losses,
           draws: rec.draws,
-          points: rec.wins * pointsForWin + rec.draws,
+          points: rec.wins * POINTS_FOR_WIN + rec.draws * POINTS_FOR_DRAW,
         },
       });
     }

@@ -10,6 +10,7 @@ import {
   projectPointToSegment,
   distanceDeg,
 } from "~/lib/maps/border-editor";
+import { distanceKm } from "~/lib/maps/geo-math";
 
 export const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as Feature[] };
 
@@ -227,21 +228,9 @@ export function updateSnapGuide(map: MapLibreMap, from: Position | null, to: Pos
 }
 
 /**
- * Calculate distance between two points in kilometers using haversine formula
+ * Distance between two [lng, lat] points in km (haversine, IxEarth radius).
  */
-export function haversineDistance(coord1: [number, number], coord2: [number, number]): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = ((coord2[1] - coord1[1]) * Math.PI) / 180;
-  const dLon = ((coord2[0] - coord1[0]) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((coord1[1] * Math.PI) / 180) *
-      Math.cos((coord2[1] * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
+export const haversineDistance = distanceKm;
 
 /**
  * Snap a coordinate point to visible background features (rivers, lakes, elevation contour, climate zones).
