@@ -1,0 +1,78 @@
+{
+  "$comment": "Shrink-only. Remove an entry when its test passes and lower `ceiling` to match. Adding entries needs reviewer sign-off and CI will reject growth vs the base branch.",
+  "ceiling": 13,
+  "tests": [
+    {
+      "path": "src/app/builder/__tests__/identityUtils.test.ts",
+      "reason": "pre-existing failure measured 2026-09-26 at 926610f8 (1 failing test)",
+      "owner": "unassigned"
+    },
+    {
+      "path": "src/tests/app/mycountry/editor-hooks.test.ts",
+      "reason": "pre-existing failure measured 2026-09-26 at 926610f8 (1 failing test)",
+      "owner": "unassigned"
+    },
+    {
+      "path": "src/tests/components/cards/designer/CardDesigner.test.ts",
+      "reason": "pre-existing failure measured 2026-09-26 at 926610f8 (1 failing test)",
+      "owner": "unassigned"
+    },
+    {
+      "path": "src/tests/hooks/useMapHistory.test.ts",
+      "reason": "pre-existing failure measured 2026-09-26 at 926610f8 (1 failing test)",
+      "owner": "unassigned"
+    },
+    {
+      "path": "src/tests/lib/economy/national-mobility.test.ts",
+      "reason": "pre-existing failure measured 2026-09-26 at 926610f8 (1 failing test)",
+      "owner": "unassigned"
+    },
+    {
+      "path": "src/tests/lib/format-utils.test.ts",
+      "reason": "pre-existing failure measured 2026-09-26 at 926610f8 (3 failing tests)",
+      "owner": "unassigned"
+    },
+    {
+      "path": "src/tests/lib/wiki-os/parse-template-wikitext.test.ts",
+      "reason": "pre-existing failure measured 2026-09-26 at 926610f8 (2 failing tests)",
+      "owner": "unassigned"
+    },
+    {
+      "path": "src/tests/lib/wiki-os/wiki-ast-converter.test.ts",
+      "reason": "pre-existing failure measured 2026-09-26 at 926610f8 (1 failing test)",
+      "owner": "unassigned"
+    },
+    {
+      "path": "src/tests/scripts/entrypoint-dynamic-imports.test.ts",
+      "reason": "cron/server/ws entrypoints import missing modules — see table in plan 326",
+      "owner": "plan 330"
+    },
+    {
+      "path": "src/tests/scripts/router-residue.test.ts",
+      "reason": "pre-existing failure measured 2026-09-26 at 926610f8 (5 failing tests)",
+      "owner": "unassigned"
+    },
+    {
+      "path": "src/tests/sports/hockey.test.ts",
+      "reason": "pre-existing failure measured 2026-09-26 at 926610f8 (1 failing test)",
+      "owner": "unassigned"
+    },
+    {
+      "path": "src/tests/sports/integration.test.ts",
+      "reason": "pre-existing failure measured 2026-09-26 at 926610f8 (1 failing test)",
+      "owner": "unassigned"
+    },
+    {
+      "path": "src/tests/sports/transition.test.ts",
+      "reason": "pre-existing failure measured 2026-09-26 at 926610f8 (1 failing test)",
+      "owner": "unassigned"
+    }
+  ],
+  "entrypoints": [
+    {
+      "path": "server.mjs",
+      "reason": "SyntaxError at server.mjs:298 (half-merged IxTwitter block)",
+      "owner": "plan 330"
+    }
+  ]
+}
