@@ -84,7 +84,7 @@ async function resolveFilePath(wiki: WikiConfig, wikiKey: string, rawName: strin
   let filename = decodeURIComponent(rawName);
   if (filename.includes("|")) filename = filename.split("|")[0]!.trim();
   // Strip zero-width and control characters that sneak into filenames.
-  filename = filename.replace(/[​-‏ - ﻿\x00-\x1F]/g, "").trim();
+  filename = filename.replace(/[\u200B-\u200F\u2028-\u202F\uFEFF\x00-\x1F]/g, "").trim();
 
   const cacheOptions = {
     service: "mediawiki" as const,
