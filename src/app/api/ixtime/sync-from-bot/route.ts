@@ -120,7 +120,7 @@ export async function POST(request: Request) {
       IxTime.setTimeOverride(botData.ixTimeTimestamp);
     }
 
-    if (botData.multiplier) {
+    if (typeof botData.multiplier === "number") {
       IxTime.setMultiplierOverride(botData.multiplier);
     }
 

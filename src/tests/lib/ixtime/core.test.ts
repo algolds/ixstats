@@ -2,13 +2,13 @@ import { IxTime } from "~/lib/ixtime";
 
 describe("IxTime Core Chronometry & Temporal Engine", () => {
   beforeEach(() => {
-    IxTime.clearTimeOverride();
     IxTime.clearMultiplierOverride();
+    IxTime.clearTimeOverride();
   });
 
   afterEach(() => {
-    IxTime.clearTimeOverride();
     IxTime.clearMultiplierOverride();
+    IxTime.clearTimeOverride();
   });
 
   describe("Epochs and Constants", () => {
@@ -97,6 +97,15 @@ describe("IxTime Core Chronometry & Temporal Engine", () => {
   });
 
   describe("Overrides and Pause Mechanics", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
     it("should honor time and multiplier overrides", () => {
       const overrideTime = new Date("2050-01-01T00:00:00.000Z").getTime();
       IxTime.setTimeOverride(overrideTime);

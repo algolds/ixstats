@@ -54,28 +54,41 @@ export class IxTime {
   }
 
   /**
-   * Convert a real-world timestamp to its IxTime equivalent.
-   * Uses the same pivot-point system as getCurrentIxTime for consistency.
+   * Canonical (override-free) mapping from real time to IxTime:
+   * 4x from the real-world epoch until the 7/27/25 pivot, then 2x from Jan 1, 2040.
    */
-  static convertToIxTime(realWorldTimestamp: number): number {
-    if (this.multiplierOverride === 0) {
-      return this.timeOverride ?? this.getCurrentIxTime();
-    }
-
+  private static canonicalIxTime(realMs: number): number {
+    // July 27, 2025 00:00:00 UTC = January 1, 2040 IxTime
     const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
     const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
 
-    if (realWorldTimestamp >= PIVOT_POINT_REAL) {
+    if (realMs >= PIVOT_POINT_REAL) {
       // After pivot: 2x from Jan 1, 2040 IxTime
-      const realElapsed = (realWorldTimestamp - PIVOT_POINT_REAL) / 1000;
-      const mult = this.multiplierOverride ?? this.POST_SPEED_CHANGE_MULTIPLIER;
-      return PIVOT_POINT_IXTIME + realElapsed * mult * 1000;
-    } else {
-      // Before pivot: 4x from real-world epoch
-      const realElapsed = (realWorldTimestamp - this.REAL_WORLD_EPOCH) / 1000;
-      const mult = this.multiplierOverride ?? this.BASE_TIME_MULTIPLIER;
-      return this.REAL_WORLD_EPOCH + realElapsed * mult * 1000;
+      const realElapsed = (realMs - PIVOT_POINT_REAL) / 1000;
+      return PIVOT_POINT_IXTIME + realElapsed * this.POST_SPEED_CHANGE_MULTIPLIER * 1000;
     }
+    // Before pivot: 4x from real-world epoch
+    const realElapsed = (realMs - this.REAL_WORLD_EPOCH) / 1000;
+    return this.REAL_WORLD_EPOCH + realElapsed * this.BASE_TIME_MULTIPLIER * 1000;
+  }
+
+  /**
+   * Convert a real-world timestamp to its IxTime equivalent.
+   * Agrees with getCurrentIxTime: timestamps at or after the active anchor progress from
+   * it at the current multiplier; earlier timestamps use the canonical formula, so an
+   * override never rewrites history.
+   */
+  static convertToIxTime(realWorldTimestamp: number): number {
+    if (
+      this.timeOverride !== null &&
+      this.timeOverrideSetAt !== null &&
+      realWorldTimestamp >= this.timeOverrideSetAt
+    ) {
+      return (
+        this.timeOverride + (realWorldTimestamp - this.timeOverrideSetAt) * this.getTimeMultiplier()
+      );
+    }
+    return this.canonicalIxTime(realWorldTimestamp);
   }
 
   /**
@@ -101,26 +114,9 @@ export class IxTime {
       return this.timeOverride + ixTimeElapsed;
     }
 
-    // CORRECTED CALCULATION: July 27, 2025 00:00:00 UTC = January 1, 2040 IxTime
-    const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
-    const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
-    const now = Date.now();
-
-    if (now >= PIVOT_POINT_REAL) {
-      // After July 27, 2025: Use 2x multiplier from the pivot point
-      const realTimeElapsed = (now - PIVOT_POINT_REAL) / 1000;
-      const currentMultiplier =
-        this.multiplierOverride !== null
-          ? this.multiplierOverride
-          : this.POST_SPEED_CHANGE_MULTIPLIER;
-      const ixTimeElapsed = realTimeElapsed * currentMultiplier * 1000;
-      return PIVOT_POINT_IXTIME + ixTimeElapsed;
-    } else {
-      // Before July 27, 2025: Use 4x multiplier to reach the pivot point
-      const realTimeElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
-      const ixTimeElapsed = realTimeElapsed * this.BASE_TIME_MULTIPLIER * 1000;
-      return this.REAL_WORLD_EPOCH + ixTimeElapsed;
-    }
+    // No anchor: a non-null multiplierOverride always comes with a time anchor
+    // (see applyMultiplier), so the canonical formula is authoritative here.
+    return this.canonicalIxTime(Date.now());
   }
 
   /**
@@ -170,13 +166,26 @@ export class IxTime {
   }
 
   /**
-   * Add months to an IxTime timestamp
+   * Add calendar months to an IxTime timestamp (UTC). The day of month is clamped to the
+   * length of the target month, so 31 Jan + 1 month is 28/29 Feb, never 2/3 March.
    */
   static addMonths(ixTime: number | Date, months: number): number {
     const timeMs = ixTime instanceof Date ? ixTime.getTime() : ixTime;
-    const date = new Date(timeMs);
-    date.setMonth(date.getMonth() + months);
-    return date.getTime();
+    const d = new Date(timeMs);
+    const totalMonths = d.getUTCFullYear() * 12 + d.getUTCMonth() + months;
+    const year = Math.floor(totalMonths / 12);
+    const month = totalMonths - year * 12;
+    const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    const day = Math.min(d.getUTCDate(), lastDay);
+    return Date.UTC(
+      year,
+      month,
+      day,
+      d.getUTCHours(),
+      d.getUTCMinutes(),
+      d.getUTCSeconds(),
+      d.getUTCMilliseconds()
+    );
   }
 
   /**
@@ -439,12 +448,33 @@ export class IxTime {
     this.timeOverrideSetAt = null;
   }
 
+  /** Freeze the current game time as the new reference point before the speed changes. */
+  private static anchorAtCurrentTime(): void {
+    const current = this.getCurrentIxTime();
+    this.timeOverride = current;
+    this.timeOverrideSetAt = Date.now();
+  }
+
+  /**
+   * Change the multiplier override without letting the game clock jump.
+   * Anchors only when the effective speed actually changes, so clearing an
+   * already-natural clock leaves no override behind.
+   */
+  private static applyMultiplier(next: number | null): void {
+    const effectiveBefore = this.getTimeMultiplier();
+    const effectiveAfter = next ?? this.getDefaultMultiplier();
+    if (effectiveBefore !== effectiveAfter) {
+      this.anchorAtCurrentTime(); // must run BEFORE multiplierOverride changes
+    }
+    this.multiplierOverride = next;
+  }
+
   static setMultiplierOverride(multiplier: number): void {
-    this.multiplierOverride = multiplier;
+    this.applyMultiplier(multiplier);
   }
 
   static clearMultiplierOverride(): void {
-    this.multiplierOverride = null;
+    this.applyMultiplier(null);
   }
 
   static getTimeMultiplier(): number {
@@ -466,14 +496,14 @@ export class IxTime {
 
     if (multiplier === naturalMultiplier) {
       // Clear override to use natural progression
-      this.multiplierOverride = null;
+      this.applyMultiplier(null);
       return {
         isNatural: true,
         message: `Set to natural ${multiplier}x speed for current era`,
       };
     } else {
       // Set as override since it doesn't match natural progression
-      this.multiplierOverride = multiplier;
+      this.applyMultiplier(multiplier);
       return {
         isNatural: false,
         message: `Set to ${multiplier}x speed (override)`,
