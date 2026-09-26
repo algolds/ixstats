@@ -96,6 +96,14 @@ export function WikiVisualEditor({
   );
 
   const handleSave = useCallback(async () => {
+    // Never save leftover HTML: blocks without canonical wikitext must be fixed in source mode.
+    if (!wtRef.current.complete) {
+      state.notify.error(
+        "Save Blocked",
+        "Some content could not be converted to wikitext; switch to source mode to fix it."
+      );
+      return;
+    }
     const wikitextToSave = wtRef.current.wikitext || htmlRef.current;
     await state.executeSave(() => wikitextToSave);
     saveDraft({ title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
@@ -273,14 +281,6 @@ export function WikiVisualEditor({
           onCancel={onCancel}
           onSave={handleSave}
           handleSaveDraft={handleSaveDraft}
-          saving={state.saving}
-          saveDropdownOpen={state.saveDropdownOpen}
-          setSaveDropdownOpen={state.setSaveDropdownOpen}
-          saveActionType={state.saveActionType}
-          setSaveActionType={state.setSaveActionType}
-          setShowSavePanel={state.setShowSavePanel}
-          summary={state.summary}
-          setSummary={state.setSummary}
           activeFormats={fmt.activeFormats}
           exec={fmt.exec}
           setHeading={fmt.setHeading}

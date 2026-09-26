@@ -6,7 +6,7 @@
 
 import { Transforms, type Descendant, type BaseEditor } from "slate";
 import { MASTER_TEMPLATE_PRESETS } from "~/lib/wiki-os/templates/master-presets";
-import { templatePresetToNode } from "../insert-template";
+import { insertTemplatePreset } from "../insert-template";
 
 export interface SlashItem {
   id: string;
@@ -136,7 +136,7 @@ export const SLASH_ITEMS: SlashItem[] = [
       preset.category === "engine"
         ? "Live Simulation Connectors"
         : (CATEGORY_OF_NAME[preset.name] ?? "Factbooks & Infoboxes"),
-    execute: insertNode(templatePresetToNode(preset)),
+    execute: (editor) => insertTemplatePreset(editor, preset),
   })),
 
   {

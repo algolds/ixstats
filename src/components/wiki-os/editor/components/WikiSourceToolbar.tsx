@@ -36,7 +36,6 @@ import { WikiEditorHeader } from "./WikiEditorHeader";
 import { StashDropdown } from "./shared/StashDropdown";
 import { TemplateDropdown } from "./shared/TemplateDropdown";
 import { SettingsDropdown } from "./shared/SettingsDropdown";
-import type { SaveActionType } from "../types";
 
 export interface WikiSourceToolbarProps {
   title: string;
@@ -48,14 +47,6 @@ export interface WikiSourceToolbarProps {
   onCancel: () => void;
   onSave: () => void;
   handleSaveDraft: () => void;
-  saving: boolean;
-  saveDropdownOpen: boolean;
-  setSaveDropdownOpen: (open: boolean) => void;
-  saveActionType: SaveActionType;
-  setSaveActionType: (t: SaveActionType) => void;
-  setShowSavePanel: (show: boolean) => void;
-  summary: string;
-  setSummary: (s: string) => void;
 
   handleUndo: () => void;
   handleRedo: () => void;
@@ -75,13 +66,6 @@ export function WikiSourceToolbar({
   onSwitchToVisual,
   onCancel,
   handleSaveDraft,
-  saving,
-  saveDropdownOpen,
-  setSaveDropdownOpen,
-  setSaveActionType,
-  setShowSavePanel,
-  summary,
-  setSummary,
   handleUndo,
   handleRedo,
   wrapSelection,
@@ -100,13 +84,13 @@ export function WikiSourceToolbar({
         onSwitchMode={onSwitchToVisual}
         onCancel={onCancel}
         handleSaveDraft={handleSaveDraft}
-        saving={saving}
-        saveDropdownOpen={saveDropdownOpen}
-        setSaveDropdownOpen={setSaveDropdownOpen}
-        setSaveActionType={setSaveActionType}
-        setShowSavePanel={setShowSavePanel}
-        summary={summary}
-        setSummary={setSummary}
+        saving={modal.saving}
+        saveDropdownOpen={modal.saveDropdownOpen}
+        setSaveDropdownOpen={modal.setSaveDropdownOpen}
+        setSaveActionType={modal.setSaveActionType}
+        setShowSavePanel={modal.setShowSavePanel}
+        summary={modal.summary}
+        setSummary={modal.setSummary}
         extraActions={
           <button
             className={cn(

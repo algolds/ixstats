@@ -32,7 +32,6 @@ import { StashDropdown } from "./shared/StashDropdown";
 import { TemplateDropdown } from "./shared/TemplateDropdown";
 import { SettingsDropdown } from "./shared/SettingsDropdown";
 import { WikiEditorHeader } from "./WikiEditorHeader";
-import type { SaveActionType } from "../types";
 
 export interface WikiVisualToolbarProps {
   title: string;
@@ -43,14 +42,6 @@ export interface WikiVisualToolbarProps {
   onCancel: () => void;
   onSave: () => void;
   handleSaveDraft: () => void;
-  saving: boolean;
-  saveDropdownOpen: boolean;
-  setSaveDropdownOpen: (open: boolean) => void;
-  saveActionType: SaveActionType;
-  setSaveActionType: (t: SaveActionType) => void;
-  setShowSavePanel: (show: boolean) => void;
-  summary: string;
-  setSummary: (s: string) => void;
   activeFormats: Set<string>;
   exec: (cmd: string, val?: string) => void;
   setHeading: (level: number) => void;
@@ -75,13 +66,6 @@ export function WikiVisualToolbar({
   onSwitchToSource,
   onCancel,
   handleSaveDraft,
-  saving,
-  saveDropdownOpen,
-  setSaveDropdownOpen,
-  setSaveActionType,
-  setShowSavePanel,
-  summary,
-  setSummary,
   activeFormats,
   exec,
   setHeading,
@@ -109,13 +93,13 @@ export function WikiVisualToolbar({
         onSwitchMode={onSwitchToSource}
         onCancel={onCancel}
         handleSaveDraft={handleSaveDraft}
-        saving={saving}
-        saveDropdownOpen={saveDropdownOpen}
-        setSaveDropdownOpen={setSaveDropdownOpen}
-        setSaveActionType={setSaveActionType}
-        setShowSavePanel={setShowSavePanel}
-        summary={summary}
-        setSummary={setSummary}
+        saving={modal.saving}
+        saveDropdownOpen={modal.saveDropdownOpen}
+        setSaveDropdownOpen={modal.setSaveDropdownOpen}
+        setSaveActionType={modal.setSaveActionType}
+        setShowSavePanel={modal.setShowSavePanel}
+        summary={modal.summary}
+        setSummary={modal.setSummary}
       />
 
       {/* ─── Full Formatting Toolbar ─── */}

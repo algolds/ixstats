@@ -7,6 +7,7 @@
 import { Transforms, type Descendant, type BaseEditor } from "slate";
 import { nanoid } from "platejs";
 import type { MasterTemplatePreset } from "~/lib/wiki-os/templates/master-presets";
+import { serializeTemplateToWikitext } from "~/lib/wiki-os/wikitext/serializer";
 
 export function templatePresetToNode(preset: MasterTemplatePreset): Record<string, unknown> {
   const params = Object.fromEntries(
@@ -21,6 +22,7 @@ export function templatePresetToNode(preset: MasterTemplatePreset): Record<strin
     name: preset.name,
     params,
     html: `<div typeof="mw:Transclusion" class="wikios-ve-template"><em>${preset.description}</em></div>`,
+    wikitext: serializeTemplateToWikitext({ name: preset.name, params }),
     children: [{ text: "" }],
   };
 }

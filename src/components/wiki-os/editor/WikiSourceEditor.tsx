@@ -402,14 +402,6 @@ export function WikiSourceEditor({
           onCancel={onCancel}
           onSave={handleSave}
           handleSaveDraft={handleSaveDraft}
-          saving={state.saving}
-          saveDropdownOpen={state.saveDropdownOpen}
-          setSaveDropdownOpen={state.setSaveDropdownOpen}
-          saveActionType={state.saveActionType}
-          setSaveActionType={state.setSaveActionType}
-          setShowSavePanel={state.setShowSavePanel}
-          summary={state.summary}
-          setSummary={state.setSummary}
           handleUndo={handleUndo}
           handleRedo={handleRedo}
           wrapSelection={wrapSelection}
