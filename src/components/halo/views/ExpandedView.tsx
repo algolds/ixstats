@@ -34,7 +34,7 @@ function ExpandedViewComponent({
 
   const handleStopImpersonating = () => {
     localStorage.removeItem("ixstats.play_as_user");
-    window.location.href = "/admin/user-management";
+    window.location.href = "/admin/users";
   };
 
   // Don't render if mode is compact

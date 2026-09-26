@@ -46,8 +46,8 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
         icon: Settings,
         label: "General Settings",
         description: "Time, economy & general parameters",
-        href: "/admin/settings",
-        section: "settings",
+        href: "/admin/platform",
+        section: "platform",
         color: "blue",
       },
       {
@@ -62,8 +62,8 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
         icon: Users,
         label: "User Management",
         description: "User list & country binders",
-        href: "/admin/user-management",
-        section: "user-management",
+        href: "/admin/users",
+        section: "users",
         color: "emerald",
       },
       {
@@ -118,8 +118,8 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
         icon: Activity,
         label: "User Logs",
         description: "Audit trail & terminal outputs",
-        href: "/admin/user-logs",
-        section: "user-logs",
+        href: "/admin/logs",
+        section: "logs",
         color: "indigo",
       },
       {

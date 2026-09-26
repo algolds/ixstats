@@ -205,7 +205,6 @@ export function AdminRouter() {
   const renderContent = () => {
     switch (activeSection) {
       // Platform & Systems
-      case "settings":
       case "platform":
         return <PlatformSettingsPanel />;
       case "autosave-monitor":
@@ -230,7 +229,6 @@ export function AdminRouter() {
         return <StorytellerPanel />;
       case "realms":
         return <RealmsPanel defaultTab="realms" />;
-      case "worldstudio":
       case "maps":
         return <WorldStudioPanel />;
       case "style-editor":
@@ -260,14 +258,12 @@ export function AdminRouter() {
         return <RingsAuditPanel />;
 
       // Users & Security
-      case "user-management":
       case "users":
         return <UserManagement mode="users" />;
       case "user-roles":
         return <UserManagement mode="roles" />;
       case "membership":
         return <MembershipPanel />;
-      case "user-logs":
       case "logs":
         return <LogsPanel />;
 

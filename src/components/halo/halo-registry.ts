@@ -366,22 +366,6 @@ export const CORE_COMMANDS: CommandEntry[] = [
     description: "Voronoi terrain mesh generator and spline topology inspector",
     keywords: ["mesh", "voronoi", "pipeline", "terrain", "splines", "map generator"],
   },
-  {
-    name: "Simulation Sandbox",
-    path: "/labs/sandbox",
-    icon: Flask,
-    category: "Labs",
-    description: "Isolated sandbox to test economic dynamics and formulas",
-    keywords: ["sandbox", "test", "experiment", "sim", "model", "lab"],
-  },
-  {
-    name: "Facet Design Bible",
-    path: "/labs/design-bible",
-    icon: LayoutLeft,
-    category: "Labs",
-    description: "UI component showcase and glass physics design system",
-    keywords: ["design", "facet", "tokens", "components", "bible", "ui"],
-  },
 
   // ─── 8. System & Settings ─────────────────────────────────────────────────
   {

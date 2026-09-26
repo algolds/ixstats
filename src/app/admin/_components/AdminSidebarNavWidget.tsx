@@ -123,11 +123,11 @@ const NAV_GROUPS: NavGroup[] = [
         items: [
           {
             label: "WorldStudio Generator",
-            href: "/admin/worldstudio",
+            href: "/admin/maps",
             icon: Map,
             description: "Map editor and GIS vector layers",
             glyphClass: "bg-teal-500/15 text-teal-500 dark:text-teal-400",
-            section: "worldstudio",
+            section: "maps",
           },
           {
             label: "Map Style Editor",
@@ -409,11 +409,11 @@ const NAV_GROUPS: NavGroup[] = [
           },
           {
             label: "User Logs",
-            href: "/admin/user-logs",
+            href: "/admin/logs",
             icon: Terminal,
             description: "Audit trail and admin action logs",
             glyphClass: "bg-indigo-500/15 text-indigo-500 dark:text-indigo-400",
-            section: "user-logs",
+            section: "logs",
           },
           {
             label: "Membership Tiers",
@@ -469,11 +469,8 @@ function getSectionFromPathname(rawPathname: string): string {
   const pathname = rawPathname.replace(/\/$/, "");
   if (pathname === "/admin") return "dashboard";
 
-  // Alias maps
-  if (pathname.includes("/admin/settings")) return "platform";
   if (pathname.includes("/admin/platform")) return "platform";
   if (pathname.includes("/admin/autosave-monitor")) return "autosave-monitor";
-  if (pathname.includes("/admin/user-management")) return "users";
 
   for (const group of NAV_GROUPS) {
     for (const sub of group.subgroups) {
