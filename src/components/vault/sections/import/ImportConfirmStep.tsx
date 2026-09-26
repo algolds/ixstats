@@ -45,7 +45,7 @@ export function ImportConfirmStep({
     <div className="space-y-6">
       <div className="flex flex-col items-center py-2 text-center">
         <motion.div
-          initial={{ scale: 0 }}
+          initial={{ scale: 0.96, opacity: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 15 }}
           className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20 ring-2 ring-green-400/30"
@@ -102,7 +102,7 @@ export function ImportCompleteStep({
         <div className="relative mb-6">
           <motion.div
             className="absolute inset-0 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 blur-3xl"
-            initial={{ scale: 0 }}
+            initial={{ scale: 0.96, opacity: 0 }}
             animate={{ scale: [0, 2, 1.5], opacity: [0, 0.8, 0.4] }}
             transition={{ duration: 0.8 }}
           />

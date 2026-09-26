@@ -375,7 +375,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
                   opacity: particle.opacity,
                   boxShadow: `0 0 ${particle.size * 2}px ${particle.color}`,
                 }}
-                initial={{ scale: 0 }}
+                initial={{ scale: 0.96, opacity: 0 }}
                 animate={{ scale: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ duration: 0.3 }}

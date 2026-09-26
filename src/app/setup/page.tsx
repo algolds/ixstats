@@ -262,7 +262,7 @@ export default function SetupPage() {
                     className="text-center"
                   >
                     <motion.div
-                      initial={{ scale: 0 }}
+                      initial={{ scale: 0.96, opacity: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                       className="mb-8"
@@ -754,7 +754,7 @@ export default function SetupPage() {
                   >
                     <div className="mb-12">
                       <motion.div
-                        initial={{ scale: 0 }}
+                        initial={{ scale: 0.96, opacity: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                         className="facet-hierarchy-parent mx-auto mb-10 flex h-40 w-40 items-center justify-center rounded-full"

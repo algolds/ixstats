@@ -137,7 +137,7 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
             </button>
 
             {bulkMode && selectedCards.size > 0 && (
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex gap-2">
+              <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1 }} className="flex gap-2">
                 <button
                   onClick={() => handleBulkAction("junk")}
                   className="rounded-lg bg-red-500/20 px-3 py-1 text-sm font-medium text-red-300 hover:bg-red-500/30"
