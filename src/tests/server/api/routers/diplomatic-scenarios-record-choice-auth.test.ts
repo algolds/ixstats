@@ -95,13 +95,16 @@ describe("diplomaticScenarios.recordChoice auth (Finding 5)", () => {
         choiceLabel: "Choice 1",
       })
     ).rejects.toThrow();
-    expect(db.culturalScenario.update).not.toHaveBeenCalled();
+    expect(db.culturalScenario.updateMany).not.toHaveBeenCalled();
   });
 
   it("resolves for the owner of country1Id recording a choice for their own country", async () => {
     const db = createMockDb();
     db.culturalScenario.findUnique = jest.fn().mockResolvedValue(makeScenario() as never);
-    db.culturalScenario.update = jest.fn().mockResolvedValue(makeScenario({ status: "completed" }) as never);
+    db.culturalScenario.updateMany = jest.fn().mockResolvedValue({ count: 1 } as never);
+    db.culturalScenario.findUniqueOrThrow = jest
+      .fn()
+      .mockResolvedValue(makeScenario({ status: "completed" }) as never);
     db.country.findUnique = jest
       .fn()
       .mockResolvedValue({ id: COUNTRY_A, name: "Country A", flag: null } as never);
@@ -116,7 +119,7 @@ describe("diplomaticScenarios.recordChoice auth (Finding 5)", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(db.culturalScenario.update).toHaveBeenCalledTimes(1);
+    expect(db.culturalScenario.updateMany).toHaveBeenCalledTimes(1);
   });
 
   it("forbids the owner of country1Id from recording a choice for a scenario that doesn't involve them", async () => {
@@ -136,6 +139,6 @@ describe("diplomaticScenarios.recordChoice auth (Finding 5)", () => {
         choiceLabel: "Choice 1",
       })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(db.culturalScenario.update).not.toHaveBeenCalled();
+    expect(db.culturalScenario.updateMany).not.toHaveBeenCalled();
   });
 });

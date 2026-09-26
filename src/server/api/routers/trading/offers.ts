@@ -18,6 +18,13 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { getVaultConfig } from "~/lib/vault/vault-service";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { globalCache } from "~/lib/cache";
+import {
+  claimPendingTradeTx,
+  lockCardsTx,
+  transferCardsTx,
+  transferCreditsTx,
+  unlockCardsTx,
+} from "~/lib/vault/trade-settlement";
 
 /**
  * Trade offer creation schema
@@ -164,10 +171,7 @@ export const tradingOffersRouter = createTRPCRouter({
       expiresAt.setHours(expiresAt.getHours() + 24);
 
       const trade = await ctx.db.$transaction(async (tx: any) => {
-        await tx.cardOwnership.updateMany({
-          where: { id: { in: input.initiatorCardIds } },
-          data: { isLocked: true },
-        });
+        await lockCardsTx(tx, input.initiatorCardIds, initiatorDbId);
 
         return await tx.tradeOffer.create({
           data: {
@@ -293,10 +297,13 @@ export const tradingOffersRouter = createTRPCRouter({
       }
 
       if (new Date() > trade.expiresAt) {
-        // Auto-expire the trade
-        await ctx.db.tradeOffer.update({
-          where: { id: input.tradeId },
-          data: { status: TradeStatus.EXPIRED },
+        // Auto-expire the trade (only if still PENDING) and release the initiator's cards
+        await ctx.db.$transaction(async (tx: any) => {
+          await tx.tradeOffer.updateMany({
+            where: { id: input.tradeId, status: TradeStatus.PENDING },
+            data: { status: TradeStatus.EXPIRED },
+          });
+          await unlockCardsTx(tx, trade.initiatorCardIds as string[], trade.initiatorId);
         });
 
         throw new TRPCError({
@@ -308,17 +315,10 @@ export const tradingOffersRouter = createTRPCRouter({
       // Handle different actions
       if (input.action === "REJECT") {
         const result = await ctx.db.$transaction(async (tx: any) => {
-          const initiatorCardIds = trade.initiatorCardIds as string[];
+          await claimPendingTradeTx(tx, input.tradeId, TradeStatus.REJECTED, new Date());
+          await unlockCardsTx(tx, trade.initiatorCardIds as string[], trade.initiatorId);
 
-          await tx.cardOwnership.updateMany({
-            where: { id: { in: initiatorCardIds } },
-            data: { isLocked: false },
-          });
-
-          return await tx.tradeOffer.update({
-            where: { id: input.tradeId },
-            data: { status: TradeStatus.REJECTED },
-          });
+          return await tx.tradeOffer.findUniqueOrThrow({ where: { id: input.tradeId } });
         });
 
         await Promise.all([
@@ -392,22 +392,9 @@ export const tradingOffersRouter = createTRPCRouter({
 
         // Atomically unlock original offer's cards, lock counter-offer's cards, and create counter
         const result = await ctx.db.$transaction(async (tx: any) => {
-          const originalInitiatorCardIds = trade.initiatorCardIds as string[];
-
-          await tx.cardOwnership.updateMany({
-            where: { id: { in: originalInitiatorCardIds } },
-            data: { isLocked: false },
-          });
-
-          await tx.cardOwnership.updateMany({
-            where: { id: { in: newInitiatorCardIds } },
-            data: { isLocked: true },
-          });
-
-          await tx.tradeOffer.update({
-            where: { id: input.tradeId },
-            data: { status: TradeStatus.REJECTED },
-          });
+          await claimPendingTradeTx(tx, input.tradeId, TradeStatus.REJECTED, new Date());
+          await unlockCardsTx(tx, trade.initiatorCardIds as string[], trade.initiatorId);
+          await lockCardsTx(tx, newInitiatorCardIds, userId);
 
           return await tx.tradeOffer.create({
             data: {
@@ -441,23 +428,29 @@ export const tradingOffersRouter = createTRPCRouter({
         return result;
       }
 
-      // ACCEPT - Execute the trade atomically
+      // ACCEPT - Execute the trade atomically (every transition is a conditional write)
       const completedTrade = await ctx.db.$transaction(async (tx: any) => {
         // Cast Json card IDs to string arrays
         const initiatorCardIds = trade.initiatorCardIds as string[];
         const recipientCardIds = trade.recipientCardIds as string[];
         const now = new Date();
 
-        // Unlock and transfer cards from initiator to recipient (batch update)
-        await tx.cardOwnership.updateMany({
-          where: { id: { in: initiatorCardIds } },
-          data: {
-            ownerId: trade.recipientId,
-            userId: trade.recipientId,
-            isLocked: false,
-            acquiredAt: now,
-            lastSaleDate: now,
-          },
+        await claimPendingTradeTx(tx, input.tradeId, TradeStatus.ACCEPTED, now);
+
+        // Initiator cards were locked at offer time; recipient cards were not and must still be free
+        await transferCardsTx(tx, {
+          ids: initiatorCardIds,
+          fromId: trade.initiatorId,
+          toId: trade.recipientId,
+          expectLocked: true,
+          now,
+        });
+        await transferCardsTx(tx, {
+          ids: recipientCardIds,
+          fromId: trade.recipientId,
+          toId: trade.initiatorId,
+          expectLocked: false,
+          now,
         });
 
         // Grant 25 XP per card traded to recipient and log transfer
@@ -479,18 +472,6 @@ export const tradingOffersRouter = createTRPCRouter({
           });
         }
 
-        // Unlock and transfer cards from recipient to initiator (batch update)
-        await tx.cardOwnership.updateMany({
-          where: { id: { in: recipientCardIds } },
-          data: {
-            ownerId: trade.initiatorId,
-            userId: trade.initiatorId,
-            isLocked: false,
-            acquiredAt: now,
-            lastSaleDate: now,
-          },
-        });
-
         // Grant 25 XP per card traded to initiator and log transfer
         for (const ownershipId of recipientCardIds) {
           await grantCardXp(
@@ -510,57 +491,21 @@ export const tradingOffersRouter = createTRPCRouter({
           });
         }
 
-        // Transfer credits if any
-        if (trade.initiatorCredits > 0) {
-          // Deduct from initiator and capture result to avoid redundant query
-          const initiatorVault = await tx.myVault.update({
-            where: { userId: trade.initiatorId },
-            data: { credits: { decrement: trade.initiatorCredits } },
-          });
-
-          // Add to recipient
-          await tx.myVault.update({
-            where: { userId: trade.recipientId },
-            data: { credits: { increment: trade.initiatorCredits } },
-          });
-
-          // Log transactions using cached vault data (fixes redundant queries)
-          await tx.vaultTransaction.create({
-            data: {
-              vaultId: initiatorVault.id,
-              credits: -trade.initiatorCredits,
-              balanceAfter: initiatorVault.credits, // Already decremented by the update
-              type: "SPEND_MARKET",
-              source: "P2P_TRADE",
-              metadata: { tradeId: input.tradeId },
-            },
-          });
-        }
-
-        if (trade.recipientCredits > 0) {
-          // Deduct from recipient
-          await tx.myVault.update({
-            where: { userId: trade.recipientId },
-            data: { credits: { decrement: trade.recipientCredits } },
-          });
-
-          // Add to initiator
-          await tx.myVault.update({
-            where: { userId: trade.initiatorId },
-            data: { credits: { increment: trade.recipientCredits } },
-          });
-        }
-
-        // Update trade status
-        const updatedTrade = await tx.tradeOffer.update({
-          where: { id: input.tradeId },
-          data: {
-            status: TradeStatus.ACCEPTED,
-            respondedAt: new Date(),
-          },
+        // Transfer credits (guarded debit + ledger rows for both sides; no-op when 0)
+        await transferCreditsTx(tx, {
+          fromUserId: trade.initiatorId,
+          toUserId: trade.recipientId,
+          amount: trade.initiatorCredits,
+          tradeId: input.tradeId,
+        });
+        await transferCreditsTx(tx, {
+          fromUserId: trade.recipientId,
+          toUserId: trade.initiatorId,
+          amount: trade.recipientCredits,
+          tradeId: input.tradeId,
         });
 
-        return updatedTrade;
+        return await tx.tradeOffer.findUniqueOrThrow({ where: { id: input.tradeId } });
       });
 
       // Sync both traders to forum profile (fire-and-forget)
@@ -639,17 +584,10 @@ export const tradingOffersRouter = createTRPCRouter({
       }
 
       const result = await ctx.db.$transaction(async (tx: any) => {
-        const initiatorCardIds = trade.initiatorCardIds as string[];
+        await claimPendingTradeTx(tx, input.tradeId, TradeStatus.CANCELLED, new Date());
+        await unlockCardsTx(tx, trade.initiatorCardIds as string[], userId);
 
-        await tx.cardOwnership.updateMany({
-          where: { id: { in: initiatorCardIds } },
-          data: { isLocked: false },
-        });
-
-        return await tx.tradeOffer.update({
-          where: { id: input.tradeId },
-          data: { status: TradeStatus.CANCELLED },
-        });
+        return await tx.tradeOffer.findUniqueOrThrow({ where: { id: input.tradeId } });
       });
 
       await Promise.all([

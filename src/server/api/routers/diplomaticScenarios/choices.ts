@@ -63,8 +63,7 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
           });
         }
 
-        // Check if scenario is still active
-        // NOTE: status check + update is not atomic; fixed in plan 331.
+        // Friendly pre-checks; the conditional updateMany below is the authority
         if (scenario.status !== "active" && scenario.status !== "pending") {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -92,22 +91,33 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
           });
         }
 
-        // Update scenario status
-        const updatedScenario = await ctx.db.culturalScenario.update({
-          where: { id: input.scenarioId },
+        // Resolve the scenario only if it is still open (conditional write; plan 331)
+        const now = new Date();
+        const resolved = await ctx.db.culturalScenario.updateMany({
+          where: {
+            id: input.scenarioId,
+            status: { in: ["active", "pending"] },
+            expiresAt: { gt: now },
+          },
           data: {
             status: "completed",
-            resolvedAt: new Date(),
+            resolvedAt: now,
             chosenOption: input.choiceId,
             actualCulturalImpact: selectedChoice.effects?.culturalImpact || 0,
             actualDiplomaticImpact: selectedChoice.effects?.relationshipChange || 0,
             actualEconomicCost: selectedChoice.effects?.economicImpact || 0,
             outcomeNotes: JSON.stringify({
               choiceLabel: input.choiceLabel,
-              timestamp: new Date().toISOString(),
+              timestamp: now.toISOString(),
               countryId: input.countryId,
             }),
           },
+        });
+        if (resolved.count !== 1) {
+          throw new TRPCError({ code: "CONFLICT", message: "Scenario was already resolved" });
+        }
+        const updatedScenario = await ctx.db.culturalScenario.findUniqueOrThrow({
+          where: { id: input.scenarioId },
         });
 
         // Create CulturalExchange record for historical tracking
