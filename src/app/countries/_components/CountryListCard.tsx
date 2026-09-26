@@ -159,7 +159,7 @@ export function CountryListCard({
                 {country.name}
               </h3>
               {(country.continent || country.region) && (
-                <div className="text-muted-foreground mt-0.5 flex items-center truncate text-[10px]">
+                <div className="text-muted-foreground mt-0.5 flex items-center truncate text-xs">
                   <LocateFixed className="text-primary/70 mr-1 h-3 w-3" />
                   <span className="truncate">
                     {country.continent || "—"}
@@ -217,8 +217,8 @@ export function CountryListCard({
       </div>
 
       <CardFooter className="country-card-content relative z-20 flex min-h-0 items-center justify-between gap-2 px-3 pt-0 pb-3">
-        <Badge className="px-2 py-0.5 text-[10px]">{country.economicTier ?? "—"}</Badge>
-        <Badge variant="outline" className="px-2 py-0.5 text-[10px]">
+        <Badge className="px-2 py-0.5 text-xs">{country.economicTier ?? "—"}</Badge>
+        <Badge variant="outline" className="px-2 py-0.5 text-xs">
           {country.populationTier ?? "—"}
         </Badge>
       </CardFooter>

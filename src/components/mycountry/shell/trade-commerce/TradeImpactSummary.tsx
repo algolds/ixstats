@@ -31,7 +31,7 @@ export const TradeImpactSummary = React.memo(function TradeImpactSummary({
           {currencySymbol}
           {formatCompact(totalTariffRevenue)}
         </p>
-        <span className="text-muted-foreground text-[10px]">
+        <span className="text-muted-foreground text-xs">
           Avg Tariff Rate: {averageTariff.toFixed(2)}%
         </span>
       </div>
@@ -48,7 +48,7 @@ export const TradeImpactSummary = React.memo(function TradeImpactSummary({
           {currencySymbol}
           {formatCompact(tradeBalance)}
         </p>
-        <span className="text-muted-foreground text-[10px]">
+        <span className="text-muted-foreground text-xs">
           {tradeBalance >= 0 ? "Trade Surplus" : "Trade Deficit"}
         </span>
       </div>
@@ -62,7 +62,7 @@ export const TradeImpactSummary = React.memo(function TradeImpactSummary({
           {currencySymbol}
           {formatCompact(totalExports)}
         </p>
-        <span className="text-muted-foreground text-[10px]">Outbound goods</span>
+        <span className="text-muted-foreground text-xs">Outbound goods</span>
       </div>
 
       <div className="border-border/40 bg-card/60 space-y-1 rounded-xl border p-4 backdrop-blur-md">
@@ -74,7 +74,7 @@ export const TradeImpactSummary = React.memo(function TradeImpactSummary({
           {currencySymbol}
           {formatCompact(totalImports)}
         </p>
-        <span className="text-muted-foreground text-[10px]">Inbound goods</span>
+        <span className="text-muted-foreground text-xs">Inbound goods</span>
       </div>
     </div>
   );

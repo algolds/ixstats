@@ -170,7 +170,7 @@ export function VaultBonusAdmin() {
                 <GroupIcon className={`h-4 w-4 ${group.accentColor}`} />
                 <div>
                   <h3 className="text-foreground text-sm font-bold">{group.title}</h3>
-                  <p className="text-muted-foreground text-[11px]">{group.description}</p>
+                  <p className="text-muted-foreground text-xs">{group.description}</p>
                 </div>
               </div>
 
@@ -180,7 +180,7 @@ export function VaultBonusAdmin() {
                     <div className="flex items-center justify-between">
                       <label className="text-foreground text-xs font-semibold">{field.label}</label>
                       {field.hint && (
-                        <span className="text-muted-foreground hidden text-[10px] sm:inline">
+                        <span className="text-muted-foreground hidden text-xs sm:inline">
                           {field.hint}
                         </span>
                       )}
@@ -197,7 +197,7 @@ export function VaultBonusAdmin() {
                         placeholder="0"
                         className="border-border bg-background/60 text-foreground h-8 w-full rounded-lg border px-3 font-mono text-xs transition-all focus:border-emerald-500 focus:outline-none"
                       />
-                      <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 font-mono text-[10px] uppercase">
+                      <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 font-mono text-xs uppercase">
                         Credits
                       </span>
                     </div>

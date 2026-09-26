@@ -159,7 +159,7 @@ export function CoordsPill({
         <span className="wikios-coords-pill inline-flex cursor-pointer items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold text-blue-400 transition-all select-none hover:border-white/20 hover:bg-white/10">
           <MapPin className="h-3 w-3 animate-pulse text-blue-400" />
           <span>{label}</span>
-          <span className="text-[10px] tabular-nums opacity-65">
+          <span className="text-xs tabular-nums opacity-65">
             ({lat.toFixed(2)}, {lng.toFixed(2)})
           </span>
         </span>
@@ -167,12 +167,12 @@ export function CoordsPill({
       <PopoverContent className="z-[10001] flex w-64 flex-col gap-2 rounded-xl border border-white/10 bg-zinc-950/90 p-3 shadow-2xl backdrop-blur-xl">
         <div className="flex items-center justify-between text-xs">
           <span className="font-bold text-zinc-200">{label}</span>
-          <span className="text-[10px] text-zinc-400 tabular-nums">Zoom {zoom}</span>
+          <span className="text-xs text-zinc-400 tabular-nums">Zoom {zoom}</span>
         </div>
 
         <CoordsMiniMap lat={lat} lng={lng} zoom={zoom} />
 
-        <div className="flex flex-col gap-0.5 text-[10px] font-medium text-zinc-400">
+        <div className="flex flex-col gap-0.5 text-xs font-medium text-zinc-400">
           <div>
             Latitude: <span className="text-zinc-200 tabular-nums">{lat.toFixed(4)}</span>
           </div>
@@ -230,7 +230,7 @@ export function DynamicStatSpan({
         </span>
       </PopoverTrigger>
       <PopoverContent className="z-[10001] flex w-60 flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/90 p-4 shadow-2xl backdrop-blur-xl">
-        <div className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+        <div className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
           Simulation Metrics
         </div>
 
@@ -238,13 +238,13 @@ export function DynamicStatSpan({
           <span className="text-xs font-medium text-zinc-400">{metadata?.label || "Value"}</span>
           <span className="mt-0.5 text-xl leading-tight font-bold text-white">{data.value}</span>
           {metadata?.comparisonRank && (
-            <span className="mt-1 text-[10px] font-semibold text-blue-400">
+            <span className="mt-1 text-xs font-semibold text-blue-400">
               {metadata.comparisonRank}
             </span>
           )}
         </div>
 
-        <div className="flex flex-col gap-1 border-t border-white/5 pt-2.5 text-[10px] text-zinc-400">
+        <div className="flex flex-col gap-1 border-t border-white/5 pt-2.5 text-xs text-zinc-400">
           {metadata?.countryName && (
             <div className="flex justify-between">
               <span>Country</span>
@@ -273,7 +273,7 @@ export function DynamicStatSpan({
         {metadata?.detailsUrl && (
           <Link
             href={withBasePath(metadata.detailsUrl)}
-            className="border-t border-white/5 pt-2 text-center text-[10px] font-bold text-blue-400 transition-colors hover:text-blue-300"
+            className="border-t border-white/5 pt-2 text-center text-xs font-bold text-blue-400 transition-colors hover:text-blue-300"
           >
             Analyze Dashboard &rarr;
           </Link>

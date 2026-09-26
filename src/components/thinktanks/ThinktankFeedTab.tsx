@@ -126,7 +126,7 @@ export function ThinktankFeedTab({
             {/* Multi-Persona Selector Chips */}
             {allowPersonaPosting && accounts.length > 0 && (
               <div className="border-border/30 flex flex-wrap items-center gap-1.5 border-b pb-2">
-                <span className="text-muted-foreground mr-1 flex items-center gap-1 text-[11px] font-semibold">
+                <span className="text-muted-foreground mr-1 flex items-center gap-1 text-xs font-semibold">
                   <Group className="h-3 w-3 text-blue-500" /> Post as:
                 </span>
                 {accounts.map((acc: any) => {
@@ -148,7 +148,7 @@ export function ThinktankFeedTab({
                     >
                       <span className="h-2 w-2 rounded-full bg-current opacity-70" />
                       <span>{acc.displayName || acc.username}</span>
-                      <span className="text-[10px] opacity-75">({acc.accountType})</span>
+                      <span className="text-xs opacity-75">({acc.accountType})</span>
                     </button>
                   );
                 })}
@@ -180,7 +180,7 @@ export function ThinktankFeedTab({
                       setPostContent((prev) => `${item.label}\n\n${prev}`.trim());
                     }
                   }}
-                  className="border-border/40 bg-muted/30 text-muted-foreground hover:bg-accent/40 hover:text-foreground rounded-md border px-2 py-0.5 text-[10px] font-medium transition-all"
+                  className="border-border/40 bg-muted/30 text-muted-foreground hover:bg-accent/40 hover:text-foreground rounded-md border px-2 py-0.5 text-xs font-medium transition-all"
                 >
                   {item.label}
                 </button>
@@ -225,7 +225,7 @@ export function ThinktankFeedTab({
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="text-muted-foreground text-[11px]">
+                <span className="text-muted-foreground text-xs">
                   {postContent.length} / 5000
                 </span>
                 <Button
@@ -319,7 +319,7 @@ export function ThinktankFeedTab({
                         <div className="flex items-center gap-1.5">
                           <span className="text-foreground text-xs font-bold">{displayName}</span>
                           {countryName && (
-                            <span className="text-muted-foreground text-[10px]">
+                            <span className="text-muted-foreground text-xs">
                               · {countryFlag && allowPersonaPosting ? `${countryFlag} ` : ""}
                               {countryName}
                             </span>
@@ -327,13 +327,13 @@ export function ThinktankFeedTab({
                           {showPersonaBadge && (
                             <Badge
                               variant="outline"
-                              className="border-blue-500/30 bg-blue-500/10 text-[9px] font-semibold text-blue-600 dark:text-blue-400"
+                              className="border-blue-500/30 bg-blue-500/10 text-xs font-semibold text-blue-600 dark:text-blue-400"
                             >
                               {personaAccount.accountType}
                             </Badge>
                           )}
                         </div>
-                        <span className="text-muted-foreground text-[10px]">
+                        <span className="text-muted-foreground text-xs">
                           {new Date(post.createdAt).toLocaleDateString()}
                         </span>
                       </div>
@@ -361,21 +361,21 @@ export function ThinktankFeedTab({
                   <div className="border-border/20 text-muted-foreground mt-3.5 flex items-center gap-4 border-t pt-2.5">
                     <button
                       onClick={() => soundEffects.press()}
-                      className="hover:text-foreground flex items-center gap-1 text-[11px] transition-colors"
+                      className="hover:text-foreground flex items-center gap-1 text-xs transition-colors"
                     >
                       <Heart className="h-3.5 w-3.5" />
                       <span>{post.reactions?.length ?? 0}</span>
                     </button>
                     <button
                       onClick={() => soundEffects.press()}
-                      className="hover:text-foreground flex items-center gap-1 text-[11px] transition-colors"
+                      className="hover:text-foreground flex items-center gap-1 text-xs transition-colors"
                     >
                       <ChatBubble className="h-3.5 w-3.5" />
                       <span>{post.replies?.length ?? 0}</span>
                     </button>
                     <button
                       onClick={() => soundEffects.press()}
-                      className="hover:text-foreground flex items-center gap-1 text-[11px] transition-colors"
+                      className="hover:text-foreground flex items-center gap-1 text-xs transition-colors"
                     >
                       <Repeat className="h-3.5 w-3.5" />
                       <span>{post.repostsCount ?? 0}</span>

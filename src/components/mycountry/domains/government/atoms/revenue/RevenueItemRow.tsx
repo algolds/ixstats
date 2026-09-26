@@ -121,7 +121,7 @@ export function RevenueItemRow({
         {/* Column 2: Financial Details */}
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+            <Label className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
               Annual Yield Amount
             </Label>
             <div className="relative">
@@ -138,7 +138,7 @@ export function RevenueItemRow({
                 className="h-8 border-zinc-200 bg-white pl-6 text-zinc-900 focus:border-cyan-500/30 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
               />
             </div>
-            <p className="mt-1 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               {formatExactCurrency(item.revenueAmount, currency)} (
               {(item.revenuePercent ?? 0).toFixed(1)}% share)
             </p>
@@ -146,7 +146,7 @@ export function RevenueItemRow({
 
           {item.category.includes("Tax") && (
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+              <Label className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                 Active Tax Rate (%)
               </Label>
               <div className="relative">
@@ -171,7 +171,7 @@ export function RevenueItemRow({
         {/* Column 3: Administration */}
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+            <Label className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
               Collection Channel
             </Label>
             <Select
@@ -198,7 +198,7 @@ export function RevenueItemRow({
                         />
                         <div className="flex flex-col text-left">
                           <span className="text-xs font-bold">{method.name}</span>
-                          <span className="text-[9px] text-zinc-500">{method.description}</span>
+                          <span className="text-xs text-zinc-500">{method.description}</span>
                         </div>
                       </div>
                     </SelectItem>
@@ -209,7 +209,7 @@ export function RevenueItemRow({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+            <Label className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
               Administrative Authority
             </Label>
             {availableDepartments.length > 0 ? (

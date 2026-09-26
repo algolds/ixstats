@@ -127,19 +127,19 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                   >
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className="border-border/40 bg-secondary/50 text-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
+                  <span className="border-border/40 bg-secondary/50 text-foreground rounded-full border px-2 py-0.5 text-xs font-medium">
                     {tool.badge}
                   </span>
                 </div>
                 <h4 className="text-foreground group-hover:text-wiki text-xs font-semibold">
                   {tool.title}
                 </h4>
-                <p className="text-muted-foreground mt-1 line-clamp-2 text-[11px]">
+                <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
                   {tool.description}
                 </p>
               </div>
 
-              <div className="border-border/30 text-muted-foreground mt-3 flex items-center justify-between border-t pt-2 text-[10px]">
+              <div className="border-border/30 text-muted-foreground mt-3 flex items-center justify-between border-t pt-2 text-xs">
                 <span className="font-mono opacity-60">{tool.legacyAlias}</span>
                 <NavArrowRight className="h-3 w-3 opacity-60" />
               </div>
@@ -170,7 +170,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                 </span>
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-[11px]">
+                <span className="text-muted-foreground text-xs">
                   Authoritative PostgreSQL Transaction Layer
                 </span>
                 <button
@@ -202,7 +202,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                           <div>
                             <span className="text-foreground font-medium">{item.title}</span>
                             {item.summary && (
-                              <p className="text-muted-foreground text-[11px]">{item.summary}</p>
+                              <p className="text-muted-foreground text-xs">{item.summary}</p>
                             )}
                           </div>
                           <button
@@ -211,7 +211,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                             data-cuelume-hover="tick"
                             onClick={() => handleRestore(item.title, item.slug)}
                             disabled={restoringSlug === item.slug}
-                            className="border-wiki/40 bg-wiki/10 text-wiki hover:bg-wiki/20 rounded-lg border px-2.5 py-1 text-[11px] font-medium transition-colors active:scale-[0.97] disabled:opacity-50"
+                            className="border-wiki/40 bg-wiki/10 text-wiki hover:bg-wiki/20 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors active:scale-[0.97] disabled:opacity-50"
                           >
                             {restoringSlug === item.slug ? "Restoring..." : "Restore to Published"}
                           </button>
@@ -241,17 +241,17 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                           className="hover:bg-muted/30 flex items-center justify-between rounded-lg px-3 py-2 text-xs transition-colors"
                         >
                           <div className="flex items-center gap-2">
-                            <span className="bg-secondary text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px] uppercase">
+                            <span className="bg-secondary text-muted-foreground rounded px-1.5 py-0.5 font-mono text-xs uppercase">
                               {log.action}
                             </span>
                             <span className="text-foreground font-medium">{log.title}</span>
                             {log.details?.reason && (
-                              <span className="text-muted-foreground text-[11px]">
+                              <span className="text-muted-foreground text-xs">
                                 — {log.details.reason}
                               </span>
                             )}
                           </div>
-                          <div className="text-muted-foreground flex items-center gap-1 text-[10px]">
+                          <div className="text-muted-foreground flex items-center gap-1 text-xs">
                             <Clock className="h-3 w-3" />
                             <span>{new Date(log.createdAt).toLocaleTimeString()}</span>
                           </div>
@@ -272,7 +272,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                     <h4 className="text-foreground font-semibold">
                       Protected Namespaces & Permissions
                     </h4>
-                    <p className="text-muted-foreground text-[11px]">
+                    <p className="text-muted-foreground text-xs">
                       Administer system owner edit locks, sysop barriers, and namespace guardrails.
                     </p>
                   </div>

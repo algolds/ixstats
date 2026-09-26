@@ -220,10 +220,10 @@ export function ImportCompleteStep({
                     />
                   )}
                 </div>
-                <p className="truncate text-center text-[9px] leading-tight font-bold">
+                <p className="truncate text-center text-xs leading-tight font-bold">
                   {card.title}
                 </p>
-                <p className="text-muted-foreground text-center text-[8px]">
+                <p className="text-muted-foreground text-center text-xs">
                   S{card.season} ·{" "}
                   {card.marketValue > 0
                     ? `${card.marketValue.toFixed(2)} MV`
@@ -233,7 +233,7 @@ export function ImportCompleteStep({
             ))}
           </div>
           {importResult.cards.length > 12 && (
-            <p className="text-muted-foreground text-center text-[10px]">
+            <p className="text-muted-foreground text-center text-xs">
               +{importResult.cards.length - 12} more cards
             </p>
           )}

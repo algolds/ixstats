@@ -305,7 +305,7 @@ export function EconomicArchetypesPanel() {
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Archetypes
           </div>
           <div className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
@@ -313,7 +313,7 @@ export function EconomicArchetypesPanel() {
           </div>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Modern Policy
           </div>
           <div className="mt-1 font-mono text-xl font-bold tracking-tight text-blue-400">
@@ -321,7 +321,7 @@ export function EconomicArchetypesPanel() {
           </div>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Historical Models
           </div>
           <div className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400">
@@ -329,7 +329,7 @@ export function EconomicArchetypesPanel() {
           </div>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Filtered Roster
           </div>
           <div className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
@@ -441,14 +441,14 @@ export function EconomicArchetypesPanel() {
                 <tr key={archetype.id} className="hover:bg-foreground/[0.02] transition-colors">
                   <td className="px-4 py-2.5">
                     <div className="text-foreground font-semibold">{archetype.name}</div>
-                    <div className="text-muted-foreground max-w-sm truncate text-[11px]">
+                    <div className="text-muted-foreground max-w-sm truncate text-xs">
                       {archetype.description}
                     </div>
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${
+                        className={`rounded px-1.5 py-0.5 text-xs font-medium uppercase ${
                           archetype.era === "modern"
                             ? "border border-blue-500/20 bg-blue-500/10 text-blue-400"
                             : "border border-amber-500/20 bg-amber-500/10 text-amber-400"
@@ -456,7 +456,7 @@ export function EconomicArchetypesPanel() {
                       >
                         {archetype.era}
                       </span>
-                      <span className="text-muted-foreground text-[11px]">{archetype.region}</span>
+                      <span className="text-muted-foreground text-xs">{archetype.region}</span>
                     </div>
                   </td>
                   <td className="px-4 py-2.5 font-medium">

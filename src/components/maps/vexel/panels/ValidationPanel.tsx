@@ -35,7 +35,7 @@ export default function ValidationPanel() {
                   {warn.severity === "caution" ? "🛑" : "⚠️"}
                 </span>
                 <div className="space-y-0.5">
-                  <span className="block text-[9px] font-semibold tracking-wider uppercase">
+                  <span className="block text-xs font-semibold tracking-wider uppercase">
                     {warn.code.replace(/_/g, " ")} ({warn.severity})
                   </span>
                   <p className="leading-normal font-medium text-zinc-300">{warn.message}</p>

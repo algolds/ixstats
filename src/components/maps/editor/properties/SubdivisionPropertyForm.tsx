@@ -100,7 +100,7 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
           <div className="flex items-center justify-between">
             <label className="text-muted-foreground text-xs font-medium">Area (km²)</label>
             {derivedFromGeometry && sampleAreaValue !== undefined && (
-              <span className="text-muted-foreground text-[10px]">from geometry</span>
+              <span className="text-muted-foreground text-xs">from geometry</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -125,14 +125,14 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
                   areaSqKm: sampleAreaValue ?? form.areaSqKm,
                 })
               }
-              className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-colors disabled:opacity-50"
+              className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-xs font-medium transition-colors disabled:opacity-50"
             >
               <Ruler className="h-3.5 w-3.5" />
               <span>Auto</span>
             </button>
           </div>
           {sampleAreaValue !== undefined && !derivedFromGeometry && (
-            <div className="text-muted-foreground text-[10px]">
+            <div className="text-muted-foreground text-xs">
               ≈ {sampleAreaValue.toLocaleString(undefined, { maximumFractionDigits: 1 })} km² from
               geometry
             </div>

@@ -133,14 +133,14 @@ export function WikiLinkStatusSection({
                   </td>
                   <td className="hidden px-4 py-2.5 sm:table-cell">
                     {country.wikiSource ? (
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {country.wikiSource}
                       </Badge>
                     ) : (
                       <span className="text-muted-foreground opacity-50">—</span>
                     )}
                   </td>
-                  <td className="text-muted-foreground hidden px-4 py-2.5 font-mono text-[11px] md:table-cell">
+                  <td className="text-muted-foreground hidden px-4 py-2.5 font-mono text-xs md:table-cell">
                     {country.wikiLastSynced
                       ? new Date(country.wikiLastSynced).toLocaleDateString()
                       : "—"}
@@ -159,7 +159,7 @@ export function WikiLinkStatusSection({
         </div>
       )}
 
-      <p className="text-muted-foreground text-[11px]">
+      <p className="text-muted-foreground text-xs">
         {linkedCount} of {countries.length} countries linked to wiki pages
       </p>
     </div>

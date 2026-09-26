@@ -118,7 +118,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
       {/* Primary Lake Surface Metrics */}
       <div className="grid grid-cols-2 gap-2">
         <div className="border-border/40 bg-card/60 rounded-lg border p-2 min-w-0">
-          <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider block truncate">
+          <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block truncate">
             Surface area
           </span>
           <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
@@ -126,20 +126,20 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
               {areaKm2 != null ? Math.round(areaKm2).toLocaleString() : "—"}
             </span>
             {areaKm2 != null && (
-              <span className="text-muted-foreground/80 font-sans text-[11px] font-normal shrink-0">
+              <span className="text-muted-foreground/80 font-sans text-xs font-normal shrink-0">
                 km²
               </span>
             )}
           </div>
           {areaSqMi != null && (
-            <span className="text-muted-foreground/60 font-mono text-[10px] tabular-nums block mt-0.5">
+            <span className="text-muted-foreground/60 font-mono text-xs tabular-nums block mt-0.5">
               ~{Math.round(areaSqMi).toLocaleString()} sq mi
             </span>
           )}
         </div>
 
         <div className="border-border/40 bg-card/60 rounded-lg border p-2 min-w-0">
-          <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider block truncate">
+          <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block truncate">
             Shoreline perimeter
           </span>
           <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
@@ -147,13 +147,13 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
               {perimeterKm != null ? Math.round(perimeterKm).toLocaleString() : "—"}
             </span>
             {perimeterKm != null && (
-              <span className="text-muted-foreground/80 font-sans text-[11px] font-normal shrink-0">
+              <span className="text-muted-foreground/80 font-sans text-xs font-normal shrink-0">
                 km
               </span>
             )}
           </div>
           {sdi != null && (
-            <span className="text-muted-foreground/60 font-mono text-[10px] tabular-nums block mt-0.5">
+            <span className="text-muted-foreground/60 font-mono text-xs tabular-nums block mt-0.5">
               SDI: {sdi.toFixed(2)}
             </span>
           )}
@@ -165,7 +165,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Droplet className="h-3.5 w-3.5 text-blue-500" />
-            <span className="text-muted-foreground/70 text-[9px] font-semibold uppercase tracking-wider">
+            <span className="text-muted-foreground/70 text-xs font-semibold uppercase tracking-wider">
               Limnology & Bathymetry
             </span>
           </div>
@@ -174,21 +174,21 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-[11px]">
+        <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="border-border/30 bg-muted/20 space-y-1 rounded p-2 min-w-0">
-            <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider block">
+            <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block">
               Surface elevation
             </span>
             <p className="text-foreground font-mono text-xs font-semibold tabular-nums">
               {surfaceElev != null ? `${surfaceElev.toLocaleString()} m` : "—"}
             </p>
-            <span className="text-muted-foreground/80 text-[10px] block truncate">
+            <span className="text-muted-foreground/80 text-xs block truncate">
               {surfaceSample.data?.zoneName || "Inland water"}
             </span>
           </div>
 
           <div className="border-border/30 bg-muted/20 space-y-1 rounded p-2 min-w-0">
-            <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider block">
+            <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block">
               Max depth
             </span>
             <div className="flex items-center gap-1">
@@ -200,9 +200,9 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
                 placeholder="Auto"
                 className="border-border/60 bg-background text-foreground focus:border-primary font-mono w-16 rounded px-1.5 py-0.5 text-xs tabular-nums focus:outline-none"
               />
-              <span className="text-muted-foreground/80 text-[10px]">m</span>
+              <span className="text-muted-foreground/80 text-xs">m</span>
             </div>
-            <span className="text-muted-foreground/60 text-[9px] block">
+            <span className="text-muted-foreground/60 text-xs block">
               Mean: ~{parsedDepthM ? Math.round(parsedDepthM * 0.4) : "—"} m
             </span>
           </div>
@@ -210,7 +210,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
 
         {/* Volume & Morphology */}
         <div className="border-border/30 bg-muted/20 space-y-1.5 rounded p-2">
-          <div className="flex items-center justify-between text-[11px]">
+          <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Est. water volume</span>
             <span className="text-foreground font-mono font-medium tabular-nums">
               {volumeKm3 != null
@@ -222,7 +222,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
           </div>
 
           {morphologyLabel && (
-            <div className="flex items-center justify-between text-[10px] pt-0.5 border-border/20 border-t">
+            <div className="flex items-center justify-between text-xs pt-0.5 border-border/20 border-t">
               <span className="text-muted-foreground">Shore morphology</span>
               <span className={`font-medium ${morphologyLabel.tone}`}>
                 {morphologyLabel.label}

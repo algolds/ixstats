@@ -154,7 +154,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
             <TrendingUp className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
             {title}
           </span>
-          <span className="text-muted-foreground text-[10px]">GDP Growth</span>
+          <span className="text-muted-foreground text-xs">GDP Growth</span>
         </div>
 
         <div className="h-[125px] w-full">
@@ -171,7 +171,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
           <span>Recent Trajectory</span>
           <span className="text-foreground font-semibold">Current: {formatMoney(currentGdp)}</span>
         </div>
@@ -203,7 +203,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
             <Globe className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />
             {title}
           </span>
-          <span className="text-muted-foreground text-[10px]">
+          <span className="text-muted-foreground text-xs">
             {relations.length || 3} Connections
           </span>
         </div>
@@ -221,7 +221,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
           <span>Global Network</span>
           <span className="text-foreground font-semibold">
             Top {activeRelations.length} Relations
@@ -249,7 +249,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
             <BarChart3 className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400" />
             {title}
           </span>
-          <span className="text-muted-foreground text-[10px]">Flow Dynamics</span>
+          <span className="text-muted-foreground text-xs">Flow Dynamics</span>
         </div>
 
         <div className="h-[125px] w-full">
@@ -265,7 +265,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
           <span>Net Balance</span>
           <span
             className={cn(
@@ -308,7 +308,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
             <TrendingUp className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
             {title}
           </span>
-          <span className="text-muted-foreground text-[10px]">Macro Indicators</span>
+          <span className="text-muted-foreground text-xs">Macro Indicators</span>
         </div>
 
         <div className="h-[125px] w-full">
@@ -324,7 +324,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
           <span>Current Total GDP</span>
           <span className="text-foreground font-semibold">{formatMoney(gdpVal)}</span>
         </div>
@@ -357,7 +357,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
             <Users className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />
             {title}
           </span>
-          <span className="text-muted-foreground text-[10px]">Demographic Split</span>
+          <span className="text-muted-foreground text-xs">Demographic Split</span>
         </div>
 
         <div className="h-[125px] w-full">
@@ -373,7 +373,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
           <span>Population Total</span>
           <span className="text-foreground font-semibold">{popVal.toLocaleString()}</span>
         </div>
@@ -403,7 +403,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
             <BarChart3 className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
             {title}
           </span>
-          <span className="text-muted-foreground text-[10px]">Fiscal Profile (% of GDP)</span>
+          <span className="text-muted-foreground text-xs">Fiscal Profile (% of GDP)</span>
         </div>
 
         <div className="h-[125px] w-full">
@@ -419,7 +419,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
           <span>Debt Profile</span>
           <span
             className={cn(
@@ -458,7 +458,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
             <Briefcase className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />
             {title}
           </span>
-          <span className="text-muted-foreground text-[10px]">Labor Dynamics</span>
+          <span className="text-muted-foreground text-xs">Labor Dynamics</span>
         </div>
 
         <div className="h-[125px] w-full">
@@ -474,7 +474,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
           <span>Average Annual Income</span>
           <span className="text-foreground font-semibold">
             ${(activeEcon.averageAnnualIncome || 35000).toLocaleString()}
@@ -508,7 +508,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
             <Activity className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
             {title}
           </span>
-          <span className="text-muted-foreground text-[10px]">Vitality Indicators</span>
+          <span className="text-muted-foreground text-xs">Vitality Indicators</span>
         </div>
 
         <div className="h-[125px] w-full">
@@ -524,7 +524,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
           <span>Overall Health Status</span>
           <span className="font-bold text-emerald-600 dark:text-emerald-400">Active</span>
         </div>

@@ -86,7 +86,7 @@ export function UniversalTemplateModal({
                       setSelectedTemplate(preset.name);
                       setFieldValues({});
                     }}
-                    className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all ${
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
                       selectedTemplate === preset.name
                         ? "bg-wiki/20 text-wiki border-wiki/30 border font-bold"
                         : "bg-secondary/60 text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -112,13 +112,13 @@ export function UniversalTemplateModal({
                 const val = fieldValues[key] ?? meta.default ?? "";
                 return (
                   <div key={key} className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center justify-between text-xs">
                       <label className="text-foreground font-semibold">
                         {meta.label || key}
                         {meta.required && <span className="ml-1 font-bold text-red-500">*</span>}
                       </label>
                       {meta.description && (
-                        <span className="text-muted-foreground max-w-[60%] truncate text-[10px]">
+                        <span className="text-muted-foreground max-w-[60%] truncate text-xs">
                           {meta.description}
                         </span>
                       )}

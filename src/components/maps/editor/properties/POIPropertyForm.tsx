@@ -178,14 +178,14 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
       <details className="border-border/60 bg-muted/10 group rounded-lg border p-2.5">
         <summary className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-between text-xs font-semibold select-none">
           <span>Historical Story & Lore (Optional)</span>
-          <span className="text-muted-foreground text-[10px] transition-transform group-open:rotate-180">
+          <span className="text-muted-foreground text-xs transition-transform group-open:rotate-180">
             &#9660;
           </span>
         </summary>
         <div className="border-border/40 mt-2.5 space-y-2 border-t pt-1">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-muted-foreground mb-1 block text-left text-[11px] font-medium">
+              <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
                 IxTime Year
               </label>
               <input
@@ -202,7 +202,7 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
               />
             </div>
             <div>
-              <label className="text-muted-foreground mb-1 block text-left text-[11px] font-medium">
+              <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
                 Era Label
               </label>
               <input
@@ -215,7 +215,7 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
             </div>
           </div>
           <div>
-            <label className="text-muted-foreground mb-1 block text-left text-[11px] font-medium">
+            <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
               Importance Level
             </label>
             <select
@@ -229,7 +229,7 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
             </select>
           </div>
           <div>
-            <label className="text-muted-foreground mb-1 block text-left text-[11px] font-medium">
+            <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
               Story Narrative (Markdown)
             </label>
             <textarea

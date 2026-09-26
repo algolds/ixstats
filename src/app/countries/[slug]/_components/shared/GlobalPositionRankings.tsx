@@ -109,7 +109,7 @@ export function GlobalPositionRankings({
             <Trophy className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
               Global Benchmarks
             </span>
             <h3 className="text-sm font-bold tracking-tight text-foreground">Global Position</h3>
@@ -149,7 +149,7 @@ export function GlobalPositionRankings({
                 <Icon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground" />
                 <span
                   className={cn(
-                    "flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold",
+                    "flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-extrabold",
                     isTopTier
                       ? "border border-amber-500/30 bg-amber-500/10 text-amber-400"
                       : "border border-white/10 bg-white/5 text-foreground"
@@ -160,8 +160,8 @@ export function GlobalPositionRankings({
               </div>
 
               <div className="mt-2">
-                <p className="truncate text-[11px] font-bold text-foreground">{item.label}</p>
-                <p className="truncate text-[10px] text-muted-foreground">{item.valueString}</p>
+                <p className="truncate text-xs font-bold text-foreground">{item.label}</p>
+                <p className="truncate text-xs text-muted-foreground">{item.valueString}</p>
               </div>
             </button>
           );

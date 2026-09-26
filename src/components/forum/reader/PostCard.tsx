@@ -212,7 +212,7 @@ export function PostCard({
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500/10 text-[10px] font-medium text-orange-400">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500/10 text-xs font-medium text-orange-400">
                 {authorName.charAt(0).toUpperCase()}
               </div>
             )}

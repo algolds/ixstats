@@ -94,7 +94,7 @@ export function LatestResults({
           <h3 className="text-foreground text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             {title}
           </h3>
-          <span className="text-muted-foreground text-[9px] font-semibold tracking-wider uppercase select-none">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
             Swipe Up/Down
           </span>
         </div>
@@ -118,7 +118,7 @@ export function LatestResults({
                   <span className="text-foreground text-sm font-bold tracking-tight">
                     Matchday {matchDay}
                   </span>
-                  <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-medium">
+                  <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-medium">
                     {dayMatches.length} Matches
                   </span>
                 </div>
@@ -195,7 +195,7 @@ export function LatestResults({
                           >
                             {match.homeScore ?? "-"}
                           </span>
-                          <span className="text-muted-foreground/40 text-[10px]">:</span>
+                          <span className="text-muted-foreground/40 text-xs">:</span>
                           <span
                             className={cn(
                               "text-xs font-bold tabular-nums",

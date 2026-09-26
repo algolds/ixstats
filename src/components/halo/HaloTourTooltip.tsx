@@ -131,7 +131,7 @@ export function HaloTourTooltip() {
               <div className="relative z-10 flex flex-col gap-3">
                 {/* Header & Close */}
                 <div className="flex items-center justify-between">
-                  <span className="text-primary text-[10px] font-bold tracking-wider uppercase">
+                  <span className="text-primary text-xs font-bold tracking-wider uppercase">
                     Halo Walkthrough • {currentStep} of 5
                   </span>
                   <button

@@ -88,7 +88,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                     <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider text-amber-400">
                       Season {season.seasonNumber}
                     </span>
-                    <span className="text-[10px] font-semibold text-muted-foreground">
+                    <span className="text-xs font-semibold text-muted-foreground">
                       {season.totalMatches} Matches · {season.totalGoals} Goals
                     </span>
                   </div>
@@ -112,14 +112,14 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                        <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
                           Champion
                         </span>
                         <p className="truncate text-sm font-extrabold text-foreground group-hover:underline">
                           {season.champion.teamName}
                         </p>
                         {season.runnerUp && (
-                          <p className="truncate text-[10px] text-muted-foreground">
+                          <p className="truncate text-xs text-muted-foreground">
                             Runner-up: {season.runnerUp.teamName}
                           </p>
                         )}
@@ -158,7 +158,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-border/20 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <tr className="border-b border-border/20 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     <th className="py-2.5 pl-3">Pos</th>
                     <th className="py-2.5">Club</th>
                     <th className="py-2.5 text-center">P</th>
@@ -180,7 +180,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                     >
                       <td className="py-3 pl-3 font-mono font-bold text-muted-foreground">
                         {row.position === 1 ? (
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-black text-amber-400">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-xs font-black text-amber-400">
                             1
                           </span>
                         ) : (
@@ -274,7 +274,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
 
               {records.highestScoringMatch ? (
                 <div className="my-auto space-y-2 py-3 text-center">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-cyan-400">
                     Season {records.highestScoringMatch.seasonNumber} Record
                   </span>
                   <div className="flex items-center justify-center gap-3 font-mono text-2xl font-black text-foreground">
@@ -292,7 +292,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                 </p>
               )}
 
-              <div className="border-t border-border/20 pt-2 text-[10px] font-semibold text-muted-foreground">
+              <div className="border-t border-border/20 pt-2 text-xs font-semibold text-muted-foreground">
                 Canonical archive verified by IxStates Sports Engine
               </div>
             </div>

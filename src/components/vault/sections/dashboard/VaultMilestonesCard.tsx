@@ -99,7 +99,7 @@ export function VaultMilestonesCard({
             >
               <div className="flex items-center justify-between text-xs">
                 <span className="text-foreground font-bold tracking-tight">{m.title}</span>
-                <span className="text-muted-foreground font-mono text-[10px] font-semibold">
+                <span className="text-muted-foreground font-mono text-xs font-semibold">
                   {m.current.toLocaleString()} / {m.max.toLocaleString()}
                 </span>
               </div>
@@ -112,7 +112,7 @@ export function VaultMilestonesCard({
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <div className="text-muted-foreground flex items-center justify-between text-[10px]">
+              <div className="text-muted-foreground flex items-center justify-between text-xs">
                 <span>{m.target}</span>
                 <span className="font-semibold text-amber-600 dark:text-amber-400">{m.reward}</span>
               </div>

@@ -92,12 +92,12 @@ export const HistoryPanel = React.memo(function HistoryPanel({
         <div className="text-muted-foreground flex items-center gap-1.5 font-medium">
           <History className="h-3.5 w-3.5" />
           <span>Timeline</span>
-          <span className="bg-muted text-muted-foreground rounded-full px-1.5 py-0.2 text-[10px] tabular-nums font-semibold">
+          <span className="bg-muted text-muted-foreground rounded-full px-1.5 py-0.2 text-xs tabular-nums font-semibold">
             {actions.length}
           </span>
         </div>
         {isMutating && (
-          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <div className="border-muted-foreground/20 border-t-primary h-3 w-3 animate-spin rounded-full border-2" />
             <span>Syncing…</span>
           </div>
@@ -123,7 +123,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
             }`}
           >
             <div
-              className={`relative z-10 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] transition-colors ${
+              className={`relative z-10 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs transition-colors ${
                 position === -1
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-muted text-muted-foreground group-hover:bg-accent"
@@ -134,7 +134,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
             <div className="flex min-w-0 flex-1 items-center justify-between">
               <span className="truncate">Initial State</span>
               {position === -1 && (
-                <span className="bg-primary/20 text-primary rounded px-1 py-0.2 text-[9px] font-medium tracking-wide uppercase">
+                <span className="bg-primary/20 text-primary rounded px-1 py-0.2 text-xs font-medium tracking-wide uppercase">
                   Current
                 </span>
               )}
@@ -161,7 +161,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
                 }`}
               >
                 <div
-                  className={`relative z-10 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] transition-colors ${
+                  className={`relative z-10 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs transition-colors ${
                     isCurrent
                       ? "bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/30"
                       : isActive
@@ -174,17 +174,17 @@ export const HistoryPanel = React.memo(function HistoryPanel({
 
                 <div className="flex min-w-0 flex-1 flex-col">
                   <div className="flex items-center justify-between gap-1">
-                    <span className="truncate text-[11px] leading-tight">
+                    <span className="truncate text-xs leading-tight">
                       {getActionTitle(action)}
                     </span>
                     {isCurrent && (
-                      <span className="bg-primary/20 text-primary shrink-0 rounded px-1 py-0.2 text-[9px] font-medium tracking-wide uppercase">
+                      <span className="bg-primary/20 text-primary shrink-0 rounded px-1 py-0.2 text-xs font-medium tracking-wide uppercase">
                         Current
                       </span>
                     )}
                   </div>
                   {timeStr && (
-                    <span className="text-muted-foreground/60 text-[9px] font-mono tabular-nums">
+                    <span className="text-muted-foreground/60 text-xs font-mono tabular-nums">
                       {timeStr}
                     </span>
                   )}
@@ -200,7 +200,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
               </div>
               <div className="space-y-0.5">
                 <p className="font-medium text-foreground/80">No actions recorded</p>
-                <p className="text-[11px]">Creations, edits, and deletions will appear here</p>
+                <p className="text-xs">Creations, edits, and deletions will appear here</p>
               </div>
             </div>
           )}
@@ -208,7 +208,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
       </div>
 
       {/* Footer shortcut hints */}
-      <div className="border-border/40 bg-muted/20 text-muted-foreground flex items-center justify-between border-t px-3 py-2 text-[10px]">
+      <div className="border-border/40 bg-muted/20 text-muted-foreground flex items-center justify-between border-t px-3 py-2 text-xs">
         <div className="flex items-center gap-1">
           <KeyCommand className="h-3 w-3 opacity-70" />
           <span>⌘Z to Undo</span>

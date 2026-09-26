@@ -90,7 +90,7 @@ export function VaultSubTabNav<T extends string>({
             )}
             <span>{tab.label}</span>
             {tab.badgeCount !== undefined && tab.badgeCount > 0 && (
-              <span className="ml-1 animate-pulse rounded-full border border-blue-400/40 bg-blue-500/90 px-1.5 py-0.5 text-[9px] font-semibold text-white tabular-nums shadow-sm backdrop-blur-md">
+              <span className="ml-1 animate-pulse rounded-full border border-blue-400/40 bg-blue-500/90 px-1.5 py-0.5 text-xs font-semibold text-white tabular-nums shadow-sm backdrop-blur-md">
                 {tab.badgeCount}
               </span>
             )}

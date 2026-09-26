@@ -185,7 +185,7 @@ function CompactViewComponent({
                   className="flex items-center gap-1.5 px-2 py-0.5"
                 >
                   <Bell className="h-3 w-3 animate-pulse text-amber-400" />
-                  <span className="text-foreground/90 max-w-[160px] truncate text-[11px] font-medium whitespace-nowrap">
+                  <span className="text-foreground/90 max-w-[160px] truncate text-xs font-medium whitespace-nowrap">
                     <PreText whiteSpace="nowrap">{peekText}</PreText>
                   </span>
                 </motion.div>
@@ -296,7 +296,7 @@ function CompactViewComponent({
                     ) : (
                       <button
                         onClick={() => onSwitchMode("mycountry")}
-                        className="text-foreground/80 hover:bg-accent/10 hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors"
+                        className="text-foreground/80 hover:bg-accent/10 hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs font-medium transition-colors"
                       >
                         {user?.imageUrl ? (
                           <img
@@ -374,7 +374,7 @@ function CompactViewComponent({
                               animate={{ scale: 1, opacity: 1 }}
                               exit={{ scale: 0, opacity: 0 }}
                               transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                              className={`absolute flex items-center justify-center rounded-full border-0 bg-amber-500 text-[10px] font-bold text-white shadow-lg ${
+                              className={`absolute flex items-center justify-center rounded-full border-0 bg-amber-500 text-xs font-bold text-white shadow-lg ${
                                 isSticky
                                   ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
                                   : "-top-1 -right-1 h-3 w-3 p-0"
@@ -435,7 +435,7 @@ function CompactViewComponent({
                           />
                           {action.badge != null && action.badge > 0 && (
                             <span
-                              className={`absolute flex items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold text-white ${
+                              className={`absolute flex items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white ${
                                 isSticky
                                   ? "-top-0.5 -right-0.5 h-2.5 w-2.5"
                                   : "-top-1 -right-1 h-3 w-3"

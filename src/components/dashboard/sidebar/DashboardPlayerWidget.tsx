@@ -198,7 +198,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               <span
                 key={ach.key}
                 title={ach.description}
-                className="inline-flex cursor-help items-center gap-0.5 rounded-full border border-white/15 bg-white/10 px-1.5 py-0.5 text-[9px] font-medium tracking-wide text-white shadow-sm backdrop-blur-md transition-colors hover:bg-white/25 active:scale-[0.96]"
+                className="inline-flex cursor-help items-center gap-0.5 rounded-full border border-white/15 bg-white/10 px-1.5 py-0.5 text-xs font-medium tracking-wide text-white shadow-sm backdrop-blur-md transition-colors hover:bg-white/25 active:scale-[0.96]"
               >
                 <span>{ach.iconUrl || "🏆"}</span>
                 <span>{ach.title}</span>
@@ -218,7 +218,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         {heroCollapsed && (
           <>
             <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between text-[10px]">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground flex items-center gap-1.5 font-medium tracking-normal">
                   <Users className="h-3 w-3 text-blue-600 dark:text-blue-400" /> Pop
                 </span>
@@ -226,7 +226,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                   {formatCompactNumber((country as any)?.newStats?.currentPopulation ?? 0)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-[10px]">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground flex items-center gap-1.5 font-medium tracking-normal">
                   <DollarSign className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /> GDP
                 </span>
@@ -235,7 +235,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                 </span>
               </div>
               {(country as any)?.newStats?.landArea && (
-                <div className="flex items-center justify-between text-[10px]">
+                <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground flex items-center gap-1.5 font-medium tracking-normal">
                     <MapIcon className="h-3 w-3 text-amber-600 dark:text-amber-400" /> Area
                   </span>
@@ -247,7 +247,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             </div>
             <button
               onClick={onHeroExpand}
-              className="dark:text-muted-foreground flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-100/80 py-1 text-[9px] font-medium tracking-normal text-slate-700 backdrop-blur-md transition-all hover:bg-slate-200 active:scale-[0.97] dark:border-white/5 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
+              className="dark:text-muted-foreground flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-100/80 py-1 text-xs font-medium tracking-normal text-slate-700 backdrop-blur-md transition-all hover:bg-slate-200 active:scale-[0.97] dark:border-white/5 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
             >
               <ChevronUp className="h-3 w-3 rotate-180" />
               Expand
@@ -270,11 +270,11 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           >
             <Mail className="h-4 w-4 text-indigo-600 transition-transform duration-150 group-hover/icon:scale-110 dark:text-indigo-400" />
             {totalUnreadMessages > 0 && (
-              <span className="animate-in fade-in zoom-in-75 absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[8px] font-semibold text-white tabular-nums shadow-md dark:bg-blue-500">
+              <span className="animate-in fade-in zoom-in-75 absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-xs font-semibold text-white tabular-nums shadow-md dark:bg-blue-500">
                 {totalUnreadMessages}
               </span>
             )}
-            <span className="mt-1.5 text-[9px] font-medium tracking-normal text-indigo-800 dark:text-indigo-300">
+            <span className="mt-1.5 text-xs font-medium tracking-normal text-indigo-800 dark:text-indigo-300">
               Mail
             </span>
           </Link>
@@ -291,21 +291,21 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               {(issueCount > 0 || urgentCount > 0) && (
                 <span
                   className={cn(
-                    "animate-in fade-in zoom-in-75 absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[8px] font-semibold text-white tabular-nums shadow-md",
+                    "animate-in fade-in zoom-in-75 absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-xs font-semibold text-white tabular-nums shadow-md",
                     urgentCount > 0 ? "animate-pulse bg-red-600" : "bg-amber-600 dark:bg-amber-500"
                   )}
                 >
                   {urgentCount > 0 ? urgentCount : issueCount}
                 </span>
               )}
-              <span className="mt-1.5 max-w-full truncate text-[9px] font-medium tracking-normal text-amber-800 dark:text-amber-300">
+              <span className="mt-1.5 max-w-full truncate text-xs font-medium tracking-normal text-amber-800 dark:text-amber-300">
                 Directives
               </span>
             </Link>
           ) : (
             <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-100/60 px-1 py-2.5 opacity-40 dark:border-white/5 dark:bg-white/[0.03]">
               <ClipboardList className="text-muted-foreground h-4 w-4" />
-              <span className="text-muted-foreground mt-1.5 max-w-full truncate text-[9px] font-medium tracking-normal">
+              <span className="text-muted-foreground mt-1.5 max-w-full truncate text-xs font-medium tracking-normal">
                 Directives
               </span>
             </div>
@@ -344,7 +344,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               />
               <span
                 className={cn(
-                  "mt-1.5 max-w-full truncate text-[9px] font-medium tracking-normal",
+                  "mt-1.5 max-w-full truncate text-xs font-medium tracking-normal",
                   pendingActions > 0
                     ? "text-orange-900 dark:text-orange-400"
                     : "text-emerald-900 dark:text-emerald-400"
@@ -356,7 +356,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           ) : (
             <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-100/60 px-1 py-2.5 opacity-40 dark:border-white/5 dark:bg-white/[0.03]">
               <CalendarCheck className="text-muted-foreground h-4 w-4" />
-              <span className="text-muted-foreground mt-1.5 max-w-full truncate text-[9px] font-medium tracking-normal">
+              <span className="text-muted-foreground mt-1.5 max-w-full truncate text-xs font-medium tracking-normal">
                 Agenda
               </span>
             </div>
@@ -368,7 +368,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           <div className="mt-1 border-t border-red-500/20 pt-2">
             <Link
               href={createUrl("/mycountry/executive")}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/15 py-1.5 text-[9px] font-semibold tracking-wider text-red-700 uppercase shadow-sm shadow-red-500/10 backdrop-blur-md transition-all duration-150 hover:bg-red-500/25 active:scale-[0.96] dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/15 py-1.5 text-xs font-semibold tracking-wider text-red-700 uppercase shadow-sm shadow-red-500/10 backdrop-blur-md transition-all duration-150 hover:bg-red-500/25 active:scale-[0.96] dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
               title={`${crisesCount} active crises! Click to view.`}
             >
               <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-red-600 dark:text-red-400" />

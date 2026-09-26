@@ -84,7 +84,7 @@ export default function WhatLinksHereHubPage() {
                     <div className="text-foreground max-w-[160px] truncate text-xs font-bold">
                       {activeTarget}
                     </div>
-                    <div className="text-muted-foreground text-[10px]">
+                    <div className="text-muted-foreground text-xs">
                       {links.length} inbound links
                     </div>
                   </div>
@@ -132,7 +132,7 @@ export default function WhatLinksHereHubPage() {
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
                 <LinkIcon className="h-4 w-4 text-amber-500" />
-                <h2 className="text-foreground text-sm text-[11px] font-bold tracking-tight tracking-wider uppercase">
+                <h2 className="text-foreground text-sm text-xs font-bold tracking-tight tracking-wider uppercase">
                   Pages linking to &ldquo;{activeTarget}&rdquo; ({links.length})
                 </h2>
               </div>

@@ -191,7 +191,7 @@ export function VitalityBreakdownModal({
                       </div>
                       <div>
                         <h4 className="text-foreground text-xs font-bold">{meta.title}</h4>
-                        <span className={cn("text-[10px] font-semibold", pillarStatus.color)}>
+                        <span className={cn("text-xs font-semibold", pillarStatus.color)}>
                           {pillarStatus.text}
                         </span>
                       </div>
@@ -204,19 +204,19 @@ export function VitalityBreakdownModal({
                     />
                   </div>
 
-                  <p className="text-muted-foreground mt-2.5 text-[11px] leading-relaxed font-medium">
+                  <p className="text-muted-foreground mt-2.5 text-xs leading-relaxed font-medium">
                     {meta.description}
                   </p>
 
                   <div className="border-border/30 mt-3 border-t pt-2">
-                    <span className="text-muted-foreground/70 text-[9px] font-extrabold tracking-wider uppercase">
+                    <span className="text-muted-foreground/70 text-xs font-extrabold tracking-wider uppercase">
                       Core Drivers
                     </span>
                     <ul className="mt-1 space-y-1">
                       {meta.drivers.map((driver) => (
                         <li
                           key={driver}
-                          className="text-foreground/80 flex items-center gap-1.5 text-[10px]"
+                          className="text-foreground/80 flex items-center gap-1.5 text-xs"
                         >
                           <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500 dark:text-emerald-400" />
                           <span className="truncate">{driver}</span>

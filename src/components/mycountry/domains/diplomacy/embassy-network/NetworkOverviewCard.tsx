@@ -66,32 +66,32 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
             <div className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
               {networkMetrics.totalEmbassies}
             </div>
-            <div className="text-muted-foreground text-[11px]">Embassies</div>
+            <div className="text-muted-foreground text-xs">Embassies</div>
           </div>
           <div className="space-y-0.5">
             <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
               {networkMetrics.networkPower}
             </div>
-            <div className="text-muted-foreground text-[11px]">Power</div>
+            <div className="text-muted-foreground text-xs">Power</div>
           </div>
           <div className="space-y-0.5">
             <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
               {networkMetrics.avgSynergyScore.toFixed(0)}%
             </div>
-            <div className="text-muted-foreground text-[11px]">Synergy</div>
+            <div className="text-muted-foreground text-xs">Synergy</div>
           </div>
           <div className="space-y-0.5">
             <div className="text-lg font-bold text-amber-600 dark:text-amber-400">
               +{networkMetrics.totalEconomicBonus.toFixed(1)}%
             </div>
-            <div className="text-muted-foreground text-[11px]">Econ Bonus</div>
+            <div className="text-muted-foreground text-xs">Econ Bonus</div>
           </div>
         </div>
 
         {/* Bonus Breakdown with Progress Bars */}
         <div className="grid grid-cols-3 gap-2 border-t pt-2">
           <div className="space-y-1">
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Economic</span>
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                 +{networkMetrics.totalEconomicBonus.toFixed(1)}%
@@ -103,7 +103,7 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
             />
           </div>
           <div className="space-y-1">
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Diplomatic</span>
               <span className="font-semibold text-cyan-600 dark:text-cyan-400">
                 +{networkMetrics.totalDiplomaticBonus.toFixed(1)}%
@@ -115,7 +115,7 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
             />
           </div>
           <div className="space-y-1">
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Cultural</span>
               <span className="font-semibold text-blue-600 dark:text-blue-400">
                 +{networkMetrics.totalCulturalBonus.toFixed(1)}%

@@ -143,7 +143,7 @@ export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwi
       <div className="flex items-center gap-2">
         <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-wiki" />
         <span className="text-foreground truncate text-sm font-semibold">{title}</span>
-        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-medium">
+        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
         </span>
       </div>
@@ -191,7 +191,7 @@ export function ForumPreviewContent({ threadId }: { threadId: number }) {
         <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
       </div>
       {thread.forumName && (
-        <span className="inline-block rounded-md bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-400">
+        <span className="inline-block rounded-md bg-orange-500/10 px-1.5 py-0.5 text-xs font-medium text-orange-400">
           {thread.forumName}
         </span>
       )}
@@ -201,7 +201,7 @@ export function ForumPreviewContent({ threadId }: { threadId: number }) {
           {thread.excerpt.length > 250 ? "…" : ""}
         </p>
       )}
-      <div className="text-muted-foreground flex items-center gap-3 text-[10px]">
+      <div className="text-muted-foreground flex items-center gap-3 text-xs">
         <span className="flex items-center gap-0.5">
           <Users className="h-2.5 w-2.5" />
           {thread.author}
@@ -318,7 +318,7 @@ export function TrendingSectionWidget() {
               key={tab}
               onClick={() => setActiveFilter(tab)}
               className={cn(
-                "cursor-pointer rounded-lg py-1 text-center text-[10px] font-medium capitalize transition-all duration-150 active:scale-[0.97]",
+                "cursor-pointer rounded-lg py-1 text-center text-xs font-medium capitalize transition-all duration-150 active:scale-[0.97]",
                 activeFilter === tab
                   ? "border-border/60 bg-card text-foreground border font-semibold shadow-xs"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/15 font-medium"
@@ -339,7 +339,7 @@ export function TrendingSectionWidget() {
           )}
 
           {!isLoading && trendingItems.length === 0 && (
-            <p className="text-muted-foreground py-6 text-center text-[11px] font-medium">
+            <p className="text-muted-foreground py-6 text-center text-xs font-medium">
               No trending content found
             </p>
           )}
@@ -406,13 +406,13 @@ export function TrendingSectionWidget() {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-foreground truncate text-[11px] font-semibold tracking-tight transition-colors group-hover/item:text-amber-600 dark:group-hover/item:text-amber-400">
+                      <span className="text-foreground truncate text-xs font-semibold tracking-tight transition-colors group-hover/item:text-amber-600 dark:group-hover/item:text-amber-400">
                         {displayTitle}
                       </span>
                       <Badge
                         variant="outline"
                         className={cn(
-                          "shrink-0 border px-1.5 py-0 text-[8px] font-semibold tracking-wider uppercase",
+                          "shrink-0 border px-1.5 py-0 text-xs font-semibold tracking-wider uppercase",
                           src.color,
                           src.bg
                         )}
@@ -422,12 +422,12 @@ export function TrendingSectionWidget() {
                     </div>
 
                     {displayExcerpt && (
-                      <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-[10px] leading-snug font-normal">
+                      <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-xs leading-snug font-normal">
                         {displayExcerpt}
                       </p>
                     )}
 
-                    <div className="text-muted-foreground/70 mt-1 flex items-center gap-2.5 text-[9px] font-medium tabular-nums">
+                    <div className="text-muted-foreground/70 mt-1 flex items-center gap-2.5 text-xs font-medium tabular-nums">
                       {item.engagement?.likes > 0 && (
                         <span className="flex items-center gap-0.5 text-red-500">
                           <Heart className="h-2.5 w-2.5 fill-current" />

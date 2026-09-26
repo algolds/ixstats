@@ -107,7 +107,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
       {/* Controls */}
       <div className="space-y-2">
         <div>
-          <label className="text-muted-foreground text-[10px] font-medium uppercase">
+          <label className="text-muted-foreground text-xs font-medium uppercase">
             Count ({count})
           </label>
           <input
@@ -121,7 +121,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-muted-foreground shrink-0 text-[10px] font-medium uppercase">
+          <label className="text-muted-foreground shrink-0 text-xs font-medium uppercase">
             Seed
           </label>
           <input
@@ -133,7 +133,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
         </div>
 
         <div>
-          <label className="text-muted-foreground text-[10px] font-medium uppercase">
+          <label className="text-muted-foreground text-xs font-medium uppercase">
             Names (one per line, optional)
           </label>
           <textarea
@@ -141,7 +141,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
             onChange={(e) => setNames(e.target.value)}
             rows={3}
             placeholder="Province A&#10;Province B&#10;..."
-            className="border-border bg-background w-full rounded border px-2 py-1 text-[10px] focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+            className="border-border bg-background w-full rounded border px-2 py-1 text-xs focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
           />
         </div>
       </div>
@@ -161,7 +161,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
       {cells && (
         <>
           <div className="border-border/30 bg-muted/10 space-y-1 rounded-lg border p-2">
-            <div className="text-muted-foreground flex items-center justify-between text-[10px] font-semibold tracking-wider uppercase">
+            <div className="text-muted-foreground flex items-center justify-between text-xs font-semibold tracking-wider uppercase">
               <span className="flex items-center gap-1">
                 <Grid3X3 className="h-3 w-3" />
                 Preview ({cells.length} cells)
@@ -169,14 +169,14 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
             </div>
             <div className="max-h-40 space-y-0.5 overflow-y-auto">
               {cells.map((cell, i) => (
-                <div key={i} className="text-muted-foreground flex justify-between text-[10px]">
+                <div key={i} className="text-muted-foreground flex justify-between text-xs">
                   <span>
                     {names
                       .split("\n")
                       .map((n) => n.trim())
                       .filter(Boolean)[i] || `Province ${i + 1}`}
                   </span>
-                  <span className="font-mono text-[9px]">
+                  <span className="font-mono text-xs">
                     {cell.type === "Polygon"
                       ? `${cell.coordinates[0].length} pts`
                       : `${cell.coordinates.length} polys`}
@@ -211,7 +211,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
         </>
       )}
 
-      {error && <p className="text-[10px] text-red-500">{error}</p>}
+      {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   );
 });

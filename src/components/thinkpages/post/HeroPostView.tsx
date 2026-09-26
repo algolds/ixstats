@@ -144,7 +144,7 @@ export function HeroPostView({
                 </span>
               )}
               {post.account.country && (
-                <span className="border-border/40 bg-muted/40 text-muted-foreground inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-medium">
+                <span className="border-border/40 bg-muted/40 text-muted-foreground inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-medium">
                   {post.account.country.flag && (
                     <img
                       src={normalizeFlagUrl(post.account.country.flag) ?? undefined}
@@ -164,7 +164,7 @@ export function HeroPostView({
               <span className="text-muted-foreground/60 text-xs">·</span>
               <div
                 className={cn(
-                  "flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase",
+                  "flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium tracking-wide uppercase",
                   ACCOUNT_TYPE_COLORS[
                     post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS
                   ] || "bg-gray-500/20 text-gray-500"

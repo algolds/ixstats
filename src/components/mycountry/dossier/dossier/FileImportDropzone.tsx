@@ -192,7 +192,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
                 setParsedSections([]);
                 setFileName(null);
               }}
-              className="h-6 text-[10px]"
+              className="h-6 text-xs"
             >
               Choose different file
             </Button>
@@ -214,14 +214,14 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
                         prev.map((s, i) => (i === idx ? { ...s, classification: val } : s))
                       );
                     }}
-                    className="text-muted-foreground rounded border border-white/10 bg-black/40 px-2 py-0.5 text-[10px]"
+                    className="text-muted-foreground rounded border border-white/10 bg-black/40 px-2 py-0.5 text-xs"
                   >
                     <option value="PUBLIC">PUBLIC</option>
                     <option value="ALLIANCE">ALLIANCE</option>
                     <option value="PRIVATE">PRIVATE</option>
                   </select>
                 </div>
-                <p className="text-muted-foreground line-clamp-2 font-mono text-[11px]">
+                <p className="text-muted-foreground line-clamp-2 font-mono text-xs">
                   {sec.content}
                 </p>
               </div>

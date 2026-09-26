@@ -368,7 +368,7 @@ export function WikiOSHeader({
       >
         <div className="facet-surface facet-refraction space-y-2.5 rounded-2xl border border-black/15 bg-white/95 p-4 text-left shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-2xl sm:p-5 dark:border-white/10 dark:bg-zinc-950/80 dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           {/* Breadcrumb Path */}
-          <div className="text-muted-foreground flex items-center gap-1 text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
             <CategoryBreadcrumb title={title} />
           </div>
 
@@ -382,7 +382,7 @@ export function WikiOSHeader({
               <Popover open={showPopover} onOpenChange={setShowPopover}>
                 <PopoverTrigger asChild>
                   <button
-                    className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-95 ${
+                    className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-95 ${
                       badgeConfig.classes
                     } ${
                       showCelebration && primaryAward.category === "LOREWARD"
@@ -405,7 +405,7 @@ export function WikiOSHeader({
                     />
 
                     {awardsData.awards.length > 1 && (
-                      <span className="text-[10px] leading-none font-bold tabular-nums opacity-80">
+                      <span className="text-xs leading-none font-bold tabular-nums opacity-80">
                         +{awardsData.awards.length - 1}
                       </span>
                     )}
@@ -415,7 +415,7 @@ export function WikiOSHeader({
                 <PopoverContent className="font-ui w-72 p-3" align="start">
                   <div className="mb-2 flex items-center justify-between border-b border-zinc-100 pb-2 dark:border-white/5">
                     <span className="text-foreground text-xs font-bold">Lorewards & Accolades</span>
-                    <span className="text-muted-foreground text-[10px] font-medium">
+                    <span className="text-muted-foreground text-xs font-medium">
                       {awardsData.awards.length} awarded
                     </span>
                   </div>
@@ -448,15 +448,15 @@ export function WikiOSHeader({
                         >
                           <AwardIcon className={`mt-0.5 h-4 w-4 shrink-0 ${iconColor}`} />
                           <div className="flex flex-col text-left">
-                            <span className="text-foreground text-[11px] font-semibold">
+                            <span className="text-foreground text-xs font-semibold">
                               {award.name}
                             </span>
                             {award.description && (
-                              <span className="text-muted-foreground mt-0.5 text-[10px] leading-normal">
+                              <span className="text-muted-foreground mt-0.5 text-xs leading-normal">
                                 {award.description}
                               </span>
                             )}
-                            <span className="text-muted-foreground/60 mt-0.5 text-[9px]">
+                            <span className="text-muted-foreground/60 mt-0.5 text-xs">
                               {date.toLocaleDateString(undefined, {
                                 month: "short",
                                 day: "numeric",
@@ -471,7 +471,7 @@ export function WikiOSHeader({
                   <div className="flex justify-end border-t border-zinc-100 pt-2 dark:border-white/5">
                     <Link
                       href={withBasePath("/wiki/lorewards")}
-                      className="text-[10px] font-bold text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                      className="text-xs font-bold text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
                     >
                       View Leaderboard &rarr;
                     </Link>

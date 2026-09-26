@@ -104,7 +104,7 @@ export function NationStatesCardsPanel() {
       />
 
       {/* NationStates API & Trademark Disclaimer */}
-      <div className="border-border/40 bg-card/30 text-muted-foreground flex items-start gap-2.5 rounded-2xl border p-3 text-[11px] leading-relaxed backdrop-blur-md">
+      <div className="border-border/40 bg-card/30 text-muted-foreground flex items-start gap-2.5 rounded-2xl border p-3 text-xs leading-relaxed backdrop-blur-md">
         <NationStatesLogo size="xs" className="mt-0.5 shrink-0 opacity-80" />
         <p className="min-w-0 flex-1">
           Trading card data is retrieved via the official{" "}
@@ -131,7 +131,7 @@ export function NationStatesCardsPanel() {
           <div className="flex flex-col items-center justify-center p-8 text-center">
             <Gem className="text-muted-foreground/40 mb-2 h-8 w-8" />
             <p className="text-muted-foreground text-xs font-semibold">No cards imported yet</p>
-            <p className="text-muted-foreground/70 mt-0.5 max-w-sm text-[11px]">
+            <p className="text-muted-foreground/70 mt-0.5 max-w-sm text-xs">
               Connect your NationStates nation to import your season trading cards and showcase them
               on your profile.
             </p>
@@ -185,7 +185,7 @@ export function NationStatesCardsPanel() {
                       </div>
                       <div className="min-w-0 space-y-0.5">
                         <p className="text-foreground truncate text-xs font-bold">{card.title}</p>
-                        <p className="text-muted-foreground text-[10px]">
+                        <p className="text-muted-foreground text-xs">
                           Card #{card.nsCardId} · S{card.nsSeason}
                         </p>
                       </div>
@@ -193,11 +193,11 @@ export function NationStatesCardsPanel() {
 
                     <div className="flex shrink-0 items-center gap-1.5">
                       {card.isHidden ? (
-                        <span className="border-border/60 bg-muted/40 text-muted-foreground rounded-md border px-1.5 py-0.5 text-[9px] font-bold">
+                        <span className="border-border/60 bg-muted/40 text-muted-foreground rounded-md border px-1.5 py-0.5 text-xs font-bold">
                           Hidden
                         </span>
                       ) : (
-                        <span className="border-border/60 bg-muted/60 text-foreground rounded-md border px-1.5 py-0.5 text-[9px] font-bold">
+                        <span className="border-border/60 bg-muted/60 text-foreground rounded-md border px-1.5 py-0.5 text-xs font-bold">
                           Active
                         </span>
                       )}
@@ -208,7 +208,7 @@ export function NationStatesCardsPanel() {
                           setSelectedCard(card as unknown as CardInstance);
                         }}
                         data-cuelume-press="soft"
-                        className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-semibold active:scale-[0.98]"
+                        className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold active:scale-[0.98]"
                       >
                         <Eye className="text-muted-foreground h-3 w-3" />
                         <span>View</span>

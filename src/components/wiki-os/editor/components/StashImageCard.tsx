@@ -51,7 +51,7 @@ export function StashImageCard({ imgInfo, cleanTitle, filename, onInsert }: Stas
         </button>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/85 to-transparent p-1 text-[8px] text-zinc-300 group-hover:text-white">
+      <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/85 to-transparent p-1 text-xs text-zinc-300 group-hover:text-white">
         {cleanTitle}
       </div>
     </div>

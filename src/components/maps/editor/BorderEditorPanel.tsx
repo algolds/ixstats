@@ -54,7 +54,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
           <h3 className="text-foreground text-sm font-semibold">{displayName || featureId}</h3>
           <p className="text-muted-foreground text-xs">{featureId}</p>
           {isDirty && (
-            <span className="mt-1 inline-block rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-500">
+            <span className="mt-1 inline-block rounded bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-500">
               Modified
             </span>
           )}
@@ -158,7 +158,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
               </button>
             ))}
           </div>
-          <p className="text-muted-foreground/50 mt-1 text-[10px]">
+          <p className="text-muted-foreground/50 mt-1 text-xs">
             Click and drag on the map to paint territory into the selected neighbor.
           </p>
         </div>

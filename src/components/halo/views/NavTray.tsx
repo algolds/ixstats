@@ -189,7 +189,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                       onClick={onClose}
                       data-cuelume-hover="tick"
                       data-cuelume-press="press"
-                      className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                      className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
                         isActive(item.href)
                           ? "bg-foreground/10 text-foreground"
                           : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"

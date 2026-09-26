@@ -102,7 +102,7 @@ export function InteractiveActionTemplates({
               ))}
               <div
                 onClick={() => setButtonClickCount((c) => c + 1)}
-                className="ml-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-[10px] font-bold text-white transition-transform active:scale-95"
+                className="ml-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-xs font-bold text-white transition-transform active:scale-95"
                 style={{ backgroundColor: customAccent }}
                 title={`Profile clicked ${buttonClickCount} times`}
               >
@@ -127,7 +127,7 @@ export function InteractiveActionTemplates({
           />
           <div className="pointer-events-none relative z-10">
             <h4 className="text-sm font-bold">National Vitality</h4>
-            <p className="text-muted-foreground text-[10px]">
+            <p className="text-muted-foreground text-xs">
               {material} · depth {depth}
             </p>
           </div>
@@ -168,7 +168,7 @@ export function InteractiveActionTemplates({
                   <span className="font-mono text-xs font-bold" style={{ color: ring.color }}>
                     {ring.value}%
                   </span>
-                  <span className="text-muted-foreground text-[8px] font-semibold tracking-wider uppercase">
+                  <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     {ring.label}
                   </span>
                 </div>
@@ -192,7 +192,7 @@ export function InteractiveActionTemplates({
           />
           <div className="pointer-events-none relative z-10">
             <h4 className="text-sm font-bold">Glass Button Variants</h4>
-            <p className="text-muted-foreground text-[10px]">
+            <p className="text-muted-foreground text-xs">
               {material} ·{" "}
               {depth === 1 ? "shallow" : depth === 2 ? "medium" : depth === 3 ? "deep" : "modal"}{" "}
               depth
@@ -268,20 +268,20 @@ export function InteractiveActionTemplates({
             >
               IxStats
             </h3>
-            <p className="text-muted-foreground max-w-[240px] text-[10px] leading-relaxed">
+            <p className="text-muted-foreground max-w-[240px] text-xs leading-relaxed">
               Next-generation nation simulation platform with real-time analytics and diplomatic
               intelligence.
             </p>
           </div>
           <div className="pointer-events-none relative z-10 flex items-center justify-center gap-3">
             <div
-              className="rounded-lg px-4 py-2 text-[10px] font-bold text-white transition-opacity hover:opacity-90"
+              className="rounded-lg px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: customAccent }}
             >
               Get Started
             </div>
             <div
-              className="rounded-lg border px-4 py-2 text-[10px] font-bold transition-colors"
+              className="rounded-lg border px-4 py-2 text-xs font-bold transition-colors"
               style={{ borderColor: `${customAccent}40`, color: customAccent }}
             >
               Learn More
@@ -311,7 +311,7 @@ export function InteractiveActionTemplates({
             >
               System Overview
             </h3>
-            <p className="text-muted-foreground mt-0.5 text-[10px]">
+            <p className="text-muted-foreground mt-0.5 text-xs">
               Real-time performance with {material} surface
             </p>
           </div>
@@ -331,13 +331,13 @@ export function InteractiveActionTemplates({
                 >
                   <div className="flex items-center gap-2">
                     <Icon className="h-3 w-3" style={{ color: customAccent }} />
-                    <span className="text-muted-foreground text-[8px] font-semibold tracking-wider uppercase">
+                    <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                       {metric.label}
                     </span>
                   </div>
                   <div className="mt-1 flex items-baseline gap-1.5">
                     <span className="font-mono text-lg font-bold">{metric.value}</span>
-                    <span className="text-muted-foreground font-mono text-[9px]">{metric.sub}</span>
+                    <span className="text-muted-foreground font-mono text-xs">{metric.sub}</span>
                   </div>
                 </div>
               );
@@ -347,7 +347,7 @@ export function InteractiveActionTemplates({
             className="pointer-events-none relative z-10 flex items-center justify-between border-t pt-3"
             style={{ borderColor: `${customAccent}10` }}
           >
-            <span className="text-muted-foreground text-[9px]">Last updated 2m ago</span>
+            <span className="text-muted-foreground text-xs">Last updated 2m ago</span>
             <ChevronRight className="text-muted-foreground h-3 w-3" />
           </div>
         </div>

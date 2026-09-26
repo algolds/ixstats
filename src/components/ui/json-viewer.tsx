@@ -353,7 +353,7 @@ function JsonNode({
           {!isExpanded && (
             <>
               <span
-                className={cn("mx-1 text-[10px]", !theme && "text-muted-foreground/60")}
+                className={cn("mx-1 text-xs", !theme && "text-muted-foreground/60")}
                 style={theme ? { color: `${theme.fg}60` } : undefined}
               >
                 {count} {count === 1 ? "item" : "items"}
@@ -560,7 +560,7 @@ function JsonViewer({
           <div className="flex items-center gap-2">
             {title && <h3 className="text-foreground text-sm font-semibold">{title}</h3>}
             {isExpandable && (
-              <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-medium">
+              <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-medium">
                 {countEntries(data)} {type === "array" ? "items" : "keys"}
               </span>
             )}

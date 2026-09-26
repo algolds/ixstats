@@ -861,7 +861,7 @@ export function LoreCardBatchAdmin() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-3">
               {/* Wiki Source */}
               <div>
-                <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   Default Wiki Source
                 </label>
                 <select
@@ -880,7 +880,7 @@ export function LoreCardBatchAdmin() {
 
               {/* Target Rarity */}
               <div>
-                <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   Target Rarity Strategy
                 </label>
                 <select
@@ -914,7 +914,7 @@ export function LoreCardBatchAdmin() {
 
               {/* Card Season */}
               <div>
-                <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   Target Card Season
                 </label>
                 <select
@@ -939,7 +939,7 @@ export function LoreCardBatchAdmin() {
           {/* Quick Category Presets & Bulk Import Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-muted-foreground flex items-center gap-1 text-[11px] font-semibold">
+              <span className="text-muted-foreground flex items-center gap-1 text-xs font-semibold">
                 <BookOpen className="h-3 w-3 text-amber-500" /> Category Presets:
               </span>
               {CATEGORY_PRESETS.filter(
@@ -972,7 +972,7 @@ export function LoreCardBatchAdmin() {
                       <Icon className="h-3.5 w-3.5 text-purple-500" />
                     )}
                     <span>{preset.name}</span>
-                    <span className="text-muted-foreground bg-muted/80 rounded-md px-1.5 py-0.5 font-mono text-[10px]">
+                    <span className="text-muted-foreground bg-muted/80 rounded-md px-1.5 py-0.5 font-mono text-xs">
                       {isPresetCrawling ? "Crawling..." : liveCount.toLocaleString()}
                     </span>
                   </button>
@@ -1035,7 +1035,7 @@ export function LoreCardBatchAdmin() {
                       size="sm"
                       disabled={isCrawlingCategory}
                       onClick={() => handleCrawlCategory(categorySearchQuery)}
-                      className="bg-primary/20 hover:bg-primary/30 text-primary border-primary/30 absolute right-1 h-6.5 rounded-lg border px-2.5 text-[11px] font-semibold transition-all active:scale-95"
+                      className="bg-primary/20 hover:bg-primary/30 text-primary border-primary/30 absolute right-1 h-6.5 rounded-lg border px-2.5 text-xs font-semibold transition-all active:scale-95"
                     >
                       {isCrawlingCategory ? (
                         <Loader2 className="mr-1 h-3 w-3 animate-spin" />
@@ -1052,11 +1052,11 @@ export function LoreCardBatchAdmin() {
                   categorySearchData?.categories &&
                   categorySearchData.categories.length > 0 && (
                     <div className="border-border bg-popover/95 absolute top-10 right-0 left-0 z-50 max-h-48 space-y-0.5 overflow-y-auto rounded-xl border p-1.5 shadow-xl backdrop-blur-xl">
-                      <div className="text-muted-foreground border-border/50 flex items-center justify-between border-b px-2 py-1 pb-1 text-[10px] font-semibold">
+                      <div className="text-muted-foreground border-border/50 flex items-center justify-between border-b px-2 py-1 pb-1 text-xs font-semibold">
                         <span>Matching {globalWikiSource.toUpperCase()} Categories</span>
                         <button
                           onClick={() => setIsCategoryDropdownOpen(false)}
-                          className="text-muted-foreground hover:text-foreground text-[10px] hover:underline"
+                          className="text-muted-foreground hover:text-foreground text-xs hover:underline"
                         >
                           Close
                         </button>
@@ -1071,7 +1071,7 @@ export function LoreCardBatchAdmin() {
                             <BookOpen className="h-3 w-3 text-purple-400" />
                             {cat}
                           </span>
-                          <span className="text-muted-foreground group-hover:text-primary font-mono text-[10px] transition-colors">
+                          <span className="text-muted-foreground group-hover:text-primary font-mono text-xs transition-colors">
                             Crawl Category →
                           </span>
                         </button>
@@ -1125,7 +1125,7 @@ export function LoreCardBatchAdmin() {
               placeholder="e.g. Caphiria, Daxia, Category:IXWB, Category:Wars, Category:Treaties, Urcea..."
               className="border-border bg-card text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary h-20 w-full rounded-xl border p-3 text-xs transition-all outline-none focus:ring-1"
             />
-            <p className="text-muted-foreground text-[11px]">
+            <p className="text-muted-foreground text-xs">
               💡 Supports individual article titles, comma-separated lists, and{" "}
               <code className="rounded bg-purple-500/10 px-1 py-0.5 font-mono text-purple-400">
                 Category:&lt;Name&gt;
@@ -1300,7 +1300,7 @@ export function LoreCardBatchAdmin() {
                       <div className="font-bold text-rose-600 dark:text-rose-400">
                         {errorCount} candidate{errorCount > 1 ? "s" : ""} failed during generation
                       </div>
-                      <div className="text-muted-foreground mt-0.5 text-[11px]">
+                      <div className="text-muted-foreground mt-0.5 text-xs">
                         Common issues: Article missing on wiki, stub/short article, duplicate card,
                         or API timeout.
                       </div>
@@ -1311,7 +1311,7 @@ export function LoreCardBatchAdmin() {
                       size="sm"
                       variant="outline"
                       onClick={handleCopyErrorReport}
-                      className="h-7 border-rose-500/30 text-[11px] font-semibold text-rose-600 hover:bg-rose-500/20 dark:text-rose-400"
+                      className="h-7 border-rose-500/30 text-xs font-semibold text-rose-600 hover:bg-rose-500/20 dark:text-rose-400"
                     >
                       <Copy className="mr-1 h-3 w-3" /> Copy Error Log
                     </Button>
@@ -1319,7 +1319,7 @@ export function LoreCardBatchAdmin() {
                       size="sm"
                       variant="outline"
                       onClick={handleClearFailed}
-                      className="border-border text-muted-foreground hover:bg-accent hover:text-foreground h-7 text-[11px] font-semibold"
+                      className="border-border text-muted-foreground hover:bg-accent hover:text-foreground h-7 text-xs font-semibold"
                     >
                       <Trash2 className="mr-1 h-3 w-3" /> Clear Failed
                     </Button>
@@ -1327,7 +1327,7 @@ export function LoreCardBatchAdmin() {
                       size="sm"
                       onClick={handleRetryAllFailed}
                       disabled={isProcessingBatch}
-                      className="h-7 border border-rose-500/40 bg-rose-500/20 text-[11px] font-semibold text-rose-600 hover:bg-rose-500/30 dark:text-rose-300"
+                      className="h-7 border border-rose-500/40 bg-rose-500/20 text-xs font-semibold text-rose-600 hover:bg-rose-500/30 dark:text-rose-300"
                     >
                       <RotateCcw className="mr-1 h-3 w-3" /> Retry All Failed ({errorCount})
                     </Button>
@@ -1337,7 +1337,7 @@ export function LoreCardBatchAdmin() {
 
               <div className="max-h-[440px] overflow-x-auto overflow-y-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="border-border bg-card/95 text-muted-foreground sticky top-0 z-10 border-b text-[10px] font-semibold tracking-wider uppercase backdrop-blur-xl">
+                  <thead className="border-border bg-card/95 text-muted-foreground sticky top-0 z-10 border-b text-xs font-semibold tracking-wider uppercase backdrop-blur-xl">
                     <tr>
                       <th className="w-14 px-3 py-2.5 text-center">Artwork</th>
                       <th className="px-4 py-2.5">Article Title</th>
@@ -1408,7 +1408,7 @@ export function LoreCardBatchAdmin() {
                               <div className="flex items-center gap-1.5">
                                 <span>{c.articleTitle}</span>
                                 {c.category && (
-                                  <span className="bg-primary/10 border-primary/20 py-0.2 text-primary rounded-full border px-1.5 text-[8px] font-bold uppercase">
+                                  <span className="bg-primary/10 border-primary/20 py-0.2 text-primary rounded-full border px-1.5 text-xs font-bold uppercase">
                                     {c.category}
                                   </span>
                                 )}
@@ -1416,7 +1416,7 @@ export function LoreCardBatchAdmin() {
                               {c.author &&
                                 c.author !== "Unknown" &&
                                 !c.author.toLowerCase().includes("community") && (
-                                  <span className="line-clamp-1 text-[10px] font-medium text-amber-500/90">
+                                  <span className="line-clamp-1 text-xs font-medium text-amber-500/90">
                                     ✍️ {c.author}
                                   </span>
                                 )}
@@ -1424,7 +1424,7 @@ export function LoreCardBatchAdmin() {
                                 (!c.author ||
                                   c.author === "Unknown" ||
                                   c.author.toLowerCase().includes("community")) && (
-                                  <span className="text-muted-foreground line-clamp-1 text-[10px] font-normal">
+                                  <span className="text-muted-foreground line-clamp-1 text-xs font-normal">
                                     {c.extract}
                                   </span>
                                 )}
@@ -1434,25 +1434,25 @@ export function LoreCardBatchAdmin() {
                             {c.wikiSource === "iiwiki" ? (
                               <IIWikiBadge size="xs" />
                             ) : (
-                              <span className="bg-muted border-border text-foreground rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase">
+                              <span className="bg-muted border-border text-foreground rounded-full border px-2 py-0.5 text-xs font-bold uppercase">
                                 {c.wikiSource}
                               </span>
                             )}
                           </td>
                           <td className="px-4 py-2.5">
-                            <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2 py-0.5 text-[9px] font-bold text-purple-600 dark:text-purple-300">
+                            <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2 py-0.5 text-xs font-bold text-purple-600 dark:text-purple-300">
                               {c.targetRarity}
                             </span>
                           </td>
                           <td className="text-muted-foreground px-4 py-2.5">S{c.season}</td>
                           <td className="px-4 py-2.5">
                             {c.status === "generating" && (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-500">
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-500">
                                 <Loader2 className="h-3 w-3 animate-spin" /> Generating...
                               </span>
                             )}
                             {c.status === "success" && (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-500">
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-500">
                                 <CheckCircle2 className="h-3 w-3" /> Minted (
                                 {c.generatedCardId?.slice(0, 8)})
                               </span>
@@ -1462,7 +1462,7 @@ export function LoreCardBatchAdmin() {
                                 <button
                                   type="button"
                                   onClick={() => setSelectedErrorCandidate(c)}
-                                  className="inline-flex w-fit cursor-pointer items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold text-rose-600 transition-all hover:bg-rose-500/25 dark:text-rose-400"
+                                  className="inline-flex w-fit cursor-pointer items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-xs font-bold text-rose-600 transition-all hover:bg-rose-500/25 dark:text-rose-400"
                                   title="Click to view full failure diagnostic"
                                 >
                                   <XCircle className="h-3 w-3 text-rose-500" />
@@ -1471,7 +1471,7 @@ export function LoreCardBatchAdmin() {
                                 {c.errorMessage && (
                                   <span
                                     onClick={() => setSelectedErrorCandidate(c)}
-                                    className="line-clamp-1 max-w-[240px] cursor-pointer text-[10px] font-medium text-rose-500/90 hover:underline"
+                                    className="line-clamp-1 max-w-[240px] cursor-pointer text-xs font-medium text-rose-500/90 hover:underline"
                                     title={c.errorMessage}
                                   >
                                     {c.errorMessage}
@@ -1480,7 +1480,7 @@ export function LoreCardBatchAdmin() {
                               </div>
                             )}
                             {c.status === "idle" && (
-                              <span className="text-muted-foreground inline-flex items-center gap-1 text-[11px]">
+                              <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
                                 <Clock className="h-3 w-3" /> Queued
                               </span>
                             )}
@@ -1552,7 +1552,7 @@ export function LoreCardBatchAdmin() {
                 interactive="hover"
                 className="border-border bg-card/70 rounded-xl border p-3 backdrop-blur-md"
               >
-                <div className="text-muted-foreground text-[11px]">Total Requests</div>
+                <div className="text-muted-foreground text-xs">Total Requests</div>
                 <div className="text-foreground mt-0.5 text-lg font-bold">
                   {requestStats.data.total}
                 </div>
@@ -1562,7 +1562,7 @@ export function LoreCardBatchAdmin() {
                 interactive="hover"
                 className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 backdrop-blur-md"
               >
-                <div className="text-muted-foreground text-[11px]">Pending Approval</div>
+                <div className="text-muted-foreground text-xs">Pending Approval</div>
                 <div className="mt-0.5 text-lg font-bold text-amber-500 dark:text-amber-300">
                   {requestStats.data.pending}
                 </div>
@@ -1572,7 +1572,7 @@ export function LoreCardBatchAdmin() {
                 interactive="hover"
                 className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 backdrop-blur-md"
               >
-                <div className="text-muted-foreground text-[11px]">Generated Cards</div>
+                <div className="text-muted-foreground text-xs">Generated Cards</div>
                 <div className="mt-0.5 text-lg font-bold text-emerald-600 dark:text-emerald-400">
                   {requestStats.data.generated}
                 </div>
@@ -1582,7 +1582,7 @@ export function LoreCardBatchAdmin() {
                 interactive="hover"
                 className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 backdrop-blur-md"
               >
-                <div className="text-muted-foreground text-[11px]">Rejected</div>
+                <div className="text-muted-foreground text-xs">Rejected</div>
                 <div className="mt-0.5 text-lg font-bold text-rose-600 dark:text-rose-400">
                   {requestStats.data.rejected}
                 </div>
@@ -1636,7 +1636,7 @@ export function LoreCardBatchAdmin() {
             >
               <div className="max-h-[500px] overflow-x-auto overflow-y-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="border-border bg-card/95 text-muted-foreground sticky top-0 z-10 border-b text-[10px] font-semibold tracking-wider uppercase backdrop-blur-xl">
+                  <thead className="border-border bg-card/95 text-muted-foreground sticky top-0 z-10 border-b text-xs font-semibold tracking-wider uppercase backdrop-blur-xl">
                     <tr>
                       <th className="px-4 py-3">Article Title</th>
                       <th className="px-4 py-3">Wiki Source</th>
@@ -1662,13 +1662,13 @@ export function LoreCardBatchAdmin() {
                             {request.wikiSource === "iiwiki" ? (
                               <IIWikiBadge size="xs" />
                             ) : (
-                              <span className="bg-muted border-border text-foreground rounded-full border px-2 py-0.5 text-[9px] font-bold">
+                              <span className="bg-muted border-border text-foreground rounded-full border px-2 py-0.5 text-xs font-bold">
                                 {request.wikiSource}
                               </span>
                             )}
                           </td>
                           <td className="text-foreground px-4 py-3 font-medium">
-                            <span className="bg-primary/10 border-primary/20 text-primary inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold">
+                            <span className="bg-primary/10 border-primary/20 text-primary inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold">
                               <UserCheck className="h-3 w-3" />
                               {request.requesterName || request.userId}
                             </span>
@@ -1678,22 +1678,22 @@ export function LoreCardBatchAdmin() {
                           </td>
                           <td className="px-4 py-3">
                             {isPending && (
-                              <span className="rounded-full border border-amber-500/30 bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-500 dark:text-amber-300">
+                              <span className="rounded-full border border-amber-500/30 bg-amber-500/20 px-2.5 py-0.5 text-xs font-bold text-amber-500 dark:text-amber-300">
                                 Pending
                               </span>
                             )}
                             {isApproved && (
-                              <span className="rounded-full border border-blue-500/30 bg-blue-500/20 px-2.5 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-300">
+                              <span className="rounded-full border border-blue-500/30 bg-blue-500/20 px-2.5 py-0.5 text-xs font-bold text-blue-600 dark:text-blue-300">
                                 Approved
                               </span>
                             )}
                             {isGenerated && (
-                              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-300">
+                              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-300">
                                 Generated
                               </span>
                             )}
                             {isRejected && (
-                              <span className="rounded-full border border-rose-500/30 bg-rose-500/20 px-2.5 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-300">
+                              <span className="rounded-full border border-rose-500/30 bg-rose-500/20 px-2.5 py-0.5 text-xs font-bold text-rose-600 dark:text-rose-300">
                                 Rejected
                               </span>
                             )}
@@ -1708,7 +1708,7 @@ export function LoreCardBatchAdmin() {
                                       approveMutation.mutate({ requestId: request.id })
                                     }
                                     disabled={approveMutation.isPending}
-                                    className="h-7 rounded-lg border border-emerald-500/30 bg-emerald-500/20 text-[11px] font-semibold text-emerald-600 hover:bg-emerald-500/30 dark:text-emerald-300"
+                                    className="h-7 rounded-lg border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/30 dark:text-emerald-300"
                                   >
                                     Approve
                                   </Button>
@@ -1716,7 +1716,7 @@ export function LoreCardBatchAdmin() {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => setRejectionRequestId(request.id)}
-                                    className="h-7 rounded-lg border border-rose-500/20 bg-rose-500/10 text-[11px] font-semibold text-rose-600 hover:bg-rose-500/20 dark:text-rose-300"
+                                    className="h-7 rounded-lg border border-rose-500/20 bg-rose-500/10 text-xs font-semibold text-rose-600 hover:bg-rose-500/20 dark:text-rose-300"
                                   >
                                     Reject
                                   </Button>
@@ -1729,7 +1729,7 @@ export function LoreCardBatchAdmin() {
                                     generateRequestedMutation.mutate({ requestId: request.id })
                                   }
                                   disabled={generateRequestedMutation.isPending}
-                                  className="h-7 rounded-lg border border-purple-500/30 bg-purple-500/20 text-[11px] font-semibold text-purple-600 hover:bg-purple-500/30 dark:text-purple-300"
+                                  className="h-7 rounded-lg border border-purple-500/30 bg-purple-500/20 text-xs font-semibold text-purple-600 hover:bg-purple-500/30 dark:text-purple-300"
                                 >
                                   Mint Card
                                 </Button>
@@ -1813,12 +1813,12 @@ export function LoreCardBatchAdmin() {
                 </div>
                 <div className="flex items-center gap-2">
                   {previewImage.wikiSource && (
-                    <span className="bg-muted border-border text-foreground rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase">
+                    <span className="bg-muted border-border text-foreground rounded-full border px-2.5 py-0.5 font-mono text-xs font-bold uppercase">
                       {previewImage.wikiSource}
                     </span>
                   )}
                   {previewImage.rarity && (
-                    <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2.5 py-0.5 text-[10px] font-bold text-purple-400">
+                    <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2.5 py-0.5 text-xs font-bold text-purple-400">
                       {previewImage.rarity}
                     </span>
                   )}
@@ -1847,7 +1847,7 @@ export function LoreCardBatchAdmin() {
                   previewImage.author !== "Unknown" &&
                   !previewImage.author.toLowerCase().includes("community") && (
                     <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
-                      <span className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">
+                      <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                         Wiki Author:
                       </span>
                       <span className="font-semibold">{previewImage.author}</span>
@@ -1856,7 +1856,7 @@ export function LoreCardBatchAdmin() {
 
                 {previewImage.extract && (
                   <div className="bg-card/60 border-border/60 text-muted-foreground max-h-24 overflow-y-auto rounded-xl border p-3 text-xs leading-relaxed">
-                    <p className="text-foreground mb-1 text-[11px] font-semibold">
+                    <p className="text-foreground mb-1 text-xs font-semibold">
                       Article Summary:
                     </p>
                     {previewImage.extract}
@@ -1864,7 +1864,7 @@ export function LoreCardBatchAdmin() {
                 )}
 
                 {previewImage.imageUrl && (
-                  <div className="bg-muted/40 border-border/40 flex items-center justify-between rounded-xl border px-3 py-2 font-mono text-[11px]">
+                  <div className="bg-muted/40 border-border/40 flex items-center justify-between rounded-xl border px-3 py-2 font-mono text-xs">
                     <span className="text-muted-foreground max-w-[400px] truncate">
                       {previewImage.imageUrl}
                     </span>
@@ -1939,7 +1939,7 @@ export function LoreCardBatchAdmin() {
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 How Duplicate Purging Works:
               </p>
-              <p className="text-[11px] leading-relaxed opacity-90">
+              <p className="text-xs leading-relaxed opacity-90">
                 For each article with duplicate cards, the system selects the highest-level / most
                 referenced card as the Primary Keeper. All user ownerships, auctions, and value
                 history are re-linked to the keeper card before deleting redundant copies.
@@ -1965,11 +1965,11 @@ export function LoreCardBatchAdmin() {
                       <div key={idx} className="flex items-center justify-between p-2.5">
                         <div className="min-w-0">
                           <p className="text-foreground truncate font-semibold">{g.title}</p>
-                          <span className="text-muted-foreground font-mono text-[10px] uppercase">
+                          <span className="text-muted-foreground font-mono text-xs uppercase">
                             {g.wikiSource}
                           </span>
                         </div>
-                        <span className="shrink-0 rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                        <span className="shrink-0 rounded-full bg-rose-500/20 px-2 py-0.5 text-xs font-bold text-rose-600 dark:text-rose-400">
                           {g.count} copies (+{g.redundantCount} redundant)
                         </span>
                       </div>
@@ -1981,7 +1981,7 @@ export function LoreCardBatchAdmin() {
               <div className="text-muted-foreground py-4 text-center">
                 <CheckCircle2 className="mx-auto mb-1.5 h-8 w-8 text-emerald-500 opacity-80" />
                 <p className="text-foreground font-semibold">No Duplicate Lore Cards Found</p>
-                <p className="text-[11px]">
+                <p className="text-xs">
                   Your database is clean with no redundant lore card records.
                 </p>
               </div>
@@ -2086,7 +2086,7 @@ export function LoreCardBatchAdmin() {
                 ))}
               </div>
             </div>
-            <p className="text-muted-foreground text-[11px] leading-relaxed">
+            <p className="text-muted-foreground text-xs leading-relaxed">
               This will find lore cards from{" "}
               <strong className="text-foreground">
                 {backfillSource === "all" ? "all wikis" : backfillSource.toUpperCase()}
@@ -2201,7 +2201,7 @@ export function LoreCardBatchAdmin() {
             <div className="border-border/60 bg-muted/30 flex items-center justify-between rounded-xl border p-3">
               <div>
                 <span className="text-foreground block text-xs font-semibold">Force Overwrite</span>
-                <span className="text-muted-foreground text-[10px]">
+                <span className="text-muted-foreground text-xs">
                   Re-classify all cards, not just unclassified/defaults
                 </span>
               </div>
@@ -2213,7 +2213,7 @@ export function LoreCardBatchAdmin() {
               />
             </div>
 
-            <p className="text-muted-foreground text-[11px] leading-relaxed">
+            <p className="text-muted-foreground text-xs leading-relaxed">
               This will analyze lore cards from{" "}
               <strong className="text-foreground">
                 {reclassifySource === "all" ? "all wikis" : reclassifySource.toUpperCase()}
@@ -2307,13 +2307,13 @@ export function LoreCardBatchAdmin() {
                 <div className="flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400">
                   <XCircle className="h-4 w-4 text-rose-500" /> Error Reason
                 </div>
-                <div className="font-mono text-[11px] leading-relaxed break-words whitespace-pre-wrap text-rose-700 dark:text-rose-300">
+                <div className="font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-rose-700 dark:text-rose-300">
                   {selectedErrorCandidate.errorMessage ||
                     "Unknown error occurred during generation."}
                 </div>
               </div>
 
-              <div className="border-border/40 bg-card/60 text-muted-foreground space-y-1 rounded-xl border p-3 text-[11px]">
+              <div className="border-border/40 bg-card/60 text-muted-foreground space-y-1 rounded-xl border p-3 text-xs">
                 <div className="text-foreground flex items-center gap-1 font-semibold">
                   <Info className="text-primary h-3.5 w-3.5" /> Troubleshooting Tips:
                 </div>

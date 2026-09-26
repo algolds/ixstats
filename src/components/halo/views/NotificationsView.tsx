@@ -273,7 +273,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
           </PreText>
           {totalUnreadCount > 0 && (
             <PreText
-              className="min-w-[18px] rounded-full bg-amber-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white shadow-xs"
+              className="min-w-[18px] rounded-full bg-amber-500 px-1.5 py-0.5 text-center text-xs font-bold text-white shadow-xs"
               whiteSpace="nowrap"
             >
               {String(totalUnreadCount)}
@@ -337,7 +337,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                 <Icon className={cn("h-3.5 w-3.5", isSelected && "text-amber-400")} />
                 <span>{tab.label}</span>
                 {tab.unread > 0 && (
-                  <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white shadow-2xs">
+                  <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-xs font-bold text-white shadow-2xs">
                     {tab.unread > 9 ? "9+" : tab.unread}
                   </span>
                 )}
@@ -377,7 +377,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                 <p className="text-muted-foreground text-xs font-semibold">No recent messages</p>
                 <Link
                   href="/messages"
-                  className="text-primary mt-2 inline-block text-[11px] font-semibold hover:underline"
+                  className="text-primary mt-2 inline-block text-xs font-semibold hover:underline"
                 >
                   Start a diplomatic conversation →
                 </Link>
@@ -405,13 +405,13 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                           <ChevronRight className="text-muted-foreground/60 h-3 w-3" />
                         </motion.div>
                         <PreText
-                          className="text-muted-foreground/90 text-[11px] font-semibold tracking-wider uppercase"
+                          className="text-muted-foreground/90 text-xs font-semibold tracking-wider uppercase"
                           whiteSpace="nowrap"
                         >
                           {group.label}
                         </PreText>
                       </div>
-                      <PreText className="text-muted-foreground/70 text-[10px]" whiteSpace="nowrap">
+                      <PreText className="text-muted-foreground/70 text-xs" whiteSpace="nowrap">
                         {String(group.items.length)}
                       </PreText>
                     </button>

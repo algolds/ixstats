@@ -85,7 +85,7 @@ const statusIndicatorVariants = cva(
   {
     variants: {
       size: {
-        sm: "h-6 px-2.5 text-[11px] [&>[data-slot=status-dot]]:size-1.5",
+        sm: "h-6 px-2.5 text-xs [&>[data-slot=status-dot]]:size-1.5",
         md: "h-7 px-3 text-xs [&>[data-slot=status-dot]]:size-2",
         lg: "h-8 px-3.5 text-sm [&>[data-slot=status-dot]]:size-2.5",
       },

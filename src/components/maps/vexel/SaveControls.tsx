@@ -118,7 +118,7 @@ export default function SaveControls() {
         <div className="flex flex-1 flex-wrap items-center gap-4">
           {/* Title Input */}
           <div className="flex min-w-[150px] flex-col gap-1">
-            <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+            <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
               Arms Title
             </span>
             <input
@@ -131,7 +131,7 @@ export default function SaveControls() {
 
           {/* Subject Type */}
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+            <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
               Subject Type
             </span>
             <select
@@ -152,7 +152,7 @@ export default function SaveControls() {
           {/* Subject Association (Conditional) */}
           {subjectType === "COUNTRY" && (
             <div className="animate-in fade-in slide-in-from-left-2 flex min-w-[150px] flex-col gap-1 duration-150">
-              <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+              <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
                 Select Country
               </span>
               <select

@@ -211,7 +211,7 @@ export function MatchTickerSim({
 
         {/* Live commentary feeds banner */}
         <div className="border-border border-t pt-4">
-          <p className="text-muted-foreground mb-2 text-[10px] font-bold tracking-wider uppercase">
+          <p className="text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase">
             Live Commentary
           </p>
           <div className="relative h-12 overflow-hidden">

@@ -86,7 +86,7 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
                 >
                   {cleanTitle}
                 </span>
-                <span className="font-mono text-[10px] text-[var(--wikios-text-dim)]">
+                <span className="font-mono text-xs text-[var(--wikios-text-dim)]">
                   {imgInfo ? `${imgInfo.width} × ${imgInfo.height}` : "..."}
                 </span>
               </div>
@@ -263,7 +263,7 @@ export function StashedImageModal({
         <div className="flex w-full flex-col justify-between gap-4 md:w-80">
           <div className="flex flex-col gap-3">
             <div>
-              <span className="text-[10px] font-bold tracking-wider text-[var(--wikios-accent)] uppercase">
+              <span className="text-xs font-bold tracking-wider text-[var(--wikios-accent)] uppercase">
                 Stashed Media
               </span>
               <h2 className="mt-0.5 text-lg leading-tight font-bold break-words text-[var(--wikios-text)]">
@@ -295,7 +295,7 @@ export function StashedImageModal({
 
             {/* Wikitext formats */}
             <div>
-              <span className="mb-1.5 block text-[9px] font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
+              <span className="mb-1.5 block text-xs font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
                 Wikitext Copy Format
               </span>
               <div className="wikios-filter-group grid grid-cols-4">

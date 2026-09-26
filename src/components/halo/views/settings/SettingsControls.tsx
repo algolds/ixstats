@@ -75,7 +75,7 @@ export function ToggleSwitch({ enabled, onToggle }: { enabled: boolean; onToggle
 
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-muted-foreground px-1 pt-2 pb-1 text-[11px] font-semibold tracking-wider uppercase">
+    <div className="text-muted-foreground px-1 pt-2 pb-1 text-xs font-semibold tracking-wider uppercase">
       {typeof children === "string" ? <PreText whiteSpace="nowrap">{children}</PreText> : children}
     </div>
   );

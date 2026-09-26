@@ -42,7 +42,7 @@ export function EditorialProfileView({ country, slug }: EditorialProfileViewProp
 
         <div className="max-w-3xl space-y-3">
           <div className="flex items-center gap-2">
-            <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-extrabold uppercase tracking-widest text-[var(--flag-primary)]">
+            <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-extrabold uppercase tracking-widest text-[var(--flag-primary)]">
               National Chronicle & Briefing
             </span>
             <span className="text-xs text-muted-foreground">Vol. XXIV · Edition 2033</span>
@@ -70,7 +70,7 @@ export function EditorialProfileView({ country, slug }: EditorialProfileViewProp
           {/* Chapter 1: The State of the Sovereign */}
           <article className="facet-surface facet-refraction space-y-4 rounded-3xl border border-white/10 p-6 md:p-8 shadow-xl backdrop-blur-xl">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--flag-primary)]">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--flag-primary)]">
                 Chapter I · Geopolitical Overview
               </span>
               <span className="text-xs text-muted-foreground">Published in IxWiki Archives</span>
@@ -106,7 +106,7 @@ export function EditorialProfileView({ country, slug }: EditorialProfileViewProp
           {/* Chapter 2: Constitutional Architecture & Government */}
           <article className="facet-surface facet-refraction space-y-4 rounded-3xl border border-white/10 p-6 md:p-8 shadow-xl backdrop-blur-xl">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--flag-primary)]">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--flag-primary)]">
                 Chapter II · Institutional Architecture
               </span>
               <span className="text-xs text-muted-foreground">Constitutional Dossier</span>
@@ -157,7 +157,7 @@ export function EditorialProfileView({ country, slug }: EditorialProfileViewProp
           {/* Chapter 3: Chronicle of Historical Epochs */}
           <article className="facet-surface facet-refraction space-y-6 rounded-3xl border border-white/10 p-6 md:p-8 shadow-xl backdrop-blur-xl">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--flag-primary)]">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--flag-primary)]">
                 Chapter III · Historical Timeline
               </span>
               <span className="text-xs text-muted-foreground">Epoch Chronology</span>
@@ -214,7 +214,7 @@ export function EditorialProfileView({ country, slug }: EditorialProfileViewProp
             <div className="facet-surface facet-refraction space-y-3 rounded-2xl border border-white/10 p-5 shadow-lg backdrop-blur-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
                     Geospatial Radar
                   </span>
                   <h4 className="text-sm font-bold text-foreground">Territorial Footprint</h4>

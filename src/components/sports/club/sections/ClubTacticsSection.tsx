@@ -183,7 +183,7 @@ export function ClubTacticsSection({
                       </Badge>
                     )}
                   </div>
-                  <p className="text-muted-foreground mt-2 text-[10px] leading-relaxed">
+                  <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
                     {tactic.description}
                   </p>
                 </div>
@@ -228,7 +228,7 @@ export function ClubTacticsSection({
               </div>
               <div>
                 <h5 className="text-sm leading-none font-bold">Offense Bias</h5>
-                <p className="text-muted-foreground mt-1 text-[10px] leading-tight">
+                <p className="text-muted-foreground mt-1 text-xs leading-tight">
                   Adjusts match scoring chances
                 </p>
               </div>
@@ -262,7 +262,7 @@ export function ClubTacticsSection({
               </div>
               <div>
                 <h5 className="text-sm leading-none font-bold">Defense Bias</h5>
-                <p className="text-muted-foreground mt-1 text-[10px] leading-tight">
+                <p className="text-muted-foreground mt-1 text-xs leading-tight">
                   Concede probability coefficient
                 </p>
               </div>
@@ -276,7 +276,7 @@ export function ClubTacticsSection({
 
               {/* Attack Focus Slider */}
               <div className="space-y-1.5">
-                <div className="flex justify-between text-[11px] font-bold">
+                <div className="flex justify-between text-xs font-bold">
                   <span className="text-muted-foreground">Attack Focus</span>
                   <span style={{ color: teamColor }}>{attackFocus}%</span>
                 </div>
@@ -303,7 +303,7 @@ export function ClubTacticsSection({
                   className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-slate-800"
                   style={{ accentColor: teamColor }}
                 />
-                <div className="text-muted-foreground/60 flex justify-between text-[9px]">
+                <div className="text-muted-foreground/60 flex justify-between text-xs">
                   <span>Defensive (-8 Off)</span>
                   <span>Balanced</span>
                   <span>Attacking (+8 Off)</span>
@@ -312,7 +312,7 @@ export function ClubTacticsSection({
 
               {/* Team Intensity Slider */}
               <div className="space-y-1.5 pt-2">
-                <div className="flex justify-between text-[11px] font-bold">
+                <div className="flex justify-between text-xs font-bold">
                   <span className="text-muted-foreground">Team Intensity</span>
                   <span style={{ color: teamColor }}>{teamIntensity}%</span>
                 </div>
@@ -339,7 +339,7 @@ export function ClubTacticsSection({
                   className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-slate-800"
                   style={{ accentColor: teamColor }}
                 />
-                <div className="text-muted-foreground/60 flex justify-between text-[9px]">
+                <div className="text-muted-foreground/60 flex justify-between text-xs">
                   <span>Conservative (-0.5 Vol)</span>
                   <span>Standard</span>
                   <span>Intense (+0.5 Vol)</span>

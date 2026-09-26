@@ -136,7 +136,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
           {/* Header Row: Title & Vitality Pill */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 flex-col">
-              <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
+              <span className="text-muted-foreground/70 text-xs font-bold tracking-wider uppercase">
                 National Standing
               </span>
               {country?.name && (
@@ -169,7 +169,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
             >
               <Activity className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-colors" />
               <span className="font-semibold">{ratingLabelText}</span>
-              <span className="text-muted-foreground font-mono text-[9px]">
+              <span className="text-muted-foreground font-mono text-xs">
                 ({compositeScore})
               </span>
             </motion.button>
@@ -189,7 +189,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                   title="Click to toggle exact population count"
                 >
                   <Users className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-colors" />
-                  <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
+                  <span className="text-muted-foreground/70 text-xs font-bold tracking-wider uppercase">
                     Pop:
                   </span>
                   <strong className="text-foreground text-xs font-bold tracking-tight tabular-nums group-hover:underline">
@@ -199,7 +199,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
 
                 <div className="flex items-center gap-1.5 text-xs">
                   <DollarSign className="text-muted-foreground h-3.5 w-3.5" />
-                  <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
+                  <span className="text-muted-foreground/70 text-xs font-bold tracking-wider uppercase">
                     GDP:
                   </span>
                   <strong className="text-foreground text-xs font-bold tracking-tight tabular-nums">
@@ -213,7 +213,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                 <div className="flex min-w-0 items-center gap-1.5 px-0.5 text-xs">
                   <Heart className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                   <div className="flex min-w-0 flex-col">
-                    <span className="text-muted-foreground/70 text-[8px] leading-none font-bold tracking-wider uppercase">
+                    <span className="text-muted-foreground/70 text-xs leading-none font-bold tracking-wider uppercase">
                       Approval
                     </span>
                     <span className="text-foreground truncate text-xs leading-tight font-bold tabular-nums">
@@ -225,7 +225,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                 <div className="border-border/40 flex min-w-0 items-center gap-1.5 border-l px-1 text-xs">
                   <Scale className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                   <div className="flex min-w-0 flex-col">
-                    <span className="text-muted-foreground/70 text-[8px] leading-none font-bold tracking-wider uppercase">
+                    <span className="text-muted-foreground/70 text-xs leading-none font-bold tracking-wider uppercase">
                       Stability
                     </span>
                     <span className="text-foreground truncate text-xs leading-tight font-bold tabular-nums">
@@ -240,7 +240,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                 >
                   <Zap className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                   <div className="flex min-w-0 flex-col">
-                    <span className="text-muted-foreground/70 text-[8px] leading-none font-bold tracking-wider uppercase">
+                    <span className="text-muted-foreground/70 text-xs leading-none font-bold tracking-wider uppercase">
                       Directives
                     </span>
                     <span className="text-foreground truncate font-mono text-xs leading-tight font-bold tabular-nums">
@@ -268,7 +268,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
               >
                 <HealthRing value={ring.value} size={34} color={ring.color} label={ring.label} />
                 <div className="min-w-0 flex-1">
-                  <span className="text-muted-foreground/70 group-hover/ring:text-foreground block truncate text-[8px] font-bold tracking-wider uppercase transition-colors">
+                  <span className="text-muted-foreground/70 group-hover/ring:text-foreground block truncate text-xs font-bold tracking-wider uppercase transition-colors">
                     {ring.label}
                   </span>
                   <span
@@ -276,7 +276,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                     style={{ color: ring.color }}
                   >
                     {ring.value}
-                    <span className="text-muted-foreground/60 text-[8px] font-normal">/100</span>
+                    <span className="text-muted-foreground/60 text-xs font-normal">/100</span>
                   </span>
                 </div>
               </motion.button>

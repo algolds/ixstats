@@ -177,7 +177,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
               <div className="h-4 w-px shrink-0 bg-border/60" />
 
               <div className="hidden items-center gap-1.5 px-1 md:flex">
-                <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                   Step {stepIndex + 1} of {steps.length}
                 </span>
               </div>
@@ -242,7 +242,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                             ) : (
                               <span className="h-1.5 w-1.5 rounded-full bg-current" />
                             )}
-                            <span className="hidden lg:inline text-[11px]">{label}</span>
+                            <span className="hidden lg:inline text-xs">{label}</span>
                           </motion.button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="text-xs font-medium">
@@ -260,7 +260,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
               {hasAlerts && (
                 <div
                   className={cn(
-                    "flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold",
+                    "flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold",
                     activeErrors.length > 0
                       ? "bg-destructive/15 text-destructive"
                       : "bg-amber-500/15 text-amber-500 dark:text-amber-400"

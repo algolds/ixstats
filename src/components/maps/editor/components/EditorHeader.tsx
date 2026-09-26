@@ -154,7 +154,7 @@ export const EditorHeader = React.memo(function EditorHeader({
               </>
             )}
             <ChevronRight className="h-3 w-3" />
-            <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-blue-500">
+            <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-xs font-semibold text-blue-500">
               {activeEditorMode === "border_edit" ? "BORDER EDIT" : "VIEW"}
             </span>
           </>
@@ -192,10 +192,10 @@ export const EditorHeader = React.memo(function EditorHeader({
 
       {/* Save indicator */}
       {editor.isMutating && (
-        <span className="ml-2 animate-pulse text-[10px] text-amber-500">Saving…</span>
+        <span className="ml-2 animate-pulse text-xs text-amber-500">Saving…</span>
       )}
       {!editor.isMutating && editor.lastSavedAt && (
-        <span className="ml-2 text-[10px] text-emerald-500">Saved</span>
+        <span className="ml-2 text-xs text-emerald-500">Saved</span>
       )}
 
       <div className="ml-auto" />
@@ -320,7 +320,7 @@ export const EditorHeader = React.memo(function EditorHeader({
               align="end"
             >
               <div className="flex flex-col gap-3">
-                <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase select-none">
+                <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
                   Map Editor Settings
                 </div>
 
@@ -378,13 +378,13 @@ export const EditorHeader = React.memo(function EditorHeader({
                     <div className="flex items-center justify-between px-2 py-1.5">
                       <div className="flex items-center gap-1.5">
                         <Magnet className="text-muted-foreground h-3 w-3" />
-                        <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                           Snap
                         </span>
                       </div>
                       <button
                         onClick={() => setSnapEnabled(!snapEnabled)}
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
                           snapEnabled
                             ? "bg-emerald-500/10 text-emerald-500"
                             : "bg-muted text-muted-foreground"
@@ -404,7 +404,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                           onChange={(e) => setSnapTolerance(parseFloat(e.target.value))}
                           className="h-1 flex-1 accent-primary"
                         />
-                        <span className="text-muted-foreground w-10 text-right font-mono text-[10px] tabular-nums">
+                        <span className="text-muted-foreground w-10 text-right font-mono text-xs tabular-nums">
                           {snapTolerance.toFixed(3)}°
                         </span>
                       </div>
@@ -417,13 +417,13 @@ export const EditorHeader = React.memo(function EditorHeader({
                     <div className="flex items-center justify-between px-2 py-1.5">
                       <div className="flex items-center gap-1.5">
                         <Settings className="text-muted-foreground h-3 w-3" />
-                        <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                           Lock Panels
                         </span>
                       </div>
                       <button
                         onClick={() => setPanelsLocked(!panelsLocked)}
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
                           panelsLocked
                             ? "bg-amber-500/10 text-amber-500"
                             : "bg-muted text-muted-foreground"
@@ -438,7 +438,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                   {isAdmin && activeCountryId && (
                     <>
                       <div className="border-border/60 my-1 border-t" aria-hidden />
-                      <div className="text-muted-foreground/80 px-2 text-[9px] font-semibold tracking-wider uppercase select-none">
+                      <div className="text-muted-foreground/80 px-2 text-xs font-semibold tracking-wider uppercase select-none">
                         Admin
                       </div>
                       <button
@@ -506,7 +506,7 @@ export const EditorHeader = React.memo(function EditorHeader({
             if (!confirm(`Delete ${editor.selectedIds.size} selected features?`)) return;
             await editor.bulkDeleteSelected();
           }}
-          className="flex items-center gap-1 rounded-md bg-red-500/10 px-2 py-1 text-[11px] font-medium text-red-600 hover:bg-red-500/20 active:scale-[0.98] transition dark:text-red-400"
+          className="flex items-center gap-1 rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20 active:scale-[0.98] transition dark:text-red-400"
         >
           Delete {editor.selectedIds.size} Selected
         </button>

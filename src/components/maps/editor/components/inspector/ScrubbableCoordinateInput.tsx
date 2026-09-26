@@ -116,11 +116,11 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-[11px]">
-        <span className="text-muted-foreground font-medium tracking-wider uppercase text-[10px]">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-muted-foreground font-medium tracking-wider uppercase text-xs">
           Coordinates
         </span>
-        <span className="text-muted-foreground/60 text-[9px] italic">
+        <span className="text-muted-foreground/60 text-xs italic">
           Drag label or type value
         </span>
       </div>
@@ -133,7 +133,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             onPointerMove={(e) => handlePointerMove("lng", e)}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            className={`cursor-ew-resize font-mono text-[10px] font-semibold tracking-wider uppercase select-none transition-colors ${
+            className={`cursor-ew-resize font-mono text-xs font-semibold tracking-wider uppercase select-none transition-colors ${
               activeScrub === "lng"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
@@ -151,7 +151,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             disabled={disabled || !coordinates}
             className="text-foreground w-full bg-transparent text-right font-mono text-xs tabular-nums focus:outline-none"
           />
-          <span className="text-muted-foreground/60 ml-0.5 text-[10px]">&deg;</span>
+          <span className="text-muted-foreground/60 ml-0.5 text-xs">&deg;</span>
         </div>
 
         {/* Latitude */}
@@ -161,7 +161,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             onPointerMove={(e) => handlePointerMove("lat", e)}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            className={`cursor-ew-resize font-mono text-[10px] font-semibold tracking-wider uppercase select-none transition-colors ${
+            className={`cursor-ew-resize font-mono text-xs font-semibold tracking-wider uppercase select-none transition-colors ${
               activeScrub === "lat"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
@@ -179,7 +179,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             disabled={disabled || !coordinates}
             className="text-foreground w-full bg-transparent text-right font-mono text-xs tabular-nums focus:outline-none"
           />
-          <span className="text-muted-foreground/60 ml-0.5 text-[10px]">&deg;</span>
+          <span className="text-muted-foreground/60 ml-0.5 text-xs">&deg;</span>
         </div>
 
         {/* Crosshair Picker */}

@@ -143,7 +143,7 @@ export function MarginInspectTab({
               Article Topology
             </h4>
           </div>
-          <span className="bg-margin-accent rounded-full px-2 py-0.5 text-[10px] font-bold text-stone-950 shadow-xs">
+          <span className="bg-margin-accent rounded-full px-2 py-0.5 text-xs font-bold text-stone-950 shadow-xs">
             {pageTierInfo.title}
           </span>
         </div>
@@ -169,11 +169,11 @@ export function MarginInspectTab({
           </div>
         </div>
 
-        <p className="text-[11px] leading-relaxed text-[var(--wikios-text-muted)]">
+        <p className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
           {pageTierInfo.description}
         </p>
 
-        <div className="space-y-1 rounded-xl border border-[var(--wikios-border)]/70 bg-[var(--wikios-surface)]/70 p-2.5 text-[11px] text-[var(--wikios-text-muted)]">
+        <div className="space-y-1 rounded-xl border border-[var(--wikios-border)]/70 bg-[var(--wikios-surface)]/70 p-2.5 text-xs text-[var(--wikios-text-muted)]">
           <span className="text-margin-accent block text-[9.5px] font-bold tracking-wider uppercase">
             Linkage Recommendation
           </span>
@@ -209,7 +209,7 @@ export function MarginInspectTab({
                 <h4 className="truncate text-xs font-bold text-[var(--wikios-text)]">
                   {matchedCountry.name}
                 </h4>
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
                   <span>Simulation Active</span>
                 </div>
@@ -218,7 +218,7 @@ export function MarginInspectTab({
 
             <Link
               href={`/countries/${matchedCountry.id}`}
-              className="text-margin-accent hover:text-margin-accent/90 flex items-center gap-1 p-1 text-[10.5px] font-bold transition-colors"
+              className="text-margin-accent hover:text-margin-accent/90 flex items-center gap-1 p-1 text-xs font-bold transition-colors"
               title="Open sovereign dossier"
             >
               <span>Profile</span>
@@ -229,7 +229,7 @@ export function MarginInspectTab({
           {/* Metric Comparison Grid */}
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="space-y-1 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 p-2.5">
-              <div className="flex items-center gap-1 text-[10px] font-medium text-[var(--wikios-text-dim)]">
+              <div className="flex items-center gap-1 text-xs font-medium text-[var(--wikios-text-dim)]">
                 <Users className="h-3 w-3 text-cyan-400" />
                 <span>Population</span>
               </div>
@@ -239,7 +239,7 @@ export function MarginInspectTab({
             </div>
 
             <div className="space-y-1 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 p-2.5">
-              <div className="flex items-center gap-1 text-[10px] font-medium text-[var(--wikios-text-dim)]">
+              <div className="flex items-center gap-1 text-xs font-medium text-[var(--wikios-text-dim)]">
                 <DollarSign className="h-3 w-3 text-emerald-400" />
                 <span>Gross Domestic Product</span>
               </div>
@@ -250,7 +250,7 @@ export function MarginInspectTab({
           </div>
 
           {/* Additional Registry Facts */}
-          <div className="space-y-1.5 border-t border-[var(--wikios-border)]/60 pt-1 text-[11px]">
+          <div className="space-y-1.5 border-t border-[var(--wikios-border)]/60 pt-1 text-xs">
             {matchedCountry.continent && (
               <div className="flex items-center justify-between text-[var(--wikios-text-dim)]">
                 <span>Continental Region</span>
@@ -291,7 +291,7 @@ export function MarginInspectTab({
           <p className="text-xs font-bold text-[var(--wikios-text)]">
             Independent Encyclopedic Entry
           </p>
-          <p className="mx-auto max-w-xs text-[11px] leading-relaxed text-[var(--wikios-text-dim)]">
+          <p className="mx-auto max-w-xs text-xs leading-relaxed text-[var(--wikios-text-dim)]">
             This entry represents an event, custom, or artifact rather than an active sovereign
             nation state.
           </p>

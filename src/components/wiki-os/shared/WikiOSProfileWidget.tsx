@@ -73,7 +73,7 @@ export function WikiOSProfileWidget({
       )}
       {withBadge && rank != null && (
         <span
-          className="absolute -right-1 -bottom-1 grid min-w-[14px] place-items-center rounded-full border border-[var(--wikios-border)] px-0.5 text-[8px] leading-[14px] font-bold text-white shadow-sm"
+          className="absolute -right-1 -bottom-1 grid min-w-[14px] place-items-center rounded-full border border-[var(--wikios-border)] px-0.5 text-xs leading-[14px] font-bold text-white shadow-sm"
           style={{ backgroundColor: hoverBorderColor }}
         >
           #{rank}
@@ -138,7 +138,7 @@ export function WikiOSProfileWidget({
             {displayName}
           </div>
           {rank != null && (
-            <div className="text-[10px] font-semibold" style={{ color: hoverBorderColor }}>
+            <div className="text-xs font-semibold" style={{ color: hoverBorderColor }}>
               Rank #{rank}
             </div>
           )}
@@ -147,7 +147,7 @@ export function WikiOSProfileWidget({
 
       <div className="relative z-10 mt-2 flex flex-col gap-1 border-t border-[var(--wikios-border)] pt-2">
         {registration && (
-          <div className="flex items-center gap-1.5 text-[10px] text-[var(--wikios-text-muted)]">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--wikios-text-muted)]">
             <Calendar className="h-3 w-3 shrink-0 text-[var(--wikios-text-muted)]" />
             <span className="truncate">
               Joined{" "}
@@ -159,19 +159,19 @@ export function WikiOSProfileWidget({
           </div>
         )}
         {editCount != null && (
-          <div className="flex items-center gap-1.5 text-[10px] text-[var(--wikios-text-muted)]">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--wikios-text-muted)]">
             <FileText className="h-3 w-3 shrink-0 text-[var(--wikios-text-dim)]" />
             <span className="truncate">{editCount.toLocaleString()} edits</span>
           </div>
         )}
         {lorescore > 0 && (
-          <div className="flex items-center gap-1.5 text-[10px] text-[var(--wikios-text-muted)]">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--wikios-text-muted)]">
             <Scroll className="h-3 w-3 shrink-0 text-indigo-500 dark:text-indigo-400/90" />
             <span className="truncate">{lorescore.toLocaleString()} Lorescore</span>
           </div>
         )}
         {lorewards > 0 && (
-          <div className="flex items-center gap-1.5 text-[10px] text-[var(--wikios-text-muted)]">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--wikios-text-muted)]">
             <Trophy className="h-3 w-3 shrink-0 text-amber-500 dark:text-amber-400/90" />
             <span className="truncate">
               {lorewards.toLocaleString()} Loreward{lorewards !== 1 ? "s" : ""} won

@@ -282,7 +282,7 @@ export function NSImportSuiteAdmin() {
                         {job.syncType.replace("NS_REGION_", "Region: ").replace(/_/g, " ")}
                       </span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${getStatusColor(job.status)}`}
+                        className={`rounded-full px-2 py-0.5 text-xs font-bold ${getStatusColor(job.status)}`}
                       >
                         {job.status}
                       </span>
@@ -451,7 +451,7 @@ export function NSImportSuiteAdmin() {
               enableRefraction={true}
               className="border-border bg-card/60 overflow-hidden rounded-xl border backdrop-blur-md"
             >
-              <div className="border-border text-muted-foreground flex items-center justify-between border-b px-4 py-2 text-[10px] font-semibold tracking-wider uppercase">
+              <div className="border-border text-muted-foreground flex items-center justify-between border-b px-4 py-2 text-xs font-semibold tracking-wider uppercase">
                 <span>Top {discoveredRegions.length} Regions</span>
                 <span>
                   {discoveredRegions.reduce((sum, r) => sum + r.numnations, 0).toLocaleString()}{" "}
@@ -465,14 +465,14 @@ export function NSImportSuiteAdmin() {
                     className="hover:bg-accent/40 flex items-center justify-between px-4 py-2 transition-colors"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="text-muted-foreground w-5 text-right font-mono text-[10px]">
+                      <span className="text-muted-foreground w-5 text-right font-mono text-xs">
                         {i + 1}
                       </span>
                       <div className="min-w-0">
                         <p className="text-foreground truncate text-xs font-semibold">
                           {region.name}
                         </p>
-                        <p className="text-muted-foreground flex items-center gap-1 text-[10px]">
+                        <p className="text-muted-foreground flex items-center gap-1 text-xs">
                           <Users className="h-3 w-3" />
                           {region.numnations.toLocaleString()} nations
                         </p>
@@ -483,7 +483,7 @@ export function NSImportSuiteAdmin() {
                       variant="outline"
                       onClick={() => setConfirmFetchRegions(region.id)}
                       disabled={fetchRegionMutation.isPending}
-                      className="h-7 rounded-lg border-emerald-500/30 bg-emerald-500/10 text-[11px] font-medium text-emerald-600 transition-all hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-300"
+                      className="h-7 rounded-lg border-emerald-500/30 bg-emerald-500/10 text-xs font-medium text-emerald-600 transition-all hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-300"
                     >
                       <Globe className="mr-1 h-3 w-3" /> Fetch
                     </Button>
@@ -539,7 +539,7 @@ export function NSImportSuiteAdmin() {
             <div className="flex items-center gap-2">
               <h2 className="text-foreground text-lg font-bold">Sync Operations & Import Runs</h2>
               {selectedSyncLog && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/15 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
                   <Filter className="h-3 w-3" /> Filtered View
                 </span>
               )}
@@ -552,7 +552,7 @@ export function NSImportSuiteAdmin() {
           <div className="flex flex-wrap items-center gap-2">
             {/* Import run selector dropdown */}
             <div className="flex items-center gap-1.5">
-              <label className="text-muted-foreground flex items-center gap-1 text-[11px] font-semibold">
+              <label className="text-muted-foreground flex items-center gap-1 text-xs font-semibold">
                 <Layers className="text-primary h-3 w-3" /> Import:
               </label>
               <select
@@ -623,7 +623,7 @@ export function NSImportSuiteAdmin() {
                   {selectedSyncLog.syncType.replace("NS_REGION_", "Region: ").replace(/_/g, " ")}
                 </span>
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${getStatusColor(selectedSyncLog.status)}`}
+                  className={`rounded-full px-2 py-0.5 text-xs font-bold ${getStatusColor(selectedSyncLog.status)}`}
                 >
                   {selectedSyncLog.status}
                 </span>
@@ -655,7 +655,7 @@ export function NSImportSuiteAdmin() {
                   >
                     <Sparkles className="h-3 w-3" />
                     <span>Imported Cards</span>
-                    <span className="bg-primary-foreground/20 py-0.2 ml-1 rounded-full px-1.5 font-mono text-[10px]">
+                    <span className="bg-primary-foreground/20 py-0.2 ml-1 rounded-full px-1.5 font-mono text-xs">
                       {syncLogCardsData?.total ?? selectedSyncLog.cardsProcessed}
                     </span>
                   </button>
@@ -678,32 +678,32 @@ export function NSImportSuiteAdmin() {
             {/* Metrics row */}
             <div className="grid grid-cols-2 gap-2 pt-1 text-xs sm:grid-cols-4 lg:grid-cols-6">
               <div className="bg-card/60 border-border/60 rounded-lg border p-2">
-                <span className="text-muted-foreground block text-[10px]">Processed</span>
+                <span className="text-muted-foreground block text-xs">Processed</span>
                 <span className="text-foreground font-mono font-bold">
                   {selectedSyncLog.cardsProcessed} cards
                 </span>
               </div>
               <div className="bg-card/60 border-border/60 rounded-lg border p-2">
-                <span className="text-muted-foreground block text-[10px]">Created</span>
+                <span className="text-muted-foreground block text-xs">Created</span>
                 <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                   +{selectedSyncLog.cardsCreated} new
                 </span>
               </div>
               <div className="bg-card/60 border-border/60 rounded-lg border p-2">
-                <span className="text-muted-foreground block text-[10px]">Updated</span>
+                <span className="text-muted-foreground block text-xs">Updated</span>
                 <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
                   +{selectedSyncLog.cardsUpdated}
                 </span>
               </div>
               <div className="bg-card/60 border-border/60 rounded-lg border p-2">
-                <span className="text-muted-foreground block text-[10px]">Duration</span>
+                <span className="text-muted-foreground block text-xs">Duration</span>
                 <span className="text-foreground font-mono font-bold">
                   {formatDuration(selectedSyncLog.duration)}
                 </span>
               </div>
               <div className="bg-card/60 border-border/60 col-span-2 rounded-lg border p-2">
-                <span className="text-muted-foreground block text-[10px]">Started / Completed</span>
-                <span className="text-foreground block truncate font-mono text-[11px]">
+                <span className="text-muted-foreground block text-xs">Started / Completed</span>
+                <span className="text-foreground block truncate font-mono text-xs">
                   {new Date(selectedSyncLog.startedAt).toLocaleString([], {
                     dateStyle: "short",
                     timeStyle: "medium",
@@ -733,21 +733,21 @@ export function NSImportSuiteAdmin() {
                             selectedSyncLog.syncType.replace("NS_REGION_", "").toLowerCase()
                           )
                         }
-                        className="h-6.5 rounded-lg border-rose-500/40 bg-rose-500/20 text-[11px] text-rose-600 transition-all hover:bg-rose-500/30 active:scale-95 dark:text-rose-200"
+                        className="h-6.5 rounded-lg border-rose-500/40 bg-rose-500/20 text-xs text-rose-600 transition-all hover:bg-rose-500/30 active:scale-95 dark:text-rose-200"
                       >
                         <RefreshCw className="mr-1 h-3 w-3" /> Retry Region Fetch
                       </Button>
                     )}
                     <button
                       onClick={() => setShowErrorDetails(!showErrorDetails)}
-                      className="cursor-pointer text-[11px] font-medium text-rose-600 underline hover:no-underline dark:text-rose-400"
+                      className="cursor-pointer text-xs font-medium text-rose-600 underline hover:no-underline dark:text-rose-400"
                     >
                       {showErrorDetails ? "Hide Nations" : `View Nations (${parsedErrors.count})`}
                     </button>
                   </div>
                 </div>
 
-                <p className="text-muted-foreground text-[11px] leading-relaxed">
+                <p className="text-muted-foreground text-xs leading-relaxed">
                   {parsedErrors.isRateLimit
                     ? "The upstream NationStates API rate-limited card fetch requests for these nations. All cards that were successfully imported are safely stored in your database."
                     : parsedErrors.raw}
@@ -758,10 +758,10 @@ export function NSImportSuiteAdmin() {
                     {parsedErrors.nations.map((n, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/20 px-2 py-0.5 font-mono text-[10px] text-rose-600 dark:text-rose-300"
+                        className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/20 px-2 py-0.5 font-mono text-xs text-rose-600 dark:text-rose-300"
                       >
                         {n.nation}
-                        {n.reason && <span className="text-[9px] opacity-70">({n.reason})</span>}
+                        {n.reason && <span className="text-xs opacity-70">({n.reason})</span>}
                       </span>
                     ))}
                   </div>
@@ -779,7 +779,7 @@ export function NSImportSuiteAdmin() {
                   <Clock className="h-3.5 w-3.5 text-blue-500" /> Recent Import Runs (Click to
                   inspect cards & logs)
                 </span>
-                <span className="font-mono text-[11px]">{rawLogsData.length} records</span>
+                <span className="font-mono text-xs">{rawLogsData.length} records</span>
               </div>
               <FacetContainer
                 depth={1}
@@ -802,7 +802,7 @@ export function NSImportSuiteAdmin() {
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <span
-                            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${getStatusColor(log.status)}`}
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${getStatusColor(log.status)}`}
                           >
                             {log.status}
                           </span>
@@ -810,7 +810,7 @@ export function NSImportSuiteAdmin() {
                             <p className="text-foreground truncate text-xs font-semibold">
                               {typeLabel}
                             </p>
-                            <p className="text-muted-foreground flex items-center gap-2 text-[10px]">
+                            <p className="text-muted-foreground flex items-center gap-2 text-xs">
                               <span>
                                 {new Date(log.startedAt).toLocaleString([], {
                                   dateStyle: "short",
@@ -828,7 +828,7 @@ export function NSImportSuiteAdmin() {
                             <span className="text-foreground font-mono font-bold">
                               {log.cardsProcessed} cards
                             </span>
-                            <div className="text-muted-foreground text-[10px]">
+                            <div className="text-muted-foreground text-xs">
                               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                                 +{log.cardsCreated}
                               </span>
@@ -841,7 +841,7 @@ export function NSImportSuiteAdmin() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-7 px-2 text-[11px] text-blue-500 hover:bg-blue-500/10 hover:text-blue-600"
+                            className="h-7 px-2 text-xs text-blue-500 hover:bg-blue-500/10 hover:text-blue-600"
                           >
                             Filter <ArrowRight className="ml-1 h-3 w-3" />
                           </Button>
@@ -915,7 +915,7 @@ export function NSImportSuiteAdmin() {
                           </div>
 
                           {card.season && (
-                            <div className="absolute bottom-1.5 left-1.5 rounded-md bg-black/70 px-1.5 py-0.5 font-mono text-[9px] font-bold text-white">
+                            <div className="absolute bottom-1.5 left-1.5 rounded-md bg-black/70 px-1.5 py-0.5 font-mono text-xs font-bold text-white">
                               S{card.season}
                             </div>
                           )}
@@ -928,7 +928,7 @@ export function NSImportSuiteAdmin() {
                             {card.title}
                           </p>
                           {region && (
-                            <p className="text-muted-foreground flex items-center gap-1 truncate text-[10px]">
+                            <p className="text-muted-foreground flex items-center gap-1 truncate text-xs">
                               <MapPin className="h-2.5 w-2.5 text-emerald-500" />
                               {region}
                             </p>
@@ -936,7 +936,7 @@ export function NSImportSuiteAdmin() {
                         </div>
                       </div>
 
-                      <div className="border-border/40 flex items-center justify-between border-t pt-2 text-[10px]">
+                      <div className="border-border/40 flex items-center justify-between border-t pt-2 text-xs">
                         <span className="text-muted-foreground font-mono">
                           ID: {card.nsCardId ? `#${card.nsCardId}` : card.id.slice(0, 10)}
                         </span>

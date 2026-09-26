@@ -159,7 +159,7 @@ export function MessageTrayItem({
                     {displayTitle}
                   </span>
                   {isDiplomatic && (
-                    <span className="py-0.2 shrink-0 rounded border border-amber-500/30 bg-amber-500/10 px-1 text-[8px] font-bold text-amber-600 uppercase dark:text-amber-400">
+                    <span className="py-0.2 shrink-0 rounded border border-amber-500/30 bg-amber-500/10 px-1 text-xs font-bold text-amber-600 uppercase dark:text-amber-400">
                       Dispatch
                     </span>
                   )}
@@ -169,7 +169,7 @@ export function MessageTrayItem({
                 </span>
               </div>
 
-              <p className="text-muted-foreground group-hover:text-foreground/90 line-clamp-1 text-[11px] leading-relaxed font-medium transition-colors">
+              <p className="text-muted-foreground group-hover:text-foreground/90 line-clamp-1 text-xs leading-relaxed font-medium transition-colors">
                 {excerpt}
               </p>
             </div>

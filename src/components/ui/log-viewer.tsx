@@ -310,7 +310,7 @@ function LogViewerTerminal({
         <Terminal className="text-muted-foreground size-3.5 shrink-0" />
         <span className="text-foreground flex-1 truncate text-sm font-medium">{title}</span>
 
-        <span className="text-muted-foreground mr-1 text-[10px] tabular-nums">
+        <span className="text-muted-foreground mr-1 text-xs tabular-nums">
           {filteredEntries.length}
           {searchQuery && ` / ${entries.length}`} lines
         </span>
@@ -433,7 +433,7 @@ function LogViewerTerminal({
         <button
           type="button"
           onClick={scrollToBottom}
-          className="border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground flex w-full items-center justify-center gap-1.5 border-t py-1.5 text-[10px] font-medium transition-colors"
+          className="border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground flex w-full items-center justify-center gap-1.5 border-t py-1.5 text-xs font-medium transition-colors"
           aria-label="Scroll to latest"
         >
           <ArrowDown className="size-3" />
@@ -522,7 +522,7 @@ function LogViewerMinimal({
         <button
           type="button"
           onClick={scrollToBottom}
-          className="border-border/40 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground flex w-full items-center justify-center gap-1.5 border-t py-1 text-[10px] font-medium transition-colors"
+          className="border-border/40 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground flex w-full items-center justify-center gap-1.5 border-t py-1 text-xs font-medium transition-colors"
           aria-label="Scroll to latest"
         >
           <ArrowDown className="size-3" />
@@ -620,7 +620,7 @@ function LogViewerFilterable({
         <Filter className="text-muted-foreground size-3.5 shrink-0" />
         <span className="text-foreground flex-1 truncate text-sm font-medium">{title}</span>
 
-        <span className="text-muted-foreground mr-1 text-[10px] tabular-nums">
+        <span className="text-muted-foreground mr-1 text-xs tabular-nums">
           {filteredEntries.length} / {entries.length}
         </span>
 
@@ -665,7 +665,7 @@ function LogViewerFilterable({
                 aria-checked={isActive}
                 aria-label={`${isActive ? "Hide" : "Show"} ${level} logs`}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors outline-none",
+                  "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors outline-none",
                   "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-1",
                   isActive ? colors.badge : "bg-muted/50 text-muted-foreground/50 line-through"
                 )}
@@ -766,7 +766,7 @@ function LogViewerFilterable({
         <button
           type="button"
           onClick={scrollToBottom}
-          className="border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground flex w-full items-center justify-center gap-1.5 border-t py-1.5 text-[10px] font-medium transition-colors"
+          className="border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground flex w-full items-center justify-center gap-1.5 border-t py-1.5 text-xs font-medium transition-colors"
           aria-label="Scroll to latest"
         >
           <ArrowDown className="size-3" />

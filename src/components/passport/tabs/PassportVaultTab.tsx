@@ -79,7 +79,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
         <Link
           href="/vault"
           data-cuelume-press="soft"
-          className="flex items-center gap-0.5 font-mono text-[11px] text-amber-600 hover:underline dark:text-amber-400"
+          className="flex items-center gap-0.5 font-mono text-xs text-amber-600 hover:underline dark:text-amber-400"
         >
           <span>Open Vault</span>
           <ArrowRight className="h-3 w-3" />
@@ -92,7 +92,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
           className="space-y-2 rounded-2xl border border-black/8 bg-black/[0.02] p-3.5 dark:border-white/10 dark:bg-white/[0.02]"
         >
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground font-mono text-[9px] font-bold tracking-wider uppercase">
+            <span className="text-muted-foreground font-mono text-xs font-bold tracking-wider uppercase">
               Collector Level
             </span>
             <Trophy className="text-muted-foreground h-3.5 w-3.5" />
@@ -114,7 +114,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
                 style={{ willChange: "width" }}
               />
             </div>
-            <p className="text-muted-foreground font-mono text-[9px]">
+            <p className="text-muted-foreground font-mono text-xs">
               {xp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP
             </p>
           </div>
@@ -125,7 +125,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
           className="space-y-2 rounded-2xl border border-black/8 bg-black/[0.02] p-3.5 dark:border-white/10 dark:bg-white/[0.02]"
         >
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground font-mono text-[9px] font-bold tracking-wider uppercase">
+            <span className="text-muted-foreground font-mono text-xs font-bold tracking-wider uppercase">
               Deck Value
             </span>
             <Coins className="h-3.5 w-3.5 text-amber-500" />
@@ -138,7 +138,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
 
       {topCards.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-muted-foreground font-mono text-[10px] font-bold tracking-wider uppercase">
+          <h3 className="text-muted-foreground font-mono text-xs font-bold tracking-wider uppercase">
             Featured Deck · Top {topCards.length}
           </h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

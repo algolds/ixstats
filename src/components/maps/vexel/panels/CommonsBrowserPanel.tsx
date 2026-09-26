@@ -125,7 +125,7 @@ export default function CommonsBrowserPanel({
       <header className="flex h-14 items-center justify-between border-b border-white/10 px-6">
         <div>
           <h2 className="text-sm font-bold tracking-wider text-amber-500">Wikimedia Commons</h2>
-          <p className="text-[10px] text-zinc-500">Search and import vector heraldic charges</p>
+          <p className="text-xs text-zinc-500">Search and import vector heraldic charges</p>
         </div>
         <button
           onClick={onClose}
@@ -163,7 +163,7 @@ export default function CommonsBrowserPanel({
       <div className="border-b border-white/5 bg-zinc-950 p-4">
         {activeTab === "category" ? (
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase">
+            <label className="text-xs font-bold text-zinc-500 uppercase">
               Commons Category
             </label>
             <select
@@ -180,7 +180,7 @@ export default function CommonsBrowserPanel({
           </div>
         ) : (
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase">Search Term</label>
+            <label className="text-xs font-bold text-zinc-500 uppercase">Search Term</label>
             <input
               type="text"
               placeholder="e.g. heraldic lion, crown SVG..."
@@ -223,13 +223,13 @@ export default function CommonsBrowserPanel({
                       className="max-h-full max-w-full object-contain brightness-95 transition-all group-hover:brightness-100"
                       loading="lazy"
                     />
-                    <span className="absolute right-1 bottom-1 rounded border border-emerald-400/20 bg-black/60 px-1 py-0.5 font-mono text-[8px] text-emerald-400">
+                    <span className="absolute right-1 bottom-1 rounded border border-emerald-400/20 bg-black/60 px-1 py-0.5 font-mono text-xs text-emerald-400">
                       SVG
                     </span>
                   </div>
 
                   {/* Title / Info */}
-                  <div className="space-y-0.5 text-[10px]">
+                  <div className="space-y-0.5 text-xs">
                     <p className="truncate font-medium text-zinc-300" title={img.title}>
                       {getSanitizedTitle(img.title)}
                     </p>
@@ -238,7 +238,7 @@ export default function CommonsBrowserPanel({
 
                   {/* Action buttons or Inline import form */}
                   {isImportingThis ? (
-                    <div className="space-y-1.5 border-t border-white/5 p-1 text-[10px]">
+                    <div className="space-y-1.5 border-t border-white/5 p-1 text-xs">
                       <div>
                         <span className="mb-0.5 block font-bold text-zinc-500">Name</span>
                         <input
@@ -281,7 +281,7 @@ export default function CommonsBrowserPanel({
                   ) : (
                     <button
                       onClick={() => handleStartImport(img)}
-                      className="w-full rounded border border-white/5 bg-zinc-800 py-1 text-center text-[10px] font-semibold text-zinc-300 transition-all hover:border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-400"
+                      className="w-full rounded border border-white/5 bg-zinc-800 py-1 text-center text-xs font-semibold text-zinc-300 transition-all hover:border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-400"
                     >
                       📥 Import to Library
                     </button>

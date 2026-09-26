@@ -149,7 +149,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
         {/* City population */}
         {isCity && feature.population != null && (
           <div className="bg-muted mb-3 rounded-lg px-3 py-2">
-            <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium tracking-wider uppercase">
+            <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
               <Users className="h-3 w-3" />
               Population
             </div>
@@ -162,7 +162,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
         {/* POI description */}
         {!isCity && !isStoryPin && feature.description && (
           <div className="bg-muted mb-3 rounded-lg px-3 py-2">
-            <div className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+            <div className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
               Description
             </div>
             <p className="text-foreground mt-0.5 text-xs leading-relaxed">{feature.description}</p>
@@ -183,7 +183,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
               </div>
             )}
             {feature.category && (
-              <span className="inline-block rounded-full bg-wiki/15 px-2 py-0.5 text-[10px] font-medium text-wiki capitalize">
+              <span className="inline-block rounded-full bg-wiki/15 px-2 py-0.5 text-xs font-medium text-wiki capitalize">
                 {feature.category}
               </span>
             )}

@@ -46,7 +46,7 @@ export const WikiHeader: React.FC<WikiHeaderProps> = ({
               <h2 className="text-foreground text-sm font-extrabold tracking-tight">
                 {countryName} Sovereign Dossier
               </h2>
-              <span className="rounded-md border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold text-blue-400">
+              <span className="rounded-md border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-xs font-bold text-blue-400">
                 {viewerClearanceLevel}
               </span>
             </div>

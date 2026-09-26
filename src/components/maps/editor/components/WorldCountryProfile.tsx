@@ -105,7 +105,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
     <div className="space-y-3">
       {/* Header badge */}
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           {isUnclaimed ? "Unclaimed Territory" : "Country Profile"}
         </span>
         <div className="flex min-w-0 items-center gap-1.5">
@@ -124,7 +124,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
             </div>
           )}
           <span
-            className={`truncate rounded px-1.5 py-0.5 text-[10px] font-medium ${
+            className={`truncate rounded px-1.5 py-0.5 text-xs font-medium ${
               isUnclaimed
                 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                 : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
@@ -137,12 +137,12 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
 
       {/* Settings (editable display name & linkage) */}
       <div className="border-border/60 bg-muted/10 space-y-3 rounded-lg border p-3">
-        <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Details
         </label>
         <div className="space-y-2">
           <div className="space-y-1">
-            <span className="text-muted-foreground text-[10px] font-medium">Name</span>
+            <span className="text-muted-foreground text-xs font-medium">Name</span>
             <input
               type="text"
               value={editableFeatureName}
@@ -153,7 +153,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
           </div>
 
           <div className="space-y-1">
-            <span className="text-muted-foreground text-[10px] font-medium">Linked country</span>
+            <span className="text-muted-foreground text-xs font-medium">Linked country</span>
             <select
               value={editableCountryLinkageId}
               onChange={(e) => setEditableCountryLinkageId(e.target.value)}
@@ -171,7 +171,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
 
           {!isUnclaimed && (
             <div className="space-y-1">
-              <span className="text-muted-foreground text-[10px] font-medium">Wiki article</span>
+              <span className="text-muted-foreground text-xs font-medium">Wiki article</span>
               <input
                 type="text"
                 value={wikiPageTitle}
@@ -198,19 +198,19 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
 
       {/* Feature data card */}
       <div className="border-border/60 bg-muted/10 space-y-2 rounded-lg border p-3">
-        <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Feature Data
         </label>
         <div className="space-y-1">
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">Feature ID</span>
-            <span className="text-foreground/80 max-w-[180px] truncate font-mono text-[10px]">
+            <span className="text-foreground/80 max-w-[180px] truncate font-mono text-xs">
               {mapSelectedCountry.featureId || "—"}
             </span>
           </div>
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">Centroid</span>
-            <span className="text-foreground/80 font-mono text-[10px]">
+            <span className="text-foreground/80 font-mono text-xs">
               {mapSelectedCountry.centroidLng?.toFixed(4)},
               {mapSelectedCountry.centroidLat?.toFixed(4)}
             </span>
@@ -224,7 +224,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                   backgroundColor: mapSelectedCountry.fillColor || "var(--color-bg-secondary)",
                 }}
               />
-              <span className="text-foreground/80 font-mono text-[10px]">
+              <span className="text-foreground/80 font-mono text-xs">
                 {mapSelectedCountry.fillColor || "—"}
               </span>
             </span>
@@ -235,7 +235,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
       {/* DB feature details card */}
       {featureDetails && (
         <div className="border-border/60 bg-muted/10 space-y-2 rounded-lg border p-3">
-          <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Database Record
           </label>
           <div className="space-y-1">
@@ -267,7 +267,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
       {/* Full feature properties JSON viewer */}
       <div className="border-border/60 bg-muted/10 rounded-lg border p-3">
         <div className="mb-2 flex items-center justify-between">
-          <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Properties JSON
           </label>
           <button
@@ -285,7 +285,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                 setIsEditingJson(true);
               }
             }}
-            className="text-primary text-[10px] font-semibold hover:underline"
+            className="text-primary text-xs font-semibold hover:underline"
           >
             {isEditingJson ? "Save" : "Edit JSON"}
           </button>
@@ -296,9 +296,9 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
               value={propertiesJsonString}
               onChange={(e) => setPropertiesJsonString(e.target.value)}
               rows={6}
-              className="border-border bg-background focus:border-primary w-full rounded-lg border px-3 py-2 font-mono text-[10px] leading-relaxed focus:outline-none"
+              className="border-border bg-background focus:border-primary w-full rounded-lg border px-3 py-2 font-mono text-xs leading-relaxed focus:outline-none"
             />
-            {jsonError && <p className="text-destructive text-[10px]">{jsonError}</p>}
+            {jsonError && <p className="text-destructive text-xs">{jsonError}</p>}
           </div>
         ) : (
           <JsonViewer data={parsedProperties} />
@@ -308,13 +308,13 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
       {/* Unclaimed territory actions */}
       {isUnclaimed && (
         <div className="border-border/60 space-y-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-          <p className="text-muted-foreground text-[10px]">
+          <p className="text-muted-foreground text-xs">
             This territory has no linked country record.
           </p>
 
           {setAssignCountryId && handleAssignLink && availableCountries && (
             <div className="space-y-1.5">
-              <label className="text-muted-foreground text-[10px] font-medium uppercase">
+              <label className="text-muted-foreground text-xs font-medium uppercase">
                 Assign to country
               </label>
               <div className="flex gap-1.5">
@@ -344,7 +344,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
           {createCountryFromShapeAction &&
             (isCreatingCountry ? (
               <div className="space-y-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2">
-                <label className="block text-[10px] font-semibold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
+                <label className="block text-xs font-semibold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
                   New Country Name
                 </label>
                 <input

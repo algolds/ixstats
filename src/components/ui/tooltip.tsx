@@ -51,7 +51,7 @@ function Tooltip({
             <div className="flex items-center gap-2">
               <span>{content}</span>
               {shortcut && (
-                <kbd className="bg-muted text-muted-foreground pointer-events-none inline-flex h-4 items-center gap-0.5 rounded px-1.5 font-mono text-[10px] font-medium opacity-100 select-none">
+                <kbd className="bg-muted text-muted-foreground pointer-events-none inline-flex h-4 items-center gap-0.5 rounded px-1.5 font-mono text-xs font-medium opacity-100 select-none">
                   {shortcut}
                 </kbd>
               )}

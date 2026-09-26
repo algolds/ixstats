@@ -511,11 +511,11 @@ export function ColorPickerInput({
             >
               <ColorPickerSelection className="mb-2 h-32" />
               <div className="mb-2 space-y-1">
-                <Label className="text-muted-foreground text-[10px]">Hue</Label>
+                <Label className="text-muted-foreground text-xs">Hue</Label>
                 <ColorPickerHue />
               </div>
               <div className="mb-2 space-y-1">
-                <Label className="text-muted-foreground text-[10px]">Alpha</Label>
+                <Label className="text-muted-foreground text-xs">Alpha</Label>
                 <ColorPickerAlpha />
               </div>
               <div className="flex items-center gap-1.5 pt-1">

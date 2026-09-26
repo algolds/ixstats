@@ -152,7 +152,7 @@ export function NationBuilderShowcase() {
                       >
                         <Icon className="h-5 w-5" aria-hidden />
                       </motion.div>
-                      <span className="text-muted-foreground mb-0.5 text-[10px] font-medium tracking-wider uppercase">
+                      <span className="text-muted-foreground mb-0.5 text-xs font-medium tracking-wider uppercase">
                         Step {i + 1}
                       </span>
                       <span className={`text-sm font-semibold ${splashGold.text}`}>

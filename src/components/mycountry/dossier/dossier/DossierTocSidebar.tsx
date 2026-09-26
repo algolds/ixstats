@@ -273,7 +273,7 @@ export function DossierTocSidebar({
             </CardTitle>
             <Badge
               variant="outline"
-              className="text-muted-foreground border-white/10 font-mono text-[9px]"
+              className="text-muted-foreground border-white/10 font-mono text-xs"
             >
               {totalEntries} Entries
             </Badge>
@@ -297,7 +297,7 @@ export function DossierTocSidebar({
               <button
                 key={mode}
                 onClick={() => setSourceFilter(mode)}
-                className={`rounded px-2 py-0.5 text-[9px] font-bold uppercase transition-colors ${
+                className={`rounded px-2 py-0.5 text-xs font-bold uppercase transition-colors ${
                   sourceFilter === mode
                     ? "border border-blue-500/30 bg-blue-500/20 text-blue-400"
                     : "text-muted-foreground hover:text-foreground"
@@ -335,7 +335,7 @@ export function DossierTocSidebar({
                     </div>
 
                     <div className="flex shrink-0 items-center gap-1.5">
-                      <span className="text-muted-foreground rounded border border-white/5 bg-black/40 px-1.5 py-0.5 font-mono text-[10px]">
+                      <span className="text-muted-foreground rounded border border-white/5 bg-black/40 px-1.5 py-0.5 font-mono text-xs">
                         {items.length}
                       </span>
                       {isOpen ? (
@@ -371,7 +371,7 @@ export function DossierTocSidebar({
                               ) : (
                                 <FileText className="h-3 w-3 shrink-0 text-amber-400/80" />
                               )}
-                              <span className="truncate text-[11px] font-medium">{item.title}</span>
+                              <span className="truncate text-xs font-medium">{item.title}</span>
                             </div>
 
                             {item.isPage ? (

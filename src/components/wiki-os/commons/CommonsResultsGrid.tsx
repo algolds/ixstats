@@ -85,7 +85,7 @@ const CommonsCard = memo(function CommonsCard({
         {imageError ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center text-muted-foreground/60">
             <ImageIcon className="h-6 w-6 opacity-40" />
-            <span className="text-[10px] font-medium tracking-wide uppercase opacity-70">
+            <span className="text-xs font-medium tracking-wide uppercase opacity-70">
               {img.mime ? img.mime.split("/")[1] : "Image"}
             </span>
           </div>
@@ -112,10 +112,10 @@ const CommonsCard = memo(function CommonsCard({
       </div>
 
       <div className="wikios-commons-card-info flex flex-col gap-0.5 p-2.5">
-        <span className="wikios-commons-card-title truncate text-[11px] font-medium text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)] transition-colors">
+        <span className="wikios-commons-card-title truncate text-xs font-medium text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)] transition-colors">
           {cleanTitle}
         </span>
-        <div className="flex items-center justify-between text-[9px] text-[var(--wikios-text-dim)]">
+        <div className="flex items-center justify-between text-xs text-[var(--wikios-text-dim)]">
           <span>
             {img.width > 0 && img.height > 0 ? `${img.width}×${img.height}` : "Vector"}
           </span>
@@ -212,7 +212,7 @@ export function CommonsResultsGrid({
   return (
     <div className="wikios-commons-results">
       {totalHits != null && totalHits > 0 && (
-        <div className="mb-3 flex items-center justify-between px-1 text-[10px] text-[var(--wikios-text-dim)]">
+        <div className="mb-3 flex items-center justify-between px-1 text-xs text-[var(--wikios-text-dim)]">
           <span>
             Showing <strong className="text-[var(--wikios-text-muted)]">{images.length}</strong> of{" "}
             <strong className="text-[var(--wikios-text-muted)]">

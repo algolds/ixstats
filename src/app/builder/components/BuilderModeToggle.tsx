@@ -125,7 +125,7 @@ export const BuilderModeToggle = React.memo(function BuilderModeToggle({
             ? "Advanced Mode active: deep simulation tabs (Sectors, Workforce, Departments) unlocked."
             : "Switch to Advanced Mode for deep economic levers & department hierarchy."}
         </p>
-        <span className="mt-1 inline-block text-[10px] font-mono text-muted-foreground opacity-80">
+        <span className="mt-1 inline-block text-xs font-mono text-muted-foreground opacity-80">
           Shortcut: {shortcutLabel}
         </span>
       </TooltipContent>

@@ -101,7 +101,7 @@ function BlurbStatsSummary() {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-        <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Total Responses
         </p>
         {countLoading ? (
@@ -114,7 +114,7 @@ function BlurbStatsSummary() {
       </div>
 
       <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-        <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Active Prompts
         </p>
         {activeLoading ? (
@@ -127,7 +127,7 @@ function BlurbStatsSummary() {
       </div>
 
       <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-        <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           All Prompts Catalog
         </p>
         {allLoading ? (
@@ -383,19 +383,19 @@ function PromptManagementSection() {
                       <span className="text-foreground truncate text-xs font-bold">
                         {prompt.title}
                       </span>
-                      <Badge variant={config.variant} className="text-[10px]">
+                      <Badge variant={config.variant} className="text-xs">
                         {config.label}
                       </Badge>
                       {prompt.featured && (
                         <Badge
                           variant="outline"
-                          className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-400"
+                          className="border-amber-500/30 bg-amber-500/10 text-xs text-amber-400"
                         >
                           Featured
                         </Badge>
                       )}
                     </div>
-                    <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                    <p className="text-muted-foreground mt-0.5 truncate text-xs">
                       {prompt.question}
                     </p>
                   </div>
@@ -510,7 +510,7 @@ function ResponseModerationSection() {
   return (
     <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
       <div className="border-border/20 max-w-md space-y-1.5 border-b pb-4">
-        <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Select Discussion Prompt
         </Label>
         <Select value={selectedPromptId} onValueChange={setSelectedPromptId}>
@@ -563,7 +563,7 @@ function ResponseModerationSection() {
                   {r.featured && (
                     <Badge
                       variant="outline"
-                      className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-400"
+                      className="border-amber-500/30 bg-amber-500/10 text-xs text-amber-400"
                     >
                       Featured
                     </Badge>
@@ -590,7 +590,7 @@ function ResponseModerationSection() {
               <p className="text-muted-foreground text-xs leading-relaxed whitespace-pre-wrap">
                 {r.content}
               </p>
-              <span className="text-muted-foreground/60 mt-2 block font-mono text-[10px]">
+              <span className="text-muted-foreground/60 mt-2 block font-mono text-xs">
                 {new Date(r.createdAt).toLocaleDateString()}
               </span>
             </div>

@@ -312,7 +312,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                 {name || "Untitled Feature"}
               </h3>
             </div>
-            <p className="text-muted-foreground/70 truncate text-[11px] capitalize">
+            <p className="text-muted-foreground/70 truncate text-xs capitalize">
               {feature.type === "subdivision" ? "Region" : feature.type}
             </p>
           </div>
@@ -320,12 +320,12 @@ export const FeatureInspector = React.memo(function FeatureInspector({
 
         <div className="flex items-center gap-1">
           {isMutating ? (
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground pr-1">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground pr-1">
               <div className="border-muted-foreground/20 border-t-primary h-3 w-3 animate-spin rounded-full border-2" />
               <span>Saving…</span>
             </div>
           ) : (
-            <span className="text-muted-foreground/60 flex items-center gap-1 text-[10px] pr-1">
+            <span className="text-muted-foreground/60 flex items-center gap-1 text-xs pr-1">
               <Check className="h-3 w-3 text-emerald-500" />
               <span>Saved</span>
             </span>
@@ -350,7 +350,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
           onClick={() => setOpenIdentity((v) => !v)}
           className="hover:bg-muted/20 flex w-full items-center justify-between px-3 py-2 text-left font-medium transition-colors"
         >
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Details
           </span>
           {openIdentity ? <ChevronUp className="h-3.5 w-3.5 opacity-60" /> : <ChevronDown className="h-3.5 w-3.5 opacity-60" />}
@@ -360,7 +360,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
           <div className="border-border/40 space-y-2.5 border-t p-3">
             {/* Feature Name */}
             <div className="space-y-1">
-              <span className="text-muted-foreground text-[10px] font-medium">Name</span>
+              <span className="text-muted-foreground text-xs font-medium">Name</span>
               <input
                 type="text"
                 value={name}
@@ -374,14 +374,14 @@ export const FeatureInspector = React.memo(function FeatureInspector({
             {/* City: Type selector */}
             {feature.type === "city" && (
               <div className="space-y-1">
-                <span className="text-muted-foreground text-[10px] font-medium">Type</span>
+                <span className="text-muted-foreground text-xs font-medium">Type</span>
                 <div className="flex flex-wrap gap-1">
                   {CITY_TYPES.map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => handleCityTypeChange(t)}
-                      className={`rounded-md px-2 py-1 text-[11px] font-medium capitalize transition-all active:scale-[0.98] ${
+                      className={`rounded-md px-2 py-1 text-xs font-medium capitalize transition-all active:scale-[0.98] ${
                         cityType === t
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "border-border/60 bg-card/60 text-muted-foreground hover:bg-accent/40 hover:text-foreground border"
@@ -398,7 +398,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
             {feature.type === "route" && (
               <div className="space-y-2.5">
                 <div className="space-y-1">
-                  <span className="text-muted-foreground text-[10px] font-medium">Route sub-type</span>
+                  <span className="text-muted-foreground text-xs font-medium">Route sub-type</span>
                   <select
                     value={routeType}
                     onChange={(e) => handleRouteTypeChange(e.target.value)}
@@ -416,7 +416,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-muted-foreground text-[10px] font-medium">Operational status</span>
+                  <span className="text-muted-foreground text-xs font-medium">Operational status</span>
                   <select
                     value={routeStatus}
                     onChange={(e) => handleRouteStatusChange(e.target.value)}
@@ -442,11 +442,11 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                 {/* Velocity & Transit Telemetry Card */}
                 <div className="space-y-2 rounded-lg border border-border/40 bg-muted/15 p-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase flex items-center gap-1.5">
+                    <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase flex items-center gap-1.5">
                       <Gauge className="h-3 w-3 text-primary" /> Velocity & Transit
                     </span>
                     {travelTime?.isInstantaneous ? (
-                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
                         Light Speed
                       </span>
                     ) : (
@@ -461,7 +461,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                     <>
                       {/* Speed custom input */}
                       <div className="space-y-1">
-                        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>Design Speed</span>
                           <span className="font-mono tabular-nums font-medium text-foreground">
                             {routeSpeed} km/h
@@ -488,7 +488,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                                 key={preset.speed}
                                 type="button"
                                 onClick={() => handleSpeedChange(preset.speed)}
-                                className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition active:scale-[0.98] ${
+                                className={`rounded px-1.5 py-0.5 text-xs font-medium transition active:scale-[0.98] ${
                                   routeSpeed === preset.speed
                                     ? "bg-primary text-primary-foreground shadow-2xs"
                                     : "border border-border/40 bg-muted/40 text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -502,14 +502,14 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                       </div>
 
                       {/* Travel summary stats */}
-                      <div className="grid grid-cols-2 gap-2 border-t border-border/30 pt-2 text-[10px]">
+                      <div className="grid grid-cols-2 gap-2 border-t border-border/30 pt-2 text-xs">
                         <div>
                           <span className="text-muted-foreground block">Effective Speed</span>
                           <span className="font-mono font-medium text-foreground tabular-nums">
                             {travelTime?.effectiveSpeedKmh} km/h
                           </span>
                           {Boolean(travelTime && travelTime.terrainPenaltyPercent > 0) && (
-                            <span className="text-amber-500 block text-[9px] font-medium">
+                            <span className="text-amber-500 block text-xs font-medium">
                               -{travelTime?.terrainPenaltyPercent}% terrain drag
                             </span>
                           )}
@@ -537,14 +537,14 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                 {/* Route Nodes Summary & Direct Map Edit Trigger */}
                 <div className="space-y-1.5 pt-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-[10px] font-medium">
+                    <span className="text-muted-foreground text-xs font-medium">
                       Path Nodes ({routeVertices.length})
                     </span>
                     {onEditRoute && (
                       <button
                         type="button"
                         onClick={() => onEditRoute(feature.id)}
-                        className="flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary transition active:scale-[0.98] hover:bg-primary/20"
+                        className="flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-xs font-semibold text-primary transition active:scale-[0.98] hover:bg-primary/20"
                       >
                         <Route className="h-3 w-3" />
                         <span>Edit Path on Map</span>
@@ -555,13 +555,13 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                   {routeVertices.length > 0 && (
                     <div className="max-h-28 space-y-1 overflow-y-auto rounded-md border border-border/40 bg-muted/10 p-1.5">
                       {routeVertices.slice(0, 10).map((pt, i) => (
-                        <div key={i} className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+                        <div key={i} className="flex items-center justify-between text-xs font-mono text-muted-foreground">
                           <span>#{i + 1} {i === 0 ? "(Start)" : i === routeVertices.length - 1 ? "(End)" : ""}</span>
                           <span>{pt[0].toFixed(4)}°, {pt[1].toFixed(4)}°</span>
                         </div>
                       ))}
                       {routeVertices.length > 10 && (
-                        <div className="text-center text-[9px] text-muted-foreground pt-0.5">
+                        <div className="text-center text-xs text-muted-foreground pt-0.5">
                           + {routeVertices.length - 10} more nodes
                         </div>
                       )}
@@ -574,7 +574,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
             {/* Region: Level */}
             {feature.type === "subdivision" && (
               <div className="space-y-1">
-                <span className="text-muted-foreground text-[10px] font-medium">Level</span>
+                <span className="text-muted-foreground text-xs font-medium">Level</span>
                 <select
                   value={subdivisionLevel}
                   onChange={(e) => {
@@ -596,7 +596,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
             {/* Region assignment (for non-subdivisions) */}
             {feature.type !== "subdivision" && subdivisions.length > 0 && (
               <div className="space-y-1">
-                <span className="text-muted-foreground text-[10px] font-medium">Region</span>
+                <span className="text-muted-foreground text-xs font-medium">Region</span>
                 <select
                   value={subdivisionId}
                   onChange={(e) => handleSubdivisionChange(e.target.value)}
@@ -622,7 +622,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
           onClick={() => setOpenSpatial((v) => !v)}
           className="hover:bg-muted/20 flex w-full items-center justify-between px-3 py-2 text-left font-medium transition-colors"
         >
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             {feature.type === "river"
               ? "Hydrology & Course"
               : feature.type === "lake"
@@ -655,7 +655,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                 {coords && (
                   <div className="border-border/40 bg-card/40 space-y-2 rounded-lg border p-2.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider">
+                      <span className="text-muted-foreground/70 text-xs uppercase tracking-wider">
                         Elevation & Terrain
                       </span>
                       {sampleTerrain.isLoading && (
@@ -665,7 +665,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
 
                     <div className="grid grid-cols-2 gap-1.5">
                       <div className="border-border/30 bg-muted/20 rounded p-1.5">
-                        <span className="text-muted-foreground/70 text-[9px]">Elevation</span>
+                        <span className="text-muted-foreground/70 text-xs">Elevation</span>
                         <p className="text-foreground font-mono text-xs font-semibold tabular-nums">
                           {sampleTerrain.data?.midpoint != null
                             ? `${sampleTerrain.data.midpoint.toLocaleString()} m`
@@ -674,7 +674,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                       </div>
 
                       <div className="border-border/30 bg-muted/20 rounded p-1.5">
-                        <span className="text-muted-foreground/70 text-[9px]">Terrain zone</span>
+                        <span className="text-muted-foreground/70 text-xs">Terrain zone</span>
                         <p className="text-foreground font-mono text-xs font-semibold">
                           {sampleTerrain.data?.zoneName || "Lowland"}
                         </p>
@@ -682,7 +682,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                     </div>
 
                     {sampleTerrain.data?.elevationMin != null && sampleTerrain.data?.elevationMax != null && (
-                      <div className="border-border/30 bg-muted/20 flex items-center justify-between rounded px-2 py-1 text-[10px]">
+                      <div className="border-border/30 bg-muted/20 flex items-center justify-between rounded px-2 py-1 text-xs">
                         <span className="text-muted-foreground">Zone range</span>
                         <span className="text-foreground font-mono font-medium">
                           {sampleTerrain.data.elevationMin}m to {sampleTerrain.data.elevationMax}m
@@ -704,7 +704,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
           onClick={() => setOpenWiki((v) => !v)}
           className="hover:bg-muted/20 flex w-full items-center justify-between px-3 py-2 text-left font-medium transition-colors"
         >
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Wiki article
           </span>
           {openWiki ? <ChevronUp className="h-3.5 w-3.5 opacity-60" /> : <ChevronDown className="h-3.5 w-3.5 opacity-60" />}
@@ -713,7 +713,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
         {openWiki && (
           <div className="border-border/40 space-y-2.5 border-t p-3">
             <div className="space-y-1">
-              <span className="text-muted-foreground text-[10px] font-medium">Article title</span>
+              <span className="text-muted-foreground text-xs font-medium">Article title</span>
               <WikiLinkWizard
                 value={wikiPageTitle}
                 onChange={handleWikiChange}
@@ -744,7 +744,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
           onClick={() => setOpenActions((v) => !v)}
           className="hover:bg-muted/20 flex w-full items-center justify-between px-3 py-2 text-left font-medium transition-colors"
         >
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Actions
           </span>
           {openActions ? <ChevronUp className="h-3.5 w-3.5 opacity-60" /> : <ChevronDown className="h-3.5 w-3.5 opacity-60" />}

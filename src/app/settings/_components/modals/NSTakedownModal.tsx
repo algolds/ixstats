@@ -195,17 +195,17 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                         <div className="flex items-center gap-2">
                           <span className="text-foreground text-xs font-bold">{nation}</span>
                           {isVerified ? (
-                            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                               <ShieldCheck className="h-2.5 w-2.5" />
                               Verified
                             </span>
                           ) : (
-                            <span className="inline-flex items-center rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-600 dark:text-amber-400">
+                            <span className="inline-flex items-center rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
                               Unverified
                             </span>
                           )}
                         </div>
-                        <span className="text-muted-foreground text-[10px]">
+                        <span className="text-muted-foreground text-xs">
                           {nationCards.length} {nationCards.length === 1 ? "card" : "cards"}
                         </span>
                       </div>
@@ -220,7 +220,7 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                               <p className="text-foreground truncate text-xs font-medium">
                                 {card.title}
                               </p>
-                              <p className="text-muted-foreground text-[10px]">
+                              <p className="text-muted-foreground text-xs">
                                 Card #{card.nsCardId} · S{card.nsSeason}
                               </p>
                             </div>
@@ -312,7 +312,7 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                   <p className="text-foreground text-xs font-medium">
                     Step 1: Get your verification checksum code
                   </p>
-                  <p className="text-muted-foreground text-[11px]">
+                  <p className="text-muted-foreground text-xs">
                     Sign in to NationStates and generate a temporary code to prove ownership of this
                     flag.
                   </p>
@@ -368,7 +368,7 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
           </div>
         )}
 
-        <NationStatesAttribution className="mt-2 !text-[10px]" />
+        <NationStatesAttribution className="mt-2 !text-xs" />
       </DialogContent>
     </Dialog>
   );

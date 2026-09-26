@@ -417,7 +417,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                                 {doc.title}
                               </h4>
                               <span
-                                className={`rounded-md border px-1.5 py-0.5 text-[9px] font-bold ${
+                                className={`rounded-md border px-1.5 py-0.5 text-xs font-bold ${
                                   doc.clearance === "PUBLIC"
                                     ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                                     : doc.clearance === "ALLIANCE"
@@ -435,7 +435,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                         </div>
 
                         <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
-                          <span className="text-muted-foreground text-[10px]">
+                          <span className="text-muted-foreground text-xs">
                             Updated {new Date(doc.updatedAt).toLocaleDateString()}
                           </span>
                           <div className="flex items-center gap-1.5">

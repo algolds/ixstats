@@ -91,7 +91,7 @@ export function BuilderGuideSheet({
                   </SheetTitle>
                   <span
                     className={cn(
-                      "rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase",
+                      "rounded-full border px-2 py-0.5 text-xs font-semibold tracking-wide uppercase",
                       sectionBadge.border,
                       sectionBadge.color
                     )}
@@ -144,7 +144,7 @@ export function BuilderGuideSheet({
                 <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                   Section Roadmap
                 </span>
-                <Badge variant="outline" className="border-border/40 text-[10px] font-mono">
+                <Badge variant="outline" className="border-border/40 text-xs font-mono">
                   {milestones.length} Steps
                 </Badge>
               </div>
@@ -181,7 +181,7 @@ export function BuilderGuideSheet({
                 <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                   Core Mechanics & Rules
                 </span>
-                <Badge variant="outline" className="border-border/40 text-[10px] font-mono">
+                <Badge variant="outline" className="border-border/40 text-xs font-mono">
                   {rules.length} Directives
                 </Badge>
               </div>
@@ -210,7 +210,7 @@ export function BuilderGuideSheet({
                               {rule.title}
                             </h4>
                             {rule.badge && (
-                              <span className="rounded-md border border-border/50 bg-muted/40 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+                              <span className="rounded-md border border-border/50 bg-muted/40 px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                                 {rule.badge}
                               </span>
                             )}
@@ -241,12 +241,12 @@ export function BuilderGuideSheet({
         </div>
 
         {/* Footer info bar */}
-        <div className="flex items-center justify-between border-t border-border/40 px-5 py-3 text-[11px] text-muted-foreground">
+        <div className="flex items-center justify-between border-t border-border/40 px-5 py-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <InfoCircle className="h-3.5 w-3.5" />
             Changes auto-save in draft
           </span>
-          <span className="font-mono text-[10px] text-muted-foreground/60">
+          <span className="font-mono text-xs text-muted-foreground/60">
             IxStates Studio
           </span>
         </div>

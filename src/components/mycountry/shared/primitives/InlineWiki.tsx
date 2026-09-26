@@ -61,14 +61,14 @@ function InlineWikiExcerpt({
       <div className="mb-1.5 flex items-center gap-2">
         <BookOpen className={cn("h-3.5 w-3.5", a.text)} />
         <span className="text-xs font-semibold">{title}</span>
-        <span className="text-muted-foreground ml-auto text-[10px] tracking-wider uppercase">
+        <span className="text-muted-foreground ml-auto text-xs tracking-wider uppercase">
           From the wiki
         </span>
       </div>
       {isLoading ? (
         <div className="flex items-center gap-2 py-2">
           <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
-          <span className="text-muted-foreground text-[10px]">Loading lore…</span>
+          <span className="text-muted-foreground text-xs">Loading lore…</span>
         </div>
       ) : (
         <p className="text-foreground/75 text-xs leading-relaxed">{excerpt}</p>
@@ -78,7 +78,7 @@ function InlineWikiExcerpt({
           <Link
             href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
             className={cn(
-              "mt-2 inline-flex items-center gap-1 text-[11px] hover:underline",
+              "mt-2 inline-flex items-center gap-1 text-xs hover:underline",
               a.text
             )}
           >
@@ -90,7 +90,7 @@ function InlineWikiExcerpt({
             target="_blank"
             rel="noopener noreferrer"
             className={cn(
-              "mt-2 inline-flex items-center gap-1 text-[11px] hover:underline",
+              "mt-2 inline-flex items-center gap-1 text-xs hover:underline",
               a.text
             )}
           >

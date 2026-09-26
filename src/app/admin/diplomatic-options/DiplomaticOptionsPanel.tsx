@@ -247,7 +247,7 @@ export function DiplomaticOptionsPanel() {
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Options
           </p>
           <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
@@ -255,7 +255,7 @@ export function DiplomaticOptionsPanel() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Active Registry
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
@@ -263,7 +263,7 @@ export function DiplomaticOptionsPanel() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Filtered Results
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
@@ -271,7 +271,7 @@ export function DiplomaticOptionsPanel() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Selected
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
@@ -457,14 +457,14 @@ export function DiplomaticOptionsPanel() {
                         />
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className="inline-block rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-400">
+                        <span className="inline-block rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-xs font-semibold text-cyan-400">
                           {TYPE_LABELS[option.type as DiplomaticOptionType]}
                         </span>
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="text-foreground font-semibold">{option.value}</div>
                         {option.description && (
-                          <div className="text-muted-foreground max-w-sm truncate text-[11px]">
+                          <div className="text-muted-foreground max-w-sm truncate text-xs">
                             {option.description}
                           </div>
                         )}
@@ -481,11 +481,11 @@ export function DiplomaticOptionsPanel() {
                       </td>
                       <td className="px-4 py-2.5">
                         {option.isActive ? (
-                          <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
+                          <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-400">
                             Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center rounded-md border border-zinc-500/20 bg-zinc-500/10 px-2 py-0.5 text-[10px] font-medium text-zinc-400">
+                          <span className="inline-flex items-center rounded-md border border-zinc-500/20 bg-zinc-500/10 px-2 py-0.5 text-xs font-medium text-zinc-400">
                             Inactive
                           </span>
                         )}

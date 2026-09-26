@@ -91,7 +91,7 @@ export function GovernmentTab({
                 content="View your nation's leadership, official capital and currency metadata, and public budget allocation details. Click values to analyze spending or debt."
               />
             </div>
-            <p className="text-muted-foreground/80 text-[11px]">
+            <p className="text-muted-foreground/80 text-xs">
               Structure, spending, and fiscal policy for {country.name}
             </p>
           </div>
@@ -123,7 +123,7 @@ export function GovernmentTab({
                 }
                 className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
                   {metricView.structure === "government" ? "Head of Government" : "Head of State"}
                 </p>
                 <div className="flex items-center gap-1.5">
@@ -142,7 +142,7 @@ export function GovernmentTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground truncate text-[10px] font-medium">
+                <p className="text-muted-foreground truncate text-xs font-medium">
                   {metricView.structure === "government"
                     ? "Executive office"
                     : toTitleCase(governmentStructure?.governmentType || "Ceremonial office")}
@@ -159,7 +159,7 @@ export function GovernmentTab({
                 }
                 className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
                   {metricView.budget === "percentage" ? "Spending % of GDP" : "Total Spending"}
                 </p>
                 <div
@@ -188,7 +188,7 @@ export function GovernmentTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground truncate text-[10px] font-medium">
+                <p className="text-muted-foreground truncate text-xs font-medium">
                   {metricView.budget === "percentage"
                     ? `Public sector share`
                     : `Annual expenditure`}
@@ -205,7 +205,7 @@ export function GovernmentTab({
                 }
                 className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
                   {metricView.debt === "ratio" ? "Debt to GDP Ratio" : "Total Public Debt"}
                 </p>
                 <div
@@ -235,7 +235,7 @@ export function GovernmentTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                <p className="text-muted-foreground mt-0.5 truncate text-xs">
                   {metricView.debt === "ratio"
                     ? (economyData?.fiscal?.totalDebtGDPRatio ?? 0) < 60
                       ? "Healthy ratio (<60%)"
@@ -294,7 +294,7 @@ export function GovernmentTab({
               <div className="relative z-10 space-y-4 p-4">
                 <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Government Type
                     </p>
                     <p className="text-foreground mt-0.5 truncate text-xs font-semibold">
@@ -304,34 +304,34 @@ export function GovernmentTab({
                           "N/A"
                       )}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Constitution base</p>
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Constitution base</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Capital City
                     </p>
                     <p className="text-foreground mt-0.5 truncate text-xs font-semibold">
                       {country.nationalIdentity?.capitalCity || "N/A"}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Seat of power</p>
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Seat of power</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Official Currency
                     </p>
                     <p className="text-foreground mt-0.5 truncate text-xs font-semibold">
                       {country.nationalIdentity?.currency || "N/A"}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Legal tender</p>
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Legal tender</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Branches
                     </p>
                     <p className="text-foreground mt-0.5 text-xs font-semibold">
                       {governmentStructure?.branches?.length || 3} Branches
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">
                       Separation of powers
                     </p>
                   </div>

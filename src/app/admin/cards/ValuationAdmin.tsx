@@ -56,9 +56,9 @@ export function ValuationAdmin() {
           <Coins className="h-4 w-4 text-amber-400" />
           <h2 className="text-foreground text-xs font-bold">Card Valuation Formula</h2>
         </div>
-        <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+        <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
           Single source of truth for every card&apos;s value:{" "}
-          <code className="rounded bg-amber-500/10 px-1 py-0.5 font-mono text-[10px] text-amber-400">
+          <code className="rounded bg-amber-500/10 px-1 py-0.5 font-mono text-xs text-amber-400">
             max(rarityFloor × typeMult, nsValue × premium)
           </code>
           . Saving applies the change and revalues all cards.
@@ -72,7 +72,7 @@ export function ValuationAdmin() {
           <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {FIELDS.map((f) => (
               <div key={f.key} className="space-y-1">
-                <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   {f.label}
                 </span>
                 <input
@@ -86,7 +86,7 @@ export function ValuationAdmin() {
                   className="border-border/30 bg-background/50 text-foreground h-8 w-full rounded-xl border px-3 font-mono text-xs shadow-xs focus-visible:ring-1 focus-visible:outline-none"
                 />
                 {f.hint && (
-                  <span className="text-muted-foreground block text-[10px]">{f.hint}</span>
+                  <span className="text-muted-foreground block text-xs">{f.hint}</span>
                 )}
               </div>
             ))}

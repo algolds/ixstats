@@ -35,7 +35,7 @@ export const TimelineEraBadge = memo(function TimelineEraBadge({
 
   return (
     <div
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-tight ${colorClass} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium tracking-tight ${colorClass} ${className}`}
     >
       <Clock className="h-3 w-3 shrink-0 opacity-70" />
       {eraLabel && <span className="font-semibold">{eraLabel}</span>}

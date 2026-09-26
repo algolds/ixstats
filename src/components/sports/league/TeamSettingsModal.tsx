@@ -212,7 +212,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
               placeholder="e.g. Real_Capital"
               maxLength={100}
             />
-            <p className="text-muted-foreground text-[10px]">
+            <p className="text-muted-foreground text-xs">
               Links this team to its IxWiki article.
             </p>
           </div>
@@ -233,7 +233,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="text-muted-foreground text-[10px] font-medium">No logo</span>
+                  <span className="text-muted-foreground text-xs font-medium">No logo</span>
                 )}
               </div>
 
@@ -292,7 +292,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
           {/* Cover Image */}
           <div className="space-y-2">
             <Label>Cover Image</Label>
-            <p className="text-muted-foreground text-[10px] leading-tight">
+            <p className="text-muted-foreground text-xs leading-tight">
               Shown as the background banner for your club.
             </p>
             <div className="flex items-start gap-4">
@@ -309,7 +309,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="text-muted-foreground text-[10px] font-medium">No cover</span>
+                  <span className="text-muted-foreground text-xs font-medium">No cover</span>
                 )}
               </div>
               <div className="flex flex-col gap-2">

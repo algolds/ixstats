@@ -443,7 +443,7 @@ export function PolicyCreatorSheet({
             {selectedTemplateKey === "custom" && (
               <>
                 <div className="space-y-2 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3.5">
-                  <p className="text-[10px] font-semibold tracking-wider text-indigo-400 uppercase">
+                  <p className="text-xs font-semibold tracking-wider text-indigo-400 uppercase">
                     Estimated Cost Projections
                   </p>
                   <div className="grid grid-cols-2 gap-3 text-xs">

@@ -875,7 +875,7 @@ export function SwipeActionButton({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent dark:via-white/4" />
 
         <Icon className="h-4 w-4 shrink-0" />
-        <span className="truncate text-[9px] font-bold">{label}</span>
+        <span className="truncate text-xs font-bold">{label}</span>
       </button>
     );
   }
@@ -909,7 +909,7 @@ export function SwipeActionButton({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent dark:via-white/4" />
 
       <Icon className="h-4 w-4 shrink-0" />
-      <span className="truncate text-[9px] font-bold">{label}</span>
+      <span className="truncate text-xs font-bold">{label}</span>
     </motion.button>
   );
 }

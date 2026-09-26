@@ -31,7 +31,7 @@ export function TranscriptViewer() {
 
   return (
     <div className="flex flex-col gap-2 border-t border-black/5 pt-4 dark:border-white/5">
-      <span className="text-muted-foreground px-1 text-[10px] font-bold tracking-wider uppercase">
+      <span className="text-muted-foreground px-1 text-xs font-bold tracking-wider uppercase">
         Synchronized Transcript
       </span>
       <div className="flex max-h-48 flex-col gap-1 overflow-y-auto scroll-smooth p-0.5">

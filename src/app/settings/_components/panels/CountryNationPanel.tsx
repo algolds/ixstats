@@ -172,7 +172,7 @@ export function CountryNationPanel({
                     <span className="text-foreground text-xs font-semibold">
                       Choose a flag image to upload
                     </span>
-                    <span className="text-muted-foreground mt-0.5 text-[10px]">
+                    <span className="text-muted-foreground mt-0.5 text-xs">
                       PNG, JPG, SVG or WEBP up to 5MB
                     </span>
                   </>
@@ -196,7 +196,7 @@ export function CountryNationPanel({
                       className="h-full w-full object-cover"
                     />
                   </div>
-                  <span className="text-muted-foreground text-[10px] font-semibold">Preview</span>
+                  <span className="text-muted-foreground text-xs font-semibold">Preview</span>
                 </div>
               )}
             </div>

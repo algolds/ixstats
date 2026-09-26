@@ -152,7 +152,7 @@ export function SystemTuningSection() {
             <Database className="h-4 w-4 text-emerald-400" />
             <div>
               <h3 className="text-foreground text-xs font-bold">Cache Operations</h3>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Purge article wikitext and page parse trees from memory
               </p>
             </div>
@@ -206,7 +206,7 @@ export function SystemTuningSection() {
             <SlidersHorizontal className="h-4 w-4 text-indigo-400" />
             <div>
               <h3 className="text-foreground text-xs font-bold">Wiki Templates Synchronization</h3>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Registered template components synced from MediaWiki
               </p>
             </div>
@@ -338,7 +338,7 @@ export function SystemTuningSection() {
             <Sliders className="h-4 w-4 text-emerald-400" />
             <div>
               <h3 className="text-foreground text-xs font-bold">Cron Schedules Editor</h3>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Configure background job intervals in standard 5-field cron syntax
               </p>
             </div>
@@ -388,7 +388,7 @@ export function SystemTuningSection() {
                 <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
                 <div>
                   <p className="font-semibold">PM2 Restart Required</p>
-                  <p className="mt-0.5 text-[11px] opacity-80">
+                  <p className="mt-0.5 text-xs opacity-80">
                     Changing schedules updates SystemConfig values. Next time the custom server is
                     restarted via PM2, these new schedule intervals will take effect.
                   </p>

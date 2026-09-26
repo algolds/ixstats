@@ -181,7 +181,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
             </Badge>
             <Badge
               className={cn(
-                "border text-[10px] font-semibold tracking-wider uppercase shadow-xs",
+                "border text-xs font-semibold tracking-wider uppercase shadow-xs",
                 asymmetry.badgeColor
               )}
             >

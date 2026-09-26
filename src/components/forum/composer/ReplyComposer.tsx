@@ -96,9 +96,9 @@ export function ReplyComposer({
         />
 
         <div className="flex items-center justify-between border-t border-white/5 pt-2">
-          <span className="text-[11px] text-[var(--forum-text-dim)]">
+          <span className="text-xs text-[var(--forum-text-dim)]">
             Press{" "}
-            <kbd className="rounded bg-white/10 px-1 py-0.5 text-[10px] text-zinc-300">Enter</kbd>{" "}
+            <kbd className="rounded bg-white/10 px-1 py-0.5 text-xs text-zinc-300">Enter</kbd>{" "}
             to reply
           </span>
 

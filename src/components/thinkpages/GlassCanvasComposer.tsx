@@ -159,7 +159,7 @@ export function GlassCanvasComposer({
               <h4 className="text-foreground text-xs font-semibold">
                 Create a ThinkPages Account to post
               </h4>
-              <p className="text-muted-foreground mt-0.5 text-[11px] leading-normal">
+              <p className="text-muted-foreground mt-0.5 text-xs leading-normal">
                 Set up a ThinkPages Account to publish articles and participate in global community
                 discussions.
               </p>
@@ -335,7 +335,7 @@ export function GlassCanvasComposer({
                   <p className="text-foreground truncate text-xs font-semibold">
                     {pollDraft.question || "Untitled Poll"}
                   </p>
-                  <p className="text-muted-foreground text-[10px]">
+                  <p className="text-muted-foreground text-xs">
                     {pollDraft.pollType === "choice" ? "Choice Poll" : "Feature Poll"} •{" "}
                     {pollDraft.options.filter((o) => o.trim()).length} options
                   </p>
@@ -347,7 +347,7 @@ export function GlassCanvasComposer({
                   variant="outline"
                   size="sm"
                   onClick={() => setShowPollModal(true)}
-                  className="border-poll/30 text-poll hover:bg-poll/10 h-7 cursor-pointer px-2.5 text-[10px] font-semibold transition-all active:scale-95"
+                  className="border-poll/30 text-poll hover:bg-poll/10 h-7 cursor-pointer px-2.5 text-xs font-semibold transition-all active:scale-95"
                 >
                   Edit Poll
                 </Button>

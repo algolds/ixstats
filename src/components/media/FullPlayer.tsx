@@ -76,7 +76,7 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
             duration={duration}
             onSeek={seekTrack}
           />
-          <div className="text-muted-foreground flex items-center justify-between font-mono text-[10px]">
+          <div className="text-muted-foreground flex items-center justify-between font-mono text-xs">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>

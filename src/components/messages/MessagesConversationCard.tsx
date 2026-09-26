@@ -136,7 +136,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
             {/* Subtle contextual glyph for official / community channels */}
             {isDiplomatic && <Globe className="h-3 w-3 shrink-0 text-amber-500/80" />}
             {isCommunity && (
-              <span className="text-muted-foreground/60 text-[10.5px] font-normal">
+              <span className="text-muted-foreground/60 text-xs font-normal">
                 • Community
               </span>
             )}
@@ -145,7 +145,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
           <div className="flex shrink-0 items-center gap-1.5">
             {isMuted && <BellOff className="text-muted-foreground/50 h-3 w-3 shrink-0" />}
             {lastMessage && (
-              <span className="text-muted-foreground/60 text-[11px] font-normal tabular-nums">
+              <span className="text-muted-foreground/60 text-xs font-normal tabular-nums">
                 {formatRelativeTime(lastMessage.createdAt ?? lastMessage.ixTimeTimestamp)}
               </span>
             )}
@@ -171,7 +171,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
           </p>
 
           {hasUnread && conversation.unreadCount > 0 && (
-            <span className="bg-primary text-primary-foreground flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums shadow-2xs">
+            <span className="bg-primary text-primary-foreground flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full px-1 text-xs font-semibold tabular-nums shadow-2xs">
               {conversation.unreadCount}
             </span>
           )}

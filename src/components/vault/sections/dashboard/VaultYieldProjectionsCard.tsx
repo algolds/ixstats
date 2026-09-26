@@ -98,7 +98,7 @@ export function VaultYieldProjectionsCard({
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Projections */}
             <div className="space-y-3">
-              <span className="text-muted-foreground block text-[10px] font-semibold tracking-wider uppercase">
+              <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
                 Treasury Revenue Forecasts
               </span>
               <div className="space-y-2.5">
@@ -134,7 +134,7 @@ export function VaultYieldProjectionsCard({
 
             {/* active multipliers */}
             <div className="md:border-border/40 space-y-3 md:border-l md:pl-6">
-              <span className="text-muted-foreground block text-[10px] font-semibold tracking-wider uppercase">
+              <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
                 Active Multipliers & Streaks
               </span>
               <div className="space-y-2.5">
@@ -175,15 +175,15 @@ export function VaultYieldProjectionsCard({
 
           {/* Daily Allowances (Earning Caps) */}
           <div className="border-border/40 mt-5 space-y-3 border-t pt-5">
-            <span className="text-muted-foreground block text-[10px] font-semibold tracking-wider uppercase">
+            <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
               Daily Allowance Progress
             </span>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               {/* Active Gameplay Cap */}
               <div className="space-y-2">
-                <div className="flex justify-between text-[11px] font-semibold">
+                <div className="flex justify-between text-xs font-semibold">
                   <span className="text-muted-foreground">Active Gameplay</span>
-                  <span className="text-foreground flex items-center gap-0.5 font-mono text-[11px] font-bold">
+                  <span className="text-foreground flex items-center gap-0.5 font-mono text-xs font-bold">
                     {activeCapLoading ? (
                       "..."
                     ) : (
@@ -209,9 +209,9 @@ export function VaultYieldProjectionsCard({
 
               {/* Social Earning Cap */}
               <div className="space-y-2">
-                <div className="flex justify-between text-[11px] font-semibold">
+                <div className="flex justify-between text-xs font-semibold">
                   <span className="text-muted-foreground">Social Engagement</span>
-                  <span className="text-foreground flex items-center gap-0.5 font-mono text-[11px] font-bold">
+                  <span className="text-foreground flex items-center gap-0.5 font-mono text-xs font-bold">
                     {socialCapLoading ? (
                       "..."
                     ) : (

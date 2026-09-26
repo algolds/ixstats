@@ -153,7 +153,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
                         {c.name}
                       </span>
                       {viewerCountryId && c.id === viewerCountryId && (
-                        <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400 uppercase">
+                        <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-xs font-bold text-emerald-400 uppercase">
                           My Country
                         </span>
                       )}

@@ -244,7 +244,7 @@ export function UsersPanel() {
                 <span className="text-xs font-bold tracking-wide text-red-600 uppercase dark:text-red-400">
                   Active Admin Impersonation Session
                 </span>
-                <Badge className="border-red-500/30 bg-red-500/20 text-[10px] font-semibold text-red-600 dark:text-red-400">
+                <Badge className="border-red-500/30 bg-red-500/20 text-xs font-semibold text-red-600 dark:text-red-400">
                   Playing As
                 </Badge>
               </div>
@@ -387,16 +387,16 @@ export function UsersPanel() {
                       <tr key={u.id} className="hover:bg-muted/20 transition-colors">
                         <td className="py-3">
                           <div className="flex items-center gap-2">
-                            <div className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-lg font-mono text-[10px] font-bold">
+                            <div className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-lg font-mono text-xs font-bold">
                               {u.country?.name
                                 ? u.country.name.substring(0, 2).toUpperCase()
                                 : "US"}
                             </div>
                             <div>
-                              <div className="text-foreground font-mono text-[11px] font-semibold">
+                              <div className="text-foreground font-mono text-xs font-semibold">
                                 {u.clerkUserId}
                               </div>
-                              <div className="text-muted-foreground text-[10px]">
+                              <div className="text-muted-foreground text-xs">
                                 ID: {u.id.substring(0, 10)}...
                               </div>
                             </div>
@@ -412,7 +412,7 @@ export function UsersPanel() {
                               {u.country.name}
                             </Badge>
                           ) : (
-                            <span className="text-muted-foreground text-[11px] italic">
+                            <span className="text-muted-foreground text-xs italic">
                               No nation claimed
                             </span>
                           )}
@@ -429,20 +429,20 @@ export function UsersPanel() {
                                   {u.wikiUsername}
                                 </Badge>
                                 {u.wikiUserId && (
-                                  <span className="text-muted-foreground text-[10px]">
+                                  <span className="text-muted-foreground text-xs">
                                     #{u.wikiUserId}
                                   </span>
                                 )}
                               </div>
                               {u.wikiAlts && u.wikiAlts.length > 0 && (
-                                <div className="text-muted-foreground text-[10px]">
+                                <div className="text-muted-foreground text-xs">
                                   Alts:{" "}
                                   <span className="text-foreground">{u.wikiAlts.join(", ")}</span>
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-[11px]">Unlinked</span>
+                            <span className="text-muted-foreground text-xs">Unlinked</span>
                           )}
                         </td>
 
@@ -456,23 +456,23 @@ export function UsersPanel() {
                                 @{u.discordUsername}
                               </Badge>
                               {u.discordUserId && (
-                                <div className="text-muted-foreground font-mono text-[9px]">
+                                <div className="text-muted-foreground font-mono text-xs">
                                   ID: {u.discordUserId}
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-[11px]">Unlinked</span>
+                            <span className="text-muted-foreground text-xs">Unlinked</span>
                           )}
                         </td>
 
                         <td className="py-3">
                           <div className="flex items-center gap-1.5">
-                            <Badge variant="outline" className="text-[10px] capitalize">
+                            <Badge variant="outline" className="text-xs capitalize">
                               {u.role?.name || "Member"}
                             </Badge>
                             {u.membershipTier === "mycountry_premium" && (
-                              <Badge className="border-amber-500/30 bg-amber-500/20 text-[10px] text-amber-500">
+                              <Badge className="border-amber-500/30 bg-amber-500/20 text-xs text-amber-500">
                                 VIP
                               </Badge>
                             )}
@@ -486,7 +486,7 @@ export function UsersPanel() {
                                 variant="outline"
                                 size="sm"
                                 onClick={handleStopPlayAs}
-                                className="h-7 gap-1 rounded-lg border-red-500/40 bg-red-500/10 px-2 text-[11px] font-semibold text-red-600 transition-transform hover:bg-red-500/20 active:scale-[0.98] dark:text-red-400"
+                                className="h-7 gap-1 rounded-lg border-red-500/40 bg-red-500/10 px-2 text-xs font-semibold text-red-600 transition-transform hover:bg-red-500/20 active:scale-[0.98] dark:text-red-400"
                               >
                                 <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
                                 Active (Stop)
@@ -496,7 +496,7 @@ export function UsersPanel() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleStartPlayAs(u.clerkUserId, u.country?.name)}
-                                className="h-7 gap-1 rounded-lg border-border/40 px-2 text-[11px] font-medium transition-transform hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
+                                className="h-7 gap-1 rounded-lg border-border/40 px-2 text-xs font-medium transition-transform hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
                               >
                                 <Play className="h-3 w-3 fill-current text-primary" />
                                 Play As
@@ -510,7 +510,7 @@ export function UsersPanel() {
                                 setWikiUsernameInput(u.wikiUsername || "");
                                 setIsWikiDialogOpen(true);
                               }}
-                              className="h-7 px-2 text-[11px]"
+                              className="h-7 px-2 text-xs"
                             >
                               Wiki Link
                             </Button>
@@ -523,7 +523,7 @@ export function UsersPanel() {
                                 setDiscordUserIdInput(u.discordUserId || "");
                                 setIsDiscordDialogOpen(true);
                               }}
-                              className="h-7 px-2 text-[11px]"
+                              className="h-7 px-2 text-xs"
                             >
                               Discord
                             </Button>
@@ -583,22 +583,22 @@ export function UsersPanel() {
                         </td>
                         <td className="py-3">
                           {e.status === "ALREADY_LINKED" && (
-                            <Badge className="gap-1 border-emerald-500/30 bg-emerald-500/20 text-[10px] text-emerald-600 dark:text-emerald-400">
+                            <Badge className="gap-1 border-emerald-500/30 bg-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400">
                               <CheckCircle className="h-3 w-3" /> Linked & Verified
                             </Badge>
                           )}
                           {e.status === "ALT_MERGED" && (
-                            <Badge className="gap-1 border-blue-500/30 bg-blue-500/20 text-[10px] text-blue-600 dark:text-blue-400">
+                            <Badge className="gap-1 border-blue-500/30 bg-blue-500/20 text-xs text-blue-600 dark:text-blue-400">
                               <Sparkles className="h-3 w-3" /> Alt Merged ({e.isAltFor})
                             </Badge>
                           )}
                           {e.status === "READY_TO_LINK" && (
-                            <Badge className="gap-1 border-amber-500/30 bg-amber-500/20 text-[10px] text-amber-600 dark:text-amber-400">
+                            <Badge className="gap-1 border-amber-500/30 bg-amber-500/20 text-xs text-amber-600 dark:text-amber-400">
                               <WarningCircle className="h-3 w-3" /> Ready to Link
                             </Badge>
                           )}
                           {e.status === "UNMATCHED_USER" && (
-                            <Badge variant="outline" className="text-muted-foreground text-[10px]">
+                            <Badge variant="outline" className="text-muted-foreground text-xs">
                               Awaiting User Claim
                             </Badge>
                           )}
@@ -606,18 +606,18 @@ export function UsersPanel() {
                         <td className="py-3">
                           {e.matchedUser ? (
                             <div>
-                              <div className="font-mono text-[11px] font-medium">
+                              <div className="font-mono text-xs font-medium">
                                 {e.matchedUser.clerkUserId}
                               </div>
-                              <div className="text-muted-foreground text-[10px]">
+                              <div className="text-muted-foreground text-xs">
                                 {e.matchedUser.countryName}
                               </div>
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-[11px] italic">—</span>
+                            <span className="text-muted-foreground text-xs italic">—</span>
                           )}
                         </td>
-                        <td className="text-muted-foreground py-3 text-[11px]">{e.notes || "—"}</td>
+                        <td className="text-muted-foreground py-3 text-xs">{e.notes || "—"}</td>
                         <td className="py-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             {e.matchedUser && (
@@ -626,7 +626,7 @@ export function UsersPanel() {
                                   variant="outline"
                                   size="sm"
                                   onClick={handleStopPlayAs}
-                                  className="h-7 border-red-500/30 bg-red-500/10 px-2 text-[11px] font-semibold text-red-600 dark:text-red-400"
+                                  className="h-7 border-red-500/30 bg-red-500/10 px-2 text-xs font-semibold text-red-600 dark:text-red-400"
                                 >
                                   Active (Stop)
                                 </Button>
@@ -640,7 +640,7 @@ export function UsersPanel() {
                                       e.matchedUser!.countryName
                                     )
                                   }
-                                  className="h-7 gap-1 border-border/40 px-2 text-[11px] font-medium hover:text-primary active:scale-[0.98]"
+                                  className="h-7 gap-1 border-border/40 px-2 text-xs font-medium hover:text-primary active:scale-[0.98]"
                                   title={`Play as ${e.matchedUser.clerkUserId}`}
                                 >
                                   <Play className="h-2.5 w-2.5 fill-current text-primary" />
@@ -658,7 +658,7 @@ export function UsersPanel() {
                                   });
                                 }}
                                 disabled={linkWikiMutation.isPending}
-                                className="h-7 rounded-lg text-[11px]"
+                                className="h-7 rounded-lg text-xs"
                               >
                                 1-Click Link
                               </Button>
@@ -670,7 +670,7 @@ export function UsersPanel() {
                                 onClick={() => {
                                   unlinkWikiMutation.mutate({ userId: e.matchedUser!.id });
                                 }}
-                                className="text-destructive h-7 text-[11px]"
+                                className="text-destructive h-7 text-xs"
                               >
                                 Unlink
                               </Button>
@@ -756,15 +756,15 @@ export function UsersPanel() {
                                 @{s.discordUsername}
                               </span>
                               {s.discordNick && (
-                                <Badge variant="secondary" className="text-[10px]">
+                                <Badge variant="secondary" className="text-xs">
                                   Nick: {s.discordNick}
                                 </Badge>
                               )}
-                              <Badge className="border-emerald-500/30 bg-emerald-500/20 text-[10px] text-emerald-600 dark:text-emerald-400">
+                              <Badge className="border-emerald-500/30 bg-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400">
                                 Match: {s.matchedCountryName}
                               </Badge>
                             </div>
-                            <div className="text-muted-foreground text-[10px]">{s.reason}</div>
+                            <div className="text-muted-foreground text-xs">{s.reason}</div>
                           </div>
 
                           <Button
@@ -776,7 +776,7 @@ export function UsersPanel() {
                                 discordUsername: s.discordUsername,
                               });
                             }}
-                            className="h-7 rounded-lg text-[11px]"
+                            className="h-7 rounded-lg text-xs"
                           >
                             Accept Link
                           </Button>
@@ -829,9 +829,9 @@ export function UsersPanel() {
                       <td className="text-foreground py-2.5 font-semibold">{c.name}</td>
                       <td className="py-2.5">
                         {c.user ? (
-                          <span className="font-mono text-[11px]">{c.user.clerkUserId}</span>
+                          <span className="font-mono text-xs">{c.user.clerkUserId}</span>
                         ) : (
-                          <span className="text-muted-foreground text-[11px] italic">
+                          <span className="text-muted-foreground text-xs italic">
                             Unclaimed
                           </span>
                         )}
@@ -844,7 +844,7 @@ export function UsersPanel() {
                                 variant="outline"
                                 size="sm"
                                 onClick={handleStopPlayAs}
-                                className="h-6 gap-1 rounded-md border-red-500/40 bg-red-500/10 px-2 text-[10px] font-semibold text-red-600 dark:text-red-400"
+                                className="h-6 gap-1 rounded-md border-red-500/40 bg-red-500/10 px-2 text-xs font-semibold text-red-600 dark:text-red-400"
                               >
                                 Active (Stop)
                               </Button>
@@ -853,7 +853,7 @@ export function UsersPanel() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleStartPlayAs(c.user!.clerkUserId, c.name)}
-                                className="h-6 gap-1 rounded-md border-border/40 px-2 text-[10px] font-medium hover:text-primary active:scale-[0.98]"
+                                className="h-6 gap-1 rounded-md border-border/40 px-2 text-xs font-medium hover:text-primary active:scale-[0.98]"
                               >
                                 <Play className="h-2.5 w-2.5 fill-current text-primary" />
                                 Play As
@@ -868,7 +868,7 @@ export function UsersPanel() {
                                   countryId: c.id,
                                 });
                               }}
-                              className="text-destructive h-6 text-[10px]"
+                              className="text-destructive h-6 text-xs"
                             >
                               Unassign
                             </Button>

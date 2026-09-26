@@ -251,7 +251,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-48 p-1.5 backdrop-blur-xl">
-                    <DropdownMenuLabel className="px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+                    <DropdownMenuLabel className="px-2 py-1 text-xs font-semibold text-muted-foreground">
                       Wiki Source
                     </DropdownMenuLabel>
                     {wikiSites.map((site) => (
@@ -380,7 +380,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48 p-1.5 backdrop-blur-xl">
-                    <DropdownMenuLabel className="px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+                    <DropdownMenuLabel className="px-2 py-1 text-xs font-semibold text-muted-foreground">
                       Sort Nations
                     </DropdownMenuLabel>
                     {SORT_OPTIONS.map((opt) => (
@@ -403,7 +403,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                 </DropdownMenu>
 
                 {/* Nation Count Badge */}
-                <span className="rounded-full border border-border/50 bg-background/60 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground shadow-xs whitespace-nowrap">
+                <span className="rounded-full border border-border/50 bg-background/60 px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground shadow-xs whitespace-nowrap">
                   {nationCount} {nationCount === 1 ? "nation" : "nations"}
                 </span>
 

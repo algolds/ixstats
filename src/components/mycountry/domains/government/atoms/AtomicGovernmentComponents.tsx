@@ -253,7 +253,7 @@ export function AtomicGovernmentComponents({
               <h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                 Available Components
               </h3>
-              <Badge variant="outline" className="font-mono text-[11px] text-muted-foreground">
+              <Badge variant="outline" className="font-mono text-xs text-muted-foreground">
                 {builder.selectedComponents.length} / {maxComponents} selected
               </Badge>
             </div>

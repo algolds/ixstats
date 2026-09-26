@@ -81,7 +81,7 @@ export function WikiEditorHeader({
               {title}
             </span>
             {isDirty && (
-              <span className="wikios-ve-dirty ml-1.5 text-[10px] font-semibold text-[var(--wikios-accent)] uppercase opacity-80">
+              <span className="wikios-ve-dirty ml-1.5 text-xs font-semibold text-[var(--wikios-accent)] uppercase opacity-80">
                 Unsaved
               </span>
             )}

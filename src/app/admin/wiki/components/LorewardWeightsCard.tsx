@@ -135,7 +135,7 @@ export function LorewardWeightsCard() {
             <SlidersHorizontal className="h-4 w-4 text-blue-400" />
             <h3 className="text-foreground text-xs font-bold">Scoring Parameters Tuning</h3>
           </div>
-          <p className="text-muted-foreground mt-0.5 text-[11px]">
+          <p className="text-muted-foreground mt-0.5 text-xs">
             Tune the daily Loreward scoring engine weights in real-time
           </p>
         </div>
@@ -277,7 +277,7 @@ export function LorewardWeightsCard() {
             <SlidersHorizontal className="h-4 w-4 text-indigo-400" />
             <h3 className="text-foreground text-xs font-bold">Weight Tuning Preview</h3>
           </div>
-          <p className="text-muted-foreground mt-0.5 text-[11px]">
+          <p className="text-muted-foreground mt-0.5 text-xs">
             Preview candidate ranks under simulated weights
           </p>
         </div>
@@ -341,7 +341,7 @@ export function LorewardWeightsCard() {
                         </td>
                         <td className="px-3 py-2">
                           <span className="text-foreground font-semibold">{item.user}</span>
-                          <span className="text-muted-foreground block text-[10px]">
+                          <span className="text-muted-foreground block text-xs">
                             {item.page}
                           </span>
                         </td>
@@ -353,7 +353,7 @@ export function LorewardWeightsCard() {
                           {item.scoreDelta !== 0 && (
                             <span
                               className={cn(
-                                "block text-[10px] font-medium",
+                                "block text-xs font-medium",
                                 item.scoreDelta > 0 ? "text-emerald-400" : "text-red-400"
                               )}
                             >

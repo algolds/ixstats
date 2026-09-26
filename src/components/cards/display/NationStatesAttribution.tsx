@@ -16,7 +16,7 @@ export function NationStatesAttribution({
 }) {
   return (
     <div
-      className={`border-border/40 bg-card/40 text-muted-foreground flex shrink-0 items-center justify-between gap-2.5 rounded-lg border px-2.5 py-1.5 text-[10px] leading-tight backdrop-blur-sm ${className ?? ""}`}
+      className={`border-border/40 bg-card/40 text-muted-foreground flex shrink-0 items-center justify-between gap-2.5 rounded-lg border px-2.5 py-1.5 text-xs leading-tight backdrop-blur-sm ${className ?? ""}`}
     >
       <div className="flex min-w-0 flex-1 items-start gap-1.5">
         <NationStatesLogo size="xs" className="mt-0.5 shrink-0" />

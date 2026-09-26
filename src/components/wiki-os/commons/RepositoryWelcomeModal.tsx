@@ -190,7 +190,7 @@ export function RepositoryWelcomeModal({
                       </p>
                     </div>
                   </div>
-                  <span className="bg-muted border-border text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-[10px]">
+                  <span className="bg-muted border-border text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-xs">
                     v{WIKIOS_VERSION}
                   </span>
                 </div>
@@ -272,7 +272,7 @@ export function RepositoryWelcomeModal({
                               Visual-First Discovery
                             </span>
                           </div>
-                          <p className="text-muted-foreground text-[11px] leading-relaxed">
+                          <p className="text-muted-foreground text-xs leading-relaxed">
                             A visual media explorer is vastly superior to blind markup guessing.
                             Browse images interactively, filter by size or orientation, and inspect
                             layouts in real-time before you publish.
@@ -304,7 +304,7 @@ export function RepositoryWelcomeModal({
                                 {step.title}
                               </span>
                             </div>
-                            <p className="text-muted-foreground text-[10px] leading-relaxed">
+                            <p className="text-muted-foreground text-xs leading-relaxed">
                               {step.description}
                             </p>
                           </div>
@@ -337,7 +337,7 @@ export function RepositoryWelcomeModal({
                                 <h4 className="text-foreground/90 text-xs font-semibold">
                                   {item.title}
                                 </h4>
-                                <p className="text-muted-foreground text-[10px] leading-normal">
+                                <p className="text-muted-foreground text-xs leading-normal">
                                   {item.description}
                                 </p>
                               </div>
@@ -381,7 +381,7 @@ export function RepositoryWelcomeModal({
                               <span className="font-bold text-blue-500">Q:</span>
                               {faq.q}
                             </h4>
-                            <p className="text-muted-foreground pl-4 text-[10px] leading-relaxed">
+                            <p className="text-muted-foreground pl-4 text-xs leading-relaxed">
                               {faq.a}
                             </p>
                           </div>

@@ -133,7 +133,7 @@ export function CardImportStudio({
                   {tab.badge && (
                     <Badge
                       variant={tab.badgeVariant || "secondary"}
-                      className="ml-0.5 px-1.5 py-0 font-mono text-[9px] font-medium"
+                      className="ml-0.5 px-1.5 py-0 font-mono text-xs font-medium"
                     >
                       {tab.badge}
                     </Badge>

@@ -67,7 +67,7 @@ export function MapSettingsPopover({
       >
         {/* Theme */}
         <div className="space-y-2">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Theme
           </div>
           <div className="bg-accent/50 flex rounded-xl p-0.5">
@@ -77,7 +77,7 @@ export function MapSettingsPopover({
                 <button
                   key={t}
                   onClick={() => setTheme(t)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-all ${
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all ${
                     theme === t
                       ? "bg-background text-foreground ring-border shadow-sm ring-1"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -93,7 +93,7 @@ export function MapSettingsPopover({
 
         {/* Projection */}
         <div className="mt-3 space-y-2">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Projection
           </div>
           <div className="bg-accent/50 flex rounded-xl p-0.5">
@@ -101,7 +101,7 @@ export function MapSettingsPopover({
               <button
                 key={mode}
                 onClick={() => onProjectionChange(mode)}
-                className={`flex-1 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-all ${
+                className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-all ${
                   projectionMode === mode
                     ? "bg-background text-foreground ring-border shadow-sm ring-1"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -118,7 +118,7 @@ export function MapSettingsPopover({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Magnet className="text-muted-foreground h-3 w-3" />
-              <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+              <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Snap
               </span>
             </div>
@@ -128,7 +128,7 @@ export function MapSettingsPopover({
                 setSnapEnabled(next);
                 setSnapEnabledState(next);
               }}
-              className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+              className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
                 snapEnabled
                   ? "bg-emerald-500/10 text-emerald-500"
                   : "bg-muted text-muted-foreground"
@@ -152,7 +152,7 @@ export function MapSettingsPopover({
                 }}
                 className="h-1 flex-1 accent-blue-500"
               />
-              <span className="text-muted-foreground w-10 text-right font-mono text-[10px] tabular-nums">
+              <span className="text-muted-foreground w-10 text-right font-mono text-xs tabular-nums">
                 {snapTol.toFixed(3)}°
               </span>
             </div>
@@ -163,7 +163,7 @@ export function MapSettingsPopover({
         <div className="border-border mt-3 border-t pt-2">
           <button
             onClick={() => router.push("/settings")}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-colors"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors"
           >
             <User className="h-3.5 w-3.5" />
             User Settings
@@ -171,7 +171,7 @@ export function MapSettingsPopover({
           {isAdmin && (
             <button
               onClick={() => router.push("/admin")}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-colors"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors"
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
               Admin Dashboard

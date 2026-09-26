@@ -61,7 +61,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
           placeholder="e.g. Liga_Ixnay"
           maxLength={100}
         />
-        <p className="text-muted-foreground text-[10px]">
+        <p className="text-muted-foreground text-xs">
           Links this league to its IxWiki article.
         </p>
       </div>
@@ -78,7 +78,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
             {previewSrc ? (
               <img src={previewSrc} alt="Logo preview" className="h-full w-full object-cover" />
             ) : (
-              <span className="text-muted-foreground text-[10px] font-medium">No logo</span>
+              <span className="text-muted-foreground text-xs font-medium">No logo</span>
             )}
           </div>
 
@@ -120,7 +120,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
                 Remove
               </Button>
             )}
-            <p className="text-muted-foreground text-[10px] leading-tight">
+            <p className="text-muted-foreground text-xs leading-tight">
               PNG, JPEG, GIF, or WebP. Max 5 MB.
             </p>
           </div>
@@ -137,7 +137,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
       {/* Cover Image */}
       <div className="space-y-2">
         <Label>Cover Image</Label>
-        <p className="text-muted-foreground text-[10px] leading-tight">
+        <p className="text-muted-foreground text-xs leading-tight">
           Shown on the card carousel. Recommended 3:2 ratio.
         </p>
         <div className="flex items-start gap-4">
@@ -150,7 +150,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
             {coverUrl ? (
               <img src={coverUrl} alt="Cover preview" className="h-full w-full object-cover" />
             ) : (
-              <span className="text-muted-foreground text-[10px] font-medium">No cover</span>
+              <span className="text-muted-foreground text-xs font-medium">No cover</span>
             )}
           </div>
           <div className="flex flex-col gap-2">

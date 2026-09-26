@@ -330,7 +330,7 @@ export function PrivacySecurityPanel() {
                 <div className="border-border/40 bg-card/20 rounded-xl border p-6 text-center">
                   <UserXmark className="text-muted-foreground/40 mx-auto mb-1.5 h-6 w-6" />
                   <p className="text-muted-foreground text-xs font-semibold">No blocked accounts</p>
-                  <p className="text-muted-foreground/70 mx-auto mt-0.5 max-w-sm text-[11px]">
+                  <p className="text-muted-foreground/70 mx-auto mt-0.5 max-w-sm text-xs">
                     Blocked accounts cannot send you direct messages, invite you to thinktanks, or
                     tag you in Thinkpages.
                   </p>
@@ -358,7 +358,7 @@ export function PrivacySecurityPanel() {
                           <p className="text-foreground truncate text-xs font-bold">
                             {account.label}
                           </p>
-                          <p className="text-muted-foreground text-[10px]">{account.subtitle}</p>
+                          <p className="text-muted-foreground text-xs">{account.subtitle}</p>
                         </div>
                       </div>
 
@@ -422,7 +422,7 @@ export function PrivacySecurityPanel() {
                 <div className="border-border/40 bg-card/20 rounded-xl border p-6 text-center">
                   <EyeOff className="text-muted-foreground/40 mx-auto mb-1.5 h-6 w-6" />
                   <p className="text-muted-foreground text-xs font-semibold">No muted accounts</p>
-                  <p className="text-muted-foreground/70 mx-auto mt-0.5 max-w-sm text-[11px]">
+                  <p className="text-muted-foreground/70 mx-auto mt-0.5 max-w-sm text-xs">
                     Muted accounts will not appear in your feeds or notification streams without
                     them knowing.
                   </p>
@@ -438,7 +438,7 @@ export function PrivacySecurityPanel() {
                         <p className="text-foreground truncate text-xs font-bold">
                           {account.label}
                         </p>
-                        <p className="text-muted-foreground text-[10px]">{account.subtitle}</p>
+                        <p className="text-muted-foreground text-xs">{account.subtitle}</p>
                       </div>
 
                       <button
@@ -497,7 +497,7 @@ export function PrivacySecurityPanel() {
                 <div className="border-border/40 bg-card/20 rounded-xl border p-6 text-center">
                   <Filter className="text-muted-foreground/40 mx-auto mb-1.5 h-6 w-6" />
                   <p className="text-muted-foreground text-xs font-semibold">No muted keywords</p>
-                  <p className="text-muted-foreground/70 mx-auto mt-0.5 max-w-sm text-[11px]">
+                  <p className="text-muted-foreground/70 mx-auto mt-0.5 max-w-sm text-xs">
                     Posts and notifications containing these keywords will be filtered from your
                     feed.
                   </p>

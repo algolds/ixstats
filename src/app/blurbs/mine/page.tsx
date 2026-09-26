@@ -64,7 +64,7 @@ function MyBlurbsList() {
             {r.featured && (
               <Badge
                 variant="outline"
-                className="shrink-0 border-amber-500/30 text-[10px] text-amber-400"
+                className="shrink-0 border-amber-500/30 text-xs text-amber-400"
               >
                 Featured
               </Badge>

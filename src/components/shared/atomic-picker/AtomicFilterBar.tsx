@@ -247,7 +247,7 @@ export const AtomicFilterBar = React.memo(function AtomicFilterBar<TType extends
                     <SelectItem key={tpl.id} value={tpl.id} className="text-xs">
                       <div className="flex items-center justify-between gap-3 w-full">
                         <span className="font-medium truncate">{tpl.name}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono shrink-0">
+                        <span className="text-xs text-muted-foreground font-mono shrink-0">
                           {tpl.components.length} comps
                         </span>
                       </div>
@@ -285,7 +285,7 @@ export const AtomicFilterBar = React.memo(function AtomicFilterBar<TType extends
           <Badge
             variant="secondary"
             className={cn(
-              "px-1 py-0 text-[10px] leading-tight font-semibold border-none",
+              "px-1 py-0 text-xs leading-tight font-semibold border-none",
               selectedCategory === null ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
             )}
           >
@@ -316,7 +316,7 @@ export const AtomicFilterBar = React.memo(function AtomicFilterBar<TType extends
               <Badge
                 variant="secondary"
                 className={cn(
-                  "px-1 py-0 text-[10px] leading-tight font-semibold border-none",
+                  "px-1 py-0 text-xs leading-tight font-semibold border-none",
                   isSelected ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
                 )}
               >

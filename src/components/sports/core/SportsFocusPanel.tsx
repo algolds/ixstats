@@ -136,10 +136,10 @@ function OrganizationFocusContent({
       {/* Top Squad Athletes Preview */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+          <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
             Key Athletes ({activePlayers.length})
           </span>
-          <span className="text-[10px] text-muted-foreground/60 font-semibold">Click to focus</span>
+          <span className="text-xs text-muted-foreground/60 font-semibold">Click to focus</span>
         </div>
 
         <div className="space-y-1.5">
@@ -167,7 +167,7 @@ function OrganizationFocusContent({
                     <p className="text-xs font-bold text-foreground truncate">
                       {player.firstName} {player.lastName}
                     </p>
-                    <p className="text-[10px] text-muted-foreground font-medium">
+                    <p className="text-xs text-muted-foreground font-medium">
                       {player.position} · Age {player.age}
                     </p>
                   </div>
@@ -175,7 +175,7 @@ function OrganizationFocusContent({
 
                 <Badge
                   variant="outline"
-                  className={cn("text-[10px] font-black px-1.5 py-0.5", attributeBadgeClass(ovr))}
+                  className={cn("text-xs font-black px-1.5 py-0.5", attributeBadgeClass(ovr))}
                 >
                   {ovr}
                 </Badge>
@@ -258,13 +258,13 @@ function AthleteFocusContent({
             </h3>
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <Badge variant="outline" className="text-[10px] font-bold border-border/50">
+            <Badge variant="outline" className="text-xs font-bold border-border/50">
               {athlete.position}
             </Badge>
-            <Badge variant="outline" className={cn("text-[10px] font-bold", stageInfo?.className)}>
+            <Badge variant="outline" className={cn("text-xs font-bold", stageInfo?.className)}>
               {stageInfo?.label ?? "Active"}
             </Badge>
-            <span className="text-[10px] text-muted-foreground font-semibold">
+            <span className="text-xs text-muted-foreground font-semibold">
               Age {athlete.age}
             </span>
           </div>
@@ -277,7 +277,7 @@ function AthleteFocusContent({
           >
             {overall}
           </Badge>
-          <span className="block text-[9px] font-bold text-muted-foreground mt-0.5">OVR</span>
+          <span className="block text-xs font-bold text-muted-foreground mt-0.5">OVR</span>
         </div>
       </div>
 
@@ -295,14 +295,14 @@ function AthleteFocusContent({
               {athlete.team.name}
             </span>
           </div>
-          <span className="text-[10px] text-muted-foreground font-semibold">Focus Club →</span>
+          <span className="text-xs text-muted-foreground font-semibold">Focus Club →</span>
         </button>
       )}
 
       {/* Ratings & Skills Matrix */}
       {skillKeys.length > 0 && (
         <div className="space-y-2.5">
-          <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+          <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
             Attributes & Skills
           </span>
           <div className="grid grid-cols-2 gap-2">
@@ -313,7 +313,7 @@ function AthleteFocusContent({
                   key={key}
                   className="flex items-center justify-between rounded-xl border border-border/30 bg-muted/20 px-3 py-2"
                 >
-                  <span className="text-[11px] font-medium capitalize text-muted-foreground">
+                  <span className="text-xs font-medium capitalize text-muted-foreground">
                     {key.replace(/([A-Z])/g, " $1").toLowerCase()}
                   </span>
                   <span
@@ -366,7 +366,7 @@ function MatchFocusContent({ matchId }: { matchId: string }) {
     <div className="space-y-5">
       {/* Match Scoreboard Snippet */}
       <div className="rounded-2xl border border-border/40 bg-card/60 p-4 text-center space-y-3">
-        <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider">
+        <Badge variant="outline" className="text-xs font-bold uppercase tracking-wider">
           {isCompleted ? "Full Time" : `Matchday ${match.matchDay ?? 1}`}
         </Badge>
 
@@ -381,7 +381,7 @@ function MatchFocusContent({ matchId }: { matchId: string }) {
             <p className="text-xs font-bold text-foreground group-hover:text-primary truncate">
               {match.homeTeam.name}
             </p>
-            <span className="text-[9px] text-muted-foreground">Focus Club →</span>
+            <span className="text-xs text-muted-foreground">Focus Club →</span>
           </button>
 
           {/* Score */}
@@ -399,7 +399,7 @@ function MatchFocusContent({ matchId }: { matchId: string }) {
             <p className="text-xs font-bold text-foreground group-hover:text-primary truncate">
               {match.awayTeam.name}
             </p>
-            <span className="text-[9px] text-muted-foreground">Focus Club →</span>
+            <span className="text-xs text-muted-foreground">Focus Club →</span>
           </button>
         </div>
       </div>
@@ -431,7 +431,7 @@ export function SportsFocusPanel({
         <div className="flex items-center gap-2">
           <Badge
             variant="outline"
-            className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-wider px-2 py-0.5"
+            className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-xs font-black uppercase tracking-wider px-2 py-0.5"
           >
             {focus.type} Focus
           </Badge>

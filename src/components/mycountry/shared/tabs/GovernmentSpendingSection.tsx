@@ -67,7 +67,7 @@ export function GovernmentSpendingSection({
         <div className="relative z-10 space-y-4 p-4">
           <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Total Spending
               </p>
               <p className="text-foreground mt-0.5 text-sm font-bold">
@@ -77,32 +77,32 @@ export function GovernmentSpendingSection({
                   currency
                 )}
               </p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">
                 Annual expenditure
               </p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Spending % GDP
               </p>
               <p className="text-foreground mt-0.5 text-sm font-bold">
                 {`${(economyData?.spending?.spendingGDPPercent ?? 0).toFixed(1)}%`}
               </p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">
                 GDP share percentage
               </p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Spending per Capita
               </p>
               <p className="text-foreground mt-0.5 text-sm font-bold">
                 {formatExactCurrency(economyData?.spending?.spendingPerCapita ?? 0, currency)}
               </p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Per citizen share</p>
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">Per citizen share</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Budget Balance
               </p>
               <p
@@ -119,7 +119,7 @@ export function GovernmentSpendingSection({
                   currency
                 )}
               </p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">
                 {(economyData?.spending?.deficitSurplus ?? 0) >= 0 ? "Surplus" : "Deficit"}
               </p>
             </div>

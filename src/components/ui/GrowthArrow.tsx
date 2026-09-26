@@ -32,7 +32,7 @@ export function GrowthArrow({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center gap-0.5 text-[10px] font-semibold",
+        "inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold",
         !inheritColor && (up ? "text-emerald-500" : "text-red-500"),
         className
       )}

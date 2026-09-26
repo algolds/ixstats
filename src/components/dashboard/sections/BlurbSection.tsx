@@ -73,7 +73,7 @@ export function BlurbSection() {
             <span>Blurb of the Day</span>
           </div>
 
-          <span className="inline-flex items-center gap-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[9px] font-semibold tracking-wider text-indigo-700 uppercase dark:border-indigo-400/25 dark:bg-indigo-500/20 dark:text-indigo-300">
+          <span className="inline-flex items-center gap-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-xs font-semibold tracking-wider text-indigo-700 uppercase dark:border-indigo-400/25 dark:bg-indigo-500/20 dark:text-indigo-300">
             <Compass className="h-2.5 w-2.5 text-indigo-600 dark:text-indigo-400" />
             Daily Prompt
           </span>
@@ -86,7 +86,7 @@ export function BlurbSection() {
           {/* Prompt Question Body */}
           <div className="space-y-1">
             {prompt.title && (
-              <p className="text-[11px] font-medium tracking-tight text-indigo-600/90 dark:text-indigo-400/90">
+              <p className="text-xs font-medium tracking-tight text-indigo-600/90 dark:text-indigo-400/90">
                 {prompt.title}
               </p>
             )}
@@ -97,7 +97,7 @@ export function BlurbSection() {
 
           {/* Footer Meta & Tactile CTA */}
           <div className="flex items-center justify-between pt-1">
-            <span className="text-muted-foreground/80 flex items-center gap-1.5 text-[11px] font-medium tabular-nums">
+            <span className="text-muted-foreground/80 flex items-center gap-1.5 text-xs font-medium tabular-nums">
               <MessageCircle className="h-3.5 w-3.5 text-indigo-500/70 dark:text-indigo-400/70" />
               {responseCount} {responseCount === 1 ? "response" : "responses"}
             </span>
@@ -108,7 +108,7 @@ export function BlurbSection() {
                 e.stopPropagation();
                 setModalOpen(true);
               }}
-              className="group/btn inline-flex cursor-pointer items-center gap-1 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-medium text-indigo-700 shadow-2xs transition-all duration-150 hover:border-indigo-500/40 hover:bg-indigo-500/20 active:scale-95 dark:border-indigo-400/25 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:border-indigo-400/40 dark:hover:bg-indigo-500/25"
+              className="group/btn inline-flex cursor-pointer items-center gap-1 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-1 text-xs font-medium text-indigo-700 shadow-2xs transition-all duration-150 hover:border-indigo-500/40 hover:bg-indigo-500/20 active:scale-95 dark:border-indigo-400/25 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:border-indigo-400/40 dark:hover:bg-indigo-500/25"
             >
               <span>Respond</span>
               <ChevronRight className="h-3 w-3 shrink-0 text-indigo-600/80 transition-transform duration-150 group-hover/btn:translate-x-0.5 dark:text-indigo-300/80" />
@@ -193,7 +193,7 @@ export function BlurbResponseModal({
                 </DialogTitle>
                 <Badge
                   variant="outline"
-                  className="border-indigo-500/25 bg-indigo-500/10 px-2 py-0 text-[10px] font-medium text-indigo-700 tabular-nums dark:border-indigo-400/25 dark:bg-indigo-500/15 dark:text-indigo-300"
+                  className="border-indigo-500/25 bg-indigo-500/10 px-2 py-0 text-xs font-medium text-indigo-700 tabular-nums dark:border-indigo-400/25 dark:bg-indigo-500/15 dark:text-indigo-300"
                 >
                   {totalCount} {totalCount === 1 ? "response" : "responses"}
                 </Badge>
@@ -218,7 +218,7 @@ export function BlurbResponseModal({
                   rows={3}
                   className="text-foreground placeholder:text-muted-foreground/60 w-full resize-none bg-transparent px-3 py-2.5 text-xs leading-relaxed focus:outline-none"
                 />
-                <div className="border-border/30 flex items-center justify-between border-t px-3 py-1.5 text-[10px]">
+                <div className="border-border/30 flex items-center justify-between border-t px-3 py-1.5 text-xs">
                   <span
                     className={cn(
                       "font-mono transition-colors",
@@ -229,7 +229,7 @@ export function BlurbResponseModal({
                   </span>
                   <Button
                     size="sm"
-                    className="h-6 cursor-pointer gap-1 rounded-md bg-indigo-600 px-2.5 text-[10px] font-medium text-white shadow-xs hover:bg-indigo-700 active:scale-95 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                    className="h-6 cursor-pointer gap-1 rounded-md bg-indigo-600 px-2.5 text-xs font-medium text-white shadow-xs hover:bg-indigo-700 active:scale-95 dark:bg-indigo-500 dark:hover:bg-indigo-600"
                     onClick={() =>
                       submitMutation.mutate({
                         promptId: prompt.id,
@@ -255,7 +255,7 @@ export function BlurbResponseModal({
                 </div>
               </div>
               {submitMutation.error && (
-                <p className="text-[10px] font-medium text-red-500 dark:text-red-400">
+                <p className="text-xs font-medium text-red-500 dark:text-red-400">
                   {submitMutation.error.message}
                 </p>
               )}
@@ -266,7 +266,7 @@ export function BlurbResponseModal({
         {/* User's existing submitted response */}
         {isSignedIn && myResponse && (
           <div className="border-border/30 border-b bg-emerald-500/[0.04] px-5 py-3.5">
-            <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+            <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>Your Country&apos;s Dispatch</span>
             </div>
@@ -300,7 +300,7 @@ export function BlurbResponseModal({
                 <MessageCircle className="h-5 w-5 opacity-80" />
               </div>
               <p className="text-foreground mt-2.5 text-xs font-medium">No responses yet</p>
-              <p className="text-muted-foreground mt-0.5 text-[11px]">
+              <p className="text-muted-foreground mt-0.5 text-xs">
                 Be the first country to share a perspective on this topic.
               </p>
             </div>
@@ -342,7 +342,7 @@ export function BlurbResponseModal({
                     {r.featured && (
                       <Badge
                         variant="outline"
-                        className="border-amber-500/30 px-1.5 py-0 text-[8px] font-semibold text-amber-600 dark:text-amber-400"
+                        className="border-amber-500/30 px-1.5 py-0 text-xs font-semibold text-amber-600 dark:text-amber-400"
                       >
                         Featured
                       </Badge>
@@ -350,7 +350,7 @@ export function BlurbResponseModal({
                   </div>
 
                   {r.createdAt && (
-                    <span className="text-muted-foreground/60 text-[10px] tabular-nums">
+                    <span className="text-muted-foreground/60 text-xs tabular-nums">
                       {formatRelativeTime(r.createdAt)}
                     </span>
                   )}
@@ -369,7 +369,7 @@ export function BlurbResponseModal({
                           <Link
                             key={i}
                             href={article.url}
-                            className="inline-flex items-center gap-1 text-[10px] text-indigo-600 underline underline-offset-2 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                            className="inline-flex items-center gap-1 text-xs text-indigo-600 underline underline-offset-2 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
                           >
                             <ExternalLink className="h-2.5 w-2.5" />
                             {article.title}

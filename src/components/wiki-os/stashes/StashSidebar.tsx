@@ -79,7 +79,7 @@ export function StashSidebar({
             Collections
           </span>
         </div>
-        <span className="rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-2 py-0.5 text-[10px] font-bold text-[var(--wikios-text-dim)]">
+        <span className="rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-2 py-0.5 text-xs font-bold text-[var(--wikios-text-dim)]">
           {stashes.length}
         </span>
       </div>
@@ -142,7 +142,7 @@ export function StashSidebar({
                     <button
                       type="button"
                       onClick={() => setEditingStash(null)}
-                      className="cursor-pointer rounded-xl px-2.5 py-1 text-[11px] font-semibold text-[var(--wikios-text-muted)] transition-all hover:bg-white/5 hover:text-[var(--wikios-text)] active:scale-95"
+                      className="cursor-pointer rounded-xl px-2.5 py-1 text-xs font-semibold text-[var(--wikios-text-muted)] transition-all hover:bg-white/5 hover:text-[var(--wikios-text)] active:scale-95"
                     >
                       Cancel
                     </button>
@@ -150,7 +150,7 @@ export function StashSidebar({
                       type="button"
                       onClick={() => handleSaveEdit(s.id)}
                       disabled={isUpdating || !editName.trim()}
-                      className="cursor-pointer rounded-xl bg-[var(--wikios-accent)] px-3 py-1 text-[11px] font-bold text-white shadow-xs transition-all hover:bg-[var(--wikios-accent-hover)] active:scale-95 disabled:opacity-40"
+                      className="cursor-pointer rounded-xl bg-[var(--wikios-accent)] px-3 py-1 text-xs font-bold text-white shadow-xs transition-all hover:bg-[var(--wikios-accent-hover)] active:scale-95 disabled:opacity-40"
                     >
                       Save
                     </button>
@@ -190,7 +190,7 @@ export function StashSidebar({
                     {/* Item count badge */}
                     <span
                       className={cn(
-                        "rounded-md px-1.5 py-0.5 text-[10px] font-bold transition-opacity",
+                        "rounded-md px-1.5 py-0.5 text-xs font-bold transition-opacity",
                         isActive
                           ? "bg-[var(--wikios-card-bg)] text-[var(--wikios-text)]"
                           : "bg-white/5 text-[var(--wikios-text-dim)]",

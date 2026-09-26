@@ -345,7 +345,7 @@ export function WikiOSUnifiedSidebar({
             "border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15",
           isActive: activeId === "search",
           badge: (
-            <kbd className="text-muted-foreground/60 rounded border border-white/5 bg-white/5 px-1 text-[8px]">
+            <kbd className="text-muted-foreground/60 rounded border border-white/5 bg-white/5 px-1 text-xs">
               ⌘K
             </kbd>
           ),
@@ -487,7 +487,7 @@ export function WikiOSUnifiedSidebar({
                 "rail-glow-highlighter rail-animate-wiggle border-yellow-400/50 bg-margin-accent/15 text-[var(--wikios-text)] hover:bg-margin-accent/25",
               isActive: isMarginOpen || activeId === "margin",
               badge: (
-                <kbd className="text-muted-foreground/60 rounded border border-white/5 bg-white/5 px-1 font-mono text-[8px]">
+                <kbd className="text-muted-foreground/60 rounded border border-white/5 bg-white/5 px-1 font-mono text-xs">
                   T
                 </kbd>
               ),
@@ -543,7 +543,7 @@ export function WikiOSUnifiedSidebar({
                       sideOffset={12}
                       className="z-[100050] w-56 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 p-1.5 text-[var(--wikios-text)] shadow-2xl backdrop-blur-2xl"
                     >
-                      <div className="mb-1 border-b border-[var(--wikios-border)] px-2.5 py-1 text-[10px] font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
+                      <div className="mb-1 border-b border-[var(--wikios-border)] px-2.5 py-1 text-xs font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
                         Page Tools
                       </div>
                       <DropdownMenuItem
@@ -555,7 +555,7 @@ export function WikiOSUnifiedSidebar({
                           <div className="font-semibold text-[var(--wikios-text)]">
                             Revision History
                           </div>
-                          <div className="truncate text-[10px] text-[var(--wikios-text-dim)]">
+                          <div className="truncate text-xs text-[var(--wikios-text-dim)]">
                             Past edits & revisions
                           </div>
                         </div>
@@ -569,7 +569,7 @@ export function WikiOSUnifiedSidebar({
                           <div className="font-semibold text-[var(--wikios-text)]">
                             What Links Here
                           </div>
-                          <div className="truncate text-[10px] text-[var(--wikios-text-dim)]">
+                          <div className="truncate text-xs text-[var(--wikios-text-dim)]">
                             Inbound wiki backlinks
                           </div>
                         </div>
@@ -584,7 +584,7 @@ export function WikiOSUnifiedSidebar({
                             <div className="font-semibold text-[var(--wikios-text)]">
                               Utilities & Special Hub
                             </div>
-                            <div className="truncate text-[10px] text-[var(--wikios-text-dim)]">
+                            <div className="truncate text-xs text-[var(--wikios-text-dim)]">
                               Diagnostics, tools & special pages
                             </div>
                           </div>
@@ -602,7 +602,7 @@ export function WikiOSUnifiedSidebar({
                           <div className="font-semibold text-[var(--wikios-text)]">
                             Print / Clean View
                           </div>
-                          <div className="truncate text-[10px] text-[var(--wikios-text-dim)]">
+                          <div className="truncate text-xs text-[var(--wikios-text-dim)]">
                             Export clean page
                           </div>
                         </div>

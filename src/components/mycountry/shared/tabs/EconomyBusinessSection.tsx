@@ -56,32 +56,32 @@ export function EconomyBusinessSection({
         <div className="relative z-10 space-y-4 p-4">
           <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Doing Business
               </p>
               <p className="text-foreground mt-0.5 text-sm font-bold">Rank #45</p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Out of 190 countries</p>
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">Out of 190 countries</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Startup Formation
               </p>
               <p className="text-foreground mt-0.5 text-sm font-bold">12.5</p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Per 1,000 citizens</p>
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">Per 1,000 citizens</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 R&D Investment
               </p>
               <p className="text-foreground mt-0.5 text-sm font-bold">2.8%</p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Share of GDP</p>
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">Share of GDP</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 FDI Inflow
               </p>
               <p className="text-foreground mt-0.5 text-sm font-bold">2.5%</p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Of nominal GDP</p>
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">Of nominal GDP</p>
             </div>
           </div>
 

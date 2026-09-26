@@ -45,7 +45,7 @@ const MapContainer = dynamic(
     loading: () => (
       <div className="bg-muted flex h-full items-center justify-center">
         <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-emerald-500" />
-        <p className="text-muted-foreground ml-2 text-[11px]">Loading map canvas...</p>
+        <p className="text-muted-foreground ml-2 text-xs">Loading map canvas...</p>
       </div>
     ),
   }
@@ -431,9 +431,9 @@ export default function MapEditorOverlay({
                         >
                           <FallbackIcon className="h-4 w-4" />
 
-                          <div className="bg-popover text-popover-foreground ring-border pointer-events-none absolute top-1/2 left-full z-50 ml-1.5 hidden -translate-y-1/2 rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 group-hover:block">
+                          <div className="bg-popover text-popover-foreground ring-border pointer-events-none absolute top-1/2 left-full z-50 ml-1.5 hidden -translate-y-1/2 rounded px-2 py-1 text-xs font-medium whitespace-nowrap shadow-md ring-1 group-hover:block">
                             {tool.label}
-                            <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-[10px]">
+                            <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-xs">
                               {tool.shortcut}
                             </span>
                           </div>
@@ -477,7 +477,7 @@ export default function MapEditorOverlay({
                       Loading Border Editor...
                     </h2>
                     {countryInfo?.name && (
-                      <p className="text-muted-foreground mt-1 text-[10px]">{countryInfo.name}</p>
+                      <p className="text-muted-foreground mt-1 text-xs">{countryInfo.name}</p>
                     )}
                   </div>
                 </div>

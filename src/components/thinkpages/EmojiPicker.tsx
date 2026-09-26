@@ -567,7 +567,7 @@ export function EmojiPicker({
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setActiveTab("unicode")}
             className={cn(
-              "flex-1 rounded-lg py-1 text-[11px] font-semibold transition-all focus:outline-none",
+              "flex-1 rounded-lg py-1 text-xs font-semibold transition-all focus:outline-none",
               activeTab === "unicode"
                 ? "bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
                 : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
@@ -580,7 +580,7 @@ export function EmojiPicker({
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setActiveTab("discord")}
             className={cn(
-              "flex-1 rounded-lg py-1 text-[11px] font-semibold transition-all focus:outline-none",
+              "flex-1 rounded-lg py-1 text-xs font-semibold transition-all focus:outline-none",
               activeTab === "discord"
                 ? "bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
                 : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
@@ -601,7 +601,7 @@ export function EmojiPicker({
                     id={`emoji-category-${idx}`}
                     className="scroll-mt-2 space-y-1"
                   >
-                    <div className="text-muted-foreground px-1 text-[10px] font-bold tracking-wider uppercase">
+                    <div className="text-muted-foreground px-1 text-xs font-bold tracking-wider uppercase">
                       {category.name}
                     </div>
                     <div className="grid grid-cols-8 gap-1">

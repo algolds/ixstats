@@ -122,7 +122,7 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
               <Icon className="h-4 w-4 shrink-0" />
               <span className="flex-1 truncate text-left">{item.label}</span>
               {item.isPremium && (
-                <span className="flex shrink-0 items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-amber-500 uppercase shadow-xs">
+                <span className="flex shrink-0 items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-xs font-bold tracking-wider text-amber-500 uppercase shadow-xs">
                   <Crown className="h-2.5 w-2.5 text-amber-400" />
                   Premium
                 </span>

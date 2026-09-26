@@ -112,7 +112,7 @@ export function ComposerActionBar({
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="bg-slate-900/90 text-[11px] font-medium tracking-tight text-white backdrop-blur-md"
+                className="bg-slate-900/90 text-xs font-medium tracking-tight text-white backdrop-blur-md"
               >
                 Add live data chart
               </TooltipContent>
@@ -147,7 +147,7 @@ export function ComposerActionBar({
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="bg-slate-900/90 text-[11px] font-medium tracking-tight text-white backdrop-blur-md"
+                className="bg-slate-900/90 text-xs font-medium tracking-tight text-white backdrop-blur-md"
               >
                 Add media / images
               </TooltipContent>
@@ -159,7 +159,7 @@ export function ComposerActionBar({
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="bg-slate-900/90 text-[11px] font-medium tracking-tight text-white backdrop-blur-md"
+                className="bg-slate-900/90 text-xs font-medium tracking-tight text-white backdrop-blur-md"
               >
                 Insert GIF
               </TooltipContent>
@@ -192,7 +192,7 @@ export function ComposerActionBar({
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="bg-slate-900/90 text-[11px] font-medium tracking-tight text-white backdrop-blur-md"
+                className="bg-slate-900/90 text-xs font-medium tracking-tight text-white backdrop-blur-md"
               >
                 Add Poll
               </TooltipContent>
@@ -208,7 +208,7 @@ export function ComposerActionBar({
               />
               <label
                 htmlFor="share-to-discord-toggle"
-                className="flex cursor-pointer items-center gap-1.5 text-[10px] font-semibold tracking-tight text-slate-500 transition-colors select-none hover:text-slate-800 dark:text-neutral-400 dark:hover:text-neutral-200"
+                className="flex cursor-pointer items-center gap-1.5 text-xs font-semibold tracking-tight text-slate-500 transition-colors select-none hover:text-slate-800 dark:text-neutral-400 dark:hover:text-neutral-200"
               >
                 <svg
                   viewBox="0 0 24 24"

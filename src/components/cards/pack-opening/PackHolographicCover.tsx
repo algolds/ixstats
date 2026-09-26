@@ -134,7 +134,7 @@ function getHoloOpacity(rarity: CardRarity): number {
 // ─── Size presets ───────────────────────────────────────────────
 
 const SIZE_CLASSES = { sm: "h-20", md: "h-40", lg: "h-full min-h-[320px]" } as const;
-const LABEL_SIZES = { sm: "text-[9px]", md: "text-xs", lg: "text-base" } as const;
+const LABEL_SIZES = { sm: "text-xs", md: "text-xs", lg: "text-base" } as const;
 const STAMP_SIZES = {
   sm: "text-xs h-5 w-5",
   md: "text-lg h-8 w-8",
@@ -424,7 +424,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               <p
                 className={cn(
                   "text-center font-semibold tracking-wider text-white/40 uppercase",
-                  size === "sm" ? "text-[7px]" : "text-[9px]"
+                  size === "sm" ? "text-[7px]" : "text-xs"
                 )}
               >
                 IxCards

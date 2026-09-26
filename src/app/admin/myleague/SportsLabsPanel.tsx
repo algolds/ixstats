@@ -72,10 +72,10 @@ function PipelineNode({ data, selected }: NodeProps) {
           {Icon && <Icon className="h-4.5 w-4.5" />}
         </div>
         <div className="text-left">
-          <div className="text-foreground text-[11px] leading-tight font-bold">
+          <div className="text-foreground text-xs leading-tight font-bold">
             {data.label as string}
           </div>
-          <div className="text-muted-foreground text-[9px]">{data.description as string}</div>
+          <div className="text-muted-foreground text-xs">{data.description as string}</div>
         </div>
       </div>
 
@@ -371,7 +371,7 @@ export default function SportsLabsPanel() {
               MatchResolver
               <Badge
                 variant="outline"
-                className="border-amber-500/20 bg-amber-500/10 text-[10px] font-semibold text-amber-400 uppercase"
+                className="border-amber-500/20 bg-amber-500/10 text-xs font-semibold text-amber-400 uppercase"
               >
                 Simulation Kernel Layer
               </Badge>
@@ -432,7 +432,7 @@ export default function SportsLabsPanel() {
               />
               <Panel
                 position="top-left"
-                className="bg-background/80 border-border/60 text-muted-foreground rounded-lg border px-3 py-1.5 text-[10px] shadow-sm backdrop-blur-sm select-none"
+                className="bg-background/80 border-border/60 text-muted-foreground rounded-lg border px-3 py-1.5 text-xs shadow-sm backdrop-blur-sm select-none"
               >
                 <span className="mr-1 font-bold text-amber-500">💡 Pipeline Loop:</span> Click nodes
                 to select and configure settings in the inspector.

@@ -45,7 +45,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
       <div className="flex items-center gap-2">
         <div className="border-border mr-2 flex items-center gap-1.5 border-r pr-2">
           <Scissors className="text-muted-foreground h-3.5 w-3.5" />
-          <span className="text-foreground text-[11px] font-semibold">
+          <span className="text-foreground text-xs font-semibold">
             Border Editor ({countryName || "unnamed"})
           </span>
         </div>
@@ -53,7 +53,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
         {/* Tool-specific configuration */}
         {borderState.mode === "brush" && (
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+            <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
               Brush Size
             </span>
             <input
@@ -65,38 +65,38 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
               onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
               className="accent-primary h-4 w-24"
             />
-            <span className="text-muted-foreground w-12 text-right font-mono text-[11px] tabular-nums">
+            <span className="text-muted-foreground w-12 text-right font-mono text-xs tabular-nums">
               {brushRadius}km
             </span>
           </div>
         )}
 
         {borderState.mode === "split" && borderState.splitLine.length > 0 && (
-          <span className="animate-pulse text-[11px] font-medium text-amber-500">
+          <span className="animate-pulse text-xs font-medium text-amber-500">
             Split Line: {borderState.splitLine.length} points
           </span>
         )}
 
         {borderState.mode === "select" && (
-          <span className="text-muted-foreground text-[11px]">
+          <span className="text-muted-foreground text-xs">
             Click a vertex/edge to start editing.
           </span>
         )}
 
         {borderState.mode === "vertex_edit" && (
-          <span className="text-muted-foreground text-[11px]">
+          <span className="text-muted-foreground text-xs">
             Drag vertices. Click midpoints to add vertices.
           </span>
         )}
 
         {borderState.mode === "merge" && (
-          <span className="text-muted-foreground text-[11px]">
+          <span className="text-muted-foreground text-xs">
             Select neighbor subdivisions to merge.
           </span>
         )}
 
         {borderState.mode === "trace" && (
-          <span className="text-muted-foreground text-[11px]">
+          <span className="text-muted-foreground text-xs">
             Click points on river/coast to trace.
           </span>
         )}
@@ -134,7 +134,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
 
         {/* Area Stats */}
         {borderState.areaKm2 !== null && (
-          <span className="text-muted-foreground text-[11px] font-medium select-none">
+          <span className="text-muted-foreground text-xs font-medium select-none">
             {borderState.areaKm2 > 1000000
               ? `${(borderState.areaKm2 / 1000000).toFixed(2)}M km²`
               : `${Math.round(borderState.areaKm2).toLocaleString()} km²`}
@@ -145,7 +145,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
 
         {/* Advanced operations popover */}
         <Popover>
-          <PopoverTrigger className="bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-[11px] font-medium transition-colors">
+          <PopoverTrigger className="bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-xs font-medium transition-colors">
             <Wrench className="h-3 w-3" />
             <span>Advanced</span>
           </PopoverTrigger>
@@ -228,7 +228,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
         <button
           onClick={() => void borderActions.save()}
           disabled={!borderState.isDirty || isSubmitting}
-          className="bg-muted/50 text-foreground hover:bg-accent active:scale-[0.98] flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-[11px] font-medium transition-colors disabled:opacity-30"
+          className="bg-muted/50 text-foreground hover:bg-accent active:scale-[0.98] flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-xs font-medium transition-colors disabled:opacity-30"
           title="Save draft"
         >
           <Save className="h-3 w-3" />
@@ -243,7 +243,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
             borderState.splitLine.length === 0 &&
             borderState.mergeTargets.length === 0
           }
-          className="flex h-6 cursor-pointer items-center gap-1 rounded bg-red-500/10 px-2 text-[11px] font-medium text-red-600 transition-colors hover:bg-red-500/20 active:scale-[0.98] disabled:opacity-30"
+          className="flex h-6 cursor-pointer items-center gap-1 rounded bg-red-500/10 px-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/20 active:scale-[0.98] disabled:opacity-30"
           title="Revert all unsaved changes for this feature"
         >
           <RefreshCw className="h-3 w-3" />
@@ -258,7 +258,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
             !(borderState.mode === "split" && borderState.splitLine.length >= 2) &&
             !(borderState.mode === "merge" && borderState.mergeTargets.length > 0)
           }
-          className="flex h-6 cursor-pointer items-center gap-1 rounded bg-emerald-600/20 px-2 text-[11px] font-medium text-emerald-500 transition-colors hover:bg-emerald-600/30 active:scale-[0.98] disabled:opacity-30"
+          className="flex h-6 cursor-pointer items-center gap-1 rounded bg-emerald-600/20 px-2 text-xs font-medium text-emerald-500 transition-colors hover:bg-emerald-600/30 active:scale-[0.98] disabled:opacity-30"
           title="Apply and exit"
         >
           <Check className="h-3 w-3" />
@@ -270,7 +270,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
         {/* Close / Exit Border Editor */}
         <button
           onClick={onExit}
-          className="bg-muted hover:bg-accent text-foreground active:scale-[0.98] flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-[11px] font-medium transition-colors"
+          className="bg-muted hover:bg-accent text-foreground active:scale-[0.98] flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-xs font-medium transition-colors"
           title="Close Border Editor"
         >
           <X className="h-3 w-3" />

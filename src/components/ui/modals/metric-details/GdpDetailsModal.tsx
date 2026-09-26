@@ -662,7 +662,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                     ? `${((countryData.currentGdpPerCapita / (globalStats as any).averageGdpPerCapita - 1) * 100).toFixed(1)}%`
                     : "N/A"}
                 </span>
-                <span className="text-muted-foreground mt-1 text-[10px]">
+                <span className="text-muted-foreground mt-1 text-xs">
                   Avg: {formatCurrency((globalStats as any).averageGdpPerCapita)}
                 </span>
               </div>
@@ -691,7 +691,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                     ? `${((countryData.currentTotalGdp / (globalStats as any).totalGdp) * 100).toFixed(3)}%`
                     : "N/A"}
                 </span>
-                <span className="text-muted-foreground mt-1 text-[10px]">
+                <span className="text-muted-foreground mt-1 text-xs">
                   Global: {formatCurrency((globalStats as any).totalGdp / 1e12)}T
                 </span>
               </div>

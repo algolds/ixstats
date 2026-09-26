@@ -28,7 +28,7 @@ export function CircuitMap({
         <span className="text-xs font-black uppercase tracking-wider text-red-400">
           🏎️ {circuitName}
         </span>
-        <span className="text-[10px] font-bold text-muted-foreground uppercase">
+        <span className="text-xs font-bold text-muted-foreground uppercase">
           {lapCount} Laps · DRS Zones (2)
         </span>
       </div>
@@ -74,7 +74,7 @@ export function CircuitMap({
         </svg>
 
         {/* Legend */}
-        <div className="absolute bottom-1 right-2 flex gap-3 text-[9px] font-bold">
+        <div className="absolute bottom-1 right-2 flex gap-3 text-xs font-bold">
           <span className="flex items-center gap-1 text-cyan-400">
             <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" /> S1
           </span>

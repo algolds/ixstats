@@ -92,7 +92,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
         <div className="space-y-4 pt-2">
           <div className="border-border bg-muted/40 flex items-center justify-between rounded-xl border p-4">
             <div>
-              <p className="text-muted-foreground text-[10px] font-bold uppercase">
+              <p className="text-muted-foreground text-xs font-bold uppercase">
                 Current Ticket Price
               </p>
               <p className="text-foreground text-2xl font-bold">₷{team.ticketPrice}</p>
@@ -120,7 +120,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
               </Button>
             </div>
           </div>
-          <p className="text-muted-foreground text-[10px] leading-relaxed">
+          <p className="text-muted-foreground text-xs leading-relaxed">
             Ticket pricing scales attendance dynamically. Setting prices too high (above ₷30) will
             reduce seat sales, while lower pricing guarantees sold-out crowds but reduces matchday
             ticketing margins.
@@ -139,7 +139,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
         <div className="space-y-4 pt-2">
           <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
             <div>
-              <p className="text-[10px] font-bold text-emerald-600 uppercase dark:text-emerald-400">
+              <p className="text-xs font-bold text-emerald-600 uppercase dark:text-emerald-400">
                 Current Capacity
               </p>
               <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
@@ -156,7 +156,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
               {upgradeStadium.isPending ? "Upgrading..." : "Expand (+1k seats)"}
             </Button>
           </div>
-          <p className="text-[10px] leading-relaxed text-emerald-800/80 dark:text-emerald-300/80">
+          <p className="text-xs leading-relaxed text-emerald-800/80 dark:text-emerald-300/80">
             Stadium expansions cost a flat ₷1,000 Sovereigns and instantly add 1,000 additional
             seats, allowing you to generate more matchday revenue during high-popularity matches.
           </p>
@@ -185,13 +185,13 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
               </h5>
               <div className="mt-2 grid grid-cols-2 gap-2 border-t border-amber-500/20 pt-2 text-xs">
                 <div>
-                  <span className="text-muted-foreground block text-[9px] uppercase">Base Fee</span>
+                  <span className="text-muted-foreground block text-xs uppercase">Base Fee</span>
                   <span className="text-foreground font-semibold">
                     ₷{currentSponsor.baseFee} / season
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-[9px] uppercase">
+                  <span className="text-muted-foreground block text-xs uppercase">
                     Win Bonus
                   </span>
                   <span className="text-foreground font-semibold">
@@ -250,11 +250,11 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
               >
                 <div>
                   <p className="text-xs font-bold">{s.name}</p>
-                  <p className="text-muted-foreground text-[10px]">{s.desc}</p>
+                  <p className="text-muted-foreground text-xs">{s.desc}</p>
                 </div>
                 <Badge
                   variant="outline"
-                  className="border-amber-500/30 text-[10px] text-amber-600 dark:text-amber-400"
+                  className="border-amber-500/30 text-xs text-amber-600 dark:text-amber-400"
                 >
                   {s.payout}
                 </Badge>
@@ -306,7 +306,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                     <div>
                       <h4 className="text-sm leading-none font-bold">{card.title}</h4>
                       {!isExpanded && (
-                        <p className="text-muted-foreground mt-1 text-[10px] leading-none">
+                        <p className="text-muted-foreground mt-1 text-xs leading-none">
                           {card.description}
                         </p>
                       )}

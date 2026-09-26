@@ -537,12 +537,12 @@ export function MapContainer({
         <div className="absolute bottom-20 left-4 z-50 max-w-sm rounded-xl border border-amber-500/20 bg-slate-950/80 p-4 shadow-xl backdrop-blur-md transition-all duration-300">
           <div className="flex items-start justify-between gap-3">
             <div className="flex gap-2.5">
-              <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-bold text-amber-500">
+              <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-xs font-bold text-amber-500">
                 ⚠️
               </span>
               <div className="space-y-1">
                 <h4 className="text-xs font-bold text-amber-500">Maps Private Beta</h4>
-                <p className="text-[10px] leading-relaxed text-zinc-300">
+                <p className="text-xs leading-relaxed text-zinc-300">
                   External country integration and interactive plotting are under active
                   development. You can freely explore the world map, topography, and other nations,
                   but adding your own borders or claiming territory is not yet open to external
@@ -552,7 +552,7 @@ export function MapContainer({
             </div>
             <button
               onClick={() => setShowGatekeepingWarning(false)}
-              className="p-0.5 text-[10px] font-bold text-zinc-400 transition-colors hover:text-white"
+              className="p-0.5 text-xs font-bold text-zinc-400 transition-colors hover:text-white"
               title="Dismiss warning"
               type="button"
             >

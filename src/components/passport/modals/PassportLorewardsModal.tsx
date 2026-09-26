@@ -212,7 +212,7 @@ export function PassportLorewardsModal({
 
             {/* Calendar Grid */}
             <div className="space-y-1.5">
-              <div className="text-muted-foreground grid grid-cols-7 gap-1 text-center font-mono text-[9px] font-bold">
+              <div className="text-muted-foreground grid grid-cols-7 gap-1 text-center font-mono text-xs font-bold">
                 {DAY_LABELS.map((d, i) => (
                   <div key={i}>{d}</div>
                 ))}
@@ -235,7 +235,7 @@ export function PassportLorewardsModal({
                     <div
                       key={day}
                       className={cn(
-                        "flex h-6 items-center justify-center rounded-md font-mono text-[11px] transition-all select-none",
+                        "flex h-6 items-center justify-center rounded-md font-mono text-xs transition-all select-none",
                         status === "winner" &&
                           "border border-amber-500/40 bg-amber-500/20 font-bold text-amber-600 dark:text-amber-400",
                         status === "runner-up" &&
@@ -260,7 +260,7 @@ export function PassportLorewardsModal({
             </div>
 
             {/* Legend */}
-            <div className="text-muted-foreground flex items-center justify-between border-t border-black/6 pt-2 font-mono text-[10px] dark:border-white/8">
+            <div className="text-muted-foreground flex items-center justify-between border-t border-black/6 pt-2 font-mono text-xs dark:border-white/8">
               <span className="flex items-center gap-1">
                 <span className="h-2 w-2 rounded-sm border border-amber-500 bg-amber-500/40" />
                 <span>Winner</span>
@@ -290,7 +290,7 @@ export function PassportLorewardsModal({
               <Link
                 href="/wiki"
                 data-cuelume-press="soft"
-                className="flex items-center gap-0.5 font-mono text-[10px] text-blue-600 hover:underline dark:text-blue-400"
+                className="flex items-center gap-0.5 font-mono text-xs text-blue-600 hover:underline dark:text-blue-400"
               >
                 <span>WikiOS</span>
                 <ArrowUpRight className="h-2.5 w-2.5" />
@@ -311,7 +311,7 @@ export function PassportLorewardsModal({
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <span
                         className={cn(
-                          "py-0.2 shrink-0 rounded border px-1.5 font-mono text-[9px] font-bold tracking-wider uppercase",
+                          "py-0.2 shrink-0 rounded border px-1.5 font-mono text-xs font-bold tracking-wider uppercase",
                           award.type === "daily" &&
                             "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
                           award.type === "weekly" &&
@@ -335,7 +335,7 @@ export function PassportLorewardsModal({
                         ) : (
                           <span className="text-foreground font-bold">Lore Laureate</span>
                         )}
-                        <div className="text-muted-foreground flex items-center gap-1.5 font-mono text-[10px]">
+                        <div className="text-muted-foreground flex items-center gap-1.5 font-mono text-xs">
                           <span>{award.date}</span>
                           <span>·</span>
                           <span
@@ -405,14 +405,14 @@ function MetricCard({
       className="space-y-0.5 rounded-xl border border-black/8 bg-black/[0.015] p-3 shadow-xs dark:border-white/10 dark:bg-white/[0.02]"
     >
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground font-mono text-[9px] tracking-wider uppercase">
+        <span className="text-muted-foreground font-mono text-xs tracking-wider uppercase">
           {label}
         </span>
         {icon}
       </div>
       <div className="text-foreground font-mono text-base font-bold tracking-tight">{value}</div>
       {subtext && (
-        <div className="text-muted-foreground truncate font-mono text-[9px]">{subtext}</div>
+        <div className="text-muted-foreground truncate font-mono text-xs">{subtext}</div>
       )}
     </FacetCard>
   );

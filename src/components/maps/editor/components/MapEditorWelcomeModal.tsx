@@ -192,7 +192,7 @@ export function MapEditorWelcomeModal({
                     <h2 className="text-foreground text-sm font-bold sm:text-base">
                       Map Editor Onboarding
                     </h2>
-                    <p className="text-muted-foreground text-[11px] sm:text-xs">
+                    <p className="text-muted-foreground text-xs sm:text-xs">
                       Forge the geography, borders, and features of IxWorld
                     </p>
                   </div>
@@ -224,7 +224,7 @@ export function MapEditorWelcomeModal({
                                 {tip.title}
                               </span>
                             </div>
-                            <p className="text-muted-foreground text-[10.5px] leading-relaxed">
+                            <p className="text-muted-foreground text-xs leading-relaxed">
                               {tip.description}
                             </p>
                           </div>
@@ -252,10 +252,10 @@ export function MapEditorWelcomeModal({
                             key={s.action}
                             className="bg-muted/30 border-border/40 flex items-center justify-between rounded-lg border px-3 py-1.5"
                           >
-                            <span className="text-muted-foreground text-[11px] font-medium">
+                            <span className="text-muted-foreground text-xs font-medium">
                               {s.action}
                             </span>
-                            <kbd className="bg-muted text-foreground/90 border-border/50 inline-flex h-5 items-center justify-center rounded border px-1.5 font-mono text-[10px]">
+                            <kbd className="bg-muted text-foreground/90 border-border/50 inline-flex h-5 items-center justify-center rounded border px-1.5 font-mono text-xs">
                               {s.keys[0]}
                             </kbd>
                           </div>
@@ -284,14 +284,14 @@ export function MapEditorWelcomeModal({
                             className="bg-muted/20 border-border/30 flex flex-col gap-0.5 rounded-lg border p-2 text-left"
                           >
                             <div className="flex items-center justify-between">
-                              <span className="text-foreground text-[11px] font-bold">
+                              <span className="text-foreground text-xs font-bold">
                                 {item.title}
                               </span>
-                              <span className="text-primary font-mono text-[9px] font-semibold">
+                              <span className="text-primary font-mono text-xs font-semibold">
                                 {item.version}
                               </span>
                             </div>
-                            <p className="text-muted-foreground text-[10px] leading-relaxed">
+                            <p className="text-muted-foreground text-xs leading-relaxed">
                               {item.desc}
                             </p>
                           </div>

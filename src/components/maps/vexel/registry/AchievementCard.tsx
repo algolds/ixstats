@@ -51,7 +51,7 @@ export default function AchievementCard({ achievement }: AchievementCardProps) {
           <div className="flex w-full flex-1 flex-col justify-between space-y-1.5 text-center">
             <div>
               <span
-                className={`mb-1 inline-block rounded-full border px-2 py-0.5 text-[8px] font-bold tracking-widest uppercase ${getSubjectBadgeColor(
+                className={`mb-1 inline-block rounded-full border px-2 py-0.5 text-xs font-bold tracking-widest uppercase ${getSubjectBadgeColor(
                   achievement.subjectType
                 )}`}
               >
@@ -62,12 +62,12 @@ export default function AchievementCard({ achievement }: AchievementCardProps) {
                 {achievement.title}
               </h4>
 
-              <p className="mt-0.5 truncate text-[10px] text-zinc-500">
+              <p className="mt-0.5 truncate text-xs text-zinc-500">
                 By: {achievement.ownerId.slice(0, 8)}
               </p>
             </div>
 
-            <p className="mt-2 line-clamp-2 border-t border-white/5 px-1 pt-2 font-serif text-[10px] text-zinc-400 italic">
+            <p className="mt-2 line-clamp-2 border-t border-white/5 px-1 pt-2 font-serif text-xs text-zinc-400 italic">
               {achievement.generatedBlazon}
             </p>
           </div>

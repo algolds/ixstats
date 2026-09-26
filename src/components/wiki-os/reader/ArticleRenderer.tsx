@@ -730,7 +730,7 @@ export function ArticleRenderer({
               soundEffects.press();
               setCompanionCollapsed(true);
             }}
-            className="text-muted-foreground hover:text-foreground -mb-1 hidden cursor-pointer items-center justify-center gap-1 self-end rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium transition-all duration-150 select-none hover:border-white/15 hover:bg-white/10 active:scale-[0.96] xl:flex"
+            className="text-muted-foreground hover:text-foreground -mb-1 hidden cursor-pointer items-center justify-center gap-1 self-end rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium transition-all duration-150 select-none hover:border-white/15 hover:bg-white/10 active:scale-[0.96] xl:flex"
             title="Hide companion"
             aria-label="Hide companion"
           >

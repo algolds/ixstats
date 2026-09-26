@@ -206,7 +206,7 @@ export const DomainActionTiles = React.memo(function DomainActionTiles({
                 <span className="text-foreground truncate text-[13px] leading-tight font-bold tracking-tight">
                   {title}
                 </span>
-                <span className="text-muted-foreground truncate text-[11px] leading-tight font-medium tracking-tight">
+                <span className="text-muted-foreground truncate text-xs leading-tight font-medium tracking-tight">
                   {getPeek(country as CountryPeekData | null | undefined)}
                 </span>
               </div>

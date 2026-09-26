@@ -21,7 +21,7 @@ export function MyLeagueInlinePreview({ leagueId }: { leagueId: string }) {
             {leagueData?.name ?? "League"}
           </div>
           {leagueData && (
-            <div className="text-muted-foreground text-[10px] capitalize">
+            <div className="text-muted-foreground text-xs capitalize">
               {leagueData.sportPreset} · {leagueData.archetype}
             </div>
           )}
@@ -29,7 +29,7 @@ export function MyLeagueInlinePreview({ leagueId }: { leagueId: string }) {
       </div>
       <Link
         href={`/myleague/${leagueId}`}
-        className="ml-1.5 shrink-0 text-[10px] font-semibold text-amber-400/80 transition-colors hover:text-amber-300 active:scale-95"
+        className="ml-1.5 shrink-0 text-xs font-semibold text-amber-400/80 transition-colors hover:text-amber-300 active:scale-95"
       >
         View League →
       </Link>
@@ -49,7 +49,7 @@ export function MyClubInlinePreview({ teamId }: { teamId: string }) {
         <div className="min-w-0">
           <div className="truncate text-xs font-bold text-blue-300">{teamData?.name ?? "Club"}</div>
           {teamData && (
-            <div className="text-muted-foreground text-[10px]">
+            <div className="text-muted-foreground text-xs">
               Stadium Cap: {teamData.stadiumCapacity}
             </div>
           )}
@@ -57,7 +57,7 @@ export function MyClubInlinePreview({ teamId }: { teamId: string }) {
       </div>
       <Link
         href={`/myclub/${teamId}`}
-        className="ml-1.5 shrink-0 text-[10px] font-semibold text-blue-400/80 transition-colors hover:text-blue-300 active:scale-95"
+        className="ml-1.5 shrink-0 text-xs font-semibold text-blue-400/80 transition-colors hover:text-blue-300 active:scale-95"
       >
         View Club →
       </Link>
@@ -81,7 +81,7 @@ export function InlineForumThreadPreview({ threadId, url }: { threadId: number; 
               {thread?.title ?? "Forum Thread"}
             </div>
             {thread && (
-              <div className="text-muted-foreground text-[10px]">
+              <div className="text-muted-foreground text-xs">
                 {thread.forumName ? `${thread.forumName} · ` : ""}
                 {thread.replyCount ?? 0} replies
               </div>
@@ -92,7 +92,7 @@ export function InlineForumThreadPreview({ threadId, url }: { threadId: number; 
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="ml-1.5 shrink-0 text-[10px] font-semibold text-indigo-400/80 transition-colors hover:text-indigo-300 active:scale-95"
+          className="ml-1.5 shrink-0 text-xs font-semibold text-indigo-400/80 transition-colors hover:text-indigo-300 active:scale-95"
         >
           View Thread →
         </a>

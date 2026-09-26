@@ -99,10 +99,10 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
             <p className="font-semibold text-emerald-400">
               Head Coach: {mockCoach.firstName} {mockCoach.lastName}
             </p>
-            <p className="text-muted-foreground text-[10px] capitalize">
+            <p className="text-muted-foreground text-xs capitalize">
               {mockCoach.role} &middot; Age {mockCoach.age} &middot; {mockCoach.careerStage}
             </p>
-            <div className="mt-2 grid grid-cols-2 gap-1.5 font-mono text-[10px]">
+            <div className="mt-2 grid grid-cols-2 gap-1.5 font-mono text-xs">
               <div>Strat: {mockCoach.ratings.strategy}</div>
               <div>Dev: {mockCoach.ratings.development}</div>
             </div>
@@ -123,7 +123,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
                     <p className="font-semibold">
                       {p.firstName} {p.lastName}
                     </p>
-                    <p className="text-muted-foreground flex items-center gap-1 text-[10px]">
+                    <p className="text-muted-foreground flex items-center gap-1 text-xs">
                       <PositionTooltip position={p.position}>
                         <span className="hover:text-foreground cursor-help font-medium transition-colors">
                           {p.position}
@@ -189,7 +189,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
         <div className="space-y-3">
           <div className="bg-muted/40 relative overflow-hidden rounded-lg border p-3 text-xs">
             <h5 className="text-foreground font-bold">{dbTeam.name}</h5>
-            <p className="text-muted-foreground text-[10px]">
+            <p className="text-muted-foreground text-xs">
               {dbTeam.shortName} &middot; HSL Color: {dbTeam.color}
             </p>
             {dbTeam.coaches && dbTeam.coaches.length > 0 && (
@@ -202,7 +202,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
                 🙏 Patron Saint:{" "}
                 <Badge
                   variant="secondary"
-                  className="border-amber-500/20 bg-amber-500/10 text-[9px] text-amber-400"
+                  className="border-amber-500/20 bg-amber-500/10 text-xs text-amber-400"
                 >
                   {(dbTeam as any).patronSaint}
                 </Badge>
@@ -214,12 +214,12 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
             <Card className="border-amber-500/20 bg-amber-500/5 backdrop-blur-md">
               <CardContent className="space-y-2 p-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-bold tracking-wider text-amber-400 uppercase">
+                  <p className="text-xs font-bold tracking-wider text-amber-400 uppercase">
                     Patron Saint Ritual (Cost: ₷100)
                   </p>
                   <Badge
                     variant="outline"
-                    className="border-amber-500/30 text-[9px] text-amber-300"
+                    className="border-amber-500/30 text-xs text-amber-300"
                   >
                     BLESSING BOOST: +5 ELO
                   </Badge>
@@ -253,7 +253,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
           )}
 
           <div className="thin-scrollbar max-h-[300px] space-y-1.5 overflow-y-auto">
-            <h6 className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">
+            <h6 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Active Roster ({dbTeam.players.length})
             </h6>
             {dbTeam.players.map((p) => {
@@ -267,7 +267,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
                     <p className="font-semibold">
                       {p.firstName} {p.lastName}
                     </p>
-                    <p className="text-muted-foreground flex items-center gap-1 text-[10px]">
+                    <p className="text-muted-foreground flex items-center gap-1 text-xs">
                       <PositionTooltip position={p.position}>
                         <span className="hover:text-foreground cursor-help font-medium transition-colors">
                           {p.position}

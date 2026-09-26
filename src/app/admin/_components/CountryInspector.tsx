@@ -816,25 +816,25 @@ export function CountryInspector() {
             </p>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="border-border/40 bg-muted/20 rounded-lg p-2.5">
-                <span className="text-muted-foreground block text-[10px]">Baseline Population</span>
+                <span className="text-muted-foreground block text-xs">Baseline Population</span>
                 <span className="text-foreground font-mono font-bold">
                   {calculation.baseline.pop.toLocaleString()}
                 </span>
               </div>
               <div className="border-border/40 bg-muted/20 rounded-lg p-2.5">
-                <span className="text-muted-foreground block text-[10px]">Baseline GDP PC</span>
+                <span className="text-muted-foreground block text-xs">Baseline GDP PC</span>
                 <span className="text-foreground font-mono font-bold">
                   ${calculation.baseline.gdppc.toLocaleString()}
                 </span>
               </div>
               <div className="border-border/40 bg-muted/20 col-span-2 rounded-lg p-2.5">
-                <span className="text-muted-foreground block text-[10px]">Baseline Total GDP</span>
+                <span className="text-muted-foreground block text-xs">Baseline Total GDP</span>
                 <span className="text-foreground font-mono font-bold">
                   ${calculation.baseline.gdp.toLocaleString()}
                 </span>
               </div>
             </div>
-            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-xs">
               Formula:{" "}
               <code className="font-mono font-semibold">Total GDP = Population × GDP PC</code>
             </div>
@@ -875,7 +875,7 @@ export function CountryInspector() {
                 </span>
               </div>
             </div>
-            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-xs">
               Formula:{" "}
               <code className="font-mono font-semibold">Base rate × Global × Local × Tier</code>
             </div>
@@ -908,11 +908,11 @@ export function CountryInspector() {
                   >
                     <div>
                       <div className="max-w-[150px] truncate font-medium">{eff.name}</div>
-                      <div className="text-muted-foreground text-[9px]">
+                      <div className="text-muted-foreground text-xs">
                         {eff.type.replace("_", " ")} {eff.mock ? "(Sandbox)" : "(DB)"}
                       </div>
                     </div>
-                    <Badge variant="outline" className="font-mono text-[10px]">
+                    <Badge variant="outline" className="font-mono text-xs">
                       {eff.value >= 0 ? "+" : ""}
                       {(eff.value * 100).toFixed(1)}%
                     </Badge>
@@ -954,7 +954,7 @@ export function CountryInspector() {
                 </span>
               </div>
             </div>
-            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-xs">
               Formula:{" "}
               <code className="font-mono font-semibold">Final Rate = Base Rate + Adjustments</code>
             </div>
@@ -1024,7 +1024,7 @@ export function CountryInspector() {
                 </span>
               </div>
             </div>
-            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-xs">
               Formula:{" "}
               <code className="font-mono font-semibold">
                 Raw Growth = (Base × Global × Local × Tier + Adjustments) × Multipliers
@@ -1060,14 +1060,14 @@ export function CountryInspector() {
                 {calculation.gdpGrowth.diminishingReturns.active ? (
                   <Badge
                     variant="outline"
-                    className="border-yellow-500/30 bg-yellow-500/10 text-[10px] text-yellow-500"
+                    className="border-yellow-500/30 bg-yellow-500/10 text-xs text-yellow-500"
                   >
                     ACTIVE
                   </Badge>
                 ) : (
                   <Badge
                     variant="outline"
-                    className="border-green-500/30 bg-green-500/10 text-[10px] text-green-500"
+                    className="border-green-500/30 bg-green-500/10 text-xs text-green-500"
                   >
                     INACTIVE
                   </Badge>
@@ -1086,7 +1086,7 @@ export function CountryInspector() {
                 </span>
               </div>
             </div>
-            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-xs">
               <div>
                 Formula:{" "}
                 <code className="font-mono font-semibold">
@@ -1130,21 +1130,21 @@ export function CountryInspector() {
                 {calculation.gdpGrowth.isCapped ? (
                   <Badge
                     variant="outline"
-                    className="border-red-500/30 bg-red-500/10 text-[10px] text-red-500"
+                    className="border-red-500/30 bg-red-500/10 text-xs text-red-500"
                   >
                     CAPPED
                   </Badge>
                 ) : (
                   <Badge
                     variant="outline"
-                    className="border-green-500/30 bg-green-500/10 text-[10px] text-green-500"
+                    className="border-green-500/30 bg-green-500/10 text-xs text-green-500"
                   >
                     UNCAPPED
                   </Badge>
                 )}
               </div>
             </div>
-            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-xs">
               {calculation.baseline.tier} limits annual GDPPC growth to{" "}
               {(calculation.gdpGrowth.tierMax * 100).toFixed(2)}%.
             </div>
@@ -1182,7 +1182,7 @@ export function CountryInspector() {
                 </span>
               </div>
             </div>
-            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-xs">
               Formula:{" "}
               <code className="font-mono font-semibold">Value_t = Value_0 × (1 + r)^N</code>
             </div>
@@ -1216,7 +1216,7 @@ export function CountryInspector() {
                 </span>
               </div>
             </div>
-            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-xs">
               Formula:{" "}
               <code className="font-mono font-semibold">
                 Output = CompoundedState × (1 + DirectModifier)
@@ -1237,39 +1237,39 @@ export function CountryInspector() {
             </p>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="border-border/40 bg-muted/20 rounded-lg p-2">
-                <span className="text-muted-foreground block text-[9px]">Projected Population</span>
+                <span className="text-muted-foreground block text-xs">Projected Population</span>
                 <span className="text-foreground font-mono font-bold">
                   {Math.round(calculation.output.pop).toLocaleString()}
                 </span>
-                <span className="text-muted-foreground block text-[9px]">
+                <span className="text-muted-foreground block text-xs">
                   (Tier {calculation.output.popTier})
                 </span>
               </div>
               <div className="border-border/40 bg-muted/20 rounded-lg p-2">
-                <span className="text-muted-foreground block text-[9px]">Projected GDP PC</span>
+                <span className="text-muted-foreground block text-xs">Projected GDP PC</span>
                 <span className="text-foreground font-mono font-bold">
                   ${Math.round(calculation.output.gdppc).toLocaleString()}
                 </span>
-                <span className="text-muted-foreground block text-[9px]">
+                <span className="text-muted-foreground block text-xs">
                   ({calculation.output.tier})
                 </span>
               </div>
               <div className="border-border/40 bg-muted/20 col-span-2 rounded-lg p-2">
-                <span className="text-muted-foreground block text-[9px]">Projected Total GDP</span>
+                <span className="text-muted-foreground block text-xs">Projected Total GDP</span>
                 <span className="font-mono font-bold text-emerald-500">
                   {fmtBig(calculation.output.gdp)}
                 </span>
               </div>
               {calculation.output.popDensity !== undefined && (
                 <div className="border-border/40 bg-muted/20 col-span-2 rounded-lg p-2">
-                  <span className="text-muted-foreground block text-[9px]">Population Density</span>
+                  <span className="text-muted-foreground block text-xs">Population Density</span>
                   <span className="text-foreground font-mono font-medium">
                     {calculation.output.popDensity.toFixed(1)} / km²
                   </span>
                 </div>
               )}
             </div>
-            <div className="text-muted-foreground bg-muted/30 mt-2 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 mt-2 rounded p-2 text-xs">
               Formula:{" "}
               <code className="font-mono font-semibold">Total GDP = Population × GDP PC</code>
             </div>
@@ -1306,7 +1306,7 @@ export function CountryInspector() {
                 </span>
               </div>
             </div>
-            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-xs">
               <div>
                 Formula:{" "}
                 <code className="font-mono font-semibold">
@@ -1355,7 +1355,7 @@ export function CountryInspector() {
                 </span>
               </div>
             </div>
-            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-xs">
               <div>
                 Formula:{" "}
                 <code className="font-mono font-semibold">
@@ -1402,14 +1402,14 @@ export function CountryInspector() {
                 </span>
               </div>
             </div>
-            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-xs">
               <div>
                 Formula:{" "}
                 <code className="font-mono font-semibold">Efficiency = Tier Score × 0.8</code>
               </div>
               <div>
                 • Tier Scores:{" "}
-                <code className="font-mono text-[9px]">
+                <code className="font-mono text-xs">
                   Extravagant=95, VeryStrong=85, Strong=75, Healthy=65, Developed=50, Developing=35,
                   Impoverished=25
                 </code>
@@ -1454,7 +1454,7 @@ export function CountryInspector() {
                 </span>
               </div>
             </div>
-            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-[10px]">
+            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-xs">
               <div>
                 Formula:{" "}
                 <code className="font-mono font-semibold">
@@ -1525,7 +1525,7 @@ export function CountryInspector() {
                       >
                         <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="xs" />
                         <span className="text-foreground font-semibold">{c.name}</span>
-                        <span className="text-muted-foreground ml-auto text-[10px]">
+                        <span className="text-muted-foreground ml-auto text-xs">
                           {c.economicTier}
                         </span>
                       </button>
@@ -1580,7 +1580,7 @@ export function CountryInspector() {
               />
               <div>
                 <h4 className="text-foreground text-sm font-extrabold">{countryData.name}</h4>
-                <div className="text-muted-foreground space-y-0.5 text-[10px]">
+                <div className="text-muted-foreground space-y-0.5 text-xs">
                   <div>Region: {countryData.region || "Global"}</div>
                   <div>Baseline: {calculation.baseline.date.toLocaleDateString()}</div>
                 </div>
@@ -1601,7 +1601,7 @@ export function CountryInspector() {
                   max={20}
                   step={0.5}
                 />
-                <div className="text-muted-foreground flex justify-between text-[9px]">
+                <div className="text-muted-foreground flex justify-between text-xs">
                   <span>Baseline ({calculation.baseline.date.getFullYear()})</span>
                   <span>
                     +{yearsElapsed.toFixed(1)} yrs (
@@ -1622,7 +1622,7 @@ export function CountryInspector() {
                   max={2.0}
                   step={0.05}
                 />
-                <div className="text-muted-foreground flex justify-between text-[9px]">
+                <div className="text-muted-foreground flex justify-between text-xs">
                   <span>0.50x Penalty</span>
                   <span>1.0x Normal</span>
                   <span>2.00x Boost</span>
@@ -1653,7 +1653,7 @@ export function CountryInspector() {
                           <div className="truncate font-semibold">
                             {eff.description || `${eff.inputType} effect`}
                           </div>
-                          <div className="text-muted-foreground text-[9px]">
+                          <div className="text-muted-foreground text-xs">
                             {eff.inputType.replace("_", " ")}
                           </div>
                         </div>
@@ -1665,7 +1665,7 @@ export function CountryInspector() {
                           <button
                             onClick={() => handleToggleDbEffect(eff.id)}
                             className={cn(
-                              "rounded border px-1.5 py-0.5 text-[9px] font-bold transition-all",
+                              "rounded border px-1.5 py-0.5 text-xs font-bold transition-all",
                               isDisabled
                                 ? "bg-primary/10 text-primary border-primary/20"
                                 : "bg-destructive/10 text-destructive border-destructive/20"
@@ -1679,7 +1679,7 @@ export function CountryInspector() {
                   })}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-[11px] italic">
+                <p className="text-muted-foreground text-xs italic">
                   No active database storyteller events found for this country.
                 </p>
               )}
@@ -1691,9 +1691,9 @@ export function CountryInspector() {
               <form onSubmit={handleAddMockEffect} className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label className="text-muted-foreground text-[10px]">Effect Type</Label>
+                    <Label className="text-muted-foreground text-xs">Effect Type</Label>
                     <Select value={newEffectType} onValueChange={setNewEffectType}>
-                      <SelectTrigger className="h-8 text-[11px]">
+                      <SelectTrigger className="h-8 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1719,7 +1719,7 @@ export function CountryInspector() {
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-muted-foreground text-[10px]">Value (%)</Label>
+                    <Label className="text-muted-foreground text-xs">Value (%)</Label>
                     <Input
                       type="number"
                       value={newEffectValue}
@@ -1731,7 +1731,7 @@ export function CountryInspector() {
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground text-[10px]">Description / Label</Label>
+                  <Label className="text-muted-foreground text-xs">Description / Label</Label>
                   <Input
                     placeholder="e.g. Technology Boom"
                     value={newEffectDesc}
@@ -1747,7 +1747,7 @@ export function CountryInspector() {
 
               {mockEffects.length > 0 && (
                 <div className="border-border/30 max-h-[140px] space-y-2 overflow-y-auto border-t pt-3 pr-1">
-                  <div className="text-[10px] font-bold tracking-wider text-indigo-500 uppercase">
+                  <div className="text-xs font-bold tracking-wider text-indigo-500 uppercase">
                     Added Mock Effects
                   </div>
                   {mockEffects.map((eff) => (
@@ -1757,7 +1757,7 @@ export function CountryInspector() {
                     >
                       <div className="max-w-[160px] truncate">
                         <div className="truncate font-semibold">{eff.description}</div>
-                        <div className="text-[9px] text-indigo-400">
+                        <div className="text-xs text-indigo-400">
                           {eff.type.replace("_", " ")}
                         </div>
                       </div>

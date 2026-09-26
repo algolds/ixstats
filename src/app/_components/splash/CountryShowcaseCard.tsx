@@ -149,7 +149,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
           <div className="facet-hierarchy-child grid grid-cols-3 gap-3 rounded-xl p-3">
             {identity.capitalCity && (
               <div className="text-center">
-                <div className="text-muted-foreground mb-0.5 text-[10px] tracking-wider uppercase">
+                <div className="text-muted-foreground mb-0.5 text-xs tracking-wider uppercase">
                   Capital
                 </div>
                 <div className="text-foreground text-xs font-medium">{identity.capitalCity}</div>
@@ -157,7 +157,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {identity.currency && (
               <div className="text-center">
-                <div className="text-muted-foreground mb-0.5 text-[10px] tracking-wider uppercase">
+                <div className="text-muted-foreground mb-0.5 text-xs tracking-wider uppercase">
                   Currency
                 </div>
                 <div className="text-foreground text-xs font-medium">
@@ -169,7 +169,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {identity.demonym && (
               <div className="text-center">
-                <div className="text-muted-foreground mb-0.5 text-[10px] tracking-wider uppercase">
+                <div className="text-muted-foreground mb-0.5 text-xs tracking-wider uppercase">
                   Demonym
                 </div>
                 <div className="text-foreground text-xs font-medium">{identity.demonym}</div>
@@ -207,7 +207,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <TrendingUp className={`h-3 w-3 ${splashGold.text}`} />
-                <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                <span className="text-muted-foreground text-xs tracking-wider uppercase">
                   Total GDP
                 </span>
               </div>
@@ -218,7 +218,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <Users className={`h-3 w-3 ${splashGold.text}`} />
-                <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                <span className="text-muted-foreground text-xs tracking-wider uppercase">
                   Population
                 </span>
               </div>
@@ -229,7 +229,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <BarChart3 className={`h-3 w-3 ${splashGold.text}`} />
-                <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                <span className="text-muted-foreground text-xs tracking-wider uppercase">
                   Per Capita
                 </span>
               </div>
@@ -242,7 +242,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
                 <Activity
                   className={`h-3 w-3 ${growthPositive ? splashGold.text : "text-destructive"}`}
                 />
-                <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                <span className="text-muted-foreground text-xs tracking-wider uppercase">
                   Growth
                 </span>
               </div>
@@ -258,7 +258,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
           <div className="facet-hierarchy-child grid grid-cols-4 gap-2 rounded-xl p-3">
             {landArea != null && (
               <div className="text-center">
-                <div className="text-muted-foreground text-[10px]">Land Area</div>
+                <div className="text-muted-foreground text-xs">Land Area</div>
                 <div className="text-foreground text-xs font-semibold">
                   {landArea > 1000000
                     ? `${(landArea / 1000000).toFixed(2)}M km²`
@@ -270,7 +270,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {populationDensity != null && (
               <div className="text-center">
-                <div className="text-muted-foreground text-[10px]">Density</div>
+                <div className="text-muted-foreground text-xs">Density</div>
                 <div className="text-foreground text-xs font-semibold">
                   {populationDensity.toFixed(0)}/km²
                 </div>
@@ -278,7 +278,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {unemploymentRate != null && (
               <div className="text-center">
-                <div className="text-muted-foreground text-[10px]">Unemployment</div>
+                <div className="text-muted-foreground text-xs">Unemployment</div>
                 <div className="text-foreground text-xs font-semibold">
                   {(unemploymentRate * 100).toFixed(1)}%
                 </div>
@@ -286,7 +286,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {lifeExpectancy != null && (
               <div className="text-center">
-                <div className="text-muted-foreground text-[10px]">Life Exp.</div>
+                <div className="text-muted-foreground text-xs">Life Exp.</div>
                 <div className="text-foreground text-xs font-semibold">
                   {lifeExpectancy.toFixed(1)} yrs
                 </div>
@@ -388,7 +388,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
               <div className="space-y-2">
                 {indicators.map((ind) => (
                   <div key={ind.label} className="flex items-center gap-3">
-                    <span className="text-muted-foreground w-20 text-[10px]">{ind.label}</span>
+                    <span className="text-muted-foreground w-20 text-xs">{ind.label}</span>
                     <div className="bg-muted h-1.5 flex-1 overflow-hidden rounded-full">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-amber-600 to-yellow-500 transition-all duration-500 dark:from-amber-500 dark:to-yellow-400"
@@ -398,7 +398,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
                         }}
                       />
                     </div>
-                    <span className="text-foreground w-8 text-right text-[10px] font-medium">
+                    <span className="text-foreground w-8 text-right text-xs font-medium">
                       {Math.round(ind.value)}
                     </span>
                   </div>

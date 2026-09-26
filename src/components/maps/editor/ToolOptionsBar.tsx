@@ -167,7 +167,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
     return (
       <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-all duration-200 ease-out">
         <ToolLabel icon={Scissors} label="Split Subdivision" />
-        <span className="text-muted-foreground text-[11px]">
+        <span className="text-muted-foreground text-xs">
           Click on the map to draw a split-line slicing through the subdivision.
         </span>
         <div className={dividerClass} />
@@ -203,7 +203,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           <>
             <button
               onClick={props.onCreateCentroidCities}
-              className="flex h-6 items-center gap-1 rounded bg-emerald-500/10 px-1.5 text-[11px] text-emerald-500 hover:bg-emerald-500/20"
+              className="flex h-6 items-center gap-1 rounded bg-emerald-500/10 px-1.5 text-xs text-emerald-500 hover:bg-emerald-500/20"
               title="Create centroid-based cities in all empty regions"
             >
               <Sparkles className="h-3 w-3" /> Auto-Create Cities ({props.emptyRegionsCount})
@@ -215,7 +215,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {/* ── Select mode ── */}
       {mode === "view" && props.selectedCount! > 0 && (
         <>
-          <span className="text-foreground text-[11px] font-medium">
+          <span className="text-foreground text-xs font-medium">
             {props.selectedCount} selected
           </span>
           <div className={dividerClass} />
@@ -305,7 +305,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               className="border-border h-3 w-3 rounded"
             />
             <Crown className="h-3 w-3 text-amber-500" />
-            <span className="text-muted-foreground text-[11px]">Capital</span>
+            <span className="text-muted-foreground text-xs">Capital</span>
           </label>
           {mode === "edit-city" && (
             <>
@@ -406,7 +406,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {mode === "lasso-select" && (
         <>
           <ToolLabel icon={LassoSelect} label="Lasso Select" />
-          <span className="text-muted-foreground text-[11px]">
+          <span className="text-muted-foreground text-xs">
             Drag to select features. Freehand draws a loop; Rect draws a box. Shift = add, Alt =
             subtract.
           </span>
@@ -415,7 +415,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               <button
                 key={tool}
                 onClick={() => props.onLassoToolChange?.(tool)}
-                className={`h-5 rounded px-2 text-[10px] font-medium transition-colors ${
+                className={`h-5 rounded px-2 text-xs font-medium transition-colors ${
                   (props.lassoTool ?? "freehand") === tool
                     ? "bg-primary/15 text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -454,7 +454,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             ))}
           </select>
           <div className={dividerClass} />
-          <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
+          <span className="text-xs font-mono tabular-nums text-muted-foreground">
             {props.routeWaypointsCount ?? 0} waypoints
           </span>
           {props.onUndoRouteWaypoint && (props.routeWaypointsCount ?? 0) > 0 && (
@@ -475,18 +475,18 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         <>
           <ToolLabel icon={Route} label="Edit Route" />
           {props.editingRouteName && (
-            <span className="rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+            <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
               {props.editingRouteName}
             </span>
           )}
-          <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
+          <span className="text-xs font-mono tabular-nums text-muted-foreground">
             {props.editingRouteNodesCount ?? 0} nodes
           </span>
           <div className={dividerClass} />
           {props.onRouteEditCommit && (
             <button
               onClick={props.onRouteEditCommit}
-              className="flex items-center gap-1 rounded bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90"
+              className="flex items-center gap-1 rounded bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90"
               title="Save route geometry"
             >
               <Check className="h-3 w-3" /> Save Path
@@ -495,7 +495,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           {props.onRouteEditCancel && (
             <button
               onClick={props.onRouteEditCancel}
-              className="rounded px-2 py-1 text-[11px] font-medium text-muted-foreground transition active:scale-[0.98] hover:bg-accent hover:text-foreground"
+              className="rounded px-2 py-1 text-xs font-medium text-muted-foreground transition active:scale-[0.98] hover:bg-accent hover:text-foreground"
               title="Cancel route editing"
             >
               Cancel

@@ -60,7 +60,7 @@ function ExpandedViewComponent({
           </div>
           <button
             onClick={handleStopImpersonating}
-            className="rounded bg-red-600 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-red-700"
+            className="rounded bg-red-600 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-red-700"
           >
             Stop
           </button>

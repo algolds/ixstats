@@ -474,7 +474,7 @@ export default function RepositoryPage() {
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             {/* File Type Filter */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase select-none">
+              <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 Type:
               </span>
               <div
@@ -490,7 +490,7 @@ export default function RepositoryPage() {
                     aria-checked={fileTypeFilter === type}
                     onClick={() => setFileTypeFilter(type)}
                     className={cn(
-                      "rounded px-2 py-0.5 text-[10px] font-medium transition-all duration-150 active:scale-[0.97] select-none cursor-pointer uppercase",
+                      "rounded px-2 py-0.5 text-xs font-medium transition-all duration-150 active:scale-[0.97] select-none cursor-pointer uppercase",
                       fileTypeFilter === type
                         ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -504,7 +504,7 @@ export default function RepositoryPage() {
 
             {/* Orientation Filter */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase select-none">
+              <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 Orientation:
               </span>
               <div
@@ -520,7 +520,7 @@ export default function RepositoryPage() {
                     aria-checked={orientationFilter === orient}
                     onClick={() => setOrientationFilter(orient)}
                     className={cn(
-                      "rounded px-2 py-0.5 text-[10px] font-medium transition-all duration-150 active:scale-[0.97] select-none cursor-pointer",
+                      "rounded px-2 py-0.5 text-xs font-medium transition-all duration-150 active:scale-[0.97] select-none cursor-pointer",
                       orientationFilter === orient
                         ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -544,7 +544,7 @@ export default function RepositoryPage() {
             <button
               type="button"
               onClick={handleClearFilters}
-              className="cursor-pointer text-[11px] font-medium text-muted-foreground hover:text-foreground active:scale-[0.97] transition-all underline underline-offset-2"
+              className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.97] transition-all underline underline-offset-2"
             >
               Clear Filters
             </button>
@@ -554,7 +554,7 @@ export default function RepositoryPage() {
         {/* Starter Category Exploration Chips when cold start */}
         {tab === "commons" && !isSearchMode && !browsingCategory && (
           <div className="mb-3 flex flex-wrap items-center gap-1.5 px-1 py-1">
-            <span className="flex items-center gap-1 text-[10px] font-semibold tracking-wider text-[var(--wikios-text-dim)] uppercase mr-1">
+            <span className="flex items-center gap-1 text-xs font-semibold tracking-wider text-[var(--wikios-text-dim)] uppercase mr-1">
               <Sparkles className="h-3 w-3 text-amber-400" />
               Quick Explore:
             </span>
@@ -562,7 +562,7 @@ export default function RepositoryPage() {
               <button
                 key={cat.category}
                 onClick={() => handleBrowseCategory(cat.category)}
-                className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium text-[var(--wikios-text-muted)] hover:border-blue-500/30 hover:bg-blue-500/10 hover:text-blue-400 active:scale-95 transition-all"
+                className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-[var(--wikios-text-muted)] hover:border-blue-500/30 hover:bg-blue-500/10 hover:text-blue-400 active:scale-95 transition-all"
               >
                 {cat.label}
               </button>

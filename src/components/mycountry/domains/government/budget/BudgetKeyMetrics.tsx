@@ -21,7 +21,7 @@ export function BudgetKeyMetrics({
       <div className="bg-card/40 rounded-2xl border border-white/10 p-4 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Total Budget
             </p>
             <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400 tabular-nums">
@@ -31,7 +31,7 @@ export function BudgetKeyMetrics({
           <DollarSign className="h-6 w-6 shrink-0 text-emerald-400" />
         </div>
         <div className="mt-2">
-          <p className="text-muted-foreground font-mono text-[11px] tabular-nums">
+          <p className="text-muted-foreground font-mono text-xs tabular-nums">
             {formatCurrency(budgetSummary.totalBudget)}
           </p>
         </div>
@@ -40,7 +40,7 @@ export function BudgetKeyMetrics({
       <div className="bg-card/40 rounded-2xl border border-white/10 p-4 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Allocated
             </p>
             <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400 tabular-nums">
@@ -50,7 +50,7 @@ export function BudgetKeyMetrics({
           <Target className="h-6 w-6 shrink-0 text-cyan-400" />
         </div>
         <div className="mt-2">
-          <p className="text-muted-foreground font-mono text-[11px] tabular-nums">
+          <p className="text-muted-foreground font-mono text-xs tabular-nums">
             {budgetSummary.totalBudget > 0
               ? ((budgetSummary.totalAllocated / budgetSummary.totalBudget) * 100).toFixed(1)
               : 0}
@@ -62,7 +62,7 @@ export function BudgetKeyMetrics({
       <div className="bg-card/40 rounded-2xl border border-white/10 p-4 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Utilized
             </p>
             <p className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400 tabular-nums">
@@ -72,7 +72,7 @@ export function BudgetKeyMetrics({
           <TrendingUp className="h-6 w-6 shrink-0 text-amber-400" />
         </div>
         <div className="mt-2">
-          <p className="text-muted-foreground font-mono text-[11px] tabular-nums">
+          <p className="text-muted-foreground font-mono text-xs tabular-nums">
             {budgetSummary.utilizationRate.toFixed(1)}% utilization
           </p>
         </div>
@@ -81,7 +81,7 @@ export function BudgetKeyMetrics({
       <div className="bg-card/40 rounded-2xl border border-white/10 p-4 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Revenue
             </p>
             <p className="mt-1 font-mono text-xl font-bold tracking-tight text-indigo-400 tabular-nums">
@@ -91,7 +91,7 @@ export function BudgetKeyMetrics({
           <BarChart3 className="h-6 w-6 shrink-0 text-indigo-400" />
         </div>
         <div className="mt-2">
-          <p className="text-muted-foreground font-mono text-[11px] tabular-nums">
+          <p className="text-muted-foreground font-mono text-xs tabular-nums">
             {revenueSummary.totalTaxRevenue > 0
               ? ((revenueSummary.totalTaxRevenue / revenueSummary.totalRevenue) * 100).toFixed(1)
               : 0}

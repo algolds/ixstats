@@ -294,13 +294,13 @@ export function LoreImportDrawer({
             ) : isSearchError ? (
               <div className="text-destructive flex h-48 flex-col items-center justify-center p-4 text-center text-xs">
                 <p>Failed to search {SOURCE_CONFIGS[source].name}.</p>
-                <p className="text-muted-foreground mt-1 text-[11px]">Please try again.</p>
+                <p className="text-muted-foreground mt-1 text-xs">Please try again.</p>
               </div>
             ) : !searchResults?.items || searchResults.items.length === 0 ? (
               <div className="text-muted-foreground flex h-48 flex-col items-center justify-center p-4 text-center text-xs">
                 <BookOpen className="mb-2 h-6 w-6 opacity-30" />
                 <p>No results found for &quot;{debouncedQuery}&quot;</p>
-                <p className="text-muted-foreground/70 mt-1 text-[11px]">Try another keyword.</p>
+                <p className="text-muted-foreground/70 mt-1 text-xs">Try another keyword.</p>
               </div>
             ) : (
               searchResults.items.map((item, idx) => {
@@ -339,12 +339,12 @@ export function LoreImportDrawer({
                       <div className="flex w-full items-center justify-between gap-1.5">
                         <span className="truncate text-xs font-semibold">{item.title}</span>
                         {"stashName" in item && Boolean((item as any).stashName) && (
-                          <Badge variant="secondary" className="shrink-0 px-1.5 py-0 text-[10px]">
+                          <Badge variant="secondary" className="shrink-0 px-1.5 py-0 text-xs">
                             {(item as any).stashName}
                           </Badge>
                         )}
                       </div>
-                      <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[11px] leading-relaxed">
+                      <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs leading-relaxed">
                         {item.snippet}
                       </p>
                     </div>
@@ -394,7 +394,7 @@ export function LoreImportDrawer({
                       <div className="flex items-center gap-2">
                         <Tag className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                         <div className="truncate">
-                          <div className="text-muted-foreground text-[10px]">Category</div>
+                          <div className="text-muted-foreground text-xs">Category</div>
                           <div className="text-foreground truncate font-medium">
                             {activeMetadata.subcategory}
                           </div>
@@ -404,7 +404,7 @@ export function LoreImportDrawer({
                       <div className="flex items-center gap-2">
                         <Coins className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                         <div>
-                          <div className="text-muted-foreground text-[10px]">Catalog Value</div>
+                          <div className="text-muted-foreground text-xs">Catalog Value</div>
                           <div className="text-foreground flex items-center gap-1 font-mono font-medium">
                             <IxCreditsSymbol className="h-3 w-3 shrink-0" />
                             {activeMetadata.marketValue.toLocaleString()}
@@ -415,7 +415,7 @@ export function LoreImportDrawer({
                       <div className="flex items-center gap-2">
                         <FileText className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                         <div>
-                          <div className="text-muted-foreground text-[10px]">Artwork</div>
+                          <div className="text-muted-foreground text-xs">Artwork</div>
                           <div className="text-foreground font-medium">
                             {activeMetadata.hasImage ? "Wiki Image" : "Procedural"}
                           </div>
@@ -441,11 +441,11 @@ export function LoreImportDrawer({
                       <div className="min-w-0 flex-1">
                         <div className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
                           <span>Wiki Article Image Detected</span>
-                          <Badge variant="secondary" className="px-1.5 py-0 text-[9px]">
+                          <Badge variant="secondary" className="px-1.5 py-0 text-xs">
                             Auto-Import
                           </Badge>
                         </div>
-                        <p className="text-muted-foreground mt-0.5 truncate font-mono text-[11px]">
+                        <p className="text-muted-foreground mt-0.5 truncate font-mono text-xs">
                           {activeMetadata.imageUrl}
                         </p>
                       </div>
@@ -459,7 +459,7 @@ export function LoreImportDrawer({
                       <label className="text-muted-foreground text-xs font-medium">
                         Wikitext Excerpt
                       </label>
-                      <span className="text-muted-foreground text-[10px]">MediaWiki Parser</span>
+                      <span className="text-muted-foreground text-xs">MediaWiki Parser</span>
                     </div>
 
                     <div className="border-border bg-card text-foreground max-h-52 overflow-y-auto rounded-lg border p-3.5 text-xs leading-relaxed">

@@ -102,7 +102,7 @@ export function DiplomaticScenariosHeader({
 
       {/* Advanced Tag Filter Pills */}
       <div className="flex flex-wrap items-center gap-1.5 pt-1">
-        <span className="text-muted-foreground mr-1 text-[11px] font-medium">Filter by:</span>
+        <span className="text-muted-foreground mr-1 text-xs font-medium">Filter by:</span>
 
         {/* Relationship filters */}
         {RELATIONSHIP_LEVELS.map((rel) => {

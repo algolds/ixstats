@@ -203,7 +203,7 @@ export function GovernmentSpendingModal({
                   <div className="text-lg font-bold text-blue-400">
                     ${((fiscal?.governmentRevenueTotal || 0) / 1e9).toFixed(1)}B
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
                     Tax Revenue
                   </div>
                 </div>
@@ -211,7 +211,7 @@ export function GovernmentSpendingModal({
                   <div className="text-lg font-bold text-green-400">
                     {(fiscal?.taxRevenueGDPPercent || 0).toFixed(1)}%
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
                     Revenue % GDP
                   </div>
                 </div>
@@ -225,7 +225,7 @@ export function GovernmentSpendingModal({
                     ).toFixed(1)}
                     B
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
                     Public Debt
                   </div>
                 </div>
@@ -233,7 +233,7 @@ export function GovernmentSpendingModal({
                   <div className="text-lg font-bold text-red-400">
                     {(fiscal?.totalDebtGDPRatio || 0).toFixed(1)}%
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
                     Debt to GDP
                   </div>
                 </div>
@@ -507,7 +507,7 @@ export function GovernmentSpendingModal({
               <span className="text-xl font-bold text-amber-500">
                 {spendingGdpPercent <= globalAvgSpending ? "Efficient" : "Above Avg"}
               </span>
-              <span className="text-muted-foreground mt-1 text-[10px]">
+              <span className="text-muted-foreground mt-1 text-xs">
                 Spending: {spendingGdpPercent.toFixed(1)}% vs {globalAvgSpending}% global avg
               </span>
             </div>
@@ -518,7 +518,7 @@ export function GovernmentSpendingModal({
               <span className="text-xl font-bold text-green-400">
                 {debtToGdp < 60 ? "Healthy" : debtToGdp < 100 ? "Moderate" : "High"}
               </span>
-              <span className="text-muted-foreground mt-1 text-[10px]">
+              <span className="text-muted-foreground mt-1 text-xs">
                 Public Debt: {debtToGdp.toFixed(1)}% of GDP
               </span>
             </div>
@@ -534,7 +534,7 @@ export function GovernmentSpendingModal({
               >
                 {budgetBalance >= 0 ? "Surplus" : "Deficit"}
               </span>
-              <span className="text-muted-foreground mt-1 text-[10px]">
+              <span className="text-muted-foreground mt-1 text-xs">
                 Annual Balance: {(budgetBalance / 1e9).toFixed(1)}B
               </span>
             </div>
@@ -657,7 +657,7 @@ export function GovernmentSpendingModal({
           <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
             <CardHeader className="mb-4 p-0">
               <CardTitle className="text-sm font-semibold">Priority Spending</CardTitle>
-              <CardDescription className="text-[10px]">
+              <CardDescription className="text-xs">
                 Key budget policies and priorities
               </CardDescription>
             </CardHeader>

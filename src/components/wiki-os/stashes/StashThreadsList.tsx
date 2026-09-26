@@ -41,7 +41,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
                   <h3 className="truncate text-sm font-bold tracking-tight text-[var(--wikios-text)] transition-colors group-hover/title:text-orange-400">
                     {cleanTitle}
                   </h3>
-                  <div className="flex items-center gap-2 pt-0.5 text-[11px] text-[var(--wikios-text-dim)]">
+                  <div className="flex items-center gap-2 pt-0.5 text-xs text-[var(--wikios-text-dim)]">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {new Date(item.savedAt).toLocaleDateString("en-US", {
@@ -50,7 +50,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
                         year: "numeric",
                       })}
                     </span>
-                    <span className="py-0.2 rounded-md border border-orange-500/25 bg-orange-500/15 px-1.5 text-[9px] font-bold tracking-wider text-orange-400 uppercase">
+                    <span className="py-0.2 rounded-md border border-orange-500/25 bg-orange-500/15 px-1.5 text-xs font-bold tracking-wider text-orange-400 uppercase">
                       Forum
                     </span>
                   </div>

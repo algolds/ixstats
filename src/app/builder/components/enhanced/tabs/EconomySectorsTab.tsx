@@ -378,7 +378,7 @@ export function EconomySectorsTab({
                   <p className="text-foreground text-xs font-medium">
                     Sectors Analysis & Rationale:
                   </p>
-                  <ul className="list-inside list-disc space-y-1 text-[11px] text-zinc-400">
+                  <ul className="list-inside list-disc space-y-1 text-xs text-zinc-400">
                     {gdpValid && employmentValid ? (
                       <li className="text-emerald-400">
                         ✓ Ratios perfectly balanced! Rationale checks out.

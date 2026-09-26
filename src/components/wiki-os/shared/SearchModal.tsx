@@ -110,7 +110,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
             autoComplete="off"
             spellCheck={false}
           />
-          <kbd className="hidden shrink-0 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] text-[var(--wikios-text-dim)] sm:inline">
+          <kbd className="hidden shrink-0 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-xs text-[var(--wikios-text-dim)] sm:inline">
             ESC
           </kbd>
         </div>
@@ -141,7 +141,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
                   </span>
                   {item.snippet && (
                     <span
-                      className="mt-0.5 line-clamp-1 text-[11px] text-[var(--wikios-text-dim)] [&_.searchmatch]:font-semibold [&_.searchmatch]:text-[var(--wikios-text)]"
+                      className="mt-0.5 line-clamp-1 text-xs text-[var(--wikios-text-dim)] [&_.searchmatch]:font-semibold [&_.searchmatch]:text-[var(--wikios-text)]"
                       dangerouslySetInnerHTML={{ __html: item.snippet }}
                     />
                   )}

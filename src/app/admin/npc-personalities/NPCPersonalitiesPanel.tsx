@@ -276,7 +276,7 @@ export function NPCPersonalitiesPanel() {
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 backdrop-blur-md">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Archetypes
           </div>
           <div className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
@@ -284,7 +284,7 @@ export function NPCPersonalitiesPanel() {
           </div>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 backdrop-blur-md">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Active Profiles
           </div>
           <div className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-500">
@@ -292,7 +292,7 @@ export function NPCPersonalitiesPanel() {
           </div>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 backdrop-blur-md">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Assignments
           </div>
           <div className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-500">
@@ -300,7 +300,7 @@ export function NPCPersonalitiesPanel() {
           </div>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 backdrop-blur-md">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Filtered Roster
           </div>
           <div className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-500">
@@ -389,18 +389,18 @@ export function NPCPersonalitiesPanel() {
                   <td className="px-4 py-2.5">
                     <div className="text-foreground font-semibold">{p.name}</div>
                     {p.historicalBasis && (
-                      <div className="text-muted-foreground max-w-xs truncate text-[11px]">
+                      <div className="text-muted-foreground max-w-xs truncate text-xs">
                         {p.historicalBasis}
                       </div>
                     )}
                   </td>
                   <td className="px-4 py-2.5">
-                    <span className="inline-block rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-medium text-cyan-400 capitalize">
+                    <span className="inline-block rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-xs font-medium text-cyan-400 capitalize">
                       {p.archetype.replace(/_/g, " ")}
                     </span>
                   </td>
                   <td className="px-4 py-2.5">
-                    <div className="text-muted-foreground flex items-center gap-3 font-mono text-[11px]">
+                    <div className="text-muted-foreground flex items-center gap-3 font-mono text-xs">
                       <span>
                         Mil:{" "}
                         <strong className="text-foreground">{p.traits?.militarism ?? 50}%</strong>
@@ -424,11 +424,11 @@ export function NPCPersonalitiesPanel() {
                   </td>
                   <td className="px-4 py-2.5">
                     {p.isActive ? (
-                      <Badge className="border-emerald-500/20 bg-emerald-500/10 text-[10px] font-semibold text-emerald-400">
+                      <Badge className="border-emerald-500/20 bg-emerald-500/10 text-xs font-semibold text-emerald-400">
                         Active
                       </Badge>
                     ) : (
-                      <Badge className="bg-muted/50 text-muted-foreground border-border text-[10px]">
+                      <Badge className="bg-muted/50 text-muted-foreground border-border text-xs">
                         Inactive
                       </Badge>
                     )}

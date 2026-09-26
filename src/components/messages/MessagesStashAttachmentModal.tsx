@@ -144,11 +144,11 @@ export function MessagesStashAttachmentModal({
                         <p className="truncate text-xs font-semibold text-slate-200 group-hover:text-white">
                           {item.pageTitle}
                         </p>
-                        <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                        <p className="mt-0.5 truncate text-xs text-slate-400">
                           /wiki/{item.pageSlug}
                         </p>
                       </div>
-                      <span className="flex shrink-0 items-center gap-1 text-[10px] font-semibold text-indigo-400 opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-indigo-400 opacity-0 transition-opacity group-hover:opacity-100">
                         Attach Link <ArrowRight className="h-3 w-3" />
                       </span>
                     </button>
@@ -177,7 +177,7 @@ export function MessagesStashAttachmentModal({
                         <p className="truncate text-xs font-semibold text-slate-200 group-hover:text-white">
                           {stash.name}
                         </p>
-                        <p className="mt-0.5 text-[10px] text-slate-400">
+                        <p className="mt-0.5 text-xs text-slate-400">
                           {stash.itemCount} {stash.itemCount === 1 ? "item" : "items"}
                         </p>
                       </div>

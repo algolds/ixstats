@@ -294,7 +294,7 @@ export default function ReferenceDataPage() {
                             <h3 className="text-foreground group-hover:text-primary text-xs font-semibold tracking-tight transition-colors">
                               {type.label}
                             </h3>
-                            <p className="text-muted-foreground mt-0.5 line-clamp-1 text-[11px]">
+                            <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
                               {type.description}
                             </p>
                           </div>
@@ -304,7 +304,7 @@ export default function ReferenceDataPage() {
 
                       {/* Count badge */}
                       {count != null ? (
-                        <div className="border-border/20 mt-3 flex items-center justify-between border-t pt-2 text-[11px]">
+                        <div className="border-border/20 mt-3 flex items-center justify-between border-t pt-2 text-xs">
                           <span className="text-muted-foreground">Records</span>
                           <span className="text-foreground font-mono font-bold">
                             {count.toLocaleString()}

@@ -175,7 +175,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                   </div>
                   <span
                     className={cn(
-                      "text-[10px] font-bold tracking-tight transition-colors",
+                      "text-xs font-bold tracking-tight transition-colors",
                       step === s.number ? "text-poll font-extrabold" : "text-muted-foreground"
                     )}
                   >

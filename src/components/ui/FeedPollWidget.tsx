@@ -205,7 +205,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
             )}
 
             {!isSignedIn && (
-              <p className="text-muted-foreground/60 mt-3 text-center text-[11px]">
+              <p className="text-muted-foreground/60 mt-3 text-center text-xs">
                 Sign in to participate in this poll
               </p>
             )}
@@ -277,7 +277,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
       </FeatureVoting.Root>
 
       {!isSignedIn && (
-        <p className="text-muted-foreground/60 mt-3 text-center text-[11px]">
+        <p className="text-muted-foreground/60 mt-3 text-center text-xs">
           Sign in to upvote features
         </p>
       )}

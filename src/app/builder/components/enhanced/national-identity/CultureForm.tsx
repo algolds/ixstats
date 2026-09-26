@@ -300,7 +300,7 @@ export const CultureForm = React.memo(
                   <Sparkles className="text-muted-foreground h-4 w-4" />
                   National Motto
                 </label>
-                <p className="text-muted-foreground text-[11px] leading-tight">
+                <p className="text-muted-foreground text-xs leading-tight">
                   The primary rallying cry or constitutional motto of your people
                 </p>
                 <Input
@@ -330,7 +330,7 @@ export const CultureForm = React.memo(
                   <Music className="text-muted-foreground h-4 w-4" />
                   National Anthem
                 </label>
-                <p className="text-muted-foreground text-[11px] leading-tight">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Title of the solemn or celebratory state anthem
                 </p>
                 <Input
@@ -346,7 +346,7 @@ export const CultureForm = React.memo(
                   <Heart className="text-muted-foreground h-4 w-4" />
                   Primary / State Religion
                 </label>
-                <p className="text-muted-foreground text-[11px] leading-tight">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Major religious tradition or secular constitutional designation
                 </p>
                 <Input
@@ -453,7 +453,7 @@ export const CultureForm = React.memo(
                           Custom Currency Symbol
                         </label>
                       </div>
-                      <p className="text-muted-foreground text-[11px]">
+                      <p className="text-muted-foreground text-xs">
                         Symbol placed before amounts (e.g. ₮, ℳ, ©, Cr)
                       </p>
                     </div>
@@ -516,7 +516,7 @@ export const CultureForm = React.memo(
             {unrevealedSymbols.length > 0 && !showAllMotifs && (
               <div className="border-border/20 pt-3 border-t space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-[11px] font-medium">
+                  <span className="text-muted-foreground text-xs font-medium">
                     Add More Cultural Motifs:
                   </span>
                 </div>

@@ -149,7 +149,7 @@ export function MyCountrySidebarNav({
         <CrownIcon className="h-3.5 w-3.5 shrink-0 text-amber-500" />
         <span className="whitespace-nowrap">Overview</span>
         {isPremium && (
-          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 text-[9px] font-bold tracking-wider text-amber-500/90 uppercase">
+          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 text-xs font-bold tracking-wider text-amber-500/90 uppercase">
             Premium
           </span>
         )}
@@ -260,7 +260,7 @@ export function MyCountrySidebarNav({
         <CrownIcon className="h-4 w-4 shrink-0 text-amber-500" />
         <span className="truncate font-semibold">MyCountry</span>
         {isPremium && (
-          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 py-0.5 text-[9px] font-bold tracking-wider text-amber-500/95 uppercase">
+          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 py-0.5 text-xs font-bold tracking-wider text-amber-500/95 uppercase">
             Premium
           </span>
         )}
@@ -312,7 +312,7 @@ export function MyCountrySidebarNav({
           const badge = noteCount > 0 && (
             <span
               className={cn(
-                "ml-auto inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] leading-none font-bold",
+                "ml-auto inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-xs leading-none font-bold",
                 isActive ? "bg-white/25 text-white" : "bg-amber-500 text-white"
               )}
             >
@@ -372,7 +372,7 @@ export function MyCountrySidebarNav({
       <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/logo:opacity-100">
         <span>Overview</span>
         {isPremium && (
-          <span className="rounded bg-amber-500/15 px-1 text-[10px] font-bold tracking-wider text-amber-500 uppercase">
+          <span className="rounded bg-amber-500/15 px-1 text-xs font-bold tracking-wider text-amber-500 uppercase">
             Premium
           </span>
         )}

@@ -98,7 +98,7 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
               />
               <div>
                 <div className="text-xs font-semibold text-[var(--wikios-text)]">{item.label}</div>
-                <div className="mt-0.5 text-[9px] leading-tight text-[var(--wikios-text-dim)]">
+                <div className="mt-0.5 text-xs leading-tight text-[var(--wikios-text-dim)]">
                   {item.desc}
                 </div>
               </div>

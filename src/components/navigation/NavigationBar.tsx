@@ -64,7 +64,7 @@ const DesktopNavItem = React.memo(function DesktopNavItem({
                       <div className="relative">
                         <SubIcon className="text-muted-foreground h-4 w-4" />
                         {isMessages && messageUnreadCount > 0 && (
-                          <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
+                          <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-0.5 text-xs font-bold text-white">
                             {messageUnreadCount > 9 ? "9+" : messageUnreadCount}
                           </span>
                         )}
@@ -78,7 +78,7 @@ const DesktopNavItem = React.memo(function DesktopNavItem({
                         )}
                       </div>
                       {isMessages && messageUnreadCount > 0 && (
-                        <span className="shrink-0 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        <span className="shrink-0 rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white">
                           {messageUnreadCount}
                         </span>
                       )}

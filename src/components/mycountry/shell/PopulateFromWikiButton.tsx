@@ -63,7 +63,7 @@ export function PopulateFromWikiButton({
         }
         disabled={mutate.isPending}
         title={`Pull population, leader, and other attributes from the linked wiki page (${wikiTitle ?? "entity name"}).`}
-        className="text-muted-foreground hover:text-foreground hover:bg-accent flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors disabled:opacity-50"
+        className="text-muted-foreground hover:text-foreground hover:bg-accent flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium transition-colors disabled:opacity-50"
       >
         {mutate.isPending ? (
           <Loader2 className="h-3 w-3 animate-spin" />
@@ -92,7 +92,7 @@ function WikiParseResult({
 
   return (
     <div
-      className={`mt-1.5 flex flex-col gap-1 rounded-md border px-2 py-1.5 text-[10px] ${
+      className={`mt-1.5 flex flex-col gap-1 rounded-md border px-2 py-1.5 text-xs ${
         isError
           ? "border-red-500/30 bg-red-500/10 text-red-400"
           : hardMismatches.length > 0
@@ -139,14 +139,14 @@ function WikiParseResult({
               <div className="font-medium">
                 {hardMismatches.length} hard contradiction
                 {hardMismatches.length === 1 ? "" : "s"} (wiki differs from stored value):
-                <ul className="mt-1 space-y-0.5 pl-3 text-[10px] font-normal">
+                <ul className="mt-1 space-y-0.5 pl-3 text-xs font-normal">
                   {hardMismatches.map((a) => (
                     <li key={a.field} className="flex flex-wrap items-baseline gap-1.5">
                       <span className="text-foreground/80 font-medium">{a.label}:</span>
                       <span className="line-through opacity-70">{formatVal(a.oldValue)}</span>
                       <span>→</span>
                       <span className="font-semibold">{formatVal(a.newValue)}</span>
-                      <span className="text-muted-foreground/70 text-[9px]">(from {a.source})</span>
+                      <span className="text-muted-foreground/70 text-xs">(from {a.source})</span>
                     </li>
                   ))}
                 </ul>
@@ -158,7 +158,7 @@ function WikiParseResult({
               </div>
             )}
             {result.templateName && (
-              <div className="text-muted-foreground/60 font-mono text-[9px]">
+              <div className="text-muted-foreground/60 font-mono text-xs">
                 via {result.templateName} on {result.wikiTitle}
               </div>
             )}

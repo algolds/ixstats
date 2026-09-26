@@ -367,7 +367,7 @@ function ExecutiveOpportunityHeroComponent({
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={cn(
-                    "flex items-center rounded-full border px-3 py-1 text-[10px] font-extrabold tracking-wider uppercase shadow-2xs backdrop-blur-md",
+                    "flex items-center rounded-full border px-3 py-1 text-xs font-extrabold tracking-wider uppercase shadow-2xs backdrop-blur-md",
                     opportunity.badgeCls
                   )}
                 >
@@ -375,7 +375,7 @@ function ExecutiveOpportunityHeroComponent({
                 </span>
 
                 {opportunity.metricLabel && opportunity.metricValue && (
-                  <span className="border-border/60 bg-card/60 text-muted-foreground rounded-full border px-2.5 py-1 font-mono text-[10px] font-semibold shadow-2xs dark:border-white/10 dark:bg-white/5">
+                  <span className="border-border/60 bg-card/60 text-muted-foreground rounded-full border px-2.5 py-1 font-mono text-xs font-semibold shadow-2xs dark:border-white/10 dark:bg-white/5">
                     {opportunity.metricLabel}:{" "}
                     <strong className="text-foreground">{opportunity.metricValue}</strong>
                   </span>

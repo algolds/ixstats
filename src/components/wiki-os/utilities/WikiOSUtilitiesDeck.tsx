@@ -97,7 +97,7 @@ export function WikiOSUtilitiesDeck({
                 <Icon className="h-3.5 w-3.5" />
                 <span>{dom.label}</span>
                 <span
-                  className={`py-0.2 rounded-full px-1.5 text-[10px] ${
+                  className={`py-0.2 rounded-full px-1.5 text-xs ${
                     isSelected
                       ? "bg-black/20 font-bold text-black"
                       : "bg-muted text-muted-foreground"
@@ -133,7 +133,7 @@ export function WikiOSUtilitiesDeck({
               <X className="h-3.5 w-3.5" />
             </button>
           ) : (
-            <kbd className="text-muted-foreground/60 border-border/40 bg-secondary/50 py-0.2 pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 rounded border px-1 font-mono text-[9px]">
+            <kbd className="text-muted-foreground/60 border-border/40 bg-secondary/50 py-0.2 pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 rounded border px-1 font-mono text-xs">
               /
             </kbd>
           )}

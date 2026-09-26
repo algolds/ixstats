@@ -78,7 +78,7 @@ export default function ContributionsHubPage() {
                   <UserIcon className="h-4 w-4 text-emerald-500" />
                   <div className="text-left">
                     <div className="text-foreground text-xs font-bold">{activeUser}</div>
-                    <div className="text-muted-foreground text-[10px]">
+                    <div className="text-muted-foreground text-xs">
                       {contribs.length} recorded edits
                     </div>
                   </div>
@@ -125,7 +125,7 @@ export default function ContributionsHubPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-2 px-1">
               <Clock className="h-4 w-4 text-emerald-500" />
-              <h2 className="text-foreground text-sm text-[11px] font-bold tracking-tight tracking-wider uppercase">
+              <h2 className="text-foreground text-sm text-xs font-bold tracking-tight tracking-wider uppercase">
                 Revision History for {activeUser} ({contribs.length})
               </h2>
             </div>
@@ -139,12 +139,12 @@ export default function ContributionsHubPage() {
                   <div className="flex min-w-0 items-start gap-3 sm:items-center">
                     <div className="flex shrink-0 items-center gap-1">
                       {c.isNew && (
-                        <span className="rounded border border-emerald-500/20 bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-500">
+                        <span className="rounded border border-emerald-500/20 bg-emerald-500/15 px-1.5 py-0.5 text-xs font-bold text-emerald-500">
                           NEW
                         </span>
                       )}
                       {c.minor && (
-                        <span className="rounded border border-blue-500/20 bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-bold text-blue-500">
+                        <span className="rounded border border-blue-500/20 bg-blue-500/15 px-1.5 py-0.5 text-xs font-bold text-blue-500">
                           m
                         </span>
                       )}
@@ -160,7 +160,7 @@ export default function ContributionsHubPage() {
                         {c.title}
                       </Link>
                       {c.comment && (
-                        <p className="text-muted-foreground mt-0.5 line-clamp-1 text-[11px] italic">
+                        <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs italic">
                           &ldquo;{c.comment}&rdquo;
                         </p>
                       )}
@@ -168,10 +168,10 @@ export default function ContributionsHubPage() {
                   </div>
 
                   <div className="flex shrink-0 items-center gap-3 text-xs">
-                    <span className="text-muted-foreground font-mono text-[10px] tabular-nums">
+                    <span className="text-muted-foreground font-mono text-xs tabular-nums">
                       {c.size.toLocaleString()} bytes
                     </span>
-                    <span className="text-muted-foreground text-[10px]">
+                    <span className="text-muted-foreground text-xs">
                       {new Date(c.timestamp).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -181,7 +181,7 @@ export default function ContributionsHubPage() {
                     {!c.isNew && (
                       <Link
                         href={withBasePath(`/wiki/diff?to=${c.revid}`)}
-                        className="bg-muted hover:bg-muted/80 text-foreground inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors"
+                        className="bg-muted hover:bg-muted/80 text-foreground inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors"
                       >
                         <GitCommit className="text-muted-foreground h-3 w-3" />
                         <span>diff</span>

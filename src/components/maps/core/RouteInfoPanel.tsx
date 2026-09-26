@@ -272,12 +272,12 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, c
             </h3>
           )}
           <div className="mt-0.5 flex items-center gap-1.5">
-            <span className="text-muted-foreground text-[10px]">{typeMeta.label}</span>
+            <span className="text-muted-foreground text-xs">{typeMeta.label}</span>
             {editing ? (
               <select
                 value={editStatus}
                 onChange={(e) => setEditStatus(e.target.value)}
-                className="border-border bg-background rounded border px-1 py-0.5 text-[10px] focus:outline-none"
+                className="border-border bg-background rounded border px-1 py-0.5 text-xs focus:outline-none"
               >
                 <option value="planned">Planned</option>
                 <option value="under_construction">Under Construction</option>
@@ -285,7 +285,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, c
                 <option value="abandoned">Abandoned</option>
               </select>
             ) : (
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${statusClass}`}>
+              <span className={`rounded-full px-1.5 py-0.5 text-xs font-medium ${statusClass}`}>
                 {route.status.replace("_", " ")}
               </span>
             )}
@@ -355,7 +355,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, c
                 className="border-border bg-background w-20 rounded border px-1.5 py-0.5 text-right font-mono text-xs tabular-nums focus:outline-none"
                 placeholder={String(baseSpeed)}
               />
-              <span className="text-muted-foreground text-[10px]">km/h</span>
+              <span className="text-muted-foreground text-xs">km/h</span>
             </div>
           </div>
         ) : (
@@ -366,7 +366,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, c
             <div className="flex items-center gap-1.5 font-mono tabular-nums">
               <span className="font-medium">{Math.round(travelTime.effectiveSpeedKmh)} km/h</span>
               {travelTime.terrainDragFactor < 1 && (
-                <span className="text-[10px] text-amber-500/80">
+                <span className="text-xs text-amber-500/80">
                   ({Math.round(baseSpeed)} base)
                 </span>
               )}
@@ -429,9 +429,9 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, c
           <span className="font-medium capitalize text-foreground">{modalFamily} Logistics</span>
         </div>
         {intermodalBadge && (
-          <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-1.5 text-[11px] text-cyan-400">
+          <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-1.5 text-xs text-cyan-400">
             <span className="font-semibold">{intermodalBadge.title}</span>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{intermodalBadge.detail}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{intermodalBadge.detail}</p>
           </div>
         )}
       </div>
@@ -439,7 +439,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, c
       {/* Stops */}
       {Boolean(route.stopsResolved && route.stopsResolved.length > 0) && (
         <div className="border-border border-t px-4 py-3">
-          <div className="text-muted-foreground mb-1.5 text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wider uppercase">
             Stops ({route.stopsResolved.length})
           </div>
           <div className="space-y-1">
@@ -450,7 +450,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, c
                   {stop.cityName ?? stop.name ?? `Stop ${i + 1}`}
                 </span>
                 {Boolean(stop.cityPopulation) && (
-                  <span className="text-muted-foreground text-[10px] font-mono tabular-nums">
+                  <span className="text-muted-foreground text-xs font-mono tabular-nums">
                     {Number(stop.cityPopulation).toLocaleString()}
                   </span>
                 )}
@@ -486,7 +486,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, c
             </div>
           ) : confirmingDelete ? (
             <div className="flex w-full items-center justify-between gap-2">
-              <span className="text-[11px] font-medium text-destructive">Delete route?</span>
+              <span className="text-xs font-medium text-destructive">Delete route?</span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => {

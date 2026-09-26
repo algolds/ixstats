@@ -41,7 +41,7 @@ export function SettingsGroup({
       </div>
 
       {footer && (
-        <div className="text-muted-foreground/60 px-2 pt-1 text-[11px] font-medium">{footer}</div>
+        <div className="text-muted-foreground/60 px-2 pt-1 text-xs font-medium">{footer}</div>
       )}
     </div>
   );

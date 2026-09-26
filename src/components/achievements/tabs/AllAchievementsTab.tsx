@@ -231,7 +231,7 @@ function GroupedSeriesCard({
             {/* Rarity & Tier Badge */}
             <span
               className={cn(
-                "flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase backdrop-blur-md transition-colors",
+                "flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-xs font-bold uppercase backdrop-blur-md transition-colors",
                 tierConfig.bg
               )}
             >
@@ -241,7 +241,7 @@ function GroupedSeriesCard({
 
             {/* Ultra-Rare Diamond Pill */}
             {isUltraRare && (
-              <span className="flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 font-mono text-[9px] font-extrabold text-cyan-600 uppercase shadow-sm backdrop-blur-md dark:text-cyan-300">
+              <span className="flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 font-mono text-xs font-extrabold text-cyan-600 uppercase shadow-sm backdrop-blur-md dark:text-cyan-300">
                 <Diamond className="h-3 w-3 animate-pulse text-cyan-500 dark:text-cyan-300" />
                 <span>{activeLevel.globalUnlockPercent}% Ultra-Rare</span>
               </span>
@@ -251,7 +251,7 @@ function GroupedSeriesCard({
           {/* Category Tag with Icon */}
           <span
             className={cn(
-              "flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-extrabold tracking-wider uppercase backdrop-blur-md",
+              "flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-extrabold tracking-wider uppercase backdrop-blur-md",
               categoryTheme.badge
             )}
           >
@@ -320,7 +320,7 @@ function GroupedSeriesCard({
         {item.isSeries && item.levels.length > 1 && (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground text-[10px] font-bold uppercase">Tiers:</span>
+              <span className="text-muted-foreground text-xs font-bold uppercase">Tiers:</span>
               <div className="border-border/60 bg-muted/40 flex items-center gap-1 rounded-xl border p-0.5 shadow-inner backdrop-blur-md">
                 {item.levels.map((lvl: any, idx: number) => {
                   const lvlUnlocked = lvl.isUnlocked;
@@ -341,7 +341,7 @@ function GroupedSeriesCard({
                         setInspectedIndex(idx);
                       }}
                       className={cn(
-                        "relative flex h-6 min-w-[24px] items-center justify-center rounded-lg px-1.5 font-mono text-[10px] font-bold transition-all select-none",
+                        "relative flex h-6 min-w-[24px] items-center justify-center rounded-lg px-1.5 font-mono text-xs font-bold transition-all select-none",
                         isCurrent
                           ? "bg-foreground text-background shadow-md"
                           : lvlUnlocked
@@ -363,7 +363,7 @@ function GroupedSeriesCard({
               </div>
             </div>
 
-            <span className="text-muted-foreground font-mono text-[10px] font-semibold">
+            <span className="text-muted-foreground font-mono text-xs font-semibold">
               {item.unlockedCount} / {item.totalLevels} Mastered
             </span>
           </div>
@@ -389,14 +389,14 @@ function GroupedSeriesCard({
             {/* Clean Points Badge without '+' symbol */}
             <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-xs font-bold text-emerald-600 tabular-nums shadow-sm backdrop-blur-md select-none dark:text-emerald-400">
               <span>{activeLevel.points || 10}</span>
-              <span className="text-[9px] font-semibold tracking-wider text-emerald-600/80 uppercase dark:text-emerald-400/80">
+              <span className="text-xs font-semibold tracking-wider text-emerald-600/80 uppercase dark:text-emerald-400/80">
                 pts
               </span>
             </div>
           </div>
 
           {/* Date Details */}
-          <div className="text-muted-foreground text-right text-[10px]">
+          <div className="text-muted-foreground text-right text-xs">
             {isUnlocked && activeLevel.unlockedAt ? (
               <span className="text-foreground font-mono font-bold tabular-nums">
                 Unlocked{" "}
@@ -516,7 +516,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
                     key={r}
                     onClick={() => setSelectedRarity(r)}
                     className={cn(
-                      "relative flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] font-bold capitalize transition-all duration-200 select-none active:scale-95",
+                      "relative flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-xs font-bold capitalize transition-all duration-200 select-none active:scale-95",
                       isSelected ? config.textColor : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -536,7 +536,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
                     <span className="relative z-10">{config.label}</span>
                     <span
                       className={cn(
-                        "py-0.2 relative z-10 rounded-full px-1.5 font-mono text-[9px] font-bold tabular-nums transition-colors",
+                        "py-0.2 relative z-10 rounded-full px-1.5 font-mono text-xs font-bold tabular-nums transition-colors",
                         isSelected
                           ? "bg-background/80 text-foreground shadow-xs"
                           : "bg-muted/60 text-muted-foreground"
@@ -554,7 +554,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
               <button
                 onClick={() => setViewMode("grid")}
                 className={cn(
-                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-[10px] font-bold transition-all active:scale-95",
+                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-xs font-bold transition-all active:scale-95",
                   viewMode === "grid"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -567,7 +567,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
               <button
                 onClick={() => setViewMode("list")}
                 className={cn(
-                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-[10px] font-bold transition-all active:scale-95",
+                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-xs font-bold transition-all active:scale-95",
                   viewMode === "list"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -612,7 +612,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
                 <Award className="h-5 w-5 text-amber-500 dark:text-amber-400" />
               </div>
               <h3 className="text-foreground text-xs font-bold">No Matching Series</h3>
-              <p className="text-muted-foreground text-[11px] leading-relaxed">
+              <p className="text-muted-foreground text-xs leading-relaxed">
                 Try adjusting your search query or rarity filter.
               </p>
             </div>

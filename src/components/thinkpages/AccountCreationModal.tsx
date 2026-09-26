@@ -344,7 +344,7 @@ export function AccountCreationModal({
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span className="text-xs font-medium sm:text-sm">Account Limit Reached</span>
                   </div>
-                  <p className="mt-1 pl-6 text-[10px] text-[var(--color-error)]/80 sm:pl-7 sm:text-xs">
+                  <p className="mt-1 pl-6 text-xs text-[var(--color-error)]/80 sm:pl-7 sm:text-xs">
                     You have reached the maximum of {maxAccounts} accounts. Delete an existing
                     account to create a new one.
                   </p>

@@ -106,7 +106,7 @@ export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberPr
         aria-label="Historical timeline scrubber"
       />
 
-      <div className="mt-2 flex items-center justify-between text-[10px] text-white/50">
+      <div className="mt-2 flex items-center justify-between text-xs text-white/50">
         <span>{IxTime.formatIxTime(minTime)}</span>
         <span className="mx-2 truncate" title={label}>
           {label}
@@ -114,7 +114,7 @@ export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberPr
         <span>{IxTime.formatIxTime(maxTime)}</span>
       </div>
 
-      <p className="mt-2 text-[10px] leading-snug text-white/40">
+      <p className="mt-2 text-xs leading-snug text-white/40">
         Shows the political layer as of the selected date. Snapshots reflect editor history;
         countries without edits show their current border at every date.
       </p>

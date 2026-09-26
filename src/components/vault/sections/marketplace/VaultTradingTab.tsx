@@ -103,7 +103,7 @@ export function VaultTradingTab() {
             <TextureOverlay texture="dots" opacity={0.03} />
             <stat.icon className={cn("relative z-10 h-4 w-4 shrink-0", stat.color)} />
             <div className="relative z-10 min-w-0 flex-1">
-              <p className="text-muted-foreground truncate text-[8px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground truncate text-xs font-semibold tracking-wider uppercase">
                 {stat.label}
               </p>
               <p
@@ -129,7 +129,7 @@ export function VaultTradingTab() {
             >
               <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" /> Active Offer List
               {activeTrades && activeTrades.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-blue-500 px-1.5 py-0 text-[8px] leading-none font-bold text-white">
+                <span className="ml-1.5 rounded-full bg-blue-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
                   {activeTrades.length}
                 </span>
               )}
@@ -140,7 +140,7 @@ export function VaultTradingTab() {
             >
               <Inbox className="mr-1.5 h-3.5 w-3.5" /> Incoming Offers
               {incomingTrades.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-green-500 px-1.5 py-0 text-[8px] leading-none font-bold text-white">
+                <span className="ml-1.5 rounded-full bg-green-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
                   {incomingTrades.length}
                 </span>
               )}
@@ -151,7 +151,7 @@ export function VaultTradingTab() {
             >
               <Send className="mr-1.5 h-3.5 w-3.5" /> Sent Offers
               {outgoingTrades.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0 text-[8px] leading-none font-bold text-white">
+                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
                   {outgoingTrades.length}
                 </span>
               )}
@@ -182,7 +182,7 @@ export function VaultTradingTab() {
               <div className="border-border/50 flex flex-col items-center justify-center rounded-lg border border-dashed py-10">
                 <ArrowRightLeft className="text-muted-foreground/30 mb-3 h-10 w-10" />
                 <p className="text-foreground/80 text-xs font-bold">No Active Trades</p>
-                <p className="text-muted-foreground mt-0.5 mb-3 text-[10px]">
+                <p className="text-muted-foreground mt-0.5 mb-3 text-xs">
                   Start trading by creating a new offer
                 </p>
                 <Button
@@ -210,7 +210,7 @@ export function VaultTradingTab() {
               <div className="border-border/50 flex flex-col items-center justify-center rounded-lg border border-dashed py-10">
                 <Inbox className="text-muted-foreground/30 mb-3 h-10 w-10" />
                 <p className="text-foreground/80 text-xs font-bold">No Incoming Trades</p>
-                <p className="text-muted-foreground mt-0.5 text-[10px]">
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   You don't have any trade offers to review
                 </p>
               </div>
@@ -231,7 +231,7 @@ export function VaultTradingTab() {
               <div className="border-border/50 flex flex-col items-center justify-center rounded-lg border border-dashed py-10">
                 <Send className="text-muted-foreground/30 mb-3 h-10 w-10" />
                 <p className="text-foreground/80 text-xs font-bold">No Outgoing Trades</p>
-                <p className="text-muted-foreground mt-0.5 mb-3 text-[10px]">
+                <p className="text-muted-foreground mt-0.5 mb-3 text-xs">
                   You haven't sent any trade offers yet
                 </p>
                 <Button

@@ -208,7 +208,7 @@ export function WikiOSLayout({
           <PopoverTrigger asChild>
             <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 opacity-80 transition-all duration-200 select-none hover:opacity-100 active:scale-95">
               <WikiOSLogomark className="h-7 w-auto text-zinc-900 transition-transform duration-300 group-hover:scale-105 dark:text-zinc-100" />
-              <div className="text-muted-foreground/70 group-hover:text-muted-foreground flex items-center gap-1.5 text-[11px] font-[var(--wikios-font-brand)] font-medium tracking-wide">
+              <div className="text-muted-foreground/70 group-hover:text-muted-foreground flex items-center gap-1.5 text-xs font-[var(--wikios-font-brand)] font-medium tracking-wide">
                 <span className="text-foreground/80 group-hover:text-foreground font-semibold">
                   Powered by wikiOS
                 </span>
@@ -230,7 +230,7 @@ export function WikiOSLayout({
           </PopoverContent>
         </Popover>
 
-        <div className="text-muted-foreground/60 flex items-center justify-center gap-4 text-[11px] font-[var(--wikios-font-ui)]">
+        <div className="text-muted-foreground/60 flex items-center justify-center gap-4 text-xs font-[var(--wikios-font-ui)]">
           <Link href="/terms" className="transition-colors hover:text-amber-400">
             Terms of Service
           </Link>

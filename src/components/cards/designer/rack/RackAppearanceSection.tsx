@@ -29,7 +29,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
             <span>Card Artwork & Media</span>
           </div>
           {state.artworkUrl && (
-            <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-[11px]">
+            <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs">
               <input
                 type="checkbox"
                 checked={state.enableArtwork}
@@ -58,7 +58,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                     ? "Wiki Article Artwork"
                     : "Custom Artwork"}
                 </div>
-                <div className="text-muted-foreground truncate font-mono text-[10px]">
+                <div className="text-muted-foreground truncate font-mono text-xs">
                   {state.artworkUrl}
                 </div>
               </div>
@@ -125,7 +125,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
               variant="outline"
               size="sm"
               onClick={() => onOpenIconBrowser("emblem")}
-              className="h-6 gap-1 px-2 text-[10px]"
+              className="h-6 gap-1 px-2 text-xs"
             >
               <Library className="text-primary h-3 w-3" />
               4,100+ Icons
@@ -150,19 +150,19 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                 variant="ghost"
                 size="sm"
                 onClick={() => onChange((p) => ({ ...p, emblemIcon: null }))}
-                className="text-muted-foreground hover:text-destructive h-5 px-1 text-[10px]"
+                className="text-muted-foreground hover:text-destructive h-5 px-1 text-xs"
               >
                 Reset
               </Button>
             </div>
           ) : (
-            <div className="text-muted-foreground text-[11px] italic">
+            <div className="text-muted-foreground text-xs italic">
               Default {getCategoryLabel(state.category)} Sigil
             </div>
           )}
 
           <div className="flex items-center gap-2 pt-1">
-            <span className="text-muted-foreground shrink-0 text-[11px]">Scale:</span>
+            <span className="text-muted-foreground shrink-0 text-xs">Scale:</span>
             <input
               type="range"
               min="0.5"
@@ -172,7 +172,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
               onChange={(e) => onChange((p) => ({ ...p, emblemScale: Number(e.target.value) }))}
               className="bg-muted accent-primary h-1 flex-1 rounded-lg"
             />
-            <span className="text-foreground w-7 text-right font-mono text-[11px]">
+            <span className="text-foreground w-7 text-right font-mono text-xs">
               {state.emblemScale.toFixed(2)}x
             </span>
           </div>
@@ -180,8 +180,8 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
           {/* Emblem Color Swatches */}
           <div className="border-border/40 space-y-1.5 border-t pt-2">
             <div className="flex items-center justify-between">
-              <span className="text-foreground text-[11px] font-semibold">Emblem Color</span>
-              <span className="text-primary font-mono text-[10px]">
+              <span className="text-foreground text-xs font-semibold">Emblem Color</span>
+              <span className="text-primary font-mono text-xs">
                 {state.emblemColor ? state.emblemColor.toUpperCase() : "Auto"}
               </span>
             </div>
@@ -228,7 +228,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
               variant="outline"
               size="sm"
               onClick={() => onOpenIconBrowser("watermark")}
-              className="h-6 gap-1 px-2 text-[10px]"
+              className="h-6 gap-1 px-2 text-xs"
             >
               <Library className="text-primary h-3 w-3" />
               Open
@@ -253,19 +253,19 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                 variant="ghost"
                 size="sm"
                 onClick={() => onChange((p) => ({ ...p, watermarkIcon: null }))}
-                className="text-muted-foreground hover:text-destructive h-5 px-1 text-[10px]"
+                className="text-muted-foreground hover:text-destructive h-5 px-1 text-xs"
               >
                 Reset
               </Button>
             </div>
           ) : (
-            <div className="text-muted-foreground text-[11px] italic">
+            <div className="text-muted-foreground text-xs italic">
               Default {getCategoryLabel(state.category)} Watermark
             </div>
           )}
 
           <div className="flex items-center gap-2 pt-1">
-            <span className="text-muted-foreground shrink-0 text-[11px]">Opacity:</span>
+            <span className="text-muted-foreground shrink-0 text-xs">Opacity:</span>
             <input
               type="range"
               min="0.05"
@@ -277,7 +277,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
               }
               className="bg-muted accent-primary h-1 flex-1 rounded-lg"
             />
-            <span className="text-foreground w-7 text-right font-mono text-[11px]">
+            <span className="text-foreground w-7 text-right font-mono text-xs">
               {Math.round(state.watermarkOpacity * 100)}%
             </span>
           </div>
@@ -285,8 +285,8 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
           {/* Watermark Color Swatches */}
           <div className="border-border/40 space-y-1.5 border-t pt-2">
             <div className="flex items-center justify-between">
-              <span className="text-foreground text-[11px] font-semibold">Watermark Color</span>
-              <span className="text-primary font-mono text-[10px]">
+              <span className="text-foreground text-xs font-semibold">Watermark Color</span>
+              <span className="text-primary font-mono text-xs">
                 {state.watermarkColor ? state.watermarkColor.toUpperCase() : "Auto"}
               </span>
             </div>
@@ -330,7 +330,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
       <div className="border-border flex items-center justify-between border-t pt-2">
         <div>
           <span className="text-foreground block text-xs font-medium">Custom Hue Override</span>
-          <span className="text-muted-foreground text-[10px]">
+          <span className="text-muted-foreground text-xs">
             Overrides base material gradient hue
           </span>
         </div>

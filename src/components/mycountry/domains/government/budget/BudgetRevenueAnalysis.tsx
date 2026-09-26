@@ -38,7 +38,7 @@ export function BudgetRevenueAnalysis({
           <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-xl border p-3">
             <div>
               <p className="text-foreground text-xs font-semibold">Tax Revenue</p>
-              <p className="text-muted-foreground text-[11px]">Direct & Indirect Taxes</p>
+              <p className="text-muted-foreground text-xs">Direct & Indirect Taxes</p>
             </div>
             <div className="text-right">
               <p className="font-mono text-base font-bold text-emerald-400 tabular-nums">
@@ -53,7 +53,7 @@ export function BudgetRevenueAnalysis({
           <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-xl border p-3">
             <div>
               <p className="text-foreground text-xs font-semibold">Non-Tax Revenue</p>
-              <p className="text-muted-foreground text-[11px]">Fees, Fines & Other Sources</p>
+              <p className="text-muted-foreground text-xs">Fees, Fines & Other Sources</p>
             </div>
             <div className="text-right">
               <p className="font-mono text-base font-bold text-cyan-400 tabular-nums">
@@ -83,19 +83,19 @@ export function BudgetRevenueAnalysis({
               className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2"
             >
               <div className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/20 text-[10px] font-semibold text-emerald-400 tabular-nums">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-400 tabular-nums">
                   {index + 1}
                 </span>
                 <div>
                   <p className="text-foreground text-xs font-semibold">{source.name}</p>
-                  <p className="text-muted-foreground text-[10px]">{source.category}</p>
+                  <p className="text-muted-foreground text-xs">{source.category}</p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-foreground font-mono text-xs font-semibold tabular-nums">
                   {formatNumber(source.revenueAmount ?? 0)}
                 </p>
-                <p className="text-muted-foreground font-mono text-[10px] tabular-nums">
+                <p className="text-muted-foreground font-mono text-xs tabular-nums">
                   {(source.revenuePercent ?? 0).toFixed(1)}%
                 </p>
               </div>

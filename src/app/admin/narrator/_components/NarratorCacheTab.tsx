@@ -44,7 +44,7 @@ export function NarratorCacheTab() {
       {/* Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Cached Cards
           </p>
           {isLoading ? (
@@ -57,7 +57,7 @@ export function NarratorCacheTab() {
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Cache Hits
           </p>
           {isLoading ? (
@@ -70,7 +70,7 @@ export function NarratorCacheTab() {
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Avg Hits per Card
           </p>
           {isLoading ? (
@@ -90,7 +90,7 @@ export function NarratorCacheTab() {
             <Database className="h-4 w-4 text-amber-400" />
             <h3 className="text-foreground text-xs font-bold">Cache Policy & Storage</h3>
           </div>
-          <p className="text-muted-foreground mt-0.5 text-[11px]">
+          <p className="text-muted-foreground mt-0.5 text-xs">
             To prevent quota drainage and API rate limits, flavor text descriptions are cached for
             14 days in the database. Clearing the cache forces new narrative cards to generate on
             demand.
@@ -103,7 +103,7 @@ export function NarratorCacheTab() {
               <AlertTriangle className="h-4 w-4" />
               Flush AI Narrator Cache
             </h4>
-            <p className="text-muted-foreground mt-0.5 max-w-xl text-[11px]">
+            <p className="text-muted-foreground mt-0.5 max-w-xl text-xs">
               Deletes all database cache entries with the flavor prefix. This will force subsequent
               requests to load directly from the LLM provider.
             </p>

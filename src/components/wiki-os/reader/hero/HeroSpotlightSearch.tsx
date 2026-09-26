@@ -221,7 +221,7 @@ export function HeroSpotlightSearch({
             <X className="h-3.5 w-3.5" />
           </button>
         ) : (
-          <kbd className="border-border/80 bg-background/80 text-muted-foreground hidden shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-medium shadow-2xs sm:inline-flex">
+          <kbd className="border-border/80 bg-background/80 text-muted-foreground hidden shrink-0 rounded-md border px-1.5 py-0.5 text-xs font-medium shadow-2xs sm:inline-flex">
             ⌘K
           </kbd>
         )}
@@ -238,7 +238,7 @@ export function HeroSpotlightSearch({
             className="absolute top-full right-0 left-0 z-50 mt-2 min-w-[320px] overflow-hidden rounded-2xl border border-black/[0.08] bg-white/95 p-1.5 shadow-2xl backdrop-blur-2xl dark:border-white/[0.1] dark:bg-zinc-950/95"
           >
             {/* Header / Results Count */}
-            <div className="text-muted-foreground border-border/40 mb-1 flex items-center justify-between border-b px-2.5 py-1.5 text-[10px] font-semibold tracking-wider uppercase">
+            <div className="text-muted-foreground border-border/40 mb-1 flex items-center justify-between border-b px-2.5 py-1.5 text-xs font-semibold tracking-wider uppercase">
               <span>
                 {isLoading
                   ? "Searching encyclopedia..."
@@ -273,7 +273,7 @@ export function HeroSpotlightSearch({
                       Create new page: &ldquo;
                       <span className="text-foreground">{query.trim()}</span>&rdquo;
                     </span>
-                    <span className="text-muted-foreground/80 block text-[10px]">
+                    <span className="text-muted-foreground/80 block text-xs">
                       Start writing in WikiOS visual & source editor
                     </span>
                   </div>
@@ -354,13 +354,13 @@ export function HeroSpotlightSearch({
                               {displayTitle}
                             </span>
                             {isCat && (
-                              <span className="py-0.2 rounded bg-amber-500/15 px-1.5 text-[9px] font-medium text-amber-600 dark:text-amber-400">
+                              <span className="py-0.2 rounded bg-amber-500/15 px-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
                                 Category
                               </span>
                             )}
                           </div>
                           {snippet ? (
-                            <p className="text-muted-foreground mt-0.5 truncate text-[11px] leading-tight">
+                            <p className="text-muted-foreground mt-0.5 truncate text-xs leading-tight">
                               {snippet}
                             </p>
                           ) : null}

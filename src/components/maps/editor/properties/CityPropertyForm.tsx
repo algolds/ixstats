@@ -115,7 +115,7 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
           <div className="flex items-center justify-between">
             <label className={labelClasses}>Elevation (m)</label>
             {derivedFromZone && sampleTerrain.data && (
-              <span className="text-muted-foreground text-[10px]">
+              <span className="text-muted-foreground text-xs">
                 from zone: {sampleTerrain.data.zoneName}
               </span>
             )}
@@ -144,7 +144,7 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
                   elevation: sampleTerrain.data?.midpoint ?? form.elevation,
                 })
               }
-              className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-colors disabled:opacity-50"
+              className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-xs font-medium transition-colors disabled:opacity-50"
             >
               {sampleTerrain.isFetching ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

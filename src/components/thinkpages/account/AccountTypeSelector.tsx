@@ -93,7 +93,7 @@ export function AccountTypeSelector({
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold tracking-tight text-white">{type.label}</span>
-                  <span className="text-[10px] font-semibold text-slate-400">
+                  <span className="text-xs font-semibold text-slate-400">
                     Max {type.maxAccounts} accounts
                   </span>
                 </div>
@@ -102,7 +102,7 @@ export function AccountTypeSelector({
                   {type.examples.map((ex, i) => (
                     <span
                       key={i}
-                      className="rounded-md border border-white/10 bg-black/40 px-2 py-0.5 text-[9px] font-medium text-slate-300"
+                      className="rounded-md border border-white/10 bg-black/40 px-2 py-0.5 text-xs font-medium text-slate-300"
                     >
                       {ex}
                     </span>

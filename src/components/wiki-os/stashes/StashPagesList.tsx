@@ -78,7 +78,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
                   <h3 className="truncate text-sm font-bold tracking-tight text-[var(--wikios-text)] transition-colors group-hover/title:text-[var(--wikios-accent)]">
                     {cleanTitle}
                   </h3>
-                  <div className="flex flex-wrap items-center gap-2.5 pt-0.5 text-[11px] text-[var(--wikios-text-dim)]">
+                  <div className="flex flex-wrap items-center gap-2.5 pt-0.5 text-xs text-[var(--wikios-text-dim)]">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {new Date(item.savedAt).toLocaleDateString("en-US", {
@@ -88,13 +88,13 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
                       })}
                     </span>
                     {annotations.length > 0 && (
-                      <span className="py-0.2 bg-margin-accent/15 dark:text-margin-accent flex items-center gap-1 rounded-md border border-yellow-400/40 px-2 text-[10px] font-bold text-stone-950">
+                      <span className="py-0.2 bg-margin-accent/15 dark:text-margin-accent flex items-center gap-1 rounded-md border border-yellow-400/40 px-2 text-xs font-bold text-stone-950">
                         <Highlighter className="h-2.5 w-2.5" />
                         {annotations.length} highlight{annotations.length !== 1 ? "s" : ""}
                       </span>
                     )}
                     {item.note && (
-                      <span className="py-0.2 flex items-center gap-1 rounded-md border border-indigo-500/30 bg-indigo-500/15 px-2 text-[10px] font-bold text-indigo-400">
+                      <span className="py-0.2 flex items-center gap-1 rounded-md border border-indigo-500/30 bg-indigo-500/15 px-2 text-xs font-bold text-indigo-400">
                         <StickyNote className="h-2.5 w-2.5" />
                         Note
                       </span>

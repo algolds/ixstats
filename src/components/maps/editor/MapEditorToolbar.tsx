@@ -231,14 +231,14 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
 
                     {!isToolDisabled && activePopoverGroupId !== item.id && (
                       <div
-                        className={`bg-popover/90 text-popover-foreground ring-border/50 pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 backdrop-blur-md group-hover:block ${
+                        className={`bg-popover/90 text-popover-foreground ring-border/50 pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-xs font-medium whitespace-nowrap shadow-md ring-1 backdrop-blur-md group-hover:block ${
                           horizontal
                             ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
                             : "top-1/2 left-full ml-1.5 -translate-y-1/2"
                         }`}
                       >
                         {activeTool.label}
-                        <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-[10px]">
+                        <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-xs">
                           {activeTool.shortcut}
                         </span>
                       </div>
@@ -274,7 +274,7 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
                             <span>{subTool.label}</span>
                           </div>
                           <span
-                            className={`rounded px-1 py-0.5 font-mono text-[9px] ${
+                            className={`rounded px-1 py-0.5 font-mono text-xs ${
                               isSubActive
                                 ? "bg-primary-foreground/20 text-primary-foreground"
                                 : "bg-muted text-muted-foreground"
@@ -323,14 +323,14 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
 
                 {!isToolDisabled && (
                   <div
-                    className={`bg-popover/90 text-popover-foreground ring-border/50 pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 backdrop-blur-md group-hover:block ${
+                    className={`bg-popover/90 text-popover-foreground ring-border/50 pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-xs font-medium whitespace-nowrap shadow-md ring-1 backdrop-blur-md group-hover:block ${
                       horizontal
                         ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
                         : "top-1/2 left-full ml-1.5 -translate-y-1/2"
                     }`}
                   >
                     {tool.label}
-                    <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-[10px]">
+                    <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-xs">
                       {tool.shortcut}
                     </span>
                   </div>

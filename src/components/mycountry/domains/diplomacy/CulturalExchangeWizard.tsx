@@ -403,7 +403,7 @@ export function CulturalExchangeWizard({
                       >
                         <div className="pointer-events-none flex flex-col items-center gap-1 text-center">
                           <Icon className={cn("h-4 w-4", config.color)} />
-                          <span className="text-foreground text-[10px] leading-tight font-medium">
+                          <span className="text-foreground text-xs leading-tight font-medium">
                             {config.label}
                           </span>
                         </div>
@@ -461,7 +461,7 @@ export function CulturalExchangeWizard({
                               >
                                 <div className="pointer-events-none flex flex-col items-center gap-1 text-center">
                                   <Icon className={cn("h-4 w-4", config.color)} />
-                                  <span className="text-foreground text-[10px] leading-tight font-medium">
+                                  <span className="text-foreground text-xs leading-tight font-medium">
                                     {config.label}
                                   </span>
                                 </div>

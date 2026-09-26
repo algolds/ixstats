@@ -20,7 +20,7 @@ export function FeedGroupedDrawer({ subEdits, isWiki, className }: FeedGroupedDr
     <div className={cn("pt-1", className)}>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[10px] font-medium tracking-tight transition-all duration-150 active:scale-[0.96]"
+        className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-medium tracking-tight transition-all duration-150 active:scale-[0.96]"
       >
         <ChevronDown
           className={cn("h-3 w-3 transition-transform duration-200", expanded && "rotate-180")}
@@ -39,7 +39,7 @@ export function FeedGroupedDrawer({ subEdits, isWiki, className }: FeedGroupedDr
             return (
               <div
                 key={i}
-                className="text-muted-foreground flex items-center justify-between py-0.5 text-[10px] tracking-tight"
+                className="text-muted-foreground flex items-center justify-between py-0.5 text-xs tracking-tight"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-1.5 truncate">
                   <span className="text-foreground shrink-0 font-semibold">

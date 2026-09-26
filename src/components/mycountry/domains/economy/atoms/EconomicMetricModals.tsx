@@ -225,7 +225,7 @@ export function EconomicMetricModals({
                               <p className="text-xs font-semibold text-foreground">
                                 {component1.name} + {component2.name}
                               </p>
-                              <p className="mt-0.5 text-[10px] text-green-500">
+                              <p className="mt-0.5 text-xs text-green-500">
                                 {synergy.description}
                               </p>
                             </div>
@@ -267,7 +267,7 @@ export function EconomicMetricModals({
                               <p className="text-xs font-semibold text-foreground">
                                 {component1.name} vs {component2.name}
                               </p>
-                              <p className="mt-0.5 text-[10px] text-red-500">
+                              <p className="mt-0.5 text-xs text-red-500">
                                 {conflict.description}
                               </p>
                             </div>
@@ -292,7 +292,7 @@ export function EconomicMetricModals({
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 text-center">
                 <div className="space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                     Base Score
                   </p>
                   <p className="text-xl font-extrabold text-foreground">
@@ -300,7 +300,7 @@ export function EconomicMetricModals({
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                     Synergy Bonus
                   </p>
                   <p className="text-xl font-extrabold text-green-500">
@@ -308,7 +308,7 @@ export function EconomicMetricModals({
                   </p>
                 </div>
                 <div className="mt-2 space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                     Conflict Penalty
                   </p>
                   <p className="text-xl font-extrabold text-red-500">
@@ -316,7 +316,7 @@ export function EconomicMetricModals({
                   </p>
                 </div>
                 <div className="mt-2 space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                     Total Score
                   </p>
                   <p className="text-xl font-extrabold text-emerald-500">
@@ -357,7 +357,7 @@ export function EconomicMetricModals({
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 text-center">
                 <div className="space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-emerald-500 uppercase">
+                  <p className="text-xs font-bold tracking-wider text-emerald-500 uppercase">
                     Implementation
                   </p>
                   <p className="font-mono text-xl font-bold text-foreground tabular-nums">
@@ -365,7 +365,7 @@ export function EconomicMetricModals({
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-amber-500 uppercase">
+                  <p className="text-xs font-bold tracking-wider text-amber-500 uppercase">
                     Annual Maintenance
                   </p>
                   <p className="font-mono text-xl font-bold text-foreground tabular-nums">
@@ -391,7 +391,7 @@ export function EconomicMetricModals({
                           <span className="font-semibold text-foreground">
                             {comp.name}
                           </span>
-                          <span className="text-[10px] text-muted-foreground capitalize">
+                          <span className="text-xs text-muted-foreground capitalize">
                             {comp.category}
                           </span>
                         </div>

@@ -159,7 +159,7 @@ export function ActiveCountryUnifiedWidget({
           <span className="block truncate text-xs font-semibold text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)]">
             {countryName}
           </span>
-          <span className="block text-[9px] leading-tight text-[var(--wikios-text-dim)]">
+          <span className="block text-xs leading-tight text-[var(--wikios-text-dim)]">
             {isOwnCountry ? "MyCountry" : "MyCountry Actions"}
           </span>
         </button>
@@ -176,7 +176,7 @@ export function ActiveCountryUnifiedWidget({
               <h4 className="text-foreground truncate text-xs leading-tight font-bold">
                 {countryName}
               </h4>
-              <p className="text-muted-foreground text-[9px] leading-tight">
+              <p className="text-muted-foreground text-xs leading-tight">
                 {activeCountry.continent ? String(activeCountry.continent) : ""}{" "}
                 {isOwnCountry ? "(MyCountry)" : "(MyCountry Actions)"}
               </p>
@@ -184,7 +184,7 @@ export function ActiveCountryUnifiedWidget({
           </div>
 
           {/* Base Stats */}
-          <div className="space-y-1.5 text-[10px]">
+          <div className="space-y-1.5 text-xs">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Population:</span>
               <span className="text-foreground font-semibold">
@@ -232,10 +232,10 @@ export function ActiveCountryUnifiedWidget({
           {/* Vitality Summary */}
           {rings && (
             <div className="mt-2.5 border-t border-white/5 pt-2.5">
-              <div className="mb-1.5 text-[9px] font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
+              <div className="mb-1.5 text-xs font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
                 Vitality Indices
               </div>
-              <div className="grid grid-cols-2 gap-1.5 text-[9px]">
+              <div className="grid grid-cols-2 gap-1.5 text-xs">
                 <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Econ:</span>
                   <span className="font-bold text-emerald-400">{rings.economicVitality}</span>
@@ -263,7 +263,7 @@ export function ActiveCountryUnifiedWidget({
                 setPopoverOpen(false);
                 setActionsMenuOpen(true);
               }}
-              className="flex w-full items-center justify-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-300 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-300 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
               type="button"
             >
               {isOwnCountry ? "Manage Country" : "Country Actions"}

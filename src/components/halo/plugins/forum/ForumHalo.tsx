@@ -34,7 +34,7 @@ function ForumBreadcrumb() {
       </PreText>
       {unreadAlerts > 0 && (
         <PreText
-          className="flex h-3.5 min-w-3.5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1 text-[8px] font-bold text-white"
+          className="flex h-3.5 min-w-3.5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1 text-xs font-bold text-white"
           whiteSpace="nowrap"
         >
           {String(unreadAlerts)}

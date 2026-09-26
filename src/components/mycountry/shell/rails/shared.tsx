@@ -36,10 +36,10 @@ export function DomainKpiGrid({ items }: { items: Kpi[] }) {
           className="rounded-xl border border-white/5 bg-white/[0.02] p-2.5 text-center backdrop-blur-md"
         >
           <p className="text-foreground text-sm font-bold tabular-nums">{item.value}</p>
-          <p className="text-muted-foreground/70 mt-0.5 text-[9px] font-medium tracking-wider uppercase">
+          <p className="text-muted-foreground/70 mt-0.5 text-xs font-medium tracking-wider uppercase">
             {item.label}
           </p>
-          {item.sub && <p className="text-muted-foreground mt-0.5 text-[10px]">{item.sub}</p>}
+          {item.sub && <p className="text-muted-foreground mt-0.5 text-xs">{item.sub}</p>}
         </div>
       ))}
     </div>
@@ -69,14 +69,14 @@ export function DomainActivityCard({
             {title}
           </h4>
         </div>
-        <span className="text-muted-foreground/60 rounded-full border border-white/10 px-1.5 py-0.5 text-[9px] font-bold">
+        <span className="text-muted-foreground/60 rounded-full border border-white/10 px-1.5 py-0.5 text-xs font-bold">
           {recent.length}
         </span>
       </div>
 
       <div className="mt-3 space-y-1.5">
         {recent.length === 0 && (
-          <p className="text-muted-foreground rounded-lg border border-dashed border-white/10 bg-white/[0.01] px-3 py-5 text-center text-[11px] leading-relaxed">
+          <p className="text-muted-foreground rounded-lg border border-dashed border-white/10 bg-white/[0.01] px-3 py-5 text-center text-xs leading-relaxed">
             {emptyMessage}
           </p>
         )}
@@ -84,8 +84,8 @@ export function DomainActivityCard({
           <div key={e.id} className="flex items-start gap-2 py-1">
             <e.icon className={cn("mt-0.5 h-3 w-3 shrink-0", e.iconColor)} />
             <div className="min-w-0 flex-1">
-              <p className="line-clamp-1 text-[11px] leading-snug">{e.text}</p>
-              <span className="text-muted-foreground text-[10px]">{timeAgo(e.time)}</span>
+              <p className="line-clamp-1 text-xs leading-snug">{e.text}</p>
+              <span className="text-muted-foreground text-xs">{timeAgo(e.time)}</span>
             </div>
           </div>
         ))}

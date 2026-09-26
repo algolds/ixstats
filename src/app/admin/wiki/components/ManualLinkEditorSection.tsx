@@ -116,7 +116,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
                     className="hover:bg-muted/50 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-xs font-medium"
                   >
                     <span>{c.name}</span>
-                    <span className="text-muted-foreground font-mono text-[10px]">
+                    <span className="text-muted-foreground font-mono text-xs">
                       {c.id.slice(0, 8)}...
                     </span>
                   </button>
@@ -216,7 +216,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
                   Article found
                 </div>
                 {testResult.intro && (
-                  <p className="text-muted-foreground line-clamp-3 text-[11px]">
+                  <p className="text-muted-foreground line-clamp-3 text-xs">
                     {testResult.intro}
                   </p>
                 )}

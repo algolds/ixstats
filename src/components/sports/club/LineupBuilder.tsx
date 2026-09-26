@@ -134,7 +134,7 @@ export function LineupBuilder({
             Starting XI
             <Badge
               variant="outline"
-              className="border-border text-muted-foreground ml-2 text-[10px]"
+              className="border-border text-muted-foreground ml-2 text-xs"
             >
               {starterCount} selected
             </Badge>
@@ -170,7 +170,7 @@ export function LineupBuilder({
                     )}
                   >
                     {player.number && (
-                      <span className="text-muted-foreground w-5 text-center text-[10px] font-bold tabular-nums">
+                      <span className="text-muted-foreground w-5 text-center text-xs font-bold tabular-nums">
                         #{player.number}
                       </span>
                     )}
@@ -185,14 +185,14 @@ export function LineupBuilder({
                         <PositionTooltip position={player.position}>
                           <Badge
                             variant="outline"
-                            className="border-border text-muted-foreground cursor-help rounded px-1 py-0 text-[9px]"
+                            className="border-border text-muted-foreground cursor-help rounded px-1 py-0 text-xs"
                           >
                             {player.position}
                           </Badge>
                         </PositionTooltip>
                         <span
                           className={cn(
-                            "text-[10px] font-bold",
+                            "text-xs font-bold",
                             ovr >= 80
                               ? "text-amber-400"
                               : ovr >= 70

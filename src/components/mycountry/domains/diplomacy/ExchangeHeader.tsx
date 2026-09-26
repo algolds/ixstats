@@ -62,7 +62,7 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
                   </div>
                 ))}
                 {achievements.length > 3 && (
-                  <div className="text-[10px] text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     +{achievements.length - 3} more
                   </div>
                 )}

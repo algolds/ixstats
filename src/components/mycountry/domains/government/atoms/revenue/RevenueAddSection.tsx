@@ -80,7 +80,7 @@ export function RevenueAddSection({
           <div className="space-y-3">
             {revenueCategories.map((category) => (
               <div key={category} className="space-y-1.5">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                <div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                   {React.createElement(revenueCategoryIcons[category], {
                     className: "h-3.5 w-3.5",
                     style: { color: revenueCategoryColors[category] },
@@ -221,7 +221,7 @@ export function RevenueAddSection({
                       />
                       <div className="flex flex-col text-left">
                         <span className="text-xs font-bold">{method.name}</span>
-                        <span className="text-[9px] text-zinc-500">{method.description}</span>
+                        <span className="text-xs text-zinc-500">{method.description}</span>
                       </div>
                     </div>
                   </SelectItem>

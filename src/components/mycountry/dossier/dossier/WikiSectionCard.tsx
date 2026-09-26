@@ -89,7 +89,7 @@ export function WikiSectionCard({
                 <h3 className="text-foreground flex items-center gap-2 truncate text-base font-extrabold tracking-tight">
                   {section.title}
                 </h3>
-                <p className="text-muted-foreground truncate text-[11px]">
+                <p className="text-muted-foreground truncate text-xs">
                   {section.wordCount} words • {section.images?.length || 0} media assets
                 </p>
               </div>
@@ -99,7 +99,7 @@ export function WikiSectionCard({
               {/* Classification Badge */}
               <span
                 className={cn(
-                  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold tracking-wider uppercase",
+                  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-extrabold tracking-wider uppercase",
                   CLASSIFICATION_STYLES[
                     section.classification as keyof typeof CLASSIFICATION_STYLES
                   ]?.color || CLASSIFICATION_STYLES.PUBLIC.color
@@ -111,7 +111,7 @@ export function WikiSectionCard({
               {/* Importance Badge */}
               <span
                 className={cn(
-                  "hidden items-center rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold tracking-wider uppercase sm:inline-flex",
+                  "hidden items-center rounded-full border px-2.5 py-0.5 text-xs font-extrabold tracking-wider uppercase sm:inline-flex",
                   section.importance ? getImportanceBadgeClass(section.importance) : ""
                 )}
               >
@@ -162,7 +162,7 @@ export function WikiSectionCard({
             {/* Immersive Apple Media Gallery */}
             {section.images && section.images.length > 0 && (
               <div className="space-y-2 border-t border-white/5 pt-2">
-                <div className="text-muted-foreground flex items-center justify-between text-[11px] font-extrabold tracking-wider uppercase">
+                <div className="text-muted-foreground flex items-center justify-between text-xs font-extrabold tracking-wider uppercase">
                   <span className="flex items-center gap-1.5">
                     <ImageIcon className="h-3.5 w-3.5 text-blue-400" />
                     Section Media ({section.images.length})
@@ -201,7 +201,7 @@ export function WikiSectionCard({
                           }
                         />
                         <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/80 via-transparent to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
-                          <span className="max-w-[80%] truncate font-mono text-[9px] text-white">
+                          <span className="max-w-[80%] truncate font-mono text-xs text-white">
                             {fileName}
                           </span>
                           <Maximize2 className="h-3 w-3 shrink-0 text-white" />
@@ -246,7 +246,7 @@ export function WikiSectionCard({
               </div>
 
               {/* Section Metadata Footer */}
-              <div className="text-muted-foreground/80 flex items-center gap-4 font-mono text-[10px]">
+              <div className="text-muted-foreground/80 flex items-center gap-4 font-mono text-xs">
                 <span>{section.wordCount} words</span>
                 {section.lastModified && (
                   <span>Updated {new Date(section.lastModified).toLocaleDateString()}</span>

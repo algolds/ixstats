@@ -66,7 +66,7 @@ export function ForumMiniCard({
           {!compact && <span>{formatValue(card.marketValue)}</span>}
         </div>
         {serialNumber != null && !compact && (
-          <div className="text-muted-foreground mt-0.5 text-[9px]">#{serialNumber}</div>
+          <div className="text-muted-foreground mt-0.5 text-xs">#{serialNumber}</div>
         )}
       </div>
     </a>

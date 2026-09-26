@@ -130,7 +130,7 @@ export function TimeControlCard({
           <div className="border-border/20 bg-card/20 flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5">
             <Label
               htmlFor="time-advanced-mode"
-              className="text-muted-foreground cursor-pointer text-[10px] font-bold tracking-wider uppercase select-none"
+              className="text-muted-foreground cursor-pointer text-xs font-bold tracking-wider uppercase select-none"
             >
               Advanced
             </Label>
@@ -146,7 +146,7 @@ export function TimeControlCard({
       <CardContent className="space-y-4">
         {/* Live IxTime Display */}
         <div className="space-y-2 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3.5">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-blue-400 uppercase">
+          <div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-blue-400 uppercase">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500"></span>
@@ -156,7 +156,7 @@ export function TimeControlCard({
           <div className="font-mono text-sm leading-tight font-bold break-words text-blue-500">
             {formattedIxTime}
           </div>
-          <div className="text-muted-foreground grid grid-cols-1 gap-2 border-t border-blue-500/10 pt-2 text-[10px] font-medium sm:grid-cols-2">
+          <div className="text-muted-foreground grid grid-cols-1 gap-2 border-t border-blue-500/10 pt-2 text-xs font-medium sm:grid-cols-2">
             <div>
               <span className="text-foreground font-semibold">1 real day</span> = {ixDaysPerRealDay}{" "}
               IX days
@@ -192,7 +192,7 @@ export function TimeControlCard({
             step={0.1}
             className="cursor-grab py-1 active:cursor-grabbing"
           />
-          <div className="text-muted-foreground flex justify-between text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground flex justify-between text-xs font-semibold tracking-wider uppercase">
             <span>Paused</span>
             <span>2x (Default)</span>
             <span>4x</span>
@@ -257,7 +257,7 @@ export function TimeControlCard({
                       <Calendar className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                       <span>{year}</span>
                       {isPast && (
-                        <span className="text-muted-foreground/60 ml-0.5 text-[9px] font-normal">
+                        <span className="text-muted-foreground/60 ml-0.5 text-xs font-normal">
                           (past)
                         </span>
                       )}
@@ -276,7 +276,7 @@ export function TimeControlCard({
                 <div className="space-y-1">
                   <Label
                     htmlFor="custom-date"
-                    className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase"
+                    className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
                   >
                     Date
                   </Label>
@@ -291,7 +291,7 @@ export function TimeControlCard({
                 <div className="space-y-1">
                   <Label
                     htmlFor="custom-time"
-                    className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase"
+                    className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
                   >
                     Time
                   </Label>

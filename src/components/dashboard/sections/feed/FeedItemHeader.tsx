@@ -38,7 +38,7 @@ export function FeedExternalLink({ url }: { url: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 active:scale-[0.95]"
+      className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium tracking-tight transition-all duration-150 active:scale-[0.95]"
     >
       <ExternalLink className="h-3 w-3" />
       <span>Open</span>
@@ -97,7 +97,7 @@ export function FeedItemHeader({
         )}
 
         {activity._isNew && (
-          <Badge className="shrink-0 rounded-full border-wiki/30 bg-wiki/15 text-[8px] font-semibold tracking-wider text-wiki uppercase">
+          <Badge className="shrink-0 rounded-full border-wiki/30 bg-wiki/15 text-xs font-semibold tracking-wider text-wiki uppercase">
             NEW
           </Badge>
         )}
@@ -135,7 +135,7 @@ export function FeedItemHeader({
         )}
 
         {/* Timestamp */}
-        <span className="text-muted-foreground/70 flex items-center gap-1 text-[10px] font-normal tracking-normal tabular-nums">
+        <span className="text-muted-foreground/70 flex items-center gap-1 text-xs font-normal tracking-normal tabular-nums">
           <Clock className="h-3 w-3" />
           {formatTimeAgo(new Date(activity.timestamp))}
         </span>

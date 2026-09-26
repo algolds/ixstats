@@ -354,7 +354,7 @@ function ImageLightboxModal({
           title="Dismiss Lightbox (Esc)"
         >
           <X className="h-4 w-4" />
-          <span className="text-[10px] font-bold tracking-wider uppercase opacity-70">Esc</span>
+          <span className="text-xs font-bold tracking-wider uppercase opacity-70">Esc</span>
         </button>
       </div>
 
@@ -447,7 +447,7 @@ function ImageLightboxModal({
                       {cleanTitle}
                     </p>
                     {imgNaturalSize && (
-                      <div className="mt-1.5 flex items-center gap-2 text-[11px] text-[var(--wikios-text-dim)]">
+                      <div className="mt-1.5 flex items-center gap-2 text-xs text-[var(--wikios-text-dim)]">
                         <span className="wikios-lightbox-badge">{fileExt}</span>
                         <span>
                           {imgNaturalSize.width} × {imgNaturalSize.height} px

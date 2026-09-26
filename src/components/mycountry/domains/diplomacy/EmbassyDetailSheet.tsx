@@ -303,7 +303,7 @@ export function EmbassyDetailSheet({
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-medium">{m.name}</span>
-                            <Badge variant="outline" className="text-[10px]">
+                            <Badge variant="outline" className="text-xs">
                               {m.type}
                             </Badge>
                           </div>
@@ -315,7 +315,7 @@ export function EmbassyDetailSheet({
                                   style={{ width: `${m.progress}%` }}
                                 />
                               </div>
-                              <span className="text-muted-foreground mt-0.5 block text-[10px]">
+                              <span className="text-muted-foreground mt-0.5 block text-xs">
                                 {m.progress}% complete
                               </span>
                             </div>

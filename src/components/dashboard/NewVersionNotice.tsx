@@ -42,13 +42,13 @@ export function NewVersionNotice() {
           <Link href="/changelog" className="font-semibold text-blue-400 hover:underline">
             v{APP_VERSION}
           </Link>{" "}
-          <span className="text-muted-foreground font-mono text-[10px]">({BUILD_VERSION})</span>.
+          <span className="text-muted-foreground font-mono text-xs">({BUILD_VERSION})</span>.
         </p>
       </div>
       <div className="relative z-10 flex items-center gap-2">
         <Link
           href="/changelog"
-          className="group inline-flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-[11px] font-semibold text-blue-400 transition-all hover:bg-blue-500/20 active:scale-[0.97]"
+          className="group inline-flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-400 transition-all hover:bg-blue-500/20 active:scale-[0.97]"
         >
           <span>What's New</span>
           <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />

@@ -255,25 +255,25 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
               <div className="flex items-center gap-1.5">
                 <h3 className="text-foreground truncate text-sm font-semibold">{displayTitle}</h3>
                 {isSystemThread || isLoreBotThread ? (
-                  <span className="py-0.2 flex items-center gap-0.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 text-[8px] font-bold tracking-wider text-amber-500 uppercase">
+                  <span className="py-0.2 flex items-center gap-0.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 text-xs font-bold tracking-wider text-amber-500 uppercase">
                     Official
                   </span>
                 ) : (
                   identity && <MessagesIdentityBadge identity={identity} />
                 )}
                 {isDiplomatic && (
-                  <span className="py-0.2 flex items-center gap-0.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 text-[8px] font-bold tracking-wider text-amber-400 uppercase">
+                  <span className="py-0.2 flex items-center gap-0.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 text-xs font-bold tracking-wider text-amber-400 uppercase">
                     <Shield className="h-2.5 w-2.5" />
                     Diplomatic Cable
                   </span>
                 )}
                 {isGroup && (
-                  <span className="py-0.2 flex items-center gap-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 text-[8px] font-bold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
+                  <span className="py-0.2 flex items-center gap-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 text-xs font-bold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
                     Group Chat
                   </span>
                 )}
               </div>
-              <p className="text-muted-foreground text-[10.5px]">
+              <p className="text-muted-foreground text-xs">
                 {isSystemThread
                   ? "Platform broadcasts, simulation digests & system dispatches"
                   : isLoreBotThread

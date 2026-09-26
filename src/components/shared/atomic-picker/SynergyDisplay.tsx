@@ -43,7 +43,7 @@ export const SynergyDisplay = React.memo(function SynergyDisplay({
         <p className="text-xs font-semibold text-foreground">
           No synergies or conflicts detected yet
         </p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground max-w-xs">
+        <p className="mt-0.5 text-xs text-muted-foreground max-w-xs">
           Select complementary components to unlock compounding synergies, and watch out for conflicting doctrines.
         </p>
       </div>
@@ -75,13 +75,13 @@ export const SynergyDisplay = React.memo(function SynergyDisplay({
                       {item.comp1Name} + {item.comp2Name}
                     </h5>
                     {item.bonus && (
-                      <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-none text-[10px] px-1 py-0 font-semibold">
+                      <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-none text-xs px-1 py-0 font-semibold">
                         +{item.bonus}%
                       </Badge>
                     )}
                   </div>
                   {item.description && (
-                    <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
                       {item.description}
                     </p>
                   )}
@@ -115,13 +115,13 @@ export const SynergyDisplay = React.memo(function SynergyDisplay({
                       {item.comp1Name} ↔ {item.comp2Name}
                     </h5>
                     {item.penalty && (
-                      <Badge className="bg-red-500/20 text-red-600 dark:text-red-400 border-none text-[10px] px-1 py-0 font-semibold">
+                      <Badge className="bg-red-500/20 text-red-600 dark:text-red-400 border-none text-xs px-1 py-0 font-semibold">
                         -{item.penalty}%
                       </Badge>
                     )}
                   </div>
                   {item.description && (
-                    <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
                       {item.description}
                     </p>
                   )}

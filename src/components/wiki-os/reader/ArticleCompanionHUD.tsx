@@ -126,7 +126,7 @@ export function ArticleCompanionHUD({
       <div className="facet-surface bg-card/40 rounded-2xl border border-white/10 p-3 shadow-xs backdrop-blur-xl transition-all duration-300">
         <div className="border-border/30 mb-2.5 flex items-center justify-between gap-2 border-b pb-2">
           {awardsData?.hasLoreward && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-400">
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-xs font-bold text-amber-400">
               <Trophy className="h-2.5 w-2.5" />
               Awarded
             </span>
@@ -134,7 +134,7 @@ export function ArticleCompanionHUD({
         </div>
 
         <div className="text-muted-foreground font-ui space-y-2 text-xs">
-          <div className="flex items-center justify-between text-[11px]">
+          <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground/70">Read Time</span>
             <span
               className="text-foreground font-semibold tabular-nums"
@@ -146,7 +146,7 @@ export function ArticleCompanionHUD({
 
           {/* Original Creator / Author — with IxnayID avatar when available */}
           {creatorName && (
-            <div className="border-border/20 flex items-center justify-between border-t pt-1.5 text-[11px]">
+            <div className="border-border/20 flex items-center justify-between border-t pt-1.5 text-xs">
               <span className="text-muted-foreground/70">Created by</span>
               <Link
                 href={withBasePath(
@@ -164,7 +164,7 @@ export function ArticleCompanionHUD({
                     decoding="async"
                   />
                 ) : (
-                  <span className="text-muted-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[8px] leading-none font-bold">
+                  <span className="text-muted-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs leading-none font-bold">
                     {creatorName.charAt(0).toUpperCase()}
                   </span>
                 )}
@@ -175,9 +175,9 @@ export function ArticleCompanionHUD({
 
           {/* Creation Date */}
           {createdAt && (
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground/70">Created</span>
-              <span className="text-foreground/80 text-[10.5px] font-medium tabular-nums">
+              <span className="text-foreground/80 text-xs font-medium tabular-nums">
                 {new Date(createdAt).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -189,9 +189,9 @@ export function ArticleCompanionHUD({
 
           {/* Last Updated Timestamp */}
           {effectiveLastModified && (
-            <div className="border-border/20 flex items-center justify-between border-t pt-1.5 text-[11px]">
+            <div className="border-border/20 flex items-center justify-between border-t pt-1.5 text-xs">
               <span className="text-muted-foreground/70">Last Updated</span>
-              <span className="text-foreground/90 text-[10.5px] font-medium tabular-nums">
+              <span className="text-foreground/90 text-xs font-medium tabular-nums">
                 {new Date(effectiveLastModified).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -203,7 +203,7 @@ export function ArticleCompanionHUD({
 
           {/* Last Editor (if distinct) — with IxnayID avatar when available */}
           {lastEditorName && lastEditorName.toLowerCase() !== creatorName?.toLowerCase() && (
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground/70">Last Editor</span>
               <Link
                 href={withBasePath(
@@ -221,7 +221,7 @@ export function ArticleCompanionHUD({
                     decoding="async"
                   />
                 ) : (
-                  <span className="text-muted-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[8px] leading-none font-bold">
+                  <span className="text-muted-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs leading-none font-bold">
                     {lastEditorName.charAt(0).toUpperCase()}
                   </span>
                 )}
@@ -233,12 +233,12 @@ export function ArticleCompanionHUD({
           {/* Other Contributors Section */}
           {otherContributors.length > 0 && (
             <div className="border-border/20 space-y-1.5 border-t pt-2">
-              <div className="flex items-center justify-between text-[10.5px]">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground/80 flex items-center gap-1 font-medium">
                   <Users className="h-3 w-3 text-cyan-400" />
                   Contributors
                 </span>
-                <span className="text-muted-foreground/70 text-[10px] font-bold tabular-nums">
+                <span className="text-muted-foreground/70 text-xs font-bold tabular-nums">
                   {totalContributorsCount}
                 </span>
               </div>
@@ -251,7 +251,7 @@ export function ArticleCompanionHUD({
                       href={withBasePath(
                         `/wiki/User:${encodeURIComponent(contrib.username.replace(/ /g, "_"))}`
                       )}
-                      className="text-foreground/90 inline-flex max-w-[140px] items-center gap-1 truncate rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium transition-colors hover:bg-white/10 hover:text-cyan-300"
+                      className="text-foreground/90 inline-flex max-w-[140px] items-center gap-1 truncate rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-xs font-medium transition-colors hover:bg-white/10 hover:text-cyan-300"
                       title={`${contrib.username} (${contrib.editCount || 1} edits)`}
                     >
                       <span>{contrib.username}</span>
@@ -330,7 +330,7 @@ export function ArticleCompanionHUD({
               soundEffects.bloom();
               onOpenBacklinks?.();
             }}
-            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-[11px] font-medium transition-all duration-200 hover:bg-white/10 active:scale-[0.97]"
+            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-xs font-medium transition-all duration-200 hover:bg-white/10 active:scale-[0.97]"
             title="What Links Here"
           >
             <LinkIcon className="h-3 w-3 text-cyan-400" />
@@ -343,7 +343,7 @@ export function ArticleCompanionHUD({
               soundEffects.bloom();
               onOpenHistory?.();
             }}
-            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-[11px] font-medium transition-all duration-200 hover:bg-white/10 active:scale-[0.97]"
+            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-xs font-medium transition-all duration-200 hover:bg-white/10 active:scale-[0.97]"
             title="Revision History"
           >
             <Clock className="h-3 w-3 text-muted-foreground" />
@@ -358,7 +358,7 @@ export function ArticleCompanionHUD({
             soundEffects.bloom();
             onOpenMargin?.("threads");
           }}
-          className="group border-border/20 text-muted-foreground hover:text-foreground mt-1 flex w-full cursor-pointer items-center justify-between border-t pt-2 text-[11px] font-medium transition-colors"
+          className="group border-border/20 text-muted-foreground hover:text-foreground mt-1 flex w-full cursor-pointer items-center justify-between border-t pt-2 text-xs font-medium transition-colors"
         >
           <span className="flex items-center gap-1.5">
             <ChatBubble className="h-3 w-3 text-amber-400/80 group-hover:text-amber-400" />
@@ -381,7 +381,7 @@ export function ArticleCompanionHUD({
       {/* 3. Top Categories / Domain Tags */}
       {categories.length > 0 && (
         <div className="facet-surface bg-card/40 rounded-2xl border border-white/10 p-3 shadow-xs backdrop-blur-xl">
-          <div className="text-muted-foreground/80 font-brand mb-2 text-[10px] font-bold tracking-wider uppercase">
+          <div className="text-muted-foreground/80 font-brand mb-2 text-xs font-bold tracking-wider uppercase">
             Categories
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -392,7 +392,7 @@ export function ArticleCompanionHUD({
                 <Link
                   key={cleanCat}
                   href={`/wiki/categories/${encodeURIComponent(cleanCat.replace(/ /g, "_"))}`}
-                  className="text-muted-foreground hover:text-foreground max-w-[180px] truncate rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium transition-all duration-150 hover:bg-white/10 active:scale-95"
+                  className="text-muted-foreground hover:text-foreground max-w-[180px] truncate rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium transition-all duration-150 hover:bg-white/10 active:scale-95"
                 >
                   {cleanCat}
                 </Link>

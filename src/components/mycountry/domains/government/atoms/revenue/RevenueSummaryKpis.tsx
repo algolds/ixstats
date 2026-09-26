@@ -47,7 +47,7 @@ export function RevenueSummaryKpis({ data, totalCalculated }: RevenueSummaryKpis
           <div className="text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
             {formatNumber(totalCalculated)}
           </div>
-          <div className="mt-1 text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+          <div className="mt-1 text-xs font-bold tracking-wider text-zinc-500 uppercase">
             Total Revenue
           </div>
         </div>
@@ -55,7 +55,7 @@ export function RevenueSummaryKpis({ data, totalCalculated }: RevenueSummaryKpis
           <div className="text-xl font-extrabold tracking-tight text-emerald-500 dark:text-emerald-400">
             {data.filter((r) => r.category.includes("Tax")).length}
           </div>
-          <div className="mt-1 text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+          <div className="mt-1 text-xs font-bold tracking-wider text-zinc-500 uppercase">
             Tax Sources
           </div>
         </div>
@@ -63,7 +63,7 @@ export function RevenueSummaryKpis({ data, totalCalculated }: RevenueSummaryKpis
           <div className="text-xl font-extrabold tracking-tight text-cyan-500 dark:text-cyan-400">
             {data.filter((r) => !r.category.includes("Tax")).length}
           </div>
-          <div className="mt-1 text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+          <div className="mt-1 text-xs font-bold tracking-wider text-zinc-500 uppercase">
             Non-Tax Sources
           </div>
         </div>
@@ -71,7 +71,7 @@ export function RevenueSummaryKpis({ data, totalCalculated }: RevenueSummaryKpis
           <div className="text-xl font-extrabold tracking-tight text-indigo-500 dark:text-indigo-400">
             {data.length > 0 ? formatNumber(totalCalculated / data.length) : "0"}
           </div>
-          <div className="mt-1 text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+          <div className="mt-1 text-xs font-bold tracking-wider text-zinc-500 uppercase">
             Avg per Channel
           </div>
         </div>
@@ -101,7 +101,7 @@ export function RevenueSummaryKpis({ data, totalCalculated }: RevenueSummaryKpis
                       <div className="text-xs font-bold text-zinc-900 dark:text-white">
                         {stat.category}
                       </div>
-                      <div className="text-[9px] font-semibold text-zinc-500 uppercase">
+                      <div className="text-xs font-semibold text-zinc-500 uppercase">
                         {stat.count} active channels
                       </div>
                     </div>
@@ -110,7 +110,7 @@ export function RevenueSummaryKpis({ data, totalCalculated }: RevenueSummaryKpis
                     <div className="text-xs font-extrabold text-zinc-800 dark:text-zinc-300">
                       {formatNumber(stat.amount)}
                     </div>
-                    <div className="text-[10px] font-bold text-zinc-500">
+                    <div className="text-xs font-bold text-zinc-500">
                       {stat.percent.toFixed(1)}%
                     </div>
                   </div>

@@ -132,7 +132,7 @@ export function AtlasProfileView({ country, slug }: AtlasProfileViewProps) {
                     data-cuelume-press="soft"
                     onClick={() => setActiveLayer(layer.id)}
                     className={cn(
-                      "rounded-lg px-2 py-1 text-[11px] font-bold transition-all duration-150 active:scale-[0.96]",
+                      "rounded-lg px-2 py-1 text-xs font-bold transition-all duration-150 active:scale-[0.96]",
                       activeLayer === layer.id
                         ? "bg-[var(--flag-primary)] text-white shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -147,7 +147,7 @@ export function AtlasProfileView({ country, slug }: AtlasProfileViewProps) {
             {/* Interactive Vector Province Selection Map Grid */}
             <div className="relative my-auto flex flex-col items-center justify-center space-y-4">
               <div className="text-center">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
                   Select a Territorial Entity
                 </span>
                 <p className="text-xs text-muted-foreground">
@@ -179,7 +179,7 @@ export function AtlasProfileView({ country, slug }: AtlasProfileViewProps) {
                           style={{ backgroundColor: prov.color }}
                         />
                       </div>
-                      <div className="mt-3 flex items-center justify-between text-[11px]">
+                      <div className="mt-3 flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">{prov.population}</span>
                         <span className="font-extrabold text-foreground">{prov.gdp}</span>
                       </div>
@@ -215,7 +215,7 @@ export function AtlasProfileView({ country, slug }: AtlasProfileViewProps) {
             <div>
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--flag-primary)]">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--flag-primary)]">
                     Intelligence Feed
                   </span>
                   <h3 className="text-lg font-bold tracking-tight text-foreground truncate">
@@ -250,25 +250,25 @@ export function AtlasProfileView({ country, slug }: AtlasProfileViewProps) {
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">
+                        <p className="text-xs font-bold text-muted-foreground uppercase">
                           Provincial Population
                         </p>
                         <p className="text-base font-extrabold text-foreground mt-0.5">
                           {selectedProvince.population}
                         </p>
-                        <p className="text-[10px] text-blue-400">
+                        <p className="text-xs text-blue-400">
                           {selectedProvince.popPercent} of National Total
                         </p>
                       </div>
 
                       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">
+                        <p className="text-xs font-bold text-muted-foreground uppercase">
                           Regional GDP Output
                         </p>
                         <p className="text-base font-extrabold text-emerald-400 mt-0.5">
                           {selectedProvince.gdp}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {selectedProvince.gdpPercent} of Total Economy
                         </p>
                       </div>
@@ -298,19 +298,19 @@ export function AtlasProfileView({ country, slug }: AtlasProfileViewProps) {
                   <div className="space-y-4">
                     <div className="grid grid-cols-3 gap-3">
                       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-center">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Total GDP</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase">Total GDP</p>
                         <p className="text-base font-extrabold text-foreground mt-0.5">
                           ${((country.currentTotalGdp || 40200000000000) / 1000000000000).toFixed(1)}T
                         </p>
                       </div>
                       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-center">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Population</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase">Population</p>
                         <p className="text-base font-extrabold text-foreground mt-0.5">
                           {((country.currentPopulation || 626200000) / 1000000).toFixed(1)}M
                         </p>
                       </div>
                       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-center">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Provinces</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase">Provinces</p>
                         <p className="text-base font-extrabold text-sky-400 mt-0.5">42 Total</p>
                       </div>
                     </div>

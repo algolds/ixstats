@@ -172,7 +172,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
 
               {/* Host Label */}
               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                <span className="rounded-full border border-white/20 bg-black/70 px-1.5 py-0.5 text-[9px] font-medium text-white backdrop-blur-sm">
+                <span className="rounded-full border border-white/20 bg-black/70 px-1.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
                   HOST
                 </span>
               </div>
@@ -187,7 +187,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
               >
                 {exchange.hostCountry.name}
               </p>
-              <p className={cn("text-[10px] font-medium opacity-80", typeConfig.textColor)}>
+              <p className={cn("text-xs font-medium opacity-80", typeConfig.textColor)}>
                 {typeConfig.label}
               </p>
             </div>
@@ -251,7 +251,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
                   ? exchange.participatingCountries[0].name
                   : "Open to All"}
               </p>
-              <p className={cn("text-[10px] font-medium opacity-80", typeConfig.textColor)}>
+              <p className={cn("text-xs font-medium opacity-80", typeConfig.textColor)}>
                 {exchange.participatingCountries.length > 1
                   ? `+${exchange.participatingCountries.length - 1} more`
                   : "Participant"}
@@ -325,8 +325,8 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
                 "border-white/40 shadow-xl"
               )}
             >
-              <span className="mr-1 text-[10px]">{statusConfig.icon}</span>
-              <span className="text-[10px]">{statusConfig.label}</span>
+              <span className="mr-1 text-xs">{statusConfig.icon}</span>
+              <span className="text-xs">{statusConfig.label}</span>
             </div>
           </motion.div>
         </div>

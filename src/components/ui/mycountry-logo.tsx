@@ -177,7 +177,7 @@ export function MyCountryLogo({
             </span>
           )}
           {showVersion && (
-            <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1 py-0.5 text-[9px] leading-none font-bold text-amber-400">
+            <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1 py-0.5 text-xs leading-none font-bold text-amber-400">
               v{BUILDER_VERSION}
             </span>
           )}

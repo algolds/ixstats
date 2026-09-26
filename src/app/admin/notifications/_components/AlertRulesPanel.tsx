@@ -211,7 +211,7 @@ export function AlertRulesPanel() {
                       >
                         <TableCell className="font-medium">{t.metricName}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-[10px]">
+                          <Badge variant="outline" className="text-xs">
                             {t.alertType}
                           </Badge>
                         </TableCell>

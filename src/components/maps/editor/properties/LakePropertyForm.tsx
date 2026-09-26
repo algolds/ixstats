@@ -82,7 +82,7 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
           )}
         </div>
         {!hasGeom && (
-          <div className="text-muted-foreground mt-1 text-left text-[10px]">
+          <div className="text-muted-foreground mt-1 text-left text-xs">
             Use the polygon drawing tool in the map controls to trace the contours of the lake.
           </div>
         )}

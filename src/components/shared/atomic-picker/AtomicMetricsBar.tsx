@@ -131,7 +131,7 @@ export const AtomicMetricsBar = React.memo(function AtomicMetricsBar({
               <Icon className={cn("h-4 w-4", item.iconColor)} />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[10px] font-medium tracking-wide uppercase text-muted-foreground">
+              <div className="truncate text-xs font-medium tracking-wide uppercase text-muted-foreground">
                 {item.label}
               </div>
               <div className="truncate text-xs font-bold leading-tight tracking-tight text-foreground">

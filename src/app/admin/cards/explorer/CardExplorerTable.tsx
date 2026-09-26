@@ -71,7 +71,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         return <IIWikiBadge size="xs" />;
       }
       return (
-        <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[9px] font-bold text-amber-500 backdrop-blur-md dark:text-amber-300">
+        <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-500 backdrop-blur-md dark:text-amber-300">
           Wiki
         </span>
       );
@@ -79,7 +79,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
 
     if (card.cardType === "COMMONS_IMPORT") {
       return (
-        <span className="inline-flex items-center rounded-full border border-teal-500/30 bg-teal-500/15 px-2 py-0.5 text-[9px] font-bold text-teal-600 backdrop-blur-md dark:text-teal-300">
+        <span className="inline-flex items-center rounded-full border border-teal-500/30 bg-teal-500/15 px-2 py-0.5 text-xs font-bold text-teal-600 backdrop-blur-md dark:text-teal-300">
           Commons Import
         </span>
       );
@@ -92,14 +92,14 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
       card.cardType === "NS_IMPORT"
     ) {
       return (
-        <span className="inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/15 px-2 py-0.5 text-[9px] font-bold text-blue-600 backdrop-blur-md dark:text-blue-300">
+        <span className="inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/15 px-2 py-0.5 text-xs font-bold text-blue-600 backdrop-blur-md dark:text-blue-300">
           NS Import
         </span>
       );
     }
 
     return (
-      <span className="inline-flex items-center rounded-full border border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 text-[9px] font-bold text-cyan-600 backdrop-blur-md dark:text-cyan-300">
+      <span className="inline-flex items-center rounded-full border border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 text-xs font-bold text-cyan-600 backdrop-blur-md dark:text-cyan-300">
         User Imported
       </span>
     );
@@ -185,7 +185,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
                 <div className="text-foreground max-w-[180px] truncate font-semibold">
                   {card.title}
                 </div>
-                <div className="text-muted-foreground font-mono text-[10px]">
+                <div className="text-muted-foreground font-mono text-xs">
                   {card.nsCardId ? `NS ID: ${card.nsCardId}` : `ID: ${card.id.slice(0, 8)}`}
                 </div>
               </div>
@@ -216,10 +216,10 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         mobileRole: "badge",
         render: (_val: unknown, card: any) => (
           <div className="flex items-center gap-1.5">
-            <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2 py-0.5 text-[9px] font-bold text-purple-600 backdrop-blur-md dark:text-purple-300">
+            <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2 py-0.5 text-xs font-bold text-purple-600 backdrop-blur-md dark:text-purple-300">
               S{card.season}
             </span>
-            <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[9px] font-bold text-amber-600 backdrop-blur-md dark:text-amber-300">
+            <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-600 backdrop-blur-md dark:text-amber-300">
               {card.rarity}
             </span>
           </div>
@@ -273,7 +273,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
             <div className="group/val flex items-center gap-2">
               <span className="text-foreground font-semibold">
                 {(card.marketValue || 0).toLocaleString()}{" "}
-                <span className="text-muted-foreground text-[9px]">CR</span>
+                <span className="text-muted-foreground text-xs">CR</span>
               </span>
               <button
                 onClick={(e) => {
@@ -322,7 +322,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
             return (
               <div className="bg-primary/10 border-primary/20 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 backdrop-blur-md">
                 <CategoryIcon category={resolvedCategory || "SPECIAL"} treatment="seal" size="xs" />
-                <span className="text-primary text-[10px] font-bold">
+                <span className="text-primary text-xs font-bold">
                   {resolvedCategory ? getCategoryLabel(resolvedCategory) : "Lore"}
                 </span>
               </div>
@@ -330,14 +330,14 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
           }
           if (isCTE) {
             return (
-              <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2.5 py-0.5 text-[10px] font-bold text-rose-600 backdrop-blur-md dark:text-rose-300">
+              <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2.5 py-0.5 text-xs font-bold text-rose-600 backdrop-blur-md dark:text-rose-300">
                 <AlertTriangle className="h-3 w-3 text-rose-500" />
                 CTE (Defunct)
               </span>
             );
           }
           return (
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 backdrop-blur-md dark:text-emerald-300">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-600 backdrop-blur-md dark:text-emerald-300">
               <CheckCircle className="h-3 w-3 text-emerald-500" />
               Active Nation
             </span>
@@ -357,7 +357,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
                 onToggleTakedown(card.id, isRetired);
               }}
               disabled={isPending}
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold transition-all active:scale-95 ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition-all active:scale-95 ${
                 isRetired
                   ? "border border-amber-500/30 bg-amber-500/20 text-amber-600 hover:bg-amber-500/30 dark:text-amber-300"
                   : "bg-muted/80 border-border text-muted-foreground hover:bg-accent hover:text-foreground border"
@@ -392,7 +392,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
               e.stopPropagation();
               onOpenEditModal(card);
             }}
-            className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 h-7 rounded-lg text-[11px] font-semibold shadow-xs transition-all active:scale-95"
+            className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 h-7 rounded-lg text-xs font-semibold shadow-xs transition-all active:scale-95"
           >
             <Eye className="mr-1 h-3 w-3" /> Edit Studio
           </Button>

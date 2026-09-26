@@ -1282,7 +1282,7 @@ const EditorMap = memo(
                     <text
                       x={t.x}
                       y={10}
-                      className="fill-neutral-500 font-mono text-[8px] dark:fill-neutral-400"
+                      className="fill-neutral-500 font-mono text-xs dark:fill-neutral-400"
                       textAnchor="middle"
                     >
                       {t.label}
@@ -1312,7 +1312,7 @@ const EditorMap = memo(
                     <text
                       x={10}
                       y={t.y + 3}
-                      className="fill-neutral-500 font-mono text-[8px] dark:fill-neutral-400"
+                      className="fill-neutral-500 font-mono text-xs dark:fill-neutral-400"
                       textAnchor="end"
                     >
                       {t.label}
@@ -1324,7 +1324,7 @@ const EditorMap = memo(
 
             {/* Corner box */}
             <div className="pointer-events-none absolute top-0 left-0 z-30 flex h-6 w-6 items-center justify-center border-r border-b border-neutral-300 bg-neutral-200 dark:border-neutral-800 dark:bg-neutral-950">
-              <span className="font-mono text-[9px] font-bold text-neutral-400 dark:text-neutral-500">
+              <span className="font-mono text-xs font-bold text-neutral-400 dark:text-neutral-500">
                 °
               </span>
             </div>

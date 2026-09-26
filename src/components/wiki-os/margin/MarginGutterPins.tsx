@@ -364,8 +364,8 @@ export function MarginGutterPins({
               <div className="animate-in fade-in zoom-in-95 pointer-events-none absolute right-0 bottom-full z-50 mb-2 flex max-w-xs origin-bottom-right flex-col gap-1 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 px-3 py-1.5 text-xs whitespace-nowrap text-[var(--wikios-text)] shadow-2xl backdrop-blur-xl duration-150">
                 {isCluster ? (
                   <>
-                    <div className="flex items-center gap-2 border-b border-[var(--wikios-border)] pb-1 text-[10px] font-bold text-[var(--wikios-text)]">
-                      <span className="py-0.2 bg-margin-accent rounded px-1.5 text-[9px] font-bold text-stone-950">
+                    <div className="flex items-center gap-2 border-b border-[var(--wikios-border)] pb-1 text-xs font-bold text-[var(--wikios-text)]">
+                      <span className="py-0.2 bg-margin-accent rounded px-1.5 text-xs font-bold text-stone-950">
                         Cluster
                       </span>
                       <span>({pin.count} items)</span>
@@ -377,7 +377,7 @@ export function MarginGutterPins({
                       {pin.children?.slice(0, 3).map((c) => (
                         <div
                           key={c.id}
-                          className="truncate text-[10.5px] font-medium text-[var(--wikios-text-dim)]"
+                          className="truncate text-xs font-medium text-[var(--wikios-text-dim)]"
                         >
                           • {c.title}
                         </div>
@@ -386,7 +386,7 @@ export function MarginGutterPins({
                   </>
                 ) : (
                   <div className="flex items-center gap-1.5">
-                    <span className="py-0.2 bg-margin-accent rounded px-1.5 text-[9px] font-black tracking-wider text-stone-950 uppercase">
+                    <span className="py-0.2 bg-margin-accent rounded px-1.5 text-xs font-black tracking-wider text-stone-950 uppercase">
                       {isAnnotation ? "Note" : "Thread"}
                     </span>
                     <span className="opacity-40">·</span>

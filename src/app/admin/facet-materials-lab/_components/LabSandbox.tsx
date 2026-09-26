@@ -56,7 +56,7 @@ function renderBackdrop(style: BgStyleType, theme: "light" | "dark", customColor
 
             <div
               className={cn(
-                "absolute inset-0 flex flex-col items-center justify-between px-6 py-12 font-mono text-[9px] tracking-widest uppercase",
+                "absolute inset-0 flex flex-col items-center justify-between px-6 py-12 font-mono text-xs tracking-widest uppercase",
                 textColor
               )}
             >
@@ -400,7 +400,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
       <button
         onClick={() => setShowDebug(!showDebug)}
         className={cn(
-          "flex items-center gap-1.5 self-end rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold transition-all",
+          "flex items-center gap-1.5 self-end rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all",
           showDebug
             ? "bg-primary border-primary text-primary-foreground"
             : "bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground"
@@ -412,8 +412,8 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
 
       {/* Debug panel */}
       {showDebug && (
-        <div className="bg-background/80 border-border/20 space-y-2 rounded-xl border p-4 font-mono text-[10px] leading-relaxed backdrop-blur-sm">
-          <div className="text-muted-foreground mb-1.5 flex items-center gap-2 border-b pb-1.5 text-[9px] font-bold tracking-wider uppercase">
+        <div className="bg-background/80 border-border/20 space-y-2 rounded-xl border p-4 font-mono text-xs leading-relaxed backdrop-blur-sm">
+          <div className="text-muted-foreground mb-1.5 flex items-center gap-2 border-b pb-1.5 text-xs font-bold tracking-wider uppercase">
             <Bug className="h-3 w-3" />
             Computed CSS
             <span className="text-muted-foreground/50 ml-auto font-normal normal-case">live</span>
@@ -433,7 +433,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
             ))}
           </div>
           <div className="border-border/10 border-t pt-1.5">
-            <div className="text-muted-foreground mb-1 text-[9px] font-semibold tracking-wider uppercase">
+            <div className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
               Computed Styles
             </div>
             <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5">

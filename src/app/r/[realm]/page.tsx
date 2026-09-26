@@ -52,7 +52,7 @@ export default function RealmHubPage({ params }: { params: Promise<{ realm: stri
                 <h1 className="text-foreground text-2xl font-bold tracking-tight">
                   {formattedRealmName}
                 </h1>
-                <span className="border-border bg-accent text-foreground rounded-md border px-2 py-0.5 text-[10px] font-bold">
+                <span className="border-border bg-accent text-foreground rounded-md border px-2 py-0.5 text-xs font-bold">
                   Realm Instance
                 </span>
               </div>

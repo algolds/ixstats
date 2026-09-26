@@ -215,7 +215,7 @@ export function WorldConfigsTab() {
                             }))
                           }
                         />
-                        <span className="text-[10px]">min</span>
+                        <span className="text-xs">min</span>
                       </div>
                     ) : config.syncEnabled ? (
                       <span className="font-mono">{config.syncIntervalMin}m</span>

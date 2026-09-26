@@ -121,14 +121,14 @@ export function SplashThinkPagesPeek() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="text-muted-foreground flex h-full w-full items-center justify-center text-[10px] font-medium">
+                      <span className="text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium">
                         TP
                       </span>
                     )}
                   </div>
                   <Avatar className="border-border h-7 w-7 border">
                     <AvatarImage src={profileUrl ?? undefined} alt="" />
-                    <AvatarFallback className="text-[9px] font-semibold">
+                    <AvatarFallback className="text-xs font-semibold">
                       {displayName
                         .split(/\s+/)
                         .filter(Boolean)
@@ -185,7 +185,7 @@ export function SplashThinkPagesPeek() {
                   ) : null}
 
                   <div className="flex items-center justify-between gap-2 pt-0.5">
-                    <p className="text-muted-foreground text-[10px] tabular-nums">
+                    <p className="text-muted-foreground text-xs tabular-nums">
                       {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                     </p>
                     <Link

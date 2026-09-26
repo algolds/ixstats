@@ -170,7 +170,7 @@ export function ThinktankHeader({
               )}
             </div>
 
-            <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+            <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
               <span className="text-foreground/80 font-medium">{group.category || "General"}</span>
               <span>·</span>
               <span>{group.memberCount ?? 1} members</span>

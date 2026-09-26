@@ -147,7 +147,7 @@ export function MapPipelineControls({
                 <button
                   type="button"
                   onClick={handleRandomizeSeed}
-                  className="text-primary flex items-center gap-1 text-[11px] font-medium hover:underline"
+                  className="text-primary flex items-center gap-1 text-xs font-medium hover:underline"
                 >
                   <RefreshCw className="h-3 w-3" /> Randomize
                 </button>
@@ -165,7 +165,7 @@ export function MapPipelineControls({
               <span className="flex items-center gap-1.5">
                 <Layers className="text-primary h-3.5 w-3.5" /> Mesh Engine
               </span>
-              <span className="text-primary font-mono text-[11px] font-semibold">
+              <span className="text-primary font-mono text-xs font-semibold">
                 100K RBF Splines
               </span>
             </div>
@@ -253,7 +253,7 @@ export function MapPipelineControls({
                 />
                 <div>
                   <div className="text-foreground text-xs font-medium">{layer.label}</div>
-                  <div className="text-muted-foreground text-[11px]">{layer.desc}</div>
+                  <div className="text-muted-foreground text-xs">{layer.desc}</div>
                 </div>
               </label>
             ))}
@@ -271,7 +271,7 @@ export function MapPipelineControls({
                 <MapPin className="h-3.5 w-3.5" /> Submit Territory Claim
               </h3>
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[11px]">Unclaimed Polygon</label>
+                <label className="text-muted-foreground text-xs">Unclaimed Polygon</label>
                 <select
                   value={selectedFeatureId}
                   onChange={(e) => setSelectedFeatureId(e.target.value)}
@@ -287,7 +287,7 @@ export function MapPipelineControls({
               </div>
 
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[11px]">New Nation Name</label>
+                <label className="text-muted-foreground text-xs">New Nation Name</label>
                 <input
                   type="text"
                   placeholder="e.g. Republic of Valoria"
@@ -324,11 +324,11 @@ export function MapPipelineControls({
                         <div className="text-foreground text-xs font-medium">
                           {claim.nationName}
                         </div>
-                        <div className="text-muted-foreground font-mono text-[11px]">
+                        <div className="text-muted-foreground font-mono text-xs">
                           Target: {claim.featureId}
                         </div>
                       </div>
-                      <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-[10px] font-medium">
+                      <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-xs font-medium">
                         Pending
                       </span>
                     </div>

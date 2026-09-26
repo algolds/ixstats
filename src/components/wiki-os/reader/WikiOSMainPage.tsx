@@ -103,7 +103,7 @@ function BlurbPromptModal({
               </div>
               <p className="text-muted-foreground text-sm leading-relaxed">{prompt.question}</p>
               <div className="mt-2 flex items-center gap-2">
-                <Badge variant="secondary" className="text-[10px]">
+                <Badge variant="secondary" className="text-xs">
                   {prompt._count.responses}{" "}
                   {prompt._count.responses === 1 ? "response" : "responses"}
                 </Badge>
@@ -139,7 +139,7 @@ function BlurbPromptModal({
                 {r.featured && (
                   <Badge
                     variant="outline"
-                    className="border-amber-500/30 px-1 py-0 text-[9px] text-amber-400"
+                    className="border-amber-500/30 px-1 py-0 text-xs text-amber-400"
                   >
                     Featured
                   </Badge>

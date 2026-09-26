@@ -88,7 +88,7 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
           <span className="text-sm font-semibold tracking-tight tabular-nums sm:text-base">
             {earthClock ? earthTime : realmCalendarLine}
           </span>
-          <span className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase sm:text-[11px]">
+          <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase sm:text-xs">
             {earthClock ? "Earth" : "IxTime"}
           </span>
         </button>

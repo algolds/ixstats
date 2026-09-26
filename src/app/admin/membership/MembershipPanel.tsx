@@ -70,7 +70,7 @@ export function MembershipPanel() {
                 </div>
                 <div>
                   <p className="text-foreground text-xs font-semibold">Current Session</p>
-                  <p className="text-muted-foreground font-mono text-[11px]">{user.id}</p>
+                  <p className="text-muted-foreground font-mono text-xs">{user.id}</p>
                 </div>
               </div>
               <Button

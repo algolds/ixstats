@@ -154,7 +154,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
       {/* Region Pathfinder Operations */}
       {isRegion && onPathfinderOperation && (
         <div className="border-border/40 bg-muted/20 space-y-1.5 rounded-lg border p-2">
-          <span className="text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
+          <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
             Combine regions
           </span>
           <div className="grid grid-cols-3 gap-1">
@@ -162,7 +162,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
               type="button"
               onClick={() => onPathfinderOperation("union")}
               disabled={disabled}
-              className="bg-card/60 hover:bg-accent/40 border-border/40 text-foreground rounded border py-1 text-center text-[11px] font-medium transition-all active:scale-[0.98]"
+              className="bg-card/60 hover:bg-accent/40 border-border/40 text-foreground rounded border py-1 text-center text-xs font-medium transition-all active:scale-[0.98]"
             >
               Union
             </button>
@@ -170,7 +170,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
               type="button"
               onClick={() => onPathfinderOperation("subtract")}
               disabled={disabled}
-              className="bg-card/60 hover:bg-accent/40 border-border/40 text-foreground rounded border py-1 text-center text-[11px] font-medium transition-all active:scale-[0.98]"
+              className="bg-card/60 hover:bg-accent/40 border-border/40 text-foreground rounded border py-1 text-center text-xs font-medium transition-all active:scale-[0.98]"
             >
               Subtract
             </button>
@@ -178,7 +178,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
               type="button"
               onClick={() => onPathfinderOperation("intersect")}
               disabled={disabled}
-              className="bg-card/60 hover:bg-accent/40 border-border/40 text-foreground rounded border py-1 text-center text-[11px] font-medium transition-all active:scale-[0.98]"
+              className="bg-card/60 hover:bg-accent/40 border-border/40 text-foreground rounded border py-1 text-center text-xs font-medium transition-all active:scale-[0.98]"
             >
               Intersect
             </button>

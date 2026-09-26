@@ -107,7 +107,7 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
               )}
               <Link
                 href={titleToWikiOSPath(wikiTitle)}
-                className="text-primary mt-2 flex items-center gap-1 text-[11px] font-medium hover:underline"
+                className="text-primary mt-2 flex items-center gap-1 text-xs font-medium hover:underline"
               >
                 Open on Wiki
                 <ExternalLink className="h-3 w-3" />

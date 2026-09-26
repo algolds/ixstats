@@ -157,7 +157,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
           <span className="text-muted-foreground">Active Stage:</span>
           <Badge
             variant="outline"
-            className="border-amber-500/20 bg-amber-500/10 text-[10px] font-bold text-amber-400"
+            className="border-amber-500/20 bg-amber-500/10 text-xs font-bold text-amber-400"
           >
             Stage {(dbSeason as any).activeStage ?? 1}
           </Badge>
@@ -170,7 +170,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
           {((dbLeague as any).settings.stages as any[]).map((stg: any, sIdx: number) => (
             <div
               key={sIdx}
-              className="text-muted-foreground border-border/20 flex justify-between border-b py-0.5 text-[10px] last:border-0"
+              className="text-muted-foreground border-border/20 flex justify-between border-b py-0.5 text-xs last:border-0"
             >
               <span className="font-medium">
                 Stage {stg.id}:{" "}
@@ -203,7 +203,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
               </span>
               <div className="flex items-center gap-1.5">
                 {(m as any).stage && (
-                  <Badge variant="secondary" className="px-1 font-mono text-[8px]">
+                  <Badge variant="secondary" className="px-1 font-mono text-xs">
                     S{(m as any).stage}
                   </Badge>
                 )}

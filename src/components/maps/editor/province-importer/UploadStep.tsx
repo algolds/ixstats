@@ -82,7 +82,7 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
 
       {/* Scope picker */}
       <div className="space-y-2">
-        <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Import Scope
         </label>
         <div className="grid grid-cols-3 gap-2">
@@ -164,7 +164,7 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
         </div>
       )}
 
-      <div className="text-muted-foreground text-[10px]">
+      <div className="text-muted-foreground text-xs">
         <strong>Tips:</strong> For best results, use an Inkscape SVG where each province is a
         separate path or group. Name your groups/paths with province names. For PNG files, use
         distinct fill colors for each province.

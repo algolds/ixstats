@@ -105,27 +105,27 @@ export const DailyBonusWidget: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="flex w-full cursor-pointer items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-[11px] font-semibold text-amber-800 shadow-sm transition-all hover:bg-amber-500/25 active:scale-[0.98] dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/15"
+            className="flex w-full cursor-pointer items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-xs font-semibold text-amber-800 shadow-sm transition-all hover:bg-amber-500/25 active:scale-[0.98] dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/15"
           >
             <Trophy className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-            <span className="flex-1 text-left text-[11px] leading-tight select-none">
+            <span className="flex-1 text-left text-xs leading-tight select-none">
               Daily Reward
             </span>
             {balanceData?.loginStreak > 0 && (
-              <span className="flex items-center gap-0.5 text-[9px] font-semibold text-amber-700 tabular-nums opacity-90 dark:text-amber-300">
+              <span className="flex items-center gap-0.5 text-xs font-semibold text-amber-700 tabular-nums opacity-90 dark:text-amber-300">
                 <Flame className="h-2.5 w-2.5 fill-amber-500/25 text-amber-600 dark:text-amber-400" />
                 {balanceData.loginStreak}d
               </span>
             )}
           </button>
         ) : (
-          <div className="text-muted-foreground border-border bg-muted/40 flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5 text-[10px] select-none">
-            <span className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium">
+          <div className="text-muted-foreground border-border bg-muted/40 flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs select-none">
+            <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
               <Trophy className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
               Daily Claimed
             </span>
             {(balanceData?.loginStreak ?? 0) > 0 && (
-              <span className="text-muted-foreground flex items-center gap-0.5 text-[9px] font-medium tabular-nums">
+              <span className="text-muted-foreground flex items-center gap-0.5 text-xs font-medium tabular-nums">
                 <Flame className="fill-muted-foreground/20 h-2.5 w-2.5" />
                 {balanceData?.loginStreak}d streak
               </span>
@@ -165,7 +165,7 @@ export const DailyBonusWidget: React.FC = () => {
                     </h4>
                   </div>
                   {(balanceData?.loginStreak ?? 0) > 0 && (
-                    <div className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-[9px] leading-none font-medium text-amber-600 dark:border-amber-500/25 dark:bg-amber-500/15 dark:text-amber-400">
+                    <div className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs leading-none font-medium text-amber-600 dark:border-amber-500/25 dark:bg-amber-500/15 dark:text-amber-400">
                       <Flame className="relative -top-[0.5px] h-3 w-3 shrink-0 fill-amber-500/25 text-amber-500" />
                       <span>{balanceData?.loginStreak} Streak</span>
                     </div>
@@ -191,7 +191,7 @@ export const DailyBonusWidget: React.FC = () => {
                     <span className="text-foreground mt-2 text-xs font-semibold group-hover:text-amber-600 dark:group-hover:text-amber-400">
                       IxCredits
                     </span>
-                    <span className="text-muted-foreground mt-0.5 text-[9px] leading-tight">
+                    <span className="text-muted-foreground mt-0.5 text-xs leading-tight">
                       1 to 10,000 IxCredits scaled by level & streak
                     </span>
                   </button>
@@ -209,7 +209,7 @@ export const DailyBonusWidget: React.FC = () => {
                     <span className="text-foreground mt-2 text-xs font-semibold group-hover:text-blue-600 dark:group-hover:text-blue-400">
                       Card Pull
                     </span>
-                    <span className="text-muted-foreground mt-0.5 text-[9px] leading-tight">
+                    <span className="text-muted-foreground mt-0.5 text-xs leading-tight">
                       Pulls 1 random card (streak scales rarity)
                     </span>
                   </button>
@@ -268,7 +268,7 @@ export const DailyBonusWidget: React.FC = () => {
                       />
                     )}
                     <div className="absolute right-0 bottom-0 left-0 bg-black/85 px-2 py-1.5 text-center">
-                      <span className="block truncate text-[10px] font-semibold text-white">
+                      <span className="block truncate text-xs font-semibold text-white">
                         {claimResult.cardAwarded.title}
                       </span>
                     </div>

@@ -199,7 +199,7 @@ function ElementRenderer(props: any) {
       return (
         <span
           {...attributes}
-          className="text-wiki align-super text-[10px] font-semibold cursor-pointer select-none hover:underline"
+          className="text-wiki align-super text-xs font-semibold cursor-pointer select-none hover:underline"
           title={(element as any).label ? `Reference: ${(element as any).label}` : "Citation"}
         >
           [{(element as any).label || (element as any).name || "ref"}]
@@ -218,7 +218,7 @@ function ElementRenderer(props: any) {
         <span
           {...attributes}
           contentEditable={false}
-          className="inline-flex items-center gap-1 mx-0.5 px-1.5 py-0.5 rounded-md bg-secondary/80 border border-border/50 text-[11px] font-mono text-foreground select-none align-baseline hover:bg-secondary transition-colors"
+          className="inline-flex items-center gap-1 mx-0.5 px-1.5 py-0.5 rounded-md bg-secondary/80 border border-border/50 text-xs font-mono text-foreground select-none align-baseline hover:bg-secondary transition-colors"
         >
           <span className="text-wiki font-semibold">{"{{"}</span>
           <span>{element.templateName || (element as any).name || "template"}</span>

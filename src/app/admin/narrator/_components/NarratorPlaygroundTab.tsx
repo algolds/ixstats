@@ -130,7 +130,7 @@ export function NarratorPlaygroundTab() {
               <Label className="text-foreground text-xs font-bold uppercase">
                 Sandbox Snapshot Mode
               </Label>
-              <p className="text-muted-foreground text-[10px]">
+              <p className="text-muted-foreground text-xs">
                 Inject custom JSON metrics directly instead of querying database instances.
               </p>
             </div>
@@ -150,7 +150,7 @@ export function NarratorPlaygroundTab() {
           {!sandboxMode && (
             <div className="border-border/20 bg-background/30 grid grid-cols-1 gap-3 rounded-xl border p-3.5 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[10px] font-semibold uppercase">
+                <Label className="text-muted-foreground text-xs font-semibold uppercase">
                   1. Country
                 </Label>
                 <Select
@@ -174,7 +174,7 @@ export function NarratorPlaygroundTab() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[10px] font-semibold uppercase">
+                <Label className="text-muted-foreground text-xs font-semibold uppercase">
                   2. Event Type
                 </Label>
                 <Select
@@ -196,7 +196,7 @@ export function NarratorPlaygroundTab() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[10px] font-semibold uppercase">
+                <Label className="text-muted-foreground text-xs font-semibold uppercase">
                   3. Live Incident
                 </Label>
                 <Select
@@ -222,7 +222,7 @@ export function NarratorPlaygroundTab() {
           {/* Title & Description */}
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+              <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Event Title
               </Label>
               <Input
@@ -234,7 +234,7 @@ export function NarratorPlaygroundTab() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+              <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Event Details
               </Label>
               <Textarea
@@ -250,21 +250,21 @@ export function NarratorPlaygroundTab() {
           {/* Sandbox JSON */}
           {sandboxMode && (
             <div className="space-y-1">
-              <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+              <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Sandbox Country Snapshot (JSON)
               </Label>
               <Textarea
                 value={sandboxMetricsJson}
                 onChange={(e) => setSandboxMetricsJson(e.target.value)}
                 rows={5}
-                className="border-border/30 bg-background/50 rounded-xl font-mono text-[11px] leading-relaxed"
+                className="border-border/30 bg-background/50 rounded-xl font-mono text-xs leading-relaxed"
               />
             </div>
           )}
 
           {/* Custom Prompt */}
           <div className="space-y-1">
-            <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Prompt Override (Playground only)
             </Label>
             <Textarea
@@ -299,11 +299,11 @@ export function NarratorPlaygroundTab() {
       {/* Preview Card Panel (Right) */}
       <div className="space-y-4 xl:col-span-5">
         <div className="flex items-center justify-between">
-          <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Chronicle Card Mockup Preview
           </Label>
           {playgroundLatency !== null && (
-            <span className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-cyan-400">
+            <span className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 font-mono text-xs font-bold text-cyan-400">
               {playgroundLatency}ms
             </span>
           )}
@@ -328,7 +328,7 @@ export function NarratorPlaygroundTab() {
                 <ScrollText className="h-4 w-4 animate-pulse" />
                 <span>The Chronicle</span>
               </div>
-              <span className="text-muted-foreground/60 font-mono text-[10px] uppercase italic">
+              <span className="text-muted-foreground/60 font-mono text-xs uppercase italic">
                 {selectedEventType}
               </span>
             </div>
@@ -346,7 +346,7 @@ export function NarratorPlaygroundTab() {
 
         <div className="border-border/30 bg-card/25 space-y-1.5 rounded-2xl border p-4 text-xs shadow-xs backdrop-blur-md">
           <h4 className="text-foreground text-xs font-bold uppercase">Immersion Snapshots</h4>
-          <p className="text-muted-foreground text-[11px] leading-relaxed">
+          <p className="text-muted-foreground text-xs leading-relaxed">
             During live simulation, when a player views an Issue, Policy, or Cabinet Decision, a
             contextual snapshot of live national metrics (GDP, stability, approval, government type)
             is passed alongside details to generate immersion flavor text.

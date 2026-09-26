@@ -308,12 +308,12 @@ export function VaultStoreControl() {
                     </TableCell>
                     <TableCell>
                       <div className="text-foreground font-semibold">{item.name}</div>
-                      <div className="text-muted-foreground max-w-sm truncate text-[10px]">
+                      <div className="text-muted-foreground max-w-sm truncate text-xs">
                         {item.description || "No description provided."}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-[10px] capitalize">
+                      <Badge variant="secondary" className="text-xs capitalize">
                         {item.category}
                       </Badge>
                     </TableCell>
@@ -321,7 +321,7 @@ export function VaultStoreControl() {
                       <div className="flex gap-1.5">
                         <Badge
                           variant="outline"
-                          className={`px-1.5 py-0 text-[9px] uppercase ${getQualityBadge(
+                          className={`px-1.5 py-0 text-xs uppercase ${getQualityBadge(
                             item.quality
                           )}`}
                         >
@@ -330,7 +330,7 @@ export function VaultStoreControl() {
                         {item.badgeText && (
                           <Badge
                             variant="outline"
-                            className="bg-slate-550/10 text-muted-foreground border-slate-500/20 px-1.5 py-0 text-[9px]"
+                            className="bg-slate-550/10 text-muted-foreground border-slate-500/20 px-1.5 py-0 text-xs"
                           >
                             {item.badgeText}
                           </Badge>
@@ -343,7 +343,7 @@ export function VaultStoreControl() {
                     <TableCell className="text-center">
                       <Badge
                         variant={item.isActive ? "default" : "secondary"}
-                        className={`text-[9px] ${
+                        className={`text-xs ${
                           item.isActive
                             ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/15"
                             : "border-slate-500/20 bg-slate-500/10 text-slate-400 hover:bg-slate-500/15"
@@ -720,13 +720,13 @@ export function VaultStoreControl() {
                   <TableBody>
                     {priceHistory.map((hist: any) => (
                       <TableRow key={hist.id}>
-                        <TableCell className="text-muted-foreground text-[10px]">
+                        <TableCell className="text-muted-foreground text-xs">
                           {new Date(hist.changedAt).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right font-mono text-xs font-bold text-amber-500">
                           {hist.price.toLocaleString()} IxC
                         </TableCell>
-                        <TableCell className="text-muted-foreground max-w-[100px] truncate text-right text-[10px]">
+                        <TableCell className="text-muted-foreground max-w-[100px] truncate text-right text-xs">
                           {hist.adminId.substring(0, 8)}...
                         </TableCell>
                       </TableRow>

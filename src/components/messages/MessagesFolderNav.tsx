@@ -84,7 +84,7 @@ export function MessagesFolderNav({
         <div className="flex items-center gap-2">
           <span className="text-foreground text-[13px] font-bold tracking-tight">Messages</span>
           {totalUnread > 0 && (
-            <span className="flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] leading-none font-bold text-white tabular-nums shadow-2xs">
+            <span className="flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-emerald-500 px-1 text-xs leading-none font-bold text-white tabular-nums shadow-2xs">
               {totalUnread > 99 ? "99+" : totalUnread}
             </span>
           )}
@@ -128,7 +128,7 @@ export function MessagesFolderNav({
                       soundEffects.chime();
                     }}
                     title="Test notification sound"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/20 cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/20 cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium transition-colors"
                   >
                     Test
                   </button>

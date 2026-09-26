@@ -145,7 +145,7 @@ export function SectorCard({
                 {constraint?.locked && (
                   <Badge
                     variant="secondary"
-                    className="border-red-500/20 bg-red-500/10 px-1.5 py-0 text-[9px] leading-none text-red-400"
+                    className="border-red-500/20 bg-red-500/10 px-1.5 py-0 text-xs leading-none text-red-400"
                   >
                     Constrained
                   </Badge>
@@ -154,7 +154,7 @@ export function SectorCard({
                   <Badge
                     variant={isBoosted ? "default" : "secondary"}
                     className={cn(
-                      "px-1.5 py-0 text-[9px] leading-none",
+                      "px-1.5 py-0 text-xs leading-none",
                       isBoosted
                         ? "border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
                         : isPenalized
@@ -168,7 +168,7 @@ export function SectorCard({
                   </Badge>
                 )}
               </div>
-              <span className="text-muted-foreground text-[10px]">
+              <span className="text-muted-foreground text-xs">
                 {template.baseContribution}% template base
               </span>
             </div>
@@ -193,7 +193,7 @@ export function SectorCard({
             {isRecommended && !isActive && !isLocked && (
               <Badge
                 variant="default"
-                className="h-4 border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0 text-[9px] font-semibold tracking-wider text-emerald-400 uppercase"
+                className="h-4 border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0 text-xs font-semibold tracking-wider text-emerald-400 uppercase"
               >
                 Recommended
               </Badge>
@@ -210,14 +210,14 @@ export function SectorCard({
 
         {/* Incompatible Component List */}
         {isLocked && lockedBy.length > 0 && (
-          <div className="rounded border border-red-500/10 bg-red-500/[0.03] px-2.5 py-1 text-[9px] leading-tight text-red-400">
+          <div className="rounded border border-red-500/10 bg-red-500/[0.03] px-2.5 py-1 text-xs leading-tight text-red-400">
             <span className="font-semibold">Incompatible with:</span> {lockedBy.join(", ")}
           </div>
         )}
 
         {/* Recommendations list */}
         {isRecommended && !isActive && !isLocked && recommendedBy.length > 0 && (
-          <div className="flex items-start gap-1 rounded border border-emerald-500/10 bg-emerald-500/[0.03] px-2.5 py-1 text-[9px] leading-tight text-emerald-400">
+          <div className="flex items-start gap-1 rounded border border-emerald-500/10 bg-emerald-500/[0.03] px-2.5 py-1 text-xs leading-tight text-emerald-400">
             <ArrowUpRight className="mt-0.5 h-3 w-3 shrink-0" />
             <div>
               <span className="font-semibold">Recommended by:</span> {recommendedBy.join(", ")}
@@ -235,7 +235,7 @@ export function SectorCard({
             {isAffected && affectingComponents.length > 0 && (
               <div
                 className={cn(
-                  "space-y-1 rounded-lg border border-white/5 bg-black/10 p-2 text-[10px]",
+                  "space-y-1 rounded-lg border border-white/5 bg-black/10 p-2 text-xs",
                   isBoosted ? "text-emerald-400" : "text-amber-400"
                 )}
               >
@@ -248,7 +248,7 @@ export function SectorCard({
                   </span>
                 </div>
                 {effectiveGDP !== undefined && activeConfig.gdpContribution !== effectiveGDP && (
-                  <div className="flex items-center justify-between text-[9px]">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-zinc-400">Effective GDP Contribution:</span>
                     <span className="font-semibold text-emerald-400">
                       {activeConfig.gdpContribution.toFixed(1)}% → {effectiveGDP.toFixed(1)}%
@@ -257,7 +257,7 @@ export function SectorCard({
                 )}
                 {effectiveEmployment !== undefined &&
                   activeConfig.employmentShare !== effectiveEmployment && (
-                    <div className="flex items-center justify-between text-[9px]">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="text-zinc-400">Effective Employment Share:</span>
                       <span className="font-semibold text-emerald-400">
                         {activeConfig.employmentShare.toFixed(1)}% →{" "}
@@ -426,7 +426,7 @@ export function SectorCard({
             <Badge
               key={idx}
               variant="secondary"
-              className="border-none bg-white/5 px-1.5 py-1 text-[9px] leading-none font-normal text-zinc-400 hover:bg-white/5"
+              className="border-none bg-white/5 px-1.5 py-1 text-xs leading-none font-normal text-zinc-400 hover:bg-white/5"
             >
               {char}
             </Badge>
@@ -434,7 +434,7 @@ export function SectorCard({
           {template.characteristics.length > 2 && (
             <Badge
               variant="secondary"
-              className="flex items-center justify-center border-none bg-white/5 px-1 py-1 text-[9px] leading-none font-normal text-zinc-400 hover:bg-white/5"
+              className="flex items-center justify-center border-none bg-white/5 px-1 py-1 text-xs leading-none font-normal text-zinc-400 hover:bg-white/5"
             >
               +{template.characteristics.length - 2}
             </Badge>

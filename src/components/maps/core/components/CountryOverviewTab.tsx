@@ -72,7 +72,7 @@ export function CountryOverviewTab({
           />
           <button
             onClick={() => setActiveTab("info")}
-            className="mt-1 text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
+            className="mt-1 text-xs font-medium text-blue-600 transition-colors hover:text-blue-500"
           >
             Read more →
           </button>
@@ -112,7 +112,7 @@ export function CountryOverviewTab({
       {/* Geography — clickable badges to highlight on map */}
       {(summary.continent || summary.region) && (
         <div className="mt-4">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Geography
           </div>
           <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
@@ -141,7 +141,7 @@ export function CountryOverviewTab({
       {/* Leader / Government */}
       {(summary.leader || summary.governmentType) && (
         <div className="mt-3">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Government
           </div>
           <div className="text-foreground/80 mt-1 space-y-0.5 text-xs">
@@ -165,12 +165,12 @@ export function CountryOverviewTab({
       {/* Sovereignty - subject of another */}
       {sovereignty.sovereign && (
         <div className="mt-3">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
             <Swords className="h-3 w-3" />
             Sovereignty
           </div>
           <div className="mt-1.5 rounded-lg border border-amber-200/50 bg-amber-50/50 p-2">
-            <div className="text-[10px] text-amber-700">
+            <div className="text-xs text-amber-700">
               {SOVEREIGNTY_TYPE_MAP[
                 sovereignty.sovereign.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP
               ]?.label ?? sovereignty.sovereign.relationshipType}{" "}
@@ -197,7 +197,7 @@ export function CountryOverviewTab({
             </button>
             {sovereignty.sovereign.autonomyLevel != null && (
               <div className="mt-1.5 flex items-center gap-2">
-                <span className="text-[10px] text-amber-600">Autonomy</span>
+                <span className="text-xs text-amber-600">Autonomy</span>
                 <div className="h-1.5 flex-1 rounded-full bg-amber-200">
                   <div
                     className="h-1.5 rounded-full bg-amber-500"
@@ -206,13 +206,13 @@ export function CountryOverviewTab({
                     }}
                   />
                 </div>
-                <span className="text-[10px] font-medium text-amber-700">
+                <span className="text-xs font-medium text-amber-700">
                   {Math.round(sovereignty.sovereign.autonomyLevel * 100)}%
                 </span>
               </div>
             )}
             {sovereignty.sovereign.establishedDate && (
-              <div className="mt-1 text-[10px] text-amber-600">
+              <div className="mt-1 text-xs text-amber-600">
                 Est. {sovereignty.sovereign.establishedDate}
               </div>
             )}
@@ -223,7 +223,7 @@ export function CountryOverviewTab({
       {/* Sovereignty - sovereign over others */}
       {sovereignty.subjects.length > 0 && (
         <div className="mt-3">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
             <Shield className="h-3 w-3" />
             Domains ({sovereignty.subjects.length})
           </div>
@@ -250,7 +250,7 @@ export function CountryOverviewTab({
                     <img src={s.flag} alt="" className="h-3 w-4 rounded-sm object-cover" />
                   )}
                   {s.name}
-                  <span className="text-[9px] text-indigo-400">
+                  <span className="text-xs text-indigo-400">
                     (
                     {SOVEREIGNTY_TYPE_MAP[s.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]
                       ?.short ?? s.relationshipType}
@@ -266,7 +266,7 @@ export function CountryOverviewTab({
       {/* Neighbors */}
       {neighbors.length > 0 && (
         <div className="mt-3">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Neighbors
           </div>
           <div className="mt-1 flex flex-wrap gap-1">

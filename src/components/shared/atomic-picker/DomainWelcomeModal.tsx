@@ -221,12 +221,12 @@ export const DomainWelcomeModal = React.memo(function DomainWelcomeModal({
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-foreground">{currentTip.title}</h3>
                     {currentTip.badge && (
-                      <Badge variant="outline" className="text-[10px] font-medium border-border/50">
+                      <Badge variant="outline" className="text-xs font-medium border-border/50">
                         {currentTip.badge}
                       </Badge>
                     )}
                   </div>
-                  <span className="text-[10px] font-medium text-muted-foreground">
+                  <span className="text-xs font-medium text-muted-foreground">
                     Step {currentIndex + 1} of {tips.length}
                   </span>
                 </div>

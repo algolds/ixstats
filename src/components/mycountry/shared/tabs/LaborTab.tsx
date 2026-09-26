@@ -88,7 +88,7 @@ export function LaborTab({
                 content="View national employment rates, labor participation, wages, and education levels. Click values to open historical charts and details."
               />
             </div>
-            <p className="text-muted-foreground/80 text-[11px]">
+            <p className="text-muted-foreground/80 text-xs">
               Employment, wages, and human capital for {country.name}
             </p>
           </div>
@@ -120,7 +120,7 @@ export function LaborTab({
                 }
                 className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-[transform,opacity,border-color,background-color] duration-150 ease-out active:scale-[0.98] dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   {metricView.workforce === "participation"
                     ? "Participation Rate"
                     : "Total Workforce"}
@@ -147,7 +147,7 @@ export function LaborTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                <p className="text-muted-foreground mt-0.5 truncate text-xs">
                   {metricView.workforce === "participation"
                     ? "Active workforce share"
                     : `${(economyData?.labor?.laborForceParticipationRate ?? 0).toFixed(1)}% participation`}
@@ -164,7 +164,7 @@ export function LaborTab({
                 }
                 className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-[transform,opacity,border-color,background-color] duration-150 ease-out active:scale-[0.98] dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   {metricView.employment === "employed" ? "Employment Rate" : "Unemployment Rate"}
                 </p>
                 <div
@@ -195,14 +195,14 @@ export function LaborTab({
                     const unemp = economyData?.labor?.unemploymentRate ?? 0;
                     if (unemp < 4.0)
                       return (
-                        <span className="text-[10px] font-semibold text-emerald-500">Low</span>
+                        <span className="text-xs font-semibold text-emerald-500">Low</span>
                       );
                     if (unemp > 8.0)
-                      return <span className="text-[10px] font-semibold text-red-500">High</span>;
-                    return <span className="text-[10px] font-semibold text-amber-500">Stable</span>;
+                      return <span className="text-xs font-semibold text-red-500">High</span>;
+                    return <span className="text-xs font-semibold text-amber-500">Stable</span>;
                   })()}
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                <p className="text-muted-foreground mt-0.5 truncate text-xs">
                   {metricView.employment === "employed"
                     ? `Active employment share`
                     : `Seeking employment`}
@@ -219,7 +219,7 @@ export function LaborTab({
                 }
                 className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-[transform,opacity,border-color,background-color] duration-150 ease-out active:scale-[0.98] dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   {metricView.compensation === "minimum" ? "Minimum Wage" : "Average Wage"}
                 </p>
                 <div
@@ -247,7 +247,7 @@ export function LaborTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                <p className="text-muted-foreground mt-0.5 truncate text-xs">
                   {metricView.compensation === "minimum"
                     ? `Per year (mandatory)`
                     : `Average annual salary`}
@@ -304,40 +304,40 @@ export function LaborTab({
               <div className="relative z-10 space-y-4 p-4">
                 <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Labor Force
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
                       {(economyData?.labor?.totalWorkforce ?? 0).toLocaleString()}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Active workforce</p>
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Active workforce</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Participation
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
                       {`${(economyData?.labor?.laborForceParticipationRate ?? 0).toFixed(1)}%`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Working-age share</p>
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Working-age share</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Employment
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
                       {`${(economyData?.labor?.employmentRate ?? 0).toFixed(1)}%`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Employed portion</p>
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Employed portion</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Unemployment
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
                       {`${(economyData?.labor?.unemploymentRate ?? 0).toFixed(1)}%`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Actively seeking</p>
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Actively seeking</p>
                   </div>
                 </div>
 
@@ -437,34 +437,34 @@ export function LaborTab({
               <div className="relative z-10 space-y-4 p-4">
                 <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Average Annual Income
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
                       {formatExactCurrency(economyData?.labor?.averageAnnualIncome ?? 0, currency)}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Mean earnings</p>
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Mean earnings</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Minimum Wage
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
                       {formatExactCurrency(economyData?.labor?.minimumWage ?? 0, currency)}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Per year</p>
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Per year</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Average Work Week
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
                       {economyData?.labor?.averageWorkweekHours ?? 0}h
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Hours per week</p>
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Hours per week</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Productivity Index
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
@@ -472,7 +472,7 @@ export function LaborTab({
                         economyData?.labor?.skillsAndProductivity?.laborProductivityIndex ?? 0
                       ).toFixed(0)}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Output efficiency</p>
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Output efficiency</p>
                   </div>
                 </div>
 
@@ -567,46 +567,46 @@ export function LaborTab({
               <div className="relative z-10 space-y-4 p-4">
                 <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Education Years
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
                       {`${(economyData?.labor?.skillsAndProductivity?.averageEducationYears ?? 0).toFixed(1)} years`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">
                       Schooling duration
                     </p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Tertiary Ed Rate
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
                       {`${(economyData?.labor?.skillsAndProductivity?.tertiaryEducationRate ?? 0).toFixed(1)}%`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">
                       University graduates
                     </p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Vocational Rate
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
                       {`${(economyData?.labor?.skillsAndProductivity?.vocationalTrainingRate ?? 0).toFixed(1)}%`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">
                       Technical certified
                     </p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                       Youth Unemp.
                     </p>
                     <p className="text-foreground mt-0.5 text-sm font-bold">
                       {`${(economyData?.labor?.youthUnemploymentRate ?? 0).toFixed(1)}%`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">
                       Age 15-24 unemployed
                     </p>
                   </div>

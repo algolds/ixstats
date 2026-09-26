@@ -36,7 +36,7 @@ export function DiplomaticMatrixCard({
     >
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
             International Relations
           </span>
           <h3 className="text-base font-bold tracking-tight text-foreground">
@@ -68,13 +68,13 @@ export function DiplomaticMatrixCard({
                   <span className="text-sm">{partner.flag}</span>
                   <div>
                     <p className="text-xs font-bold text-foreground">{partner.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{partner.tier}</p>
+                    <p className="text-xs text-muted-foreground">{partner.tier}</p>
                   </div>
                 </div>
 
                 <div className="text-right">
                   <span className="text-xs font-extrabold text-emerald-400">{partner.score}%</span>
-                  <p className="text-[10px] text-muted-foreground">{partner.trade}</p>
+                  <p className="text-xs text-muted-foreground">{partner.trade}</p>
                 </div>
               </div>
             ))}
@@ -90,15 +90,15 @@ export function DiplomaticMatrixCard({
 
           <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-sm">
             <div className="flex items-center justify-between border-b border-white/5 pb-2">
-              <span className="text-[11px] text-muted-foreground">Annual Trade Balance</span>
+              <span className="text-xs text-muted-foreground">Annual Trade Balance</span>
               <span className="text-xs font-bold text-emerald-400">+$1.2 Trillion Surplus</span>
             </div>
             <div className="flex items-center justify-between border-b border-white/5 pb-2">
-              <span className="text-[11px] text-muted-foreground">Active Treaties & Accords</span>
+              <span className="text-xs text-muted-foreground">Active Treaties & Accords</span>
               <span className="text-xs font-bold text-foreground">14 Ratified Treaties</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-muted-foreground">Active Embassies</span>
+              <span className="text-xs text-muted-foreground">Active Embassies</span>
               <span className="text-xs font-bold text-foreground">58 Missions Worldwide</span>
             </div>
           </div>

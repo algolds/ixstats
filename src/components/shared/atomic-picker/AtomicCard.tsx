@@ -189,7 +189,7 @@ function AtomicCardComponent<TType extends string = string>({
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <Badge
             variant="secondary"
-            className={cn("px-1.5 py-0.5 text-[10px] font-medium border border-transparent capitalize", theme.text)}
+            className={cn("px-1.5 py-0.5 text-xs font-medium border border-transparent capitalize", theme.text)}
           >
             {component.category}
           </Badge>
@@ -197,7 +197,7 @@ function AtomicCardComponent<TType extends string = string>({
           <Badge
             variant="outline"
             className={cn(
-              "px-1.5 py-0.5 text-[10px] font-semibold border-transparent",
+              "px-1.5 py-0.5 text-xs font-semibold border-transparent",
               component.metadata.complexity === "High"
                 ? "bg-red-500/10 text-red-600 dark:text-red-400"
                 : component.metadata.complexity === "Medium"
@@ -208,7 +208,7 @@ function AtomicCardComponent<TType extends string = string>({
             {component.metadata.complexity}
           </Badge>
 
-          <Badge variant="outline" className="px-1.5 py-0.5 text-[10px] text-muted-foreground">
+          <Badge variant="outline" className="px-1.5 py-0.5 text-xs text-muted-foreground">
             {component.effectiveness}% eff.
           </Badge>
 
@@ -220,7 +220,7 @@ function AtomicCardComponent<TType extends string = string>({
                   role="button"
                   tabIndex={0}
                   onClick={(e) => e.stopPropagation()}
-                  className="inline-flex cursor-help items-center gap-0.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400"
+                  className="inline-flex cursor-help items-center gap-0.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400"
                 >
                   <Zap className="h-3 w-3" />
                   <span>+{synergisticWith.length}</span>
@@ -228,7 +228,7 @@ function AtomicCardComponent<TType extends string = string>({
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs text-xs">
                 <p className="font-semibold text-emerald-400">Synergies ({synergisticWith.length}):</p>
-                <ul className="mt-1 list-disc pl-3 text-[11px] space-y-0.5">
+                <ul className="mt-1 list-disc pl-3 text-xs space-y-0.5">
                   {synergisticWith.map((s, idx) => (
                     <li key={idx}>
                       {s.name} {s.score ? `(+${s.score}%)` : ""}
@@ -247,7 +247,7 @@ function AtomicCardComponent<TType extends string = string>({
                   role="button"
                   tabIndex={0}
                   onClick={(e) => e.stopPropagation()}
-                  className="inline-flex cursor-help items-center gap-0.5 rounded-md border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400"
+                  className="inline-flex cursor-help items-center gap-0.5 rounded-md border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-xs font-semibold text-red-600 dark:text-red-400"
                 >
                   <AlertTriangle className="h-3 w-3" />
                   <span>-{conflictingWith.length}</span>
@@ -255,7 +255,7 @@ function AtomicCardComponent<TType extends string = string>({
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs text-xs">
                 <p className="font-semibold text-red-400">Conflicts ({conflictingWith.length}):</p>
-                <ul className="mt-1 list-disc pl-3 text-[11px] space-y-0.5">
+                <ul className="mt-1 list-disc pl-3 text-xs space-y-0.5">
                   {conflictingWith.map((c, idx) => (
                     <li key={idx}>{c.name}</li>
                   ))}
@@ -267,7 +267,7 @@ function AtomicCardComponent<TType extends string = string>({
       </div>
 
       {/* Footer Details */}
-      <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] text-muted-foreground">
+      <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-xs text-muted-foreground">
         <span>Cost: {currencyFormatter(component.implementationCost)}</span>
         <span>Maint: {currencyFormatter(component.maintenanceCost)}/yr</span>
       </div>

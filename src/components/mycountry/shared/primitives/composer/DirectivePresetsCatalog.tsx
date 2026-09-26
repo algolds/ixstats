@@ -486,7 +486,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
               type="button"
               onClick={() => setSelectedCategory(cat)}
               className={cn(
-                "rounded-xl border px-3 py-1.5 text-[11px] font-extrabold transition-all duration-150 select-none active:scale-95",
+                "rounded-xl border px-3 py-1.5 text-xs font-extrabold transition-all duration-150 select-none active:scale-95",
                 selectedCategory === cat
                   ? "border-amber-500/50 bg-amber-500/20 text-amber-950 shadow-sm dark:text-amber-300"
                   : "border-border/40 bg-card/40 text-muted-foreground hover:border-border hover:bg-card hover:text-foreground"
@@ -540,7 +540,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
                 >
                   {item.label}
                 </p>
-                <span className="text-muted-foreground text-[10px] font-extrabold tracking-wider uppercase opacity-80">
+                <span className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase opacity-80">
                   {item.category}
                 </span>
               </div>

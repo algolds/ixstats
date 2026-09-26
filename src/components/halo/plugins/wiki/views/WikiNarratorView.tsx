@@ -112,7 +112,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
         <div className="flex shrink-0 items-center gap-1.5">
           {/* Progress Reading Pill */}
           {narratorState && narratorState.totalBlocks > 0 && (
-            <div className="text-muted-foreground bg-muted/40 border-border/30 flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-[11px] tabular-nums">
+            <div className="text-muted-foreground bg-muted/40 border-border/30 flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-xs tabular-nums">
               <span>
                 {narratorState.activeBlockIndex + 1}/{narratorState.totalBlocks}
               </span>

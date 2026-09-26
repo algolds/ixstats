@@ -51,7 +51,7 @@ export const CommitStep = memo(function CommitStep({
                   {c.name || `Unnamed City ${index + 1}`}
                 </span>
                 {c.isCapital && (
-                  <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-[10px] font-semibold">
+                  <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-xs font-semibold">
                     Capital
                   </span>
                 )}
@@ -130,7 +130,7 @@ export const CommitStep = memo(function CommitStep({
                 <Replace className="h-3 w-3" />
                 Replace existing subdivisions
               </span>
-              <p className="text-muted-foreground mt-0.5 text-[10px]">
+              <p className="text-muted-foreground mt-0.5 text-xs">
                 Delete {importer.existingSubdivisions.length} existing subdivision
                 {importer.existingSubdivisions.length !== 1 ? "s" : ""} before importing. This
                 cannot be undone.

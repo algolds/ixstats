@@ -66,7 +66,7 @@ export function OverviewTab({
                 }
                 className="border-border/30 bg-card/40 hover:bg-card/70 cursor-pointer rounded-xl border p-3 text-left transition-all duration-150 active:scale-[0.98] backdrop-blur-md"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   {metricView.gdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1.5">
@@ -85,7 +85,7 @@ export function OverviewTab({
                       return (
                         <span className="flex items-center gap-0.5 text-emerald-500">
                           <TrendingUp className="inline-flex h-3.5 w-3.5" />
-                          <span className="text-[10px] font-semibold">
+                          <span className="text-xs font-semibold">
                             +{gdpGrowth.toFixed(1)}%
                           </span>
                         </span>
@@ -94,13 +94,13 @@ export function OverviewTab({
                       return (
                         <span className="flex items-center gap-0.5 text-red-500">
                           <TrendingDown className="inline-flex h-3.5 w-3.5" />
-                          <span className="text-[10px] font-semibold">{gdpGrowth.toFixed(1)}%</span>
+                          <span className="text-xs font-semibold">{gdpGrowth.toFixed(1)}%</span>
                         </span>
                       );
-                    return <span className="text-muted-foreground text-[10px]">0.0%</span>;
+                    return <span className="text-muted-foreground text-xs">0.0%</span>;
                   })()}
                 </div>
-                <p className="text-muted-foreground mt-0.5 text-[11px]">
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   {metricView.gdp === "perCapita"
                     ? `${country.economicTier || "Developing"} · $${Math.round(country.currentTotalGdp ?? 0).toLocaleString("en-US")} total`
                     : `Per capita: $${Math.round(country.currentGdpPerCapita ?? 0).toLocaleString("en-US")}`}
@@ -117,7 +117,7 @@ export function OverviewTab({
                 }
                 className="border-border/30 bg-card/40 hover:bg-card/70 cursor-pointer rounded-xl border p-3 text-left transition-all duration-150 active:scale-[0.98] backdrop-blur-md"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   {metricView.population === "total" ? "Population" : "Pop. Density"}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1.5">
@@ -134,7 +134,7 @@ export function OverviewTab({
                       return (
                         <span className="flex items-center gap-0.5 text-emerald-500">
                           <TrendingUp className="inline-flex h-3.5 w-3.5" />
-                          <span className="text-[10px] font-semibold">
+                          <span className="text-xs font-semibold">
                             +{popGrowth.toFixed(1)}%
                           </span>
                         </span>
@@ -143,13 +143,13 @@ export function OverviewTab({
                       return (
                         <span className="flex items-center gap-0.5 text-red-500">
                           <TrendingDown className="inline-flex h-3.5 w-3.5" />
-                          <span className="text-[10px] font-semibold">{popGrowth.toFixed(1)}%</span>
+                          <span className="text-xs font-semibold">{popGrowth.toFixed(1)}%</span>
                         </span>
                       );
-                    return <span className="text-muted-foreground text-[10px]">0.0%</span>;
+                    return <span className="text-muted-foreground text-xs">0.0%</span>;
                   })()}
                 </div>
-                <p className="text-muted-foreground mt-0.5 text-[11px]">
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   {metricView.population === "total"
                     ? `Tier ${country.populationTier || "N/A"}${country.populationDensity ? ` · ${Math.round(country.populationDensity).toLocaleString()}/km²` : ""}`
                     : `Total: ${Math.round(country.currentPopulation ?? 0).toLocaleString("en-US")}`}
@@ -174,7 +174,7 @@ export function OverviewTab({
                     "hover:bg-card/70 cursor-pointer active:scale-[0.98]"
                 )}
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   Land Area
                 </p>
                 <p className="text-foreground mt-0.5 text-lg font-bold tracking-tight">
@@ -186,7 +186,7 @@ export function OverviewTab({
                       ? `${Math.round(country.areaSqMi).toLocaleString()} sq mi`
                       : "N/A"}
                 </p>
-                <p className="text-muted-foreground mt-0.5 text-[11px]">
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   {metricView.area === "km"
                     ? country.areaSqMi
                       ? `${Math.round(country.areaSqMi).toLocaleString()} sq mi`
@@ -204,7 +204,7 @@ export function OverviewTab({
         </Tooltip>
 
         {/* Growth footer */}
-        <div className="border-border/40 text-muted-foreground flex items-center gap-4 border-t pt-2.5 text-[11px]">
+        <div className="border-border/40 text-muted-foreground flex items-center gap-4 border-t pt-2.5 text-xs">
           <span>
             <TrendingUp className="mr-1 inline h-3 w-3 text-muted-foreground" />
             Max GDP Growth{" "}
@@ -304,7 +304,7 @@ export function OverviewTab({
                       >
                         <FieldIcon className={cn("h-3.5 w-3.5 shrink-0", f.color)} />
                         <div className="min-w-0">
-                          <p className="text-muted-foreground/70 text-[9px] tracking-wide uppercase">
+                          <p className="text-muted-foreground/70 text-xs tracking-wide uppercase">
                             {f.label}
                           </p>
                           <p className="text-foreground truncate text-xs font-semibold">

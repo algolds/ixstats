@@ -416,7 +416,7 @@ export default function StashesPage() {
                           <h2 className="truncate text-base font-bold tracking-tight text-[var(--wikios-text)]">
                             {activeStash.name}
                           </h2>
-                          <span className="shrink-0 rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-2 py-0.5 text-[10px] font-bold text-[var(--wikios-text-dim)]">
+                          <span className="shrink-0 rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-2 py-0.5 text-xs font-bold text-[var(--wikios-text-dim)]">
                             {activeStash.itemCount} item{activeStash.itemCount === 1 ? "" : "s"}
                           </span>
                         </div>
@@ -482,7 +482,7 @@ export default function StashesPage() {
                                 <span className="relative z-10">{tab.label}</span>
                                 <span
                                   className={cn(
-                                    "py-0.2 relative z-10 ml-0.5 rounded-full px-1.5 text-[9px] leading-none font-bold",
+                                    "py-0.2 relative z-10 ml-0.5 rounded-full px-1.5 text-xs leading-none font-bold",
                                     isActive
                                       ? "border border-rose-500/25 bg-rose-500/15 text-rose-400"
                                       : "bg-white/5 text-[var(--wikios-text-dim)]"
@@ -523,7 +523,7 @@ export default function StashesPage() {
                                     ? "No articles match your search"
                                     : "No articles in this collection"}
                                 </p>
-                                <p className="mx-auto max-w-sm text-[11px] text-[var(--wikios-text-dim)]">
+                                <p className="mx-auto max-w-sm text-xs text-[var(--wikios-text-dim)]">
                                   Browse wiki articles and click the{" "}
                                   <Bookmark className="inline h-3 w-3 text-rose-400" />{" "}
                                   <strong>Stash</strong> button in the toolbar to save them here.
@@ -543,7 +543,7 @@ export default function StashesPage() {
                                     ? "No quotes match your search"
                                     : "No saved quotes in this collection"}
                                 </p>
-                                <p className="mx-auto max-w-sm text-[11px] text-[var(--wikios-text-dim)]">
+                                <p className="mx-auto max-w-sm text-xs text-[var(--wikios-text-dim)]">
                                   Highlight text while reading an article and click{" "}
                                   <strong>Save Quote</strong> in the Margin capsule to curate
                                   excerpts here.
@@ -567,7 +567,7 @@ export default function StashesPage() {
                                     ? "No media matches your search"
                                     : "No media in this collection"}
                                 </p>
-                                <p className="mx-auto max-w-sm text-[11px] text-[var(--wikios-text-dim)]">
+                                <p className="mx-auto max-w-sm text-xs text-[var(--wikios-text-dim)]">
                                   Browse the{" "}
                                   <Link
                                     href={withBasePath("/wiki/repository")}
@@ -592,7 +592,7 @@ export default function StashesPage() {
                                     ? "No threads match your search"
                                     : "No forum threads in this collection"}
                                 </p>
-                                <p className="mx-auto max-w-sm text-[11px] text-[var(--wikios-text-dim)]">
+                                <p className="mx-auto max-w-sm text-xs text-[var(--wikios-text-dim)]">
                                   Browse the{" "}
                                   <Link
                                     href={withBasePath("/forum")}

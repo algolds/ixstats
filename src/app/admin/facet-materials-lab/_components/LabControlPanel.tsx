@@ -86,7 +86,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
                 key={t.id}
                 onClick={() => onChange({ template: t.id as TemplateType })}
                 className={
-                  "rounded-lg border px-2.5 py-2 text-center text-[10px] font-semibold transition-all " +
+                  "rounded-lg border px-2.5 py-2 text-center text-xs font-semibold transition-all " +
                   (config.template === t.id
                     ? "bg-primary border-primary text-primary-foreground shadow-sm"
                     : "bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground")
@@ -102,7 +102,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         <div className="border-border/10 space-y-4 border-t pt-4">
           <div className="flex items-center gap-1.5">
             <GlassWater className="text-primary h-3 w-3" />
-            <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+            <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Material & Depth
             </h4>
           </div>
@@ -168,7 +168,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               onValueChange={(val) => onChange({ depth: val[0] ?? 2 })}
               className="py-2"
             />
-            <div className="text-muted-foreground/80 flex justify-between px-0.5 text-[10px]">
+            <div className="text-muted-foreground/80 flex justify-between px-0.5 text-xs">
               <span>Flat (1)</span>
               <span>Floating (2)</span>
               <span>Overlay (3)</span>
@@ -207,7 +207,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         <div className="border-border/10 space-y-3 border-t pt-4">
           <div className="flex items-center gap-1.5">
             <Palette className="text-primary h-3 w-3" />
-            <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+            <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Texture
             </h4>
           </div>
@@ -304,7 +304,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         <div className="border-border/10 space-y-3 border-t pt-4">
           <div className="flex items-center gap-1.5">
             <GlassWater className="h-3 w-3" style={{ color: config.customAccent }} />
-            <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+            <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Glass & Refraction
             </h4>
           </div>
@@ -350,7 +350,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-0.5">
               <span className="text-foreground text-xs font-semibold">Edge Refraction</span>
-              <span className="text-muted-foreground text-[10px]">
+              <span className="text-muted-foreground text-xs">
                 Gradient sheen at material borders
               </span>
             </div>
@@ -365,7 +365,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         <div className="border-border/10 space-y-3 border-t pt-4">
           <div className="flex items-center gap-1.5">
             <Sun className="h-3 w-3" style={{ color: config.customAccent }} />
-            <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+            <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Glow & Shadow
             </h4>
           </div>
@@ -394,7 +394,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         <div className="border-border/10 space-y-3 border-t pt-4">
           <div className="flex items-center gap-1.5">
             <span
-              className="text-[10px] font-bold tracking-wider uppercase"
+              className="text-xs font-bold tracking-wider uppercase"
               style={{ color: config.customAccent }}
             >
               Depth of Field
@@ -417,7 +417,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               onValueChange={(val) => onChange({ dofStrength: val[0] ?? 0 })}
               className="py-2"
             />
-            <p className="text-muted-foreground text-[9px]">
+            <p className="text-muted-foreground text-xs">
               Moves foreground content forward and background elements backward to visualize depth
               layering.
             </p>
@@ -428,7 +428,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         <div className="border-border/10 space-y-3 border-t pt-4">
           <div className="flex items-center gap-1.5">
             <Palette className="h-3 w-3" style={{ color: config.customAccent }} />
-            <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+            <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Sandbox Background
             </h4>
           </div>
@@ -500,7 +500,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               <span className="text-foreground text-xs font-semibold">
                 Pointer Light Interactions
               </span>
-              <span className="text-muted-foreground text-[10px]">
+              <span className="text-muted-foreground text-xs">
                 Radial reflection gradient follows mouse coordinates
               </span>
             </div>

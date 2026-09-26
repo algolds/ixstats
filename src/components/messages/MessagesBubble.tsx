@@ -204,7 +204,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
         {!isConsecutive ? (
           <Avatar className="border-border/50 h-8 w-8 rounded-full border shadow-2xs">
             <AvatarImage src={account.profileImageUrl ?? undefined} />
-            <AvatarFallback className="bg-emerald-500/10 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+            <AvatarFallback className="bg-emerald-500/10 text-xs font-bold text-emerald-600 dark:text-emerald-400">
               {account.country?.flag ? account.country.flag : initials}
             </AvatarFallback>
           </Avatar>
@@ -222,11 +222,11 @@ export const MessagesBubble = React.memo(function MessagesBubble({
       >
         {!isConsecutive && !isOwn && (
           <div className="mb-1 ml-1 flex items-baseline gap-1.5">
-            <span className="text-foreground/80 text-[11px] font-semibold">
+            <span className="text-foreground/80 text-xs font-semibold">
               {resolvedDisplayName}
             </span>
             {account.country?.name && (
-              <span className="text-muted-foreground text-[10px]">· {account.country.name}</span>
+              <span className="text-muted-foreground text-xs">· {account.country.name}</span>
             )}
           </div>
         )}
@@ -236,7 +236,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
           {message.replyTo && (
             <div
               className={cn(
-                "mb-0.5 flex items-center gap-1.5 rounded-t-xl px-2.5 py-1 text-[10px] backdrop-blur-md",
+                "mb-0.5 flex items-center gap-1.5 rounded-t-xl px-2.5 py-1 text-xs backdrop-blur-md",
                 isOwn
                   ? "bg-emerald-700/60 text-emerald-100"
                   : "bg-muted/60 text-muted-foreground border-border/40 border border-b-0"
@@ -263,13 +263,13 @@ export const MessagesBubble = React.memo(function MessagesBubble({
               <div className="border-border/30 mt-2 flex items-center justify-end gap-1.5 border-t pt-1.5">
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="text-muted-foreground hover:text-foreground cursor-pointer rounded-lg px-2.5 py-1 text-[10px] font-medium transition-colors"
+                  className="text-muted-foreground hover:text-foreground cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
-                  className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 text-[10px] font-semibold text-white shadow-xs transition-all hover:bg-emerald-700 active:scale-95"
+                  className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-xs transition-all hover:bg-emerald-700 active:scale-95"
                 >
                   Save
                 </button>
@@ -292,7 +292,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
             >
               {message.classification && (
                 <div className="mb-1 flex items-center gap-1">
-                  <span className="py-0.2 flex items-center gap-1 rounded-md border border-amber-400/30 bg-amber-500/20 px-1.5 text-[8px] font-bold tracking-wider text-amber-200 uppercase">
+                  <span className="py-0.2 flex items-center gap-1 rounded-md border border-amber-400/30 bg-amber-500/20 px-1.5 text-xs font-bold tracking-wider text-amber-200 uppercase">
                     <Shield className="h-2.5 w-2.5" />
                     {message.classification}
                   </span>
@@ -337,12 +337,12 @@ export const MessagesBubble = React.memo(function MessagesBubble({
               {Object.entries(message.reactions).map(([emoji, count]) => (
                 <button
                   key={emoji}
-                  className="border-border/60 bg-background/90 py-0.2 text-foreground flex items-center gap-1 rounded-full border px-1.5 text-[10px] font-semibold shadow-xs backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+                  className="border-border/60 bg-background/90 py-0.2 text-foreground flex items-center gap-1 rounded-full border px-1.5 text-xs font-semibold shadow-xs backdrop-blur-md transition-all hover:scale-105 active:scale-95"
                   onClick={() => actions.onRemoveReaction(message.id, emoji)}
                   title="Remove reaction"
                 >
                   <span>{emoji}</span>
-                  <span className="text-muted-foreground text-[9px]">{count as number}</span>
+                  <span className="text-muted-foreground text-xs">{count as number}</span>
                 </button>
               ))}
             </div>
@@ -439,13 +439,13 @@ export const MessagesBubble = React.memo(function MessagesBubble({
                           isOwn ? "right-0" : "left-0"
                         )}
                       >
-                        <span className="text-foreground text-[11px] font-semibold">
+                        <span className="text-foreground text-xs font-semibold">
                           Delete message?
                         </span>
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => setShowDeleteConfirm(false)}
-                            className="text-muted-foreground hover:bg-muted rounded-md px-2 py-0.5 text-[10px] font-medium"
+                            className="text-muted-foreground hover:bg-muted rounded-md px-2 py-0.5 text-xs font-medium"
                           >
                             Cancel
                           </button>
@@ -454,7 +454,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
                               setShowDeleteConfirm(false);
                               actions.onDeleteMessage(message.id);
                             }}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md px-2 py-0.5 text-[10px] font-semibold"
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md px-2 py-0.5 text-xs font-semibold"
                           >
                             Delete
                           </button>

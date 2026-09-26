@@ -171,13 +171,13 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
                 )}
                 <Badge
                   variant="outline"
-                  className="text-muted-foreground h-4 border-white/10 px-1.5 py-0 text-[9px] tracking-wider uppercase"
+                  className="text-muted-foreground h-4 border-white/10 px-1.5 py-0 text-xs tracking-wider uppercase"
                 >
                   {n.category || n.type || "system"}
                 </Badge>
                 <Badge
                   variant="outline"
-                  className="text-muted-foreground flex h-4 items-center gap-1 border-white/10 px-1.5 py-0 text-[9px]"
+                  className="text-muted-foreground flex h-4 items-center gap-1 border-white/10 px-1.5 py-0 text-xs"
                 >
                   {scope.icon}
                   <span>{scope.label}</span>
@@ -190,7 +190,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
                         ? "default"
                         : "secondary"
                   }
-                  className="h-4 px-1.5 py-0 text-[9px] leading-none"
+                  className="h-4 px-1.5 py-0 text-xs leading-none"
                 >
                   {n.priority}
                 </Badge>
@@ -204,7 +204,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
           </div>
 
           <div className="flex shrink-0 flex-col items-end gap-1.5 pl-3">
-            <span className="text-muted-foreground/80 text-[10px] font-medium whitespace-nowrap">
+            <span className="text-muted-foreground/80 text-xs font-medium whitespace-nowrap">
               {formattedTime}
             </span>
             <div className="flex items-center gap-1.5">
@@ -230,7 +230,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
         <div className="space-y-3 rounded-b-xl border-t border-white/5 bg-slate-950/40 p-4 pl-[52px]">
           {n.message && (
             <div className="space-y-1">
-              <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 Full Message
               </span>
               <p className="text-foreground/90 text-xs leading-relaxed font-medium whitespace-pre-wrap select-text">
@@ -240,7 +240,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
           )}
           {n.description && !n.message && (
             <div className="space-y-1">
-              <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 Description
               </span>
               <p className="text-foreground/90 text-xs leading-relaxed font-medium whitespace-pre-wrap select-text">
@@ -249,7 +249,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-white/5 pt-2 text-[10px]">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-white/5 pt-2 text-xs">
             <div>
               <span className="text-muted-foreground font-semibold">User ID:</span>{" "}
               <code className="text-foreground/90 rounded bg-white/5 px-1 py-0.5">
@@ -273,7 +273,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
             {n.metadata && (
               <div className="col-span-2 mt-1 space-y-1">
                 <span className="text-muted-foreground font-semibold">Metadata:</span>
-                <pre className="max-w-full overflow-x-auto rounded border border-white/5 bg-black/30 p-2 font-mono text-[10px] text-emerald-400">
+                <pre className="max-w-full overflow-x-auto rounded border border-white/5 bg-black/30 p-2 font-mono text-xs text-emerald-400">
                   {JSON.stringify(JSON.parse(n.metadata), null, 2)}
                 </pre>
               </div>
@@ -284,7 +284,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
             <Button
               variant="outline"
               size="sm"
-              className="h-7 border-red-500/20 text-[10px] text-red-400 hover:bg-red-500/10 hover:text-red-500"
+              className="h-7 border-red-500/20 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-500"
               onClick={() => handleDelete(n.id)}
               disabled={deleteMutation.isPending}
             >

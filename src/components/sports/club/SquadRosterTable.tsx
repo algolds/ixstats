@@ -86,7 +86,7 @@ export function SquadRosterTable({
       <table className="w-full text-left text-xs border-collapse">
         {/* Table Header */}
         <thead>
-          <tr className="border-b border-border/30 bg-muted/30 text-[11px] font-black uppercase tracking-wider text-muted-foreground select-none">
+          <tr className="border-b border-border/30 bg-muted/30 text-xs font-black uppercase tracking-wider text-muted-foreground select-none">
             <th
               onClick={() => handleSort("number")}
               className="py-3 px-3 text-center w-12 cursor-pointer hover:text-foreground transition"
@@ -177,7 +177,7 @@ export function SquadRosterTable({
                       <p className="font-bold text-foreground truncate group-hover:text-primary transition-colors">
                         {player.firstName} {player.lastName}
                       </p>
-                      <p className="text-[10px] text-muted-foreground capitalize">
+                      <p className="text-xs text-muted-foreground capitalize">
                         {player.careerStage}
                       </p>
                     </div>
@@ -186,7 +186,7 @@ export function SquadRosterTable({
 
                 {/* Position */}
                 <td className="py-3 px-3 text-center">
-                  <Badge variant="outline" className="text-[10px] font-bold border-border/50">
+                  <Badge variant="outline" className="text-xs font-bold border-border/50">
                     {player.position}
                   </Badge>
                 </td>
@@ -259,7 +259,7 @@ export function SquadRosterTable({
                         size="sm"
                         variant="ghost"
                         onClick={() => onListPlayer(player)}
-                        className="h-7 px-2 text-[10px] font-bold text-muted-foreground hover:text-foreground cursor-pointer"
+                        className="h-7 px-2 text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer"
                       >
                         Listing
                       </Button>
@@ -268,7 +268,7 @@ export function SquadRosterTable({
                       size="sm"
                       variant="outline"
                       onClick={() => focusAthlete(player.id)}
-                      className="h-7 px-2.5 text-[10px] font-bold border-border/40 bg-card hover:bg-muted/40 cursor-pointer"
+                      className="h-7 px-2.5 text-xs font-bold border-border/40 bg-card hover:bg-muted/40 cursor-pointer"
                     >
                       Focus
                     </Button>

@@ -90,14 +90,14 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
                   <div className="min-w-0">
                     <Link
                       href={createUrl(`/countries/${c.slug}`)}
-                      className="text-foreground truncate text-[11px] font-medium hover:underline"
+                      className="text-foreground truncate text-xs font-medium hover:underline"
                     >
                       {c.name}
                     </Link>
                     <div className="flex items-center gap-1">
                       <Badge
                         variant="outline"
-                        className="text-muted-foreground border-border/40 px-1 py-0 text-[8px] font-medium tracking-wide uppercase"
+                        className="text-muted-foreground border-border/40 px-1 py-0 text-xs font-medium tracking-wide uppercase"
                       >
                         Tier {c.economicTier}
                       </Badge>
@@ -108,7 +108,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
                   <Button
                     size="sm"
                     variant={isFollowed ? "secondary" : "outline"}
-                    className="h-6 shrink-0 px-2 text-[9px] font-medium active:scale-95"
+                    className="h-6 shrink-0 px-2 text-xs font-medium active:scale-95"
                     disabled={!followerCountryId || followMutation.isPending}
                     onClick={() => {
                       if (isFollowed) return;
@@ -128,7 +128,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
         </div>
         <Link
           href={"/countries"}
-          className="text-muted-foreground hover:text-foreground hover:bg-muted/40 mt-2 flex items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-medium transition-colors active:scale-[0.98]"
+          className="text-muted-foreground hover:text-foreground hover:bg-muted/40 mt-2 flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-medium transition-colors active:scale-[0.98]"
         >
           <Globe className="h-3.5 w-3.5" />
           <span>Explore all countries →</span>

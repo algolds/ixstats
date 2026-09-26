@@ -159,7 +159,7 @@ export function EnhancedAccountManager({
                   </span>
                 )}
                 {(account as any).bio?.startsWith("Former Nation") && (
-                  <span className="text-[9px] text-gray-400">[Former Nation]</span>
+                  <span className="text-xs text-gray-400">[Former Nation]</span>
                 )}
                 {isFavorite && <Star className="h-3 w-3 fill-current text-yellow-500" />}
               </div>
@@ -258,7 +258,7 @@ export function EnhancedAccountManager({
               type="button"
               onClick={() => setFilterType(type)}
               className={cn(
-                "flex flex-1 cursor-pointer items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-[10px] tracking-wide uppercase transition-all",
+                "flex flex-1 cursor-pointer items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-xs tracking-wide uppercase transition-all",
                 isActive
                   ? "border-primary bg-primary/10 font-bold shadow-xs"
                   : "border-transparent opacity-75 hover:opacity-100",
@@ -271,7 +271,7 @@ export function EnhancedAccountManager({
                   {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}
                 </span>
               </span>
-              <span className="bg-background/50 rounded-full px-1.5 py-0.5 text-[9px] font-semibold">
+              <span className="bg-background/50 rounded-full px-1.5 py-0.5 text-xs font-semibold">
                 {count}/{limit}
               </span>
             </button>

@@ -190,7 +190,7 @@ export function BuilderWelcomeModal({
                       </p>
                     </div>
                   </div>
-                  <span className="bg-muted border-border text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-[10px]">
+                  <span className="bg-muted border-border text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-xs">
                     v{BUILDER_VERSION}
                   </span>
                 </div>
@@ -279,7 +279,7 @@ export function BuilderWelcomeModal({
                               How It Works
                             </span>
                           </div>
-                          <p className="text-muted-foreground text-[11px] leading-relaxed">
+                          <p className="text-muted-foreground text-xs leading-relaxed">
                             Every decision applies real-time modifiers to your GDP growth, stability
                             index, and currency value. All components and sliders can be customized
                             and re-allocated at any time without penalty once your nation is active.
@@ -311,7 +311,7 @@ export function BuilderWelcomeModal({
                                 {step.title}
                               </span>
                             </div>
-                            <p className="text-muted-foreground text-[10px] leading-relaxed">
+                            <p className="text-muted-foreground text-xs leading-relaxed">
                               {step.description}
                             </p>
                           </div>
@@ -344,7 +344,7 @@ export function BuilderWelcomeModal({
                                 <h4 className="text-foreground/90 text-xs font-semibold">
                                   {item.title}
                                 </h4>
-                                <p className="text-muted-foreground text-[10px] leading-normal">
+                                <p className="text-muted-foreground text-xs leading-normal">
                                   {item.description}
                                 </p>
                               </div>
@@ -388,7 +388,7 @@ export function BuilderWelcomeModal({
                               <span className="font-black text-amber-500">Q:</span>
                               {faq.q}
                             </h4>
-                            <p className="text-muted-foreground pl-4 text-[10px] leading-relaxed">
+                            <p className="text-muted-foreground pl-4 text-xs leading-relaxed">
                               {faq.a}
                             </p>
                           </div>

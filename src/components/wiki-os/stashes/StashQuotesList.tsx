@@ -69,7 +69,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
                 <button
                   type="button"
                   onClick={(e) => handleCopyQuote(e, q.id, q.selectedText)}
-                  className="flex h-7 cursor-pointer items-center gap-1 rounded-xl border border-[var(--wikios-border)] bg-white/5 px-2 text-[11px] font-semibold text-[var(--wikios-text-dim)] shadow-2xs transition-all hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
+                  className="flex h-7 cursor-pointer items-center gap-1 rounded-xl border border-[var(--wikios-border)] bg-white/5 px-2 text-xs font-semibold text-[var(--wikios-text-dim)] shadow-2xs transition-all hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
                   title="Copy quote"
                 >
                   {copiedId === q.id ? (
@@ -105,8 +105,8 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
 
             {/* Lore Significance Note if present */}
             {q.comment && q.comment !== "Saved quote" && (
-              <div className="ml-2 space-y-0.5 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/70 p-2.5 text-[11px] text-[var(--wikios-text-muted)] shadow-2xs">
-                <div className="flex items-center gap-1 text-[10px] font-bold text-[var(--wikios-text)]">
+              <div className="ml-2 space-y-0.5 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/70 p-2.5 text-xs text-[var(--wikios-text-muted)] shadow-2xs">
+                <div className="flex items-center gap-1 text-xs font-bold text-[var(--wikios-text)]">
                   <MessageSquare className="h-3 w-3 text-blue-400" />
                   <span>Lore Note</span>
                 </div>
@@ -115,7 +115,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
             )}
 
             {/* Timestamp */}
-            <div className="flex items-center gap-1 pt-0.5 pl-2 text-[10px] text-[var(--wikios-text-dim)]">
+            <div className="flex items-center gap-1 pt-0.5 pl-2 text-xs text-[var(--wikios-text-dim)]">
               <Clock className="h-2.5 w-2.5" />
               <span>
                 Saved on{" "}

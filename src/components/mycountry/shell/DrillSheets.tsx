@@ -170,12 +170,12 @@ function IntentBranchingTree({
                 />
                 <div className="truncate">
                   <p className="text-foreground/90 truncate font-semibold">{it.goal}</p>
-                  <p className="text-muted-foreground text-[10px] capitalize">
+                  <p className="text-muted-foreground text-xs capitalize">
                     {it.category} • {it.tier}
                   </p>
                 </div>
               </div>
-              <span className="text-muted-foreground shrink-0 font-mono text-[10px] font-bold capitalize">
+              <span className="text-muted-foreground shrink-0 font-mono text-xs font-bold capitalize">
                 {it.status}
               </span>
             </div>
@@ -271,17 +271,17 @@ function IntentDetail({
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={cn(
-                "rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider uppercase",
+                "rounded-full border px-2.5 py-0.5 text-xs font-extrabold tracking-wider uppercase",
                 TIER_BADGE[intent.tier] || "border-border bg-muted text-muted-foreground"
               )}
             >
               {intent.tier} Tier
             </span>
-            <span className="border-border/40 bg-muted/20 text-muted-foreground rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase">
+            <span className="border-border/40 bg-muted/20 text-muted-foreground rounded-full border px-2.5 py-0.5 text-xs font-extrabold uppercase">
               {intent.category}
             </span>
             {intent.target && (
-              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-cyan-400">
+              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-xs font-extrabold text-cyan-400">
                 Target: {intent.target}
               </span>
             )}
@@ -289,7 +289,7 @@ function IntentDetail({
 
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase",
+              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-extrabold uppercase",
               intent.status === "completed"
                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                 : intent.status === "abandoned"
@@ -341,7 +341,7 @@ function IntentDetail({
               <button
                 type="button"
                 onClick={handleCopySummary}
-                className="border-border/40 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/40 inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-all"
+                className="border-border/40 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/40 inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold transition-all"
               >
                 {copied ? (
                   <Check className="h-3 w-3 text-emerald-400" />
@@ -357,7 +357,7 @@ function IntentDetail({
                 type="button"
                 onClick={() => updateM.mutate({ id: intent.id, status: "completed" })}
                 disabled={updateM.isPending}
-                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-400 transition-all hover:bg-emerald-500/20"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-400 transition-all hover:bg-emerald-500/20"
               >
                 <CheckCircle2 className="h-3 w-3" />
                 <span>Complete Directive</span>
@@ -367,7 +367,7 @@ function IntentDetail({
             <button
               type="button"
               onClick={() => setIsShareModalOpen(true)}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-[11px] font-bold text-blue-500 dark:text-blue-400 shadow-xs transition-all hover:bg-blue-500/20 active:scale-95"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-500 dark:text-blue-400 shadow-xs transition-all hover:bg-blue-500/20 active:scale-95"
             >
               <BookOpen className="h-3.5 w-3.5" />
               <span>Share to ThinkPages...</span>
@@ -409,7 +409,7 @@ function IntentDetail({
             <Shield className="h-4 w-4" />
             <span>Resistance Progress</span>
           </div>
-          <span className="border-border/40 bg-muted/20 text-muted-foreground rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-bold">
+          <span className="border-border/40 bg-muted/20 text-muted-foreground rounded-full border px-2.5 py-0.5 font-mono text-xs font-bold">
             {linked.data?.resolvedCount ?? 0} / {linked.data?.totalCount ?? 0} resolved
           </span>
         </div>
@@ -459,7 +459,7 @@ function IntentDetail({
                   </div>
                   <span
                     className={cn(
-                      "shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-extrabold tracking-wider uppercase",
+                      "shrink-0 rounded-full border px-2 py-0.5 text-xs font-extrabold tracking-wider uppercase",
                       done
                         ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                         : iss.status === "viewed"
@@ -474,7 +474,7 @@ function IntentDetail({
             })}
           </div>
         ) : (
-          <p className="text-muted-foreground text-[11px] font-medium">
+          <p className="text-muted-foreground text-xs font-medium">
             No active resistance. The directive is proceeding without friction.
           </p>
         )}
@@ -499,10 +499,10 @@ function IntentDetail({
           </div>
           <div>
             <div className="text-foreground text-xs font-bold">Aligned Power Broker</div>
-            <div className="text-muted-foreground text-[11px] font-medium">{brokerInfo.name}</div>
+            <div className="text-muted-foreground text-xs font-medium">{brokerInfo.name}</div>
           </div>
         </div>
-        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-extrabold text-emerald-400">
+        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-extrabold text-emerald-400">
           Cabinet Aligned
         </span>
       </FacetCard>
@@ -510,7 +510,7 @@ function IntentDetail({
       {/* Applied Policy Line-Items & Stat Changes */}
       {parsedChanges.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-extrabold tracking-widest uppercase">
+          <h4 className="text-muted-foreground flex items-center gap-1.5 text-xs font-extrabold tracking-widest uppercase">
             <Sliders className="h-3.5 w-3.5 text-amber-500" />
             Applied Package Line-Items ({parsedChanges.length})
           </h4>
@@ -522,7 +522,7 @@ function IntentDetail({
                 className="bg-card/20 flex items-center justify-between p-3.5 text-xs backdrop-blur-md"
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-[10px] font-bold text-amber-500">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-xs font-bold text-amber-500">
                     #{idx + 1}
                   </span>
                   <span className="text-foreground font-bold">{change.label}</span>
@@ -550,14 +550,14 @@ function IntentDetail({
       {/* Chained Initiative Tree (Parents & Children) */}
       {(parent || children.length > 0) && (
         <div className="border-border/30 space-y-3 border-t pt-4">
-          <h4 className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-extrabold tracking-widest uppercase">
+          <h4 className="text-muted-foreground flex items-center gap-1.5 text-xs font-extrabold tracking-widest uppercase">
             <Layers className="h-3.5 w-3.5 text-amber-500" />
             Chained Initiative Tree
           </h4>
 
           {parent && (
             <div className="space-y-1">
-              <div className="text-muted-foreground text-[10px] font-bold uppercase">
+              <div className="text-muted-foreground text-xs font-bold uppercase">
                 Parent Initiative
               </div>
               <FacetCard
@@ -565,7 +565,7 @@ function IntentDetail({
                 className="bg-card/20 flex items-center justify-between border-l-2 border-l-amber-500 p-3 text-xs backdrop-blur-md"
               >
                 <span className="text-foreground font-bold">{parent.goal}</span>
-                <span className="text-[10px] font-bold text-amber-400 uppercase">
+                <span className="text-xs font-bold text-amber-400 uppercase">
                   {parent.tier}
                 </span>
               </FacetCard>
@@ -574,7 +574,7 @@ function IntentDetail({
 
           {children.length > 0 && (
             <div className="space-y-1">
-              <div className="text-muted-foreground text-[10px] font-bold uppercase">
+              <div className="text-muted-foreground text-xs font-bold uppercase">
                 Follow-up Directives ({children.length})
               </div>
               <div className="space-y-2">
@@ -588,7 +588,7 @@ function IntentDetail({
                       <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-blue-400" />
                       <span className="text-foreground font-bold">{kid.goal}</span>
                     </div>
-                    <span className="text-[10px] font-bold text-blue-400 uppercase">
+                    <span className="text-xs font-bold text-blue-400 uppercase">
                       {kid.tier}
                     </span>
                   </FacetCard>
@@ -657,7 +657,7 @@ function DrillSheetsComponent({
               <Link
                 href={`/countries/${encodeURIComponent(countryId)}#${drill.kind}`}
                 target="_blank"
-                className="group border-border/80 bg-muted/50 hover:bg-muted text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold shadow-xs transition-all active:scale-95"
+                className="group border-border/80 bg-muted/50 hover:bg-muted text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shadow-xs transition-all active:scale-95"
               >
                 <span>Open Page</span>
                 <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

@@ -73,7 +73,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
 
       {showSovereigntyForm && (
         <div className="bg-muted/40 border-border/50 space-y-2.5 rounded-lg border p-3">
-          <h4 className="text-foreground border-border/30 border-b pb-1 text-[10px] font-semibold tracking-wider uppercase">
+          <h4 className="text-foreground border-border/30 border-b pb-1 text-xs font-semibold tracking-wider uppercase">
             {editingSovereigntyId ? "Edit Sovereignty" : "New Sovereignty Relation"}
           </h4>
           <div className="space-y-2 text-xs">
@@ -243,10 +243,10 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
                     {rel.sovereignName}
                   </span>
                 </div>
-                <div className="text-muted-foreground mt-0.5 flex items-center gap-1 pl-6 text-[10px]">
+                <div className="text-muted-foreground mt-0.5 flex items-center gap-1 pl-6 text-xs">
                   <span>➔</span>
                   <span>{rel.subjectName}</span>
-                  <span className="ml-1 rounded-sm bg-primary/10 px-1 text-[9px] text-primary">
+                  <span className="ml-1 rounded-sm bg-primary/10 px-1 text-xs text-primary">
                     {typeLabel(rel.relationshipType)}
                   </span>
                 </div>

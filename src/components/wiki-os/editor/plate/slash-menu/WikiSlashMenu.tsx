@@ -90,7 +90,7 @@ export function WikiSlashMenu({
                     }}
                     className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 active:scale-[0.98]"
                   >
-                    <span className="text-muted-foreground w-5 text-center font-mono text-[11px]">
+                    <span className="text-muted-foreground w-5 text-center font-mono text-xs">
                       {item.icon}
                     </span>
                     <span className="truncate">{item.label}</span>

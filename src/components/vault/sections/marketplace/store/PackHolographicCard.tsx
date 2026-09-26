@@ -192,20 +192,20 @@ export function PackHolographicCard({
 
         <div className="mt-2.5 space-y-2 px-1">
           <div className="flex items-center justify-between">
-            <span className="text-foreground line-clamp-1 text-[11px] font-semibold">
+            <span className="text-foreground line-clamp-1 text-xs font-semibold">
               {pack.name}
             </span>
             <Badge
               variant="outline"
               className={cn(
-                "px-1 py-0 text-[8px] font-medium tracking-wider uppercase",
+                "px-1 py-0 text-xs font-medium tracking-wider uppercase",
                 config.color
               )}
             >
               {config.label}
             </Badge>
           </div>
-          <p className="text-muted-foreground line-clamp-2 text-[9px] leading-tight">
+          <p className="text-muted-foreground line-clamp-2 text-xs leading-tight">
             {pack.description || `${pack.cardCount} premium cards included`}
           </p>
           <div className="pt-1">{actionButton}</div>

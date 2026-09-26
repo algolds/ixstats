@@ -99,7 +99,7 @@ export const PreviewEconomy = memo(function PreviewEconomy({
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">Workforce</div>
               {laborEmployment.totalWorkforce && laborEmployment.totalWorkforce >= 1e6 && (
-                <div className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground/70">
+                <div className="mt-0.5 truncate font-mono text-xs text-muted-foreground/70">
                   {laborEmployment.totalWorkforce.toLocaleString()}
                 </div>
               )}

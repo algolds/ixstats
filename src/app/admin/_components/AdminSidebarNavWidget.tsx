@@ -575,7 +575,7 @@ export function AdminSidebarNavWidget({
       <nav className="space-y-5">
         {filteredGroups.map((group) => (
           <div key={group.title} className="space-y-1.5">
-            <h3 className="text-muted-foreground/70 px-2 text-[10px] font-bold tracking-wider uppercase">
+            <h3 className="text-muted-foreground/70 px-2 text-xs font-bold tracking-wider uppercase">
               {group.title}
             </h3>
 
@@ -586,7 +586,7 @@ export function AdminSidebarNavWidget({
                   key={sub.subtitle}
                   className={sIdx > 0 ? "border-border/15 border-t pt-2" : ""}
                 >
-                  <div className="text-muted-foreground/50 px-2 py-0.5 text-[9px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground/50 px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
                     {sub.subtitle}
                   </div>
 

@@ -116,7 +116,7 @@ export function CurrencySelector({
                 </span>
               )}
               {(activeOption?.symbol || currencyInfo.symbol) && (
-                <Badge variant="secondary" className="text-[10px] font-mono font-bold ml-1 shrink-0">
+                <Badge variant="secondary" className="text-xs font-mono font-bold ml-1 shrink-0">
                   {activeOption?.symbol || currencyInfo.symbol}
                 </Badge>
               )}
@@ -158,7 +158,7 @@ export function CurrencySelector({
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="text-[10px] text-muted-foreground hover:text-foreground px-1"
+                className="text-xs text-muted-foreground hover:text-foreground px-1"
               >
                 ✕
               </button>
@@ -180,7 +180,7 @@ export function CurrencySelector({
                 className="h-4 w-4 shrink-0 text-muted-foreground"
               />
               <span className="font-mono font-semibold text-xs">{value}</span>
-              <Badge variant="outline" className="text-[10px] ml-auto">
+              <Badge variant="outline" className="text-xs ml-auto">
                 Custom
               </Badge>
               <Check className="h-3.5 w-3.5 text-primary shrink-0 ml-1" />
@@ -216,7 +216,7 @@ export function CurrencySelector({
                 <span className="text-muted-foreground text-xs truncate max-w-[160px] sm:max-w-[200px]">
                   {name}
                 </span>
-                <span className="text-muted-foreground/70 font-mono text-[11px] ml-auto pl-2 font-bold shrink-0">
+                <span className="text-muted-foreground/70 font-mono text-xs ml-auto pl-2 font-bold shrink-0">
                   {symbol}
                 </span>
                 {isSelected && (

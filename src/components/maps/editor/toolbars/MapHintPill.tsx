@@ -19,7 +19,7 @@ export function MapHintPill({ isVertexEditing, mode, drawVerticesCount }: MapHin
   }
 
   return (
-    <div className="bg-card/95 text-muted-foreground ring-border absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full px-3 py-1 text-[11px] shadow-md ring-1 backdrop-blur-sm">
+    <div className="bg-card/95 text-muted-foreground ring-border absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full px-3 py-1 text-xs shadow-md ring-1 backdrop-blur-sm">
       {mode === "add-city" && "Click map to place city"}
       {mode === "add-subdivision" &&
         (drawVerticesCount >= 3

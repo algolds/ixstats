@@ -62,16 +62,16 @@ export function GovernmentFiscalSection({
         <div className="relative z-10 space-y-4 p-4">
           <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Tax Revenue % GDP
               </p>
               <p className="text-foreground mt-0.5 text-sm font-bold">
                 {`${(economyData?.fiscal?.taxRevenueGDPPercent ?? 0).toFixed(1)}%`}
               </p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Tax burden ratio</p>
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">Tax burden ratio</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Total Debt
               </p>
               <p className="text-foreground mt-0.5 text-sm font-bold">
@@ -82,27 +82,27 @@ export function GovernmentFiscalSection({
                   currency
                 )}
               </p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">
                 Outstanding national debt
               </p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Debt to GDP Ratio
               </p>
               <p className="text-foreground mt-0.5 text-sm font-bold">
                 {`${(economyData?.fiscal?.totalDebtGDPRatio ?? 0).toFixed(1)}%`}
               </p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">
                 Relative to economic size
               </p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Sovereign Rating
               </p>
               <p className="mt-0.5 text-sm font-bold text-emerald-500">AAA</p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">
                 Credit worthiness rating
               </p>
             </div>

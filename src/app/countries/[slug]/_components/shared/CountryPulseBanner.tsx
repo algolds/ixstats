@@ -109,12 +109,12 @@ export function CountryPulseBanner({ country, className }: CountryPulseBannerPro
 
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-extrabold tracking-wider uppercase text-muted-foreground">
+              <span className="text-xs font-extrabold tracking-wider uppercase text-muted-foreground">
                 National Pulse
               </span>
               <span
                 className={cn(
-                  "rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                  "rounded-full border px-2 py-0.5 text-xs font-bold uppercase tracking-wider",
                   pulseStatus.color
                 )}
               >
@@ -133,7 +133,7 @@ export function CountryPulseBanner({ country, className }: CountryPulseBannerPro
           <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5 backdrop-blur-md">
             <Coins className="h-3.5 w-3.5 text-muted-foreground" />
             <div className="text-left">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Real GDP
               </p>
               <div className="flex items-center gap-1">
@@ -153,7 +153,7 @@ export function CountryPulseBanner({ country, className }: CountryPulseBannerPro
           <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5 backdrop-blur-md">
             <Users className="h-3.5 w-3.5 text-muted-foreground" />
             <div className="text-left">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Population
               </p>
               <div className="flex items-center gap-1">
@@ -169,7 +169,7 @@ export function CountryPulseBanner({ country, className }: CountryPulseBannerPro
           <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5 backdrop-blur-md">
             <Shield className="h-3.5 w-3.5 text-muted-foreground" />
             <div className="text-left">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Stability
               </p>
               <span className="text-xs font-bold text-foreground">{stability}/100</span>

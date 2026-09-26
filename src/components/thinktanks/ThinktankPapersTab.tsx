@@ -178,7 +178,7 @@ export function ThinktankPapersTab({
               <Button
                 size="sm"
                 onClick={handleStartCreate}
-                className="h-7.5 rounded-lg bg-emerald-600 px-2.5 text-[11px] font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500"
+                className="h-7.5 rounded-lg bg-emerald-600 px-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500"
               >
                 <Plus className="mr-1 h-3 w-3" /> New Doc
               </Button>
@@ -200,7 +200,7 @@ export function ThinktankPapersTab({
           {isLoading ? (
             <div className="flex flex-col items-center justify-center gap-2 py-12">
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-              <p className="text-muted-foreground text-[11px]">Loading documents...</p>
+              <p className="text-muted-foreground text-xs">Loading documents...</p>
             </div>
           ) : filteredDocs.length === 0 ? (
             <div className="text-muted-foreground p-6 text-center text-xs">No docs found.</div>
@@ -231,7 +231,7 @@ export function ThinktankPapersTab({
                       <Lock className="h-3 w-3 shrink-0 text-amber-500/70" />
                     )}
                   </div>
-                  <div className="text-muted-foreground mt-1 flex w-full items-center justify-between text-[10px]">
+                  <div className="text-muted-foreground mt-1 flex w-full items-center justify-between text-xs">
                     <span>v{doc.version || 1}</span>
                     <span>{new Date(doc.updatedAt).toLocaleDateString()}</span>
                   </div>
@@ -325,12 +325,12 @@ export function ThinktankPapersTab({
                   </h2>
                   <Badge
                     variant="outline"
-                    className="text-[10px] text-emerald-600 uppercase dark:text-emerald-400"
+                    className="text-xs text-emerald-600 uppercase dark:text-emerald-400"
                   >
                     v{activeDoc.version || 1}
                   </Badge>
                 </div>
-                <div className="text-muted-foreground mt-1 flex items-center gap-3 text-[11px]">
+                <div className="text-muted-foreground mt-1 flex items-center gap-3 text-xs">
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" /> Updated{" "}
                     {new Date(activeDoc.updatedAt).toLocaleDateString()}

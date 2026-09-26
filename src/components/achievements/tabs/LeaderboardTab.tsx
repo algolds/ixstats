@@ -195,7 +195,7 @@ function PodiumCard({
           >
             #{rank}
           </span>
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             {styles.label}
           </span>
         </div>

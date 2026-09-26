@@ -199,7 +199,7 @@ export function LaborDetailsModal({
                     ).toFixed(1)}
                     %
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
                     Of Population
                   </div>
                 </div>
@@ -210,7 +210,7 @@ export function LaborDetailsModal({
                       100
                     ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
                     Employed
                   </div>
                 </div>
@@ -221,7 +221,7 @@ export function LaborDetailsModal({
                       100
                     ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
                     Unemployed
                   </div>
                 </div>
@@ -229,7 +229,7 @@ export function LaborDetailsModal({
                   <div className="text-lg font-bold text-emerald-400">
                     ${(labor?.averageAnnualIncome || 0).toLocaleString()}
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
                     Avg. Income
                   </div>
                 </div>
@@ -542,7 +542,7 @@ export function LaborDetailsModal({
               <span className="text-xl font-bold text-blue-400">
                 {employmentRate >= globalAvgEmployment ? "Above Average" : "Below Average"}
               </span>
-              <span className="text-muted-foreground mt-1 text-[10px]">
+              <span className="text-muted-foreground mt-1 text-xs">
                 Employment: {employmentRate.toFixed(1)}% vs {globalAvgEmployment}% Avg
               </span>
             </div>
@@ -553,7 +553,7 @@ export function LaborDetailsModal({
               <span className="text-xl font-bold text-green-400">
                 {(labor?.laborForceParticipationRate || 0) >= 60 ? "Strong" : "Low"}
               </span>
-              <span className="text-muted-foreground mt-1 text-[10px]">
+              <span className="text-muted-foreground mt-1 text-xs">
                 Active Participation Rate: {(labor?.laborForceParticipationRate || 0).toFixed(1)}%
               </span>
             </div>
@@ -568,7 +568,7 @@ export function LaborDetailsModal({
                     ? "Moderate"
                     : "Struggling"}
               </span>
-              <span className="text-muted-foreground mt-1 text-[10px]">
+              <span className="text-muted-foreground mt-1 text-xs">
                 Unemployment Rate: {(labor?.unemploymentRate || 0).toFixed(1)}%
               </span>
             </div>
@@ -659,13 +659,13 @@ export function LaborDetailsModal({
           <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
             <CardHeader className="mb-4 p-0">
               <CardTitle className="text-sm font-semibold">Productivity Metrics</CardTitle>
-              <CardDescription className="text-[10px]">
+              <CardDescription className="text-xs">
                 Workforce efficiency and output
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                <span className="text-muted-foreground text-xs font-semibold uppercase">
                   GDP per Worker
                 </span>
                 <div className="mt-1 text-lg font-bold text-blue-400">
@@ -677,7 +677,7 @@ export function LaborDetailsModal({
               </div>
 
               <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                <span className="text-muted-foreground text-xs font-semibold uppercase">
                   Productivity Index
                 </span>
                 <div className="mt-1 text-lg font-bold text-emerald-400">
@@ -686,7 +686,7 @@ export function LaborDetailsModal({
               </div>
 
               <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                <span className="text-muted-foreground text-xs font-semibold uppercase">
                   Avg. Education
                 </span>
                 <div className="mt-1 text-lg font-bold text-indigo-400">

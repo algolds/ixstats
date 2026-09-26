@@ -194,7 +194,7 @@ export function ThinktankSettingsModal({
             <div className="border-border/40 bg-muted/20 space-y-3 rounded-2xl border p-3.5">
               <div className="flex items-center justify-between">
                 <span className="text-foreground text-xs font-bold">Branding & Artwork</span>
-                <span className="text-muted-foreground text-[10px]">Media Repository</span>
+                <span className="text-muted-foreground text-xs">Media Repository</span>
               </div>
 
               {/* Banner Preview */}
@@ -212,7 +212,7 @@ export function ThinktankSettingsModal({
                     size="sm"
                     variant="secondary"
                     onClick={() => setMediaTarget("banner")}
-                    className="bg-background/80 h-7 rounded-lg px-2.5 text-[11px] font-semibold shadow-xs backdrop-blur-md"
+                    className="bg-background/80 h-7 rounded-lg px-2.5 text-xs font-semibold shadow-xs backdrop-blur-md"
                   >
                     <MediaImage className="mr-1 h-3 w-3" />
                     {bannerUrl ? "Change Banner" : "Choose Banner"}
@@ -265,7 +265,7 @@ export function ThinktankSettingsModal({
                       </Button>
                     )}
                   </div>
-                  <p className="text-muted-foreground text-[10px]">
+                  <p className="text-muted-foreground text-xs">
                     Upload a custom emblem or choose from Wiki Commons & Unsplash.
                   </p>
                 </div>
@@ -326,7 +326,7 @@ export function ThinktankSettingsModal({
                 <Plus className="h-4 w-4 text-emerald-500" />
                 <span className="text-foreground text-xs font-bold">Invite Members</span>
               </div>
-              <p className="text-muted-foreground text-[11px] leading-snug">
+              <p className="text-muted-foreground text-xs leading-snug">
                 Send an invitation to a player or collaborator by user ID or handle.
               </p>
               <div className="flex items-center gap-2">
@@ -364,7 +364,7 @@ export function ThinktankSettingsModal({
                   }}
                 />
               </div>
-              <p className="text-muted-foreground text-[11px] leading-relaxed">
+              <p className="text-muted-foreground text-xs leading-relaxed">
                 When enabled, members can choose to publish notes under their country's Government,
                 Media, or Citizen personas. When disabled, all members post under authentic national
                 accounts.
@@ -383,7 +383,7 @@ export function ThinktankSettingsModal({
                   <span className="text-foreground text-xs font-bold">
                     {type === "public" ? "Public Group" : "Private Group"}
                   </span>
-                  <p className="text-muted-foreground text-[11px]">
+                  <p className="text-muted-foreground text-xs">
                     {type === "public"
                       ? "Anyone can discover and join this group."
                       : "Invite-only membership."}

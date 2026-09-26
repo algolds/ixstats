@@ -229,7 +229,7 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
       <div className="flex items-center gap-2">
         <BookOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
         <span className="text-foreground truncate text-sm font-semibold">{title}</span>
-        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium">
+        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
         </span>
       </div>
@@ -244,7 +244,7 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
       <a
         href={articleUrl}
         {...(wiki === "ixwiki" ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-        className="flex items-center gap-1 text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
+        className="flex items-center gap-1 text-xs font-medium text-blue-600 transition-colors hover:text-blue-500"
       >
         Read full article <ExternalLink className="h-2.5 w-2.5" />
       </a>
@@ -283,7 +283,7 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
         <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
       </div>
       {thread.forumName && (
-        <span className="inline-block rounded-full bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-400">
+        <span className="inline-block rounded-full bg-orange-500/10 px-1.5 py-0.5 text-xs font-medium text-orange-400">
           {thread.forumName}
         </span>
       )}
@@ -293,7 +293,7 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
           {thread.excerpt.length > 250 ? "…" : ""}
         </p>
       )}
-      <div className="text-muted-foreground flex items-center gap-3 text-[10px]">
+      <div className="text-muted-foreground flex items-center gap-3 text-xs">
         <span className="flex items-center gap-0.5">
           <Users className="h-2.5 w-2.5" />
           {thread.author}
@@ -311,7 +311,7 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
         href={forumUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-1 text-[10px] font-medium text-orange-500 transition-colors hover:text-orange-400"
+        className="flex items-center gap-1 text-xs font-medium text-orange-500 transition-colors hover:text-orange-400"
       >
         Open thread <ExternalLink className="h-2.5 w-2.5" />
       </a>

@@ -59,7 +59,7 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
               type="button"
               onClick={() => onToggleAgreement(partner.countryId)}
               className={cn(
-                "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors",
+                "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors",
                 partner.tradeAgreement
                   ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
                   : "bg-muted text-muted-foreground hover:text-foreground"

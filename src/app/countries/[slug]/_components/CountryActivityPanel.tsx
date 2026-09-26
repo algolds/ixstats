@@ -158,7 +158,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
     switch (source) {
       case "thinkpages":
         return (
-          <Badge variant="outline" className="text-[10px] font-bold">
+          <Badge variant="outline" className="text-xs font-bold">
             ThinkPages
           </Badge>
         );
@@ -266,7 +266,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                           dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.description) }}
                         />
                       </p>
-                      <div className="text-muted-foreground mt-1.5 flex items-center gap-3 text-[11px]">
+                      <div className="text-muted-foreground mt-1.5 flex items-center gap-3 text-xs">
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {isValid(item.timestamp)

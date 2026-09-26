@@ -43,8 +43,8 @@ export function StatPill({
     <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5">
       <Icon className={cn("h-3 w-3 shrink-0", color)} />
       <div className="min-w-0">
-        <p className="text-muted-foreground/60 text-[8px] tracking-wider uppercase">{label}</p>
-        <p className="text-foreground text-[11px] font-bold">{value}</p>
+        <p className="text-muted-foreground/60 text-xs tracking-wider uppercase">{label}</p>
+        <p className="text-foreground text-xs font-bold">{value}</p>
       </div>
     </div>
   );
@@ -84,7 +84,7 @@ export function IndicatorRow({
 }) {
   return (
     <div className="space-y-0.5">
-      <div className="flex items-center justify-between gap-2 text-[9px]">
+      <div className="flex items-center justify-between gap-2 text-xs">
         <span className="text-muted-foreground/70 truncate">{label}</span>
         <span className={cn("shrink-0 font-bold", valueClass)}>{value}</span>
       </div>
@@ -96,7 +96,7 @@ export function IndicatorRow({
 export function DetailList({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="mt-1.5 flex min-h-0 flex-1 flex-col gap-1 rounded-lg bg-white/[0.02] p-2">
-      <p className="text-muted-foreground/50 text-[8px] font-semibold tracking-wider uppercase">
+      <p className="text-muted-foreground/50 text-xs font-semibold tracking-wider uppercase">
         {title}
       </p>
       <div className="flex min-h-0 flex-1 flex-col justify-center gap-1.5">{children}</div>
@@ -255,7 +255,7 @@ function HeroSnapshotPanelsComponent({
         >
           <Users className="h-4 w-4 shrink-0 text-blue-600 transition-transform group-hover/pop:scale-110 dark:text-blue-400" />
           <div className="min-w-0">
-            <p className="text-muted-foreground/70 text-[8px] font-semibold tracking-wider uppercase">
+            <p className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
               Pop
             </p>
             <p className="text-foreground truncate text-xs font-bold tracking-tight tabular-nums group-hover/pop:underline sm:text-sm">
@@ -271,7 +271,7 @@ function HeroSnapshotPanelsComponent({
         >
           <Coins className="h-4 w-4 shrink-0 text-emerald-600 transition-transform group-hover/gdp:scale-110 dark:text-emerald-400" />
           <div className="min-w-0">
-            <p className="text-muted-foreground/70 text-[8px] font-semibold tracking-wider uppercase">
+            <p className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
               GDP
             </p>
             <p className="truncate text-xs font-bold tracking-tight text-emerald-600 tabular-nums group-hover/gdp:underline sm:text-sm dark:text-emerald-400">
@@ -287,7 +287,7 @@ function HeroSnapshotPanelsComponent({
         >
           <Activity className="h-4 w-4 shrink-0 text-amber-600 transition-transform group-hover/standing:scale-110 dark:text-amber-400" />
           <div className="min-w-0">
-            <p className="text-muted-foreground/70 text-[8px] font-semibold tracking-wider uppercase">
+            <p className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
               Standing
             </p>
             <p className="truncate text-xs font-bold tracking-tight text-amber-700 group-hover/standing:underline sm:text-sm dark:text-amber-300">
@@ -311,7 +311,7 @@ function HeroSnapshotPanelsComponent({
               >
                 <HealthRing value={ring.value} size={32} color={ring.color} label={ring.label} />
                 <div className="min-w-0 flex-1">
-                  <span className="text-muted-foreground/70 group-hover:text-foreground block truncate text-[8px] font-medium tracking-wider uppercase transition-colors">
+                  <span className="text-muted-foreground/70 group-hover:text-foreground block truncate text-xs font-medium tracking-wider uppercase transition-colors">
                     {ring.label}
                   </span>
                   <span className={cn("text-xs font-semibold tracking-tight", rating.color)}>
@@ -328,30 +328,30 @@ function HeroSnapshotPanelsComponent({
       <div className="grid grid-cols-3 gap-1 border-t border-white/10 bg-white/[0.02] p-1.5">
         <div className="flex min-w-0 items-center justify-center gap-1">
           <Heart className="h-3 w-3 shrink-0 text-red-400" />
-          <span className="text-muted-foreground/70 text-[8px] font-medium tracking-wider uppercase">
+          <span className="text-muted-foreground/70 text-xs font-medium tracking-wider uppercase">
             Approval:
           </span>
-          <span className="text-foreground truncate text-[10px] font-semibold tabular-nums">
+          <span className="text-foreground truncate text-xs font-semibold tabular-nums">
             {approvalPct}%
           </span>
         </div>
 
         <div className="flex min-w-0 items-center justify-center gap-1 border-l border-white/10 pl-1">
           <Scale className="h-3 w-3 shrink-0 text-indigo-400" />
-          <span className="text-muted-foreground/70 text-[8px] font-medium tracking-wider uppercase">
+          <span className="text-muted-foreground/70 text-xs font-medium tracking-wider uppercase">
             Stability:
           </span>
-          <span className="text-foreground truncate text-[10px] font-semibold tabular-nums">
+          <span className="text-foreground truncate text-xs font-semibold tabular-nums">
             {stabilityPct}%
           </span>
         </div>
 
         <div className="flex min-w-0 items-center justify-center gap-1 border-l border-white/10 pl-1">
           <Zap className="h-3 w-3 shrink-0 text-amber-400" />
-          <span className="text-muted-foreground/70 text-[8px] font-medium tracking-wider uppercase">
+          <span className="text-muted-foreground/70 text-xs font-medium tracking-wider uppercase">
             Capacity:
           </span>
-          <span className="text-foreground truncate text-[10px] font-semibold tabular-nums">
+          <span className="text-foreground truncate text-xs font-semibold tabular-nums">
             {capacityPct}%
           </span>
         </div>

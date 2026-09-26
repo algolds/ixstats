@@ -230,7 +230,7 @@ export function MapControls({
                       className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm border border-black/10"
                       style={{ backgroundColor: entry.color }}
                     />
-                    <span className="text-foreground text-[11px]">{entry.label}</span>
+                    <span className="text-foreground text-xs">{entry.label}</span>
                   </div>
                 ))}
               </div>
@@ -305,7 +305,7 @@ function DropdownPanel({ children }: { children: React.ReactNode }) {
 function PanelSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="[&+&]:border-border [&+&]:mt-1.5 [&+&]:border-t [&+&]:pt-1.5">
-      <div className="text-muted-foreground px-1.5 pb-0.5 text-[10px] font-semibold tracking-wider uppercase">
+      <div className="text-muted-foreground px-1.5 pb-0.5 text-xs font-semibold tracking-wider uppercase">
         {title}
       </div>
       {children}

@@ -150,7 +150,7 @@ export function MessagesConversationPanel({
                   key={filter.id}
                   onClick={() => setActiveFilter(filter.id)}
                   className={cn(
-                    "relative cursor-pointer rounded-lg px-2.5 py-1 text-[10.5px] font-semibold tracking-tight transition-all select-none active:scale-95",
+                    "relative cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold tracking-tight transition-all select-none active:scale-95",
                     isActive
                       ? "text-foreground shadow-2xs"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
@@ -287,7 +287,7 @@ export function MessagesConversationPanel({
             <p className="text-foreground text-xs font-semibold">
               {folderConfig?.emptyTitle || "No conversations found"}
             </p>
-            <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+            <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
               {searchQuery
                 ? `No conversations match "${searchQuery}"`
                 : (folderConfig?.emptyDescription ?? "")}

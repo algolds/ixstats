@@ -90,7 +90,7 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
         </div>
 
         <div className="ml-1 flex shrink-0 items-center gap-0.5">
-          <Badge variant="outline" className="h-4 px-1 text-[9px] leading-none">
+          <Badge variant="outline" className="h-4 px-1 text-xs leading-none">
             {component.effectiveness}%
           </Badge>
           {isSelected && <CheckCircle className="h-3 w-3 text-green-500 dark:text-green-400" />}
@@ -104,26 +104,26 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
       </div>
 
       {/* Description */}
-      <p className="text-muted-foreground mb-1 line-clamp-2 text-[10px] leading-snug">
+      <p className="text-muted-foreground mb-1 line-clamp-2 text-xs leading-snug">
         {component.description}
       </p>
 
       {/* Metadata */}
       <div className="space-y-0.5">
-        <div className="flex items-center justify-between text-[10px]">
+        <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Impl:</span>
           <span className="font-medium">${(component.implementationCost / 1000).toFixed(0)}k</span>
         </div>
-        <div className="flex items-center justify-between text-[10px]">
+        <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Annual:</span>
           <span className="font-medium">${(component.maintenanceCost / 1000).toFixed(0)}k</span>
         </div>
-        <div className="flex items-center justify-between text-[10px]">
+        <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Complexity:</span>
           <Badge
             variant="secondary"
             className={cn(
-              "h-3.5 px-1 text-[9px] leading-none",
+              "h-3.5 px-1 text-xs leading-none",
               getComplexityBgColor(component.metadata.complexity),
               getComplexityColor(component.metadata.complexity)
             )}
@@ -135,16 +135,16 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
 
       {/* Additional Metadata */}
       <div className="border-border/50 mt-1 flex items-center gap-2 border-t pt-1">
-        <span className="text-muted-foreground flex items-center gap-0.5 text-[10px]">
+        <span className="text-muted-foreground flex items-center gap-0.5 text-xs">
           <Clock className="h-2.5 w-2.5" />
           {component.metadata.timeToImplement}
         </span>
-        <span className="text-muted-foreground flex items-center gap-0.5 text-[10px]">
+        <span className="text-muted-foreground flex items-center gap-0.5 text-xs">
           <Users className="h-2.5 w-2.5" />
           {component.metadata.staffRequired}
         </span>
         {component.metadata.technologyRequired && (
-          <span className="flex items-center gap-0.5 text-[10px] text-blue-500 dark:text-blue-400">
+          <span className="flex items-center gap-0.5 text-xs text-blue-500 dark:text-blue-400">
             <Zap className="h-2.5 w-2.5" />
             Tech
           </span>
@@ -154,7 +154,7 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
       {/* Prerequisites */}
       {component.prerequisites.length > 0 && (
         <div className="border-border/50 mt-1 border-t pt-1">
-          <p className="text-muted-foreground truncate text-[10px]">
+          <p className="text-muted-foreground truncate text-xs">
             <span className="font-medium">Requires:</span>{" "}
             {component.prerequisites
               .map((p) =>

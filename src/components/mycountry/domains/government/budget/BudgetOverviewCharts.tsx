@@ -59,7 +59,7 @@ export function BudgetOverviewCharts({
               type="button"
               onClick={() => setOverviewChartMode("allocation")}
               className={cn(
-                "cursor-pointer rounded-md px-2 py-0.5 text-[10px] font-bold transition-all select-none",
+                "cursor-pointer rounded-md px-2 py-0.5 text-xs font-bold transition-all select-none",
                 overviewChartMode === "allocation"
                   ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
                   : "text-muted-foreground hover:text-foreground"
@@ -71,7 +71,7 @@ export function BudgetOverviewCharts({
               type="button"
               onClick={() => setOverviewChartMode("trend")}
               className={cn(
-                "cursor-pointer rounded-md px-2 py-0.5 text-[10px] font-bold transition-all select-none",
+                "cursor-pointer rounded-md px-2 py-0.5 text-xs font-bold transition-all select-none",
                 overviewChartMode === "trend"
                   ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
                   : "text-muted-foreground hover:text-foreground"
@@ -110,9 +110,9 @@ export function BudgetOverviewCharts({
                 <XAxis
                   dataKey="year"
                   stroke="currentColor"
-                  className="text-muted-foreground text-[10px]"
+                  className="text-muted-foreground text-xs"
                 />
-                <YAxis stroke="currentColor" className="text-muted-foreground text-[10px]" />
+                <YAxis stroke="currentColor" className="text-muted-foreground text-xs" />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Legend />
                 <Line
@@ -159,9 +159,9 @@ export function BudgetOverviewCharts({
               <XAxis
                 dataKey="name"
                 stroke="currentColor"
-                className="text-muted-foreground text-[10px]"
+                className="text-muted-foreground text-xs"
               />
-              <YAxis stroke="currentColor" className="text-muted-foreground text-[10px]" />
+              <YAxis stroke="currentColor" className="text-muted-foreground text-xs" />
               <Tooltip formatter={(value) => formatCurrency(Number(value))} />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {revenueChartData.map((entry, index) => (

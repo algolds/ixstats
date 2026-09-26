@@ -135,13 +135,13 @@ export const StoryPinModal = memo(function StoryPinModal({
                   {/* Category + Importance badges */}
                   <div className="mb-1.5 flex items-center gap-2">
                     <span
-                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize"
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold capitalize"
                       style={{ backgroundColor: `${color}20`, color }}
                     >
                       {CATEGORY_ICONS[category]} {category}
                     </span>
                     {pin.importance >= 1 && (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                         {IMPORTANCE_LABELS[pin.importance]}
                       </span>
                     )}
@@ -168,7 +168,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                   {/* Storyline breadcrumb */}
                   {hasStoryline && (
                     <p
-                      className="text-muted-foreground mt-1 text-[10px]"
+                      className="text-muted-foreground mt-1 text-xs"
                       style={{ color: storyline.color ?? color }}
                     >
                       {storyline.title} · Event {currentStorylineIdx + 1} of {storyline.pins.length}
@@ -211,7 +211,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                   <div className="rounded-xl border border-amber-200/50 bg-amber-50/50 p-4 dark:border-amber-800/30 dark:bg-amber-900/10">
                     <div className="mb-2 flex items-center gap-2">
                       <BookOpen className="h-3.5 w-3.5 text-amber-600" />
-                      <span className="text-[10px] font-semibold tracking-wider text-amber-600 uppercase">
+                      <span className="text-xs font-semibold tracking-wider text-amber-600 uppercase">
                         From IxWiki
                       </span>
                     </div>
@@ -223,7 +223,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                       wikiEnrichment.wikiUrl.includes("/wiki/") ? (
                         <Link
                           href={wikiEnrichment.wikiUrl}
-                          className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 hover:underline"
+                          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:underline"
                         >
                           Read full article
                         </Link>
@@ -232,7 +232,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                           href={wikiEnrichment.wikiUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 hover:underline"
+                          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:underline"
                         >
                           Read full article <ExternalLink className="h-3 w-3" />
                         </a>

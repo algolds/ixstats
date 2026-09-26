@@ -198,11 +198,11 @@ export function SplashIssuesTeaser() {
                       return <Icon className={`h-5 w-5 shrink-0 ${splashGold.text}`} aria-hidden />;
                     })()}
                   </div>
-                  <Badge className={`text-[10px] ${splashGold.badge}`}>
+                  <Badge className={`text-xs ${splashGold.badge}`}>
                     {formatSeverityLabel(current.severity)}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground mb-1 text-[11px] font-medium tracking-wide uppercase">
+                <p className="text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase">
                   {current.country.name.replace(/_/g, " ")}
                 </p>
                 <h3 className="text-foreground mb-2 text-lg font-semibold">{current.title}</h3>

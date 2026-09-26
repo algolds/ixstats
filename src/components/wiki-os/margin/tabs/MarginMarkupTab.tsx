@@ -162,7 +162,7 @@ export function MarginMarkupTab({
     <div className="space-y-3.5">
       {/* Header Info & Export Action */}
       <div className="flex items-center justify-between border-b border-[var(--wikios-border)] pb-2 text-xs text-[var(--wikios-text-muted)]">
-        <span className="text-[11px] font-semibold tracking-tight text-[var(--wikios-text)]">
+        <span className="text-xs font-semibold tracking-tight text-[var(--wikios-text)]">
           Highlights and notes ({annotations.length})
         </span>
 
@@ -170,7 +170,7 @@ export function MarginMarkupTab({
           <button
             type="button"
             onClick={handleExportAllMarkdown}
-            className="bg-margin-accent hover:bg-margin-accent/90 flex cursor-pointer items-center gap-1 rounded-lg border border-yellow-400/50 px-2.5 py-0.5 text-[10.5px] font-bold text-stone-950 shadow-xs transition-all duration-150 active:scale-95"
+            className="bg-margin-accent hover:bg-margin-accent/90 flex cursor-pointer items-center gap-1 rounded-lg border border-yellow-400/50 px-2.5 py-0.5 text-xs font-bold text-stone-950 shadow-xs transition-all duration-150 active:scale-95"
           >
             {copiedAll ? (
               <>
@@ -204,7 +204,7 @@ export function MarginMarkupTab({
           <p className="text-xs font-bold tracking-tight text-[var(--wikios-text)]">
             No highlights yet
           </p>
-          <p className="mx-auto max-w-xs text-[11px] leading-relaxed text-[var(--wikios-text-dim)]">
+          <p className="mx-auto max-w-xs text-xs leading-relaxed text-[var(--wikios-text-dim)]">
             Select any paragraph or sentence in the article to highlight, note, or save a quote.
           </p>
         </div>
@@ -246,14 +246,14 @@ export function MarginMarkupTab({
                 />
 
                 {/* Top Metadata Row: Swatch indicator, Type tag, Actions */}
-                <div className="flex items-center justify-between gap-1 pl-1 text-[10px]">
+                <div className="flex items-center justify-between gap-1 pl-1 text-xs">
                   <div className="flex items-center gap-1.5">
                     <span
                       className="h-2 w-2 shrink-0 rounded-full shadow-xs ring-1 ring-white/20"
                       style={{ backgroundColor: swatchColor }}
                     />
                     {isStashedQuote ? (
-                      <span className="py-0.2 flex items-center gap-1 rounded-md border border-rose-500/25 bg-rose-500/15 px-1.5 text-[9px] font-bold tracking-wider text-rose-400 uppercase">
+                      <span className="py-0.2 flex items-center gap-1 rounded-md border border-rose-500/25 bg-rose-500/15 px-1.5 text-xs font-bold tracking-wider text-rose-400 uppercase">
                         <Bookmark className="h-2.5 w-2.5" /> Quote
                       </span>
                     ) : (
@@ -317,7 +317,7 @@ export function MarginMarkupTab({
 
                 {/* User Note if present */}
                 {ann.comment && !isStashedQuote && (
-                  <div className="ml-1 space-y-0.5 rounded-xl border border-yellow-400/40 bg-[var(--wikios-surface)]/80 p-2 text-[11px] text-[var(--wikios-text-muted)] shadow-2xs">
+                  <div className="ml-1 space-y-0.5 rounded-xl border border-yellow-400/40 bg-[var(--wikios-surface)]/80 p-2 text-xs text-[var(--wikios-text-muted)] shadow-2xs">
                     <div className="flex items-center gap-1 text-[9.5px] font-bold text-[var(--wikios-text)]">
                       <MessageSquare className="dark:text-margin-accent h-2.5 w-2.5 text-yellow-600" />
                       <span>Lore Significance</span>
@@ -327,7 +327,7 @@ export function MarginMarkupTab({
                 )}
 
                 {/* Bottom Action Strip */}
-                <div className="flex items-center justify-between border-t border-[var(--wikios-border)]/50 pt-1 text-[10.5px]">
+                <div className="flex items-center justify-between border-t border-[var(--wikios-border)]/50 pt-1 text-xs">
                   <button
                     type="button"
                     onClick={(e) => {

@@ -40,7 +40,7 @@ export default function RealmSettingsPage({ params }: { params: Promise<{ realm:
           <NavArrowLeft className="h-4 w-4" />
           <span>Back to Realm</span>
         </Link>
-        <div className="border-border bg-accent text-foreground flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold">
+        <div className="border-border bg-accent text-foreground flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-bold">
           {realmLogo ? (
             <img src={realmLogo} alt={realm} className="h-3.5 w-3.5 rounded object-cover" />
           ) : (

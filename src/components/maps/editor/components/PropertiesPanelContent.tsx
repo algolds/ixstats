@@ -265,10 +265,10 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
     return (
       <div className="space-y-4 px-3 py-3">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Selection
           </span>
-          <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-[10px] font-medium">
+          <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-xs font-medium">
             {editor.selectedIds.size} features selected
           </span>
         </div>
@@ -277,7 +277,7 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
           <div className="border-border/60 bg-muted/10 space-y-3 rounded-lg border p-3">
             <div className="flex flex-col gap-1">
               <span className="text-foreground text-xs font-semibold">Combine regions</span>
-              <span className="text-muted-foreground text-[10px]">
+              <span className="text-muted-foreground text-xs">
                 Merge, subtract, or find overlapping areas of selected regions.
               </span>
             </div>
@@ -308,7 +308,7 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
         )}
 
         <div className="border-border/60 bg-muted/10 space-y-2 rounded-lg border p-3">
-          <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Selected items
           </label>
           <div className="max-h-48 space-y-1 overflow-y-auto">
@@ -319,7 +319,7 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
                   <span className="text-foreground/80 max-w-[180px] truncate">
                     {f.name || f.id}
                   </span>
-                  <span className="text-muted-foreground font-mono text-[10px] uppercase">
+                  <span className="text-muted-foreground font-mono text-xs uppercase">
                     {f.type}
                   </span>
                 </div>

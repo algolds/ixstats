@@ -94,19 +94,19 @@ function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () =>
           <div className="flex items-center gap-2">
             <span
               className={cn(
-                "rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-tight",
+                "rounded-md px-1.5 py-0.5 text-xs font-semibold tracking-tight",
                 badgeClass
               )}
             >
               {label}
             </span>
             {item.priority && (
-              <span className="text-muted-foreground/70 text-[10px] font-medium">
+              <span className="text-muted-foreground/70 text-xs font-medium">
                 • {item.priority}
               </span>
             )}
           </div>
-          <span className="text-muted-foreground/60 text-[11px] font-normal tabular-nums">
+          <span className="text-muted-foreground/60 text-xs font-normal tabular-nums">
             {formatTimestamp(item.createdAt ?? item.ixTimeTimestamp)}
           </span>
         </div>
@@ -122,7 +122,7 @@ function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () =>
           <div className="mt-2.5 flex items-center gap-2">
             <Link
               href={item.href}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold shadow-2xs transition-all active:scale-95"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-2xs transition-all active:scale-95"
             >
               <span>Open Details</span>
               <ExternalLink className="h-3 w-3" />
@@ -559,7 +559,7 @@ export function MessagesChatPanel({
               <div className="flex h-full min-h-[300px] flex-col items-center justify-center p-6 text-center">
                 <BellRing className="text-muted-foreground/40 mb-2 h-10 w-10" />
                 <h4 className="text-foreground text-xs font-semibold">No system broadcasts</h4>
-                <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
                   {searchQuery
                     ? `No bulletins match "${searchQuery}"`
                     : "Platform announcements and simulation updates will appear here."}
@@ -611,7 +611,7 @@ export function MessagesChatPanel({
       {isSystemThread || isLoreBotThread ? (
         <div className="border-border/40 bg-card/60 text-muted-foreground flex shrink-0 items-center justify-center gap-2 border-t px-4 py-3 text-xs backdrop-blur-md">
           <Shield className="h-3.5 w-3.5 text-amber-500" />
-          <span className="text-[11px] font-medium">
+          <span className="text-xs font-medium">
             System Messages is an official broadcast channel. Messages are read-only.
           </span>
         </div>

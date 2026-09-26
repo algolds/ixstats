@@ -115,10 +115,10 @@ export function AllianceDashboard({
           <div>
             <h3 className="font-semibold">{alliance.name}</h3>
             <div className="text-muted-foreground flex items-center gap-2 text-xs">
-              <Badge variant="outline" className="text-[10px]">
+              <Badge variant="outline" className="text-xs">
                 {alliance.type}
               </Badge>
-              <Badge variant="outline" className="text-[10px]">
+              <Badge variant="outline" className="text-xs">
                 {alliance.visibility}
               </Badge>
               <span>{alliance.memberCount} members</span>
@@ -221,7 +221,7 @@ export function AllianceDashboard({
                     {m.country.name}
                   </span>
                 </div>
-                <Badge className={`text-[10px] ${roleBadge.color}`}>{roleBadge.label}</Badge>
+                <Badge className={`text-xs ${roleBadge.color}`}>{roleBadge.label}</Badge>
               </div>
             );
           })}

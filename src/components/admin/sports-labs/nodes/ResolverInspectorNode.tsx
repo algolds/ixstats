@@ -194,7 +194,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
         {/* Spiritual Blessings & Storyteller Modifiers */}
         <div className="border-border/40 grid grid-cols-2 gap-3 border-t pt-3">
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-semibold text-amber-500/80 uppercase">
+            <Label className="text-xs font-semibold text-amber-500/80 uppercase">
               Home Saint Blessing
             </Label>
             <Select value={homeSaint} onValueChange={setHomeSaint}>
@@ -218,7 +218,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
               />
               <label
                 htmlFor="homeScandal"
-                className="text-muted-foreground cursor-pointer text-[10px] select-none"
+                className="text-muted-foreground cursor-pointer text-xs select-none"
               >
                 Country Scandal (-8 ELO)
               </label>
@@ -226,7 +226,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-semibold text-amber-500/80 uppercase">
+            <Label className="text-xs font-semibold text-amber-500/80 uppercase">
               Away Saint Blessing
             </Label>
             <Select value={awaySaint} onValueChange={setAwaySaint}>
@@ -250,7 +250,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
               />
               <label
                 htmlFor="awayScandal"
-                className="text-muted-foreground cursor-pointer text-[10px] select-none"
+                className="text-muted-foreground cursor-pointer text-xs select-none"
               >
                 Country Scandal (-8 ELO)
               </label>
@@ -275,7 +275,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
         {singleResult && (
           <div className="space-y-3">
             <div className="bg-muted/30 space-y-1 rounded-lg border p-3 text-center text-xs">
-              <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Simulated Result
               </p>
               <div className="text-xl font-bold">
@@ -284,7 +284,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
               <Badge variant={singleResult.upset ? "destructive" : "secondary"} className="mt-1">
                 {singleResult.upset ? "Upset!" : "Expected Outcome"}
               </Badge>
-              <p className="text-muted-foreground mt-1 text-[10px]">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Home Strength: {singleResult.keyStats?.homeStrength} &middot; Away Strength:{" "}
                 {singleResult.keyStats?.awayStrength}
               </p>
@@ -293,10 +293,10 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
             {/* Match Events Ticker Trace */}
             {singleResult.trace && singleResult.trace.length > 0 && (
               <div className="space-y-2">
-                <h6 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                <h6 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                   Match Events Ticker
                 </h6>
-                <div className="thin-scrollbar bg-muted/10 max-h-[160px] space-y-1.5 overflow-y-auto rounded border p-2 pr-1 text-left font-mono text-[10px]">
+                <div className="thin-scrollbar bg-muted/10 max-h-[160px] space-y-1.5 overflow-y-auto rounded border p-2 pr-1 text-left font-mono text-xs">
                   {singleResult.trace.map((step: any, idx: number) => (
                     <div
                       key={idx}
@@ -331,7 +331,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
           <div className="space-y-3">
             <div className="bg-muted/40 rounded border p-3 text-xs">
               <h5 className="mb-1 text-center font-bold">100x Simulation Stats</h5>
-              <div className="mt-2 grid grid-cols-2 gap-2 text-center font-mono text-[10px]">
+              <div className="mt-2 grid grid-cols-2 gap-2 text-center font-mono text-xs">
                 <div>
                   Avg Goals {teamAName}: {simulationResults.avgGoalsA}
                 </div>
@@ -417,7 +417,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
                     <span>{m.awayTeam.name}</span>
                   </div>
                   {m.matchStats && (
-                    <p className="text-muted-foreground/80 text-center font-mono text-[10px]">
+                    <p className="text-muted-foreground/80 text-center font-mono text-xs">
                       Resolved: {new Date(m.resolvedIxTime || 0).toLocaleDateString()}
                     </p>
                   )}

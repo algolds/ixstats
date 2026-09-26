@@ -82,12 +82,12 @@ export function RadialCountryDNA({
     >
       <div className="mb-2 flex w-full items-center justify-between">
         <div>
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
             Sovereign Archetype
           </span>
           <h4 className="text-sm font-bold tracking-tight text-foreground">{archetype}</h4>
         </div>
-        <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold text-[var(--flag-primary)]">
+        <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-bold text-[var(--flag-primary)]">
           DNA Fingerprint
         </span>
       </div>
@@ -199,8 +199,8 @@ export function RadialCountryDNA({
                   }}
                   className="absolute text-center"
                 >
-                  <span className="text-[10px] font-bold text-foreground">{axis.label}</span>
-                  <span className="block text-[9px] font-extrabold text-muted-foreground">
+                  <span className="text-xs font-bold text-foreground">{axis.label}</span>
+                  <span className="block text-xs font-extrabold text-muted-foreground">
                     {val}
                   </span>
                 </div>

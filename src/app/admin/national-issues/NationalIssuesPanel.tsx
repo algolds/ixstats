@@ -154,7 +154,7 @@ export function NationalIssuesPanel() {
       {/* Global Stat Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Evaluations
           </p>
           <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
@@ -162,7 +162,7 @@ export function NationalIssuesPanel() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Generated (7d)
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
@@ -170,7 +170,7 @@ export function NationalIssuesPanel() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Avg Exec Time
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
@@ -178,7 +178,7 @@ export function NationalIssuesPanel() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Top Domain
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
@@ -300,20 +300,20 @@ export function NationalIssuesPanel() {
                     <tr key={t.id} className="hover:bg-foreground/[0.02] transition-colors">
                       <td className="px-4 py-2.5">
                         <div className="text-foreground font-semibold">{t.title}</div>
-                        <div className="text-muted-foreground max-w-sm truncate text-[11px]">
+                        <div className="text-muted-foreground max-w-sm truncate text-xs">
                           {t.description}
                         </div>
                       </td>
                       <td className="px-4 py-2.5">
                         <span
-                          className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase ${DOMAIN_COLORS[t.domain] || ""}`}
+                          className={`inline-block rounded-md border px-2 py-0.5 text-xs font-semibold uppercase ${DOMAIN_COLORS[t.domain] || ""}`}
                         >
                           {t.domain}
                         </span>
                       </td>
                       <td className="px-4 py-2.5">
                         <span
-                          className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase ${SEVERITY_COLORS[t.severity] || ""}`}
+                          className={`inline-block rounded-md border px-2 py-0.5 text-xs font-semibold uppercase ${SEVERITY_COLORS[t.severity] || ""}`}
                         >
                           {t.severity}
                         </span>
@@ -390,7 +390,7 @@ export function NationalIssuesPanel() {
                     <tr key={issue.id} className="hover:bg-foreground/[0.02] transition-colors">
                       <td className="px-4 py-2.5">
                         <div className="text-foreground font-semibold">{issue.title}</div>
-                        <div className="text-muted-foreground max-w-sm truncate text-[11px]">
+                        <div className="text-muted-foreground max-w-sm truncate text-xs">
                           {issue.description}
                         </div>
                       </td>
@@ -399,7 +399,7 @@ export function NationalIssuesPanel() {
                       </td>
                       <td className="px-4 py-2.5">
                         <span
-                          className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_COLORS[issue.status] || ""}`}
+                          className={`inline-block rounded-md border px-2 py-0.5 text-xs font-semibold uppercase ${STATUS_COLORS[issue.status] || ""}`}
                         >
                           {issue.status}
                         </span>

@@ -87,7 +87,7 @@ function RealmRoleBadge({ role }: { role: string }) {
     normalizedRole.includes("PRIME_MINISTER")
   ) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-amber-600 shadow-2xs dark:text-amber-400">
+      <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-0.5 font-mono text-xs font-bold tracking-wider text-amber-600 shadow-2xs dark:text-amber-400">
         <Crown className="h-3 w-3 shrink-0" />
         <span>{role.toUpperCase()}</span>
       </span>
@@ -100,7 +100,7 @@ function RealmRoleBadge({ role }: { role: string }) {
     normalizedRole.includes("MODERATOR")
   ) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-indigo-600 shadow-2xs dark:text-indigo-400">
+      <span className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-0.5 font-mono text-xs font-bold tracking-wider text-indigo-600 shadow-2xs dark:text-indigo-400">
         <Shield className="h-3 w-3 shrink-0" />
         <span>{role.toUpperCase()}</span>
       </span>
@@ -108,7 +108,7 @@ function RealmRoleBadge({ role }: { role: string }) {
   }
 
   return (
-    <span className="text-muted-foreground inline-flex items-center gap-1.5 rounded-lg border border-black/8 bg-black/5 px-2.5 py-0.5 font-mono text-[10px] font-medium tracking-wider dark:border-white/10 dark:bg-white/5">
+    <span className="text-muted-foreground inline-flex items-center gap-1.5 rounded-lg border border-black/8 bg-black/5 px-2.5 py-0.5 font-mono text-xs font-medium tracking-wider dark:border-white/10 dark:bg-white/5">
       <User className="h-3 w-3 shrink-0 opacity-70" />
       <span>{role.toUpperCase()}</span>
     </span>
@@ -137,7 +137,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-mono text-[11px] font-bold tracking-widest text-stone-400 uppercase">
+          <h2 className="font-mono text-xs font-bold tracking-widest text-stone-400 uppercase">
             JOINED REALMS ({realms.length})
           </h2>
         </div>
@@ -210,7 +210,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                       <RealmRoleBadge role={item.role} />
 
                       {item.isFeatured && (
-                        <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-bold tracking-wider text-amber-600 dark:text-amber-400">
+                        <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 font-mono text-xs font-bold tracking-wider text-amber-600 dark:text-amber-400">
                           <Crown className="h-3 w-3 shrink-0" />
                           PRIMARY
                         </span>
@@ -270,7 +270,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
                         <div>
-                          <span className="text-muted-foreground block font-mono text-[9px] font-bold tracking-wider uppercase">
+                          <span className="text-muted-foreground block font-mono text-xs font-bold tracking-wider uppercase">
                             POPULATION
                           </span>
                           <strong className="text-foreground font-mono text-sm font-bold tracking-tight">
@@ -281,7 +281,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
 
                       <div className="flex items-center gap-2 text-right">
                         <div className="min-w-0">
-                          <span className="text-muted-foreground block font-mono text-[9px] font-bold tracking-wider uppercase">
+                          <span className="text-muted-foreground block font-mono text-xs font-bold tracking-wider uppercase">
                             GROSS DOMESTIC PRODUCT
                           </span>
                           <strong className="font-mono text-sm font-bold tracking-tight text-emerald-500 dark:text-emerald-400">
@@ -297,7 +297,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                       <div className="flex min-w-0 items-center gap-2 px-1">
                         <Heart className="h-3.5 w-3.5 shrink-0 text-red-500 dark:text-red-400" />
                         <div className="flex min-w-0 flex-col">
-                          <span className="text-muted-foreground font-mono text-[8px] leading-none font-bold tracking-wider uppercase sm:text-[9px]">
+                          <span className="text-muted-foreground font-mono text-xs leading-none font-bold tracking-wider uppercase sm:text-xs">
                             APPROVAL
                           </span>
                           <span className="text-foreground mt-0.5 truncate font-mono text-xs leading-tight font-bold sm:text-sm">
@@ -309,7 +309,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                       <div className="flex min-w-0 items-center gap-2 border-l border-black/8 px-2 dark:border-white/10">
                         <Scale className="h-3.5 w-3.5 shrink-0 text-indigo-500 dark:text-indigo-400" />
                         <div className="flex min-w-0 flex-col">
-                          <span className="text-muted-foreground font-mono text-[8px] leading-none font-bold tracking-wider uppercase sm:text-[9px]">
+                          <span className="text-muted-foreground font-mono text-xs leading-none font-bold tracking-wider uppercase sm:text-xs">
                             STABILITY
                           </span>
                           <span className="text-foreground mt-0.5 truncate font-mono text-xs leading-tight font-bold sm:text-sm">
@@ -321,7 +321,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                       <div className="flex min-w-0 items-center gap-2 border-l border-black/8 px-2 dark:border-white/10">
                         <Zap className="h-3.5 w-3.5 shrink-0 text-amber-500 dark:text-amber-400" />
                         <div className="flex min-w-0 flex-col">
-                          <span className="text-muted-foreground font-mono text-[8px] leading-none font-bold tracking-wider uppercase sm:text-[9px]">
+                          <span className="text-muted-foreground font-mono text-xs leading-none font-bold tracking-wider uppercase sm:text-xs">
                             CAPACITY
                           </span>
                           <span className="text-foreground mt-0.5 truncate font-mono text-xs leading-tight font-bold sm:text-sm">

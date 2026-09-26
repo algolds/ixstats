@@ -57,13 +57,13 @@ export function VaultShowcaseGrid({
               <h4 className="text-foreground text-xs font-bold tracking-tight">
                 Import NationStates Cards!
               </h4>
-              <p className="text-muted-foreground text-[11px] leading-relaxed">
+              <p className="text-muted-foreground text-xs leading-relaxed">
                 You haven't imported your NationStates deck yet. Verify your nation and import your
                 collection to earn bonus IxCredits!
               </p>
               <button
                 onClick={() => onNavigate?.("import")}
-                className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 hover:text-amber-500 hover:underline dark:text-amber-400"
+                className="mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-500 hover:underline dark:text-amber-400"
               >
                 Go to Importer <ArrowRight className="h-2.5 w-2.5" />
               </button>

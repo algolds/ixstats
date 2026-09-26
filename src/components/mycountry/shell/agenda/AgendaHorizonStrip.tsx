@@ -60,7 +60,7 @@ export function AgendaHorizonStrip({
               )}
               <span
                 className={cn(
-                  "relative z-10 text-[9px] font-semibold tracking-wider uppercase opacity-90",
+                  "relative z-10 text-xs font-semibold tracking-wider uppercase opacity-90",
                   isSelected ? "text-cyan-950 dark:text-cyan-200" : "text-muted-foreground"
                 )}
               >
@@ -84,7 +84,7 @@ export function AgendaHorizonStrip({
 
       {/* Category Filter Chips */}
       <div className="border-border/60 flex flex-wrap items-center gap-1.5 border-t pt-2.5 dark:border-white/5">
-        <div className="text-muted-foreground mr-1 flex items-center gap-1 text-[10px] font-semibold tracking-wider uppercase select-none">
+        <div className="text-muted-foreground mr-1 flex items-center gap-1 text-xs font-semibold tracking-wider uppercase select-none">
           <Filter className="h-3 w-3" />
           <span>Filter:</span>
         </div>
@@ -96,7 +96,7 @@ export function AgendaHorizonStrip({
               type="button"
               onClick={() => onSelectCategoryFilter(chip.id)}
               className={cn(
-                "relative cursor-pointer rounded-lg border px-2.5 py-1 text-[10px] font-bold transition-colors select-none active:scale-[0.97]",
+                "relative cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-bold transition-colors select-none active:scale-[0.97]",
                 isActive
                   ? "border-cyan-500/50 font-extrabold text-cyan-950 dark:text-cyan-200"
                   : "border-border/60 bg-card/50 text-muted-foreground hover:bg-card/90 hover:text-foreground dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"

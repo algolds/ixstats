@@ -125,7 +125,7 @@ export function WikiOSArticleToolbarWidget({
         {isSignedIn && (
           <Link
             href={withBasePath(`/wiki/${slug}/edit`)}
-            className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px] font-semibold transition-all hover:bg-white/5"
+            className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-semibold transition-all hover:bg-white/5"
           >
             <FileEdit className="h-3.5 w-3.5 shrink-0 text-blue-400" />
             <span>Edit Article</span>
@@ -137,7 +137,7 @@ export function WikiOSArticleToolbarWidget({
           type="button"
           onClick={() => toggleMargin()}
           className={cn(
-            "flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-left text-[11px] font-semibold transition-all",
+            "flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-left text-xs font-semibold transition-all",
             isMarginOpen
               ? "bg-margin-accent/20 text-margin-accent font-bold"
               : "text-muted-foreground hover:text-foreground hover:bg-white/5"
@@ -147,7 +147,7 @@ export function WikiOSArticleToolbarWidget({
             <Highlighter className="text-margin-accent h-3.5 w-3.5 shrink-0" />
             <span>{isMarginOpen ? "Hide Margin" : "Show Margin"}</span>
           </div>
-          <kbd className="py-0.2 rounded border border-white/10 bg-white/5 px-1 font-mono text-[9px] text-slate-400">
+          <kbd className="py-0.2 rounded border border-white/10 bg-white/5 px-1 font-mono text-xs text-slate-400">
             T
           </kbd>
         </button>
@@ -155,7 +155,7 @@ export function WikiOSArticleToolbarWidget({
         {/* History */}
         <button
           onClick={() => setActiveModal("history")}
-          className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] font-semibold transition-all hover:bg-white/5"
+          className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold transition-all hover:bg-white/5"
           type="button"
         >
           <Clock className="h-3.5 w-3.5 shrink-0 text-amber-400" />
@@ -165,7 +165,7 @@ export function WikiOSArticleToolbarWidget({
         {/* Backlinks */}
         <button
           onClick={() => setActiveModal("backlinks")}
-          className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] font-semibold transition-all hover:bg-white/5"
+          className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold transition-all hover:bg-white/5"
           type="button"
         >
           <Link2 className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
@@ -174,9 +174,9 @@ export function WikiOSArticleToolbarWidget({
 
         {/* Media Theme Mode Segmented Selector: Auto | Plinth */}
         <div className="mt-2 space-y-1.5 border-t border-white/5 pt-2">
-          <div className="flex items-center justify-between px-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+          <div className="flex items-center justify-between px-1 text-xs font-bold tracking-wider text-slate-400 uppercase">
             <span>Media Theme</span>
-            <span className="text-[9px] font-semibold text-cyan-400 capitalize">
+            <span className="text-xs font-semibold text-cyan-400 capitalize">
               {mediaThemeMode}
             </span>
           </div>

@@ -122,7 +122,7 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
               <h4 className="text-xs font-semibold tracking-tight text-foreground">
                 Institutional Foundations
               </h4>
-              <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium tracking-wide uppercase text-amber-600 dark:text-amber-400">
+              <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium tracking-wide uppercase text-amber-600 dark:text-amber-400">
                 Step 3 Government
               </span>
             </div>
@@ -131,13 +131,13 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
                 <Badge
                   key={comp}
                   variant="outline"
-                  className="rounded-md border-border/60 bg-background/50 px-2 py-0.5 text-[10px] font-medium text-foreground/90 backdrop-blur-xs transition-colors hover:bg-muted/40 hover:border-border"
+                  className="rounded-md border-border/60 bg-background/50 px-2 py-0.5 text-xs font-medium text-foreground/90 backdrop-blur-xs transition-colors hover:bg-muted/40 hover:border-border"
                 >
                   {formatGovName(comp)}
                 </Badge>
               ))}
               {governmentComponents.length > 5 && (
-                <span className="text-[10px] font-medium text-muted-foreground/80 pl-0.5">
+                <span className="text-xs font-medium text-muted-foreground/80 pl-0.5">
                   +{governmentComponents.length - 5} more
                 </span>
               )}
@@ -155,7 +155,7 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
                   {activeSynergies.length} Cross-{activeSynergies.length === 1 ? "Synergy" : "Synergies"} Active
                 </span>
               </div>
-              <div className="hidden lg:flex items-center gap-1 text-[11px] font-medium text-emerald-600/90 dark:text-emerald-400/90">
+              <div className="hidden lg:flex items-center gap-1 text-xs font-medium text-emerald-600/90 dark:text-emerald-400/90">
                 ({activeSynergies[0]?.title}: {activeSynergies[0]?.effect})
                 {activeSynergies.length > 1 && (
                   <span className="text-muted-foreground">+{activeSynergies.length - 1} more</span>
@@ -163,7 +163,7 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-2 rounded-lg border border-border/40 bg-muted/20 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+            <div className="flex items-center gap-2 rounded-lg border border-border/40 bg-muted/20 px-2.5 py-1 text-xs font-medium text-muted-foreground">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
               <span>Select economic models to unlock institutional synergies</span>
             </div>

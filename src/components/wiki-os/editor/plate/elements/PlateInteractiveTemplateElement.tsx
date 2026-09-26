@@ -152,7 +152,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
         {/* Left: Icon, Template Name & Summary */}
         <div className="flex min-w-0 items-center gap-2.5">
           <span
-            className={`flex h-6 items-center justify-center rounded-lg px-2 text-[10px] font-bold tracking-wider uppercase border shadow-xs ${
+            className={`flex h-6 items-center justify-center rounded-lg px-2 text-xs font-bold tracking-wider uppercase border shadow-xs ${
               classification === "infobox"
                 ? "border-amber-500/30 bg-gradient-to-br from-amber-500/20 to-orange-500/10 text-amber-600 dark:text-amber-400"
                 : "border-wiki/30 bg-gradient-to-br from-wiki/20 to-cyan-500/10 text-wiki"
@@ -165,17 +165,17 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
             <span className="font-bold text-foreground text-xs">{templateName}</span>
 
             {previewValue && (
-              <span className="truncate rounded-md bg-secondary/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground border border-border/40 max-w-[180px] sm:max-w-[260px]">
+              <span className="truncate rounded-md bg-secondary/80 px-2 py-0.5 text-xs font-medium text-muted-foreground border border-border/40 max-w-[180px] sm:max-w-[260px]">
                 {previewValue}
               </span>
             )}
 
-            <span className="hidden sm:inline-block rounded-full bg-secondary/50 px-2 py-0.5 text-[10px] font-mono text-muted-foreground/80">
+            <span className="hidden sm:inline-block rounded-full bg-secondary/50 px-2 py-0.5 text-xs font-mono text-muted-foreground/80">
               {configuredParamCount} {configuredParamCount === 1 ? "param" : "params"}
             </span>
 
             {element?.parseState === "incomplete" && (
-              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold text-amber-500 border border-amber-500/30">
+              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-500 border border-amber-500/30">
                 Incomplete
               </span>
             )}
@@ -193,7 +193,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                   soundEffects.bloom();
                   setIsModalOpen(true);
                 }}
-                className="flex items-center gap-1 rounded-lg bg-wiki/10 px-2.5 py-1 text-[11px] font-semibold text-wiki hover:bg-wiki/20 active:scale-[0.97] transition-all cursor-pointer shadow-xs"
+                className="flex items-center gap-1 rounded-lg bg-wiki/10 px-2.5 py-1 text-xs font-semibold text-wiki hover:bg-wiki/20 active:scale-[0.97] transition-all cursor-pointer shadow-xs"
                 title="Edit template parameters"
               >
                 <EditIcon className="h-3 w-3" />
@@ -309,7 +309,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                             {meta.required && <span className="ml-1 font-bold text-red-500">*</span>}
                           </label>
                           {meta.description && (
-                            <span className="max-w-[60%] truncate text-[11px] text-muted-foreground">
+                            <span className="max-w-[60%] truncate text-xs text-muted-foreground">
                               {meta.description}
                             </span>
                           )}
@@ -343,7 +343,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 {/* Custom / Discovered fields */}
                 {customParamKeys.length > 0 && (
                   <div className="space-y-3 border-t border-border/30 pt-3">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                       Additional Parameters
                     </div>
                     {customParamKeys.map((key) => {
@@ -477,7 +477,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                   className="w-full rounded-xl border border-border/60 bg-muted/30 p-3.5 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-wiki/60 focus:outline-none"
                   placeholder="{{TemplateName|param=value}}"
                 />
-                <p className="mt-2 text-[11px] text-muted-foreground">
+                <p className="mt-2 text-xs text-muted-foreground">
                   Direct edits to raw wikitext synchronize immediately with visual form fields.
                 </p>
               </div>

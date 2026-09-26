@@ -68,7 +68,7 @@ export function StashSettingsContent() {
       {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Stashed Articles
           </p>
           {statsLoading ? (
@@ -81,7 +81,7 @@ export function StashSettingsContent() {
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Text Highlight Marks
           </p>
           {statsLoading ? (
@@ -94,7 +94,7 @@ export function StashSettingsContent() {
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Cache Quota per User
           </p>
           {statsLoading ? (
@@ -112,7 +112,7 @@ export function StashSettingsContent() {
         <div className="border-border/20 flex items-center justify-between border-b pb-4">
           <div>
             <h3 className="text-foreground text-xs font-bold">Stash Configuration Parameters</h3>
-            <p className="text-muted-foreground mt-0.5 text-[11px]">
+            <p className="text-muted-foreground mt-0.5 text-xs">
               Client storage policies and offline synchronization settings
             </p>
           </div>
@@ -134,7 +134,7 @@ export function StashSettingsContent() {
               <Label className="text-foreground text-xs font-bold">
                 Max Stash Limit per Account
               </Label>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Cap the maximum number of stashed wiki pages per user
               </p>
             </div>
@@ -152,7 +152,7 @@ export function StashSettingsContent() {
           <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
             <div>
               <Label className="text-foreground text-xs font-bold">Offline Storage Syncing</Label>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Cache stashed articles locally in browser IndexedDB storage
               </p>
             </div>
@@ -169,7 +169,7 @@ export function StashSettingsContent() {
               <Label className="text-foreground text-xs font-bold">
                 Automatic Image Categorization
               </Label>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Group stashed images by orientation and type filters automatically
               </p>
             </div>
@@ -184,7 +184,7 @@ export function StashSettingsContent() {
           <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
             <div>
               <Label className="text-foreground text-xs font-bold">Text Highlight Tracking</Label>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Persist user annotations and text highlights across sessions
               </p>
             </div>

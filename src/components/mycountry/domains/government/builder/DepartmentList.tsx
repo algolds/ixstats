@@ -282,13 +282,13 @@ export const DepartmentList = React.memo(function DepartmentList({
                           {department.shortName && (
                             <Badge
                               variant="outline"
-                              className={`px-1.5 py-0 text-[9px] font-bold ${tokens.badgeBorder} ${tokens.badgeText}`}
+                              className={`px-1.5 py-0 text-xs font-bold ${tokens.badgeBorder} ${tokens.badgeText}`}
                             >
                               {department.shortName}
                             </Badge>
                           )}
                         </div>
-                        <span className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                        <span className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                           {department.category}
                         </span>
                       </div>
@@ -298,7 +298,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                       {hasError && (
                         <Badge
                           variant="outline"
-                          className="flex items-center gap-1 border-red-500/35 bg-red-500/10 px-1.5 py-0.5 text-[9px] font-bold text-red-400"
+                          className="flex items-center gap-1 border-red-500/35 bg-red-500/10 px-1.5 py-0.5 text-xs font-bold text-red-400"
                         >
                           <AlertTriangle className="h-3 w-3" />
                           <span>Error</span>
@@ -333,14 +333,14 @@ export const DepartmentList = React.memo(function DepartmentList({
 
                   {/* Description (if exists) */}
                   {department.description && (
-                    <p className="line-clamp-2 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    <p className="line-clamp-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
                       {department.description}
                     </p>
                   )}
 
                   {/* Stats & Priority Progress */}
                   <div className="space-y-2.5 rounded-lg border border-zinc-200/50 bg-zinc-100/50 p-3 dark:border-white/[0.03] dark:bg-black/15">
-                    <div className="flex items-center justify-between text-[11px] text-zinc-600 dark:text-zinc-400">
+                    <div className="flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
                       <span className="font-semibold text-zinc-800 dark:text-zinc-300">
                         {department.ministerTitle || "Minister"}:{" "}
                         <span className="font-normal text-zinc-600 dark:text-zinc-400">
@@ -355,7 +355,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                         return (
                           <span className={`flex items-center gap-1.5 font-bold ${tokens.text}`}>
                             <span>Priority {priorityLevel}/10</span>
-                            <span className="rounded border border-zinc-200/50 bg-zinc-200/40 px-1 py-0 text-[9px] uppercase dark:border-white/5 dark:bg-white/5">
+                            <span className="rounded border border-zinc-200/50 bg-zinc-200/40 px-1 py-0 text-xs uppercase dark:border-white/5 dark:bg-white/5">
                               {getPriorityLabel(department.priority)}
                             </span>
                           </span>
@@ -379,7 +379,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                       const parent = departments[parseInt(department.parentDepartmentId)];
                       if (!parent) return null;
                       return (
-                        <div className="mt-1 flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400">
+                        <div className="mt-1 flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
                           <span>Reporting to:</span>
                           <span className="truncate font-bold text-zinc-700 dark:text-zinc-300">
                             {parent.name ||
@@ -394,7 +394,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                 {/* Footer: Linked Infrastructure */}
                 <FacetCardFooter className="mt-auto border-t border-zinc-200/50 bg-zinc-50/50 px-5 py-2.5 dark:border-white/[0.04] dark:bg-black/25">
                   <div className="space-y-1.5">
-                    <div className="text-[9px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                    <div className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                       Linked Infrastructure ({activeLinkedComponents.length})
                     </div>
                     {activeLinkedComponents.length > 0 ? (
@@ -407,7 +407,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                             <Badge
                               key={compType}
                               variant="outline"
-                              className="flex items-center gap-1 border-zinc-200 bg-zinc-100 px-1.5 py-0.5 text-[9px] font-semibold text-zinc-700 hover:bg-zinc-200 dark:border-white/5 dark:bg-white/[0.03] dark:text-zinc-300 dark:hover:bg-white/5"
+                              className="flex items-center gap-1 border-zinc-200 bg-zinc-100 px-1.5 py-0.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-200 dark:border-white/5 dark:bg-white/[0.03] dark:text-zinc-300 dark:hover:bg-white/5"
                             >
                               {CompIcon && (
                                 <span className={`flex shrink-0 ${tokens.iconText}`}>
@@ -420,7 +420,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                         })}
                       </div>
                     ) : (
-                      <span className="block text-[10px] text-zinc-500 italic dark:text-zinc-400">
+                      <span className="block text-xs text-zinc-500 italic dark:text-zinc-400">
                         No governance components linked
                       </span>
                     )}

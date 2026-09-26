@@ -129,7 +129,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
             <Label htmlFor="message" className="text-muted-foreground text-xs font-semibold">
               Message
             </Label>
-            <span className="text-muted-foreground/75 text-[10px]">{message.length} / 1000</span>
+            <span className="text-muted-foreground/75 text-xs">{message.length} / 1000</span>
           </div>
           <Textarea
             id="message"
@@ -148,7 +148,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
             onClick={() => setShowDiagnostics(!showDiagnostics)}
             className="hover:bg-muted/30 flex w-full items-center justify-between px-3 py-2 text-left transition-colors"
           >
-            <span className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold">
+            <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
               <Terminal className="h-3.5 w-3.5 text-blue-500" />
               <span>Diagnostic Metadata Preview ({logs.length} logs)</span>
             </span>
@@ -160,41 +160,41 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
           </button>
 
           {showDiagnostics && (
-            <div className="border-border/30 bg-background/30 max-h-[220px] space-y-2 overflow-y-auto border-t p-3 text-[10px]">
+            <div className="border-border/30 bg-background/30 max-h-[220px] space-y-2 overflow-y-auto border-t p-3 text-xs">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div className="border-border/20 bg-muted/40 flex flex-col gap-0.5 rounded-md border p-1.5">
-                  <span className="text-muted-foreground flex items-center gap-1 text-[8px] font-semibold tracking-wider uppercase">
+                  <span className="text-muted-foreground flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
                     <Globe className="h-2.5 w-2.5" />
                     Active URL
                   </span>
-                  <span className="text-foreground truncate font-mono text-[9px]" title={url}>
+                  <span className="text-foreground truncate font-mono text-xs" title={url}>
                     {url || "Retrieving..."}
                   </span>
                 </div>
                 <div className="border-border/20 bg-muted/40 flex flex-col gap-0.5 rounded-md border p-1.5">
-                  <span className="text-muted-foreground flex items-center gap-1 text-[8px] font-semibold tracking-wider uppercase">
+                  <span className="text-muted-foreground flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
                     <Cpu className="h-2.5 w-2.5" />
                     Browser Agent
                   </span>
-                  <span className="text-foreground truncate font-mono text-[9px]" title={userAgent}>
+                  <span className="text-foreground truncate font-mono text-xs" title={userAgent}>
                     {userAgent || "Retrieving..."}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <span className="text-muted-foreground block text-[8px] font-semibold tracking-wider uppercase">
+                <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
                   Console Log Stream (Last 50 Events)
                 </span>
                 {logs.length === 0 ? (
                   <div className="border-border/30 bg-muted/10 flex items-center gap-1 rounded-md border border-dashed p-2 text-center">
                     <Info className="text-muted-foreground/60 h-3 w-3" />
-                    <span className="text-muted-foreground/60 text-[9px]">
+                    <span className="text-muted-foreground/60 text-xs">
                       No console messages captured yet.
                     </span>
                   </div>
                 ) : (
-                  <div className="border-border/30 max-h-[110px] space-y-1 overflow-y-auto rounded-md border bg-slate-950/80 p-2 font-mono text-[9px] leading-relaxed">
+                  <div className="border-border/30 max-h-[110px] space-y-1 overflow-y-auto rounded-md border bg-slate-950/80 p-2 font-mono text-xs leading-relaxed">
                     {logs.map((log, index) => (
                       <div
                         key={index}
@@ -212,7 +212,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
                         >
                           {log.type}
                         </span>
-                        <span className="text-muted-foreground shrink-0 text-[8px] select-none">
+                        <span className="text-muted-foreground shrink-0 text-xs select-none">
                           {new Date(log.timestamp).toLocaleTimeString()}
                         </span>
                         <span className="break-all text-slate-200 select-all">{log.message}</span>

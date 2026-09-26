@@ -138,7 +138,7 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
         <div className="bg-muted/40 border-border/30 mt-4 grid grid-cols-3 divide-x divide-white/5 rounded-2xl border p-2.5 shadow-inner">
           {defaultStats.map((stat, idx) => (
             <div key={idx} className="px-1 text-center">
-              <span className="text-muted-foreground block text-[10px] font-semibold tracking-wider uppercase">
+              <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
                 {stat.label}
               </span>
               <span className="text-foreground text-lg font-bold tabular-nums">{stat.value}</span>

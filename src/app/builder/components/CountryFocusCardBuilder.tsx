@@ -136,7 +136,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-400">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-400">
                       <Check className="h-2.5 w-2.5 stroke-[3]" />
                       <span>Confirm</span>
                     </span>
@@ -159,13 +159,13 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                       <h4 className="line-clamp-1 text-sm sm:text-base font-bold tracking-tight text-foreground leading-tight">
                         {country.name}
                       </h4>
-                      <p className="text-[11px] font-medium text-muted-foreground">
+                      <p className="text-xs font-medium text-muted-foreground">
                         Use as template?
                       </p>
                     </div>
 
                     {(country.population !== undefined || country.gdpPerCapita !== undefined) && (
-                      <div className="rounded-lg border border-border/40 bg-muted/40 p-2 space-y-1 text-left text-[10px] sm:text-[11px]">
+                      <div className="rounded-lg border border-border/40 bg-muted/40 p-2 space-y-1 text-left text-xs sm:text-xs">
                         {country.population !== undefined && (
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Population</span>

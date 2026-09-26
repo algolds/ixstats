@@ -83,12 +83,12 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
               <div className="flex items-center gap-2">
                 <Link
                   href={withBasePath("/wiki/categories")}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600 transition-all hover:bg-emerald-500/15 dark:text-emerald-400"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 transition-all hover:bg-emerald-500/15 dark:text-emerald-400"
                 >
                   <span>Nations</span>
                 </Link>
                 {country.economicTier && (
-                  <span className="bg-muted/80 text-muted-foreground border-border/60 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold">
+                  <span className="bg-muted/80 text-muted-foreground border-border/60 rounded-full border px-2.5 py-0.5 text-xs font-semibold">
                     {country.economicTier}
                   </span>
                 )}

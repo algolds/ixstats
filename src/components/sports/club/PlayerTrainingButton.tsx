@@ -40,7 +40,7 @@ export function PlayerTrainingButton({
       <PopoverTrigger
         className={cn(
           buttonVariants({ variant: "ghost", size: "sm" }),
-          "text-muted-foreground hover:text-foreground h-7 px-2 text-[10px]"
+          "text-muted-foreground hover:text-foreground h-7 px-2 text-xs"
         )}
       >
         <Dumbbell className="mr-1 h-3 w-3" />
@@ -48,7 +48,7 @@ export function PlayerTrainingButton({
       </PopoverTrigger>
 
       <PopoverContent className="border-border bg-card pointer-events-auto w-52 rounded-xl border p-3 shadow-xl backdrop-blur-xl">
-        <p className="text-muted-foreground mb-2 text-[10px] font-semibold tracking-wider uppercase">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
           Focus Attribute
         </p>
         <div className="max-h-40 space-y-1 overflow-y-auto">
@@ -75,7 +75,7 @@ export function PlayerTrainingButton({
                   <Badge
                     variant="outline"
                     className={cn(
-                      "rounded px-1 py-0 text-[9px] font-bold",
+                      "rounded px-1 py-0 text-xs font-bold",
                       val >= 80
                         ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
                         : val >= 70
@@ -85,7 +85,7 @@ export function PlayerTrainingButton({
                   >
                     {val}
                   </Badge>
-                  <span className="text-muted-foreground text-[9px]">25c</span>
+                  <span className="text-muted-foreground text-xs">25c</span>
                 </div>
               </button>
             );

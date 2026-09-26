@@ -355,7 +355,7 @@ export function TestSuitePanel() {
               <Shield className="mr-2 h-5 w-5 text-red-400" />
               <div className="text-left">
                 <div className="text-sm font-medium">Intelligence</div>
-                <div className="text-[10px] opacity-70">Critical alert</div>
+                <div className="text-xs opacity-70">Critical alert</div>
               </div>
             </Button>
             <Button
@@ -365,7 +365,7 @@ export function TestSuitePanel() {
               <DollarSign className="mr-2 h-5 w-5 text-green-400" />
               <div className="text-left">
                 <div className="text-sm font-medium">Economic</div>
-                <div className="text-[10px] opacity-70">GDP update</div>
+                <div className="text-xs opacity-70">GDP update</div>
               </div>
             </Button>
             <Button
@@ -375,7 +375,7 @@ export function TestSuitePanel() {
               <Globe className="mr-2 h-5 w-5 text-blue-400" />
               <div className="text-left">
                 <div className="text-sm font-medium">Diplomatic</div>
-                <div className="text-[10px] opacity-70">Treaty event</div>
+                <div className="text-xs opacity-70">Treaty event</div>
               </div>
             </Button>
             <Button
@@ -385,7 +385,7 @@ export function TestSuitePanel() {
               <Trophy className="mr-2 h-5 w-5 text-yellow-400" />
               <div className="text-left">
                 <div className="text-sm font-medium">Achievement</div>
-                <div className="text-[10px] opacity-70">Unlock test</div>
+                <div className="text-xs opacity-70">Unlock test</div>
               </div>
             </Button>
           </div>

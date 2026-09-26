@@ -189,7 +189,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                       </span>
                     </h2>
                     {release.isCurrent && (
-                      <Badge className="rounded-full border-blue-500/30 bg-blue-500/15 text-[10px] font-bold text-blue-600 uppercase dark:text-blue-400">
+                      <Badge className="rounded-full border-blue-500/30 bg-blue-500/15 text-xs font-bold text-blue-600 uppercase dark:text-blue-400">
                         Latest Release
                       </Badge>
                     )}
@@ -203,7 +203,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                   <Calendar className="h-3.5 w-3.5" />
                   <span>{release.date}</span>
                   <span className="text-muted-foreground/40">·</span>
-                  <span className="font-mono text-[11px]">Channel: {release.channel}</span>
+                  <span className="font-mono text-xs">Channel: {release.channel}</span>
                 </div>
               </div>
 
@@ -225,7 +225,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                         <div className="flex items-center justify-between gap-2">
                           <span
                             className={cn(
-                              "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase",
+                              "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold tracking-wide uppercase",
                               catMeta.badgeBg
                             )}
                           >
@@ -247,7 +247,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                         {/* Bullet Highlights */}
                         {item.highlights && item.highlights.length > 0 && (
                           <div className="border-border/30 bg-accent/5 space-y-1.5 rounded-xl border p-3">
-                            <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                            <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                               Key Highlights
                             </span>
                             <ul className="space-y-1">

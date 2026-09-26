@@ -237,7 +237,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
               <div className="text-muted-foreground flex h-64 flex-col items-center justify-center p-6 text-center text-xs">
                 <Layers className="mb-2 h-8 w-8 opacity-30" />
                 <p className="text-foreground font-medium">No matching icons found</p>
-                <p className="text-muted-foreground mt-1 text-[11px]">
+                <p className="text-muted-foreground mt-1 text-xs">
                   Try searching with broader terms or clearing category filters.
                 </p>
               </div>
@@ -273,7 +273,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
                             loading="lazy"
                           />
                         </div>
-                        <span className="line-clamp-1 w-full text-[10px] leading-tight font-medium">
+                        <span className="line-clamp-1 w-full text-xs leading-tight font-medium">
                           {icon.name}
                         </span>
 

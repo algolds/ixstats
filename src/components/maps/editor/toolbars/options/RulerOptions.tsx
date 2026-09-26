@@ -27,11 +27,11 @@ export const RulerOptions = memo(function RulerOptions({
       </span>
       {pointsCount >= 2 && (
         <>
-          <span className="font-mono text-[11px] font-semibold text-cyan-500">{metrics.km} km</span>
-          <span className="text-muted-foreground text-[10px]">
+          <span className="font-mono text-xs font-semibold text-cyan-500">{metrics.km} km</span>
+          <span className="text-muted-foreground text-xs">
             ({metrics.mi} mi / {metrics.nm} nm)
           </span>
-          <span className="text-muted-foreground text-[10px]">• {pointsCount} points</span>
+          <span className="text-muted-foreground text-xs">• {pointsCount} points</span>
         </>
       )}
       {pointsCount > 0 && onClearRuler && (

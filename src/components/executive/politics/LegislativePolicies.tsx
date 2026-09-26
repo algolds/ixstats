@@ -68,7 +68,7 @@ export function LegislativePolicies({ countryId }: LegislativePoliciesProps) {
           <ScrollText className="h-4 w-4 text-emerald-600" />
           <span className="text-sm font-semibold">Laws & Active Policies</span>
           {policies && policies.length > 0 && (
-            <Badge variant="outline" className="text-[10px]">
+            <Badge variant="outline" className="text-xs">
               {policies.length} total
             </Badge>
           )}
@@ -97,13 +97,13 @@ export function LegislativePolicies({ countryId }: LegislativePoliciesProps) {
               >
                 <FileText className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                 <span className="min-w-0 flex-1 truncate text-sm">{policy.name}</span>
-                <span className="text-muted-foreground hidden text-[10px] capitalize sm:inline">
+                <span className="text-muted-foreground hidden text-xs capitalize sm:inline">
                   {policy.category}
                 </span>
-                <Badge className={`px-1.5 py-0 text-[10px] ${priorityMeta.className}`}>
+                <Badge className={`px-1.5 py-0 text-xs ${priorityMeta.className}`}>
                   {priorityMeta.label}
                 </Badge>
-                <Badge className={`px-1.5 py-0 text-[10px] ${statusMeta.className}`}>
+                <Badge className={`px-1.5 py-0 text-xs ${statusMeta.className}`}>
                   {statusMeta.label}
                 </Badge>
               </div>

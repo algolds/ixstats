@@ -126,7 +126,7 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
                       />
                     </div>
                   )}
-                  <p className="text-muted-foreground text-[10px] leading-tight">
+                  <p className="text-muted-foreground text-xs leading-tight">
                     {metric.description}
                   </p>
                 </div>

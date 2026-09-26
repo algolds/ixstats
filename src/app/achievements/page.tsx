@@ -153,7 +153,7 @@ export default function AchievementsPage() {
                   <div className="border-border/60 bg-muted/40 flex items-center gap-2 rounded-full border px-3.5 py-1.5 backdrop-blur-md">
                     <Label
                       htmlFor="cabinet-toggle"
-                      className="text-muted-foreground hover:text-foreground cursor-pointer text-[10px] font-extrabold tracking-wider uppercase select-none"
+                      className="text-muted-foreground hover:text-foreground cursor-pointer text-xs font-extrabold tracking-wider uppercase select-none"
                     >
                       Showcase Shelf
                     </Label>
@@ -173,7 +173,7 @@ export default function AchievementsPage() {
                   <div className="text-foreground text-3xl font-black tracking-tight">
                     <NumberFlow value={totalUnlocked} />
                   </div>
-                  <div className="text-muted-foreground text-[10px] font-extrabold tracking-wider uppercase">
+                  <div className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
                     Achievements Unlocked
                   </div>
                 </div>
@@ -187,7 +187,7 @@ export default function AchievementsPage() {
                       </span>
                     </span>
                   </div>
-                  <div className="text-muted-foreground text-[10px] font-extrabold tracking-wider uppercase">
+                  <div className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
                     Achievement Points
                   </div>
                 </div>
@@ -202,7 +202,7 @@ export default function AchievementsPage() {
                       "—"
                     )}
                   </div>
-                  <div className="text-muted-foreground text-[10px] font-extrabold tracking-wider uppercase">
+                  <div className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
                     Global Rank
                   </div>
                 </div>

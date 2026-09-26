@@ -85,13 +85,13 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
           <Crown className="h-4 w-4 shrink-0 text-indigo-500 dark:text-indigo-400" />
           <div>
             <span className="text-foreground font-extrabold">Executive Fiat Mode</span>
-            <p className="text-muted-foreground text-[11px]">
+            <p className="text-muted-foreground text-xs">
               Political structure, party seats, cabinet posts, and legislative rules are 100% player
               configurable.
             </p>
           </div>
         </div>
-        <span className="shrink-0 rounded-full border border-indigo-500/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-800 dark:text-indigo-300">
+        <span className="shrink-0 rounded-full border border-indigo-500/40 bg-indigo-500/20 px-2 py-0.5 text-xs font-bold text-indigo-800 dark:text-indigo-300">
           Player Fiat Enabled
         </span>
       </div>

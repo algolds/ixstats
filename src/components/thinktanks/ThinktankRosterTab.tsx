@@ -80,13 +80,13 @@ export function ThinktankRosterTab({
     switch (role.toLowerCase()) {
       case "owner":
         return (
-          <Badge className="border-amber-500/30 bg-amber-500/10 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+          <Badge className="border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-600 dark:text-amber-400">
             <Crown className="mr-1 h-3 w-3" /> Owner
           </Badge>
         );
       case "admin":
         return (
-          <Badge className="border-emerald-500/30 bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+          <Badge className="border-emerald-500/30 bg-emerald-500/10 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
             <Shield className="mr-1 h-3 w-3" /> Admin
           </Badge>
         );
@@ -94,7 +94,7 @@ export function ThinktankRosterTab({
         return (
           <Badge
             variant="outline"
-            className="text-muted-foreground border-border/40 text-[10px] font-medium"
+            className="text-muted-foreground border-border/40 text-xs font-medium"
           >
             Member
           </Badge>
@@ -135,7 +135,7 @@ export function ThinktankRosterTab({
               <User className="h-5 w-5" />
             </div>
             <p className="text-foreground text-xs font-semibold">No matching members found</p>
-            <p className="text-muted-foreground mt-0.5 text-[11px]">
+            <p className="text-muted-foreground mt-0.5 text-xs">
               Try refining your search query.
             </p>
           </div>
@@ -187,20 +187,20 @@ export function ThinktankRosterTab({
                         {displayName}
                       </span>
                       {isSelf && (
-                        <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                           (You)
                         </span>
                       )}
                     </div>
                     {subtitle && (
-                      <p className="text-muted-foreground truncate text-[10.5px]">{subtitle}</p>
+                      <p className="text-muted-foreground truncate text-xs">{subtitle}</p>
                     )}
                     <div className="mt-1 flex items-center gap-2">{getRoleBadge(member.role)}</div>
                   </div>
                 </div>
 
                 {/* Right: Join Date & Actions */}
-                <div className="text-muted-foreground flex shrink-0 flex-col items-end gap-1 text-[10px]">
+                <div className="text-muted-foreground flex shrink-0 flex-col items-end gap-1 text-xs">
                   <span>
                     {new Date(member.joinedAt).toLocaleDateString(undefined, {
                       month: "short",

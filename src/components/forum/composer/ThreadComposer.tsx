@@ -141,7 +141,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
 
       {/* Submit */}
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-[var(--forum-text-dim)]">
+        <span className="text-xs text-[var(--forum-text-dim)]">
           ⌘+Enter / Ctrl+Enter to submit
         </span>
         <Button

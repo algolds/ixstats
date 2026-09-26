@@ -71,7 +71,7 @@ export function EditorStatusBar({
   const modeInfo = MODE_LABELS[mode] ?? { label: "Edit", hint: "Select or edit map features" };
 
   return (
-    <div className="border-border bg-card text-muted-foreground flex h-7 items-center border-t px-2 text-[11px]">
+    <div className="border-border bg-card text-muted-foreground flex h-7 items-center border-t px-2 text-xs">
       {/* Coordinates */}
       <div className="flex min-w-[140px] items-center gap-1 font-mono">
         {activeCoords ? (
@@ -109,7 +109,7 @@ export function EditorStatusBar({
 
       {/* Mode + hint (takes remaining space) */}
       <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
-        <span className="bg-primary/10 text-primary shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold">
+        <span className="bg-primary/10 text-primary shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold">
           {modeInfo.label}
         </span>
         <span className="text-muted-foreground/70 hidden truncate sm:inline">{modeInfo.hint}</span>

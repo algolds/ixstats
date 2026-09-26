@@ -64,7 +64,7 @@ function MapStyleSettingsPanel() {
         </div>
         <div className="flex-1 space-y-1">
           <h3 className="text-foreground text-xs font-bold">Visual Style & Theme Editor</h3>
-          <p className="text-muted-foreground max-w-2xl text-[11px] leading-relaxed">
+          <p className="text-muted-foreground max-w-2xl text-xs leading-relaxed">
             Atlas uses the MapLibre GL style specification to define visual layers, fonts, colors,
             and layout configurations. The embedded Maputnik style editor allows you to edit
             standard, dark, and paper styles visually and preview them with live PostGIS geographic
@@ -76,7 +76,7 @@ function MapStyleSettingsPanel() {
       <div className="border-border/20 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-foreground text-xs font-semibold">Launch Style Editor</div>
-          <div className="text-muted-foreground text-[11px]">
+          <div className="text-muted-foreground text-xs">
             Visual editing is done in a full-screen canvas environment.
           </div>
         </div>

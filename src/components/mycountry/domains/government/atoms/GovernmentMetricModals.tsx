@@ -225,7 +225,7 @@ export function GovernmentMetricModals({
                               <p className="text-xs font-semibold text-foreground">
                                 {component1.name} + {component2.name}
                               </p>
-                              <p className="mt-0.5 text-[10px] text-green-500">
+                              <p className="mt-0.5 text-xs text-green-500">
                                 Complementary systems boost administrative output.
                               </p>
                             </div>
@@ -267,7 +267,7 @@ export function GovernmentMetricModals({
                               <p className="text-xs font-semibold text-foreground">
                                 {component1.name} vs {component2.name}
                               </p>
-                              <p className="mt-0.5 text-[10px] text-red-500">
+                              <p className="mt-0.5 text-xs text-red-500">
                                 Incompatible policies drag down performance.
                               </p>
                             </div>
@@ -307,7 +307,7 @@ export function GovernmentMetricModals({
                         </span>
                         <Badge
                           variant="outline"
-                          className="shrink-0 border-border/40 text-[10px] text-muted-foreground"
+                          className="shrink-0 border-border/40 text-xs text-muted-foreground"
                         >
                           {dir.category}
                         </Badge>
@@ -324,7 +324,7 @@ export function GovernmentMetricModals({
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 text-center">
                 <div className="space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                     Base Score
                   </p>
                   <p className="text-xl font-extrabold text-foreground">
@@ -332,7 +332,7 @@ export function GovernmentMetricModals({
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                     Synergy Bonus
                   </p>
                   <p className="text-xl font-extrabold text-green-500">
@@ -340,7 +340,7 @@ export function GovernmentMetricModals({
                   </p>
                 </div>
                 <div className="mt-2 space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                     Conflict Penalty
                   </p>
                   <p className="text-xl font-extrabold text-red-500">
@@ -348,7 +348,7 @@ export function GovernmentMetricModals({
                   </p>
                 </div>
                 <div className="mt-2 space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                     Total Score
                   </p>
                   <p className="text-xl font-extrabold text-indigo-500">
@@ -387,7 +387,7 @@ export function GovernmentMetricModals({
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center">
-                  <p className="text-[10px] font-semibold tracking-wider text-emerald-500 uppercase">
+                  <p className="text-xs font-semibold tracking-wider text-emerald-500 uppercase">
                     Total Setup Cost
                   </p>
                   <p className="mt-1 font-mono text-xl font-bold tracking-tight text-foreground tabular-nums">
@@ -395,7 +395,7 @@ export function GovernmentMetricModals({
                   </p>
                 </div>
                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
-                  <p className="text-[10px] font-semibold tracking-wider text-amber-500 uppercase">
+                  <p className="text-xs font-semibold tracking-wider text-amber-500 uppercase">
                     Annual Maintenance
                   </p>
                   <p className="mt-1 font-mono text-xl font-bold tracking-tight text-foreground tabular-nums">
@@ -419,7 +419,7 @@ export function GovernmentMetricModals({
                       >
                         <div className="flex flex-col">
                           <span className="font-medium text-foreground">{comp.name}</span>
-                          <span className="text-[9px] text-muted-foreground capitalize">
+                          <span className="text-xs text-muted-foreground capitalize">
                             {comp.category}
                           </span>
                         </div>

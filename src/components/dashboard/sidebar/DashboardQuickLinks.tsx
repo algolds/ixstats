@@ -113,7 +113,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 key={link.label}
                 href={link.href}
                 {...extraProps}
-                className="group text-muted-foreground hover:text-foreground flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-[11px] font-normal tracking-normal transition-all duration-150 hover:bg-white/[0.06] active:scale-[0.97]"
+                className="group text-muted-foreground hover:text-foreground flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-xs font-normal tracking-normal transition-all duration-150 hover:bg-white/[0.06] active:scale-[0.97]"
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <Icon
@@ -126,7 +126,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 </div>
 
                 {link.label === "ThinkTanks" && thinktankUnreadCount > 0 && (
-                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500/20 px-1.5 text-[9px] font-bold tracking-tight text-emerald-400 shadow-2xs ring-1 ring-emerald-500/30 backdrop-blur-xs transition-transform group-hover:scale-105">
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500/20 px-1.5 text-xs font-bold tracking-tight text-emerald-400 shadow-2xs ring-1 ring-emerald-500/30 backdrop-blur-xs transition-transform group-hover:scale-105">
                     {thinktankUnreadCount > 99 ? "99+" : thinktankUnreadCount}
                   </span>
                 )}
@@ -146,7 +146,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
               label={`v${PLATFORM_VERSION} ${channelTheme.shortName} · Build ${BUILD_VERSION}`}
               size="sm"
               className={cn(
-                "w-full justify-center text-[10px] font-medium tracking-tight tabular-nums transition-all group-hover:border-white/30 group-hover:shadow-xs",
+                "w-full justify-center text-xs font-medium tracking-tight tabular-nums transition-all group-hover:border-white/30 group-hover:shadow-xs",
                 channelTheme.borderColor,
                 channelTheme.bgColor
               )}

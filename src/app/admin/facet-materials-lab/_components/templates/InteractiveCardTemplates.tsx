@@ -71,7 +71,7 @@ export function InteractiveCardTemplates({
           <div className="pointer-events-none relative z-10 space-y-2">
             <Layers className="text-primary mx-auto h-8 w-8 opacity-75" />
             <h4 className="text-base font-bold capitalize">{material} Material</h4>
-            <p className="text-muted-foreground max-w-[200px] text-[11px] leading-relaxed">
+            <p className="text-muted-foreground max-w-[200px] text-xs leading-relaxed">
               Depth Level {depth} with theme class &apos;{variant}&apos; and overlay texture &apos;
               {texture}&apos;.
             </p>
@@ -94,13 +94,13 @@ export function InteractiveCardTemplates({
           <div className="relative z-10 flex items-start justify-between">
             <div>
               <h4 className="text-base leading-tight font-bold">MyCountry Security Core</h4>
-              <p className="text-muted-foreground mt-0.5 text-[10px]">
+              <p className="text-muted-foreground mt-0.5 text-xs">
                 Integrity & Threat Profile Validation
               </p>
             </div>
             <button
               onClick={() => setSecureStatus(!secureStatus)}
-              className="cursor-pointer rounded border px-2 py-0.5 text-[8px] font-bold tracking-wider uppercase transition-colors"
+              className="cursor-pointer rounded border px-2 py-0.5 text-xs font-bold tracking-wider uppercase transition-colors"
               style={{
                 borderColor: secureStatus ? `${customAccent}4D` : "#ef44444D",
                 backgroundColor: secureStatus ? `${customAccent}33` : "#ef444433",
@@ -164,7 +164,7 @@ export function InteractiveCardTemplates({
             className="z-0 rounded-[inherit]"
           />
           <div className="pointer-events-none relative z-10">
-            <span className="text-muted-foreground mb-0.5 block text-[9px] font-bold tracking-widest uppercase">
+            <span className="text-muted-foreground mb-0.5 block text-xs font-bold tracking-widest uppercase">
               Parent Block (Depth 1)
             </span>
             <h4 className="text-base leading-tight font-bold">System Core Hub</h4>
@@ -172,7 +172,7 @@ export function InteractiveCardTemplates({
 
           <div className="facet-hierarchy-child relative z-10 flex flex-col gap-3 p-4">
             <div className="pointer-events-none">
-              <span className="text-muted-foreground mb-0.5 block text-[8px] font-bold tracking-widest uppercase">
+              <span className="text-muted-foreground mb-0.5 block text-xs font-bold tracking-widest uppercase">
                 Nested Child (Depth 2)
               </span>
               <p className="text-muted-foreground text-xs leading-relaxed">
@@ -234,7 +234,7 @@ export function InteractiveCardTemplates({
             </div>
             <div>
               <h4 className="text-sm leading-tight font-bold">System Overview</h4>
-              <p className="text-muted-foreground text-[10px]">Real-time performance metrics</p>
+              <p className="text-muted-foreground text-xs">Real-time performance metrics</p>
             </div>
           </div>
           <div className="relative z-10 flex items-center justify-between border-t pt-2.5">
@@ -263,11 +263,11 @@ export function InteractiveCardTemplates({
           />
           <div className="pointer-events-none relative z-10 flex items-center justify-between">
             <Globe className="h-5 w-5" style={{ color: customAccent }} />
-            <span className="text-muted-foreground font-mono text-[9px]">v1.4.0</span>
+            <span className="text-muted-foreground font-mono text-xs">v1.4.0</span>
           </div>
           <div className="pointer-events-none relative z-10 space-y-1">
             <h4 className="text-base font-bold">Global Fabric</h4>
-            <p className="text-muted-foreground text-[11px] leading-relaxed">
+            <p className="text-muted-foreground text-xs leading-relaxed">
               Spatial mesh coordinates and geopolitical alignment.
             </p>
           </div>
@@ -287,7 +287,7 @@ export function InteractiveCardTemplates({
             className="z-0 rounded-[inherit]"
           />
           <div className="pointer-events-none relative z-10">
-            <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Progressive Diffusion
             </span>
             <h4 className="text-base font-bold">Stepped Layer Refraction</h4>
@@ -311,13 +311,13 @@ export function InteractiveCardTemplates({
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
           <div className="pointer-events-none relative z-10 flex items-center justify-between">
             <Star className="h-5 w-5" style={{ color: customAccent }} />
-            <span className="text-muted-foreground font-mono text-[8px] uppercase">
+            <span className="text-muted-foreground font-mono text-xs uppercase">
               Specular Glare
             </span>
           </div>
           <div className="pointer-events-none relative z-10 space-y-1.5">
             <h4 className="text-base leading-tight font-bold">Refractive Edge</h4>
-            <p className="text-muted-foreground text-[10px] leading-relaxed">
+            <p className="text-muted-foreground text-xs leading-relaxed">
               Dynamic light specular tracking layer.
             </p>
           </div>
@@ -337,7 +337,7 @@ export function InteractiveCardTemplates({
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
           <div className="relative z-10 flex items-start justify-between">
             <div className="pointer-events-none space-y-1">
-              <span className="text-muted-foreground block text-[9px] font-bold tracking-wider uppercase">
+              <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
                 Masked Chamfer
               </span>
               <h4 className="text-base font-bold">Cutout Specimen</h4>
@@ -359,14 +359,14 @@ export function InteractiveCardTemplates({
         >
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
           <div className="pointer-events-none relative z-10 flex items-center justify-between">
-            <span className="text-[9px] font-bold tracking-wider uppercase">Active Particle</span>
-            <span className="font-mono text-[9px]" style={{ color: customAccent }}>
+            <span className="text-xs font-bold tracking-wider uppercase">Active Particle</span>
+            <span className="font-mono text-xs" style={{ color: customAccent }}>
               Orbit Trajectory
             </span>
           </div>
           <div className="pointer-events-none relative z-10 space-y-1">
             <h4 className="text-base font-bold">Comet Particle Motion</h4>
-            <p className="text-muted-foreground text-[10px] leading-relaxed">
+            <p className="text-muted-foreground text-xs leading-relaxed">
               Orbital beam sweep along container perimeter border.
             </p>
           </div>
@@ -388,7 +388,7 @@ export function InteractiveCardTemplates({
             <Box className="h-5 w-5" style={{ color: customAccent }} />
             <div>
               <h4 className="text-sm font-bold capitalize">{texture} Tactile</h4>
-              <p className="text-muted-foreground text-[10px]">Embedded SVG Noise Filter</p>
+              <p className="text-muted-foreground text-xs">Embedded SVG Noise Filter</p>
             </div>
           </div>
         </div>
@@ -411,14 +411,14 @@ export function InteractiveCardTemplates({
           >
             <div className="flex items-center gap-2">
               <Code className="h-3.5 w-3.5" style={{ color: customAccent }} />
-              <span className="text-[10px] font-bold tracking-wide uppercase">Exported Code</span>
+              <span className="text-xs font-bold tracking-wide uppercase">Exported Code</span>
             </div>
-            <span className="text-muted-foreground font-mono text-[8px]">
+            <span className="text-muted-foreground font-mono text-xs">
               .{"{"} material: {material}, depth: {depth} {"}"}
             </span>
           </div>
           <pre
-            className="bg-muted/90 text-foreground max-h-[260px] overflow-x-auto px-4 pt-1 pb-4 font-mono text-[10px] leading-relaxed"
+            className="bg-muted/90 text-foreground max-h-[260px] overflow-x-auto px-4 pt-1 pb-4 font-mono text-xs leading-relaxed"
             style={{
               borderColor: `${customAccent}10`,
               tabSize: 2,

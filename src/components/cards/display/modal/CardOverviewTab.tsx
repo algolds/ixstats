@@ -223,7 +223,7 @@ export function CardOverviewTab({
             <p className="text-foreground border-l-2 border-amber-500/40 bg-amber-500/[0.02] py-1 pl-3 text-sm font-medium italic">
               "{card.inscription}"
             </p>
-            <div className="text-muted-foreground mt-2 text-right text-[10px] font-medium">
+            <div className="text-muted-foreground mt-2 text-right text-xs font-medium">
               Inscribed by user {card.inscribedById ? card.inscribedById.substring(0, 8) : "System"}
               {card.inscribedAt && ` on ${new Date(card.inscribedAt).toLocaleDateString()}`}
             </div>

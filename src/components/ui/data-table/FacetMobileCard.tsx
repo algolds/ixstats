@@ -100,7 +100,7 @@ export function FacetMobileCard<T extends Record<string, any>>({
               col.mobileLabel || (typeof col.header === "string" ? col.header : col.key);
             return (
               <div key={col.key} className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-muted-foreground/80 truncate text-[10px] font-semibold tracking-wider uppercase">
+                <span className="text-muted-foreground/80 truncate text-xs font-semibold tracking-wider uppercase">
                   {label}
                 </span>
                 <div

@@ -89,10 +89,10 @@ export function FloatingRibbonRack({
                     {ribbon.title}
                   </span>
                 </div>
-                <p className="text-muted-foreground mb-1.5 text-[11px] leading-snug font-medium">
+                <p className="text-muted-foreground mb-1.5 text-xs leading-snug font-medium">
                   Conferred platform honor for excellence in {ribbon.category}.
                 </p>
-                <div className="border-border/50 flex items-center justify-between border-t pt-1 text-[10px]">
+                <div className="border-border/50 flex items-center justify-between border-t pt-1 text-xs">
                   <span className="text-muted-foreground font-medium">Platform Honor</span>
                   <span className="rounded-xs border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 font-mono font-semibold text-amber-600 dark:bg-amber-500/15 dark:text-amber-300">
                     {ribbon.badgeLabel}

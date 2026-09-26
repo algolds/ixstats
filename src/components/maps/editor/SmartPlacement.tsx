@@ -165,17 +165,17 @@ export function SmartPlacement(props: SmartPlacementProps) {
     <div className="border-border/60 bg-card/60 space-y-2.5 rounded-lg border p-2.5 backdrop-blur-md">
       {/* CivCap Intelligence Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
+        <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
           <Sparkles className="h-3 w-3" />
           <span>CivCap Geographic Intelligence</span>
         </div>
-        <span className="text-muted-foreground font-mono text-[9px]">
+        <span className="text-muted-foreground font-mono text-xs">
           {elev || "Terrain"} · {climate || "Climate"}
         </span>
       </div>
 
       {/* CivCap Rating Bars */}
-      <div className="grid grid-cols-2 gap-2 text-[10px]">
+      <div className="grid grid-cols-2 gap-2 text-xs">
         <div className="bg-muted/40 flex items-center justify-between rounded px-2 py-1">
           <span className="text-muted-foreground flex items-center gap-1">
             <Waves className="h-2.5 w-2.5 text-emerald-500" /> Agri Yield
@@ -213,21 +213,21 @@ export function SmartPlacement(props: SmartPlacementProps) {
                 className="group border-border/40 bg-card/40 hover:bg-card/90 flex flex-col gap-1 rounded-md border p-1.5 transition-all"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-[11px] font-medium">
+                  <div className="flex items-center gap-1.5 text-xs font-medium">
                     <Icon className={`h-3 w-3 shrink-0 ${s.color}`} />
                     <span className="text-foreground">{s.title}</span>
                   </div>
                   {s.civCapImpact && (
-                    <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                       {s.civCapImpact}
                     </span>
                   )}
                 </div>
-                <p className="text-muted-foreground text-[10px] leading-tight">{s.text}</p>
+                <p className="text-muted-foreground text-xs leading-tight">{s.text}</p>
                 {props.onApplySuggestion && s.suggestedType && (
                   <button
                     onClick={() => props.onApplySuggestion?.(s.suggestedType!, s.suggestedName)}
-                    className="bg-primary/10 text-primary hover:bg-primary/20 mt-0.5 flex h-5 w-fit items-center gap-1 rounded px-2 text-[9px] font-semibold transition-colors duration-100 active:scale-95"
+                    className="bg-primary/10 text-primary hover:bg-primary/20 mt-0.5 flex h-5 w-fit items-center gap-1 rounded px-2 text-xs font-semibold transition-colors duration-100 active:scale-95"
                   >
                     <span>Apply Type: {s.suggestedType}</span>
                     {s.suggestedName && (

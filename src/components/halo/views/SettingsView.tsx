@@ -456,7 +456,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                     <span className="text-foreground block truncate text-xs font-semibold">
                       Wiki System Settings
                     </span>
-                    <span className="text-muted-foreground block truncate text-[10px]">
+                    <span className="text-muted-foreground block truncate text-xs">
                       Autonomous lore scanner &amp; sources
                     </span>
                   </div>

@@ -146,7 +146,7 @@ export function Navigation() {
           {/* Mobile Title Bar — DI pill replaces hamburger */}
           <div className="flex h-14 w-full items-center justify-between py-2 lg:hidden">
             <div className="flex min-w-0 flex-1 flex-col pr-3">
-              <span className="text-muted-foreground/80 text-[10px] tracking-wide uppercase sm:text-[11px]">
+              <span className="text-muted-foreground/80 text-xs tracking-wide uppercase sm:text-xs">
                 IxStats
               </span>
               <span className="text-foreground line-clamp-1 text-sm font-semibold sm:text-base">

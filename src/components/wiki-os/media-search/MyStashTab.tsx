@@ -226,7 +226,7 @@ export function MyStashTab({
                       <Folder className="h-5 w-5 shrink-0" style={{ color: stash.color }} />
                       <div className="min-w-0">
                         <p className="text-foreground truncate text-xs font-bold">{stash.name}</p>
-                        <p className="text-muted-foreground text-[10px] font-medium">
+                        <p className="text-muted-foreground text-xs font-medium">
                           {stash.itemCount} items
                         </p>
                       </div>
@@ -287,10 +287,10 @@ export function MyStashTab({
                         </div>
                       </div>
                       <div className="flex flex-col gap-0.5 p-2 text-left">
-                        <span className="truncate text-[11px] font-medium text-foreground/90 group-hover:text-foreground">
+                        <span className="truncate text-xs font-medium text-foreground/90 group-hover:text-foreground">
                           {cleanTitle}
                         </span>
-                        <span className="text-[9px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {img.width > 0 && img.height > 0 ? `${img.width}×${img.height}` : "Vector"}
                         </span>
                       </div>

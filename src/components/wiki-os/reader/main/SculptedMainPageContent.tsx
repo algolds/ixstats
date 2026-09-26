@@ -156,7 +156,7 @@ export function SculptedMainPageContent({
                   href={withBasePath("/wiki/Category:Bureau_of_International_Statistics")}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all hover:bg-black/5 dark:hover:bg-white/5"
+                  className="text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-all hover:bg-black/5 dark:hover:bg-white/5"
                   title="Browse full statistical category index"
                 >
                   <Database className="h-3 w-3" />
@@ -207,7 +207,7 @@ export function SculptedMainPageContent({
                   <div className="flex h-full min-w-0 flex-1 flex-col justify-between py-0.5">
                     <div>
                       <div className="flex items-center justify-between gap-1.5">
-                        <span className="truncate text-[10.5px] font-medium tracking-wider text-blue-600 uppercase dark:text-blue-400">
+                        <span className="truncate text-xs font-medium tracking-wider text-blue-600 uppercase dark:text-blue-400">
                           {almanacSpotlight.category}
                         </span>
                       </div>
@@ -306,21 +306,21 @@ export function SculptedMainPageContent({
 
                           {/* Page Blurb / Description */}
                           {rc.blurb && (
-                            <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-[11px] leading-snug">
+                            <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-xs leading-snug">
                               {rc.blurb}
                             </p>
                           )}
 
                           {/* Edit Notes / Summary */}
                           {rc.comment && rc.comment.trim() && (
-                            <div className="text-foreground/75 bg-foreground/[0.03] border-border/40 mt-1 flex max-w-fit items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10.5px]">
+                            <div className="text-foreground/75 bg-foreground/[0.03] border-border/40 mt-1 flex max-w-fit items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs">
                               <EditPencil className="text-muted-foreground/70 h-2.5 w-2.5 shrink-0" />
                               <span className="truncate font-sans italic">{rc.comment}</span>
                             </div>
                           )}
 
                           {/* Author & Timestamp */}
-                          <div className="text-muted-foreground mt-1 flex items-center gap-1.5 text-[10.5px]">
+                          <div className="text-muted-foreground mt-1 flex items-center gap-1.5 text-xs">
                             <span className="text-foreground/80 font-medium">{rc.user}</span>
                             <span className="opacity-40">·</span>
                             <span>{formatMWTimeAgo(rc.timestamp)}</span>
@@ -331,7 +331,7 @@ export function SculptedMainPageContent({
                       {/* Byte Diff Pill */}
                       <span
                         className={cn(
-                          "bg-foreground/[0.03] border-border/20 mt-0.5 flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
+                          "bg-foreground/[0.03] border-border/20 mt-0.5 flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-semibold tabular-nums",
                           diffClass
                         )}
                         title={`${rc.oldLen} → ${rc.newLen} bytes`}
@@ -426,7 +426,7 @@ export function SculptedMainPageContent({
                         loading="lazy"
                       />
                     ) : (
-                      <div className="text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
+                      <div className="text-muted-foreground flex h-full w-full items-center justify-center text-xs">
                         FLAG
                       </div>
                     )}
@@ -434,7 +434,7 @@ export function SculptedMainPageContent({
                   <span className="text-foreground group-hover:text-wiki truncate text-xs font-semibold transition-colors">
                     {c.name}
                   </span>
-                  <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate text-[10.5px] font-medium tabular-nums">
+                  <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate text-xs font-medium tabular-nums">
                     {c.population ? <span>Pop {formatNumber(c.population, 1)}</span> : null}
                     {c.population && c.gdp ? <span className="opacity-40">·</span> : null}
                     {c.gdp ? <span>{formatCurrency(c.gdp)}</span> : null}

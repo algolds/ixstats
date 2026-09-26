@@ -84,7 +84,7 @@ export function PlateMediaElement({
           <button
             type="button"
             onClick={handleDelete}
-            className="absolute top-2 right-2 rounded-lg bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100 active:scale-[0.98] z-10"
+            className="absolute top-2 right-2 rounded-lg bg-black/60 px-2 py-0.5 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100 active:scale-[0.98] z-10"
           >
             Remove
           </button>

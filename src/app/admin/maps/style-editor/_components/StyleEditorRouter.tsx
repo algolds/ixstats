@@ -71,7 +71,7 @@ export function StyleEditorRouter() {
             <RefreshCw className="h-4 w-4" />
           </button>
 
-          <div className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
+          <div className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-400">
             Maputnik v1.7.0
           </div>
         </div>

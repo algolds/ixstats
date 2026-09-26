@@ -84,7 +84,7 @@ export function DiplomaticScenariosAnalyticsTab() {
       {/* KPI Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Generations
           </p>
           <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
@@ -92,7 +92,7 @@ export function DiplomaticScenariosAnalyticsTab() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Active Scenarios
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
@@ -100,7 +100,7 @@ export function DiplomaticScenariosAnalyticsTab() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Completion Rate
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
@@ -108,7 +108,7 @@ export function DiplomaticScenariosAnalyticsTab() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Scenario Types
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">

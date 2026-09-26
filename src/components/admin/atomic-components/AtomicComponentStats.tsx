@@ -23,7 +23,7 @@ export function AtomicComponentStats({
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Components
           </span>
           <Layers className="text-muted-foreground h-3.5 w-3.5" />
@@ -35,7 +35,7 @@ export function AtomicComponentStats({
 
       <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Active Registry
           </span>
           <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
@@ -47,7 +47,7 @@ export function AtomicComponentStats({
 
       <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Synergy Links
           </span>
           <Network className="h-3.5 w-3.5 text-cyan-400" />
@@ -59,7 +59,7 @@ export function AtomicComponentStats({
 
       <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Categories
           </span>
           <Folder className="h-3.5 w-3.5 text-amber-400" />

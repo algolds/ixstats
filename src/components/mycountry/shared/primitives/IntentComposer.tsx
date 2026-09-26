@@ -125,7 +125,7 @@ export const IntentComposer = React.memo(function IntentComposer({
             <h3 className="text-foreground text-sm font-extrabold tracking-tight">
               Executive Directives
             </h3>
-            <p className="text-muted-foreground text-[11px] font-medium">
+            <p className="text-muted-foreground text-xs font-medium">
               Issue executive decrees to drive national economic, social, and security policy.
             </p>
           </div>
@@ -133,7 +133,7 @@ export const IntentComposer = React.memo(function IntentComposer({
 
         <div className="flex items-center gap-2">
           {status && (
-            <span className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1 font-mono text-[11px] font-extrabold text-amber-900 dark:text-amber-300">
+            <span className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1 font-mono text-xs font-extrabold text-amber-900 dark:text-amber-300">
               Capacity: {status.usedThisWeek}/{status.cap} used
             </span>
           )}
@@ -232,7 +232,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 setGoal("");
                 setQueryInput("");
               }}
-              className="text-muted-foreground hover:text-foreground text-[11px] font-extrabold underline transition-colors"
+              className="text-muted-foreground hover:text-foreground text-xs font-extrabold underline transition-colors"
             >
               Change Directive
             </button>
@@ -246,7 +246,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 <span>Executive Intensity Tier</span>
               </label>
               {status && (
-                <span className="text-muted-foreground font-mono text-[11px] font-semibold">
+                <span className="text-muted-foreground font-mono text-xs font-semibold">
                   Weekly Directives: {status.usedThisWeek}/{status.cap} used
                 </span>
               )}
@@ -319,20 +319,20 @@ export const IntentComposer = React.memo(function IntentComposer({
                         <span className="text-xs font-extrabold">{tierItem.label}</span>
                         <span
                           className={cn(
-                            "rounded-lg px-2 py-0.5 font-mono text-[10px] font-bold",
+                            "rounded-lg px-2 py-0.5 font-mono text-xs font-bold",
                             tierItem.badgeCls
                           )}
                         >
                           {civCapDisplay}
                         </span>
                       </div>
-                      <p className="mt-2 text-[11px] leading-relaxed font-medium opacity-90">
+                      <p className="mt-2 text-xs leading-relaxed font-medium opacity-90">
                         {pkg?.title ?? tierItem.defaultDesc}
                       </p>
                     </div>
 
                     {pkg?.risk && (
-                      <div className="mt-3 flex items-center justify-between font-mono text-[10px] font-bold uppercase opacity-80">
+                      <div className="mt-3 flex items-center justify-between font-mono text-xs font-bold uppercase opacity-80">
                         <span>Risk: {pkg.risk}</span>
                         <span>Acceptance: {pkg.acceptance}</span>
                       </div>
@@ -360,7 +360,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                     </h4>
                   </div>
                   {activePackage?.civCapCost && (
-                    <span className="font-mono text-[11px] font-extrabold text-amber-800 dark:text-amber-300">
+                    <span className="font-mono text-xs font-extrabold text-amber-800 dark:text-amber-300">
                       -{activePackage.civCapCost} CivCap Cost
                     </span>
                   )}
@@ -376,7 +376,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 {/* Specific Policy Levers & Changes */}
                 {activePackage?.changes && activePackage.changes.length > 0 && (
                   <div className="space-y-2">
-                    <span className="text-foreground text-[10px] font-extrabold tracking-wider uppercase">
+                    <span className="text-foreground text-xs font-extrabold tracking-wider uppercase">
                       Proposed Policy Levers & Budget Shifts
                     </span>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -388,7 +388,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                           <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
                           <div>
                             <strong className="text-foreground font-bold">{c.label}</strong>
-                            <p className="text-muted-foreground text-[11px] leading-snug">
+                            <p className="text-muted-foreground text-xs leading-snug">
                               {c.detail}
                             </p>
                           </div>
@@ -407,7 +407,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                         <span
                           key={idx}
                           className={cn(
-                            "inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11px] font-extrabold",
+                            "inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-xs font-extrabold",
                             isPositive
                               ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-950 dark:text-emerald-300"
                               : "border-red-500/40 bg-red-500/15 text-red-950 dark:text-red-300"

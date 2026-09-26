@@ -56,7 +56,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <label className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Route Name & Properties
         </label>
         <input
@@ -67,7 +67,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
           className="border-border/40 bg-background/50 text-foreground placeholder:text-muted-foreground focus:border-primary w-full rounded-md border px-3 py-1.5 text-xs focus:outline-none"
         />
 
-        <label className="text-muted-foreground block pt-1 text-[11px] font-semibold tracking-wider uppercase">
+        <label className="text-muted-foreground block pt-1 text-xs font-semibold tracking-wider uppercase">
           Route Type
         </label>
         <select
@@ -86,16 +86,16 @@ export const RouteWaypointList = memo(function RouteWaypointList({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+            <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Waypoints ({waypointCount})
             </span>
             {waypointCount >= 2 && (
               <div className="flex items-center gap-1">
-                <span className="border-border/40 bg-muted/40 text-foreground font-mono text-[10px] tabular-nums rounded px-1.5 py-0.5 border">
+                <span className="border-border/40 bg-muted/40 text-foreground font-mono text-xs tabular-nums rounded px-1.5 py-0.5 border">
                   {liveLengthKm.toFixed(1)} km
                 </span>
                 {liveDuration && (
-                  <span className="border-primary/20 bg-primary/10 text-primary font-mono text-[10px] tabular-nums rounded px-1.5 py-0.5 border font-medium">
+                  <span className="border-primary/20 bg-primary/10 text-primary font-mono text-xs tabular-nums rounded px-1.5 py-0.5 border font-medium">
                     ~{liveDuration}
                   </span>
                 )}
@@ -107,7 +107,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
               <button
                 type="button"
                 onClick={onUndoWaypoint}
-                className="text-muted-foreground hover:bg-muted flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] transition active:scale-[0.98]"
+                className="text-muted-foreground hover:bg-muted flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition active:scale-[0.98]"
                 title="Undo last waypoint"
               >
                 <Undo2 className="h-3 w-3" /> Undo
@@ -117,7 +117,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
               <button
                 type="button"
                 onClick={onClearWaypoints}
-                className="text-destructive hover:bg-destructive/10 flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] transition active:scale-[0.98]"
+                className="text-destructive hover:bg-destructive/10 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition active:scale-[0.98]"
                 title="Clear all waypoints"
               >
                 <Trash2 className="h-3 w-3" /> Clear
@@ -135,13 +135,13 @@ export const RouteWaypointList = memo(function RouteWaypointList({
             {routeWaypoints.map((pt, idx) => (
               <div
                 key={idx}
-                className="bg-background/40 flex items-center justify-between rounded px-2 py-1 text-[11px]"
+                className="bg-background/40 flex items-center justify-between rounded px-2 py-1 text-xs"
               >
                 <div className="flex items-center gap-1.5">
                   <MapPin className="text-primary h-3 w-3 shrink-0" />
                   <span className="text-muted-foreground font-mono tabular-nums">#{idx + 1}</span>
                 </div>
-                <span className="text-muted-foreground font-mono text-[10px] tabular-nums">
+                <span className="text-muted-foreground font-mono text-xs tabular-nums">
                   {pt[0].toFixed(4)}°, {pt[1].toFixed(4)}°
                 </span>
               </div>
@@ -151,7 +151,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
       </div>
 
       {manualError && (
-        <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border p-2 text-[11px]">
+        <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border p-2 text-xs">
           {manualError}
         </div>
       )}

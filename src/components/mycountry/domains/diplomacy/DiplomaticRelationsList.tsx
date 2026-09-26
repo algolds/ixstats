@@ -221,11 +221,11 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
                   <h4 className="text-foreground truncate text-sm font-bold">
                     {targetName.replace(/_/g, " ")}
                   </h4>
-                  <p className="text-muted-foreground text-[10px]">
+                  <p className="text-muted-foreground text-xs">
                     Established: {formatDate(rel.establishedAt)}
                   </p>
                   {sharedBloc && (
-                    <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-cyan-400 mt-0.5" title={`Shares alliance membership in ${sharedBloc.name}`}>
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-400 mt-0.5" title={`Shares alliance membership in ${sharedBloc.name}`}>
                       <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
                       In Bloc ({sharedBloc.name})
                     </span>
@@ -235,7 +235,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
               <Badge
                 variant="outline"
-                className={`shrink-0 border text-[10px] font-semibold uppercase ${theme.badge}`}
+                className={`shrink-0 border text-xs font-semibold uppercase ${theme.badge}`}
               >
                 {rel.relationship || "NEUTRAL"}
               </Badge>
@@ -243,7 +243,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
             {/* Strength indicator */}
             <div className="mt-4 space-y-1">
-              <div className="flex items-center justify-between text-[10px]">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground flex items-center gap-1 font-medium">
                   <Handshake className="h-3 w-3" />
                   Relation Strength
@@ -258,7 +258,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
             </div>
 
             {/* Stance Selection & Partner Stance */}
-            <div className="border-border/10 mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-[10px]">
+            <div className="border-border/10 mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
               <div className="flex flex-col gap-1">
                 <span className="text-muted-foreground font-medium">Your Stance</span>
                 {isOwner ? (
@@ -266,7 +266,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
                     value={rel.goalSelf || ""}
                     onChange={(e) => handleGoalChange(rel.id, e.target.value as any)}
                     disabled={setGoalMutation.isPending}
-                    className="bg-background border-border/40 text-foreground rounded border px-1.5 py-0.5 text-[10px] focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                    className="bg-background border-border/40 text-foreground rounded border px-1.5 py-0.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
                   >
                     <option value="">Choose Stance...</option>
                     <option value="ALLY">Ally (Alliance Pursuit)</option>
@@ -280,7 +280,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-muted-foreground font-medium">Their Stance</span>
-                <Badge variant="outline" className="border-border/30 w-fit px-1 py-0 text-[9px]">
+                <Badge variant="outline" className="border-border/30 w-fit px-1 py-0 text-xs">
                   {rel.goalTarget || "NOT DECLARED"}
                 </Badge>
               </div>
@@ -288,13 +288,13 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
             {/* Synergy & Conflict Badges */}
             {rel.goalSelf === "ALLY" && rel.goalTarget === "ALLY" && (
-              <div className="mt-2 flex items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[9px] font-semibold text-emerald-600">
+              <div className="mt-2 flex items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-xs font-semibold text-emerald-600">
                 <Sparkles className="h-3 w-3 text-emerald-500" />
                 Goals aligned! Reaching Allied status significantly faster.
               </div>
             )}
             {rel.goalSelf && rel.goalTarget && rel.goalSelf !== rel.goalTarget && (
-              <div className="mt-2 flex items-center gap-1 rounded border border-red-500/20 bg-red-500/10 px-2 py-1 text-[9px] font-semibold text-red-600">
+              <div className="mt-2 flex items-center gap-1 rounded border border-red-500/20 bg-red-500/10 px-2 py-1 text-xs font-semibold text-red-600">
                 <AlertCircle className="h-3 w-3 text-red-500" />
                 Stance conflict: Relations degradation expected.
               </div>
@@ -302,13 +302,13 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
             {/* Recent Activity / Pain Points */}
             {(rel as any).recentActivity && (
-              <div className="bg-muted/40 border-border/20 text-muted-foreground mt-2 rounded border px-2 py-1 text-[9px] italic">
+              <div className="bg-muted/40 border-border/20 text-muted-foreground mt-2 rounded border px-2 py-1 text-xs italic">
                 Status: {(rel as any).recentActivity}
               </div>
             )}
 
             {/* Details Grid */}
-            <div className="border-border/10 mt-4 grid grid-cols-2 gap-2 border-t pt-3 text-[10px]">
+            <div className="border-border/10 mt-4 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
               <div className="flex flex-col gap-0.5">
                 <span className="text-muted-foreground flex items-center gap-1 font-medium">
                   <Landmark className="h-3 w-3 shrink-0 text-cyan-500" />

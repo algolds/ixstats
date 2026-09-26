@@ -217,7 +217,7 @@ export function VitalityRings({
       <div className="mb-1.5 flex items-center gap-1">
         <Activity className="h-3.5 w-3.5 text-blue-500" />
         <span className="text-xs font-semibold">{title}</span>
-        <Badge variant="outline" className="ml-auto px-1.5 py-0 text-[10px]">
+        <Badge variant="outline" className="ml-auto px-1.5 py-0 text-xs">
           LIVE
         </Badge>
       </div>

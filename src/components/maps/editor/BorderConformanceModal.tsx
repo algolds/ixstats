@@ -58,7 +58,7 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
             ))}
           </div>
 
-          <p className="text-muted-foreground text-[11px]">
+          <p className="text-muted-foreground text-xs">
             These borders may need manual adjustment for accuracy. You can edit individual
             subdivisions after import to refine their shapes.
           </p>

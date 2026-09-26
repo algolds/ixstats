@@ -56,14 +56,14 @@ export const PreviewGovernment = memo(function PreviewGovernment({
 
         <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-0.5">
-            <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Government Type
             </dt>
             <dd className="text-xs font-semibold text-foreground break-words">{govType}</dd>
           </div>
 
           <div className="space-y-0.5">
-            <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Fiscal Year
             </dt>
             <dd className="text-xs font-medium text-foreground">{fiscalYear}</dd>
@@ -71,7 +71,7 @@ export const PreviewGovernment = memo(function PreviewGovernment({
 
           {headOfState && (
             <div className="space-y-0.5">
-              <dt className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <dt className="flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <Crown className="h-3 w-3 text-amber-500" />
                 Head of State
               </dt>
@@ -81,7 +81,7 @@ export const PreviewGovernment = memo(function PreviewGovernment({
 
           {headOfGovernment && (
             <div className="space-y-0.5">
-              <dt className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <dt className="flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <User className="h-3 w-3 text-primary" />
                 Head of Government
               </dt>
@@ -91,7 +91,7 @@ export const PreviewGovernment = memo(function PreviewGovernment({
 
           {legislature && (
             <div className="space-y-0.5">
-              <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Legislature
               </dt>
               <dd className="text-xs font-medium text-foreground break-words">{legislature}</dd>
@@ -100,7 +100,7 @@ export const PreviewGovernment = memo(function PreviewGovernment({
 
           {judicial && (
             <div className="space-y-0.5">
-              <dt className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <dt className="flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <Scale className="h-3 w-3 text-primary" />
                 Judiciary
               </dt>
@@ -110,7 +110,7 @@ export const PreviewGovernment = memo(function PreviewGovernment({
 
           {totalBudget && totalBudget > 0 ? (
             <div className="space-y-0.5">
-              <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Total Budget
               </dt>
               <dd className="text-xs font-medium text-foreground">
@@ -149,7 +149,7 @@ export const PreviewGovernment = memo(function PreviewGovernment({
                   </span>
                   <Badge
                     variant="outline"
-                    className="border-border/60 text-[10px] uppercase tracking-wider text-muted-foreground"
+                    className="border-border/60 text-xs uppercase tracking-wider text-muted-foreground"
                   >
                     {category}
                   </Badge>

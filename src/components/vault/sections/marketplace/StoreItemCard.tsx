@@ -132,14 +132,14 @@ export function StoreItemCard({
         <div className="flex items-center justify-between">
           <Badge
             variant="outline"
-            className={cn("px-1 py-0 text-[8px] font-bold uppercase", colors.text, colors.border)}
+            className={cn("px-1 py-0 text-xs font-bold uppercase", colors.text, colors.border)}
           >
             {item.badgeText}
           </Badge>
           {isOwned ? (
             <Badge
               variant="outline"
-              className="border-emerald-500/35 bg-emerald-500/20 px-1 py-0 text-[8px] font-bold text-emerald-600 uppercase dark:text-emerald-400"
+              className="border-emerald-500/35 bg-emerald-500/20 px-1 py-0 text-xs font-bold text-emerald-600 uppercase dark:text-emerald-400"
             >
               {maxPurchases > 1 ? "Maxed Out" : "Owned"}
             </Badge>
@@ -147,7 +147,7 @@ export function StoreItemCard({
             purchaseCount > 0 && (
               <Badge
                 variant="outline"
-                className="border-amber-500/35 bg-amber-500/20 px-1 py-0 text-[8px] font-bold text-amber-600 uppercase dark:text-emerald-400"
+                className="border-amber-500/35 bg-amber-500/20 px-1 py-0 text-xs font-bold text-amber-600 uppercase dark:text-emerald-400"
               >
                 Owned x{purchaseCount}
               </Badge>
@@ -168,7 +168,7 @@ export function StoreItemCard({
           <h4 className="text-center text-xs font-semibold tracking-tight text-slate-900 dark:text-white/95">
             {item.name}
           </h4>
-          <p className="text-muted-foreground mt-1 text-center text-[9px] leading-tight">
+          <p className="text-muted-foreground mt-1 text-center text-xs leading-tight">
             {item.description}
           </p>
         </div>
@@ -181,7 +181,7 @@ export function StoreItemCard({
               size="sm"
               onClick={() => onPreview(item)}
               className={cn(
-                "h-7 w-full border text-[10px] font-bold transition-all duration-200",
+                "h-7 w-full border text-xs font-bold transition-all duration-200",
                 isPreviewing
                   ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-600 shadow-[0_0_8px_rgba(6,182,212,0.25)] dark:text-cyan-400"
                   : "border-border/40 hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
@@ -218,7 +218,7 @@ export function StoreItemCard({
               <span className="flex items-center justify-center gap-1">
                 <ShoppingCart className="h-3 w-3 text-white" />
                 <span>Buy</span>
-                <span className="ml-0.5 inline-flex items-center gap-0.5 align-middle font-mono text-[9px] opacity-90">
+                <span className="ml-0.5 inline-flex items-center gap-0.5 align-middle font-mono text-xs opacity-90">
                   <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0 text-white" />
                   {item.price.toLocaleString()}
                 </span>

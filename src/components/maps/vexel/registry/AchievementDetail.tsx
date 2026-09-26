@@ -87,7 +87,7 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
                   composition.externals.motto.position === "above" ? "-top-10" : "-bottom-4"
                 }`}
               >
-                <div className="rounded-md border border-amber-600/30 bg-amber-500/90 px-5 py-2 font-serif text-[10px] font-bold tracking-wider whitespace-nowrap text-zinc-950 uppercase shadow-md">
+                <div className="rounded-md border border-amber-600/30 bg-amber-500/90 px-5 py-2 font-serif text-xs font-bold tracking-wider whitespace-nowrap text-zinc-950 uppercase shadow-md">
                   📜 {composition.externals.motto.text}
                 </div>
               </div>
@@ -103,7 +103,7 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
             </h3>
             <button
               onClick={handleCopyBlazon}
-              className="rounded bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-zinc-400 transition-all hover:bg-white/10 hover:text-amber-400"
+              className="rounded bg-white/5 px-2 py-0.5 text-xs font-semibold text-zinc-400 transition-all hover:bg-white/10 hover:text-amber-400"
             >
               {copied ? "✓ Copied" : "📋 Copy"}
             </button>
@@ -119,21 +119,21 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
         {/* Metadata Card */}
         <div className="flex flex-col gap-4 rounded-xl border border-white/5 bg-zinc-900/60 p-5 backdrop-blur-md">
           <div className="border-b border-white/5 pb-3">
-            <span className="mb-0.5 block text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
+            <span className="mb-0.5 block text-xs font-bold tracking-widest text-zinc-500 uppercase">
               Title
             </span>
             <h2 className="text-base font-bold text-zinc-100">{achievement.title}</h2>
           </div>
 
           <div>
-            <span className="mb-0.5 block text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
+            <span className="mb-0.5 block text-xs font-bold tracking-widest text-zinc-500 uppercase">
               Registered Owner
             </span>
             <span className="font-semibold text-zinc-200">{achievement.ownerId}</span>
           </div>
 
           <div>
-            <span className="mb-0.5 block text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
+            <span className="mb-0.5 block text-xs font-bold tracking-widest text-zinc-500 uppercase">
               Subject Binding
             </span>
             <span className="mb-1 block font-semibold text-zinc-200">
@@ -145,7 +145,7 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
           </div>
 
           <div>
-            <span className="mb-0.5 block text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
+            <span className="mb-0.5 block text-xs font-bold tracking-widest text-zinc-500 uppercase">
               Registration Date
             </span>
             <span className="text-zinc-400">

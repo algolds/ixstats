@@ -113,7 +113,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
       {/* Stats Overview */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Ballots Configured
           </p>
           <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
@@ -122,7 +122,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Active Ballots
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
@@ -131,7 +131,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Responses Collected
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
@@ -161,7 +161,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                       <h4 className="text-foreground text-sm font-bold">{poll.question}</h4>
                       <Badge
                         variant="outline"
-                        className="bg-background/40 border-border/60 text-[9px] font-bold tracking-wider uppercase"
+                        className="bg-background/40 border-border/60 text-xs font-bold tracking-wider uppercase"
                       >
                         {poll.pollType === "choice"
                           ? "Choice"
@@ -170,7 +170,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                             : "Upvote Board"}
                       </Badge>
                       <Badge
-                        className={`border text-[9px] font-bold tracking-wider uppercase ${
+                        className={`border text-xs font-bold tracking-wider uppercase ${
                           poll.isActive && !isExpired
                             ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
                             : isExpired
@@ -195,7 +195,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                   {/* Actions Panel */}
                   <div className="bg-muted/10 border-border/20 flex shrink-0 items-center gap-3.5 self-start rounded-xl border p-2 md:self-auto">
                     <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground text-[10px] font-bold tracking-tight uppercase">
+                      <span className="text-muted-foreground text-xs font-bold tracking-tight uppercase">
                         Active:
                       </span>
                       <Switch
@@ -213,7 +213,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                       variant="outline"
                       onClick={() => handlePublishToDiscord(poll.id)}
                       disabled={publishToDiscordMutation.isPending}
-                      className="border-poll/35 text-poll hover:bg-poll/10 h-7 cursor-pointer gap-1 text-[10px] font-semibold transition-all duration-200"
+                      className="border-poll/35 text-poll hover:bg-poll/10 h-7 cursor-pointer gap-1 text-xs font-semibold transition-all duration-200"
                       size="sm"
                     >
                       {publishToDiscordMutation.isPending ? (
@@ -238,7 +238,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                   </div>
                 </div>
 
-                <div className="text-muted-foreground/60 flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2.5 text-[11px] font-semibold">
+                <div className="text-muted-foreground/60 flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2.5 text-xs font-semibold">
                   <div className="flex items-center gap-1">
                     {poll.countryId ? (
                       <>
@@ -280,7 +280,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
               </div>
 
               <div className="pt-2">
-                <h4 className="text-muted-foreground/75 mb-3 text-[10px] font-bold tracking-wider uppercase">
+                <h4 className="text-muted-foreground/75 mb-3 text-xs font-bold tracking-wider uppercase">
                   Option-by-Option Breakdown
                 </h4>
                 <div className="space-y-3.5">
@@ -310,7 +310,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                     );
                   })}
                 </div>
-                <div className="border-border/20 text-muted-foreground/70 mt-4 flex justify-between border-t pt-3 text-[10px] font-bold tracking-tight uppercase">
+                <div className="border-border/20 text-muted-foreground/70 mt-4 flex justify-between border-t pt-3 text-xs font-bold tracking-tight uppercase">
                   <span>Total Option Votes Cast: {votesCount}</span>
                   {poll.multiple && <span className="text-poll">Multiple selection enabled</span>}
                 </div>

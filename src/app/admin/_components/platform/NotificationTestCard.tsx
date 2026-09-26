@@ -172,7 +172,7 @@ export function NotificationTestCard() {
           <div className="border-border/20 bg-card/20 flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5">
             <Label
               htmlFor="notif-advanced-mode"
-              className="text-muted-foreground cursor-pointer text-[10px] font-bold tracking-wider uppercase select-none"
+              className="text-muted-foreground cursor-pointer text-xs font-bold tracking-wider uppercase select-none"
             >
               Custom Builder
             </Label>

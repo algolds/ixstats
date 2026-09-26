@@ -125,7 +125,7 @@ export function CardTakedownVerificationModal({
           <div className="space-y-4 pt-2">
             {/* Nation name first — drives the dynamic verify URL */}
             <div>
-              <label className="text-muted-foreground mb-1 block text-[11px] font-semibold">
+              <label className="text-muted-foreground mb-1 block text-xs font-semibold">
                 Nation Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -140,21 +140,21 @@ export function CardTakedownVerificationModal({
             {/* Verification Instructions — OAuth-style steps */}
             <div className="border-border/60 bg-muted/40 text-muted-foreground space-y-2.5 rounded-xl border p-3 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-foreground text-[11px] font-semibold tracking-wide uppercase">
+                <span className="text-foreground text-xs font-semibold tracking-wide uppercase">
                   How to verify ownership
                 </span>
                 <a
                   href="https://www.nationstates.net/pages/api.html#verification"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 hover:underline dark:text-blue-400"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
                 >
                   NS API Docs <ExternalLink className="h-2.5 w-2.5" />
                 </a>
               </div>
-              <ol className="space-y-2 text-[11px] leading-relaxed">
+              <ol className="space-y-2 text-xs leading-relaxed">
                 <li className="flex items-start gap-2">
-                  <span className="bg-border text-foreground mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold">
+                  <span className="bg-border text-foreground mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-xs font-bold">
                     1
                   </span>
                   <span>
@@ -173,13 +173,13 @@ export function CardTakedownVerificationModal({
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="bg-border text-foreground mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold">
+                  <span className="bg-border text-foreground mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-xs font-bold">
                     2
                   </span>
                   <span>Copy the one-time verification token shown on that page.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="bg-border text-foreground mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold">
+                  <span className="bg-border text-foreground mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-xs font-bold">
                     3
                   </span>
                   <span>
@@ -193,7 +193,7 @@ export function CardTakedownVerificationModal({
             {/* Remaining inputs */}
             <div className="space-y-3">
               <div>
-                <label className="text-muted-foreground mb-1 block text-[11px] font-semibold">
+                <label className="text-muted-foreground mb-1 block text-xs font-semibold">
                   Verification Token <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -206,7 +206,7 @@ export function CardTakedownVerificationModal({
               </div>
 
               <div className="space-y-2">
-                <label className="text-muted-foreground block text-[11px] font-semibold">
+                <label className="text-muted-foreground block text-xs font-semibold">
                   Basis for Removal <span className="text-muted-foreground/60">(Optional)</span>
                 </label>
                 <select

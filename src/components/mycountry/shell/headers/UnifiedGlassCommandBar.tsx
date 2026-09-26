@@ -146,7 +146,7 @@ export function UnifiedGlassCommandBar({
                   <span className="text-foreground truncate text-xs leading-tight font-bold tracking-tight">
                     {title}
                   </span>
-                  <span className="text-muted-foreground truncate text-[10px] leading-tight font-medium tracking-tight">
+                  <span className="text-muted-foreground truncate text-xs leading-tight font-medium tracking-tight">
                     {getPeek(country)}
                   </span>
                 </div>

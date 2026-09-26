@@ -209,7 +209,7 @@ export function ArchetypeGrid({
             )}
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
                   Benchmark Country
                 </span>
                 <span className="h-1.5 w-1.5 rounded-full bg-border" />
@@ -254,7 +254,7 @@ export function ArchetypeGrid({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                   No Benchmark Country Selected
                 </span>
                 <span className="h-1.5 w-1.5 rounded-full bg-border" />
@@ -309,7 +309,7 @@ export function ArchetypeGrid({
 
         <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Complexity:
             </span>
             {(["all", "Low", "Medium", "High"] as const).map((comp) => (
@@ -318,7 +318,7 @@ export function ArchetypeGrid({
                 type="button"
                 onClick={() => setComplexityFilter(comp)}
                 className={cn(
-                  "cursor-pointer rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all active:scale-95",
+                  "cursor-pointer rounded-md px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
                   complexityFilter === comp
                     ? "bg-amber-500 font-bold text-foreground shadow-xs"
                     : "border border-border/40 bg-background/40 text-muted-foreground hover:text-foreground"
@@ -411,7 +411,7 @@ export function ArchetypeGrid({
                               e.stopPropagation();
                               onOpenDetailsModal(arch);
                             }}
-                            className="inline-flex items-center gap-1 rounded-md border border-border/40 bg-card/60 px-2 py-1 text-[10px] font-semibold text-muted-foreground transition-colors hover:bg-card/90 hover:text-foreground cursor-pointer active:scale-95"
+                            className="inline-flex items-center gap-1 rounded-md border border-border/40 bg-card/60 px-2 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-card/90 hover:text-foreground cursor-pointer active:scale-95"
                             title="View full preset details"
                             data-cuelume-press
                           >
@@ -430,12 +430,12 @@ export function ArchetypeGrid({
                           {arch.name}
                         </h3>
                         <div className="mt-1.5 flex flex-wrap gap-2">
-                          <span className="rounded border border-border/60 bg-muted/80 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                          <span className="rounded border border-border/60 bg-muted/80 px-1.5 py-0.5 text-xs font-bold tracking-wider text-muted-foreground uppercase">
                             {arch.region}
                           </span>
                           <span
                             className={cn(
-                              "rounded border px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase",
+                              "rounded border px-1.5 py-0.5 text-xs font-bold tracking-wider uppercase",
                               getComplexityBadgeClass(arch.implementationComplexity)
                             )}
                           >
@@ -452,7 +452,7 @@ export function ArchetypeGrid({
                     <div className="space-y-2.5">
                       <div className="border-t border-border/40 pt-3">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                          <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                             Traits & Modifiers
                           </span>
                           <TooltipProvider>
@@ -468,7 +468,7 @@ export function ArchetypeGrid({
                               </TooltipTrigger>
                               <TooltipContent
                                 side="top"
-                                className="max-w-xs border border-border/60 bg-card/95 px-3 py-2 text-[10px] text-foreground shadow-md backdrop-blur-md"
+                                className="max-w-xs border border-border/60 bg-card/95 px-3 py-2 text-xs text-foreground shadow-md backdrop-blur-md"
                               >
                                 Traits & modifiers seed your country's starting bonuses, penalties,
                                 and operational characteristics in the simulation.
@@ -482,7 +482,7 @@ export function ArchetypeGrid({
                             .map((trait: string, idx: number) => (
                               <span
                                 key={idx}
-                                className="rounded-full border border-border/50 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground"
+                                className="rounded-full border border-border/50 bg-muted/60 px-2 py-0.5 text-xs text-muted-foreground"
                               >
                                 ✦ {trait}
                               </span>
@@ -494,7 +494,7 @@ export function ArchetypeGrid({
                       {arch.growthMetrics && (
                         <div className="space-y-1.5 border-t border-border/40 pt-3">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                            <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                               Alignment Profile
                             </span>
                             <TooltipProvider>
@@ -510,7 +510,7 @@ export function ArchetypeGrid({
                                 </TooltipTrigger>
                                 <TooltipContent
                                   side="top"
-                                  className="max-w-xs border border-border/60 bg-card/95 px-3 py-2 text-[10px] text-foreground shadow-md backdrop-blur-md"
+                                  className="max-w-xs border border-border/60 bg-card/95 px-3 py-2 text-xs text-foreground shadow-md backdrop-blur-md"
                                 >
                                   The starting position of your country's values. Innovation
                                   represents reform/technology focus, while Stability represents
@@ -521,7 +521,7 @@ export function ArchetypeGrid({
                           </div>
                           <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1.5">
                             <div className="space-y-0.5">
-                              <div className="flex justify-between text-[9px] text-muted-foreground">
+                              <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>Innovation</span>
                                 <span>{arch.growthMetrics.innovationIndex || 50}%</span>
                               </div>
@@ -535,7 +535,7 @@ export function ArchetypeGrid({
                               </div>
                             </div>
                             <div className="space-y-0.5">
-                              <div className="flex justify-between text-[9px] text-muted-foreground">
+                              <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>Stability</span>
                                 <span>{arch.growthMetrics.stability || 50}%</span>
                               </div>

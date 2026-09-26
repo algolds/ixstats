@@ -182,7 +182,7 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
                 : "Legislature Seat Allocation"}
             </h4>
           </div>
-          <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 font-mono text-[10px] font-extrabold text-indigo-500">
+          <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 font-mono text-xs font-extrabold text-indigo-500">
             {parliament?.legislature?.totalSeats ?? legislature?.totalSeats ?? 0} Seats
           </span>
         </div>
@@ -198,7 +198,7 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-muted-foreground py-1 text-center font-mono text-[10px]">
+            <p className="text-muted-foreground py-1 text-center font-mono text-xs">
               Chamber Hemicycle ({legislature?.totalSeats ?? 100} Total Seats)
             </p>
             {parties && parties.length > 0 ? (
@@ -209,10 +209,10 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
                   const pct = total > 0 ? (seats / total) * 100 : 0;
                   return (
                     <div key={p.id} className="flex items-center justify-between text-xs">
-                      <span className="text-foreground truncate text-[11px] font-semibold">
+                      <span className="text-foreground truncate text-xs font-semibold">
                         {p.name}
                       </span>
-                      <span className="font-mono text-[10px] font-bold text-indigo-500">
+                      <span className="font-mono text-xs font-bold text-indigo-500">
                         {seats} seats ({pct.toFixed(0)}%)
                       </span>
                     </div>
@@ -220,7 +220,7 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
                 })}
               </div>
             ) : (
-              <p className="text-muted-foreground py-2 text-center text-[11px]">
+              <p className="text-muted-foreground py-2 text-center text-xs">
                 No legislature seats allocated yet.
               </p>
             )}
@@ -235,14 +235,14 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
             <Users className="h-3.5 w-3.5 text-indigo-500" />
             <h4 className="text-foreground text-xs font-bold">Political Parties</h4>
           </div>
-          <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-extrabold text-indigo-500">
+          <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-xs font-extrabold text-indigo-500">
             {parties?.length ?? 0} Parties
           </span>
         </div>
 
         <div className="space-y-1.5">
           {!parties || parties.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-center text-[11px]">
+            <p className="text-muted-foreground py-2 text-center text-xs">
               No registered political parties.
             </p>
           ) : (
@@ -255,14 +255,14 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
                   key={party.id}
                   className="space-y-1 rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
                 >
-                  <div className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center justify-between text-xs">
                     <div className="flex min-w-0 items-center gap-1.5 pr-2">
                       <span className="text-foreground truncate font-semibold">{party.name}</span>
-                      <span className="text-muted-foreground font-mono text-[9px] uppercase">
+                      <span className="text-muted-foreground font-mono text-xs uppercase">
                         ({party.ideology?.replace(/_/g, " ") ?? "Centrist"})
                       </span>
                     </div>
-                    <span className="shrink-0 text-[10px] font-bold text-indigo-500">
+                    <span className="shrink-0 text-xs font-bold text-indigo-500">
                       {support}% support · {seats} seats
                     </span>
                   </div>

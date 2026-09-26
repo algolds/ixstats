@@ -128,7 +128,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
             <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">
               Transit Accessibility & Mobility (TAMI)
             </h3>
-            <span className="text-muted-foreground text-[10px]">
+            <span className="text-muted-foreground text-xs">
               Spatial velocity and intercity transit efficiency
             </span>
           </div>
@@ -148,7 +148,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {/* TAMI Circular Index Dial */}
         <div className="bg-background/40 border-border/30 flex flex-col justify-between rounded-xl border p-3.5">
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Mobility Score
           </span>
           <div className="my-2 flex items-baseline gap-2">
@@ -164,7 +164,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
           </div>
           <div className="flex items-center gap-1.5">
             <span className={cn("h-2 w-2 rounded-full", ratingTheme.dot)} />
-            <span className="text-[11px] font-semibold text-foreground">
+            <span className="text-xs font-semibold text-foreground">
               {tami.ratingLabel}
             </span>
           </div>
@@ -172,7 +172,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
 
         {/* Network Weighted Velocity */}
         <div className="bg-background/40 border-border/30 flex flex-col justify-between rounded-xl border p-3.5">
-          <span className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
             <Gauge className="h-3 w-3" /> Average Network Speed
           </span>
           <div className="my-2 flex items-baseline gap-1.5">
@@ -181,7 +181,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
             </span>
             <span className="text-muted-foreground text-xs font-medium">km/h</span>
           </div>
-          <div className="text-muted-foreground flex items-center justify-between text-[11px]">
+          <div className="text-muted-foreground flex items-center justify-between text-xs">
             <span>Total Network</span>
             <span className="font-mono font-medium text-foreground tabular-nums">
               {totalOperationalKm.toLocaleString()} km
@@ -191,7 +191,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
 
         {/* Infrastructure Condition & Factor */}
         <div className="bg-background/40 border-border/30 flex flex-col justify-between rounded-xl border p-3.5">
-          <span className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
             <Shield className="h-3 w-3" /> Maintenance Health
           </span>
           <div className="my-2 flex items-baseline gap-1.5">
@@ -205,7 +205,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
             </span>
             <span className="text-muted-foreground text-xs font-medium">speed retention</span>
           </div>
-          <div className="flex items-center justify-between text-[11px]">
+          <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Condition</span>
             <span className={cn("font-semibold capitalize", conditionTextClass)}>
               {degradation.conditionLabel}
@@ -217,7 +217,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
       {/* Modal Velocities Spectrum */}
       {Object.keys(modalSummary.modalGroups).length > 0 && (
         <div className="mt-4 space-y-2">
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Modal Velocities & Network Extent
           </span>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -234,12 +234,12 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
                       style={{ backgroundColor: group.color }}
                     />
                     <Icon className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate text-[11px] font-medium text-foreground">
+                    <span className="truncate text-xs font-medium text-foreground">
                       {group.label}
                     </span>
                   </div>
-                  <span className="font-mono text-[11px] font-semibold tabular-nums text-foreground">
-                    {group.avgSpeedKmh} <span className="text-muted-foreground text-[9px]">km/h</span>
+                  <span className="font-mono text-xs font-semibold tabular-nums text-foreground">
+                    {group.avgSpeedKmh} <span className="text-muted-foreground text-xs">km/h</span>
                   </span>
                 </div>
               );
@@ -251,7 +251,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
       {/* Top Travel Corridors */}
       {topCorridors.length > 0 && (
         <div className="mt-4 space-y-2">
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Primary Intercity Travel Corridors
           </span>
           <div className="border-border/30 max-h-48 space-y-1.5 overflow-y-auto rounded-xl border bg-background/20 p-2">
@@ -262,7 +262,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
               >
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-semibold text-foreground">{c.name}</div>
-                  <div className="text-muted-foreground flex items-center gap-2 text-[10px]">
+                  <div className="text-muted-foreground flex items-center gap-2 text-xs">
                     <span className="capitalize">{c.routeType.replace("_", " ")}</span>
                     <span className="font-mono tabular-nums">• {c.lengthKm} km</span>
                     <span className="font-mono tabular-nums">• {c.effectiveSpeedKmh} km/h</span>

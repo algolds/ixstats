@@ -103,7 +103,7 @@ export function VaultWidget() {
             IxVault
           </span>
         </div>
-        <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-medium tracking-wider text-amber-800 uppercase dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+        <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-xs font-medium tracking-wider text-amber-800 uppercase dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
           Wallet
         </span>
       </div>
@@ -113,7 +113,7 @@ export function VaultWidget() {
             <>
               {/* Balance */}
               <div>
-                <p className="text-muted-foreground text-[9px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                   IxCredits
                 </p>
                 <div className="flex items-center gap-1.5 pt-0.5">
@@ -165,14 +165,14 @@ export function VaultWidget() {
               {/* Today's Earnings */}
               {todayEarnings && todayEarnings.sources.length > 0 && (
                 <div>
-                  <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-tight">
+                  <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-tight">
                     Today&apos;s Earnings
                   </p>
                   <div className="space-y-1 text-xs">
                     {todayEarnings.sources.map((source) => (
                       <div
                         key={source.type}
-                        className="text-muted-foreground flex justify-between text-[11px] font-normal tracking-normal"
+                        className="text-muted-foreground flex justify-between text-xs font-normal tracking-normal"
                       >
                         <span>{source.label}</span>
                         <span className="font-semibold text-emerald-600 tabular-nums dark:text-emerald-400">
@@ -180,7 +180,7 @@ export function VaultWidget() {
                         </span>
                       </div>
                     ))}
-                    <div className="border-border/40 flex justify-between border-t pt-1 text-[11px] font-medium tracking-tight">
+                    <div className="border-border/40 flex justify-between border-t pt-1 text-xs font-medium tracking-tight">
                       <span className="text-foreground">Total</span>
                       <span className="flex items-center gap-0.5 font-bold text-amber-700 tabular-nums dark:text-amber-400">
                         +<IxCreditsSymbol className="h-3 w-3 shrink-0" />
@@ -194,7 +194,7 @@ export function VaultWidget() {
               {/* Treasury Revenue Projection */}
               {showPassiveIncome && passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
                 <div className="animate-in fade-in slide-in-from-top-1 rounded-xl border border-blue-500/25 bg-blue-500/10 p-2.5 shadow-xs backdrop-blur-md duration-200">
-                  <p className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-blue-700 dark:text-blue-300">
+                  <p className="mb-1 flex items-center gap-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
@@ -206,21 +206,21 @@ export function VaultWidget() {
                     Treasury Revenue
                   </p>
                   <div className="text-muted-foreground space-y-1 text-xs">
-                    <div className="flex justify-between text-[11px] font-normal tracking-normal">
+                    <div className="flex justify-between text-xs font-normal tracking-normal">
                       <span>Daily</span>
                       <span className="flex items-center gap-0.5 font-semibold text-blue-600 tabular-nums dark:text-blue-400">
                         +<IxCreditsSymbol className="h-3 w-3 shrink-0" />
                         {Math.round(passiveIncomeData.dailyDividend).toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-[10px] font-normal tracking-normal">
+                    <div className="flex justify-between text-xs font-normal tracking-normal">
                       <span className="text-muted-foreground">Weekly</span>
                       <span className="text-muted-foreground flex items-center gap-0.5 tabular-nums">
                         ~<IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
                         {Math.round(passiveIncomeData.weeklyDividend).toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-[10px] font-normal tracking-normal">
+                    <div className="flex justify-between text-xs font-normal tracking-normal">
                       <span className="text-muted-foreground">Monthly</span>
                       <span className="text-muted-foreground flex items-center gap-0.5 tabular-nums">
                         ~<IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
@@ -232,7 +232,7 @@ export function VaultWidget() {
                   {/* Budget Multiplier Bonus */}
                   {budgetMultiplierData && (
                     <div className="mt-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-1.5 backdrop-blur-sm dark:border-amber-500/25">
-                      <div className="flex items-center justify-between text-[10px] tracking-tight">
+                      <div className="flex items-center justify-between text-xs tracking-tight">
                         <span className="font-medium text-amber-900 dark:text-amber-300">
                           Budget Bonus
                         </span>
@@ -347,7 +347,7 @@ export function VaultWidget() {
                       <PreText
                         font="12px Geist, -apple-system, sans-serif"
                         lineHeight={14}
-                        className="flex-1 truncate text-[11px] leading-tight font-medium tracking-tight select-none"
+                        className="flex-1 truncate text-xs leading-tight font-medium tracking-tight select-none"
                       >
                         {item.title}
                       </PreText>
@@ -359,7 +359,7 @@ export function VaultWidget() {
             <div className="flex flex-col gap-1.5 pt-0.5">
               <Link
                 href="/vault"
-                className="block text-center text-[11px] font-semibold tracking-tight text-amber-700 transition-all duration-150 hover:text-amber-800 hover:underline active:scale-[0.97] dark:text-amber-400 dark:hover:text-amber-300"
+                className="block text-center text-xs font-semibold tracking-tight text-amber-700 transition-all duration-150 hover:text-amber-800 hover:underline active:scale-[0.97] dark:text-amber-400 dark:hover:text-amber-300"
               >
                 View Full Vault →
               </Link>

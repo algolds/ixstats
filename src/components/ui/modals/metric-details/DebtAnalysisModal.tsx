@@ -224,7 +224,7 @@ export function DebtAnalysisModal({
                   <div className="text-lg font-bold text-amber-400">
                     ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
                     Annual Interest
                   </div>
                 </div>
@@ -236,7 +236,7 @@ export function DebtAnalysisModal({
                     ).toFixed(2)}
                     %
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
                     Interest/GDP
                   </div>
                 </div>
@@ -248,13 +248,13 @@ export function DebtAnalysisModal({
                     ).toFixed(1)}
                     %
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
                     Interest/Rev
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className={cn("text-lg font-bold", riskLevel.color)}>{riskLevel.label}</div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
                     Assessment
                   </div>
                 </div>
@@ -304,7 +304,7 @@ export function DebtAnalysisModal({
             className={`facet-refraction relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden rounded-xl border p-4 ${riskLevel.bg} ${riskLevel.border}`}
           >
             <div>
-              <span className="text-muted-foreground block text-[10px] font-medium tracking-wider uppercase">
+              <span className="text-muted-foreground block text-xs font-medium tracking-wider uppercase">
                 Risk Classification
               </span>
               <div className="mt-2 flex items-baseline gap-2">
@@ -313,7 +313,7 @@ export function DebtAnalysisModal({
                 </span>
               </div>
             </div>
-            <p className="text-muted-foreground mt-4 flex items-center gap-1.5 text-[10.5px] leading-relaxed">
+            <p className="text-muted-foreground mt-4 flex items-center gap-1.5 text-xs leading-relaxed">
               <AlertTriangle className="h-3 w-3 shrink-0" />
               Calculated rating based on macroeconomic capacity parameters.
             </p>
@@ -531,7 +531,7 @@ export function DebtAnalysisModal({
               <span className="text-xl font-bold text-amber-500">
                 {debtToGdp < globalAvgDebt ? "Below Average" : "Above Average"}
               </span>
-              <span className="text-muted-foreground mt-1 text-[10px]">
+              <span className="text-muted-foreground mt-1 text-xs">
                 Ratio: {debtToGdp.toFixed(1)}% vs {globalAvgDebt}% global avg
               </span>
             </div>
@@ -551,7 +551,7 @@ export function DebtAnalysisModal({
                         ? "BBB"
                         : "BB"}
               </span>
-              <span className="text-muted-foreground mt-1 text-[10px]">
+              <span className="text-muted-foreground mt-1 text-xs">
                 Creditworthiness index estimate
               </span>
             </div>
@@ -571,7 +571,7 @@ export function DebtAnalysisModal({
               >
                 {debtToGdp < 60 ? "Sustainable" : debtToGdp < 100 ? "Manageable" : "Critical"}
               </span>
-              <span className="text-muted-foreground mt-1 text-[10px]">
+              <span className="text-muted-foreground mt-1 text-xs">
                 Risk assessment index status
               </span>
             </div>
@@ -650,13 +650,13 @@ export function DebtAnalysisModal({
           <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
             <CardHeader className="mb-4 p-0">
               <CardTitle className="text-sm font-semibold">Debt Servicing</CardTitle>
-              <CardDescription className="text-[10px]">
+              <CardDescription className="text-xs">
                 Annual interest costs and durations
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                <span className="text-muted-foreground text-xs font-semibold uppercase">
                   Annual Interest
                 </span>
                 <div className="mt-1 text-lg font-bold text-red-400">
@@ -665,7 +665,7 @@ export function DebtAnalysisModal({
               </div>
 
               <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                <span className="text-muted-foreground text-xs font-semibold uppercase">
                   Average Interest Rate
                 </span>
                 <div className="text-amber-450 mt-1 text-lg font-bold">
@@ -674,7 +674,7 @@ export function DebtAnalysisModal({
               </div>
 
               <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                <span className="text-muted-foreground text-xs font-semibold uppercase">
                   Average Maturity
                 </span>
                 <div className="mt-1 text-lg font-bold font-semibold text-cyan-400">8.5 Years</div>

@@ -79,7 +79,7 @@ export function SystemCronScheduleWidget() {
           <Clock className="text-primary h-4.5 w-4.5" />
           System Cron Schedules
         </h2>
-        <span className="text-muted-foreground bg-primary/5 border-primary/10 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
+        <span className="text-muted-foreground bg-primary/5 border-primary/10 rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wider uppercase">
           UTC Reference
         </span>
       </div>
@@ -87,7 +87,7 @@ export function SystemCronScheduleWidget() {
       <div className="facet-surface border-border/40 flex min-h-[380px] flex-1 flex-col gap-4 rounded-xl p-4 shadow-sm md:flex-row">
         {/* Left Side: Cron List */}
         <div className="border-border/20 flex w-full flex-col gap-2 border-b pb-4 md:w-2/5 md:border-r md:border-b-0 md:pr-4 md:pb-0">
-          <p className="text-muted-foreground mb-1 text-[10px] font-bold tracking-wider uppercase">
+          <p className="text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase">
             Registered Tasks
           </p>
           <div className="flex max-h-[300px] flex-col gap-1.5 overflow-y-auto pr-1 md:max-h-[340px]">
@@ -120,7 +120,7 @@ export function SystemCronScheduleWidget() {
                         {job.title}
                       </span>
                     </div>
-                    <code className="text-muted-foreground mt-0.5 block font-mono text-[10px]">
+                    <code className="text-muted-foreground mt-0.5 block font-mono text-xs">
                       {job.expression}
                     </code>
                   </div>
@@ -155,7 +155,7 @@ export function SystemCronScheduleWidget() {
             />
           </div>
 
-          <div className="text-muted-foreground bg-muted/20 border-border/10 mt-4 flex items-center gap-2 rounded-lg border p-2.5 text-[10px]">
+          <div className="text-muted-foreground bg-muted/20 border-border/10 mt-4 flex items-center gap-2 rounded-lg border p-2.5 text-xs">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>

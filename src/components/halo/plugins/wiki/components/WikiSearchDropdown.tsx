@@ -60,13 +60,13 @@ export function WikiSearchDropdown({
       {/* Search Results Dropdown */}
       {searchQuery.length >= 2 && (
         <div className="border-border mb-3 border-b pb-3">
-          <div className="text-muted-foreground mb-1 flex items-center justify-between text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground mb-1 flex items-center justify-between text-xs font-semibold tracking-wider uppercase">
             <PreText className="text-inherit" whiteSpace="nowrap">
               {`Results${searchData?.totalHits ? ` (${searchData.totalHits})` : ""}`}
             </PreText>
             {isSearching && (
               <PreText
-                className="text-muted-foreground/80 animate-pulse text-[10px]"
+                className="text-muted-foreground/80 animate-pulse text-xs"
                 whiteSpace="nowrap"
               >
                 searching...
@@ -88,7 +88,7 @@ export function WikiSearchDropdown({
                 </span>
                 {result.snippet && (
                   <span
-                    className="text-muted-foreground [&_.searchmatch]:text-foreground mt-0.5 line-clamp-1 pl-[22px] text-[11px] [&_.searchmatch]:font-semibold"
+                    className="text-muted-foreground [&_.searchmatch]:text-foreground mt-0.5 line-clamp-1 pl-[22px] text-xs [&_.searchmatch]:font-semibold"
                     dangerouslySetInnerHTML={{ __html: result.snippet }}
                   />
                 )}

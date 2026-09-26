@@ -133,7 +133,7 @@ function FacetTabTrigger({
       {tab.badge !== undefined && (
         <span
           className={cn(
-            "ml-1.5 flex scale-95 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] leading-none font-bold",
+            "ml-1.5 flex scale-95 items-center justify-center rounded-full px-1.5 py-0.5 text-xs leading-none font-bold",
             isActive
               ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
               : "bg-black/10 text-slate-600 dark:bg-white/10 dark:text-slate-400"

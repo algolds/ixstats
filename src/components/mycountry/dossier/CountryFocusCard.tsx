@@ -340,7 +340,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                       <h3 className="text-base font-bold tracking-tight text-foreground sm:text-lg">
                         {country.name}
                       </h3>
-                      <p className="text-[11px] font-medium text-muted-foreground">
+                      <p className="text-xs font-medium text-muted-foreground">
                         {country.economicTier} • {country.continent || country.region || "Global"}
                       </p>
                     </div>

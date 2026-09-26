@@ -72,7 +72,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
           </h4>
           <dl className="mt-3 space-y-2.5">
             <div className="space-y-0.5">
-              <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Common Name
               </dt>
               <dd className="text-xs font-semibold text-foreground break-words">
@@ -81,7 +81,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
             </div>
             {nationalIdentity.officialName && (
               <div className="space-y-0.5">
-                <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Official Title
                 </dt>
                 <dd className="text-xs font-medium text-foreground break-words">
@@ -91,7 +91,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
             )}
             <div className="grid grid-cols-2 gap-2 pt-0.5">
               <div className="space-y-0.5">
-                <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Capital
                 </dt>
                 <dd className="text-xs font-medium text-foreground truncate">
@@ -99,7 +99,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
                 </dd>
               </div>
               <div className="space-y-0.5">
-                <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Largest City
                 </dt>
                 <dd className="text-xs font-medium text-foreground truncate">
@@ -109,7 +109,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
             </div>
             {nationalIdentity.callingCode && (
               <div className="space-y-0.5 pt-0.5">
-                <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Calling Code
                 </dt>
                 <dd className="text-xs font-medium text-foreground">
@@ -129,7 +129,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
           <dl className="mt-3 space-y-2.5">
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Demonym
                 </dt>
                 <dd className="text-xs font-medium text-foreground truncate">
@@ -137,7 +137,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
                 </dd>
               </div>
               <div className="space-y-0.5">
-                <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Language
                 </dt>
                 <dd className="text-xs font-medium text-foreground truncate">
@@ -148,7 +148,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
 
             {nationalIdentity.nationalReligion && (
               <div className="space-y-0.5">
-                <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Religion
                 </dt>
                 <dd className="text-xs font-medium text-foreground truncate">
@@ -159,7 +159,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
 
             {nationalIdentity.motto && (
               <div className="space-y-0.5">
-                <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Motto
                 </dt>
                 <dd className="text-xs font-medium italic text-foreground break-words">
@@ -170,7 +170,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
 
             {nationalIdentity.nationalAnthem && (
               <div className="space-y-0.5">
-                <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Anthem
                 </dt>
                 <dd className="text-xs font-medium text-foreground break-words">
@@ -181,7 +181,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
 
             {nationalIdentity.nationalDay && (
               <div className="space-y-0.5">
-                <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   National Day
                 </dt>
                 <dd className="text-xs font-medium text-foreground">

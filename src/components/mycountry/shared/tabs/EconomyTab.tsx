@@ -91,7 +91,7 @@ export function EconomyTab({
                 content="View key economic indicators, sectors, trade balances, and business environments. Toggles allow you to view detailed stats per capita or in totals."
               />
             </div>
-            <p className="text-muted-foreground/80 text-[11px]">
+            <p className="text-muted-foreground/80 text-xs">
               GDP, trade, and sector analysis for {country.name}
             </p>
           </div>
@@ -123,7 +123,7 @@ export function EconomyTab({
                 }
                 className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
                   {metricView.economyGdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
                 </p>
                 <div
@@ -157,20 +157,20 @@ export function EconomyTab({
                     );
                     if (gdpGrowth > 0)
                       return (
-                        <span className="flex items-center gap-0.5 text-[10px] font-semibold text-emerald-500">
+                        <span className="flex items-center gap-0.5 text-xs font-semibold text-emerald-500">
                           <TrendingUp className="inline h-3 w-3" /> +{gdpGrowth.toFixed(1)}%
                         </span>
                       );
                     if (gdpGrowth < 0)
                       return (
-                        <span className="flex items-center gap-0.5 text-[10px] font-semibold text-red-500">
+                        <span className="flex items-center gap-0.5 text-xs font-semibold text-red-500">
                           <TrendingDown className="inline h-3 w-3" /> {gdpGrowth.toFixed(1)}%
                         </span>
                       );
-                    return <span className="text-muted-foreground text-[10px]">0.0%</span>;
+                    return <span className="text-muted-foreground text-xs">0.0%</span>;
                   })()}
                 </div>
-                <p className="text-muted-foreground truncate text-[10px] font-medium">
+                <p className="text-muted-foreground truncate text-xs font-medium">
                   {metricView.economyGdp === "perCapita"
                     ? `${country.economicTier || "Developing"} · ${formatCompactCurrency(economyData?.core.nominalGDP ?? 0, "N/A", currency)} total`
                     : `Per capita: ${formatExactCurrency(economyData?.core.gdpPerCapita ?? 0, currency)}`}
@@ -187,7 +187,7 @@ export function EconomyTab({
                 }
                 className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   {metricView.fiscal === "balance" ? "Budget Balance" : "Tax Revenue"}
                 </p>
                 <div
@@ -216,7 +216,7 @@ export function EconomyTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                <p className="text-muted-foreground mt-0.5 truncate text-xs">
                   {metricView.fiscal === "balance"
                     ? (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0
                       ? "Fiscal Surplus"
@@ -235,7 +235,7 @@ export function EconomyTab({
                 }
                 className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
                   {metricView.trade === "imports" ? "Total Imports" : "Total Exports"}
                 </p>
                 <div
@@ -268,7 +268,7 @@ export function EconomyTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                <p className="text-muted-foreground mt-0.5 truncate text-xs">
                   Net Balance: +3.0% (Surplus)
                 </p>
               </button>

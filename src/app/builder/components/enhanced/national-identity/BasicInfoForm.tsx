@@ -374,7 +374,7 @@ export const BasicInfoForm = React.memo(
                     foundationCountry?.name && identity.countryName === foundationCountry.name
                   ) && <TemplateFieldIndicator />}
                 </div>
-                <p className="text-muted-foreground text-[11px] leading-tight">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Short form name of your sovereign nation
                 </p>
                 <Input
@@ -397,7 +397,7 @@ export const BasicInfoForm = React.memo(
                     onClick={toggleCustomOfficialName}
                     data-cuelume-press
                     className={cn(
-                      "flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all active:scale-[0.98]",
+                      "flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-all active:scale-[0.98]",
                       isCustomOfficialName
                         ? "border border-amber-500/30 bg-amber-500/10 text-amber-400"
                         : "text-muted-foreground/80 hover:bg-white/5 hover:text-foreground"
@@ -419,7 +419,7 @@ export const BasicInfoForm = React.memo(
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <span className="text-muted-foreground block text-[10px] font-medium">
+                    <span className="text-muted-foreground block text-xs font-medium">
                       Government Type
                     </span>
                     <GlassSelectBox
@@ -436,7 +436,7 @@ export const BasicInfoForm = React.memo(
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-muted-foreground block text-[10px] font-medium">
+                    <span className="text-muted-foreground block text-xs font-medium">
                       Ceremonial Official Name
                     </span>
                     {isCustomOfficialName ? (
@@ -479,7 +479,7 @@ export const BasicInfoForm = React.memo(
                     <span>Civic Geography & Demonym</span>
                   </label>
                   {isLargestLocked && (
-                    <span className="text-[10px] text-teal-400/80 font-medium">
+                    <span className="text-xs text-teal-400/80 font-medium">
                       Largest City = Capital
                     </span>
                   )}
@@ -504,7 +504,7 @@ export const BasicInfoForm = React.memo(
                               soundEffects.press();
                               setIsMapPickerOpen(true);
                             }}
-                            className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 focus:outline-none dark:text-emerald-400 dark:hover:text-emerald-300 active:scale-95 transition-all"
+                            className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 focus:outline-none dark:text-emerald-400 dark:hover:text-emerald-300 active:scale-95 transition-all"
                             title="Select Capital location on map"
                             data-cuelume-press
                           >
@@ -516,7 +516,7 @@ export const BasicInfoForm = React.memo(
                           type="button"
                           onClick={toggleLargestLock}
                           className={cn(
-                            "flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-semibold transition-all focus:outline-none active:scale-95",
+                            "flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs font-semibold transition-all focus:outline-none active:scale-95",
                             isLargestLocked
                               ? "text-amber-500 bg-amber-500/10 dark:text-amber-400"
                               : "text-muted-foreground hover:text-foreground hover:bg-muted/40"

@@ -172,11 +172,11 @@ export function ExecutiveHomeComponent({
                   <Clock className="h-3.5 w-3.5" />
                   <span>Executive Cooldown Active</span>
                 </div>
-                <p className="text-muted-foreground text-[11px] leading-relaxed">
+                <p className="text-muted-foreground text-xs leading-relaxed">
                   Your government has issued maximum weekly directives (
                   {status?.data?.usedThisWeek ?? 3}/{status?.data?.cap ?? 3}).
                 </p>
-                <div className="border-border/30 text-foreground flex items-center justify-between border-t pt-1.5 font-mono text-[10px] font-bold">
+                <div className="border-border/30 text-foreground flex items-center justify-between border-t pt-1.5 font-mono text-xs font-bold">
                   <span>Next Available Slot:</span>
                   <span className="text-amber-500 dark:text-amber-400">
                     {formatCooldownTime(status?.data?.cooldownUntil, now)}

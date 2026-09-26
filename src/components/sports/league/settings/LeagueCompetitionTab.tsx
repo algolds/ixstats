@@ -117,7 +117,7 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
             onChange={(e) => setDivisions(Math.max(1, Number(e.target.value) || 1))}
             className="h-9 text-xs"
           />
-          <p className="text-muted-foreground text-[10px]">
+          <p className="text-muted-foreground text-xs">
             Configures the number of divisions within the league's conference.
           </p>
         </div>
@@ -134,7 +134,7 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
             onChange={(e) => setRaceCount(Math.max(1, Number(e.target.value) || 1))}
             className="h-9 text-xs"
           />
-          <p className="text-muted-foreground text-[10px]">
+          <p className="text-muted-foreground text-xs">
             Configures the number of races run in a season.
           </p>
         </div>
@@ -150,7 +150,7 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
             placeholder="Heavyweight, Middleweight, Welterweight..."
             className="h-9 text-xs"
           />
-          <p className="text-muted-foreground text-[10px]">
+          <p className="text-muted-foreground text-xs">
             Comma-separated list of weight divisions.
           </p>
         </div>

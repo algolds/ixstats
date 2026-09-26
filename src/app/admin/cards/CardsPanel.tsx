@@ -160,14 +160,14 @@ export default function CardAdminDashboardPage() {
                       interactive="hover"
                       className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 backdrop-blur-md transition-all"
                     >
-                      <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
+                      <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                         <span>Total Sync Operations</span>
                         <Database className="h-3.5 w-3.5 text-blue-500" />
                       </div>
                       <div className="mt-0.5 font-mono text-base font-bold tracking-tight text-blue-600 dark:text-blue-300">
                         {(healthStats?.overall.totalSyncs ?? 0).toLocaleString()}
                       </div>
-                      <div className="truncate font-mono text-[9px] font-medium text-blue-600/80 dark:text-blue-300/60">
+                      <div className="truncate font-mono text-xs font-medium text-blue-600/80 dark:text-blue-300/60">
                         {healthStats?.overall.lastSyncAt
                           ? `Last: ${new Date(healthStats.overall.lastSyncAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}`
                           : "Never run"}
@@ -180,14 +180,14 @@ export default function CardAdminDashboardPage() {
                       interactive="hover"
                       className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 backdrop-blur-md transition-all"
                     >
-                      <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
+                      <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                         <span>Success Rate</span>
                         <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                       </div>
                       <div className="mt-0.5 font-mono text-base font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
                         {((healthStats?.overall.successRate ?? 0) * 100).toFixed(1)}%
                       </div>
-                      <div className="text-[9px] font-medium text-emerald-600/80 dark:text-emerald-300/70">
+                      <div className="text-xs font-medium text-emerald-600/80 dark:text-emerald-300/70">
                         {(healthStats?.overall.successfulSyncs ?? 0).toLocaleString()} successful
                         operations
                       </div>
@@ -199,14 +199,14 @@ export default function CardAdminDashboardPage() {
                       interactive="hover"
                       className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 backdrop-blur-md transition-all"
                     >
-                      <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
+                      <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                         <span>Failure Rate</span>
                         <AlertTriangle className="h-3.5 w-3.5 text-rose-500" />
                       </div>
                       <div className="mt-0.5 font-mono text-base font-bold tracking-tight text-rose-600 dark:text-rose-400">
                         {((healthStats?.overall.errorRate ?? 0) * 100).toFixed(1)}%
                       </div>
-                      <div className="text-[9px] font-medium text-rose-600/80 dark:text-rose-400/70">
+                      <div className="text-xs font-medium text-rose-600/80 dark:text-rose-400/70">
                         {(healthStats?.overall.failedSyncs ?? 0).toLocaleString()} failed operations
                       </div>
                     </FacetCard>
@@ -217,14 +217,14 @@ export default function CardAdminDashboardPage() {
                       interactive="hover"
                       className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 backdrop-blur-md transition-all"
                     >
-                      <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
+                      <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                         <span>Avg Cards / Sync</span>
                         <CheckCircle className="h-3.5 w-3.5 text-purple-500" />
                       </div>
                       <div className="mt-0.5 font-mono text-base font-bold tracking-tight text-purple-600 dark:text-purple-300">
                         {(healthStats?.overall.avgCardsProcessed ?? 0).toFixed(0)}
                       </div>
-                      <div className="text-[9px] font-medium text-purple-600/80 dark:text-purple-300/70">
+                      <div className="text-xs font-medium text-purple-600/80 dark:text-purple-300/70">
                         Average throughput per batch
                       </div>
                     </FacetCard>
@@ -243,14 +243,14 @@ export default function CardAdminDashboardPage() {
                     interactive="hover"
                     className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 backdrop-blur-md transition-all"
                   >
-                    <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
+                    <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                       <span>Active Cards</span>
                       <BookOpen className="h-3.5 w-3.5 text-amber-500" />
                     </div>
                     <div className="mt-0.5 text-base font-bold tracking-tight text-amber-600 dark:text-amber-300">
                       {(loreStats?.totalLoreCards ?? 0).toLocaleString()}
                     </div>
-                    <div className="text-[9px] font-medium text-amber-600/80 dark:text-amber-300/60">
+                    <div className="text-xs font-medium text-amber-600/80 dark:text-amber-300/60">
                       Cards in circulation
                     </div>
                   </FacetCard>
@@ -261,14 +261,14 @@ export default function CardAdminDashboardPage() {
                     interactive="hover"
                     className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 backdrop-blur-md transition-all"
                   >
-                    <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
+                    <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                       <span>Lore Categories</span>
                       <Layers className="h-3.5 w-3.5 text-cyan-500" />
                     </div>
                     <div className="mt-0.5 text-base font-bold tracking-tight text-cyan-600 dark:text-cyan-300">
                       {Object.keys(loreStats?.categoryBreakdown ?? {}).length} / 13
                     </div>
-                    <div className="text-[9px] font-medium text-cyan-600/80 dark:text-cyan-300/70">
+                    <div className="text-xs font-medium text-cyan-600/80 dark:text-cyan-300/70">
                       Super-categories in active circulation
                     </div>
                   </FacetCard>
@@ -279,14 +279,14 @@ export default function CardAdminDashboardPage() {
                     interactive="hover"
                     className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 backdrop-blur-md transition-all"
                   >
-                    <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
+                    <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                       <span>Pending Requests</span>
                       <Sparkles className="h-3.5 w-3.5 text-purple-500" />
                     </div>
                     <div className="mt-0.5 text-base font-bold tracking-tight text-purple-600 dark:text-purple-300">
                       {(loreStats?.pendingRequests ?? 0).toLocaleString()}
                     </div>
-                    <div className="text-[9px] font-medium text-purple-600/80 dark:text-purple-300/70">
+                    <div className="text-xs font-medium text-purple-600/80 dark:text-purple-300/70">
                       User requests awaiting approval
                     </div>
                   </FacetCard>
@@ -297,14 +297,14 @@ export default function CardAdminDashboardPage() {
                     interactive="hover"
                     className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 backdrop-blur-md transition-all"
                   >
-                    <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
+                    <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                       <span>NS Cards</span>
                       <Globe className="h-3.5 w-3.5 text-blue-500" />
                     </div>
                     <div className="mt-0.5 text-base font-bold tracking-tight text-blue-600 dark:text-blue-300">
                       {(loreStats?.totalNSCards ?? 0).toLocaleString()}
                     </div>
-                    <div className="text-[9px] font-medium text-blue-600/80 dark:text-blue-300/70">
+                    <div className="text-xs font-medium text-blue-600/80 dark:text-blue-300/70">
                       NationStates imports
                     </div>
                   </FacetCard>
@@ -420,7 +420,7 @@ export default function CardAdminDashboardPage() {
 
               {/* Quick Filter Pill Badges */}
               {unifiedLogsData?.stats && (
-                <div className="flex flex-wrap gap-1.5 pt-1 text-[11px]">
+                <div className="flex flex-wrap gap-1.5 pt-1 text-xs">
                   {[
                     {
                       id: "all",
@@ -475,7 +475,7 @@ export default function CardAdminDashboardPage() {
                       }`}
                     >
                       <span>{item.label}</span>
-                      <span className="font-mono text-[10px] opacity-80">({item.count})</span>
+                      <span className="font-mono text-xs opacity-80">({item.count})</span>
                     </button>
                   ))}
                 </div>

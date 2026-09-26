@@ -57,7 +57,7 @@ function BuilderCompactLabel({ step, countryName }: BuilderCompactLabelProps) {
       >
         Builder
       </PreText>
-      <span className="text-muted-foreground/50 shrink-0 text-[10px]">•</span>
+      <span className="text-muted-foreground/50 shrink-0 text-xs">•</span>
       <span className="text-muted-foreground min-w-0 flex-1 truncate text-xs font-medium [mask-image:linear-gradient(to_right,black_85%,transparent_100%)]">
         {fullLabel}
       </span>

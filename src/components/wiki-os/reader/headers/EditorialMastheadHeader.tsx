@@ -53,7 +53,7 @@ export function EditorialMastheadHeader({
       />
 
       {/* Top Bar: Breadcrumb */}
-      <div className="text-muted-foreground mb-3.5 flex items-center gap-1 text-[10.5px] font-semibold tracking-wider uppercase">
+      <div className="text-muted-foreground mb-3.5 flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
         <CategoryBreadcrumb title={title} />
       </div>
 
@@ -70,7 +70,7 @@ export function EditorialMastheadHeader({
           {/* Author Attribution */}
           {creatorName && (
             <div className="flex items-center gap-1.5 font-medium">
-              <span className="text-muted-foreground/75 text-[11px] font-normal">Author:</span>
+              <span className="text-muted-foreground/75 text-xs font-normal">Author:</span>
               <Link
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
@@ -103,7 +103,7 @@ export function EditorialMastheadHeader({
             lastEditorName.toLowerCase() !== creatorName.toLowerCase() && (
               <div className="flex items-center gap-1.5 font-medium">
                 <span className="text-muted-foreground/30 select-none">•</span>
-                <span className="text-muted-foreground/75 text-[11px] font-normal">
+                <span className="text-muted-foreground/75 text-xs font-normal">
                   Updated by:
                 </span>
                 <Link
@@ -134,7 +134,7 @@ export function EditorialMastheadHeader({
 
           {/* Updated Timestamp */}
           {lastModified && (
-            <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[11px]">
+            <div className="text-muted-foreground/80 flex items-center gap-1.5 text-xs">
               {(creatorName || lastEditorName) && (
                 <span className="text-muted-foreground/30 select-none">•</span>
               )}
@@ -155,7 +155,7 @@ export function EditorialMastheadHeader({
           <Popover open={showPopover} onOpenChange={setShowPopover}>
             <PopoverTrigger asChild>
               <button
-                className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-[10.5px] font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-95 ${
+                className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-95 ${
                   badgeConfig.classes
                 } ${
                   showCelebration && primaryAward.category === "LOREWARD"
@@ -174,7 +174,7 @@ export function EditorialMastheadHeader({
                   className={`h-3.5 w-3.5 shrink-0 group-hover:animate-bounce ${badgeConfig.iconColor}`}
                 />
                 {awardsData.awards.length > 1 && (
-                  <span className="text-[10.5px] leading-none font-bold tabular-nums opacity-80">
+                  <span className="text-xs leading-none font-bold tabular-nums opacity-80">
                     +{awardsData.awards.length - 1}
                   </span>
                 )}
@@ -188,7 +188,7 @@ export function EditorialMastheadHeader({
               sideOffset={8}
               className="z-[100055] w-72 space-y-2.5 rounded-xl border border-zinc-200 bg-white/95 p-3.5 text-xs shadow-2xl backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/90"
             >
-              <div className="text-muted-foreground text-left text-[9px] font-semibold tracking-wider uppercase">
+              <div className="text-muted-foreground text-left text-xs font-semibold tracking-wider uppercase">
                 Article Distinctions
               </div>
               <div className="space-y-2">
@@ -199,7 +199,7 @@ export function EditorialMastheadHeader({
                   >
                     <div className="text-foreground font-semibold">{award.name}</div>
                     {award.description && (
-                      <p className="text-muted-foreground text-[11px] leading-relaxed">
+                      <p className="text-muted-foreground text-xs leading-relaxed">
                         {award.description}
                       </p>
                     )}

@@ -210,7 +210,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
             <Link
               href="/wiki"
               data-cuelume-press="soft"
-              className="flex items-center gap-0.5 font-mono text-[11px] text-blue-600 hover:underline dark:text-blue-400"
+              className="flex items-center gap-0.5 font-mono text-xs text-blue-600 hover:underline dark:text-blue-400"
             >
               <span>Explore WikiOS</span>
               <ArrowUpRight className="h-3 w-3" />
@@ -227,11 +227,11 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1 rounded-md border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                    <span className="flex items-center gap-1 rounded-md border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
                       <FileText className="h-3 w-3" />
                       Authored Page
                     </span>
-                    <span className="text-muted-foreground font-mono text-[10px]">
+                    <span className="text-muted-foreground font-mono text-xs">
                       {new Date(item.updatedAt || item.createdAt).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -253,7 +253,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                 </div>
 
                 <div className="flex items-center justify-between border-t border-black/6 pt-3 dark:border-white/8">
-                  <span className="text-muted-foreground font-mono text-[11px] uppercase">
+                  <span className="text-muted-foreground font-mono text-xs uppercase">
                     WikiOS
                   </span>
                   <Link
@@ -292,12 +292,12 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1 rounded-md border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                      <span className="flex items-center gap-1 rounded-md border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
                         <Globe className="h-3 w-3" />
                         Language Pack
                       </span>
                       {item.culturalFamily && (
-                        <span className="text-muted-foreground font-mono text-[10px]">
+                        <span className="text-muted-foreground font-mono text-xs">
                           {item.culturalFamily}
                         </span>
                       )}
@@ -316,7 +316,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                   </div>
 
                   <div className="flex items-center justify-between border-t border-black/6 pt-3 dark:border-white/8">
-                    <span className="text-muted-foreground font-mono text-[11px] uppercase">
+                    <span className="text-muted-foreground font-mono text-xs uppercase">
                       Onoma
                     </span>
                     <Link
@@ -342,11 +342,11 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                      <span className="flex items-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
                         <Flash className="h-3 w-3" />
                         Directive
                       </span>
-                      <span className="text-muted-foreground font-mono text-[10px] uppercase">
+                      <span className="text-muted-foreground font-mono text-xs uppercase">
                         {item.tier} Tier
                       </span>
                     </div>
@@ -364,10 +364,10 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                   </div>
 
                   <div className="flex items-center justify-between border-t border-black/6 pt-3 dark:border-white/8">
-                    <span className="text-muted-foreground font-mono text-[11px] capitalize">
+                    <span className="text-muted-foreground font-mono text-xs capitalize">
                       {item.category || "Governance"}
                     </span>
-                    <span className="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span className="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                       {item.status}
                     </span>
                   </div>
@@ -385,12 +385,12 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="flex items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
                         <Trophy className="h-3 w-3" />
                         Athletic Club
                       </span>
                       {item.city && (
-                        <span className="text-muted-foreground font-mono text-[10px]">
+                        <span className="text-muted-foreground font-mono text-xs">
                           {item.city}
                         </span>
                       )}
@@ -409,7 +409,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                   </div>
 
                   <div className="flex items-center justify-between border-t border-black/6 pt-3 dark:border-white/8">
-                    <span className="text-muted-foreground font-mono text-[11px] uppercase">
+                    <span className="text-muted-foreground font-mono text-xs uppercase">
                       MyLeague
                     </span>
                     <Link
@@ -438,7 +438,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
             <Link
               href={`/wiki/contributions/${encodeURIComponent(wiki?.username || cleanUsername)}`}
               data-cuelume-press="soft"
-              className="flex items-center gap-0.5 font-mono text-[11px] text-blue-600 hover:underline dark:text-blue-400"
+              className="flex items-center gap-0.5 font-mono text-xs text-blue-600 hover:underline dark:text-blue-400"
             >
               <span>View All</span>
               <ArrowUpRight className="h-3 w-3" />
@@ -480,7 +480,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={cn(
-                          "py-0.2 rounded border px-1.5 font-mono text-[9px] font-bold tracking-wider uppercase",
+                          "py-0.2 rounded border px-1.5 font-mono text-xs font-bold tracking-wider uppercase",
                           item.type === "publish" &&
                             "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400",
                           item.type === "revision" &&
@@ -500,7 +500,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                         {item.type === "laurel" && "LAUREL"}
                       </span>
 
-                      <span className="text-muted-foreground flex items-center gap-1 font-mono text-[10px]">
+                      <span className="text-muted-foreground flex items-center gap-1 font-mono text-xs">
                         <Clock className="inline h-2.5 w-2.5" />
                         {new Date(item.timestamp).toLocaleDateString("en-US", {
                           month: "short",
@@ -512,7 +512,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                       {item.byteDiff !== null && item.byteDiff !== undefined && (
                         <span
                           className={cn(
-                            "py-0.2 flex items-center gap-0.5 rounded px-1.5 font-mono text-[10px] font-bold",
+                            "py-0.2 flex items-center gap-0.5 rounded px-1.5 font-mono text-xs font-bold",
                             item.byteDiff > 0
                               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                               : item.byteDiff < 0

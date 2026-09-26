@@ -94,7 +94,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
           <div className="space-y-3 py-2 text-xs">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   Target Category
                 </label>
                 <select
@@ -112,7 +112,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
               </div>
 
               <div>
-                <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   Source Type
                 </label>
                 <select
@@ -131,7 +131,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
 
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   Nation Status
                 </label>
                 <select
@@ -146,7 +146,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
               </div>
 
               <div>
-                <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   Season
                 </label>
                 <select
@@ -162,7 +162,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
               </div>
 
               <div>
-                <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
                   Rarity
                 </label>
                 <select

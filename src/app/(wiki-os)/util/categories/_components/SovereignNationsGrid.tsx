@@ -45,7 +45,7 @@ export function SovereignNationsGrid({ countries, searchQuery }: SovereignNation
               <div className="text-foreground truncate text-xs font-semibold transition-colors group-hover:text-emerald-500">
                 {country.name}
               </div>
-              <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate font-mono text-[10px] tabular-nums">
+              <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate font-mono text-xs tabular-nums">
                 {country.population ? <span>Pop {formatNumber(country.population, 1)}</span> : null}
                 {country.population && country.gdp ? <span className="opacity-40">·</span> : null}
                 {country.gdp ? <span>{formatCurrency(country.gdp)}</span> : null}

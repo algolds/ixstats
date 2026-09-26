@@ -272,17 +272,17 @@ export function UnifiedDashboardSection({
                   onCreateAccount={() => setIsAccountModalOpen(true)}
                 />
                 {hasCountry && accounts.length > 1 && selectedAccount && (
-                  <div className="flex items-center gap-2 px-1 text-[11px]">
+                  <div className="flex items-center gap-2 px-1 text-xs">
                     <span className="text-muted-foreground font-normal">Posting as:</span>
                     <div className="text-foreground flex items-center gap-1.5 font-medium">
                       <span>@{selectedAccount.username}</span>
-                      <span className="text-muted-foreground text-[10px] font-normal">
+                      <span className="text-muted-foreground text-xs font-normal">
                         ({selectedAccount.accountType})
                       </span>
                     </div>
                     <button
                       onClick={() => setIsAccountModalOpen(true)}
-                      className="ml-2 cursor-pointer text-[11px] font-semibold text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                      className="ml-2 cursor-pointer text-xs font-semibold text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       Switch Account
                     </button>
@@ -368,10 +368,10 @@ export function UnifiedDashboardSection({
                           key={tier}
                           className="bg-muted/50 flex items-center gap-1 rounded px-2 py-0.5"
                         >
-                          <span className="text-[10px] font-medium">{tier}</span>
+                          <span className="text-xs font-medium">{tier}</span>
                           <Badge
                             variant="secondary"
-                            className="bg-background text-foreground border-border border px-1 py-0 text-[9px] font-semibold tabular-nums"
+                            className="bg-background text-foreground border-border border px-1 py-0 text-xs font-semibold tabular-nums"
                           >
                             {count as number}
                           </Badge>

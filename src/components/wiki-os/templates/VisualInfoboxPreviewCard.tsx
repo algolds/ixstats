@@ -222,24 +222,24 @@ export function VisualInfoboxPreviewCard({
               >
                 <div className="grid grid-cols-2 gap-2">
                   <div className="border-border/40 bg-background/60 flex h-20 flex-col items-center justify-center rounded-xl border p-2">
-                    <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                    <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                       National Flag
                     </span>
-                    <span className="text-muted-foreground/60 mt-1 font-mono text-[9px]">
+                    <span className="text-muted-foreground/60 mt-1 font-mono text-xs">
                       {customValues.image_flag || "Flag.svg"}
                     </span>
                   </div>
                   <div className="border-border/40 bg-background/60 flex h-20 flex-col items-center justify-center rounded-xl border p-2">
-                    <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                    <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                       Coat of Arms
                     </span>
-                    <span className="text-muted-foreground/60 mt-1 font-mono text-[9px]">
+                    <span className="text-muted-foreground/60 mt-1 font-mono text-xs">
                       {customValues.image_coat || "Crest.svg"}
                     </span>
                   </div>
                 </div>
                 {motto && (
-                  <div className="text-muted-foreground mt-2 font-serif text-[11px] italic">
+                  <div className="text-muted-foreground mt-2 font-serif text-xs italic">
                     &ldquo;{motto}&rdquo;
                   </div>
                 )}
@@ -252,10 +252,10 @@ export function VisualInfoboxPreviewCard({
                 className="infobox-image border-border/30 bg-secondary/15 border-b p-3 text-center"
               >
                 <div className="border-border/40 bg-background/60 flex h-24 flex-col items-center justify-center rounded-xl border p-4">
-                  <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                  <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     Primary Entity Image
                   </span>
-                  <span className="text-muted-foreground/60 mt-1 font-mono text-[9px]">
+                  <span className="text-muted-foreground/60 mt-1 font-mono text-xs">
                     {customValues.image || `${cleanName.replace(/\s+/g, "_")}.jpg`}
                   </span>
                 </div>

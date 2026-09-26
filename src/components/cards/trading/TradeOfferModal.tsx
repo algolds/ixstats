@@ -332,9 +332,9 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                           <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
                             {user.countryName || "Unknown"}
                           </p>
-                          <p className="truncate text-[10px] text-slate-400">{user.leader}</p>
+                          <p className="truncate text-xs text-slate-400">{user.leader}</p>
                         </div>
-                        <span className="shrink-0 rounded border border-amber-500/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:border-amber-500/30 dark:text-amber-400">
+                        <span className="shrink-0 rounded border border-amber-500/20 px-1.5 py-0.5 text-xs font-bold text-amber-600 dark:border-amber-500/30 dark:text-amber-400">
                           {user.economicTier}
                         </span>
                       </button>
@@ -375,7 +375,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       <button
                         type="button"
                         onClick={() => setStep("partner")}
-                        className="text-[10px] text-blue-500 hover:text-blue-600"
+                        className="text-xs text-blue-500 hover:text-blue-600"
                       >
                         Change
                       </button>
@@ -445,7 +445,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                               <span className="min-w-0 flex-1 truncate font-medium text-slate-900 dark:text-white">
                                 {card.title}
                               </span>
-                              <span className="shrink-0 font-mono text-[9px] text-slate-400">
+                              <span className="shrink-0 font-mono text-xs text-slate-400">
                                 {card.marketValue.toLocaleString()}
                               </span>
                             </button>
@@ -521,7 +521,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                                 <span className="min-w-0 flex-1 truncate font-medium text-slate-900 dark:text-white">
                                   {card.title}
                                 </span>
-                                <span className="shrink-0 font-mono text-[9px] text-slate-400">
+                                <span className="shrink-0 font-mono text-xs text-slate-400">
                                   {card.marketValue.toLocaleString()}
                                 </span>
                               </button>
@@ -623,7 +623,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
 
                   {message && (
                     <div className="rounded-lg border border-slate-200 p-2 dark:border-white/10">
-                      <p className="text-[10px] text-slate-400">Message</p>
+                      <p className="text-xs text-slate-400">Message</p>
                       <p className="text-xs text-slate-800 dark:text-white/80">{message}</p>
                     </div>
                   )}

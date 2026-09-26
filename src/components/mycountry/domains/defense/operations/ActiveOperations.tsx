@@ -148,7 +148,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                     {formatCurrency(op.dailyCost)}/day
                   </div>
                   {op.gdpDrain > 0 && (
-                    <span className="text-[10px] text-red-500">
+                    <span className="text-xs text-red-500">
                       {(op.gdpDrain * 100).toFixed(3)}% GDP drain
                     </span>
                   )}

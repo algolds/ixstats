@@ -230,10 +230,10 @@ export function CoordinatesMapEmbed({
 
       {/* Floating control bar or details overlay */}
       {mapReady && (
-        <div className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/75 px-2.5 py-1 text-[10px] text-zinc-300 backdrop-blur-md select-none">
+        <div className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/75 px-2.5 py-1 text-xs text-zinc-300 backdrop-blur-md select-none">
           <MapPin className="h-2.5 w-2.5 text-blue-400" />
           <span className="font-semibold">{titleVal || "Map Embed"}</span>
-          <span className="font-mono text-[9px] text-zinc-500">
+          <span className="font-mono text-xs text-zinc-500">
             ({lat.toFixed(3)}, {lng.toFixed(3)})
           </span>
         </div>

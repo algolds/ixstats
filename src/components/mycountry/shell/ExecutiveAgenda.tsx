@@ -304,12 +304,12 @@ function ExecutiveAgendaComponent({
                   <h3 className="text-foreground text-base font-bold tracking-tight sm:text-lg">
                     Issues & Events
                   </h3>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-[10px] font-semibold tracking-wider text-cyan-800 uppercase shadow-xs dark:text-cyan-300">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-xs font-semibold tracking-wider text-cyan-800 uppercase shadow-xs dark:text-cyan-300">
                     <span>{currentSeason.emoji}</span>
                     <span>{currentSeason.name}</span>
                   </span>
                 </div>
-                <span className="text-muted-foreground text-[11px] font-medium tracking-wide">
+                <span className="text-muted-foreground text-xs font-medium tracking-wide">
                   Executive Agenda & Horizon Timeline
                 </span>
               </div>
@@ -319,7 +319,7 @@ function ExecutiveAgendaComponent({
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 font-mono text-[11px] font-semibold shadow-xs backdrop-blur-md dark:border-amber-400/25 dark:bg-amber-400/10"
+              className="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 font-mono text-xs font-semibold shadow-xs backdrop-blur-md dark:border-amber-400/25 dark:bg-amber-400/10"
             >
               <Command className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
               <span className="text-muted-foreground">Directives:</span>
@@ -368,20 +368,20 @@ function ExecutiveAgendaComponent({
                         <div className="flex items-center gap-2">
                           <span
                             className={cn(
-                              "rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold tracking-wider uppercase shadow-xs transition-colors",
+                              "rounded-full border px-2.5 py-0.5 text-xs font-extrabold tracking-wider uppercase shadow-xs transition-colors",
                               item.badgeCls
                             )}
                           >
                             {item.statusLabel}
                           </span>
-                          <span className="text-muted-foreground font-mono text-[10px] tabular-nums">
+                          <span className="text-muted-foreground font-mono text-xs tabular-nums">
                             {item.timeLabel}
                           </span>
                         </div>
                         <h4 className="text-foreground truncate text-xs leading-tight font-extrabold transition-colors group-hover:text-amber-950 dark:group-hover:text-amber-200">
                           {item.title}
                         </h4>
-                        <p className="text-muted-foreground line-clamp-1 text-[11px]">
+                        <p className="text-muted-foreground line-clamp-1 text-xs">
                           {item.description}
                         </p>
                       </div>
@@ -394,7 +394,7 @@ function ExecutiveAgendaComponent({
                         e.stopPropagation();
                         setSelectedEvent(item);
                       }}
-                      className="border-border/80 bg-card/80 text-foreground flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-3 py-1.5 text-[10px] font-bold shadow-xs transition-all group-hover:border-amber-500/50 group-hover:bg-amber-500/20 group-hover:text-amber-950 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:group-hover:text-amber-200"
+                      className="border-border/80 bg-card/80 text-foreground flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold shadow-xs transition-all group-hover:border-amber-500/50 group-hover:bg-amber-500/20 group-hover:text-amber-950 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:group-hover:text-amber-200"
                     >
                       <span>Action</span>
                       <ArrowUpRight className="h-3 w-3 opacity-70 transition-opacity group-hover:opacity-100" />
@@ -410,7 +410,7 @@ function ExecutiveAgendaComponent({
               >
                 <Calendar className="text-muted-foreground/40 mb-2 h-7 w-7 animate-pulse" />
                 <div className="text-foreground text-xs font-bold">No Events Scheduled</div>
-                <div className="text-muted-foreground/80 mt-0.5 max-w-xs text-[11px]">
+                <div className="text-muted-foreground/80 mt-0.5 max-w-xs text-xs">
                   No scheduled statecraft events or active directives match the selected day and
                   category filter.
                 </div>

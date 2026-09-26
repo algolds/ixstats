@@ -78,7 +78,7 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
                     <p className="text-foreground font-bold tracking-tight">
                       {activity.source.replace(/_/g, " ")}
                     </p>
-                    <p className="text-muted-foreground mt-0.5 text-[10px]">
+                    <p className="text-muted-foreground mt-0.5 text-xs">
                       {new Date(activity.createdAt).toLocaleString()}
                     </p>
                   </div>

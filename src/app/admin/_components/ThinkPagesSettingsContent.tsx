@@ -108,7 +108,7 @@ function PlatformSettingsTab() {
       {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Social Posts
           </p>
           {statsLoading ? (
@@ -121,7 +121,7 @@ function PlatformSettingsTab() {
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Registered Accounts
           </p>
           {statsLoading ? (
@@ -134,7 +134,7 @@ function PlatformSettingsTab() {
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Weekly Growth
           </p>
           {statsLoading ? (
@@ -153,7 +153,7 @@ function PlatformSettingsTab() {
         <div className="border-border/20 flex items-center justify-between border-b pb-4">
           <div>
             <h3 className="text-foreground text-xs font-bold">ThinkPages Platform Settings</h3>
-            <p className="text-muted-foreground mt-0.5 text-[11px]">
+            <p className="text-muted-foreground mt-0.5 text-xs">
               Limits, automated news publishing, and content moderation rules
             </p>
           </div>
@@ -175,7 +175,7 @@ function PlatformSettingsTab() {
               <Label className="text-foreground text-xs font-bold">
                 Max Accounts Limit per User
               </Label>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Cap the maximum number of ThinkPages feed profiles a player can hold
               </p>
             </div>
@@ -193,7 +193,7 @@ function PlatformSettingsTab() {
           <div className="border-border/20 bg-background/30 flex flex-col justify-between gap-3 rounded-xl border p-3.5 sm:flex-row sm:items-center">
             <div>
               <Label className="text-foreground text-xs font-bold">Post Character Length Cap</Label>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Maximum allowed character length for post content (excluding blurb header tags)
               </p>
             </div>
@@ -213,7 +213,7 @@ function PlatformSettingsTab() {
               <Label className="text-foreground text-xs font-bold">
                 Election Results Auto-News
               </Label>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Automatically publish detailed election outcomes to the ThinkPages feed
               </p>
             </div>
@@ -230,7 +230,7 @@ function PlatformSettingsTab() {
               <Label className="text-foreground text-xs font-bold">
                 Passed Directives Auto-News
               </Label>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Broadcast newly declared national directives and policy milestones
               </p>
             </div>
@@ -245,7 +245,7 @@ function PlatformSettingsTab() {
           <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
             <div>
               <Label className="text-foreground text-xs font-bold">Media & Card Attachments</Label>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Allow attaching vault cards, flags, and image links in replies
               </p>
             </div>
@@ -287,7 +287,7 @@ function DiscordMirrorTab() {
     <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
       <div>
         <h3 className="text-foreground text-xs font-bold">Discord ThinkPages Mirror</h3>
-        <p className="text-muted-foreground mt-0.5 text-[11px]">
+        <p className="text-muted-foreground mt-0.5 text-xs">
           Mirror trending thinkpage posts and breaking news bulletins directly to a Discord webhook
           channel
         </p>

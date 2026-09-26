@@ -117,7 +117,7 @@ export function NationalConditionMatrix({
     >
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
             National Performance
           </span>
           <h3 className="text-base font-bold tracking-tight text-foreground">
@@ -161,7 +161,7 @@ export function NationalConditionMatrix({
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-foreground">{pillar.label}</h4>
-                    <p className="text-[10px] text-muted-foreground">{pillar.category}</p>
+                    <p className="text-xs text-muted-foreground">{pillar.category}</p>
                   </div>
                 </div>
 
@@ -181,7 +181,7 @@ export function NationalConditionMatrix({
                     transition={{ type: "spring", bounce: 0, duration: 0.8 }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-[9px] text-muted-foreground">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{pillar.status}</span>
                   <span className="font-semibold text-foreground/80">Tier {score > 80 ? "A+" : score > 65 ? "A" : "B"}</span>
                 </div>

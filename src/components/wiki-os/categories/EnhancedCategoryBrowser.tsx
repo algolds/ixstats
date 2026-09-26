@@ -94,7 +94,7 @@ export function EnhancedCategoryBrowser({
               </div>
               <div className="text-left">
                 <div className="text-foreground text-sm font-bold tabular-nums">{pages.length}</div>
-                <div className="text-muted-foreground text-[10px] font-medium">Articles</div>
+                <div className="text-muted-foreground text-xs font-medium">Articles</div>
               </div>
             </div>
 
@@ -107,7 +107,7 @@ export function EnhancedCategoryBrowser({
                   <div className="text-foreground text-sm font-bold tabular-nums">
                     {subcategories.length}
                   </div>
-                  <div className="text-muted-foreground text-[10px] font-medium">Subcategories</div>
+                  <div className="text-muted-foreground text-xs font-medium">Subcategories</div>
                 </div>
               </div>
             )}
@@ -120,7 +120,7 @@ export function EnhancedCategoryBrowser({
         <div className="space-y-3.5">
           <div className="flex items-center gap-2 px-1">
             <Folder className="h-4 w-4 text-blue-500" />
-            <h2 className="text-foreground text-sm text-[11px] font-bold tracking-tight tracking-wider uppercase">
+            <h2 className="text-foreground text-sm text-xs font-bold tracking-tight tracking-wider uppercase">
               Subcategories ({subcategories.length})
             </h2>
           </div>
@@ -149,7 +149,7 @@ export function EnhancedCategoryBrowser({
         <div className="space-y-3.5">
           <div className="flex items-center gap-2 px-1">
             <FileText className="h-4 w-4 text-emerald-500" />
-            <h2 className="text-foreground text-sm text-[11px] font-bold tracking-tight tracking-wider uppercase">
+            <h2 className="text-foreground text-sm text-xs font-bold tracking-tight tracking-wider uppercase">
               Pages in category ({pages.length})
             </h2>
           </div>
@@ -186,7 +186,7 @@ export function EnhancedCategoryBrowser({
                       {m.title}
                     </span>
                     {match?.economicTier && (
-                      <span className="text-muted-foreground block truncate text-[10px] font-medium">
+                      <span className="text-muted-foreground block truncate text-xs font-medium">
                         {match.economicTier}
                       </span>
                     )}

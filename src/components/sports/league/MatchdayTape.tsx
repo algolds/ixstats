@@ -55,16 +55,16 @@ export function MatchdayTape({
     <div className={cn("relative overflow-hidden rounded-2xl border border-border/30 bg-card/60 backdrop-blur-xl p-3 shadow-md", className)}>
       <div className="mb-2 flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+          <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
             Round Matches
           </span>
           {matchDay && (
-            <Badge variant="outline" className="border-border/50 text-[9px] font-bold px-1.5 py-0">
+            <Badge variant="outline" className="border-border/50 text-xs font-bold px-1.5 py-0">
               Round {matchDay}
             </Badge>
           )}
         </div>
-        <span className="text-[10px] text-muted-foreground font-semibold">
+        <span className="text-xs text-muted-foreground font-semibold">
           {matches.length} Matches
         </span>
       </div>
@@ -95,10 +95,10 @@ export function MatchdayTape({
                   {match.homeTeam.logo ? (
                     <img src={match.homeTeam.logo} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <span className="text-[10px] font-bold">🏠</span>
+                    <span className="text-xs font-bold">🏠</span>
                   )}
                 </div>
-                <span className="font-bold text-foreground truncate text-[11px]">
+                <span className="font-bold text-foreground truncate text-xs">
                   {match.homeTeam.shortName ?? match.homeTeam.name}
                 </span>
               </div>
@@ -112,13 +112,13 @@ export function MatchdayTape({
                     <span>{match.awayScore ?? 0}</span>
                   </div>
                 ) : (
-                  <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">
+                  <span className="text-xs font-black uppercase text-muted-foreground tracking-wider">
                     VS
                   </span>
                 )}
                 <span
                   className={cn(
-                    "text-[8px] font-extrabold uppercase tracking-tighter mt-0.5",
+                    "text-xs font-extrabold uppercase tracking-tighter mt-0.5",
                     isCompleted ? "text-emerald-400" : isScheduled ? "text-blue-400" : "text-amber-400"
                   )}
                 >
@@ -128,14 +128,14 @@ export function MatchdayTape({
 
               {/* Away Team */}
               <div className="flex items-center justify-end gap-2 min-w-0 flex-1 text-right">
-                <span className="font-bold text-foreground truncate text-[11px]">
+                <span className="font-bold text-foreground truncate text-xs">
                   {match.awayTeam.shortName ?? match.awayTeam.name}
                 </span>
                 <div className="h-6 w-6 rounded-lg overflow-hidden border border-border/30 bg-muted/40 shrink-0 flex items-center justify-center">
                   {match.awayTeam.logo ? (
                     <img src={match.awayTeam.logo} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <span className="text-[10px] font-bold">✈️</span>
+                    <span className="text-xs font-bold">✈️</span>
                   )}
                 </div>
               </div>

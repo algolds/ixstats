@@ -137,13 +137,13 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
           <RefreshCw className="h-4 w-4 text-amber-400" />
           <h3 className="text-foreground text-xs font-bold">Bulk Wiki Entity Scanner</h3>
         </div>
-        <Badge variant="outline" className="w-fit text-[10px]">
+        <Badge variant="outline" className="w-fit text-xs">
           {unlinkedCountries.length} unlinked countries
         </Badge>
       </div>
 
       <div className="space-y-4">
-        <p className="text-muted-foreground text-[11px]">
+        <p className="text-muted-foreground text-xs">
           Automatically search wiki sources for unlinked countries and suggest entity cross-links.
         </p>
 
@@ -182,7 +182,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
         {/* Progress */}
         {isScanning && (
           <div className="space-y-1.5">
-            <div className="text-muted-foreground flex items-center justify-between text-[11px]">
+            <div className="text-muted-foreground flex items-center justify-between text-xs">
               <span>
                 Scanning {scanProgress.current} of {scanProgress.total}...
               </span>
@@ -245,14 +245,14 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
                       {result.matchedTitle}
                     </td>
                     <td className="hidden px-3 py-2.5 sm:table-cell">
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {result.source}
                       </Badge>
                     </td>
                     <td className="px-3 py-2.5 text-right">
                       <span
                         className={cn(
-                          "inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold",
+                          "inline-block rounded-md border px-2 py-0.5 text-xs font-semibold",
                           result.confidence === "exact"
                             ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                             : "border-amber-500/30 bg-amber-500/10 text-amber-400"

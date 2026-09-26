@@ -160,7 +160,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         >
           <Building2 className="h-4 w-4" />
           <span>Embassy Network</span>
-          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-mono text-[9px]">
+          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-mono text-xs">
             {stats.activeEmbassies}
           </span>
         </button>
@@ -181,7 +181,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         >
           <Handshake className="h-4 w-4" />
           <span>Bilateral Relations</span>
-          <span className="rounded-full bg-blue-500/20 px-2 py-0.5 font-mono text-[9px]">
+          <span className="rounded-full bg-blue-500/20 px-2 py-0.5 font-mono text-xs">
             {stats.totalRelations}
           </span>
         </button>
@@ -202,7 +202,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         >
           <Users className="h-4 w-4" />
           <span>Alliances & Blocs</span>
-          <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 font-mono text-[9px]">
+          <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 font-mono text-xs">
             {stats.allianceCount}
           </span>
         </button>

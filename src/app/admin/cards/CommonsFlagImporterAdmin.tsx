@@ -197,7 +197,7 @@ export function CommonsFlagImporterAdmin() {
 
           {/* Quick Preset Shortcuts */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-muted-foreground text-[11px] font-medium">Quick Categories:</span>
+            <span className="text-muted-foreground text-xs font-medium">Quick Categories:</span>
             <button
               onClick={() => {
                 const url =
@@ -206,7 +206,7 @@ export function CommonsFlagImporterAdmin() {
                 setActiveCategory("Category:SVG_flags_of_fictional_countries");
                 setSelectedItemUrls(new Set());
               }}
-              className="border-border bg-card/60 text-foreground hover:bg-accent rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all"
+              className="border-border bg-card/60 text-foreground hover:bg-accent rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all"
             >
               SVG flags of fictional countries
             </button>
@@ -218,7 +218,7 @@ export function CommonsFlagImporterAdmin() {
                 setActiveCategory("Category:SVG_special_or_fictional_flags");
                 setSelectedItemUrls(new Set());
               }}
-              className="border-border bg-card/60 text-foreground hover:bg-accent rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all"
+              className="border-border bg-card/60 text-foreground hover:bg-accent rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all"
             >
               SVG special or fictional flags
             </button>
@@ -235,7 +235,7 @@ export function CommonsFlagImporterAdmin() {
             variant="ghost"
             onClick={() => void commonsQuery.refetch()}
             disabled={commonsQuery.isFetching}
-            className="text-muted-foreground hover:text-foreground h-7 text-[11px]"
+            className="text-muted-foreground hover:text-foreground h-7 text-xs"
           >
             <RefreshCw
               className={`mr-1 h-3 w-3 ${commonsQuery.isFetching ? "animate-spin" : ""}`}
@@ -248,7 +248,7 @@ export function CommonsFlagImporterAdmin() {
         <div className="border-border/40 grid grid-cols-1 gap-3 border-t pt-2 sm:grid-cols-2">
           {/* Default Rarity */}
           <div>
-            <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+            <label className="text-muted-foreground mb-1 block text-xs font-medium">
               Target Card Rarity
             </label>
             <select
@@ -279,7 +279,7 @@ export function CommonsFlagImporterAdmin() {
 
           {/* Season */}
           <div>
-            <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+            <label className="text-muted-foreground mb-1 block text-xs font-medium">
               Target Card Season
             </label>
             <select
@@ -422,7 +422,7 @@ export function CommonsFlagImporterAdmin() {
 
                     {/* Already Minted Badge */}
                     {isMinted && (
-                      <div className="absolute top-1 left-1 flex items-center gap-1 rounded-md bg-emerald-500/90 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs">
+                      <div className="absolute top-1 left-1 flex items-center gap-1 rounded-md bg-emerald-500/90 px-1.5 py-0.5 text-xs font-bold text-white shadow-xs">
                         <Check className="h-2.5 w-2.5" /> Minted
                       </div>
                     )}
@@ -437,7 +437,7 @@ export function CommonsFlagImporterAdmin() {
                   </div>
                   <div className="mt-2 space-y-1">
                     <div
-                      className="text-foreground truncate text-[11px] font-bold"
+                      className="text-foreground truncate text-xs font-bold"
                       title={item.cleanTitle}
                     >
                       {item.cleanTitle}
@@ -447,7 +447,7 @@ export function CommonsFlagImporterAdmin() {
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="text-muted-foreground inline-flex items-center gap-0.5 text-[9px] font-semibold hover:text-cyan-500"
+                      className="text-muted-foreground inline-flex items-center gap-0.5 text-xs font-semibold hover:text-cyan-500"
                     >
                       Wikimedia <ExternalLink className="h-2.5 w-2.5" />
                     </a>

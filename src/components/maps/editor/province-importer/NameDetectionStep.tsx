@@ -71,7 +71,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                 </td>
                 <td className="px-2 py-1.5 text-right">
                   <span
-                    className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                    className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${
                       province.confidence >= 0.8
                         ? "bg-green-500/10 text-green-600"
                         : province.confidence >= 0.5
@@ -88,7 +88,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
         </table>
       </div>
 
-      <div className="text-muted-foreground flex items-center justify-between text-[10px]">
+      <div className="text-muted-foreground flex items-center justify-between text-xs">
         <span>
           {importer.includedCount} of {importer.rawProvinces.length} provinces selected
         </span>
@@ -121,13 +121,13 @@ export const NameDetectionStep = memo(function NameDetectionStep({
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-foreground text-xs font-semibold">Import Cities</span>
-              <p className="text-muted-foreground text-[10px]">
+              <p className="text-muted-foreground text-xs">
                 Import city point markers detected in this SVG.
               </p>
             </div>
             <button
               onClick={() => importer.setImportCities(!importer.importCities)}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
                 importer.importCities
                   ? "bg-primary/15 text-primary"
                   : "bg-muted text-muted-foreground"
@@ -141,7 +141,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
             <div className="space-y-2">
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="space-y-1">
-                  <label className="text-muted-foreground block text-[10px] font-semibold uppercase">
+                  <label className="text-muted-foreground block text-xs font-semibold uppercase">
                     Cities Layer
                   </label>
                   <select
@@ -165,7 +165,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-muted-foreground block text-[10px] font-semibold uppercase">
+                  <label className="text-muted-foreground block text-xs font-semibold uppercase">
                     Capitals Layer (Optional)
                   </label>
                   <select
@@ -189,7 +189,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-muted-foreground block text-[10px] font-semibold uppercase">
+                  <label className="text-muted-foreground block text-xs font-semibold uppercase">
                     City Names (Optional)
                   </label>
                   <select
@@ -214,7 +214,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
               </div>
 
               {importer.snappedCitiesCount > 0 && (
-                <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-2.5 py-1.5 text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-2.5 py-1.5 text-xs leading-relaxed text-amber-600 dark:text-amber-400">
                   <strong>Notice:</strong> {importer.snappedCitiesCount} city dot
                   {importer.snappedCitiesCount !== 1 ? "s" : ""} detected slightly outside country
                   boundaries and will be automatically snapped to the border.

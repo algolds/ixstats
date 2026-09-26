@@ -73,7 +73,7 @@ export function BudgetDepartmentList({
               <Progress value={utilizationRate} className="h-1.5" />
               <div className="grid grid-cols-3 gap-3 pt-1 text-xs">
                 <div className="bg-muted/15 border-border/20 rounded-lg border p-2">
-                  <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                  <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                     Allocated
                   </p>
                   <p className="text-foreground mt-0.5 font-mono font-semibold tabular-nums">
@@ -81,7 +81,7 @@ export function BudgetDepartmentList({
                   </p>
                 </div>
                 <div className="bg-muted/15 border-border/20 rounded-lg border p-2">
-                  <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                  <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                     Spent
                   </p>
                   <p className="mt-0.5 font-mono font-semibold text-amber-400 tabular-nums">
@@ -89,7 +89,7 @@ export function BudgetDepartmentList({
                   </p>
                 </div>
                 <div className="bg-muted/15 border-border/20 rounded-lg border p-2">
-                  <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                  <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                     Remaining
                   </p>
                   <p className="mt-0.5 font-mono font-semibold text-cyan-400 tabular-nums">

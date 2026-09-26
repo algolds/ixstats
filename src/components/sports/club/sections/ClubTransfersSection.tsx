@@ -143,7 +143,7 @@ export function ClubTransfersSection({
                         &middot; {p.teamName}
                       </p>
                       {p.listing && (
-                        <p className="mt-0.5 text-[10px] font-semibold text-cyan-400">
+                        <p className="mt-0.5 text-xs font-semibold text-cyan-400">
                           Listed for ₷{p.listing.price}
                         </p>
                       )}
@@ -183,7 +183,7 @@ export function ClubTransfersSection({
                       ) : (
                         <Badge
                           variant="outline"
-                          className="border-border/50 text-muted-foreground text-[10px]"
+                          className="border-border/50 text-muted-foreground text-xs"
                         >
                           Not Listed
                         </Badge>
@@ -226,7 +226,7 @@ export function ClubTransfersSection({
                       &middot; {l.player.team.name} &middot; OVR{" "}
                       {(l.player.ratings as { overall?: number } | undefined)?.overall ?? 50}
                     </p>
-                    <p className="mt-0.5 text-[10px] font-semibold text-cyan-500 dark:text-cyan-400">
+                    <p className="mt-0.5 text-xs font-semibold text-cyan-500 dark:text-cyan-400">
                       Asking Price: ₷{l.price}
                     </p>
                   </div>
@@ -270,7 +270,7 @@ export function ClubTransfersSection({
                   ) : (
                     <Badge
                       variant="outline"
-                      className="border-border text-muted-foreground text-[10px]"
+                      className="border-border text-muted-foreground text-xs"
                     >
                       My Player
                     </Badge>
@@ -297,7 +297,7 @@ export function ClubTransfersSection({
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-muted-foreground hover:text-foreground h-6 px-2 text-[10px]"
+                className="text-muted-foreground hover:text-foreground h-6 px-2 text-xs"
                 onClick={() => setComparePlayer(null)}
               >
                 Clear
@@ -351,11 +351,11 @@ export function ClubTransfersSection({
                       <p className="text-sm font-bold">
                         {b.listing.player.firstName} {b.listing.player.lastName}
                       </p>
-                      <p className="text-muted-foreground text-[10px]">
+                      <p className="text-muted-foreground text-xs">
                         Bid amount: ₷{b.amount}
                       </p>
                     </div>
-                    <Badge className="border border-amber-500/20 bg-amber-500/20 text-[9px] font-bold text-amber-500 uppercase dark:text-amber-400">
+                    <Badge className="border border-amber-500/20 bg-amber-500/20 text-xs font-bold text-amber-500 uppercase dark:text-amber-400">
                       {b.status}
                     </Badge>
                   </div>
@@ -408,12 +408,12 @@ export function ClubTransfersSection({
                     <p className="text-xs font-bold">
                       {b.listing.player.firstName} {b.listing.player.lastName}
                     </p>
-                    <p className="text-muted-foreground text-[10px]">Bid: ₷{b.amount}</p>
+                    <p className="text-muted-foreground text-xs">Bid: ₷{b.amount}</p>
                   </div>
                   <Badge
                     variant="outline"
                     className={cn(
-                      "text-[9px] font-bold uppercase",
+                      "text-xs font-bold uppercase",
                       b.status === "accepted" &&
                         "border-emerald-500/30 bg-emerald-500/10 text-emerald-500 dark:text-emerald-400",
                       b.status === "rejected" &&

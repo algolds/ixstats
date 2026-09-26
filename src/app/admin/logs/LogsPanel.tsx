@@ -138,7 +138,7 @@ export default function DedicatedLogsPage() {
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Fetched Logs
           </p>
           <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
@@ -146,7 +146,7 @@ export default function DedicatedLogsPage() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Errors / Warnings
           </p>
           <p
@@ -156,7 +156,7 @@ export default function DedicatedLogsPage() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Auto-Refresh
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
@@ -164,7 +164,7 @@ export default function DedicatedLogsPage() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Level Scope
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">

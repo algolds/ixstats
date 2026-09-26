@@ -200,7 +200,7 @@ export function DashboardSidebarLayout({
                 {!disableCollapse && variant !== "rail" && (
                   <button
                     onClick={handleToggleSidebar}
-                    className="text-muted-foreground hover:text-foreground border-border bg-muted/30 hover:bg-muted/60 flex w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-[10px] font-medium tracking-tight shadow-xs backdrop-blur-md transition-all duration-150 active:scale-[0.97]"
+                    className="text-muted-foreground hover:text-foreground border-border bg-muted/30 hover:bg-muted/60 flex w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium tracking-tight shadow-xs backdrop-blur-md transition-all duration-150 active:scale-[0.97]"
                     title="Collapse sidebar"
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />

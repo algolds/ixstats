@@ -119,7 +119,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
           <div className="min-w-0 flex-1 text-left">
             <div className="mb-1 flex items-center gap-1.5">
               <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-wiki" />
-              <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+              <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                 {source === "iiwiki" ? "IIWiki Article" : "IxWiki Article"}
               </span>
             </div>
@@ -194,7 +194,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
 
       // Determine style classes: Minimalist Glass Pills with default light and dark mode classes
       let badgeStyle =
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold select-none transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 backdrop-blur-[2px] border ";
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold select-none transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 backdrop-blur-[2px] border ";
       if (isLeague) {
         badgeStyle +=
           "bg-amber-600/[0.06] border-amber-600/20 text-amber-700 hover:bg-amber-600/[0.1] hover:border-amber-600/30 dark:bg-amber-500/[0.04] dark:border-amber-500/15 dark:text-amber-400/90 dark:hover:bg-amber-500/[0.08] dark:hover:border-amber-500/25";
@@ -387,7 +387,7 @@ export function MentionPopover({
                     <h4 className="text-sm font-bold text-amber-700 dark:text-amber-300">
                       {leagueData.name}
                     </h4>
-                    <p className="text-[10px] text-neutral-500 capitalize dark:text-slate-400">
+                    <p className="text-xs text-neutral-500 capitalize dark:text-slate-400">
                       {leagueData.sportPreset} · {leagueData.archetype}
                     </p>
                   </div>
@@ -417,7 +417,7 @@ export function MentionPopover({
                     <h4 className="text-sm font-bold text-blue-700 dark:text-blue-300">
                       {teamData.name}
                     </h4>
-                    <p className="text-[10px] text-neutral-500 dark:text-slate-400">
+                    <p className="text-xs text-neutral-500 dark:text-slate-400">
                       Stadium Cap: {teamData.stadiumCapacity}
                     </p>
                   </div>
@@ -442,7 +442,7 @@ export function MentionPopover({
                     <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
                       {(countryData as any)?.title ?? entityId}
                     </h4>
-                    <p className="line-clamp-2 text-[10px] text-neutral-500 dark:text-slate-400">
+                    <p className="line-clamp-2 text-xs text-neutral-500 dark:text-slate-400">
                       {countryData.paragraphs?.[0] || "Explore country details."}
                     </p>
                   </div>
@@ -478,7 +478,7 @@ export function MentionPopover({
                       @{entityId}
                     </h4>
                     {authorData.country && (
-                      <p className="text-[10px] text-neutral-500 dark:text-slate-400">
+                      <p className="text-xs text-neutral-500 dark:text-slate-400">
                         From {authorData.country.name}
                       </p>
                     )}
@@ -505,7 +505,7 @@ export function MentionPopover({
             {!isLoading && !leagueData && !teamData && !countryData && !authorData && (
               <div className="flex flex-col gap-2 text-left">
                 <h4 className="text-xs font-bold text-neutral-600 dark:text-slate-300">{label}</h4>
-                <p className="text-[10px] text-neutral-500 dark:text-slate-400">
+                <p className="text-xs text-neutral-500 dark:text-slate-400">
                   Explore page profile.
                 </p>
                 <Link

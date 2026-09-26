@@ -132,14 +132,14 @@ export function NotificationRow({
                 )}
               </div>
               {!isExpanded && (n.description || n.message) && (
-                <span className="text-muted-foreground mt-0.5 block truncate text-[11px] leading-relaxed font-medium">
+                <span className="text-muted-foreground mt-0.5 block truncate text-xs leading-relaxed font-medium">
                   {n.description || n.message}
                 </span>
               )}
             </div>
 
             <div className="flex shrink-0 flex-col items-end gap-1">
-              <span className="text-muted-foreground/70 text-[9px] font-medium tabular-nums">
+              <span className="text-muted-foreground/70 text-xs font-medium tabular-nums">
                 // oxlint-disable-next-line
                 {relTime(n.timestamp || n.createdAt || Date.now())}
               </span>
@@ -165,7 +165,7 @@ export function NotificationRow({
                   e.stopPropagation();
                   handleClick(n);
                 }}
-                className="border-primary/30 bg-primary text-primary-foreground hover:bg-primary/90 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-[10px] font-bold shadow-xs transition-all active:scale-[0.98]"
+                className="border-primary/30 bg-primary text-primary-foreground hover:bg-primary/90 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
                 <span>Open</span>
@@ -176,7 +176,7 @@ export function NotificationRow({
                 e.stopPropagation();
                 handleDismiss(n);
               }}
-              className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-[10px] font-bold transition-all active:scale-[0.98]"
+              className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-bold transition-all active:scale-[0.98]"
             >
               <X className="text-muted-foreground/60 h-3.5 w-3.5" />
               <span>Dismiss</span>

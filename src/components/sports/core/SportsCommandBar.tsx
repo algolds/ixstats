@@ -80,7 +80,7 @@ export function SportsCommandBar({
         {/* Sport Badge */}
         <Badge
           variant="outline"
-          className={cn("hidden sm:inline-flex px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", theme.badgeClass)}
+          className={cn("hidden sm:inline-flex px-2 py-0.5 text-xs font-bold uppercase tracking-wider", theme.badgeClass)}
         >
           {theme.name}
         </Badge>

@@ -64,7 +64,7 @@ function LivePill({ match }: { match: LiveActivityMatch }) {
       >
         {shortFor(match.homeTeam)} {state.homeScore}–{state.awayScore} {shortFor(match.awayTeam)}
       </PreText>
-      <PreText className="text-muted-foreground font-mono text-[10px]" whiteSpace="nowrap">
+      <PreText className="text-muted-foreground font-mono text-xs" whiteSpace="nowrap">
         {state.isFinal ? "FT" : `${state.minute}'`}
       </PreText>
     </span>
@@ -88,11 +88,11 @@ function SportsLiveView({ context }: DIViewProps) {
       />
       <div className="relative z-10 space-y-4">
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1.5 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+          <span className="flex items-center gap-1.5 rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
             <Radio className={`h-2.5 w-2.5 ${state.isFinal ? "" : "animate-pulse"}`} />
             {state.isFinal ? "FULL TIME" : "LIVE"}
           </span>
-          <span className="text-muted-foreground truncate text-[11px]">{match.leagueName}</span>
+          <span className="text-muted-foreground truncate text-xs">{match.leagueName}</span>
         </div>
 
         <div className="flex items-center justify-around">

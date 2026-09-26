@@ -129,7 +129,7 @@ export function EditorialMainPageContent({
                       <span className="text-foreground/90 group-hover:text-foreground truncate text-xs font-semibold">
                         {cat.name}
                       </span>
-                      <span className="text-muted-foreground/75 mt-0.5 truncate text-[10.5px] leading-snug">
+                      <span className="text-muted-foreground/75 mt-0.5 truncate text-xs leading-snug">
                         {meta.desc}
                       </span>
                     </div>
@@ -196,21 +196,21 @@ export function EditorialMainPageContent({
 
                           {/* Page Blurb / Description */}
                           {rc.blurb && (
-                            <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-[11px] leading-snug">
+                            <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-xs leading-snug">
                               {rc.blurb}
                             </p>
                           )}
 
                           {/* Edit Notes / Summary */}
                           {rc.comment && rc.comment.trim() && (
-                            <div className="text-foreground/75 bg-foreground/[0.03] border-border/40 mt-1 flex max-w-fit items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10.5px]">
+                            <div className="text-foreground/75 bg-foreground/[0.03] border-border/40 mt-1 flex max-w-fit items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs">
                               <EditPencil className="text-muted-foreground/70 h-2.5 w-2.5 shrink-0" />
                               <span className="truncate font-sans italic">{rc.comment}</span>
                             </div>
                           )}
 
                           {/* Author & Timestamp */}
-                          <div className="text-muted-foreground mt-1 flex items-center gap-1.5 text-[10.5px]">
+                          <div className="text-muted-foreground mt-1 flex items-center gap-1.5 text-xs">
                             <span className="text-foreground/80 font-medium">{rc.user}</span>
                             <span className="opacity-40">·</span>
                             <span>{formatMWTimeAgo(rc.timestamp)}</span>
@@ -221,7 +221,7 @@ export function EditorialMainPageContent({
                       {/* Byte Diff Pill */}
                       <span
                         className={cn(
-                          "bg-foreground/[0.03] border-border/20 mt-0.5 flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
+                          "bg-foreground/[0.03] border-border/20 mt-0.5 flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-semibold tabular-nums",
                           diffClass
                         )}
                         title={`${rc.oldLen} → ${rc.newLen} bytes`}
@@ -316,7 +316,7 @@ export function EditorialMainPageContent({
                         loading="lazy"
                       />
                     ) : (
-                      <div className="text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
+                      <div className="text-muted-foreground flex h-full w-full items-center justify-center text-xs">
                         FLAG
                       </div>
                     )}
@@ -324,7 +324,7 @@ export function EditorialMainPageContent({
                   <span className="text-foreground group-hover:text-wiki truncate text-xs font-semibold transition-colors">
                     {c.name}
                   </span>
-                  <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate text-[10.5px] font-medium tabular-nums">
+                  <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate text-xs font-medium tabular-nums">
                     {c.population ? <span>Pop {formatNumber(c.population, 1)}</span> : null}
                     {c.population && c.gdp ? <span className="opacity-40">·</span> : null}
                     {c.gdp ? <span>{formatCurrency(c.gdp)}</span> : null}

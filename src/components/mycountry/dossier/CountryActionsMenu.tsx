@@ -272,7 +272,7 @@ export function CountryActionsMenu({
                     {/* Own Country Actions */}
                     {isOwnCountry && (
                       <div className="space-y-2.5">
-                        <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                        <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
                           Management
                         </p>
 
@@ -360,7 +360,7 @@ export function CountryActionsMenu({
                     {!isOwnCountry && (
                       <>
                         <div className="space-y-2.5">
-                          <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                          <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
                             Social
                           </p>
 
@@ -444,7 +444,7 @@ export function CountryActionsMenu({
 
                         {/* Diplomatic Actions */}
                         <div className="mt-4 space-y-2.5">
-                          <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                          <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
                             Diplomacy
                           </p>
 
@@ -509,7 +509,7 @@ export function CountryActionsMenu({
 
                         {/* Foreign Policy (Adversarial) */}
                         <div className="mt-4 space-y-2.5">
-                          <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                          <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
                             Foreign Policy
                           </p>
 
@@ -540,7 +540,7 @@ export function CountryActionsMenu({
 
                     {/* Quick Links (always shown) */}
                     <div className="mt-4 space-y-2.5">
-                      <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                      <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
                         Quick Links
                       </p>
 

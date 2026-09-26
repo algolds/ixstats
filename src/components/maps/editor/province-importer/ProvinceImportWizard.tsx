@@ -84,7 +84,7 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
               <button
                 onClick={() => isPast && importer.goToStep(s.key)}
                 disabled={!isPast}
-                className={`flex items-center gap-1 rounded px-1.5 py-1 text-[10px] font-medium transition-colors ${
+                className={`flex items-center gap-1 rounded px-1.5 py-1 text-xs font-medium transition-colors ${
                   isActive
                     ? "bg-primary/10 text-primary"
                     : isPast
@@ -127,7 +127,7 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
           Back
         </button>
 
-        <div className="text-muted-foreground text-[10px]">
+        <div className="text-muted-foreground text-xs">
           {importer.importScope === "cities"
             ? `${importer.alignedCities.length} city/cities aligned`
             : `${importer.includedCount} province${importer.includedCount !== 1 ? "s" : ""} selected`}

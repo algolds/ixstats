@@ -42,7 +42,7 @@ export const StashDropdown = memo(function StashDropdown({
             <select
               value={modal.activeStashId}
               onChange={(e) => modal.setSelectedStashId(e.target.value)}
-              className="rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-zinc-300 outline-none"
+              className="rounded border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-zinc-300 outline-none"
             >
               {modal.stashes.map((s) => (
                 <option key={s.id} value={s.id} className="bg-zinc-900 text-white">
@@ -57,7 +57,7 @@ export const StashDropdown = memo(function StashDropdown({
           <div className="flex flex-col items-center justify-center p-6 text-center text-zinc-400">
             <ImageIcon className="mb-2 h-6 w-6 opacity-40" />
             <div className="text-xs">No media files in this stash</div>
-            <div className="mt-1 text-[10px] text-zinc-500">
+            <div className="mt-1 text-xs text-zinc-500">
               Stash Commons images from the repository to quickly insert them here.
             </div>
           </div>

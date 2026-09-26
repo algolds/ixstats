@@ -164,7 +164,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
                 className="shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <div className="text-muted-foreground/80 truncate text-[9px] font-extrabold tracking-wider uppercase">
+                <div className="text-muted-foreground/80 truncate text-xs font-extrabold tracking-wider uppercase">
                   {ring.label}
                 </div>
                 <div className="text-xs leading-tight font-extrabold" style={{ color: ring.color }}>
@@ -193,14 +193,14 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
             />
           </CardContent>
           <div className="flex items-center justify-between border-t border-white/10 px-4 py-2.5">
-            <span className="text-muted-foreground text-[11px] font-medium">
+            <span className="text-muted-foreground text-xs font-medium">
               {country.currentPopulation
                 ? `${Math.round(country.currentPopulation).toLocaleString()} citizens`
                 : ""}
             </span>
             <a
               href={createUrl(`/maps?country=${country.id}`)}
-              className="text-[11px] font-semibold text-blue-500 transition-colors hover:text-blue-400"
+              className="text-xs font-semibold text-blue-500 transition-colors hover:text-blue-400"
             >
               Open full map →
             </a>
@@ -297,11 +297,11 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
                         <p className="truncate text-xs font-semibold">{activity.title}</p>
                       </div>
                       {activity.source === "thinkpages" && (
-                        <Badge variant="outline" className="mt-1 h-4 text-[10px] font-bold">
+                        <Badge variant="outline" className="mt-1 h-4 text-xs font-bold">
                           ThinkPages
                         </Badge>
                       )}
-                      <div className="text-muted-foreground mt-1 flex items-center gap-2 text-[10px]">
+                      <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs">
                         <div className="flex items-center gap-1">
                           <Clock className="h-2.5 w-2.5" />
                           {formatDistanceToNow(new Date(activity.timestamp), {

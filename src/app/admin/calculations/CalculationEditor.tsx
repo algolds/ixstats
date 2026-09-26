@@ -187,7 +187,7 @@ export function CalculationEditor() {
                 <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${cat.color}`} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs">{module.name}</p>
-                  <p className="text-muted-foreground truncate text-[10px] capitalize">
+                  <p className="text-muted-foreground truncate text-xs capitalize">
                     {module.category}
                   </p>
                 </div>
@@ -206,7 +206,7 @@ export function CalculationEditor() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-foreground text-sm font-bold">{selectedModule.name}</h3>
-                    <Badge variant="outline" className="text-[10px] capitalize">
+                    <Badge variant="outline" className="text-xs capitalize">
                       {selectedModule.category}
                     </Badge>
                   </div>
@@ -249,7 +249,7 @@ export function CalculationEditor() {
 
               {/* Code / Formula Display */}
               <div className="space-y-2">
-                <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   Mathematical Formula (JavaScript Expression)
                 </label>
                 {isEditing ? (

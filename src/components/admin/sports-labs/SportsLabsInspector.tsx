@@ -68,7 +68,7 @@ export function SportsLabsInspector({
           </div>
           <div>
             <CardTitle className="text-sm font-semibold">{currentHeader.title}</CardTitle>
-            <CardDescription className="text-[11px]">{currentHeader.subtitle}</CardDescription>
+            <CardDescription className="text-xs">{currentHeader.subtitle}</CardDescription>
           </div>
         </div>
       </CardHeader>

@@ -346,13 +346,13 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
               {/* Coordinates status */}
               <div className="border-border bg-muted/30 grid shrink-0 grid-cols-2 gap-3 rounded-lg border p-3">
                 <div>
-                  <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                  <span className="text-muted-foreground block text-xs font-bold uppercase">
                     Latitude (Y)
                   </span>
                   <span className="text-foreground font-mono text-sm font-semibold">{lat}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                  <span className="text-muted-foreground block text-xs font-bold uppercase">
                     Longitude (X)
                   </span>
                   <span className="text-foreground font-mono text-sm font-semibold">{lng}</span>
@@ -382,7 +382,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                         className="hover:bg-muted/50 flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors"
                       >
                         <span className="text-foreground font-semibold">{c.name}</span>
-                        <span className="text-muted-foreground text-[9px] font-bold uppercase">
+                        <span className="text-muted-foreground text-xs font-bold uppercase">
                           {c.isNationalCapital ? "Capital" : "City"}
                         </span>
                       </button>
@@ -398,7 +398,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                         className="hover:bg-muted/50 flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors"
                       >
                         <span className="text-foreground">{p.name}</span>
-                        <span className="bg-muted text-muted-foreground rounded px-1.5 text-[9px] capitalize">
+                        <span className="bg-muted text-muted-foreground rounded px-1.5 text-xs capitalize">
                           {p.category}
                         </span>
                       </button>
@@ -487,7 +487,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
               )}
 
               {/* Syntax preview */}
-              <div className="mt-auto shrink-0 rounded border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-center font-mono text-[11px] text-emerald-400">
+              <div className="mt-auto shrink-0 rounded border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-center font-mono text-xs text-emerald-400">
                 {activeTab === "coords" ? (
                   <span>
                     [[Coords:{parseFloat(lat).toFixed(4)},{parseFloat(lng).toFixed(4)},{zoom}

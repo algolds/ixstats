@@ -47,11 +47,11 @@ export function VaultNetWorthCard({
             <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 text-amber-600 shadow-sm backdrop-blur-md dark:text-amber-400">
               <Wallet className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400" />
             </div>
-            <span className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+            <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               MyVault Balance
             </span>
           </div>
-          <Badge className="border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[9px] font-semibold tracking-wider text-amber-600 uppercase shadow-sm backdrop-blur-md dark:text-amber-400">
+          <Badge className="border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold tracking-wider text-amber-600 uppercase shadow-sm backdrop-blur-md dark:text-amber-400">
             Tier {vaultLevel} Account
           </Badge>
         </div>
@@ -65,7 +65,7 @@ export function VaultNetWorthCard({
 
         <div className="border-border/40 mt-6 grid grid-cols-2 gap-4 border-t pt-4 text-xs">
           <div>
-            <span className="text-muted-foreground block text-[10px] font-semibold tracking-wider uppercase">
+            <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
               Available Balance
             </span>
             <div className="mt-1 flex items-center gap-1 text-lg font-bold text-amber-600 dark:text-amber-400">
@@ -74,7 +74,7 @@ export function VaultNetWorthCard({
             </div>
           </div>
           <div>
-            <span className="text-muted-foreground block text-[10px] font-semibold tracking-wider uppercase">
+            <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
               Card Deck Value
             </span>
             <div className="mt-1 flex items-center gap-1 text-lg font-bold text-indigo-600 dark:text-indigo-400">
@@ -85,7 +85,7 @@ export function VaultNetWorthCard({
         </div>
 
         {/* Quick stats inline interactive pills */}
-        <div className="border-border/40 mt-5 flex flex-wrap gap-2 border-t pt-4 text-[11px]">
+        <div className="border-border/40 mt-5 flex flex-wrap gap-2 border-t pt-4 text-xs">
           <div className="border-border/60 bg-muted/40 text-foreground hover:bg-muted/70 flex cursor-default items-center gap-1.5 rounded-full border px-3 py-1 font-medium backdrop-blur-md transition-all select-none active:scale-95">
             <Layers className="h-3.5 w-3.5 shrink-0 text-amber-500 dark:text-amber-400" />
             <span>

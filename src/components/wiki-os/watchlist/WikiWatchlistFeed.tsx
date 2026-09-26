@@ -72,7 +72,7 @@ export function WikiWatchlistFeed() {
               <span className="text-foreground font-semibold">{watchlistItems?.length ?? 0}</span>{" "}
               watched articles
               {unreadCount > 0 && (
-                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-400">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
                   {unreadCount} unread
                 </span>
@@ -195,12 +195,12 @@ export function WikiWatchlistFeed() {
                           {item.articleTitle}
                         </Link>
                         {item.namespacePrefix && (
-                          <span className="bg-secondary/80 text-muted-foreground rounded px-1.5 py-0.5 text-[10px] font-medium">
+                          <span className="bg-secondary/80 text-muted-foreground rounded px-1.5 py-0.5 text-xs font-medium">
                             {item.namespacePrefix}
                           </span>
                         )}
                         {item.minor && (
-                          <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400">
+                          <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-xs font-semibold text-amber-400">
                             m
                           </span>
                         )}
@@ -224,7 +224,7 @@ export function WikiWatchlistFeed() {
                           <>
                             <span>•</span>
                             <span
-                              className={`font-mono text-[11px] font-medium ${isPositive ? "text-emerald-400" : isNegative ? "text-rose-400" : "text-muted-foreground"}`}
+                              className={`font-mono text-xs font-medium ${isPositive ? "text-emerald-400" : isNegative ? "text-rose-400" : "text-muted-foreground"}`}
                             >
                               {isPositive ? `+${delta}` : delta} B
                             </span>

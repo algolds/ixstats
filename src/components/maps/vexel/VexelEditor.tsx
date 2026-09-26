@@ -77,7 +77,7 @@ function EditorShell() {
       </div>
 
       {/* Bottom Status Bar */}
-      <footer className="flex h-8 shrink-0 items-center justify-between border-t border-white/10 bg-zinc-900/80 px-6 text-[10px] text-zinc-500">
+      <footer className="flex h-8 shrink-0 items-center justify-between border-t border-white/10 bg-zinc-900/80 px-6 text-xs text-zinc-500">
         <div>{achievementId ? `Editing: ${achievementId}` : "New Design Draft"}</div>
         <div>IxStates Vexel Engine v1.0.0</div>
       </footer>

@@ -148,7 +148,7 @@ export function UserRolesPanel() {
             <div className="border-border/20 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-foreground text-xs font-bold">Configured System Roles</h3>
-                <p className="text-muted-foreground mt-0.5 text-[11px]">
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   Hierarchy levels and attached permission profiles
                 </p>
               </div>
@@ -254,17 +254,17 @@ export function UserRolesPanel() {
                         variant="outline"
                         className={
                           role.level === 0
-                            ? "border-red-500/30 bg-red-500/10 text-[10px] text-red-400"
+                            ? "border-red-500/30 bg-red-500/10 text-xs text-red-400"
                             : role.level === 10
-                              ? "border-cyan-500/30 bg-cyan-500/10 text-[10px] text-cyan-400"
-                              : "text-[10px]"
+                              ? "border-cyan-500/30 bg-cyan-500/10 text-xs text-cyan-400"
+                              : "text-xs"
                         }
                       >
                         Level {role.level}
                       </Badge>
                     </div>
-                    <p className="text-muted-foreground mt-0.5 text-[11px]">{role.description}</p>
-                    <p className="text-muted-foreground/70 mt-0.5 font-mono text-[10px]">
+                    <p className="text-muted-foreground mt-0.5 text-xs">{role.description}</p>
+                    <p className="text-muted-foreground/70 mt-0.5 font-mono text-xs">
                       Permissions: {role.permissions}
                     </p>
                   </div>
@@ -313,8 +313,8 @@ export function UserRolesPanel() {
                         variant="outline"
                         className={
                           user.membershipTier === "mycountry_premium"
-                            ? "border-purple-500/30 bg-purple-500/10 text-[10px] text-purple-400"
-                            : "text-[10px]"
+                            ? "border-purple-500/30 bg-purple-500/10 text-xs text-purple-400"
+                            : "text-xs"
                         }
                       >
                         {user.membershipTier === "mycountry_premium"
@@ -322,7 +322,7 @@ export function UserRolesPanel() {
                           : "Basic Player"}
                       </Badge>
                     </div>
-                    <span className="text-muted-foreground mt-0.5 block text-[11px]">
+                    <span className="text-muted-foreground mt-0.5 block text-xs">
                       {user.country ? `Nation: ${user.country.name}` : "No Claimed Nation"}
                     </span>
                   </div>

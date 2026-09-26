@@ -64,7 +64,7 @@ export function StateStructureTree({
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
             Statecraft & Institutions
           </span>
           <h3 className="text-base font-bold tracking-tight text-foreground">
@@ -96,19 +96,19 @@ export function StateStructureTree({
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-foreground">{branch.title}</h4>
-                    <p className="text-[10px] text-muted-foreground">{branch.subtitle}</p>
+                    <p className="text-xs text-muted-foreground">{branch.subtitle}</p>
                   </div>
                 </div>
 
                 <div className="space-y-1 rounded-lg border border-white/5 bg-black/20 p-2.5">
                   <p className="text-xs font-bold text-foreground truncate">{branch.lead}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{branch.deputy}</p>
+                  <p className="text-xs text-muted-foreground truncate">{branch.deputy}</p>
                 </div>
               </div>
 
               <Link
                 href={createUrl(`/wiki/${encodeURIComponent(countryName)}`)}
-                className="mt-3 flex items-center justify-between text-[11px] font-semibold text-[var(--flag-primary)] hover:underline"
+                className="mt-3 flex items-center justify-between text-xs font-semibold text-[var(--flag-primary)] hover:underline"
               >
                 <span>Read Charter on IxWiki</span>
                 <ChevronRight className="h-3 w-3" />

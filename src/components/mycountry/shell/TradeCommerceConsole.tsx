@@ -188,15 +188,15 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
     <div className="border-border/40 bg-card/60 space-y-2 rounded-xl border p-3 backdrop-blur-sm">
       <div className="text-foreground flex items-center justify-between text-xs font-semibold">
         <span>Trade & Commerce</span>
-        <span className="text-muted-foreground font-mono text-[10px]">{partnerCount} Partners</span>
+        <span className="text-muted-foreground font-mono text-xs">{partnerCount} Partners</span>
       </div>
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div className="bg-background/50 border-border/30 rounded-lg border p-2">
-          <span className="text-muted-foreground block text-[10px]">Free Trade Pacts</span>
+          <span className="text-muted-foreground block text-xs">Free Trade Pacts</span>
           <span className="font-bold text-emerald-400">{ftaCount}</span>
         </div>
         <div className="bg-background/50 border-border/30 rounded-lg border p-2">
-          <span className="text-muted-foreground block text-[10px]">Active Sectors</span>
+          <span className="text-muted-foreground block text-xs">Active Sectors</span>
           <span className="text-foreground font-bold">{DEFAULT_SECTORS.length}</span>
         </div>
       </div>

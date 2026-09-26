@@ -61,7 +61,7 @@ export function VaultPurchaseLogs() {
                 {log.source.replace("Purchase item: ", "")}
               </span>
             </div>
-            <div className="text-muted-foreground font-mono text-[9px]">ID: {log.itemId}</div>
+            <div className="text-muted-foreground font-mono text-xs">ID: {log.itemId}</div>
           </div>
         ),
       },
@@ -76,7 +76,7 @@ export function VaultPurchaseLogs() {
           return (
             <Badge
               variant="outline"
-              className={`px-1.5 py-0 text-[9px] uppercase ${
+              className={`px-1.5 py-0 text-xs uppercase ${
                 isUpgrade
                   ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400"
                   : "border-purple-500/20 bg-purple-500/5 text-purple-400"
@@ -109,7 +109,7 @@ export function VaultPurchaseLogs() {
         mobileRole: "footer",
         accessor: (log: PurchaseLog) => new Date(log.createdAt).getTime(),
         render: (_val: unknown, log: PurchaseLog) => (
-          <div className="text-muted-foreground flex items-center justify-end gap-1 font-mono text-[10px]">
+          <div className="text-muted-foreground flex items-center justify-end gap-1 font-mono text-xs">
             <Calendar className="h-3 w-3" />
             {new Date(log.createdAt).toLocaleString()}
           </div>

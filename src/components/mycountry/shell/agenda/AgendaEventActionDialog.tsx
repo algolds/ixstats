@@ -40,7 +40,7 @@ export function AgendaEventActionDialog({
             <div className="flex items-center gap-2">
               <span
                 className={cn(
-                  "rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider uppercase",
+                  "rounded-full border px-2.5 py-0.5 text-xs font-extrabold tracking-wider uppercase",
                   selectedEvent.badgeCls
                 )}
               >

@@ -263,7 +263,7 @@ export function WikiNarratorPlayer({
               </span>
             </div>
 
-            <div className="text-muted-foreground flex shrink-0 items-center gap-1 font-mono text-[11px] tabular-nums">
+            <div className="text-muted-foreground flex shrink-0 items-center gap-1 font-mono text-xs tabular-nums">
               {hasNarrator && (
                 <span>
                   {narratorState.activeBlockIndex + 1}/{narratorState.totalBlocks}
@@ -393,7 +393,7 @@ export function WikiNarratorPlayer({
               type="button"
               onClick={() => toggleTray("voice")}
               className={cn(
-                "flex h-7 cursor-pointer items-center gap-1 rounded-lg px-2 text-[11px] font-medium transition-all active:scale-95",
+                "flex h-7 cursor-pointer items-center gap-1 rounded-lg px-2 text-xs font-medium transition-all active:scale-95",
                 activeTray === "voice"
                   ? "border font-bold shadow-xs"
                   : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
@@ -424,7 +424,7 @@ export function WikiNarratorPlayer({
               type="button"
               onClick={() => toggleTray("speed")}
               className={cn(
-                "flex h-7 cursor-pointer items-center gap-0.5 rounded-lg px-2 font-mono text-[11px] font-medium transition-all active:scale-95",
+                "flex h-7 cursor-pointer items-center gap-0.5 rounded-lg px-2 font-mono text-xs font-medium transition-all active:scale-95",
                 activeTray === "speed"
                   ? "border font-bold shadow-xs"
                   : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
@@ -481,9 +481,9 @@ export function WikiNarratorPlayer({
         {/* 4A. Inline Voice Picker Tray */}
         {activeTray === "voice" && (
           <div className="border-border/50 bg-popover/90 text-popover-foreground animate-in fade-in slide-in-from-top-1 mt-2 space-y-1 rounded-xl border p-2 shadow-md backdrop-blur-xl duration-150 dark:bg-zinc-900/90">
-            <div className="border-border/40 text-muted-foreground flex items-center justify-between border-b px-1 pb-1 text-[10.5px] font-bold tracking-wider uppercase">
+            <div className="border-border/40 text-muted-foreground flex items-center justify-between border-b px-1 pb-1 text-xs font-bold tracking-wider uppercase">
               <span>Narrator Voice</span>
-              <span className="text-[10px] font-normal opacity-70">Kokoro TTS</span>
+              <span className="text-xs font-normal opacity-70">Kokoro TTS</span>
             </div>
 
             <div className="scrollbar-thumb-muted max-h-36 scrollbar-thin space-y-0.5 overflow-y-auto">
@@ -554,7 +554,7 @@ export function WikiNarratorPlayer({
                     narratorActions.clearCache();
                     setActiveTray("none");
                   }}
-                  className="text-destructive hover:bg-destructive/10 flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-[11px] transition-all"
+                  className="text-destructive hover:bg-destructive/10 flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs transition-all"
                 >
                   <Trash2 className="h-3 w-3" />
                   <span>Clear Voice Audio Cache</span>
@@ -567,7 +567,7 @@ export function WikiNarratorPlayer({
         {/* 4B. Inline Playback Speed Tray */}
         {activeTray === "speed" && (
           <div className="border-border/50 bg-popover/90 text-popover-foreground animate-in fade-in slide-in-from-top-1 mt-2 space-y-2 rounded-xl border p-2.5 shadow-md backdrop-blur-xl duration-150 dark:bg-zinc-900/90">
-            <div className="text-muted-foreground flex items-center justify-between text-[10.5px] font-bold tracking-wider uppercase">
+            <div className="text-muted-foreground flex items-center justify-between text-xs font-bold tracking-wider uppercase">
               <span>Playback Speed</span>
               <span className="font-mono font-bold" style={{ color: accentColor }}>
                 {currentSpeed}×
@@ -613,7 +613,7 @@ export function WikiNarratorPlayer({
         {/* 4C. Inline Volume Slider Tray (audio-ui Fader) */}
         {activeTray === "volume" && (
           <div className="border-border/50 bg-popover/90 text-popover-foreground animate-in fade-in slide-in-from-top-1 mt-2 space-y-2 rounded-xl border p-2.5 shadow-md backdrop-blur-xl duration-150 dark:bg-zinc-900/90">
-            <div className="text-muted-foreground flex items-center justify-between text-[10.5px] font-bold tracking-wider uppercase">
+            <div className="text-muted-foreground flex items-center justify-between text-xs font-bold tracking-wider uppercase">
               <span>Volume Gain</span>
               <span className="font-mono font-bold tabular-nums" style={{ color: accentColor }}>
                 {Math.round(currentVolume * 100)}%

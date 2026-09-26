@@ -187,7 +187,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                     setActiveFilter(tab.id);
                   }}
                   className={cn(
-                    "relative flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold tracking-tight transition-all duration-150 select-none active:scale-95",
+                    "relative flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold tracking-tight transition-all duration-150 select-none active:scale-95",
                     isActive
                       ? "text-cyan-400 shadow-2xs"
                       : "text-muted-foreground hover:bg-accent/15 hover:text-foreground"
@@ -289,7 +289,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                     {item.delta !== 0 && (
                       <span
                         className={cn(
-                          "rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
+                          "rounded-md px-1.5 py-0.5 text-xs font-bold tabular-nums",
                           item.delta > 0
                             ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
                             : "border border-amber-500/20 bg-amber-500/10 text-amber-400"
@@ -309,7 +309,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                   </div>
 
                   {/* Timestamp */}
-                  <span className="text-muted-foreground/70 flex items-center gap-1 text-[11px] font-medium tabular-nums">
+                  <span className="text-muted-foreground/70 flex items-center gap-1 text-xs font-medium tabular-nums">
                     <Clock className="h-3 w-3" />
                     {formatTimestamp(item.timestamp)}
                   </span>
@@ -333,7 +333,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
 
                 {/* Bottom Action Tray */}
                 <div className="border-border/30 flex items-center justify-between gap-2 border-t pt-2.5">
-                  <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+                  <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
                     <User className="h-3 w-3" />
                     <span className="text-foreground/80 font-medium">{item.user}</span>
                   </div>
@@ -341,7 +341,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`${titleToWikiOSRoute(item.title)}?tab=history`}
-                      className="border-border/40 bg-accent/20 text-muted-foreground hover:bg-accent/40 hover:text-foreground inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all active:scale-95"
+                      className="border-border/40 bg-accent/20 text-muted-foreground hover:bg-accent/40 hover:text-foreground inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95"
                     >
                       <History className="h-3 w-3" />
                       <span>History</span>
@@ -349,7 +349,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
 
                     <Link
                       href={titleToWikiOSRoute(item.title)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-cyan-600 px-3 py-1 text-[11px] font-semibold text-white shadow-2xs transition-all hover:bg-cyan-500 active:scale-95"
+                      className="inline-flex items-center gap-1 rounded-lg bg-cyan-600 px-3 py-1 text-xs font-semibold text-white shadow-2xs transition-all hover:bg-cyan-500 active:scale-95"
                     >
                       <span>Read in WikiOS</span>
                       <ArrowUpRight className="h-3 w-3" />

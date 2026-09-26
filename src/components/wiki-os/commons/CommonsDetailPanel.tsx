@@ -169,10 +169,10 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
           {previewError ? (
             <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center text-muted-foreground/60">
               <Image className="h-8 w-8 opacity-40" />
-              <span className="text-[11px] font-medium tracking-wide text-muted-foreground">
+              <span className="text-xs font-medium tracking-wide text-muted-foreground">
                 Preview Unavailable
               </span>
-              <span className="text-[9px] text-muted-foreground/70">
+              <span className="text-xs text-muted-foreground/70">
                 Click download to view original source
               </span>
             </div>
@@ -187,7 +187,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
             />
           )}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-            <span className="flex items-center gap-1.5 rounded-md border border-white/10 bg-zinc-950/80 px-2.5 py-1.5 text-[10px] font-bold tracking-wider text-white uppercase shadow-lg backdrop-blur-md">
+            <span className="flex items-center gap-1.5 rounded-md border border-white/10 bg-zinc-950/80 px-2.5 py-1.5 text-xs font-bold tracking-wider text-white uppercase shadow-lg backdrop-blur-md">
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -206,7 +206,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
       <div className="border-b border-border/40 pb-3">
         {/* Format Selector */}
         <div className="px-3 pt-3 pb-2">
-          <span className="mb-1.5 block text-[9px] font-semibold tracking-wider text-muted-foreground uppercase">
+          <span className="mb-1.5 block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
             Wikitext Copy Format
           </span>
           <div
@@ -222,7 +222,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
                 aria-checked={format === fmt}
                 onClick={() => setFormat(fmt)}
                 className={cn(
-                  "py-1 text-[10px] font-medium rounded-md transition-all duration-150 active:scale-[0.97] cursor-pointer text-center select-none",
+                  "py-1 text-xs font-medium rounded-md transition-all duration-150 active:scale-[0.97] cursor-pointer text-center select-none",
                   format === fmt
                     ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -304,33 +304,33 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
 
       {/* Metadata */}
       <div className="flex-1 overflow-y-auto p-3 space-y-0.5">
-        <div className="flex items-center justify-between py-1.5 text-[11px] border-b border-border/30">
+        <div className="flex items-center justify-between py-1.5 text-xs border-b border-border/30">
           <span className="text-muted-foreground">Dimensions</span>
           <span className="text-foreground font-medium tabular-nums">
             {image.width} × {image.height}
           </span>
         </div>
         {image.mime && (
-          <div className="flex items-center justify-between py-1.5 text-[11px] border-b border-border/30">
+          <div className="flex items-center justify-between py-1.5 text-xs border-b border-border/30">
             <span className="text-muted-foreground">Type</span>
             <span className="text-foreground font-medium">{image.mime}</span>
           </div>
         )}
         {image.artist && (
-          <div className="flex items-center justify-between py-1.5 text-[11px] border-b border-border/30">
+          <div className="flex items-center justify-between py-1.5 text-xs border-b border-border/30">
             <span className="text-muted-foreground">Artist</span>
             <span className="max-w-[160px] truncate text-foreground font-medium">{image.artist}</span>
           </div>
         )}
         {image.license && (
-          <div className="flex items-center justify-between py-1.5 text-[11px] border-b border-border/30">
+          <div className="flex items-center justify-between py-1.5 text-xs border-b border-border/30">
             <span className="text-muted-foreground">License</span>
             <span className="text-foreground font-medium">{image.license}</span>
           </div>
         )}
         {image.description ? (
           <div className="pt-2">
-            <span className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider block mb-1">
+            <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wider block mb-1">
               Description
             </span>
             <p className="mb-2.5 text-xs leading-relaxed text-muted-foreground">
@@ -342,7 +342,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
                 href={image.descriptionUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-[10px] font-semibold text-foreground transition-all select-none hover:bg-muted active:scale-95"
+                className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-foreground transition-all select-none hover:bg-muted active:scale-95"
               >
                 <ExternalLink className="h-3 w-3" />
                 {image.descriptionUrl.includes("ixwiki.com")
@@ -359,7 +359,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
               href={image.descriptionUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-[10px] font-semibold text-foreground transition-all select-none hover:bg-muted active:scale-95"
+              className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-foreground transition-all select-none hover:bg-muted active:scale-95"
             >
               <ExternalLink className="h-3 w-3" />
               {image.descriptionUrl.includes("ixwiki.com")

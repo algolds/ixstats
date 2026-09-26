@@ -151,7 +151,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* Left Column: Paused/Saved Sessions */}
                 <div className="space-y-3">
-                  <div className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-bold tracking-wider uppercase">
+                  <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
                     <History className="h-3 w-3" />
                     <span>Saved & Paused Sessions</span>
                   </div>
@@ -160,7 +160,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                     <div className="border-foreground/30 bg-foreground/[0.02] flex flex-col items-center justify-center rounded-xl border px-4 py-8 text-center">
                       <BookOpen className="text-muted-foreground/45 mb-2 h-6 w-6" />
                       <span className="text-muted-foreground text-xs">No paused sessions yet</span>
-                      <span className="text-muted-foreground/60 mt-1 text-[10px]">
+                      <span className="text-muted-foreground/60 mt-1 text-xs">
                         Your reading/editing progress will appear here.
                       </span>
                     </div>
@@ -177,7 +177,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                             </span>
                             <button
                               onClick={() => handleResumeSession(session.title)}
-                              className="flex cursor-pointer items-center gap-1 rounded bg-blue-500/10 px-2 py-1 text-[10px] font-bold text-blue-600 transition-colors hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30"
+                              className="flex cursor-pointer items-center gap-1 rounded bg-blue-500/10 px-2 py-1 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30"
                             >
                               Resume
                             </button>
@@ -190,7 +190,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                                 style={{ width: `${session.scrollPercent}%` }}
                               />
                             </div>
-                            <span className="text-muted-foreground text-[9px] font-bold tabular-nums">
+                            <span className="text-muted-foreground text-xs font-bold tabular-nums">
                               {session.scrollPercent}% read
                             </span>
                           </div>
@@ -202,7 +202,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
                 {/* Right Column: Quick Notes / Scratchpad */}
                 <div className="flex flex-col space-y-2">
-                  <div className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-bold tracking-wider uppercase">
+                  <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
                     <FileText className="h-3 w-3" />
                     <span>Wiki Scratchpad</span>
                   </div>
@@ -254,7 +254,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                           />
                         )}
                       </div>
-                      <div className="text-muted-foreground/80 text-[10px]">
+                      <div className="text-muted-foreground/80 text-xs">
                         Worldbuilding Editor
                       </div>
                     </div>
@@ -269,7 +269,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                             {lorewardStats.stats?.totalScore ?? 0}
                           </span>
                         </div>
-                        <span className="text-muted-foreground text-[9px] font-semibold tracking-wider uppercase">
+                        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                           Score
                         </span>
                       </div>
@@ -280,7 +280,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                             {lorewardStats.stats?.currentStreak ?? 0}
                           </span>
                         </div>
-                        <span className="text-muted-foreground text-[9px] font-semibold tracking-wider uppercase">
+                        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                           Streak
                         </span>
                       </div>
@@ -291,7 +291,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 {/* Quick Actions & Recent */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                    <div className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                       Quick Actions
                     </div>
                     <div className="space-y-1">
@@ -329,7 +329,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                    <div className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                       Recent Pages Visited
                     </div>
                     {recentArticles.length === 0 ? (
@@ -381,7 +381,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                     <Crown className="h-4 w-4 text-amber-400" />
                     Country Management
                   </h3>
-                  <span className="text-muted-foreground/60 text-[10px] font-semibold">
+                  <span className="text-muted-foreground/60 text-xs font-semibold">
                     {countryName}
                   </span>
                 </div>

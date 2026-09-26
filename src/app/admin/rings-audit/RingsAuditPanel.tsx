@@ -59,9 +59,9 @@ function CountryRingsCard({
         )}
         <div>
           <span className="text-foreground font-semibold">{countryName}</span>
-          {slug && <span className="text-muted-foreground ml-2 text-[10px]">/ {slug}</span>}
+          {slug && <span className="text-muted-foreground ml-2 text-xs">/ {slug}</span>}
         </div>
-        <span className="text-muted-foreground ml-auto font-mono text-[9px]">
+        <span className="text-muted-foreground ml-auto font-mono text-xs">
           {countryId.slice(0, 8)}...
         </span>
       </div>
@@ -82,7 +82,7 @@ function CountryRingsCard({
                 className={`p-4 ${ep.id === "getActivityRingsData" ? "md:border-border/40 md:border-r" : ""}`}
               >
                 <div className="mb-3 flex items-center gap-1.5">
-                  <span className="rounded bg-blue-500/10 px-1.5 py-0.5 font-mono text-[9px] text-blue-600 dark:text-blue-400">
+                  <span className="rounded bg-blue-500/10 px-1.5 py-0.5 font-mono text-xs text-blue-600 dark:text-blue-400">
                     {ep.endpoint}
                   </span>
                 </div>

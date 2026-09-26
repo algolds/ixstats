@@ -382,7 +382,7 @@ export function MeetingScheduler({
                 {/* Linked Prefill Indicator */}
                 {defaultMeeting?.prefilledAgenda && (
                   <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200/90">
-                    <span className="mb-0.5 block text-[10px] font-semibold tracking-wider text-amber-500 uppercase">
+                    <span className="mb-0.5 block text-xs font-semibold tracking-wider text-amber-500 uppercase">
                       Linked Reference
                     </span>
                     <div className="flex items-center gap-2">
@@ -391,7 +391,7 @@ export function MeetingScheduler({
                       </span>
                       <Badge
                         variant="outline"
-                        className="border-amber-500/35 bg-amber-500/10 px-1.5 py-0 text-[9px] font-semibold text-amber-400"
+                        className="border-amber-500/35 bg-amber-500/10 px-1.5 py-0 text-xs font-semibold text-amber-400"
                       >
                         {defaultMeeting.prefilledAgenda.linkedIssueId
                           ? "CRISIS ISSUE"
@@ -412,7 +412,7 @@ export function MeetingScheduler({
                         type="button"
                         variant="ghost"
                         onClick={() => setIsChangingIntent(true)}
-                        className="h-5 cursor-pointer px-1.5 text-[10px] font-bold text-amber-500 hover:bg-amber-500/10 hover:text-amber-600"
+                        className="h-5 cursor-pointer px-1.5 text-xs font-bold text-amber-500 hover:bg-amber-500/10 hover:text-amber-600"
                       >
                         Change Intent
                       </Button>
@@ -429,7 +429,7 @@ export function MeetingScheduler({
                           <span className="text-xs font-semibold text-amber-900 dark:text-amber-100">
                             {activeTpl.name}
                           </span>
-                          <span className="mt-0.5 text-[10px] leading-snug text-amber-800/80 dark:text-amber-300/80">
+                          <span className="mt-0.5 text-xs leading-snug text-amber-800/80 dark:text-amber-300/80">
                             {activeTpl.description}
                           </span>
                         </div>
@@ -466,7 +466,7 @@ export function MeetingScheduler({
                             </span>
                             <span
                               className={cn(
-                                "mt-0.5 line-clamp-1 text-[10px] leading-snug",
+                                "mt-0.5 line-clamp-1 text-xs leading-snug",
                                 isSelected
                                   ? "text-amber-800/80 dark:text-amber-300/80"
                                   : "text-muted-foreground"
@@ -656,7 +656,7 @@ export function MeetingScheduler({
                         <span className="text-foreground">
                           {IxTime.formatIxTime(scheduledIxTime, false).replace(" (ILT)", "")}
                         </span>
-                        <span className="text-muted-foreground ml-auto text-[10px] font-normal">
+                        <span className="text-muted-foreground ml-auto text-xs font-normal">
                           (09:00)
                         </span>
                       </div>
@@ -700,7 +700,7 @@ export function MeetingScheduler({
                 <Layers className="h-4 w-4 text-amber-500" />
                 Roster & Agenda
               </h3>
-              <p className="text-muted-foreground mt-0.5 text-[11px]">
+              <p className="text-muted-foreground mt-0.5 text-xs">
                 {selectedOfficials.length} invited · {agendaItems.length} topics
               </p>
             </div>
@@ -735,7 +735,7 @@ export function MeetingScheduler({
                           <div
                             key={id}
                             className={cn(
-                              "flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] transition-all",
+                              "flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs transition-all",
                               isRecommended
                                 ? "border-amber-500/20 bg-amber-500/10 text-amber-500/90 dark:text-amber-400"
                                 : "border-white/5 bg-white/5 text-slate-300"
@@ -743,7 +743,7 @@ export function MeetingScheduler({
                           >
                             <div className="flex max-w-[100px] min-w-0 flex-col text-left leading-tight">
                               <span className="truncate font-semibold">{official.name}</span>
-                              <span className="truncate text-[8px] opacity-60">
+                              <span className="truncate text-xs opacity-60">
                                 {official.title}
                               </span>
                             </div>
@@ -829,7 +829,7 @@ export function MeetingScheduler({
                             </span>
                             <Badge
                               variant="outline"
-                              className="text-muted-foreground border-white/10 bg-white/5 px-1.5 py-0 font-mono text-[9px]"
+                              className="text-muted-foreground border-white/10 bg-white/5 px-1.5 py-0 font-mono text-xs"
                             >
                               {item.duration}m
                             </Badge>
@@ -851,7 +851,7 @@ export function MeetingScheduler({
                         {isExpanded && (
                           <div className="space-y-3 border-t border-white/5 bg-white/[0.02] p-3 text-xs">
                             <div>
-                              <Label className="text-muted-foreground text-[10px] uppercase">
+                              <Label className="text-muted-foreground text-xs uppercase">
                                 Topic Title
                               </Label>
                               <Input
@@ -867,7 +867,7 @@ export function MeetingScheduler({
 
                             <div className="grid grid-cols-2 gap-2.5">
                               <div>
-                                <Label className="text-muted-foreground text-[10px] uppercase">
+                                <Label className="text-muted-foreground text-xs uppercase">
                                   Duration (mins)
                                 </Label>
                                 <Input
@@ -882,7 +882,7 @@ export function MeetingScheduler({
                                 />
                               </div>
                               <div>
-                                <Label className="text-muted-foreground text-[10px] uppercase">
+                                <Label className="text-muted-foreground text-xs uppercase">
                                   Category
                                 </Label>
                                 <Select
@@ -908,7 +908,7 @@ export function MeetingScheduler({
                             </div>
 
                             <div>
-                              <Label className="text-muted-foreground text-[10px] uppercase">
+                              <Label className="text-muted-foreground text-xs uppercase">
                                 Description
                               </Label>
                               <Textarea

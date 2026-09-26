@@ -174,7 +174,7 @@ export function CollectiveActionsPanel({
                       <span className="font-medium">{action.title}</span>
                     </div>
                     <div className="mt-1 flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {action.actionType.replace("_", " ")}
                       </Badge>
                       <span className="text-muted-foreground text-xs">

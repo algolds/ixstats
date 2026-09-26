@@ -35,13 +35,13 @@ export function TaxRevenueProjections({ yields }: TaxRevenueProjectionsProps) {
               ACCENT_BORDER[ch.accent] ?? "border-border/20"
             )}
           >
-            <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+            <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
               {ch.shortLabel} Yield
             </p>
             <p className={cn("font-mono text-base font-bold tabular-nums", ch.accentClass)}>
               <CurrencyFlow value={yields[ch.key] ?? 0} decimalPlaces={2} />
             </p>
-            <p className="text-muted-foreground font-mono text-[10px]">
+            <p className="text-muted-foreground font-mono text-xs">
               <PercentageFlow
                 value={((yields[ch.key] ?? 0) / totalYield) * 100}
                 decimalPlaces={1}

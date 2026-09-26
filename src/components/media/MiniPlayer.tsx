@@ -51,7 +51,7 @@ export function MiniPlayer() {
               <span className="group-hover:text-primary truncate text-xs font-bold transition-colors">
                 {activeTrack.title}
               </span>
-              <span className="text-muted-foreground truncate text-[10px]">
+              <span className="text-muted-foreground truncate text-xs">
                 {activeTrack.subtitle}
               </span>
             </div>

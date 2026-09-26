@@ -36,8 +36,8 @@ const sizeClasses = {
 };
 
 const placeholderTextSize = {
-  xs: "text-[8px]",
-  sm: "text-[9px]",
+  xs: "text-xs",
+  sm: "text-xs",
   md: "text-xs",
   lg: "text-sm",
   xl: "text-base",

@@ -112,7 +112,7 @@ function ForumSearchModal({ open, onClose }: { open: boolean; onClose: () => voi
             autoComplete="off"
             spellCheck={false}
           />
-          <kbd className="hidden shrink-0 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] text-[var(--forum-text-dim)] sm:inline">
+          <kbd className="hidden shrink-0 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-xs text-[var(--forum-text-dim)] sm:inline">
             ESC
           </kbd>
         </div>

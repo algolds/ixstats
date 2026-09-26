@@ -112,9 +112,9 @@ export function MatchCommentary({
 
       {/* Volatility & Volumetric metrics */}
       {evaluation && (
-        <div className="grid grid-cols-2 gap-3 border-b border-white/5 pb-3 text-[10px] select-none md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 border-b border-white/5 pb-3 text-xs select-none md:grid-cols-4">
           <div>
-            <span className="block text-[8px] font-bold tracking-wider text-white/40 uppercase">
+            <span className="block text-xs font-bold tracking-wider text-white/40 uppercase">
               Win Prob
             </span>
             <span className="font-mono font-bold text-white/90">
@@ -122,7 +122,7 @@ export function MatchCommentary({
             </span>
           </div>
           <div>
-            <span className="block text-[8px] font-bold tracking-wider text-white/40 uppercase">
+            <span className="block text-xs font-bold tracking-wider text-white/40 uppercase">
               Possession
             </span>
             <span className="font-mono font-bold text-white/90">
@@ -130,7 +130,7 @@ export function MatchCommentary({
             </span>
           </div>
           <div>
-            <span className="block text-[8px] font-bold tracking-wider text-white/40 uppercase">
+            <span className="block text-xs font-bold tracking-wider text-white/40 uppercase">
               Tempo
             </span>
             <span className="font-mono font-bold text-white/90">
@@ -138,7 +138,7 @@ export function MatchCommentary({
             </span>
           </div>
           <div>
-            <span className="block text-[8px] font-bold tracking-wider text-white/40 uppercase">
+            <span className="block text-xs font-bold tracking-wider text-white/40 uppercase">
               Upset Volatility
             </span>
             <span className="font-mono font-bold text-white/90">
@@ -151,13 +151,13 @@ export function MatchCommentary({
       {/* Main timeline trace or generation CTA */}
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-[9px] font-semibold tracking-wider text-white/40 uppercase select-none">
+          <p className="text-xs font-semibold tracking-wider text-white/40 uppercase select-none">
             Live Match Feed
           </p>
           {hasCommentary && !isGenerating && (
             <button
               onClick={(e) => handleGenerate(e, true)}
-              className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-semibold text-white/60 transition-colors hover:border-cyan-500/30 hover:text-cyan-300"
+              className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold text-white/60 transition-colors hover:border-cyan-500/30 hover:text-cyan-300"
             >
               <Sparkles className="h-2.5 w-2.5" />
               Regenerate
@@ -174,7 +174,7 @@ export function MatchCommentary({
                   <p className="text-xs font-bold text-white">
                     Tuning AI Narration Transmitters...
                   </p>
-                  <p className="mt-1 max-w-[280px] text-[10px] text-white/50">
+                  <p className="mt-1 max-w-[280px] text-xs text-white/50">
                     Drafting play-by-play descriptions with high-fidelity commentary.
                   </p>
                 </div>
@@ -184,12 +184,12 @@ export function MatchCommentary({
                 <div className="absolute inset-0 bg-cyan-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <Sparkles className="mb-2.5 h-7 w-7 text-cyan-400 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12" />
                 <h4 className="text-xs font-bold text-white">No AI Commentary Generated</h4>
-                <p className="mt-1 mb-4 max-w-[280px] text-[10px] text-white/50">
+                <p className="mt-1 mb-4 max-w-[280px] text-xs text-white/50">
                   Experience this match through the eyes of our premium AI sports broadcast team.
                 </p>
                 <Button
                   onClick={handleGenerate}
-                  className="relative h-auto overflow-hidden rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-[10px] font-semibold text-white shadow-md transition-all group-hover:border-cyan-500/30 group-hover:shadow-cyan-500/10 hover:bg-white/20"
+                  className="relative h-auto overflow-hidden rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white shadow-md transition-all group-hover:border-cyan-500/30 group-hover:shadow-cyan-500/10 hover:bg-white/20"
                 >
                   <span className="relative z-10 flex items-center gap-1.5">
                     <Sparkles className="h-3 w-3 text-cyan-300" />

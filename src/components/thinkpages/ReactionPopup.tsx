@@ -216,7 +216,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
       {/* Current Reaction Counts */}
       {postReactionCounts && Object.keys(postReactionCounts).length > 0 && (
         <div className="border-border/40 mt-2 border-t pt-2">
-          <div className="text-muted-foreground mb-1.5 text-[10px] font-medium tracking-tight">
+          <div className="text-muted-foreground mb-1.5 text-xs font-medium tracking-tight">
             Current reactions:
           </div>
           <div className="flex flex-wrap gap-1 text-xs">
@@ -229,7 +229,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
               return (
                 <div
                   key={type}
-                  className="flex items-center gap-1 rounded-full bg-black/5 px-2 py-0.5 text-[11px] font-semibold dark:bg-white/10"
+                  className="flex items-center gap-1 rounded-full bg-black/5 px-2 py-0.5 text-xs font-semibold dark:bg-white/10"
                 >
                   {isDiscordEmoji ? (
                     <img

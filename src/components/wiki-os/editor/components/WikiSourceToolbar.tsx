@@ -175,7 +175,7 @@ export function WikiSourceToolbar({
         <div className="wikios-editor-format-group">
           <Popover>
             <PopoverTrigger className="wikios-editor-format-btn wikios-editor-format-select">
-              <span className="text-[11px] font-semibold tracking-tight">Heading</span>
+              <span className="text-xs font-semibold tracking-tight">Heading</span>
               <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
             </PopoverTrigger>
             <PopoverContent
@@ -218,7 +218,7 @@ export function WikiSourceToolbar({
                 <button
                   type="button"
                   onClick={() => insertAtLine("===== ", " =====")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] opacity-60 hover:bg-[var(--wikios-border)]"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs opacity-60 hover:bg-[var(--wikios-border)]"
                 >
                   <Hash className="h-3.5 w-3.5 text-zinc-400" />
                   <span>Heading 5</span>
@@ -282,7 +282,7 @@ export function WikiSourceToolbar({
             triggerContent={
               <>
                 <Puzzle className="h-3.5 w-3.5 shrink-0 text-blue-400" />
-                <span className="text-[11px] font-semibold tracking-tight">Templates</span>
+                <span className="text-xs font-semibold tracking-tight">Templates</span>
                 <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
               </>
             }

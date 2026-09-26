@@ -121,7 +121,7 @@ export function WikiUtilitiesRibbon({
               <Icon className="h-3.5 w-3.5" />
               <span>{tab.label}</span>
               {tab.badge && !isActive && (
-                <span className="bg-wiki/15 py-0.2 text-wiki rounded-md px-1 text-[9px] font-bold tracking-wider uppercase">
+                <span className="bg-wiki/15 py-0.2 text-wiki rounded-md px-1 text-xs font-bold tracking-wider uppercase">
                   {tab.badge}
                 </span>
               )}
@@ -143,7 +143,7 @@ export function WikiUtilitiesRibbon({
           >
             <Search className="text-muted-foreground h-3.5 w-3.5" />
             <span className="hidden md:inline">Search</span>
-            <kbd className="border-border/40 bg-background/50 py-0.2 text-muted-foreground hidden rounded border px-1 font-mono text-[9px] lg:inline-block">
+            <kbd className="border-border/40 bg-background/50 py-0.2 text-muted-foreground hidden rounded border px-1 font-mono text-xs lg:inline-block">
               ⌘K
             </kbd>
           </button>

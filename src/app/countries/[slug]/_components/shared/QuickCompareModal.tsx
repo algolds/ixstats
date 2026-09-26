@@ -62,7 +62,7 @@ export function QuickCompareModal({ isOpen, onClose, currentCountry }: QuickComp
       <DialogContent className="max-w-3xl border-white/10 bg-background/95 p-6 backdrop-blur-2xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
               Cross-Country Benchmarking
             </span>
           </div>
@@ -110,7 +110,7 @@ export function QuickCompareModal({ isOpen, onClose, currentCountry }: QuickComp
           {/* Current Country Column */}
           <div className="rounded-xl border border-[var(--flag-primary)]/30 bg-[var(--flag-primary)]/5 p-4 text-center">
             <div className="border-b border-white/10 pb-3">
-              <span className="text-[10px] font-extrabold uppercase text-[var(--flag-primary)]">Baseline</span>
+              <span className="text-xs font-extrabold uppercase text-[var(--flag-primary)]">Baseline</span>
               <h4 className="text-sm font-extrabold text-foreground truncate">{currentCountry.name}</h4>
             </div>
             <div className="space-y-4 pt-3 text-xs font-bold text-foreground">
@@ -128,7 +128,7 @@ export function QuickCompareModal({ isOpen, onClose, currentCountry }: QuickComp
           {/* Selected Peer Column */}
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center">
             <div className="border-b border-white/10 pb-3">
-              <span className="text-[10px] font-extrabold uppercase text-muted-foreground">Peer</span>
+              <span className="text-xs font-extrabold uppercase text-muted-foreground">Peer</span>
               <h4 className="text-sm font-extrabold text-foreground truncate">{selectedPeer.name}</h4>
             </div>
             <div className="space-y-4 pt-3 text-xs font-bold text-foreground">

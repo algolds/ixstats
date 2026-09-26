@@ -456,7 +456,7 @@ export function PostActions({
   const iconSize = size === "sm" ? "h-3.5 w-3.5" : size === "lg" ? "h-5 w-5" : "h-4 w-4";
   const pillPadding =
     size === "sm"
-      ? "px-2 py-1 text-[11px]"
+      ? "px-2 py-1 text-xs"
       : size === "lg"
         ? "px-3.5 py-2 text-sm"
         : "px-2.5 py-1.5 text-xs";

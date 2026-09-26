@@ -36,7 +36,7 @@ export const RackEconomySection = React.memo(function RackEconomySection({
           <span className="text-foreground block text-xs font-medium">
             Limited Supply Print Run
           </span>
-          <span className="text-muted-foreground text-[10px]">Cap total prints in circulation</span>
+          <span className="text-muted-foreground text-xs">Cap total prints in circulation</span>
         </div>
         <input
           type="checkbox"

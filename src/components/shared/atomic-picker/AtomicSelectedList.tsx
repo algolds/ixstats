@@ -61,7 +61,7 @@ function AtomicSelectedListComponent<TType extends string = string>({
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/20 px-4 py-10 text-center">
         <Package className="mx-auto mb-2.5 h-9 w-9 text-muted-foreground/60 animate-pulse" />
         <p className="text-xs font-semibold text-foreground">{emptyTitle}</p>
-        <p className="mt-0.5 max-w-[220px] text-[11px] text-muted-foreground">{emptySubtitle}</p>
+        <p className="mt-0.5 max-w-[220px] text-xs text-muted-foreground">{emptySubtitle}</p>
       </div>
     );
   }
@@ -73,7 +73,7 @@ function AtomicSelectedListComponent<TType extends string = string>({
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Selected ({selectedComponents.length}/{maxComponents})
         </span>
-        <Badge variant="outline" className="text-[10px] font-medium border-border/50 text-muted-foreground">
+        <Badge variant="outline" className="text-xs font-medium border-border/50 text-muted-foreground">
           Avg Eff: {totals.avgEff}%
         </Badge>
       </div>
@@ -106,7 +106,7 @@ function AtomicSelectedListComponent<TType extends string = string>({
                         {component.name}
                       </h5>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span>{component.category}</span>
                       <span>•</span>
                       <span>{currencyFormatter(component.implementationCost)}</span>

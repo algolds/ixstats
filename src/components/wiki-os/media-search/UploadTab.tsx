@@ -191,7 +191,7 @@ export function UploadTab({
       </div>
 
       {/* Requirements low-contrast subtle footer */}
-      <div className="border-border/5 text-muted-foreground mt-6 flex justify-between border-t pt-4 text-[10px]">
+      <div className="border-border/5 text-muted-foreground mt-6 flex justify-between border-t pt-4 text-xs">
         <span>Maximum size: 5MB</span>
         <span>Formats: PNG, JPG, GIF, WEBP, SVG</span>
         <span>Directly embeds in your content</span>

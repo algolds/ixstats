@@ -112,11 +112,11 @@ function CalcNode({ data, selected }: NodeProps) {
 
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
             {data.title as string}
           </span>
           {selected && (
-            <Badge className="bg-primary/20 text-primary h-3.5 border-0 px-1 text-[8px] select-none">
+            <Badge className="bg-primary/20 text-primary h-3.5 border-0 px-1 text-xs select-none">
               Selected
             </Badge>
           )}
@@ -124,7 +124,7 @@ function CalcNode({ data, selected }: NodeProps) {
         <div className="text-foreground truncate text-sm font-extrabold">
           {data.mainValue as string}
         </div>
-        <div className="text-muted-foreground truncate text-[10px]">{data.subValue as string}</div>
+        <div className="text-muted-foreground truncate text-xs">{data.subValue as string}</div>
       </div>
 
       {outputs.map((pos) => {
@@ -191,7 +191,7 @@ export function CountryFormulaFlow({
         />
         <Panel
           position="top-left"
-          className="bg-background/80 border-border/55 text-muted-foreground rounded-lg border px-3 py-1.5 text-[9px] shadow-sm backdrop-blur-sm select-none"
+          className="bg-background/80 border-border/55 text-muted-foreground rounded-lg border px-3 py-1.5 text-xs shadow-sm backdrop-blur-sm select-none"
         >
           <span className="mr-1 font-bold text-indigo-500">💡 Formula Map:</span>
           Click nodes to inspect formulas and values in the details panel below.

@@ -62,7 +62,7 @@ function SubmitPromptForm() {
               maxLength={200}
               className="w-full rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-3 py-2 text-sm text-[var(--wikios-text)] placeholder:text-[var(--wikios-text-dim)] focus:border-[var(--wikios-accent)] focus:outline-none"
             />
-            <span className="text-muted-foreground text-[10px]">{title.length}/200</span>
+            <span className="text-muted-foreground text-xs">{title.length}/200</span>
           </div>
 
           <div>
@@ -77,11 +77,11 @@ function SubmitPromptForm() {
               rows={4}
               className="w-full resize-none rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-3 py-2 text-sm text-[var(--wikios-text)] placeholder:text-[var(--wikios-text-dim)] focus:border-[var(--wikios-accent)] focus:outline-none"
             />
-            <span className="text-muted-foreground text-[10px]">{question.length}/500</span>
+            <span className="text-muted-foreground text-xs">{question.length}/500</span>
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            <Badge variant="outline" className="text-muted-foreground text-[10px]">
+            <Badge variant="outline" className="text-muted-foreground text-xs">
               Submitted as draft for admin review
             </Badge>
             <Button

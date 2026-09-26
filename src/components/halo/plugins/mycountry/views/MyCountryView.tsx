@@ -126,7 +126,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                   const slug = country.slug || country.name.replace(/\s+/g, "_");
                   window.location.href = createAbsoluteUrl(`/countries/${slug}`);
                 }}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/15 border-border/50 bg-accent/10 hover:border-border inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-1 text-[10.5px] font-medium transition-all duration-150 active:scale-95"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/15 border-border/50 bg-accent/10 hover:border-border inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-all duration-150 active:scale-95"
                 title="Public Country Profile"
               >
                 <User className="h-3 w-3 text-blue-400" />
@@ -137,7 +137,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 onClick={() => {
                   window.location.href = createAbsoluteUrl("/mycountry/editor");
                 }}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/15 border-border/50 bg-accent/10 hover:border-border inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-1 text-[10.5px] font-medium transition-all duration-150 active:scale-95"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/15 border-border/50 bg-accent/10 hover:border-border inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-all duration-150 active:scale-95"
                 title="Open MyCountry Map Editor"
               >
                 <Edit3 className="h-3 w-3 text-amber-400" />
@@ -175,11 +175,11 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               </div>
               {/* Membership badge */}
               {userProfile.membershipTier === "mycountry_premium" ? (
-                <span className="inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-600 uppercase shadow-xs dark:text-amber-400">
+                <span className="inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-bold tracking-wider text-amber-600 uppercase shadow-xs dark:text-amber-400">
                   Premium
                 </span>
               ) : (
-                <span className="text-muted-foreground/80 border-border bg-muted/40 inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                <span className="text-muted-foreground/80 border-border bg-muted/40 inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-bold tracking-wider uppercase">
                   Basic
                 </span>
               )}
@@ -189,7 +189,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             <div className="mb-1 flex w-full items-center justify-between">
               {userProfile.membershipTier === "mycountry_premium" ? (
                 <PreText
-                  className="text-[10px] font-semibold text-amber-600 dark:text-amber-400"
+                  className="text-xs font-semibold text-amber-600 dark:text-amber-400"
                   whiteSpace="nowrap"
                 >
                   Premium active • Member since{" "}
@@ -200,7 +200,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 </PreText>
               ) : (
                 <PreText
-                  className="text-muted-foreground/80 text-[10px] font-medium"
+                  className="text-muted-foreground/80 text-xs font-medium"
                   whiteSpace="nowrap"
                 >
                   Basic Membership
@@ -213,13 +213,13 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               (userProfile.role?.level !== undefined && userProfile.role.level <= 20)) && (
               <div className="mt-1 mb-2 flex flex-wrap gap-1">
                 {userProfile.role && (
-                  <span className="inline-flex items-center gap-0.5 rounded border border-indigo-500/25 bg-indigo-500/5 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-600 dark:text-indigo-400">
+                  <span className="inline-flex items-center gap-0.5 rounded border border-indigo-500/25 bg-indigo-500/5 px-1.5 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                     <Shield className="h-2 w-2 shrink-0 text-indigo-600 dark:text-indigo-400" />
                     {userProfile.role.displayName}
                   </span>
                 )}
                 {userProfile.role?.level !== undefined && userProfile.role.level <= 20 && (
-                  <span className="inline-flex items-center gap-0.5 rounded border border-amber-500/25 bg-amber-500/5 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600 dark:text-amber-400">
+                  <span className="inline-flex items-center gap-0.5 rounded border border-amber-500/25 bg-amber-500/5 px-1.5 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
                     <Crown className="h-2.5 w-2.5 shrink-0 text-amber-500 dark:text-amber-400" />
                     Founding Member
                   </span>
@@ -271,14 +271,14 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                           className="rounded-lg bg-white/[0.04] p-1.5 text-center transition-all hover:bg-white/[0.07] active:scale-[0.98]"
                         >
                           <PreText
-                            className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase"
+                            className="text-muted-foreground/60 text-xs font-medium tracking-wider uppercase"
                             whiteSpace="nowrap"
                           >
                             {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
                           </PreText>
                           <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
                             <PreText
-                              className="text-foreground text-[10px] font-bold tracking-tight"
+                              className="text-foreground text-xs font-bold tracking-tight"
                               whiteSpace="nowrap"
                             >
                               {`$${
@@ -287,7 +287,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                                   : Math.round(stats.currentTotalGdp).toLocaleString("en-US")
                               }`}
                             </PreText>
-                            <GrowthArrow value={stats.gdpGrowth} size={8} className="text-[8px]" />
+                            <GrowthArrow value={stats.gdpGrowth} size={8} className="text-xs" />
                           </div>
                         </button>
 
@@ -302,14 +302,14 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                           className="rounded-lg bg-white/[0.04] p-1.5 text-center transition-all hover:bg-white/[0.07] active:scale-[0.98]"
                         >
                           <PreText
-                            className="text-muted-foreground/60 text-[8px] font-medium tracking-wider uppercase"
+                            className="text-muted-foreground/60 text-xs font-medium tracking-wider uppercase"
                             whiteSpace="nowrap"
                           >
                             {metricView.population === "total" ? "Population" : "Density"}
                           </PreText>
                           <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
                             <PreText
-                              className="text-foreground text-[10px] font-bold tracking-tight"
+                              className="text-foreground text-xs font-bold tracking-tight"
                               whiteSpace="nowrap"
                             >
                               {metricView.population === "total"
@@ -322,14 +322,14 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                               <GrowthArrow
                                 value={stats.popGrowth}
                                 size={8}
-                                className="text-[8px]"
+                                className="text-xs"
                               />
                             )}
                           </div>
                         </button>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="px-2 py-1 text-[10px]">
+                    <TooltipContent side="bottom" className="px-2 py-1 text-xs">
                       <PreText whiteSpace="nowrap">Click metrics to toggle views</PreText>
                     </TooltipContent>
                   </Tooltip>
@@ -340,7 +340,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
 
           {/* ── Country Actions Grid ──────────────────────────── */}
           <div className="px-3 py-2">
-            <p className="text-muted-foreground/60 px-1 pb-2 text-[10px] font-bold tracking-widest uppercase">
+            <p className="text-muted-foreground/60 px-1 pb-2 text-xs font-bold tracking-widest uppercase">
               Country Actions
             </p>
             <div className="grid grid-cols-2 gap-2">

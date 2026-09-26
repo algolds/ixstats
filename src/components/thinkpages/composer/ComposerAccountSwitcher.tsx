@@ -61,7 +61,7 @@ export function ComposerAccountSwitcher({
         </TooltipTrigger>
         <TooltipContent
           side="right"
-          className="bg-popover/95 text-foreground border-border border text-[11px] font-medium tracking-tight shadow-xl backdrop-blur-md"
+          className="bg-popover/95 text-foreground border-border border text-xs font-medium tracking-tight shadow-xl backdrop-blur-md"
         >
           Switch account
         </TooltipContent>
@@ -78,7 +78,7 @@ export function ComposerAccountSwitcher({
             className="dark:border-border dark:bg-popover/98 absolute top-11 left-0 z-50 w-64 rounded-2xl border border-black/10 bg-white/90 p-2.5 shadow-2xl backdrop-blur-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
           >
             <div className="dark:border-border/60 mb-2 flex items-center justify-between border-b border-black/5 px-2.5 pb-2">
-              <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 Switch Account
               </span>
               {isOwner && accounts.length < 25 && (
@@ -89,7 +89,7 @@ export function ComposerAccountSwitcher({
                     onCreateAccount?.();
                     setShowAccountManager(false);
                   }}
-                  className="h-5 px-1.5 text-[9px] font-bold text-blue-500 transition-all hover:bg-blue-500/10 hover:text-blue-600 active:scale-95 dark:text-blue-400 dark:hover:text-blue-300"
+                  className="h-5 px-1.5 text-xs font-bold text-blue-500 transition-all hover:bg-blue-500/10 hover:text-blue-600 active:scale-95 dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   <Plus className="mr-0.5 h-2.5 w-2.5" />
                   Add Account
@@ -122,13 +122,13 @@ export function ComposerAccountSwitcher({
                     <div className="text-foreground truncate text-xs leading-tight font-bold tracking-tight">
                       {acc.displayName}
                     </div>
-                    <div className="text-muted-foreground mt-0.5 truncate text-[10px] font-medium">
+                    <div className="text-muted-foreground mt-0.5 truncate text-xs font-medium">
                       @{acc.username}
                     </div>
                   </div>
                   <Badge
                     variant="outline"
-                    className="dark:border-border text-muted-foreground h-4 border-slate-200 px-1.5 py-0 text-[8px] font-bold tracking-wider uppercase"
+                    className="dark:border-border text-muted-foreground h-4 border-slate-200 px-1.5 py-0 text-xs font-bold tracking-wider uppercase"
                   >
                     {acc.accountType}
                   </Badge>

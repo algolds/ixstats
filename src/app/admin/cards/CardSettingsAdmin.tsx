@@ -217,7 +217,7 @@ export function CardSettingsAdmin({
                 <span>{subtab.label}</span>
                 {subtab.badge && (
                   <span
-                    className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    className={`ml-1 rounded-full px-2 py-0.5 text-xs font-bold ${
                       subtab.badgeVariant === "destructive"
                         ? "border border-rose-500/30 bg-rose-500/20 text-rose-500"
                         : "bg-muted text-muted-foreground border-border border"

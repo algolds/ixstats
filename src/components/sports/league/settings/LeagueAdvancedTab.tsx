@@ -150,7 +150,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
             Roster
           </Button>
         </div>
-        <p className="text-muted-foreground text-[10px]">
+        <p className="text-muted-foreground text-xs">
           As league creator you can rename, recolor, and rebrand any team here.
         </p>
       </div>
@@ -220,7 +220,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
         </Label>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="games-per-season" className="text-[11px]">
+            <Label htmlFor="games-per-season" className="text-xs">
               Games Per Season
             </Label>
             <Input
@@ -233,7 +233,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="double-rr" className="text-[11px]">
+            <Label htmlFor="double-rr" className="text-xs">
               Double Round Robin
             </Label>
             <Select
@@ -250,7 +250,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="playoff-format" className="text-[11px]">
+            <Label htmlFor="playoff-format" className="text-xs">
               Playoff Format
             </Label>
             <Select value={playoffFormat} onValueChange={setPlayoffFormat}>
@@ -265,7 +265,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="rng-seed" className="text-[11px]">
+            <Label htmlFor="rng-seed" className="text-xs">
               RNG Seed Override
             </Label>
             <Input
@@ -305,7 +305,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
               <div className="bg-muted/30 border-border/10 space-y-3 rounded-lg border p-3">
                 <div className="flex items-center justify-around gap-2">
                   <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                    <span className="text-muted-foreground w-full truncate text-center text-[10px] font-bold">
+                    <span className="text-muted-foreground w-full truncate text-center text-xs font-bold">
                       {activeMatches.find((m: any) => m.id === overrideMatchId)?.homeTeam.name}
                     </span>
                     <Input
@@ -320,7 +320,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
                   </div>
                   <span className="text-muted-foreground/45 text-sm font-semibold">VS</span>
                   <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                    <span className="text-muted-foreground w-full truncate text-center text-[10px] font-bold">
+                    <span className="text-muted-foreground w-full truncate text-center text-xs font-bold">
                       {activeMatches.find((m: any) => m.id === overrideMatchId)?.awayTeam.name}
                     </span>
                     <Input

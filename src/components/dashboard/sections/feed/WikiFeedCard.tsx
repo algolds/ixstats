@@ -328,7 +328,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                 {cleanTitle}
               </Link>
               {activity._isNew && (
-                <span className="py-0.2 shrink-0 rounded-full border border-wiki/30 bg-wiki/15 px-2 text-[9px] font-semibold tracking-wider text-wiki uppercase">
+                <span className="py-0.2 shrink-0 rounded-full border border-wiki/30 bg-wiki/15 px-2 text-xs font-semibold tracking-wider text-wiki uppercase">
                   New
                 </span>
               )}
@@ -423,7 +423,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           <button
             type="button"
             onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
-            className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 active:scale-95"
+            className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium tracking-tight transition-all duration-150 active:scale-95"
           >
             <ChevronDown
               className={cn(
@@ -443,7 +443,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                 return (
                   <div
                     key={i}
-                    className="text-muted-foreground flex items-center justify-between py-0.5 text-[11px] tracking-tight"
+                    className="text-muted-foreground flex items-center justify-between py-0.5 text-xs tracking-tight"
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-1.5 truncate">
                       <span className="text-foreground shrink-0 font-semibold">
@@ -452,7 +452,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                       <span className="text-muted-foreground/40">·</span>
                       <span className="text-foreground/80 truncate">{subDesc}</span>
                     </div>
-                    <span className="text-muted-foreground/70 ml-2 shrink-0 text-[10px] font-medium tabular-nums">
+                    <span className="text-muted-foreground/70 ml-2 shrink-0 text-xs font-medium tabular-nums">
                       {formatTimeAgo(new Date(sub.timestamp))}
                     </span>
                   </div>
@@ -481,7 +481,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             <Edit className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
             <span>Margin</span>
             {marginThreadsCount > 0 && (
-              <span className="py-0.2 rounded-full bg-yellow-400/25 px-1.5 text-[10px] font-bold text-yellow-700 dark:text-yellow-300">
+              <span className="py-0.2 rounded-full bg-yellow-400/25 px-1.5 text-xs font-bold text-yellow-700 dark:text-yellow-300">
                 {marginThreadsCount}
               </span>
             )}
@@ -592,14 +592,14 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                   </span>
                   <Link
                     href="/stashes"
-                    className="text-muted-foreground hover:text-foreground text-[10px] transition-colors"
+                    className="text-muted-foreground hover:text-foreground text-xs transition-colors"
                   >
                     View all →
                   </Link>
                 </div>
 
                 {userStashes.length === 0 ? (
-                  <p className="text-muted-foreground py-1 text-[11px]">
+                  <p className="text-muted-foreground py-1 text-xs">
                     No custom stashes found. Click Save to Stash to create your default stash.
                   </p>
                 ) : (
@@ -639,7 +639,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                       unstashMutation.mutate({ pageTitle: cleanTitle });
                       setIsStashPopoverOpen(false);
                     }}
-                    className="border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/15 flex w-full cursor-pointer items-center gap-1.5 rounded-xl border px-2 py-1.5 text-[11px] font-medium transition-colors"
+                    className="border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/15 flex w-full cursor-pointer items-center gap-1.5 rounded-xl border px-2 py-1.5 text-xs font-medium transition-colors"
                   >
                     <Trash className="h-3 w-3" />
                     <span>Remove from all stashes</span>
@@ -688,7 +688,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                 <div className="flex items-center gap-2">
                   <Link
                     href={marginHref}
-                    className="text-muted-foreground text-[10px] transition-colors hover:text-yellow-500"
+                    className="text-muted-foreground text-xs transition-colors hover:text-yellow-500"
                   >
                     Open Margin reader →
                   </Link>

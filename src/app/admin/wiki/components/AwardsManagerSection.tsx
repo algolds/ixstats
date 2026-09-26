@@ -257,7 +257,7 @@ export function AwardsManagerSection() {
 
               {/* Medal Icon Builder Section */}
               <div className="border-border/20 space-y-3 border-t pt-3">
-                <span className="text-[10px] font-black tracking-wider text-amber-500 uppercase">
+                <span className="text-xs font-black tracking-wider text-amber-500 uppercase">
                   Medal Icon Builder
                 </span>
 
@@ -329,7 +329,7 @@ export function AwardsManagerSection() {
 
                 {/* Ambient Glass Medal Preview */}
                 <div className="border-border/40 bg-muted/20 flex flex-col items-center justify-center rounded-xl border p-3.5 backdrop-blur-md">
-                  <span className="text-muted-foreground/60 mb-2 text-[10px] font-bold uppercase select-none">
+                  <span className="text-muted-foreground/60 mb-2 text-xs font-bold uppercase select-none">
                     Live Medal Preview
                   </span>
                   <div className="border-border/50 bg-card/65 relative flex h-14 w-14 items-center justify-center rounded-full border shadow-inner transition-all duration-300">
@@ -359,7 +359,7 @@ export function AwardsManagerSection() {
                   <span className="text-foreground mt-2 max-w-[15rem] truncate text-xs font-black">
                     {name || "Award Title"}
                   </span>
-                  <span className="text-muted-foreground/70 mt-0.5 text-[9px] font-bold tracking-wider uppercase">
+                  <span className="text-muted-foreground/70 mt-0.5 text-xs font-bold tracking-wider uppercase">
                     {category.replace("_", " ")}
                   </span>
                 </div>
@@ -522,7 +522,7 @@ export function AwardsManagerSection() {
                           <td className="px-4 py-2">
                             <span
                               className={cn(
-                                "rounded border px-1.5 py-0.5 text-[9px] font-black tracking-wider uppercase",
+                                "rounded border px-1.5 py-0.5 text-xs font-black tracking-wider uppercase",
                                 typeColors[winner.type] || "bg-muted text-muted-foreground"
                               )}
                             >
@@ -555,7 +555,7 @@ export function AwardsManagerSection() {
                                 <ExternalLink className="h-3 w-3" />
                               </a>
                             ) : (
-                              <span className="text-muted-foreground text-[11px] italic">
+                              <span className="text-muted-foreground text-xs italic">
                                 No page
                               </span>
                             )}
@@ -565,7 +565,7 @@ export function AwardsManagerSection() {
                               {winner.winnerScore ? `${winner.winnerScore} pts` : "—"}
                             </span>
                             {winner.winnerBytes ? (
-                              <span className="text-muted-foreground ml-1.5 text-[10px]">
+                              <span className="text-muted-foreground ml-1.5 text-xs">
                                 (+{(winner.winnerBytes / 1000).toFixed(1)}k bytes)
                               </span>
                             ) : null}

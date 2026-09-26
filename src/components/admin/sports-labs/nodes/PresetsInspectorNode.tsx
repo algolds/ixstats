@@ -84,7 +84,7 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
               <span className="text-muted-foreground">Rating Vectors</span>
               <div className="mt-1 flex flex-wrap gap-1">
                 {activePreset.ratingVector.map((v) => (
-                  <Badge key={v} variant="secondary" className="text-[10px]">
+                  <Badge key={v} variant="secondary" className="text-xs">
                     {v}
                   </Badge>
                 ))}
@@ -110,7 +110,7 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
               <span className="text-2xl">{p.icon}</span>
               <div>
                 <p className="font-semibold">{p.name}</p>
-                <p className="text-muted-foreground text-[10px] capitalize">
+                <p className="text-muted-foreground text-xs capitalize">
                   {p.archetype} &middot; {p.federationShort}
                 </p>
               </div>

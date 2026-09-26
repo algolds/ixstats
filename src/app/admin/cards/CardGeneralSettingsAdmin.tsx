@@ -94,7 +94,7 @@ export function CardGeneralSettingsAdmin() {
                 <label className="text-foreground block text-xs font-semibold">
                   Global Trading & Auction House
                 </label>
-                <p className="text-muted-foreground text-[11px]">
+                <p className="text-muted-foreground text-xs">
                   Master kill-switch for direct card trades and auction marketplace
                 </p>
               </div>
@@ -110,7 +110,7 @@ export function CardGeneralSettingsAdmin() {
                 <label className="text-foreground block text-xs font-semibold">
                   Marketplace Transaction Tax (House Rake)
                 </label>
-                <p className="text-muted-foreground text-[11px]">
+                <p className="text-muted-foreground text-xs">
                   Percentage fee deducted from card sales/auctions
                 </p>
               </div>
@@ -147,7 +147,7 @@ export function CardGeneralSettingsAdmin() {
                 <label className="text-foreground block text-xs font-semibold">
                   Daily Free Pack Allowance
                 </label>
-                <p className="text-muted-foreground text-[11px]">
+                <p className="text-muted-foreground text-xs">
                   Number of complimentary packs grantable per cooldown cycle
                 </p>
               </div>
@@ -170,7 +170,7 @@ export function CardGeneralSettingsAdmin() {
                 <label className="text-foreground block text-xs font-semibold">
                   Free Pack Reset Interval
                 </label>
-                <p className="text-muted-foreground text-[11px]">
+                <p className="text-muted-foreground text-xs">
                   Hours required between consecutive free pack claims
                 </p>
               </div>
@@ -206,7 +206,7 @@ export function CardGeneralSettingsAdmin() {
                 <label className="text-foreground block text-xs font-semibold">
                   Player Lore Card Submissions
                 </label>
-                <p className="text-muted-foreground text-[11px]">
+                <p className="text-muted-foreground text-xs">
                   Allow regular players to propose lore cards for review
                 </p>
               </div>
@@ -222,7 +222,7 @@ export function CardGeneralSettingsAdmin() {
                 <label className="text-foreground block text-xs font-semibold">
                   Auto-Resolve Wiki Thumbnails
                 </label>
-                <p className="text-muted-foreground text-[11px]">
+                <p className="text-muted-foreground text-xs">
                   Automatically extract artwork during bulk wiki lore card scraping
                 </p>
               </div>
@@ -253,7 +253,7 @@ export function CardGeneralSettingsAdmin() {
                 <label className="text-foreground block text-xs font-semibold">
                   Player Binder Capacity Cap
                 </label>
-                <p className="text-muted-foreground text-[11px]">
+                <p className="text-muted-foreground text-xs">
                   Maximum active cards a user can hold in their collection
                 </p>
               </div>
@@ -277,7 +277,7 @@ export function CardGeneralSettingsAdmin() {
                 <label className="text-foreground block text-xs font-semibold">
                   Max Batch Junk/Recycle Limit
                 </label>
-                <p className="text-muted-foreground text-[11px]">
+                <p className="text-muted-foreground text-xs">
                   Maximum cards recyclable in a single batch payout call
                 </p>
               </div>

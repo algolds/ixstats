@@ -135,7 +135,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
               </div>
             </div>
             {meta?.qualityScore != null && (
-              <div className="text-muted-foreground/70 pt-1 text-[11px]">
+              <div className="text-muted-foreground/70 pt-1 text-xs">
                 Article Quality Score: {Math.round(Number(meta.qualityScore))}/100
               </div>
             )}

@@ -235,7 +235,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               ) : (
                 <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 p-2 text-center text-muted-foreground">
                   <Flag className="h-6 w-6 text-muted-foreground/60" />
-                  <span className="text-[10px] font-semibold">No Flag</span>
+                  <span className="text-xs font-semibold">No Flag</span>
                 </div>
               )}
 
@@ -308,7 +308,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
             <div className="flex flex-wrap items-center gap-1.5 text-xs">
               <Badge
                 variant="secondary"
-                className="gap-1 border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-500 dark:text-amber-400"
+                className="gap-1 border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-500 dark:text-amber-400"
               >
                 <Crown className="h-3 w-3" />
                 <span>{governmentType || "Republic"}</span>
@@ -317,7 +317,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               {demonym && (
                 <Badge
                   variant="outline"
-                  className="gap-1 border-border/60 bg-muted/30 px-2 py-0.5 text-[11px] font-medium text-foreground"
+                  className="gap-1 border-border/60 bg-muted/30 px-2 py-0.5 text-xs font-medium text-foreground"
                 >
                   <Users className="h-3 w-3 text-muted-foreground" />
                   <span>{demonym}</span>
@@ -327,7 +327,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               {capitalCity && (
                 <Badge
                   variant="outline"
-                  className="gap-1 border-border/60 bg-muted/30 px-2 py-0.5 text-[11px] font-medium text-foreground"
+                  className="gap-1 border-border/60 bg-muted/30 px-2 py-0.5 text-xs font-medium text-foreground"
                 >
                   <MapPin className="h-3 w-3 text-muted-foreground" />
                   <span>{capitalCity}</span>

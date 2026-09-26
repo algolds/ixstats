@@ -425,11 +425,11 @@ export function WikiRepositoryTab({
 
             {/* Filters bar */}
             {isCategoryExpanded && (
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-[11px] transition-all">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs transition-all">
                 <div className="flex flex-wrap items-center gap-3">
                   {/* File Type Segmented Control */}
                   <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase select-none">
+                    <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
                       Type:
                     </span>
                     <div
@@ -445,7 +445,7 @@ export function WikiRepositoryTab({
                           aria-checked={fileTypeFilter === type}
                           onClick={() => setFileTypeFilter(type)}
                           className={cn(
-                            "rounded px-2 py-0.5 text-[10px] font-medium transition-all duration-150 active:scale-[0.97] select-none cursor-pointer uppercase",
+                            "rounded px-2 py-0.5 text-xs font-medium transition-all duration-150 active:scale-[0.97] select-none cursor-pointer uppercase",
                             fileTypeFilter === type
                               ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                               : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -459,7 +459,7 @@ export function WikiRepositoryTab({
 
                   {/* Orientation Segmented Control */}
                   <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase select-none">
+                    <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
                       Orient:
                     </span>
                     <div
@@ -475,7 +475,7 @@ export function WikiRepositoryTab({
                           aria-checked={orientationFilter === orient}
                           onClick={() => setOrientationFilter(orient)}
                           className={cn(
-                            "rounded px-2 py-0.5 text-[10px] font-medium transition-all duration-150 active:scale-[0.97] select-none cursor-pointer",
+                            "rounded px-2 py-0.5 text-xs font-medium transition-all duration-150 active:scale-[0.97] select-none cursor-pointer",
                             orientationFilter === orient
                               ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                               : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -501,7 +501,7 @@ export function WikiRepositoryTab({
                       setFileTypeFilter("all");
                       setOrientationFilter("all");
                     }}
-                    className="cursor-pointer text-[11px] font-medium text-muted-foreground hover:text-foreground active:scale-[0.97] transition-all underline underline-offset-2"
+                    className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.97] transition-all underline underline-offset-2"
                   >
                     Reset Filters
                   </button>
@@ -515,7 +515,7 @@ export function WikiRepositoryTab({
                 {activeCategories.map((cat) => (
                   <span
                     key={cat}
-                    className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-[10px] font-medium text-foreground backdrop-blur-sm shadow-2xs"
+                    className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-xs font-medium text-foreground backdrop-blur-sm shadow-2xs"
                   >
                     <span>{cat}</span>
                     <button
@@ -534,7 +534,7 @@ export function WikiRepositoryTab({
 
             {browsingCategory && !isSearchMode && (
               <div className="mt-1 flex flex-wrap gap-1.5">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/40 px-2.5 py-0.5 text-[10px] font-medium text-foreground">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/40 px-2.5 py-0.5 text-xs font-medium text-foreground">
                   <span className="text-muted-foreground">Browsing:</span>
                   <span className="font-semibold">{browsingCategory}</span>
                   <button
@@ -637,10 +637,10 @@ export function WikiRepositoryTab({
                           </div>
                         </div>
                         <div className="flex flex-col gap-0.5 p-2 text-left">
-                          <span className="truncate text-[11px] font-medium text-foreground/90 group-hover:text-foreground">
+                          <span className="truncate text-xs font-medium text-foreground/90 group-hover:text-foreground">
                             {cleanTitle}
                           </span>
-                          <span className="text-[9px] text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             {img.width > 0 && img.height > 0 ? `${img.width}×${img.height}` : "Vector"}
                           </span>
                         </div>

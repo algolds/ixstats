@@ -108,7 +108,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
                   >
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className="border-border/40 bg-secondary/50 text-muted-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
+                  <span className="border-border/40 bg-secondary/50 text-muted-foreground rounded-full border px-2 py-0.5 text-xs font-medium">
                     {tool.badge}
                   </span>
                 </div>
@@ -121,8 +121,8 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
                 </p>
               </div>
 
-              <div className="border-border/30 text-muted-foreground mt-4 flex items-center justify-between border-t pt-3 text-[11px]">
-                <span className="font-mono text-[10px] opacity-70">{tool.legacyAlias}</span>
+              <div className="border-border/30 text-muted-foreground mt-4 flex items-center justify-between border-t pt-3 text-xs">
+                <span className="font-mono text-xs opacity-70">{tool.legacyAlias}</span>
                 <ArrowRight className="text-muted-foreground group-hover:text-wiki h-3 w-3 transition-transform duration-200 group-hover:translate-x-1" />
               </div>
             </Link>

@@ -195,7 +195,7 @@ export function VitalityRingsDisplay({
                   <div className="mt-2 text-center">
                     <p className="text-foreground text-xs font-medium">{ring.label}</p>
                     {ring.description && size !== "sm" && (
-                      <p className="text-muted-foreground mt-0.5 max-w-[100px] text-[10px]">
+                      <p className="text-muted-foreground mt-0.5 max-w-[100px] text-xs">
                         {ring.description}
                       </p>
                     )}

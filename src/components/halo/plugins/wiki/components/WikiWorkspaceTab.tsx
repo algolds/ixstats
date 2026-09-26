@@ -82,13 +82,13 @@ export function WikiWorkspaceTab({
                   >
                     {draft.title}
                   </PreText>
-                  <PreText className="text-muted-foreground text-[9px]" whiteSpace="nowrap">
+                  <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
                     {draft.type === "visual"
                       ? "Visual Editor (Canvas) Draft"
                       : "Source Editor Draft"}
                   </PreText>
                 </div>
-                <span className="shrink-0 text-[10px] font-semibold text-blue-400">Resume ›</span>
+                <span className="shrink-0 text-xs font-semibold text-blue-400">Resume ›</span>
               </button>
             ))}
           </div>
@@ -119,11 +119,11 @@ export function WikiWorkspaceTab({
                   >
                     {session.title}
                   </PreText>
-                  <PreText className="text-muted-foreground text-[9px]" whiteSpace="nowrap">
+                  <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
                     {`Last read ${formatTimeAgo(session.updatedAt)}`}
                   </PreText>
                 </div>
-                <span className="text-muted-foreground shrink-0 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
+                <span className="text-muted-foreground shrink-0 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-xs font-semibold tabular-nums">
                   {session.scrollPercent}%
                 </span>
               </button>
@@ -152,7 +152,7 @@ export function WikiWorkspaceTab({
                   <PreText className="truncate text-[13px] text-inherit" whiteSpace="nowrap">
                     {rc.title}
                   </PreText>
-                  <PreText className="text-muted-foreground text-[10px]" whiteSpace="nowrap">
+                  <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
                     {`${rc.user} · ${formatMWTimeAgo(rc.timestamp)}`}
                   </PreText>
                 </button>
@@ -219,7 +219,7 @@ export function WikiWorkspaceTab({
 
 export function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="text-muted-foreground mb-1.5 text-[10px] font-semibold tracking-wider uppercase">
+    <div className="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wider uppercase">
       <PreText whiteSpace="nowrap">{label}</PreText>
     </div>
   );
@@ -245,7 +245,7 @@ export function CollapsibleSection({
       <button
         type="button"
         onClick={onToggle}
-        className="text-muted-foreground hover:text-foreground mb-1 flex w-full cursor-pointer items-center justify-between text-[10px] font-semibold tracking-wider uppercase"
+        className="text-muted-foreground hover:text-foreground mb-1 flex w-full cursor-pointer items-center justify-between text-xs font-semibold tracking-wider uppercase"
       >
         <span className="flex items-center gap-1">
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -290,7 +290,7 @@ export function QuickAction({
       </span>
       {shortcut && (
         <PreText
-          className="border-border bg-accent/10 text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[10px]"
+          className="border-border bg-accent/10 text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-xs"
           whiteSpace="nowrap"
         >
           {shortcut}

@@ -56,7 +56,7 @@ function ServiceRow({
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-slate-900 dark:text-white">{name}</span>
           {linked && (
-            <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+            <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
               <Check className="h-2.5 w-2.5" />
               Verified
             </span>
@@ -66,7 +66,7 @@ function ServiceRow({
           <p className="mt-0.5 truncate text-xs font-medium text-slate-600 dark:text-slate-400">
             {username}
             {lastSync && (
-              <span className="ml-2 text-[10px] text-slate-400 dark:text-slate-500">
+              <span className="ml-2 text-xs text-slate-400 dark:text-slate-500">
                 • active {new Date(lastSync).toLocaleDateString()}
               </span>
             )}
@@ -248,7 +248,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
                 <span>View Passport</span>
               </Link>
             )}
-            <div className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold tracking-widest text-slate-500 uppercase dark:bg-slate-800 dark:text-slate-400">
+            <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold tracking-widest text-slate-500 uppercase dark:bg-slate-800 dark:text-slate-400">
               Secure Layer Active
             </div>
           </div>

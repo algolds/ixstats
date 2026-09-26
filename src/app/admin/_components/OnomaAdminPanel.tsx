@@ -239,7 +239,7 @@ export function OnomaAdminPanel() {
                 Read Naturally (Kokoro Voice Engine)
               </h3>
             </div>
-            <p className="text-muted-foreground mt-0.5 text-[11px]">
+            <p className="text-muted-foreground mt-0.5 text-xs">
               Kokoro neural voice engine for natural phoneme synthesis. kokoro-fastapi accepts raw
               phonemes for precise pronunciation; kokoro-web uses re-spelling heuristics.
             </p>
@@ -249,7 +249,7 @@ export function OnomaAdminPanel() {
             <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
               <div className="space-y-0.5">
                 <Label className="text-foreground text-xs font-bold">Enable Kokoro Voice</Label>
-                <p className="text-muted-foreground text-[11px]">
+                <p className="text-muted-foreground text-xs">
                   Activate the natural voice button across the naming lab.
                 </p>
               </div>
@@ -265,7 +265,7 @@ export function OnomaAdminPanel() {
                 <Label className="text-foreground text-xs font-medium">Engine & Status</Label>
                 <div className="flex items-center gap-2">
                   {healthData && (
-                    <span className="flex items-center gap-1 text-[10px] font-semibold">
+                    <span className="flex items-center gap-1 text-xs font-semibold">
                       {kokoroEngine === "kokoro-fastapi" ? (
                         <span
                           className={
@@ -307,7 +307,7 @@ export function OnomaAdminPanel() {
                     onClick={handleWakeServer}
                     disabled={isWaking}
                     title="Send a wake-up ping to the Kokoro server"
-                    className="border-border/30 bg-background/50 text-foreground/80 hover:border-primary/40 hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-1 rounded-xl border px-2 py-0.5 text-[10px] font-medium transition-all active:scale-[0.98] disabled:opacity-50"
+                    className="border-border/30 bg-background/50 text-foreground/80 hover:border-primary/40 hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-1 rounded-xl border px-2 py-0.5 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-50"
                   >
                     {isWaking ? (
                       <Loader2 className="text-primary h-3 w-3 animate-spin" />
@@ -319,7 +319,7 @@ export function OnomaAdminPanel() {
                 </div>
               </div>
               {wakeStatusMessage && (
-                <p className="text-muted-foreground flex items-center gap-1 font-mono text-[10px]">
+                <p className="text-muted-foreground flex items-center gap-1 font-mono text-xs">
                   <Activity className="text-primary h-3 w-3" />
                   <span>{wakeStatusMessage}</span>
                 </p>
@@ -343,7 +343,7 @@ export function OnomaAdminPanel() {
                   onChange={(e) => setKokoroFastApiUrl(e.target.value)}
                   className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
                 />
-                <p className="text-muted-foreground text-[10px]">
+                <p className="text-muted-foreground text-xs">
                   Host of the self-hosted kokoro-fastapi server that accepts raw phoneme input.
                 </p>
               </div>
@@ -357,7 +357,7 @@ export function OnomaAdminPanel() {
                 onChange={(e) => setKokoroBaseUrl(e.target.value)}
                 className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
               />
-              <p className="text-muted-foreground text-[10px]">
+              <p className="text-muted-foreground text-xs">
                 Host of the self-hosted kokoro-web container.
               </p>
             </div>
@@ -387,7 +387,7 @@ export function OnomaAdminPanel() {
                     </option>
                   ))}
                 </select>
-                <p className="text-muted-foreground text-[10px]">
+                <p className="text-muted-foreground text-xs">
                   {voicesData?.source === "server"
                     ? `${voiceOptions.length} voices loaded from Kokoro server.`
                     : "Showing built-in voices."}
@@ -418,7 +418,7 @@ export function OnomaAdminPanel() {
             {/* Per-culture voice mapping */}
             <div className="border-border/20 space-y-2 border-t pt-3">
               <Label className="text-foreground text-xs font-bold">Per-culture voices</Label>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Assign a voice per naming culture. Use default falls back to the default voice
                 above.
               </p>
@@ -431,7 +431,7 @@ export function OnomaAdminPanel() {
                       key={c}
                       className="border-border/20 bg-background/30 space-y-1 rounded-xl border p-2"
                     >
-                      <Label className="text-foreground text-[11px] font-semibold capitalize">
+                      <Label className="text-foreground text-xs font-semibold capitalize">
                         {c}
                       </Label>
                       <select
@@ -450,7 +450,7 @@ export function OnomaAdminPanel() {
                             return next;
                           })
                         }
-                        className="border-border/30 bg-background/50 text-foreground h-7 w-full rounded-lg border px-2 text-[11px] focus:outline-none"
+                        className="border-border/30 bg-background/50 text-foreground h-7 w-full rounded-lg border px-2 text-xs focus:outline-none"
                       >
                         <option value="">Use default</option>
                         <option value="custom_blend">Custom Blend...</option>
@@ -468,7 +468,7 @@ export function OnomaAdminPanel() {
                             setVoiceMap((prev) => ({ ...prev, [c]: inputVal }));
                           }}
                           placeholder="voice1*0.5+voice2*0.5"
-                          className="border-border/30 bg-background/50 h-7 rounded-lg px-2 font-mono text-[10px]"
+                          className="border-border/30 bg-background/50 h-7 rounded-lg px-2 font-mono text-xs"
                         />
                       )}
                     </div>
@@ -513,7 +513,7 @@ export function OnomaAdminPanel() {
                         → {result.phonemes || "(empty)"}
                       </span>
                       {result.dropped.length > 0 && (
-                        <span className="self-center text-[10px] text-amber-400">
+                        <span className="self-center text-xs text-amber-400">
                           ⚠ dropped: {result.dropped.join(", ")}
                         </span>
                       )}

@@ -86,7 +86,7 @@ export function SettingsSidebarNav({
                     return (
                       <span
                         className={cn(
-                          "py-0.2 inline-flex items-center gap-1 rounded-md border px-1.5 text-[8px] font-bold tracking-tight",
+                          "py-0.2 inline-flex items-center gap-1 rounded-md border px-1.5 text-xs font-bold tracking-tight",
                           tierInfo.badgeClass
                         )}
                       >
@@ -96,7 +96,7 @@ export function SettingsSidebarNav({
                     );
                   })()}
                 {roleDisplayName && (
-                  <span className="py-0.2 inline-flex items-center gap-1 rounded-md border border-purple-500/20 bg-purple-500/10 px-1.5 text-[8px] font-bold text-purple-600 dark:text-purple-400">
+                  <span className="py-0.2 inline-flex items-center gap-1 rounded-md border border-purple-500/20 bg-purple-500/10 px-1.5 text-xs font-bold text-purple-600 dark:text-purple-400">
                     <Crown className="h-2.5 w-2.5 shrink-0" />
                     {roleDisplayName}
                   </span>
@@ -132,7 +132,7 @@ export function SettingsSidebarNav({
       <nav className="space-y-4">
         {categories.map(([category, items]) => (
           <div key={category} className="space-y-1.5">
-            <h3 className="text-muted-foreground/80 px-2 text-[10px] font-bold tracking-wider uppercase">
+            <h3 className="text-muted-foreground/80 px-2 text-xs font-bold tracking-wider uppercase">
               {category}
             </h3>
 

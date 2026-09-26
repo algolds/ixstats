@@ -41,7 +41,7 @@ export function PolicyTemplateSliders({
                       : "bg-muted/40 border-border/40 hover:bg-muted/80 text-muted-foreground text-xs"
                   }`}
                 >
-                  <span className="text-center text-[10px] sm:text-xs">{opt.label}</span>
+                  <span className="text-center text-xs sm:text-xs">{opt.label}</span>
                 </button>
               );
             })}

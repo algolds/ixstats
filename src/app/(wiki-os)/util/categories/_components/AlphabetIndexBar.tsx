@@ -75,7 +75,7 @@ export function AlphabetIndexBar({
                   <div className="text-foreground truncate text-xs font-semibold transition-colors group-hover:text-blue-500">
                     {cat.name}
                   </div>
-                  <div className="text-muted-foreground mt-1 flex items-center gap-2 text-[10px]">
+                  <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs">
                     {cat.pages > 0 && <span>{cat.pages} pages</span>}
                     {cat.subcats > 0 && <span>· {cat.subcats} subcats</span>}
                     {cat.files > 0 && <span>· {cat.files} files</span>}

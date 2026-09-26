@@ -651,7 +651,7 @@ export function LorewardsBotSection() {
               </div>
               <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
                 <div>
-                  <h6 className="text-muted-foreground mb-1 text-[10px] font-bold uppercase">
+                  <h6 className="text-muted-foreground mb-1 text-xs font-bold uppercase">
                     Bot Result:
                   </h6>
                   <p>
@@ -663,7 +663,7 @@ export function LorewardsBotSection() {
                   </p>
                 </div>
                 <div>
-                  <h6 className="text-muted-foreground mb-1 text-[10px] font-bold uppercase">
+                  <h6 className="text-muted-foreground mb-1 text-xs font-bold uppercase">
                     WikiOS Core Result:
                   </h6>
                   <p>
@@ -680,7 +680,7 @@ export function LorewardsBotSection() {
 
           {/* Recent validation history list */}
           <div className="space-y-2">
-            <h6 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+            <h6 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Recent Cross-Validation History:
             </h6>
             <div className="border-border/40 bg-muted/20 divide-border/20 divide-y overflow-hidden rounded-xl border text-xs">
@@ -691,7 +691,7 @@ export function LorewardsBotSection() {
                     className="hover:bg-muted/50 flex items-center justify-between p-3 transition-colors"
                   >
                     <span className="font-mono font-semibold">{r.date}</span>
-                    <div className="flex items-center gap-3 text-[11px]">
+                    <div className="flex items-center gap-3 text-xs">
                       <span>
                         Bot: <strong>{r.botWinner || "None"}</strong>
                       </span>
@@ -700,7 +700,7 @@ export function LorewardsBotSection() {
                       </span>
                       <span
                         className={cn(
-                          "py-0.2 rounded px-1.5 text-[10px] font-bold",
+                          "py-0.2 rounded px-1.5 text-xs font-bold",
                           r.winnersAgree
                             ? "bg-emerald-500/10 text-emerald-500"
                             : "bg-destructive/10 text-destructive"
@@ -736,7 +736,7 @@ export function LorewardsBotSection() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="space-y-1">
-              <label className="text-muted-foreground text-[10px] font-bold uppercase">
+              <label className="text-muted-foreground text-xs font-bold uppercase">
                 Username
               </label>
               <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
@@ -798,7 +798,7 @@ export function LorewardsBotSection() {
                                   />
                                   {user.username}
                                 </div>
-                                <span className="text-muted-foreground font-mono text-[10px]">
+                                <span className="text-muted-foreground font-mono text-xs">
                                   {user.editCount} edits
                                 </span>
                               </CommandItem>
@@ -825,7 +825,7 @@ export function LorewardsBotSection() {
               </Popover>
             </div>
             <div className="space-y-1">
-              <label className="text-muted-foreground text-[10px] font-bold uppercase">
+              <label className="text-muted-foreground text-xs font-bold uppercase">
                 Duration
               </label>
               <select
@@ -841,7 +841,7 @@ export function LorewardsBotSection() {
             </div>
             {blacklistDuration === "custom" && (
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Expiry Date
                 </label>
                 <Input
@@ -863,7 +863,7 @@ export function LorewardsBotSection() {
 
           {/* Active Blacklisted Users List */}
           <div className="space-y-2">
-            <h6 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+            <h6 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Active Blacklisted Users:
             </h6>
             <div className="border-border/40 bg-muted/20 divide-border/20 max-h-48 divide-y overflow-hidden overflow-y-auto rounded-xl border text-xs">
@@ -878,7 +878,7 @@ export function LorewardsBotSection() {
                       {user}
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-muted-foreground font-mono text-[10px]">
+                      <span className="text-muted-foreground font-mono text-xs">
                         Expires: {date ? String(date).slice(0, 10) : "Permanent"}
                       </span>
                       <button
@@ -918,7 +918,7 @@ export function LorewardsBotSection() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-muted-foreground text-[10px] font-bold uppercase">Date</label>
+              <label className="text-muted-foreground text-xs font-bold uppercase">Date</label>
               <Input
                 type="date"
                 value={overrideDate}
@@ -927,7 +927,7 @@ export function LorewardsBotSection() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-muted-foreground text-[10px] font-bold uppercase">Type</label>
+              <label className="text-muted-foreground text-xs font-bold uppercase">Type</label>
               <select
                 value={overrideType}
                 onChange={(e) => setOverrideType(e.target.value)}
@@ -942,12 +942,12 @@ export function LorewardsBotSection() {
 
           {/* Winner details */}
           <div className="border-border/20 space-y-2 border-t pt-2">
-            <span className="text-[10px] font-black tracking-wider text-amber-500 uppercase">
+            <span className="text-xs font-black tracking-wider text-amber-500 uppercase">
               1. Winner Details
             </span>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Username
                 </label>
                 <Input
@@ -958,7 +958,7 @@ export function LorewardsBotSection() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Page Title
                 </label>
                 <Input
@@ -971,7 +971,7 @@ export function LorewardsBotSection() {
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Score
                 </label>
                 <Input
@@ -983,7 +983,7 @@ export function LorewardsBotSection() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Bytes Added
                 </label>
                 <Input
@@ -999,12 +999,12 @@ export function LorewardsBotSection() {
 
           {/* Runner up details */}
           <div className="border-border/20 space-y-2 border-t pt-2">
-            <span className="text-muted-foreground text-[10px] font-black tracking-wider uppercase">
+            <span className="text-muted-foreground text-xs font-black tracking-wider uppercase">
               2. Runner-up Details
             </span>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Username
                 </label>
                 <Input
@@ -1015,7 +1015,7 @@ export function LorewardsBotSection() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Page Title
                 </label>
                 <Input
@@ -1028,7 +1028,7 @@ export function LorewardsBotSection() {
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Score
                 </label>
                 <Input
@@ -1040,7 +1040,7 @@ export function LorewardsBotSection() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Bytes Added
                 </label>
                 <Input

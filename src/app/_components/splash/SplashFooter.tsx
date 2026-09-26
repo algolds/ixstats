@@ -20,7 +20,7 @@ export function SplashFooter() {
         <div className="flex flex-col items-center gap-1.5 text-center md:items-start md:text-left">
           <div className="flex items-center gap-2">
             <span className="text-base font-bold tracking-tight text-white">IxStates</span>
-            <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 font-mono text-[11px] text-amber-400">
+            <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 font-mono text-xs text-amber-400">
               {versionString}
             </span>
           </div>
@@ -64,7 +64,7 @@ export function SplashFooter() {
         </div>
       </div>
 
-      <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-6 text-[11px] text-slate-400 sm:flex-row">
+      <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-6 text-xs text-slate-400 sm:flex-row">
         <p>© 2026 Ixnay Community / IxWiki. Non-commercial creative platform.</p>
         <p>Public lore licensed under CC-BY-SA 4.0. Age 16+ platform.</p>
       </div>

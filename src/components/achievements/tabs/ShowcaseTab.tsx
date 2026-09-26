@@ -39,14 +39,14 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground font-mono text-[10px] font-bold">
+          <span className="text-muted-foreground font-mono text-xs font-bold">
             {rarestShowcase?.length || 0} / {Math.min(rarestAll?.length || 0, 9)} Displayed
           </span>
 
           {(rarestAll?.length || 0) > 3 && (
             <button
               onClick={() => setShowAll(!showAll)}
-              className="border-border/60 bg-muted/50 text-foreground/80 hover:bg-muted/80 hover:text-foreground rounded-full border px-3 py-1 font-mono text-[10px] font-bold backdrop-blur-md transition-all active:scale-95"
+              className="border-border/60 bg-muted/50 text-foreground/80 hover:bg-muted/80 hover:text-foreground rounded-full border px-3 py-1 font-mono text-xs font-bold backdrop-blur-md transition-all active:scale-95"
             >
               {showAll ? "Show Top 3 Only" : "See All Top 9"}
             </button>
@@ -107,14 +107,14 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                   <div className="mb-2 flex items-center justify-between">
                     <Badge
                       className={cn(
-                        "rounded-full border px-2 py-0.5 text-[8px] font-extrabold tracking-wider uppercase backdrop-blur-md",
+                        "rounded-full border px-2 py-0.5 text-xs font-extrabold tracking-wider uppercase backdrop-blur-md",
                         getRarityColor(achievement.rarity),
                         getRarityBg(achievement.rarity, isUnlocked)
                       )}
                     >
                       {achievement.rarity}
                     </Badge>
-                    <span className="font-mono text-[9px] font-bold text-amber-600 drop-shadow-sm dark:text-amber-400">
+                    <span className="font-mono text-xs font-bold text-amber-600 drop-shadow-sm dark:text-amber-400">
                       {achievement.globalUnlockPercent !== undefined
                         ? `${achievement.globalUnlockPercent}% Unlocked`
                         : "Rare unlock"}
@@ -135,7 +135,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                         className="h-6.5 w-6.5"
                       />
                       {isUnlocked && count > 1 && (
-                        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full border border-amber-500/40 bg-amber-400 px-1 text-[9px] font-bold text-slate-950 tabular-nums shadow-md">
+                        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full border border-amber-500/40 bg-amber-400 px-1 text-xs font-bold text-slate-950 tabular-nums shadow-md">
                           {count}
                         </span>
                       )}
@@ -147,7 +147,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                       </h3>
                       <span
                         className={cn(
-                          "py-0.2 inline-flex items-center gap-0.5 rounded-full border px-1.5 text-[8px] font-bold uppercase backdrop-blur-md",
+                          "py-0.2 inline-flex items-center gap-0.5 rounded-full border px-1.5 text-xs font-bold uppercase backdrop-blur-md",
                           categoryTheme.badge
                         )}
                       >
@@ -157,18 +157,18 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                     </div>
                   </div>
 
-                  <p className="text-muted-foreground line-clamp-2 text-[11px] leading-snug font-medium">
+                  <p className="text-muted-foreground line-clamp-2 text-xs leading-snug font-medium">
                     {achievement.description}
                   </p>
                 </div>
 
-                <div className="border-border/40 relative z-10 mt-3 flex items-center justify-between border-t pt-2 text-[10px]">
-                  <div className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] font-bold text-emerald-600 backdrop-blur-md dark:text-emerald-400">
+                <div className="border-border/40 relative z-10 mt-3 flex items-center justify-between border-t pt-2 text-xs">
+                  <div className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-bold text-emerald-600 backdrop-blur-md dark:text-emerald-400">
                     <span>{achievement.points}</span>
                     <span>pts</span>
                   </div>
                   {achievement.unlockedAt && (
-                    <span className="text-muted-foreground font-mono text-[9px]">
+                    <span className="text-muted-foreground font-mono text-xs">
                       {new Date(achievement.unlockedAt).toLocaleDateString()}
                     </span>
                   )}
@@ -185,7 +185,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
               <Trophy className="h-5 w-5 text-amber-500 dark:text-amber-400" />
             </div>
             <h3 className="text-foreground text-xs font-bold">Showcase Cabinet Empty</h3>
-            <p className="text-muted-foreground text-[11px] leading-relaxed">
+            <p className="text-muted-foreground text-xs leading-relaxed">
               Unlock rarest achievement badges to populate your showcase shelf!
             </p>
           </div>

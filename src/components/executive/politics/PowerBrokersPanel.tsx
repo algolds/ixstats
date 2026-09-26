@@ -52,7 +52,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
     <div className="flex w-full flex-col gap-4">
       <div>
         <h3 className="text-xs font-bold tracking-wider uppercase opacity-70">Power Brokers</h3>
-        <p className="text-muted-foreground text-[10px]">
+        <p className="text-muted-foreground text-xs">
           Internal interest groups unlocked by your country structure and budget allocation
         </p>
       </div>
@@ -61,7 +61,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
         <div className="text-muted-foreground flex flex-col items-center justify-center rounded-lg border border-dashed border-black/10 py-8 text-center text-xs dark:border-white/10">
           <AlertCircle className="mb-2 h-6 w-6 opacity-30" />
           No Power Brokers are currently active.
-          <span className="mt-1 text-[10px] opacity-75">
+          <span className="mt-1 text-xs opacity-75">
             Select government components in the editor to summon interest groups.
           </span>
         </div>
@@ -94,7 +94,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                       <span className="text-xs font-bold">{broker.name}</span>
                     </div>
                     <span
-                      className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                      className={`rounded px-1.5 py-0.5 text-xs font-bold uppercase ${
                         broker.satisfied
                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
                           : "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
@@ -104,7 +104,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                     </span>
                   </div>
 
-                  <p className="text-muted-foreground text-[10px] leading-relaxed">
+                  <p className="text-muted-foreground text-xs leading-relaxed">
                     {broker.description}
                   </p>
                 </div>
@@ -112,7 +112,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                 <div className="mt-4 space-y-2.5">
                   {/* Budget allocation satisfaction bar */}
                   <div className="space-y-1">
-                    <div className="text-muted-foreground flex justify-between text-[9px] font-medium">
+                    <div className="text-muted-foreground flex justify-between text-xs font-medium">
                       <span>Favored Budget Allocation</span>
                       <span>
                         {broker.currentSpend}% / {broker.requiredSpend}%
@@ -129,9 +129,9 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                   </div>
 
                   <div className="border-t border-black/5 pt-2 dark:border-white/5">
-                    <p className="text-muted-foreground text-[9px] font-semibold">ACTIVE EFFECT:</p>
+                    <p className="text-muted-foreground text-xs font-semibold">ACTIVE EFFECT:</p>
                     <p
-                      className={`mt-0.5 text-[10px] font-medium ${
+                      className={`mt-0.5 text-xs font-medium ${
                         broker.satisfied ? "text-foreground" : "text-muted-foreground"
                       }`}
                     >

@@ -36,7 +36,7 @@ export function UnclaimedTerritoryView({
           {wikiRichIntro.paragraphs.length > 1 && (
             <button
               onClick={() => setIntroExpanded((v) => !v)}
-              className="text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
+              className="text-xs font-medium text-blue-600 transition-colors hover:text-blue-500"
             >
               {introExpanded ? "Show less" : "Read more..."}
             </button>

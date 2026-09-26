@@ -334,7 +334,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                   setFormData({ ...formData, totalSeats: val });
                 }}
               />
-              <p className="text-muted-foreground mt-1 text-[10px]">
+              <p className="text-muted-foreground mt-1 text-xs">
                 {isMultiChamber
                   ? "Calculated as sum of all chambers (up to 10,000)"
                   : "1-5,000 seats"}
@@ -357,7 +357,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 </SelectContent>
               </Select>
               {isMultiChamber && (
-                <p className="text-muted-foreground mt-1 text-[10px]">
+                <p className="text-muted-foreground mt-1 text-xs">
                   Configured individually per chamber below
                 </p>
               )}
@@ -388,7 +388,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                   <SelectItem value="variable">Variable (snap elections)</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-muted-foreground mt-1 text-[10px]">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Fixed = strict schedule; Variable = parliament may dissolve early
               </p>
             </div>
@@ -407,7 +407,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                     className="grid grid-cols-1 gap-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3 sm:grid-cols-2 lg:grid-cols-4"
                   >
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-slate-400">Chamber {index + 1} Name</Label>
+                      <Label className="text-xs text-slate-400">Chamber {index + 1} Name</Label>
                       <Input
                         value={chamber.name}
                         onChange={(e) => updateChamber(index, "name", e.target.value)}
@@ -416,7 +416,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-slate-400">Seats (10 - 5,000)</Label>
+                      <Label className="text-xs text-slate-400">Seats (10 - 5,000)</Label>
                       <Input
                         type="number"
                         min={10}
@@ -428,7 +428,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                       />
                     </div>
                     <div className="min-w-0 space-y-1">
-                      <Label className="text-[10px] text-slate-400">Electoral System</Label>
+                      <Label className="text-xs text-slate-400">Electoral System</Label>
                       <Select
                         value={chamber.electoralSystem}
                         onValueChange={(v) => updateChamber(index, "electoralSystem", v)}
@@ -444,7 +444,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                       </Select>
                     </div>
                     <div className="min-w-0 space-y-1">
-                      <Label className="text-[10px] text-slate-400">Selection Method</Label>
+                      <Label className="text-xs text-slate-400">Selection Method</Label>
                       <Select
                         value={chamber.selectionMethod || "elected"}
                         onValueChange={(v) => updateChamber(index, "selectionMethod", v)}

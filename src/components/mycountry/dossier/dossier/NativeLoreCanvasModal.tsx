@@ -66,7 +66,7 @@ export function NativeLoreCanvasModal({
                   key={level}
                   type="button"
                   onClick={() => setClearance(level)}
-                  className={`rounded-md px-2.5 py-1 text-[10px] font-bold transition-colors ${
+                  className={`rounded-md px-2.5 py-1 text-xs font-bold transition-colors ${
                     clearance === level
                       ? level === "PUBLIC"
                         ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
@@ -96,7 +96,7 @@ export function NativeLoreCanvasModal({
         <div className="flex-1 space-y-4 overflow-y-auto p-6">
           {/* Document Title Input */}
           <div>
-            <label className="text-muted-foreground mb-1 block text-[10px] font-extrabold tracking-wider uppercase">
+            <label className="text-muted-foreground mb-1 block text-xs font-extrabold tracking-wider uppercase">
               Document Title
             </label>
             <input
@@ -110,7 +110,7 @@ export function NativeLoreCanvasModal({
 
           {/* WikiOS Visual Canvas Editor */}
           <div>
-            <label className="text-muted-foreground mb-1 block text-[10px] font-extrabold tracking-wider uppercase">
+            <label className="text-muted-foreground mb-1 block text-xs font-extrabold tracking-wider uppercase">
               Canvas Lore Content
             </label>
             <div className="min-h-[360px] rounded-xl border border-white/10 bg-white/[0.02] p-2">

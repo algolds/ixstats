@@ -117,7 +117,7 @@ export default function CategoriesIndexPage() {
                 <Layers className="h-4 w-4 text-blue-500" />
                 <div className="text-left">
                   <div className="text-foreground text-xs font-bold">12 Domains</div>
-                  <div className="text-muted-foreground text-[10px]">Primary Portals</div>
+                  <div className="text-muted-foreground text-xs">Primary Portals</div>
                 </div>
               </div>
 
@@ -127,7 +127,7 @@ export default function CategoriesIndexPage() {
                   <div className="text-foreground text-xs font-bold">
                     {countries.length} Nations
                   </div>
-                  <div className="text-muted-foreground text-[10px]">Geopolitical Portals</div>
+                  <div className="text-muted-foreground text-xs">Geopolitical Portals</div>
                 </div>
               </div>
             </div>

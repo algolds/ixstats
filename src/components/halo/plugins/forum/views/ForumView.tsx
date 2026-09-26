@@ -27,7 +27,7 @@ export interface ForumViewProps extends DIViewProps {}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-muted-foreground px-1 pt-2 pb-1 text-[11px] font-semibold tracking-wider uppercase">
+    <div className="text-muted-foreground px-1 pt-2 pb-1 text-xs font-semibold tracking-wider uppercase">
       {typeof children === "string" ? <PreText whiteSpace="nowrap">{children}</PreText> : children}
     </div>
   );
@@ -251,7 +251,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
           rightElement={
             unreadAlerts > 0 ? (
               <PreText
-                className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1.5 text-[10px] font-bold text-white shadow-sm"
+                className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-bold text-white shadow-sm"
                 whiteSpace="nowrap"
               >
                 {String(unreadAlerts)}
@@ -269,7 +269,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
             <div className="bg-accent/15 flex max-w-[140px] flex-1 rounded-lg p-0.5">
               <button
                 onClick={() => setActiveTab("recent")}
-                className={`flex-1 rounded-md py-0.5 text-center text-[9px] font-bold tracking-wide uppercase transition-all ${
+                className={`flex-1 rounded-md py-0.5 text-center text-xs font-bold tracking-wide uppercase transition-all ${
                   activeTab === "recent"
                     ? "bg-white text-orange-500 shadow-sm dark:bg-white/10 dark:text-orange-400"
                     : "text-muted-foreground hover:text-foreground"
@@ -281,7 +281,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
               </button>
               <button
                 onClick={() => setActiveTab("stash")}
-                className={`flex-1 rounded-md py-0.5 text-center text-[9px] font-bold tracking-wide uppercase transition-all ${
+                className={`flex-1 rounded-md py-0.5 text-center text-xs font-bold tracking-wide uppercase transition-all ${
                   activeTab === "stash"
                     ? "bg-white text-orange-500 shadow-sm dark:bg-white/10 dark:text-orange-400"
                     : "text-muted-foreground hover:text-foreground"

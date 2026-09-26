@@ -157,7 +157,7 @@ export function MarginShareModal({
                 <h3 className="text-sm leading-none font-bold text-[var(--wikios-text)]">
                   Share and export
                 </h3>
-                <p className="mt-0.5 max-w-[260px] truncate text-[11px] text-[var(--wikios-text-dim)]">
+                <p className="mt-0.5 max-w-[260px] truncate text-xs text-[var(--wikios-text-dim)]">
                   {articleTitle}
                 </p>
               </div>
@@ -183,9 +183,9 @@ export function MarginShareModal({
           {/* ThinkShare Dispatch Section */}
           {isAuthenticated && (conversationsData?.conversations?.length ?? 0) > 0 && (
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[11px] font-bold text-[var(--wikios-text-muted)]">
+              <div className="flex items-center justify-between text-xs font-bold text-[var(--wikios-text-muted)]">
                 <span>Send to conversation</span>
-                <span className="text-margin-accent text-[10px] font-semibold">Recent chats</span>
+                <span className="text-margin-accent text-xs font-semibold">Recent chats</span>
               </div>
               <div className="custom-scrollbar max-h-36 space-y-1 overflow-y-auto pr-1">
                 {conversationsData?.conversations.slice(0, 4).map((c: any) => {
@@ -208,7 +208,7 @@ export function MarginShareModal({
                           {participantName}
                         </span>
                       </div>
-                      <span className="text-margin-accent flex shrink-0 items-center gap-1 text-[10.5px] font-bold transition-transform group-hover:translate-x-0.5">
+                      <span className="text-margin-accent flex shrink-0 items-center gap-1 text-xs font-bold transition-transform group-hover:translate-x-0.5">
                         <Send className="h-3 w-3" />
                         <span>Send</span>
                       </span>
@@ -221,7 +221,7 @@ export function MarginShareModal({
 
           {/* Copy Formatting Grid */}
           <div className="space-y-1.5 pt-1">
-            <span className="text-[11px] font-bold text-[var(--wikios-text-muted)]">
+            <span className="text-xs font-bold text-[var(--wikios-text-muted)]">
               Copy format
             </span>
             <div className="grid grid-cols-1 gap-1.5">
@@ -243,7 +243,7 @@ export function MarginShareModal({
                         <div className="group-hover:text-margin-accent text-xs font-bold text-[var(--wikios-text)]">
                           {fmt.name}
                         </div>
-                        <div className="text-[10px] text-[var(--wikios-text-dim)]">
+                        <div className="text-xs text-[var(--wikios-text-dim)]">
                           {fmt.description}
                         </div>
                       </div>
@@ -253,12 +253,12 @@ export function MarginShareModal({
                       {isCopied ? (
                         <>
                           <Check className="h-3.5 w-3.5 text-emerald-400" />
-                          <span className="text-[10.5px] font-bold text-emerald-400">Copied</span>
+                          <span className="text-xs font-bold text-emerald-400">Copied</span>
                         </>
                       ) : (
                         <>
                           <Copy className="h-3.5 w-3.5" />
-                          <span className="text-[10.5px] font-semibold">Copy</span>
+                          <span className="text-xs font-semibold">Copy</span>
                         </>
                       )}
                     </div>

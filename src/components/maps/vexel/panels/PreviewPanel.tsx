@@ -85,7 +85,7 @@ export default function PreviewPanel() {
                   composition.externals.motto.position === "above" ? "-top-10" : "-bottom-4"
                 }`}
               >
-                <div className="animate-in fade-in zoom-in-95 rounded-md border border-amber-600/30 bg-amber-500/90 px-4 py-1.5 font-serif text-[10px] font-bold tracking-wider whitespace-nowrap text-zinc-950 uppercase shadow-md duration-200">
+                <div className="animate-in fade-in zoom-in-95 rounded-md border border-amber-600/30 bg-amber-500/90 px-4 py-1.5 font-serif text-xs font-bold tracking-wider whitespace-nowrap text-zinc-950 uppercase shadow-md duration-200">
                   📜 {composition.externals.motto.text}
                 </div>
               </div>

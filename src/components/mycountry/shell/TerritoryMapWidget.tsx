@@ -47,7 +47,7 @@ export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
           {/* Top-Left: Open Maps */}
           <Link
             href="/maps"
-            className="bg-background/90 text-foreground hover:bg-background group pointer-events-auto flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-[11px] font-bold shadow-md backdrop-blur-xl transition-all hover:scale-105 active:scale-95 dark:border-white/20 dark:bg-zinc-900/90"
+            className="bg-background/90 text-foreground hover:bg-background group pointer-events-auto flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-xs font-bold shadow-md backdrop-blur-xl transition-all hover:scale-105 active:scale-95 dark:border-white/20 dark:bg-zinc-900/90"
             title="Open IxWorld Maps"
           >
             <MapPin className="h-3.5 w-3.5 text-emerald-600 transition-transform group-hover:scale-110 dark:text-emerald-400" />
@@ -59,7 +59,7 @@ export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
           <button
             type="button"
             onClick={() => router.push("/mycountry/editor")}
-            className="bg-background/90 text-foreground hover:bg-background group pointer-events-auto flex cursor-pointer items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-[11px] font-bold shadow-md backdrop-blur-xl transition-all hover:scale-105 active:scale-95 dark:border-white/20 dark:bg-zinc-900/90"
+            className="bg-background/90 text-foreground hover:bg-background group pointer-events-auto flex cursor-pointer items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-xs font-bold shadow-md backdrop-blur-xl transition-all hover:scale-105 active:scale-95 dark:border-white/20 dark:bg-zinc-900/90"
             title="Open Map Editor"
           >
             <Edit3 className="h-3.5 w-3.5 text-emerald-600 transition-transform group-hover:scale-110 dark:text-emerald-400" />

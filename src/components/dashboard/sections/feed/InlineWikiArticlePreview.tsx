@@ -357,7 +357,7 @@ export function InlineWikiArticlePreview({
             <Edit className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
             <span>Margin</span>
             {marginThreadsCount > 0 && (
-              <span className="py-0.2 rounded-full bg-yellow-400/25 px-1.5 text-[10px] font-bold text-yellow-700 dark:text-yellow-300">
+              <span className="py-0.2 rounded-full bg-yellow-400/25 px-1.5 text-xs font-bold text-yellow-700 dark:text-yellow-300">
                 {marginThreadsCount}
               </span>
             )}
@@ -468,14 +468,14 @@ export function InlineWikiArticlePreview({
                   </span>
                   <Link
                     href="/stashes"
-                    className="text-muted-foreground hover:text-foreground text-[10px] transition-colors"
+                    className="text-muted-foreground hover:text-foreground text-xs transition-colors"
                   >
                     View all →
                   </Link>
                 </div>
 
                 {userStashes.length === 0 ? (
-                  <p className="text-muted-foreground py-1 text-[11px]">
+                  <p className="text-muted-foreground py-1 text-xs">
                     No custom stashes found. Click Save to Stash to create your default stash.
                   </p>
                 ) : (
@@ -515,7 +515,7 @@ export function InlineWikiArticlePreview({
                       unstashMutation.mutate({ pageTitle: cleanTitle });
                       setIsStashPopoverOpen(false);
                     }}
-                    className="border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/15 flex w-full cursor-pointer items-center gap-1.5 rounded-xl border px-2 py-1.5 text-[11px] font-medium transition-colors"
+                    className="border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/15 flex w-full cursor-pointer items-center gap-1.5 rounded-xl border px-2 py-1.5 text-xs font-medium transition-colors"
                   >
                     <Trash className="h-3 w-3" />
                     <span>Remove from all stashes</span>
@@ -573,7 +573,7 @@ export function InlineWikiArticlePreview({
                 <div className="flex items-center gap-2">
                   <Link
                     href={marginHref}
-                    className="text-muted-foreground text-[10px] transition-colors hover:text-yellow-500"
+                    className="text-muted-foreground text-xs transition-colors hover:text-yellow-500"
                   >
                     Open Margin reader →
                   </Link>

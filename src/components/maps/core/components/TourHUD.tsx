@@ -112,7 +112,7 @@ export function TourHUD({
                 <h3 className="dark:text-foreground text-base font-bold text-slate-900">
                   {currentStepData.name}
                 </h3>
-                <span className="text-[10px] font-semibold tracking-wider text-blue-600 uppercase dark:text-blue-400">
+                <span className="text-xs font-semibold tracking-wider text-blue-600 uppercase dark:text-blue-400">
                   Step {currentStepIndex + 1} of {totalSteps}
                 </span>
               </div>
@@ -143,7 +143,7 @@ export function TourHUD({
           {/* Quick Stats Grid */}
           <div className="dark:border-border/60 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3">
             <div className="dark:border-border/40 dark:bg-secondary/40 space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center">
-              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase">
+              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-xs tracking-wider text-slate-500 uppercase">
                 <MapPin className="h-2.5 w-2.5 text-blue-500 dark:text-blue-400" />
                 Capital
               </span>
@@ -156,7 +156,7 @@ export function TourHUD({
               )}
             </div>
             <div className="dark:border-border/40 dark:bg-secondary/40 space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center">
-              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase">
+              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-xs tracking-wider text-slate-500 uppercase">
                 <Users className="h-2.5 w-2.5 text-cyan-500 dark:text-cyan-400" />
                 Population
               </span>
@@ -169,7 +169,7 @@ export function TourHUD({
               )}
             </div>
             <div className="dark:border-border/40 dark:bg-secondary/40 space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center">
-              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase">
+              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-xs tracking-wider text-slate-500 uppercase">
                 <TrendingUp className="h-2.5 w-2.5 text-emerald-500 dark:text-emerald-400" />
                 GDP (Total)
               </span>

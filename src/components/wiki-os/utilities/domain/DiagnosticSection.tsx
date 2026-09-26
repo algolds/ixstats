@@ -143,19 +143,19 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                   >
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className="border-border/40 bg-secondary/50 text-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
+                  <span className="border-border/40 bg-secondary/50 text-foreground rounded-full border px-2 py-0.5 text-xs font-medium">
                     {card.count}
                   </span>
                 </div>
                 <h4 className="text-foreground group-hover:text-wiki text-xs font-semibold">
                   {card.title}
                 </h4>
-                <p className="text-muted-foreground mt-1 line-clamp-1 text-[11px]">
+                <p className="text-muted-foreground mt-1 line-clamp-1 text-xs">
                   {card.description}
                 </p>
               </div>
 
-              <div className="text-muted-foreground mt-2 font-mono text-[10px] opacity-60">
+              <div className="text-muted-foreground mt-2 font-mono text-xs opacity-60">
                 {card.legacyAlias}
               </div>
             </button>
@@ -181,7 +181,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                 </span>
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-[11px]">
+                <span className="text-muted-foreground text-xs">
                   Showing top results from PostgreSQL index
                 </span>
                 <button
@@ -220,7 +220,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                           >
                             {item.title}
                           </Link>
-                          <span className="text-muted-foreground font-mono text-[11px]">
+                          <span className="text-muted-foreground font-mono text-xs">
                             {item.length} bytes
                           </span>
                         </div>
@@ -258,7 +258,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                           >
                             {item.title}
                           </Link>
-                          <span className="text-muted-foreground font-mono text-[11px]">
+                          <span className="text-muted-foreground font-mono text-xs">
                             {item.length} bytes
                           </span>
                         </div>
@@ -287,7 +287,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                           className="hover:bg-muted/30 flex items-center justify-between rounded-lg px-3 py-2 text-xs transition-colors"
                         >
                           <span className="text-foreground font-medium">{item.title}</span>
-                          <span className="font-mono text-[11px] text-rose-400">
+                          <span className="font-mono text-xs text-rose-400">
                             Target missing: [[{item.targetSlug}]]
                           </span>
                         </div>
@@ -325,7 +325,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                           >
                             {item.title}
                           </Link>
-                          <span className="text-muted-foreground font-mono text-[11px]">
+                          <span className="text-muted-foreground font-mono text-xs">
                             {item.wordCount} words ({item.readingTime}m read)
                           </span>
                         </div>
@@ -358,7 +358,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                           >
                             {item.title}
                           </Link>
-                          <span className="font-mono text-[11px] text-emerald-400">
+                          <span className="font-mono text-xs text-emerald-400">
                             {item.wordCount} words ({item.readingTime}m read)
                           </span>
                         </div>

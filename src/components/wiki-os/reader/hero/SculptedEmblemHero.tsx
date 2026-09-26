@@ -217,7 +217,7 @@ export function SculptedEmblemHero({
             className="group-hover/brand:text-foreground/90 leading-none transition-colors"
           />
           <div className="mt-1.5 flex items-center justify-center">
-            <span className="text-muted-foreground/75 text-[11px] leading-none font-semibold tracking-[0.18em] uppercase sm:text-xs">
+            <span className="text-muted-foreground/75 text-xs leading-none font-semibold tracking-[0.18em] uppercase sm:text-xs">
               Worldbuilding Encyclopedia
             </span>
           </div>
@@ -316,7 +316,7 @@ export function SculptedEmblemHero({
         >
           <TextureOverlay texture="paperGrain" opacity={0.06} />
           <div className="mb-1 flex w-full items-center justify-between">
-            <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-amber-500 uppercase">
+            <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-500 uppercase">
               <History className="h-3.5 w-3.5" /> Timeline
             </span>
             {/* Apple-grade stepper pill */}
@@ -336,7 +336,7 @@ export function SculptedEmblemHero({
               >
                 <ChevronLeft className="h-3 w-3" />
               </button>
-              <span className="text-muted-foreground/80 px-1 text-[10px] font-medium tabular-nums select-none">
+              <span className="text-muted-foreground/80 px-1 text-xs font-medium tabular-nums select-none">
                 {chronicleIndex + 1}/{CANON_CHRONICLE_EVENTS.length}
               </span>
               <button
@@ -380,7 +380,7 @@ export function SculptedEmblemHero({
                       {CANON_CHRONICLE_EVENTS[chronicleIndex].title}
                     </span>
                   </div>
-                  <span className="text-muted-foreground mt-0.5 line-clamp-1 block text-[11px] leading-snug font-medium">
+                  <span className="text-muted-foreground mt-0.5 line-clamp-1 block text-xs leading-snug font-medium">
                     {CANON_CHRONICLE_EVENTS[chronicleIndex].description}
                   </span>
                 </Link>
@@ -407,7 +407,7 @@ export function SculptedEmblemHero({
           >
             <TextureOverlay texture="paperGrain" opacity={0.06} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-blue-500 uppercase dark:text-blue-400">
+              <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-blue-500 uppercase dark:text-blue-400">
                 <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
               </span>
               <div className="flex items-center gap-1">
@@ -432,7 +432,7 @@ export function SculptedEmblemHero({
               <span className="text-foreground group-hover:text-foreground block truncate text-xs leading-tight font-semibold transition-colors sm:text-[13px]">
                 {activePrompt.title}
               </span>
-              <span className="text-muted-foreground mt-0.5 block truncate text-[11px] font-medium">
+              <span className="text-muted-foreground mt-0.5 block truncate text-xs font-medium">
                 {activePrompt.question}
               </span>
             </div>
@@ -454,7 +454,7 @@ export function SculptedEmblemHero({
           >
             <TextureOverlay texture="paperGrain" opacity={0.06} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-blue-500 uppercase dark:text-blue-400">
+              <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-blue-500 uppercase dark:text-blue-400">
                 <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
               </span>
               <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-blue-600 transition-all duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
@@ -466,7 +466,7 @@ export function SculptedEmblemHero({
               <span className="text-foreground group-hover:text-foreground block truncate text-xs leading-tight font-semibold transition-colors sm:text-[13px]">
                 Worldbuilding Prompts
               </span>
-              <span className="text-muted-foreground mt-0.5 block truncate text-[11px] font-medium">
+              <span className="text-muted-foreground mt-0.5 block truncate text-xs font-medium">
                 Share your nation's perspective
               </span>
             </div>
@@ -528,7 +528,7 @@ export function SculptedEmblemHero({
                   href={withBasePath("/wiki/IxWiki:Featured_articles")}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="hover:text-foreground flex items-center gap-1 text-[11px] font-medium transition-colors"
+                  className="hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
                 >
                   <History className="h-3 w-3" />
                   <span>Archive</span>
@@ -538,7 +538,7 @@ export function SculptedEmblemHero({
                   href={withBasePath("/wiki/IxWiki:Featured_article_candidates")}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="flex items-center gap-1 text-[11px] font-medium transition-colors hover:text-amber-500 dark:hover:text-amber-400"
+                  className="flex items-center gap-1 text-xs font-medium transition-colors hover:text-amber-500 dark:hover:text-amber-400"
                 >
                   <Lightbulb className="h-3 w-3" />
                   <span>Suggest</span>

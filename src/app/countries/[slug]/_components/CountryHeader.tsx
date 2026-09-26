@@ -81,7 +81,7 @@ const bannerOptions = [
 ] satisfies BannerOption[];
 
 // Uppercase micro-label treatment shared by all header stat badges.
-const microLabel = "text-[10px] font-extrabold uppercase tracking-wider";
+const microLabel = "text-xs font-extrabold uppercase tracking-wider";
 
 // Flag-derived tint for a badge: solid text + glass scrim over imagery, tinted glass otherwise.
 const badgeTint = (
@@ -332,7 +332,7 @@ export function CountryHeader({
                 className="border-border bg-popover text-popover-foreground z-[100011] w-72 rounded-xl border p-2 shadow-2xl backdrop-blur-xl"
               >
                 <div className="space-y-1">
-                  <p className="text-muted-foreground px-2 py-1.5 text-[10px] font-extrabold tracking-wider uppercase">
+                  <p className="text-muted-foreground px-2 py-1.5 text-xs font-extrabold tracking-wider uppercase">
                     Banner Style
                   </p>
                   {bannerOptions.map((option) => {

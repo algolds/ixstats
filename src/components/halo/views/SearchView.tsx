@@ -154,7 +154,7 @@ function SearchViewComponent({
                       {result.title}
                     </PreText>
                     <span
-                      className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${badgeStyle}`}
+                      className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${badgeStyle}`}
                     >
                       {cat}
                     </span>
@@ -200,7 +200,7 @@ function SearchViewComponent({
             <PreText className="text-muted-foreground/80 mb-3 text-sm" whiteSpace="nowrap">
               {`Type to search ${searchFilter === "all" ? "countries, commands, and features" : searchFilter}`}
             </PreText>
-            <div className="text-muted-foreground/65 flex items-center justify-center gap-3 text-[11px]">
+            <div className="text-muted-foreground/65 flex items-center justify-center gap-3 text-xs">
               <span className="flex items-center gap-1">
                 <kbd className="bg-muted/50 rounded px-1.5 py-0.5">⌘K</kbd>
                 <PreText className="w-auto text-inherit" whiteSpace="nowrap">

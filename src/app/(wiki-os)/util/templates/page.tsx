@@ -164,7 +164,7 @@ export default function WikiTemplatesPage() {
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
           {/* Left Column: Template Catalog (4 cols) */}
           <div className="border-border/60 bg-card/40 h-[720px] space-y-2 overflow-y-auto rounded-3xl border p-4 backdrop-blur-xl lg:col-span-4">
-            <div className="text-muted-foreground flex items-center justify-between px-2 py-1 text-[11px] font-bold tracking-wider uppercase">
+            <div className="text-muted-foreground flex items-center justify-between px-2 py-1 text-xs font-bold tracking-wider uppercase">
               <span>Curated Templates ({searchResults?.templates?.length ?? 0})</span>
             </div>
 
@@ -189,13 +189,13 @@ export default function WikiTemplatesPage() {
                   <div className="flex w-full items-center justify-between">
                     <span className="text-foreground truncate font-bold">{tmpl.name}</span>
                     {tmpl.isCanonical && (
-                      <span className="bg-wiki/20 text-wiki rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                      <span className="bg-wiki/20 text-wiki rounded-md px-1.5 py-0.5 text-xs font-bold tracking-wider uppercase">
                         Master
                       </span>
                     )}
                   </div>
                   {tmpl.description && (
-                    <span className="text-muted-foreground line-clamp-1 text-[11px]">
+                    <span className="text-muted-foreground line-clamp-1 text-xs">
                       {tmpl.description}
                     </span>
                   )}
@@ -216,7 +216,7 @@ export default function WikiTemplatesPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <h2 className="text-foreground text-xl font-bold">{selectedTemplateName}</h2>
-                    <span className="bg-wiki/15 text-wiki rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase">
+                    <span className="bg-wiki/15 text-wiki rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase">
                       {templateData?.category || "Template"}
                     </span>
                   </div>
@@ -312,10 +312,10 @@ export default function WikiTemplatesPage() {
               {presetMatch?.variants && presetMatch.variants.length > 0 && (
                 <div className="border-border/40 bg-secondary/25 space-y-2 rounded-2xl border p-3.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-foreground text-[11px] font-bold tracking-wider uppercase">
+                    <span className="text-foreground text-xs font-bold tracking-wider uppercase">
                       Polymorphic Variant / Subtype
                     </span>
-                    <span className="text-muted-foreground text-[10px]">
+                    <span className="text-muted-foreground text-xs">
                       Swaps live field sets & visual rendering
                     </span>
                   </div>
@@ -359,14 +359,14 @@ export default function WikiTemplatesPage() {
                         <span className="text-foreground text-xs font-bold">
                           Factbook Specification
                         </span>
-                        <Badge variant="outline" className="border-border/60 font-mono text-[10px]">
+                        <Badge variant="outline" className="border-border/60 font-mono text-xs">
                           {previewParams.length} parameters
                         </Badge>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="bg-background/60 border-border/30 rounded-xl border p-2.5">
-                          <div className="text-muted-foreground text-[10px] font-semibold uppercase">
+                          <div className="text-muted-foreground text-xs font-semibold uppercase">
                             Template Class
                           </div>
                           <div className="text-foreground mt-0.5 font-medium">
@@ -374,7 +374,7 @@ export default function WikiTemplatesPage() {
                           </div>
                         </div>
                         <div className="bg-background/60 border-border/30 rounded-xl border p-2.5">
-                          <div className="text-muted-foreground text-[10px] font-semibold uppercase">
+                          <div className="text-muted-foreground text-xs font-semibold uppercase">
                             Active Subtype
                           </div>
                           <div className="text-foreground mt-0.5 font-medium">
@@ -387,19 +387,19 @@ export default function WikiTemplatesPage() {
                     {/* Instant Wikitext Snippet */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">
+                        <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                           Wikitext Invocation
                         </span>
                         <button
                           type="button"
                           data-cuelume-press="tap"
                           onClick={handleCopy}
-                          className="text-wiki cursor-pointer text-[11px] transition-transform hover:underline active:scale-[0.98]"
+                          className="text-wiki cursor-pointer text-xs transition-transform hover:underline active:scale-[0.98]"
                         >
                           {copied ? "Copied wikitext" : "Copy wikitext"}
                         </button>
                       </div>
-                      <pre className="border-border/40 bg-background/90 text-foreground/90 max-h-72 overflow-y-auto rounded-2xl border p-3.5 font-mono text-[11px] leading-relaxed shadow-inner">
+                      <pre className="border-border/40 bg-background/90 text-foreground/90 max-h-72 overflow-y-auto rounded-2xl border p-3.5 font-mono text-xs leading-relaxed shadow-inner">
                         {sampleWikitext}
                       </pre>
                     </div>
@@ -430,12 +430,12 @@ export default function WikiTemplatesPage() {
                               {p.name}
                             </span>
                             {p.type && (
-                              <Badge variant="secondary" className="text-[9px]">
+                              <Badge variant="secondary" className="text-xs">
                                 {p.type}
                               </Badge>
                             )}
                           </div>
-                          <p className="text-muted-foreground line-clamp-2 text-[11px]">
+                          <p className="text-muted-foreground line-clamp-2 text-xs">
                             {p.label || p.example || "Parameter field"}
                           </p>
                         </div>
@@ -452,7 +452,7 @@ export default function WikiTemplatesPage() {
                     <span className="text-muted-foreground text-xs font-bold">
                       Complete Wikitext Starter Code
                     </span>
-                    <span className="text-muted-foreground text-[10px]">
+                    <span className="text-muted-foreground text-xs">
                       Ready to paste into source editor
                     </span>
                   </div>

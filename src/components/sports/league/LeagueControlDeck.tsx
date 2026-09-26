@@ -140,7 +140,7 @@ export function LeagueControlDeck({
             <h4 className="text-xs font-black text-foreground uppercase tracking-wider">
               Admin Controls
             </h4>
-            <span className="text-[10px] text-muted-foreground font-semibold">
+            <span className="text-xs text-muted-foreground font-semibold">
               Commissioner
             </span>
           </div>
@@ -148,7 +148,7 @@ export function LeagueControlDeck({
 
         <Badge
           variant="outline"
-          className="border-emerald-500/40 bg-emerald-500/10 text-[9px] font-black uppercase text-emerald-400 tracking-wider"
+          className="border-emerald-500/40 bg-emerald-500/10 text-xs font-black uppercase text-emerald-400 tracking-wider"
         >
           Admin
         </Badge>
@@ -160,7 +160,7 @@ export function LeagueControlDeck({
           <span className="text-xs font-bold text-foreground block">
             Feature on Sports Page
           </span>
-          <span className="text-[10px] text-muted-foreground block">
+          <span className="text-xs text-muted-foreground block">
             Show at top of leagues list
           </span>
         </div>
@@ -176,7 +176,7 @@ export function LeagueControlDeck({
 
       {/* ─── 3. Simulation & Season Runtime ─── */}
       <div className="space-y-2 pt-1 border-t border-border/20">
-        <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">
+        <span className="text-xs font-black uppercase tracking-wider text-muted-foreground block">
           Season Controls
         </span>
 
@@ -291,7 +291,7 @@ export function LeagueControlDeck({
 
       {/* ─── 4. Administration & Utilities ─── */}
       <div className="space-y-2 pt-1 border-t border-border/20">
-        <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">
+        <span className="text-xs font-black uppercase tracking-wider text-muted-foreground block">
           League Settings
         </span>
 

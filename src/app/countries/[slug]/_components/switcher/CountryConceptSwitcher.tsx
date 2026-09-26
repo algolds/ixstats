@@ -86,10 +86,10 @@ export function CountryConceptSwitcher({
             className="facet-surface facet-refraction mb-3 w-80 rounded-2xl border border-white/15 bg-background/90 p-3 shadow-2xl backdrop-blur-2xl"
           >
             <div className="mb-2 flex items-center justify-between border-b border-white/10 px-2 pb-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
                 Switch Profile Experience
               </span>
-              <span className="text-[10px] font-mono text-muted-foreground/80">Alt + 1..4</span>
+              <span className="text-xs font-mono text-muted-foreground/80">Alt + 1..4</span>
             </div>
 
             <div className="space-y-1">
@@ -124,12 +124,12 @@ export function CountryConceptSwitcher({
                       </div>
                       <div>
                         <p className="text-xs font-bold text-foreground">{concept.label}</p>
-                        <p className="text-[10px] text-muted-foreground">{concept.tag}</p>
+                        <p className="text-xs text-muted-foreground">{concept.tag}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-mono text-muted-foreground/60">
+                      <span className="text-xs font-mono text-muted-foreground/60">
                         ⌥{index + 1}
                       </span>
                       {isSelected && <Check className="h-4 w-4 text-[var(--flag-primary)]" />}

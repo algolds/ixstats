@@ -181,7 +181,7 @@ export function IntelligenceTemplatesPanel() {
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Templates
           </p>
           <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
@@ -189,7 +189,7 @@ export function IntelligenceTemplatesPanel() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Restricted Clearance
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400">
@@ -197,7 +197,7 @@ export function IntelligenceTemplatesPanel() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Public Briefings
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
@@ -205,7 +205,7 @@ export function IntelligenceTemplatesPanel() {
           </p>
         </div>
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Active Registry
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
@@ -311,14 +311,14 @@ export function IntelligenceTemplatesPanel() {
                       {REPORT_TYPE_LABELS[template.reportType] || template.reportType}
                     </div>
                     {template.summaryTemplate && (
-                      <div className="text-muted-foreground max-w-sm truncate text-[11px]">
+                      <div className="text-muted-foreground max-w-sm truncate text-xs">
                         {template.summaryTemplate}
                       </div>
                     )}
                   </td>
                   <td className="px-4 py-2.5">
                     <span
-                      className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                      className={`inline-block rounded-md border px-2 py-0.5 text-xs font-semibold uppercase ${
                         template.classification === "RESTRICTED"
                           ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
                           : "border-cyan-500/30 bg-cyan-500/10 text-cyan-400"
@@ -335,7 +335,7 @@ export function IntelligenceTemplatesPanel() {
                   </td>
                   <td className="px-4 py-2.5">
                     <span
-                      className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-semibold ${
+                      className={`inline-block rounded-md px-2 py-0.5 text-xs font-semibold ${
                         template.isActive
                           ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
                           : "bg-muted/50 text-muted-foreground border-border border"

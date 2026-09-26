@@ -69,7 +69,7 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
           )}
         </div>
         {!hasGeom && (
-          <div className="text-muted-foreground mt-1 text-left text-[10px]">
+          <div className="text-muted-foreground mt-1 text-left text-xs">
             Use the line drawing tool in the map controls to draw the path of the river.
           </div>
         )}

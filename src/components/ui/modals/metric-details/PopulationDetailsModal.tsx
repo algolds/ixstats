@@ -428,7 +428,7 @@ export function PopulationDetailsModal({
                       {performanceMetrics.globalComparison > 0 ? "+" : ""}
                       {performanceMetrics.globalComparison.toFixed(1)}%
                     </span>
-                    <span className="text-muted-foreground mt-0.5 text-[10px]">
+                    <span className="text-muted-foreground mt-0.5 text-xs">
                       Avg: {formatPopulation(performanceMetrics.globalAverage)}
                     </span>
                   </div>
@@ -440,7 +440,7 @@ export function PopulationDetailsModal({
                     <span className="text-xl font-bold text-amber-400">
                       #{performanceMetrics.rank}
                     </span>
-                    <span className="text-muted-foreground mt-0.5 text-[10px]">
+                    <span className="text-muted-foreground mt-0.5 text-xs">
                       of {performanceMetrics.totalCountries} countries
                     </span>
                   </div>
@@ -507,7 +507,7 @@ export function PopulationDetailsModal({
                           >
                             <span
                               className={cn(
-                                "text-[11px] font-semibold",
+                                "text-xs font-semibold",
                                 idx === populationTierInfo.currentIndex
                                   ? "text-cyan-400"
                                   : "text-white/70"
@@ -515,11 +515,11 @@ export function PopulationDetailsModal({
                             >
                               {tier.name}
                             </span>
-                            <span className="text-muted-foreground text-[10px]">
+                            <span className="text-muted-foreground text-xs">
                               {tier.description}
                             </span>
                             {idx === populationTierInfo.currentIndex && (
-                              <Badge className="ml-1 border-none bg-cyan-500/20 px-1 py-0 text-[8px] text-cyan-400">
+                              <Badge className="ml-1 border-none bg-cyan-500/20 px-1 py-0 text-xs text-cyan-400">
                                 Current
                               </Badge>
                             )}
@@ -950,12 +950,12 @@ export function PopulationDetailsModal({
                 {demographicBreakdown.map((segment) => (
                   <div
                     key={segment.name}
-                    className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-2 text-[11px]"
+                    className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-2 text-xs"
                   >
                     <span className="text-muted-foreground font-medium">{segment.name}</span>
                     <div className="text-right">
                       <div className="font-bold text-white">{formatPopulation(segment.value)}</div>
-                      <div className="text-[9px] text-cyan-400">
+                      <div className="text-xs text-cyan-400">
                         {segment.percentage.toFixed(1)}%
                       </div>
                     </div>

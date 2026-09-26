@@ -105,7 +105,7 @@ export function SearchableList<T>({
           {title}
         </span>
         <span
-          className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] font-medium ${accent.badge}`}
+          className={`rounded-full px-1.5 py-0.5 font-mono text-xs font-medium ${accent.badge}`}
         >
           {items.length}
         </span>
@@ -128,14 +128,14 @@ export function SearchableList<T>({
           )}
 
           {isEmpty && (
-            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-4 text-[11px]">
+            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-4 text-xs">
               <Inbox className="h-3 w-3" />
               {emptyMessage}
             </div>
           )}
 
           {isFilteredEmpty && (
-            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-4 text-[11px]">
+            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-4 text-xs">
               <Inbox className="h-3 w-3" />
               {noMatchMessage}
             </div>

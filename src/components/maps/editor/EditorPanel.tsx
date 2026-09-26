@@ -314,7 +314,7 @@ export function EditorPanel({
             onTabDrop(tabId);
           }
         }}
-        className={`border-border/40 bg-card/20 text-muted-foreground hover:border-primary/40 m-2 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-[11px] backdrop-blur-sm transition-colors`}
+        className={`border-border/40 bg-card/20 text-muted-foreground hover:border-primary/40 m-2 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-xs backdrop-blur-sm transition-colors`}
         style={{
           width: placement === "bottom" ? "100%" : 140,
           height: placement === "bottom" ? 80 : "100%",
@@ -413,7 +413,7 @@ export function EditorPanel({
                           }
                     }
                     onClick={() => handleTabClick(tabId)}
-                    className={`flex h-full min-w-[60px] flex-shrink-0 cursor-grab items-center justify-center gap-1.5 px-3 text-[10px] font-medium transition-colors sm:text-[11px] ${
+                    className={`flex h-full min-w-[60px] flex-shrink-0 cursor-grab items-center justify-center gap-1.5 px-3 text-xs font-medium transition-colors sm:text-xs ${
                       isActive
                         ? "border-primary bg-card/40 text-foreground border-b-2"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
@@ -422,7 +422,7 @@ export function EditorPanel({
                     <tabDef.Icon className="h-3 w-3" />
                     <span className="hidden sm:inline">{tabDef.label}</span>
                     {tabId === "features" && featureCount !== undefined && featureCount > 0 && (
-                      <span className="bg-muted text-muted-foreground rounded-full px-1 text-[9px] tabular-nums">
+                      <span className="bg-muted text-muted-foreground rounded-full px-1 text-xs tabular-nums">
                         {featureCount}
                       </span>
                     )}

@@ -492,7 +492,7 @@ function CategoryGroupSection({
     <div className="mb-1">
       <button
         onClick={onToggleGroup}
-        className="flex items-center gap-1.5 w-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground cursor-pointer rounded-md transition-colors active:scale-[0.98]"
+        className="flex items-center gap-1.5 w-full px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground cursor-pointer rounded-md transition-colors active:scale-[0.98]"
       >
         {isGroupOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <span>{group.label}</span>
@@ -586,14 +586,14 @@ function CategoryRow({
           {name}
         </button>
         {totalCount != null && totalCount > 0 && (
-          <span className="text-[10px] text-muted-foreground/70 shrink-0 mr-1 tabular-nums">
+          <span className="text-xs text-muted-foreground/70 shrink-0 mr-1 tabular-nums">
             {totalCount.toLocaleString()}
           </span>
         )}
         <button
           onClick={onToggle}
           className={cn(
-            "h-5 w-5 flex items-center justify-center rounded border border-border/40 text-[10px] text-muted-foreground hover:border-primary hover:text-primary shrink-0 transition-all cursor-pointer active:scale-95",
+            "h-5 w-5 flex items-center justify-center rounded border border-border/40 text-xs text-muted-foreground hover:border-primary hover:text-primary shrink-0 transition-all cursor-pointer active:scale-95",
             isActive && "bg-primary/15 border-primary/40 text-primary font-bold"
           )}
           title={isActive ? "Remove filter" : "Add as filter"}
@@ -612,7 +612,7 @@ function CategoryRow({
                 key={sub}
                 onClick={() => onBrowse(sub)}
                 className={cn(
-                  "flex w-full items-center gap-1.5 py-1 px-1.5 text-left text-[11px] rounded transition-colors hover:bg-muted/30 active:scale-[0.98] cursor-pointer",
+                  "flex w-full items-center gap-1.5 py-1 px-1.5 text-left text-xs rounded transition-colors hover:bg-muted/30 active:scale-[0.98] cursor-pointer",
                   isSubActive
                     ? "font-semibold text-primary"
                     : "text-muted-foreground hover:text-foreground"

@@ -95,7 +95,7 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
       {/* Primary River Metrics */}
       <div className="grid grid-cols-2 gap-2">
         <div className="border-border/40 bg-card/60 rounded-lg border p-2 min-w-0">
-          <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider block truncate">
+          <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block truncate">
             Course length
           </span>
           <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
@@ -103,32 +103,32 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
               {lengthKm != null ? Math.round(lengthKm).toLocaleString() : "—"}
             </span>
             {lengthKm != null && (
-              <span className="text-muted-foreground/80 font-sans text-[11px] font-normal shrink-0">
+              <span className="text-muted-foreground/80 font-sans text-xs font-normal shrink-0">
                 km
               </span>
             )}
           </div>
           {lengthMi != null && (
-            <span className="text-muted-foreground/60 font-mono text-[10px] tabular-nums block mt-0.5">
+            <span className="text-muted-foreground/60 font-mono text-xs tabular-nums block mt-0.5">
               ~{Math.round(lengthMi).toLocaleString()} mi
             </span>
           )}
         </div>
 
         <div className="border-border/40 bg-card/60 rounded-lg border p-2 min-w-0">
-          <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider block truncate">
+          <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block truncate">
             Course geometry
           </span>
           <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
             <span className="text-foreground font-mono text-sm font-semibold tabular-nums tracking-tight truncate">
               {coords.length.toLocaleString()}
             </span>
-            <span className="text-muted-foreground/80 font-sans text-[11px] font-normal shrink-0">
+            <span className="text-muted-foreground/80 font-sans text-xs font-normal shrink-0">
               nodes
             </span>
           </div>
           {courseDirection && (
-            <div className="text-muted-foreground/80 flex items-center gap-1 text-[10px] mt-0.5">
+            <div className="text-muted-foreground/80 flex items-center gap-1 text-xs mt-0.5">
               <Compass className="h-3 w-3 text-cyan-500 shrink-0" />
               <span className="truncate">{courseDirection}</span>
             </div>
@@ -141,7 +141,7 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Waves className="h-3.5 w-3.5 text-cyan-500" />
-            <span className="text-muted-foreground/70 text-[9px] font-semibold uppercase tracking-wider">
+            <span className="text-muted-foreground/70 text-xs font-semibold uppercase tracking-wider">
               Hydrological Profile
             </span>
           </div>
@@ -151,36 +151,36 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
         </div>
 
         {/* Source vs Mouth comparison */}
-        <div className="grid grid-cols-2 gap-2 text-[11px]">
+        <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="border-border/30 bg-muted/20 space-y-1 rounded p-2 min-w-0">
-            <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider block">
+            <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block">
               Headwaters (Source)
             </span>
             <p className="text-foreground font-mono text-xs font-semibold tabular-nums">
               {sourceElev != null ? `${sourceElev.toLocaleString()} m` : "—"}
             </p>
-            <span className="text-muted-foreground/80 text-[10px] block truncate">
+            <span className="text-muted-foreground/80 text-xs block truncate">
               {sourceSample.data?.zoneName || (source ? "Highland" : "No source")}
             </span>
             {source && (
-              <span className="text-muted-foreground/50 font-mono text-[9px] block truncate tabular-nums">
+              <span className="text-muted-foreground/50 font-mono text-xs block truncate tabular-nums">
                 {source[1].toFixed(2)}°, {source[0].toFixed(2)}°
               </span>
             )}
           </div>
 
           <div className="border-border/30 bg-muted/20 space-y-1 rounded p-2 min-w-0">
-            <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider block">
+            <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block">
               Terminus (Mouth)
             </span>
             <p className="text-foreground font-mono text-xs font-semibold tabular-nums">
               {mouthElev != null ? `${mouthElev.toLocaleString()} m` : "—"}
             </p>
-            <span className="text-muted-foreground/80 text-[10px] block truncate">
+            <span className="text-muted-foreground/80 text-xs block truncate">
               {mouthSample.data?.zoneName || (mouth ? "Coastal / Lowland" : "No terminus")}
             </span>
             {mouth && (
-              <span className="text-muted-foreground/50 font-mono text-[9px] block truncate tabular-nums">
+              <span className="text-muted-foreground/50 font-mono text-xs block truncate tabular-nums">
                 {mouth[1].toFixed(2)}°, {mouth[0].toFixed(2)}°
               </span>
             )}
@@ -189,14 +189,14 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
 
         {/* Elevation Drop & Gradient */}
         <div className="border-border/30 bg-muted/20 space-y-1.5 rounded p-2">
-          <div className="flex items-center justify-between text-[11px]">
+          <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Total drop</span>
             <span className="text-foreground font-mono font-medium tabular-nums">
               {elevDropM != null ? `${elevDropM.toLocaleString()} m` : "—"}
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-[11px]">
+          <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Mean gradient</span>
             <span className="text-foreground font-mono font-medium tabular-nums">
               {gradientMPerKm != null ? `${gradientMPerKm.toFixed(1)} m/km` : "—"}
@@ -204,7 +204,7 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
           </div>
 
           {flowRegime && (
-            <div className="flex items-center justify-between text-[10px] pt-0.5 border-border/20 border-t">
+            <div className="flex items-center justify-between text-xs pt-0.5 border-border/20 border-t">
               <span className="text-muted-foreground">Flow regime</span>
               <span className={`font-medium ${flowRegime.tone}`}>{flowRegime.label}</span>
             </div>

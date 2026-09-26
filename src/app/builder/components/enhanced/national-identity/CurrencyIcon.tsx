@@ -227,7 +227,7 @@ export const CurrencyIcon = React.memo(function CurrencyIcon({
         ? "text-[8.5px]"
         : symbolText.length === 3
         ? "text-[9.5px]"
-        : "text-[11px]";
+        : "text-xs";
 
     return (
       <span

@@ -76,7 +76,7 @@ export function MessagesIdentityBadge({ identity, size = "sm" }: MessagesIdentit
     <span className="inline-flex items-center gap-1">
       {Icon && <Icon className={`${iconSize} ${identity.badgeColor ?? "text-muted-foreground"}`} />}
       {identity.sourceLabel && (
-        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           {identity.sourceLabel}
         </span>
       )}

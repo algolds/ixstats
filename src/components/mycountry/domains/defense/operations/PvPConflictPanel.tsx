@@ -272,10 +272,10 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                     <span>
                       vs <span className="font-medium">{opponent?.name ?? "Unknown"}</span>
                     </span>
-                    <Badge variant="outline" className="text-[10px]">
+                    <Badge variant="outline" className="text-xs">
                       {c.type.toUpperCase()}
                     </Badge>
-                    <Badge variant="outline" className="text-[10px]">
+                    <Badge variant="outline" className="text-xs">
                       {c.status}
                     </Badge>
                   </div>
@@ -309,7 +309,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                     <span>vs {opponent?.name ?? "Unknown"}</span>
                     <Badge
                       variant="outline"
-                      className={`text-[10px] ${
+                      className={`text-xs ${
                         draw ? "text-gray-500" : won ? "text-green-500" : "text-red-500"
                       }`}
                     >

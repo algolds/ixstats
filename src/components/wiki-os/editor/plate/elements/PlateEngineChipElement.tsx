@@ -30,7 +30,7 @@ export function PlateEngineChipElement({
       {children}
       <span
         contentEditable={false}
-        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold ${chipTone[family] ?? "border-border bg-secondary text-foreground"}`}
+        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold ${chipTone[family] ?? "border-border bg-secondary text-foreground"}`}
       >
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-70" />⚡{" "}
         {el.label}
@@ -38,7 +38,7 @@ export function PlateEngineChipElement({
           <button
             type="button"
             onClick={() => cb.openTemplateEditor(el.id!)}
-            className="ml-0.5 rounded px-1 text-[9px] underline opacity-60 hover:opacity-100 active:scale-[0.98]"
+            className="ml-0.5 rounded px-1 text-xs underline opacity-60 hover:opacity-100 active:scale-[0.98]"
           >
             edit
           </button>

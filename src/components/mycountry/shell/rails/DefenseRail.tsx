@@ -120,14 +120,14 @@ export function DefenseRail({ countryId }: { countryId: string }) {
             <Sword className="h-3.5 w-3.5 text-red-400" />
             <h4 className="text-foreground text-xs font-bold">Military Branches</h4>
           </div>
-          <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[10px] font-extrabold text-red-400">
+          <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-extrabold text-red-400">
             {branches?.length ?? 0} Active
           </span>
         </div>
 
         <div className="space-y-1.5">
           {!branches || branches.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-center text-[11px]">
+            <p className="text-muted-foreground py-2 text-center text-xs">
               No active military branches configured.
             </p>
           ) : (
@@ -140,11 +140,11 @@ export function DefenseRail({ countryId }: { countryId: string }) {
                   key={b.id}
                   className="space-y-1 rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
                 >
-                  <div className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-foreground truncate font-semibold">
                       {b.name ?? b.branchType ?? "Military Branch"}
                     </span>
-                    <span className="text-[10px] font-bold text-red-400">
+                    <span className="text-xs font-bold text-red-400">
                       {Math.round(readiness)}% ready · {(personnel / 1000).toFixed(1)}k personnel
                     </span>
                   </div>
@@ -168,14 +168,14 @@ export function DefenseRail({ countryId }: { countryId: string }) {
             <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
             <h4 className="text-foreground text-xs font-bold">Threat Assessments</h4>
           </div>
-          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-extrabold text-amber-400">
+          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-extrabold text-amber-400">
             {assessment?.activeThreats?.length ?? 0} Threats
           </span>
         </div>
 
         <div className="space-y-1.5">
           {!assessment?.activeThreats || assessment.activeThreats.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-center text-[11px]">
+            <p className="text-muted-foreground py-2 text-center text-xs">
               All threat vectors clear. Defensive alert level nominal.
             </p>
           ) : (
@@ -195,13 +195,13 @@ export function DefenseRail({ countryId }: { countryId: string }) {
                         <ShieldAlert className="h-3 w-3 text-amber-400" />
                       )}
                     </span>
-                    <span className="text-foreground truncate text-[11px] font-semibold">
+                    <span className="text-foreground truncate text-xs font-semibold">
                       {threat.threatName ?? threat.name ?? "Threat Vector"}
                     </span>
                   </div>
                   <span
                     className={cn(
-                      "shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase",
+                      "shrink-0 rounded-md border px-1.5 py-0.5 text-xs font-bold uppercase",
                       critical
                         ? "border-red-500/30 bg-red-500/10 text-red-400"
                         : "border-amber-500/30 bg-amber-500/10 text-amber-400"

@@ -247,10 +247,10 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
         {/* Layer 6: "Historical Archive" label at center */}
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <div className="space-y-1 px-4 text-center">
-            <p className="text-[9px] font-semibold tracking-[0.25em] text-white/25 uppercase">
+            <p className="text-xs font-semibold tracking-[0.25em] text-white/25 uppercase">
               {theme.label}
             </p>
-            <p className="text-[8px] tracking-[0.2em] text-white/15 uppercase">
+            <p className="text-xs tracking-[0.2em] text-white/15 uppercase">
               Historical Archive
             </p>
           </div>

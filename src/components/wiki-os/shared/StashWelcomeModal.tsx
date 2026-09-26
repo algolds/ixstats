@@ -305,7 +305,7 @@ export function StashWelcomeModal({
                               {step.title}
                             </h4>
                           </div>
-                          <p className="text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">
+                          <p className="text-xs leading-relaxed text-stone-500 dark:text-stone-400">
                             {step.description}
                           </p>
                         </div>

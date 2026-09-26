@@ -49,7 +49,7 @@ export function VaultCardHoldingsCard({
         {featuredCards.length > 0 && (
           <button
             onClick={() => onNavigate?.("cards")}
-            className="flex items-center gap-1 text-[11px] font-bold text-amber-600 transition-transform hover:underline active:scale-95 dark:text-amber-400"
+            className="flex items-center gap-1 text-xs font-bold text-amber-600 transition-transform hover:underline active:scale-95 dark:text-amber-400"
           >
             Manage Portfolio <ArrowRight className="h-3 w-3" />
           </button>
@@ -64,7 +64,7 @@ export function VaultCardHoldingsCard({
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <Layers className="text-muted-foreground/40 mb-3 h-10 w-10" />
           <span className="text-foreground block text-xs font-bold">Portfolio Empty</span>
-          <p className="text-muted-foreground mt-1 mb-3 text-[11px]">
+          <p className="text-muted-foreground mt-1 mb-3 text-xs">
             Import cards or open packs to populate your assets.
           </p>
           <Button
@@ -100,7 +100,7 @@ export function VaultCardHoldingsCard({
                   <span className="text-foreground max-w-[130px] truncate font-semibold">
                     {card.title}
                   </span>
-                  <span className="flex items-center gap-0.5 font-mono text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                  <span className="flex items-center gap-0.5 font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
                     <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
                     {card.marketValue.toLocaleString()}
                   </span>

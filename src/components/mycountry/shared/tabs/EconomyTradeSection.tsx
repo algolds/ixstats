@@ -62,7 +62,7 @@ export function EconomyTradeSection({
         <div className="relative z-10 space-y-4 p-4">
           <div className="border-border/10 grid grid-cols-3 gap-4 rounded-xl border bg-white/10 p-3 dark:bg-white/[0.02]">
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Total Exports
               </p>
               <p className="text-foreground mt-0.5 text-sm font-bold">
@@ -72,10 +72,10 @@ export function EconomyTradeSection({
                   currency
                 )}
               </p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">35.0% of GDP</p>
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">35.0% of GDP</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Total Imports
               </p>
               <p className="text-foreground mt-0.5 text-sm font-bold">
@@ -85,10 +85,10 @@ export function EconomyTradeSection({
                   currency
                 )}
               </p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">32.0% of GDP</p>
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">32.0% of GDP</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
                 Trade Balance
               </p>
               <p className="mt-0.5 text-sm font-bold text-emerald-500">
@@ -98,7 +98,7 @@ export function EconomyTradeSection({
                   currency
                 )}
               </p>
-              <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Surplus (+3.0%)</p>
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">Surplus (+3.0%)</p>
             </div>
           </div>
 

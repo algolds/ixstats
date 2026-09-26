@@ -127,7 +127,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
               </h3>
             </div>
           </div>
-          <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+          <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 rounded px-1.5 py-0.5 text-xs font-medium tracking-wide uppercase">
             Active
           </span>
         </div>
@@ -146,14 +146,14 @@ export const DocumentInspector = React.memo(function DocumentInspector({
       {/* Geography Overview */}
       <div className="border-border/60 bg-muted/10 space-y-2.5 rounded-xl border p-3">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Geography
           </span>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div className="border-border/40 bg-card/60 rounded-lg border p-2 min-w-0">
-            <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider block truncate">
+            <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block truncate">
               Land area
             </span>
             <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
@@ -161,14 +161,14 @@ export const DocumentInspector = React.memo(function DocumentInspector({
                 {areaKm2 != null ? Math.round(areaKm2).toLocaleString() : "—"}
               </span>
               {areaKm2 != null && (
-                <span className="text-muted-foreground/80 font-sans text-[11px] font-normal shrink-0">
+                <span className="text-muted-foreground/80 font-sans text-xs font-normal shrink-0">
                   km²
                 </span>
               )}
             </div>
           </div>
           <div className="border-border/40 bg-card/60 rounded-lg border p-2 min-w-0">
-            <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider block truncate">
+            <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block truncate">
               Total features
             </span>
             <p className="text-foreground font-mono text-sm font-semibold tabular-nums mt-0.5 truncate">
@@ -179,50 +179,50 @@ export const DocumentInspector = React.memo(function DocumentInspector({
 
         {/* Feature Breakdown Chips */}
         <div className="grid grid-cols-2 gap-1.5 pt-1">
-          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] min-w-0">
+          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs min-w-0">
             <MapPin className="text-primary h-3 w-3 shrink-0" />
             <span className="text-muted-foreground truncate">Cities</span>
-            <span className="text-foreground ml-auto font-mono text-[10px] font-semibold tabular-nums shrink-0">
+            <span className="text-foreground ml-auto font-mono text-xs font-semibold tabular-nums shrink-0">
               {counts.cities.toLocaleString()}
             </span>
           </div>
 
-          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] min-w-0">
+          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs min-w-0">
             <Hexagon className="text-amber-500 h-3 w-3 shrink-0" />
             <span className="text-muted-foreground truncate">Regions</span>
-            <span className="text-foreground ml-auto font-mono text-[10px] font-semibold tabular-nums shrink-0">
+            <span className="text-foreground ml-auto font-mono text-xs font-semibold tabular-nums shrink-0">
               {counts.subdivisions.toLocaleString()}
             </span>
           </div>
 
-          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] min-w-0">
+          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs min-w-0">
             <Route className="text-blue-500 h-3 w-3 shrink-0" />
             <span className="text-muted-foreground truncate">Routes</span>
-            <span className="text-foreground ml-auto font-mono text-[10px] font-semibold tabular-nums shrink-0">
+            <span className="text-foreground ml-auto font-mono text-xs font-semibold tabular-nums shrink-0">
               {counts.routes.toLocaleString()}
             </span>
           </div>
 
-          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] min-w-0">
+          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs min-w-0">
             <Landmark className="text-amber-500 h-3 w-3 shrink-0" />
             <span className="text-muted-foreground truncate">POIs</span>
-            <span className="text-foreground ml-auto font-mono text-[10px] font-semibold tabular-nums shrink-0">
+            <span className="text-foreground ml-auto font-mono text-xs font-semibold tabular-nums shrink-0">
               {counts.pois.toLocaleString()}
             </span>
           </div>
 
-          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] min-w-0">
+          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs min-w-0">
             <Mountain className="text-emerald-500 h-3 w-3 shrink-0" />
             <span className="text-muted-foreground truncate">Peaks</span>
-            <span className="text-foreground ml-auto font-mono text-[10px] font-semibold tabular-nums shrink-0">
+            <span className="text-foreground ml-auto font-mono text-xs font-semibold tabular-nums shrink-0">
               {counts.peaks.toLocaleString()}
             </span>
           </div>
 
-          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] min-w-0">
+          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs min-w-0">
             <Waves className="text-cyan-500 h-3 w-3 shrink-0" />
             <span className="text-muted-foreground truncate">Water</span>
-            <span className="text-foreground ml-auto font-mono text-[10px] font-semibold tabular-nums shrink-0">
+            <span className="text-foreground ml-auto font-mono text-xs font-semibold tabular-nums shrink-0">
               {waterCount.toLocaleString()}
             </span>
           </div>
@@ -235,12 +235,12 @@ export const DocumentInspector = React.memo(function DocumentInspector({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Waves className="h-3.5 w-3.5 text-cyan-500" />
-              <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+              <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Hydrology System
               </span>
             </div>
             {geoProfile?.hydro?.drainageDensity != null && (
-              <span className="text-muted-foreground/60 font-mono text-[9px] tabular-nums">
+              <span className="text-muted-foreground/60 font-mono text-xs tabular-nums">
                 Drainage: {geoProfile.hydro.drainageDensity.toFixed(2)} km/km²
               </span>
             )}
@@ -248,7 +248,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
 
           <div className="grid grid-cols-2 gap-2">
             <div className="border-border/40 bg-card/60 rounded-lg border p-2 min-w-0">
-              <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider block truncate">
+              <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block truncate">
                 River network
               </span>
               <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
@@ -260,20 +260,20 @@ export const DocumentInspector = React.memo(function DocumentInspector({
                     : "—"}
                 </span>
                 {geoProfile?.hydro?.totalRiverLengthKm != null && geoProfile.hydro.totalRiverLengthKm > 0 && (
-                  <span className="text-muted-foreground/80 font-sans text-[11px] font-normal shrink-0">
+                  <span className="text-muted-foreground/80 font-sans text-xs font-normal shrink-0">
                     km
                   </span>
                 )}
               </div>
               {geoProfile?.superlatives?.longestRiver && (
-                <span className="text-muted-foreground/70 text-[10px] truncate block mt-0.5">
+                <span className="text-muted-foreground/70 text-xs truncate block mt-0.5">
                   Max: {geoProfile.superlatives.longestRiver.name}
                 </span>
               )}
             </div>
 
             <div className="border-border/40 bg-card/60 rounded-lg border p-2 min-w-0">
-              <span className="text-muted-foreground/70 text-[9px] uppercase tracking-wider block truncate">
+              <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block truncate">
                 Lakes & basins
               </span>
               <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
@@ -285,13 +285,13 @@ export const DocumentInspector = React.memo(function DocumentInspector({
                     : "—"}
                 </span>
                 {geoProfile?.hydro?.totalLakeAreaSqKm != null && geoProfile.hydro.totalLakeAreaSqKm > 0 && (
-                  <span className="text-muted-foreground/80 font-sans text-[11px] font-normal shrink-0">
+                  <span className="text-muted-foreground/80 font-sans text-xs font-normal shrink-0">
                     km²
                   </span>
                 )}
               </div>
               {geoProfile?.superlatives?.largestLake && (
-                <span className="text-muted-foreground/70 text-[10px] truncate block mt-0.5">
+                <span className="text-muted-foreground/70 text-xs truncate block mt-0.5">
                   Max: {geoProfile.superlatives.largestLake.name}
                 </span>
               )}
@@ -299,7 +299,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
           </div>
 
           {geoProfile?.climate?.estAnnualPrecipMm != null && (
-            <div className="border-border/30 bg-card/40 flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-[11px]">
+            <div className="border-border/30 bg-card/40 flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs">
               <span className="text-muted-foreground">Annual precipitation</span>
               <span className="text-foreground font-mono font-semibold tabular-nums">
                 {geoProfile.climate.estAnnualPrecipMm.toLocaleString()} mm/yr
@@ -311,7 +311,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
 
       {/* Quick Add */}
       <div className="border-border/60 bg-muted/10 space-y-2 rounded-xl border p-3">
-        <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Quick add
         </span>
         <div className="grid grid-cols-3 gap-2">
@@ -320,8 +320,8 @@ export const DocumentInspector = React.memo(function DocumentInspector({
             className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition-all active:scale-[0.98]"
           >
             <Hexagon className="text-amber-500 h-4 w-4" />
-            <span className="text-[11px] font-medium">Region</span>
-            <span className="bg-muted text-muted-foreground rounded px-1 py-0.2 text-[9px] font-mono">
+            <span className="text-xs font-medium">Region</span>
+            <span className="bg-muted text-muted-foreground rounded px-1 py-0.2 text-xs font-mono">
               R
             </span>
           </button>
@@ -331,8 +331,8 @@ export const DocumentInspector = React.memo(function DocumentInspector({
             className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition-all active:scale-[0.98]"
           >
             <MapPin className="text-primary h-4 w-4" />
-            <span className="text-[11px] font-medium">City</span>
-            <span className="bg-muted text-muted-foreground rounded px-1 py-0.2 text-[9px] font-mono">
+            <span className="text-xs font-medium">City</span>
+            <span className="bg-muted text-muted-foreground rounded px-1 py-0.2 text-xs font-mono">
               C
             </span>
           </button>
@@ -342,8 +342,8 @@ export const DocumentInspector = React.memo(function DocumentInspector({
             className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition-all active:scale-[0.98]"
           >
             <Route className="text-blue-500 h-4 w-4" />
-            <span className="text-[11px] font-medium">Route</span>
-            <span className="bg-muted text-muted-foreground rounded px-1 py-0.2 text-[9px] font-mono">
+            <span className="text-xs font-medium">Route</span>
+            <span className="bg-muted text-muted-foreground rounded px-1 py-0.2 text-xs font-mono">
               T
             </span>
           </button>
@@ -351,7 +351,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
       </div>
 
       {/* Ambient tip */}
-      <div className="text-muted-foreground/60 flex items-center justify-center gap-1.5 text-center text-[11px]">
+      <div className="text-muted-foreground/60 flex items-center justify-center gap-1.5 text-center text-xs">
         <Map className="h-3.5 w-3.5 shrink-0 opacity-60" />
         <span>Select any feature on the map to view details</span>
       </div>

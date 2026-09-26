@@ -291,7 +291,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                       )}
                     </div>
                     <div className="text-muted-foreground flex items-center gap-2 text-xs">
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {ideologyLabel(party.ideology)}
                       </Badge>
                       {party.leaderName && <span>Led by {party.leaderName}</span>}
@@ -301,7 +301,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                 <div className="flex items-center gap-2">
                   <div className="text-right">
                     <div className="text-sm font-semibold">{party.currentSupport.toFixed(1)}%</div>
-                    <div className="text-muted-foreground text-[10px]">support</div>
+                    <div className="text-muted-foreground text-xs">support</div>
                   </div>
                   <Button
                     variant="ghost"

@@ -208,7 +208,7 @@ export function WikiMarginDrawer({
                   <span className="text-xs font-bold tracking-tight text-[var(--wikios-text)]">
                     Margin
                   </span>
-                  <span className="max-w-[160px] truncate text-[10px] text-[var(--wikios-text-dim)]">
+                  <span className="max-w-[160px] truncate text-xs text-[var(--wikios-text-dim)]">
                     {articleTitle.replace(/_/g, " ")}
                   </span>
                 </div>
@@ -344,7 +344,7 @@ export function WikiMarginDrawer({
             </div>
 
             {/* Sleek Footbar Wayfinding & Quick Tools (Parity with Left Sidebar Nav Tools) */}
-            <div className="flex shrink-0 items-center justify-between border-t border-[var(--wikios-border)] bg-[var(--wikios-surface)]/80 px-3 py-2 text-[10px] text-[var(--wikios-text-dim)] backdrop-blur-xl select-none">
+            <div className="flex shrink-0 items-center justify-between border-t border-[var(--wikios-border)] bg-[var(--wikios-surface)]/80 px-3 py-2 text-xs text-[var(--wikios-text-dim)] backdrop-blur-xl select-none">
               <span className="max-w-[130px] truncate font-medium">
                 {articleTitle.replace(/_/g, " ")}
               </span>

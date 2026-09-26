@@ -305,7 +305,7 @@ export function NotificationComposer() {
                   <Bell className="h-3.5 w-3.5 text-rose-500" />
                   Platform Alert
                 </div>
-                <p className="text-muted-foreground text-[11px] leading-tight">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Halo tray & realtime notification center.
                 </p>
               </button>
@@ -324,7 +324,7 @@ export function NotificationComposer() {
                   <Crown className="h-3.5 w-3.5 text-amber-500" />
                   System Message
                 </div>
-                <p className="text-muted-foreground text-[11px] leading-tight">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Pinned System Messages thread in /messages inbox.
                 </p>
               </button>
@@ -343,7 +343,7 @@ export function NotificationComposer() {
                   <MessageSquare className="h-3.5 w-3.5 text-indigo-500" />
                   Direct Dispatch
                 </div>
-                <p className="text-muted-foreground text-[11px] leading-tight">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Direct conversation or diplomatic cable in /messages.
                 </p>
               </button>
@@ -366,7 +366,7 @@ export function NotificationComposer() {
                   key={p.label}
                   variant="outline"
                   size="sm"
-                  className="h-7 text-[11px] font-medium"
+                  className="h-7 text-xs font-medium"
                   onClick={() => applyPreset(p)}
                 >
                   {p.label}
@@ -604,16 +604,16 @@ export function NotificationComposer() {
             {form.mode === "platform_alert" && (
               <div className="rounded-xl border border-rose-500/30 bg-rose-500/[0.06] p-3.5 shadow-xs">
                 <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-rose-400 uppercase">
+                  <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-rose-400 uppercase">
                     <Shield className="h-3 w-3" />
                     {form.level} Priority Alert
                   </span>
-                  <span className="text-muted-foreground text-[10px] tabular-nums">Just now</span>
+                  <span className="text-muted-foreground text-xs tabular-nums">Just now</span>
                 </div>
                 <h4 className="text-foreground text-xs font-bold">
                   {form.title || "Notification Title"}
                 </h4>
-                <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
                   {form.description || "Notification body preview will appear here."}
                 </p>
               </div>
@@ -622,21 +622,21 @@ export function NotificationComposer() {
             {form.mode === "system_message" && (
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-3.5 shadow-xs">
                 <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-amber-400 uppercase">
+                  <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-400 uppercase">
                     <Crown className="h-3 w-3" />
                     System Dispatch • {form.category}
                   </span>
-                  <span className="text-muted-foreground text-[10px] tabular-nums">10:42 AM</span>
+                  <span className="text-muted-foreground text-xs tabular-nums">10:42 AM</span>
                 </div>
                 <h4 className="text-foreground text-xs font-bold">
                   {form.title || "System Message Title"}
                 </h4>
-                <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
                   {form.description || "Event summary and dispatch details."}
                 </p>
                 {form.actionable && (
                   <div className="mt-2.5 flex items-center gap-2">
-                    <div className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-400">
+                    <div className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-400">
                       Open Action →
                     </div>
                   </div>
@@ -647,18 +647,18 @@ export function NotificationComposer() {
             {form.mode === "direct_message" && (
               <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/[0.06] p-3.5 shadow-xs">
                 <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-indigo-400 uppercase">
+                  <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-indigo-400 uppercase">
                     <Globe className="h-3 w-3" />
                     {form.classification}
                     {" // "}
                     {form.conversationType.toUpperCase()}
                   </span>
-                  <span className="text-muted-foreground text-[10px] tabular-nums">Just now</span>
+                  <span className="text-muted-foreground text-xs tabular-nums">Just now</span>
                 </div>
                 <h4 className="text-foreground text-xs font-bold">
                   {form.title || "Subject Line"}
                 </h4>
-                <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed whitespace-pre-wrap">
+                <p className="text-muted-foreground mt-1 text-xs leading-relaxed whitespace-pre-wrap">
                   {form.description || "Direct dispatch message contents."}
                 </p>
               </div>

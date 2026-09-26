@@ -51,7 +51,7 @@ export function CalculationSimulator({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Object.entries(selectedModule.variables).map(([key, defaultValue]) => (
             <div key={key} className="space-y-1">
-              <label className="text-muted-foreground block font-mono text-[11px]">{key}</label>
+              <label className="text-muted-foreground block font-mono text-xs">{key}</label>
               <Input
                 type="number"
                 value={sandboxInputs[key] ?? (typeof defaultValue === "number" ? defaultValue : 0)}
@@ -88,7 +88,7 @@ export function CalculationSimulator({
                 </span>
               </div>
               {sandboxResult.executionTime > 0 && (
-                <span className="text-muted-foreground font-mono text-[10px]">
+                <span className="text-muted-foreground font-mono text-xs">
                   {sandboxResult.executionTime.toFixed(1)}ms
                 </span>
               )}
@@ -111,10 +111,10 @@ export function CalculationSimulator({
 
             {sandboxResult.intermediateSteps && (
               <div className="border-border/20 mt-3 border-t pt-2">
-                <p className="text-muted-foreground mb-1 text-[10px] font-semibold uppercase">
+                <p className="text-muted-foreground mb-1 text-xs font-semibold uppercase">
                   Intermediate Variables
                 </p>
-                <div className="grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
                   {Object.entries(sandboxResult.intermediateSteps).map(([k, v]) => (
                     <div key={k} className="flex justify-between font-mono">
                       <span className="text-muted-foreground">{k}:</span>

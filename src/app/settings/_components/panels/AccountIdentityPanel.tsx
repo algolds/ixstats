@@ -233,11 +233,11 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                 <span className="text-foreground text-base font-bold tracking-tight">
                   @{passportHandle}
                 </span>
-                <span className="inline-flex items-center gap-1 rounded-md border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                <span className="inline-flex items-center gap-1 rounded-md border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-xs font-bold text-indigo-600 dark:text-indigo-400">
                   <ShieldCheck className="h-3 w-3" />
                   Verified
                 </span>
-                <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                   {totalConnectedCount}/4 Connected
                 </span>
               </div>
@@ -271,7 +271,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                     return (
                       <span
                         className={cn(
-                          "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-semibold tracking-tight",
+                          "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-semibold tracking-tight",
                           tierInfo.badgeClass
                         )}
                       >
@@ -408,7 +408,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             >
               {status?.forum.linked ? (
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                     Connected
                   </span>
                   <button
@@ -492,7 +492,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             >
               {status?.wiki.linked ? (
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                     Connected
                   </span>
                   <button
@@ -577,7 +577,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             >
               {status?.discord.linked ? (
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                     Connected
                   </span>
                   <button
@@ -681,12 +681,12 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                           {membership.organization.name}
                         </span>
                         {isSelected && (
-                          <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                          <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                             <Check className="h-2.5 w-2.5" />
                             Active Realm
                           </span>
                         )}
-                        <span className="border-border/60 bg-card/60 text-muted-foreground inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold">
+                        <span className="border-border/60 bg-card/60 text-muted-foreground inline-flex items-center rounded-md border px-1.5 py-0.5 text-xs font-semibold">
                           {formattedRole}
                         </span>
                       </div>

@@ -119,7 +119,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
           </PopoverTrigger>
           <PopoverContent className="!glass-none bg-popover border-border w-64 rounded-xl border p-0 shadow-xl">
             <div className="p-3">
-              <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
+              <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
                 Filter by Continent
               </p>
               <button
@@ -194,7 +194,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <p className="text-muted-foreground mb-3 text-lg font-bold tabular-nums">
                 {Math.round(totalPopulation).toLocaleString()}
               </p>
-              <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
+              <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
                 Top 5 by Population
               </p>
               <div className="space-y-1">
@@ -250,7 +250,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <p className="text-muted-foreground mb-3 text-lg font-bold tabular-nums">
                 ${Math.round(totalGDP).toLocaleString()}
               </p>
-              <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
+              <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
                 Top 5 by Total GDP
               </p>
               <div className="space-y-1">
@@ -308,7 +308,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <p className="text-muted-foreground mb-3 text-lg font-bold tabular-nums">
                 ${Math.round(avgGDPPerCapita).toLocaleString()}
               </p>
-              <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
+              <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
                 Top 5 Highest
               </p>
               <div className="space-y-1">

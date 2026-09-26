@@ -81,14 +81,14 @@ export function ToastBanner({ toast, onDismiss }: ToastBannerProps) {
             {title}
           </h4>
           {priority === "critical" && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-red-500/20 text-red-500 border border-red-500/30">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-red-500/20 text-red-500 border border-red-500/30">
               Urgent
             </span>
           )}
         </div>
 
         {message && (
-          <p className="mt-0.5 text-[11px] sm:text-xs text-muted-foreground leading-relaxed line-clamp-3">
+          <p className="mt-0.5 text-xs sm:text-xs text-muted-foreground leading-relaxed line-clamp-3">
             {message}
           </p>
         )}
@@ -105,7 +105,7 @@ export function ToastBanner({ toast, onDismiss }: ToastBannerProps) {
                   action.onClick();
                   onDismiss();
                 }}
-                className="h-6 rounded-lg border-border/50 px-2.5 text-[10px] font-semibold transition-transform active:scale-[0.98]"
+                className="h-6 rounded-lg border-border/50 px-2.5 text-xs font-semibold transition-transform active:scale-[0.98]"
               >
                 {action.label}
               </Button>

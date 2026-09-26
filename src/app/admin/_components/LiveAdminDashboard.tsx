@@ -192,7 +192,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
                     className="bg-card/95 border-border/40 max-w-xs p-2.5 text-left shadow-md backdrop-blur-md"
                   >
                     <p className="text-foreground text-xs font-bold">{action.label}</p>
-                    <p className="text-muted-foreground mt-0.5 text-[10px]">{action.description}</p>
+                    <p className="text-muted-foreground mt-0.5 text-xs">{action.description}</p>
                   </TooltipContent>
                 </Tooltip>
               ))}
@@ -214,7 +214,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
                       <h3 className="text-foreground group-hover:text-primary text-xs font-bold transition-colors">
                         {action.label}
                       </h3>
-                      <p className="text-muted-foreground mt-0.5 text-[11px]">
+                      <p className="text-muted-foreground mt-0.5 text-xs">
                         {action.description}
                       </p>
                     </div>

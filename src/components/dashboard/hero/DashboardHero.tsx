@@ -207,7 +207,7 @@ export function DashboardHeroComponent({
 
       <button
         onClick={() => onCollapsedChange(true)}
-        className="text-muted-foreground hover:bg-muted/30 relative z-10 flex w-full cursor-pointer items-center justify-end px-4 py-1.5 text-[10px] transition-colors"
+        className="text-muted-foreground hover:bg-muted/30 relative z-10 flex w-full cursor-pointer items-center justify-end px-4 py-1.5 text-xs transition-colors"
       >
         <ChevronUp className="h-3 w-3 shrink-0" />
       </button>
@@ -257,12 +257,12 @@ export function DashboardHeroComponent({
 
                   <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                     {stats.governmentType && (
-                      <span className="text-muted-foreground/90 rounded-md border border-white/15 bg-white/[0.08] px-1.5 py-0.5 text-[8px] font-semibold tracking-wider uppercase backdrop-blur-md">
+                      <span className="text-muted-foreground/90 rounded-md border border-white/15 bg-white/[0.08] px-1.5 py-0.5 text-xs font-semibold tracking-wider uppercase backdrop-blur-md">
                         {stats.governmentType}
                       </span>
                     )}
                     {stats.continent && (
-                      <span className="text-muted-foreground/70 hidden text-[9px] font-normal sm:inline">
+                      <span className="text-muted-foreground/70 hidden text-xs font-normal sm:inline">
                         • {stats.continent}
                       </span>
                     )}
@@ -272,7 +272,7 @@ export function DashboardHeroComponent({
 
               <Link
                 href="/mycountry"
-                className="group/btn flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-[9px] font-semibold text-amber-700 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-amber-500/60 hover:bg-amber-500/25 active:scale-95 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:border-amber-400/50 dark:hover:bg-amber-500/20"
+                className="group/btn flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-700 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-amber-500/60 hover:bg-amber-500/25 active:scale-95 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:border-amber-400/50 dark:hover:bg-amber-500/20"
               >
                 <span>MyCountry</span>
                 <ChevronRight className="h-3 w-3 shrink-0 text-amber-700 transition-transform duration-200 group-hover/btn:translate-x-0.5 dark:text-amber-300" />

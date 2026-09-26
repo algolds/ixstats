@@ -57,7 +57,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
     <div className="space-y-4 p-3 text-xs">
       <div className="bg-muted/10 border-border/20 flex items-center justify-between rounded-lg border p-3">
         <div className="space-y-0.5">
-          <span className="text-muted-foreground block text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
             Issues / Desyncs
           </span>
           <span className="text-foreground text-xl font-bold">
@@ -85,7 +85,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
       </div>
 
       <div className="border-border/30 bg-card/40 overflow-hidden rounded-lg border">
-        <div className="bg-muted/20 border-border/30 flex border-b text-[10px] font-semibold uppercase">
+        <div className="bg-muted/20 border-border/30 flex border-b text-xs font-semibold uppercase">
           <button
             onClick={() => setValidationTab("issues")}
             className={cn(
@@ -166,7 +166,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                     )}
                     <span className="text-foreground truncate font-medium">{item.countryName}</span>
                   </div>
-                  <span className="text-muted-foreground font-mono text-[10px]">
+                  <span className="text-muted-foreground font-mono text-xs">
                     {item.featureName}
                   </span>
                 </div>
@@ -204,7 +204,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                     )}
                     <span className="text-foreground truncate font-medium">{item.countryName}</span>
                   </div>
-                  <span className="text-muted-foreground font-mono text-[10px]">
+                  <span className="text-muted-foreground font-mono text-xs">
                     {item.featureName}
                   </span>
                 </div>
@@ -237,7 +237,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                   </div>
                   <span
                     className={cn(
-                      "inline-flex items-center rounded-full px-2 py-0.5 text-[9px] leading-tight font-semibold",
+                      "inline-flex items-center rounded-full px-2 py-0.5 text-xs leading-tight font-semibold",
                       item.hasGeometry
                         ? "bg-amber-500/10 text-amber-500"
                         : "bg-muted text-muted-foreground"
@@ -303,7 +303,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                     </div>
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-semibold",
+                        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
                         feat.isClaimed
                           ? "bg-emerald-500/10 text-emerald-600"
                           : "bg-muted text-muted-foreground"

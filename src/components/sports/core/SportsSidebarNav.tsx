@@ -181,7 +181,7 @@ export function SportsSidebarNav({
                 <div className="flex items-center justify-between">
                   <span className="truncate">{item.label}</span>
                   {noteCount > 0 && (
-                    <span className="rounded-full bg-amber-500/20 px-1.5 py-0.2 text-[10px] font-bold text-amber-400">
+                    <span className="rounded-full bg-amber-500/20 px-1.5 py-0.2 text-xs font-bold text-amber-400">
                       {noteCount}
                     </span>
                   )}
@@ -189,7 +189,7 @@ export function SportsSidebarNav({
                 {item.description && (
                   <p
                     className={cn(
-                      "truncate text-[11px] font-normal",
+                      "truncate text-xs font-normal",
                       isActive ? "text-background/70" : "text-muted-foreground/60"
                     )}
                   >

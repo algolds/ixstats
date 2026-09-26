@@ -95,7 +95,7 @@ export function SystemStatusWidget() {
       </div>
 
       {isCollapsed ? (
-        <div className="border-border/10 flex items-center justify-between gap-1.5 overflow-hidden border-t bg-black/10 px-3 py-2 text-[10px]">
+        <div className="border-border/10 flex items-center justify-between gap-1.5 overflow-hidden border-t bg-black/10 px-3 py-2 text-xs">
           {/* IxTime */}
           <span
             className="max-w-[100px] shrink-0 truncate font-mono font-bold whitespace-nowrap text-blue-600 dark:text-blue-400"
@@ -138,7 +138,7 @@ export function SystemStatusWidget() {
         <CutoutCardContent className="space-y-3 p-4 pt-1">
           {/* Live IxTime Display */}
           <div className="space-y-1">
-            <div className="text-muted-foreground flex items-center gap-1.5 text-[9px] font-medium tracking-wider uppercase">
+            <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
               <Clock className="h-3 w-3 text-blue-400" />
               IxTime
             </div>
@@ -148,7 +148,7 @@ export function SystemStatusWidget() {
               <div className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
                 {liveFormattedTime || systemStatus?.ixTime?.formattedIxTime || "N/A"}
                 {configData?.timeMultiplier !== undefined && (
-                  <span className="text-muted-foreground ml-1.5 text-[10px] font-normal">
+                  <span className="text-muted-foreground ml-1.5 text-xs font-normal">
                     ({configData.timeMultiplier.toFixed(1)}x)
                   </span>
                 )}
@@ -158,7 +158,7 @@ export function SystemStatusWidget() {
 
           {/* Discord Bot Status */}
           <div className="space-y-1">
-            <div className="text-muted-foreground flex items-center gap-1.5 text-[9px] font-medium tracking-wider uppercase">
+            <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
               <Bot className="h-3 w-3 text-green-400" />
               Discord Bot
             </div>
@@ -182,7 +182,7 @@ export function SystemStatusWidget() {
           {/* Quick System Indicators */}
           <div className="border-border/30 space-y-1.5 border-t pt-2.5">
             {/* Countries */}
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground flex items-center gap-1.5">
                 <Activity className="h-3 w-3 text-emerald-400" />
                 Countries
@@ -197,7 +197,7 @@ export function SystemStatusWidget() {
             </div>
 
             {/* Active Storyteller Effects */}
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Storyteller Events</span>
               <span className="font-bold">
                 {statusLoading ? (
@@ -209,7 +209,7 @@ export function SystemStatusWidget() {
             </div>
 
             {/* Last Calculation Time */}
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Last Recalc</span>
               <span className="text-muted-foreground font-mono font-semibold">
                 {statusLoading ? (
@@ -227,7 +227,7 @@ export function SystemStatusWidget() {
 
             {/* Warnings */}
             {warningCount > 0 && (
-              <div className="mt-1 flex items-center justify-between rounded-md border border-amber-500/15 bg-amber-500/5 px-2 py-1 text-[11px]">
+              <div className="mt-1 flex items-center justify-between rounded-md border border-amber-500/15 bg-amber-500/5 px-2 py-1 text-xs">
                 <span className="flex items-center gap-1.5 text-amber-500">
                   <AlertTriangle className="h-3 w-3" />
                   Warnings

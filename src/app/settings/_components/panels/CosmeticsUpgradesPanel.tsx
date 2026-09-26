@@ -148,7 +148,7 @@ export function CosmeticsUpgradesPanel() {
             <p className="text-muted-foreground text-xs font-semibold">
               No purchased cosmetics in inventory
             </p>
-            <p className="text-muted-foreground/70 mt-0.5 max-w-sm text-[11px]">
+            <p className="text-muted-foreground/70 mt-0.5 max-w-sm text-xs">
               Purchase profile glows, card borders, and elite chat badges from the Vault Store.
             </p>
             <Link
@@ -181,7 +181,7 @@ export function CosmeticsUpgradesPanel() {
                 <div className="flex items-center gap-2.5">
                   <span
                     className={cn(
-                      "hidden rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase sm:inline-block",
+                      "hidden rounded-md border px-1.5 py-0.5 text-xs font-bold uppercase sm:inline-block",
                       qualityMeta.class
                     )}
                   >
@@ -225,7 +225,7 @@ export function CosmeticsUpgradesPanel() {
             <p className="text-muted-foreground text-xs font-semibold">
               No purchased upgrades in inventory
             </p>
-            <p className="text-muted-foreground/70 mt-0.5 max-w-sm text-[11px]">
+            <p className="text-muted-foreground/70 mt-0.5 max-w-sm text-xs">
               Acquire card inventory expansions and passive yield multipliers in the Vault Store.
             </p>
             <Link
@@ -254,7 +254,7 @@ export function CosmeticsUpgradesPanel() {
                 <div className="flex items-center gap-2.5">
                   <span
                     className={cn(
-                      "hidden rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase sm:inline-block",
+                      "hidden rounded-md border px-1.5 py-0.5 text-xs font-bold uppercase sm:inline-block",
                       qualityMeta.class
                     )}
                   >

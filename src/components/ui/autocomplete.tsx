@@ -216,7 +216,7 @@ export const Autocomplete = React.memo(function Autocomplete({
                             />
                             <span className="flex-1 font-medium">{suggestion.value}</span>
                             {suggestion.usageCount && suggestion.usageCount > 1 && (
-                              <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
+                              <Badge variant="secondary" className="ml-2 text-xs px-1.5 py-0">
                                 {suggestion.usageCount}x
                               </Badge>
                             )}
@@ -246,7 +246,7 @@ export const Autocomplete = React.memo(function Autocomplete({
                             />
                             <span className="flex-1">{suggestion.value}</span>
                             {suggestion.usageCount && suggestion.usageCount > 1 && (
-                              <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0">
+                              <Badge variant="outline" className="ml-2 text-xs px-1.5 py-0">
                                 {suggestion.usageCount}x
                               </Badge>
                             )}

@@ -300,7 +300,7 @@ export const TemplateSelector = React.memo<TemplateSelectorProps>(
                       </span>
                     </span>
                     <span className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {group.templates.length}
                       </Badge>
                       <div className="text-muted-foreground/80">

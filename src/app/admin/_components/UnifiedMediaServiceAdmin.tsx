@@ -106,7 +106,7 @@ export function UnifiedMediaServiceAdmin() {
       {/* Stats Overview */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Cached Items
           </p>
           <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
@@ -115,7 +115,7 @@ export function UnifiedMediaServiceAdmin() {
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Hit Rate
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
@@ -124,7 +124,7 @@ export function UnifiedMediaServiceAdmin() {
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Flag Requests
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400">
@@ -133,7 +133,7 @@ export function UnifiedMediaServiceAdmin() {
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Requests
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
@@ -149,7 +149,7 @@ export function UnifiedMediaServiceAdmin() {
             <Database className="h-4 w-4 text-blue-400" />
             <div>
               <h3 className="text-foreground text-xs font-bold">Media Service Controls</h3>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-muted-foreground text-xs">
                 Centralized flag and wiki data caching system
               </p>
             </div>
@@ -158,7 +158,7 @@ export function UnifiedMediaServiceAdmin() {
           <div className="flex flex-wrap gap-1.5">
             <span
               className={cn(
-                "inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold",
+                "inline-block rounded-md border px-2 py-0.5 text-xs font-semibold",
                 stats?.cacheSize
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                   : "border-border/30 bg-background/50 text-muted-foreground"
@@ -168,7 +168,7 @@ export function UnifiedMediaServiceAdmin() {
             </span>
             <span
               className={cn(
-                "inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold",
+                "inline-block rounded-md border px-2 py-0.5 text-xs font-semibold",
                 parseFloat(hitRate) > 80
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                   : "border-amber-500/30 bg-amber-500/10 text-amber-400"
@@ -177,7 +177,7 @@ export function UnifiedMediaServiceAdmin() {
               Health: {parseFloat(hitRate) > 80 ? "Optimal" : "Cold"}
             </span>
             {lastUpdated && (
-              <span className="border-border/20 bg-background/30 text-muted-foreground inline-block rounded-md border px-2 py-0.5 font-mono text-[10px]">
+              <span className="border-border/20 bg-background/30 text-muted-foreground inline-block rounded-md border px-2 py-0.5 font-mono text-xs">
                 Synced {lastUpdated.toLocaleTimeString()}
               </span>
             )}
@@ -190,7 +190,7 @@ export function UnifiedMediaServiceAdmin() {
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
             <div>
               <p className="font-semibold">Cache is currently uninitialized</p>
-              <p className="text-[11px] opacity-80">
+              <p className="text-xs opacity-80">
                 Initialize the cache to index flags and improve UI response times.
               </p>
             </div>

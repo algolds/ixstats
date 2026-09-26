@@ -97,13 +97,13 @@ export function DiplomaticChoiceEditor({
                       (choice.predictedOutcomes &&
                         Object.keys(choice.predictedOutcomes).length > 0)) && (
                       <details className="mt-2">
-                        <summary className="text-muted-foreground hover:text-foreground mb-1 cursor-pointer text-[10px] font-semibold tracking-wider uppercase select-none">
+                        <summary className="text-muted-foreground hover:text-foreground mb-1 cursor-pointer text-xs font-semibold tracking-wider uppercase select-none">
                           View Effects & Outcomes
                         </summary>
                         <div className="mt-1.5 grid grid-cols-1 gap-3 md:grid-cols-2">
                           {choice.effects && Object.keys(choice.effects).length > 0 && (
                             <div>
-                              <span className="text-muted-foreground mb-1 block text-[10px] font-medium uppercase">
+                              <span className="text-muted-foreground mb-1 block text-xs font-medium uppercase">
                                 Effects
                               </span>
                               <JsonViewer
@@ -116,7 +116,7 @@ export function DiplomaticChoiceEditor({
                           {choice.predictedOutcomes &&
                             Object.keys(choice.predictedOutcomes).length > 0 && (
                               <div>
-                                <span className="text-muted-foreground mb-1 block text-[10px] font-medium uppercase">
+                                <span className="text-muted-foreground mb-1 block text-xs font-medium uppercase">
                                   Predicted Outcomes
                                 </span>
                                 <JsonViewer

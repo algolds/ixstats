@@ -238,7 +238,7 @@ export function ExecutiveRecordFeed({
             type="button"
             onClick={() => setFilterCat(id)}
             className={cn(
-              "shrink-0 cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all",
+              "shrink-0 cursor-pointer rounded-lg px-2.5 py-1 text-xs font-bold transition-all",
               filterCat === id
                 ? "border border-amber-500/40 bg-amber-500/20 text-amber-400 shadow-xs"
                 : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
@@ -295,7 +295,7 @@ export function ExecutiveRecordFeed({
                         )}
                       </span>
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px]">
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
                       <span className="text-muted-foreground font-semibold">{meta.label}</span>
                       <span className="text-muted-foreground/40">•</span>
                       <span className="text-muted-foreground">{relativeTime(item.timestamp)}</span>
@@ -325,11 +325,11 @@ export function ExecutiveRecordFeed({
                     onClick={(e) => e.stopPropagation()}
                   >
                     {/* Header Metadata & Badges */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase",
+                            "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold uppercase",
                             meta.cls
                           )}
                         >
@@ -339,7 +339,7 @@ export function ExecutiveRecordFeed({
                         {diagnostic.badge && (
                           <span
                             className={cn(
-                              "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold",
+                              "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-extrabold",
                               diagnostic.badge.cls
                             )}
                           >
@@ -353,7 +353,7 @@ export function ExecutiveRecordFeed({
                           </span>
                         )}
                       </div>
-                      <span className="text-muted-foreground font-mono text-[10px]">
+                      <span className="text-muted-foreground font-mono text-xs">
                         {new Date(item.timestamp).toLocaleString(undefined, {
                           dateStyle: "medium",
                           timeStyle: "short",
@@ -363,7 +363,7 @@ export function ExecutiveRecordFeed({
 
                     {/* Clean Diagnostic Briefing Text */}
                     <div className="space-y-1 px-0.5">
-                      <span className="text-muted-foreground block text-[10px] font-bold tracking-widest uppercase">
+                      <span className="text-muted-foreground block text-xs font-bold tracking-widest uppercase">
                         Diagnostic Briefing
                       </span>
                       <p className="text-foreground/90 text-xs leading-relaxed font-medium sm:text-[13px]">
@@ -379,7 +379,7 @@ export function ExecutiveRecordFeed({
                             ? `/mycountry/changelog?country=${countrySlug}`
                             : "/mycountry/changelog"
                         )}
-                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-[11px] font-semibold transition-colors"
+                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-xs font-semibold transition-colors"
                       >
                         Audit Full Ledger <ArrowUpRight className="h-3 w-3" />
                       </Link>

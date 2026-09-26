@@ -132,7 +132,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
             {isNew && (
               <Badge
                 variant="outline"
-                className="shrink-0 border-amber-500/30 bg-amber-500/20 px-1.5 py-0 text-[10px] text-amber-400"
+                className="shrink-0 border-amber-500/30 bg-amber-500/20 px-1.5 py-0 text-xs text-amber-400"
               >
                 NEW
               </Badge>
@@ -144,14 +144,14 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${badgeStyle}`}>
+            <Badge variant="outline" className={`px-1.5 py-0 text-xs ${badgeStyle}`}>
               {issue.severity.toUpperCase()}
             </Badge>
-            <span className={`text-[10px] ${domainConfig.color}`}>{domainConfig.label}</span>
+            <span className={`text-xs ${domainConfig.color}`}>{domainConfig.label}</span>
 
             {hasDeadline && (
               <span
-                className={`flex items-center gap-1 text-[10px] ${isUrgent ? "text-red-400" : "text-muted-foreground"}`}
+                className={`flex items-center gap-1 text-xs ${isUrgent ? "text-red-400" : "text-muted-foreground"}`}
               >
                 {isUrgent ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                 {timeRemainingText}
@@ -170,7 +170,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
                     e.stopPropagation();
                     onDismiss(issue.id);
                   }}
-                  className="ml-auto cursor-pointer rounded border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-slate-300 transition-all hover:border-white/30 hover:bg-white/10"
+                  className="ml-auto cursor-pointer rounded border border-white/15 bg-white/5 px-2 py-0.5 text-xs font-medium text-slate-300 transition-all hover:border-white/30 hover:bg-white/10"
                 >
                   Delegate (-15 CivCap)
                 </button>

@@ -284,7 +284,7 @@ export default function RecentChangesPage() {
                             </span>
                             {action.isPill ? (
                               <span
-                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium tracking-tight ${action.pillClass}`}
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium tracking-tight ${action.pillClass}`}
                               >
                                 {action.label}
                               </span>
@@ -305,7 +305,7 @@ export default function RecentChangesPage() {
                       return action.isPill ? (
                         <div className="mt-1 flex items-center gap-1.5 pl-6 text-xs">
                           <span
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium tracking-tight ${action.pillClass}`}
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium tracking-tight ${action.pillClass}`}
                           >
                             {action.label}
                           </span>

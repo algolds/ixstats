@@ -314,7 +314,7 @@ export function CardPacksAdmin() {
                     />
                     <div className="min-w-0">
                       <h3 className="text-foreground line-clamp-1 font-semibold">{pack.name}</h3>
-                      <Badge className={`${colors.bg} ${colors.text} text-[10px]`}>
+                      <Badge className={`${colors.bg} ${colors.text} text-xs`}>
                         {pack.packType}
                       </Badge>
                     </div>

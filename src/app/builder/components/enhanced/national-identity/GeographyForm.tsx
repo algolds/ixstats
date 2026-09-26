@@ -194,7 +194,7 @@ export const GeographyForm = React.memo(
                     maxLength={3}
                     className="font-mono text-center text-sm font-bold uppercase tracking-wider"
                   />
-                  <p className="text-muted-foreground text-[10px] text-center">
+                  <p className="text-muted-foreground text-xs text-center">
                     2 or 3 letters
                   </p>
                 </div>
@@ -213,7 +213,7 @@ export const GeographyForm = React.memo(
                     placeholder=".el"
                     className="font-mono text-center text-sm font-bold lowercase"
                   />
-                  <p className="text-muted-foreground text-[10px] text-center">
+                  <p className="text-muted-foreground text-xs text-center">
                     .el, .ix
                   </p>
                 </div>
@@ -232,7 +232,7 @@ export const GeographyForm = React.memo(
                     placeholder="+35"
                     className="font-mono text-center text-sm font-bold"
                   />
-                  <p className="text-muted-foreground text-[10px] text-center">
+                  <p className="text-muted-foreground text-xs text-center">
                     +1, +44
                   </p>
                 </div>

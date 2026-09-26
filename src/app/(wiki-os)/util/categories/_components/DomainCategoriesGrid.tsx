@@ -58,7 +58,7 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
                       <h2 className="text-foreground text-base font-bold transition-colors group-hover:text-blue-500">
                         {domain.name}
                       </h2>
-                      <div className="text-muted-foreground text-[10px] font-medium">
+                      <div className="text-muted-foreground text-xs font-medium">
                         {domain.metric}
                       </div>
                     </div>
@@ -75,7 +75,7 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
                 </p>
 
                 {/* Footer Badge */}
-                <div className="border-border/40 mt-4 flex items-center justify-between border-t pt-2.5 text-[11px] font-semibold text-blue-500">
+                <div className="border-border/40 mt-4 flex items-center justify-between border-t pt-2.5 text-xs font-semibold text-blue-500">
                   <span>Open {domain.name} Portal</span>
                   <span className="text-muted-foreground group-hover:text-foreground transition-colors">
                     Category:{domain.name} →

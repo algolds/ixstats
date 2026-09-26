@@ -387,7 +387,7 @@ export function EventsRegistryPanel() {
                               <h4 className="truncate text-sm font-medium">{event.name}</h4>
                               <Badge
                                 variant={event.enabled ? "default" : "secondary"}
-                                className="h-5 text-[10px]"
+                                className="h-5 text-xs"
                               >
                                 {event.enabled ? "ON" : "OFF"}
                               </Badge>
@@ -406,23 +406,23 @@ export function EventsRegistryPanel() {
                         </div>
 
                         <div className="mt-3 flex flex-wrap gap-1.5">
-                          <Badge variant="outline" className="text-[10px]">
+                          <Badge variant="outline" className="text-xs">
                             <Bell className="mr-1 h-3 w-3" />
                             {event.category}
                           </Badge>
                           {event.source && (
-                            <Badge variant="outline" className="text-[10px]">
+                            <Badge variant="outline" className="text-xs">
                               {event.source}
                             </Badge>
                           )}
                           {event.triggerType && (
-                            <Badge variant="outline" className="text-[10px]">
+                            <Badge variant="outline" className="text-xs">
                               {event.triggerType}
                             </Badge>
                           )}
                         </div>
 
-                        <div className="text-muted-foreground mt-2 flex items-center gap-3 text-[10px]">
+                        <div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs">
                           {event.lastTriggered ? (
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -437,7 +437,7 @@ export function EventsRegistryPanel() {
                             </span>
                           )}
                           <span>{event.triggerCount} triggers</span>
-                          <span className="font-mono text-[9px]">{event.eventKey}</span>
+                          <span className="font-mono text-xs">{event.eventKey}</span>
                         </div>
                       </CardContent>
                     </Card>

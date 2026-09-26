@@ -4,21 +4,21 @@ import React, { useState } from "react";
 import { Archery as Crosshair, Navigator as Navigation } from "iconoir-react";
 
 export const btnClass =
-  "flex h-6 items-center gap-1 rounded px-1.5 text-[11px] text-muted-foreground transition-all duration-100 ease-out active:scale-[0.98] hover:bg-accent hover:text-foreground";
+  "flex h-6 items-center gap-1 rounded px-1.5 text-xs text-muted-foreground transition-all duration-100 ease-out active:scale-[0.98] hover:bg-accent hover:text-foreground";
 export const activeBtnClass =
-  "flex h-6 items-center gap-1 rounded bg-primary/10 px-1.5 text-[11px] font-medium text-primary shadow-xs transition-all duration-100 ease-out active:scale-[0.98]";
+  "flex h-6 items-center gap-1 rounded bg-primary/10 px-1.5 text-xs font-medium text-primary shadow-xs transition-all duration-100 ease-out active:scale-[0.98]";
 export const dangerBtnClass =
-  "flex h-6 items-center gap-1 rounded px-1.5 text-[11px] text-red-500 transition-all duration-100 ease-out active:scale-[0.98] hover:bg-red-500/10";
-export const labelClass = "text-[10px] font-medium uppercase tracking-wider text-muted-foreground";
+  "flex h-6 items-center gap-1 rounded px-1.5 text-xs text-red-500 transition-all duration-100 ease-out active:scale-[0.98] hover:bg-red-500/10";
+export const labelClass = "text-xs font-medium uppercase tracking-wider text-muted-foreground";
 export const dividerClass = "bg-border h-4 w-px";
 export const selectClass =
-  "h-6 rounded border border-border bg-background px-1.5 text-[11px] text-foreground outline-none focus:ring-1 focus:ring-primary/50";
+  "h-6 rounded border border-border bg-background px-1.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-primary/50";
 
 export function ToolLabel({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
   return (
     <div className="border-border mr-2 flex items-center gap-1.5 border-r pr-2">
       <Icon className="text-muted-foreground h-3.5 w-3.5" />
-      <span className="text-foreground text-[11px] font-semibold">{label}</span>
+      <span className="text-foreground text-xs font-semibold">{label}</span>
     </div>
   );
 }
@@ -126,7 +126,7 @@ export function CoordinateSnappingControls({
         onChange={(e) => setLng(e.target.value)}
         onBlur={handleApply}
         onKeyDown={handleKeyDown}
-        className={`${selectClass} w-16 text-[10px]`}
+        className={`${selectClass} w-16 text-xs`}
       />
       <input
         type="text"
@@ -135,7 +135,7 @@ export function CoordinateSnappingControls({
         onChange={(e) => setLat(e.target.value)}
         onBlur={handleApply}
         onKeyDown={handleKeyDown}
-        className={`${selectClass} w-16 text-[10px]`}
+        className={`${selectClass} w-16 text-xs`}
       />
 
       {onTogglePickingLocation && (

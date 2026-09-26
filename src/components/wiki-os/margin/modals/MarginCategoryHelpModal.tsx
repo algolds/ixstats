@@ -123,12 +123,12 @@ export function MarginCategoryHelpModal({
                           dim.color === "#fef036" ? "rgba(250, 204, 21, 0.6)" : `${dim.color}50`,
                         color: dim.color === "#fef036" ? "var(--wikios-text)" : dim.color,
                       }}
-                      className="rounded-full border px-2 py-0.5 text-[10px] font-bold"
+                      className="rounded-full border px-2 py-0.5 text-xs font-bold"
                     >
                       {dim.short}
                     </span>
                   </div>
-                  <p className="text-[11px] leading-relaxed text-[var(--wikios-text-dim)]">
+                  <p className="text-xs leading-relaxed text-[var(--wikios-text-dim)]">
                     {dim.desc}.
                   </p>
                 </div>

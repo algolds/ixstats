@@ -182,16 +182,16 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
           {/* Header */}
           <FadeIn direction="up" delay={0.1}>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+              <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                 Country Actions
               </span>
               {country.continent && (
-                <span className="rounded-full border border-border/80 bg-muted/60 px-2.5 py-0.5 text-[10px] font-semibold text-foreground">
+                <span className="rounded-full border border-border/80 bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-foreground">
                   {country.continent}
                 </span>
               )}
               {country.region && (
-                <span className="rounded-full border border-border/80 bg-muted/30 px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                <span className="rounded-full border border-border/80 bg-muted/30 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
                   {country.region}
                 </span>
               )}
@@ -221,7 +221,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
             <div className="space-y-4">
               {/* Social */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                <p className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
                   Social
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -259,7 +259,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Diplomacy */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                <p className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
                   Diplomacy
                 </p>
                 <div className="flex flex-col gap-2">
@@ -320,7 +320,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Foreign Policy (Sanctions & Embargo) */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                <p className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
                   Foreign Policy
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -352,7 +352,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Quick Links */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                <p className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
                   Quick Links
                 </p>
                 <a

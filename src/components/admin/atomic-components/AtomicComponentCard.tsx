@@ -79,7 +79,7 @@ export function AtomicComponentCard({
 
       {/* Metrics & Synergies count */}
       <div className="border-border/30 text-muted-foreground flex items-center justify-between border-t pt-2 text-xs">
-        <span className="font-mono text-[11px] capitalize">
+        <span className="font-mono text-xs capitalize">
           Tier: {component.complexity || "Standard"}
         </span>
         {component.synergies && (

@@ -102,10 +102,10 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
       {dbSeason && dbSeason.standings && (
         <div className="space-y-3">
           {dbLeague && (
-            <div className="bg-muted/20 space-y-1 rounded border p-2.5 text-[10px]">
+            <div className="bg-muted/20 space-y-1 rounded border p-2.5 text-xs">
               <p className="text-muted-foreground flex items-center justify-between font-semibold">
                 <span>League Division Tier: {(dbLeague as any).tier ?? 1}</span>
-                <Badge variant="outline" className="border-primary/20 text-primary text-[9px]">
+                <Badge variant="outline" className="border-primary/20 text-primary text-xs">
                   Pyramid Level
                 </Badge>
               </p>
@@ -119,7 +119,7 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
                   ▼ Sub-Leagues: {(dbLeague as any).subLeagues.map((l: any) => l.name).join(", ")}
                 </p>
               )}
-              <p className="text-muted-foreground text-[9px]">
+              <p className="text-muted-foreground text-xs">
                 Zone rules: Top {(dbLeague as any).promotionCount ?? 3} Promoted / Bottom{" "}
                 {(dbLeague as any).relegationCount ?? 3} Relegated
               </p>
@@ -130,10 +130,10 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-10 text-[10px]">#</TableHead>
-                  <TableHead className="text-[10px]">Team</TableHead>
-                  <TableHead className="text-center text-[10px]">W-L-D</TableHead>
-                  <TableHead className="text-center text-[10px]">Pts</TableHead>
+                  <TableHead className="w-10 text-xs">#</TableHead>
+                  <TableHead className="text-xs">Team</TableHead>
+                  <TableHead className="text-center text-xs">W-L-D</TableHead>
+                  <TableHead className="text-center text-xs">Pts</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -160,17 +160,17 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
                       <TableCell className="flex max-w-[120px] items-center gap-1 truncate text-xs font-medium">
                         {s.team.name}
                         {isPromotionZone && (
-                          <span className="rounded bg-emerald-500/15 px-1 text-[8px] font-semibold text-emerald-400">
+                          <span className="rounded bg-emerald-500/15 px-1 text-xs font-semibold text-emerald-400">
                             Prom
                           </span>
                         )}
                         {isRelegationZone && (
-                          <span className="rounded bg-red-500/15 px-1 text-[8px] font-semibold text-red-400">
+                          <span className="rounded bg-red-500/15 px-1 text-xs font-semibold text-red-400">
                             Releg
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="text-center font-mono text-[10px]">
+                      <TableCell className="text-center font-mono text-xs">
                         {s.wins}-{s.losses}-{s.draws}
                       </TableCell>
                       <TableCell className="text-center text-xs font-bold">{s.points}</TableCell>

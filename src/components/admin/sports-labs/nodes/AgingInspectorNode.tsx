@@ -108,7 +108,7 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
               >
                 <div>
                   <p className="font-semibold">{r.playerId}</p>
-                  <p className="text-muted-foreground text-[10px]">
+                  <p className="text-muted-foreground text-xs">
                     {r.oldStage} &rarr; {r.newStage}
                   </p>
                 </div>
@@ -123,7 +123,7 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
                           key={k}
                           variant="secondary"
                           className={cn(
-                            "font-mono text-[9px]",
+                            "font-mono text-xs",
                             v >= 0 ? "text-emerald-400" : "text-red-400"
                           )}
                         >
@@ -182,20 +182,20 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
           <h5 className="flex items-center gap-1 font-semibold text-amber-400">
             🏆 Quadrennial World Cup Cycle
           </h5>
-          <div className="text-muted-foreground flex justify-between text-[10px]">
+          <div className="text-muted-foreground flex justify-between text-xs">
             <span>Current Season:</span>
             <span className="text-foreground font-bold">Season {dbSeason.seasonNumber}</span>
           </div>
-          <div className="text-muted-foreground flex justify-between text-[10px]">
+          <div className="text-muted-foreground flex justify-between text-xs">
             <span>Next Season:</span>
             <span className="text-foreground font-bold">Season {dbSeason.seasonNumber + 1}</span>
           </div>
-          <div className="text-muted-foreground flex justify-between text-[10px]">
+          <div className="text-muted-foreground flex justify-between text-xs">
             <span>Cycle Status:</span>
             <Badge
               variant="outline"
               className={cn(
-                "px-1 text-[9px] font-semibold",
+                "px-1 text-xs font-semibold",
                 (dbSeason.seasonNumber + 1) % 4 === 0
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                   : "border-border text-muted-foreground"
@@ -206,7 +206,7 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
                 : "Domestic League Season"}
             </Badge>
           </div>
-          <p className="text-muted-foreground/80 border-border/20 border-t pt-1 text-[9px] leading-relaxed">
+          <p className="text-muted-foreground/80 border-border/20 border-t pt-1 text-xs leading-relaxed">
             At season transition, if it is a World Cup year, national squads will be drafted
             automatically from top-performing citizens.
           </p>
@@ -231,7 +231,7 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
                 <span className="text-foreground font-semibold">
                   {p.player?.firstName} {p.player?.lastName}
                 </span>
-                <p className="text-muted-foreground flex items-center gap-1 text-[9px]">
+                <p className="text-muted-foreground flex items-center gap-1 text-xs">
                   {p.player?.position ? (
                     <PositionTooltip position={p.player.position}>
                       <span className="hover:text-foreground cursor-help font-medium transition-colors">

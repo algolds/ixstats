@@ -32,7 +32,7 @@ export const RegionHoverTooltip = React.memo(function RegionHoverTooltip({
       }}
     >
       <div className="text-foreground text-xs font-semibold">{hoveredFeature.feature.name}</div>
-      <div className="text-muted-foreground mt-1 space-y-0.5 text-[10px]">
+      <div className="text-muted-foreground mt-1 space-y-0.5 text-xs">
         <div className="flex justify-between gap-3">
           <span>Type</span>
           <span className="text-foreground font-medium">

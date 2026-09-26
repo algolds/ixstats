@@ -72,14 +72,14 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
           <Sparkles className="text-primary h-3.5 w-3.5" />
           <span>Procedural Network Generation</span>
         </div>
-        <p className="text-muted-foreground text-[11px] leading-relaxed">
+        <p className="text-muted-foreground text-xs leading-relaxed">
           Generate realistic national transit corridors connecting cities, ports, and industrial
           nodes using topographic friction routing and cost-distance pathfinding.
         </p>
       </div>
 
       <div className="space-y-2">
-        <label className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Network Types to Generate
         </label>
         <div className="grid grid-cols-2 gap-1.5">
@@ -92,7 +92,7 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
                 key={type}
                 type="button"
                 onClick={() => toggleType(type)}
-                className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-[11px] font-medium transition active:scale-[0.98] ${
+                className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition active:scale-[0.98] ${
                   isSelected
                     ? "border-primary/50 bg-primary/10 text-foreground"
                     : "border-border/40 bg-background/50 text-muted-foreground hover:bg-muted/30"
@@ -109,7 +109,7 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
         </div>
       </div>
 
-      <label className="border-border/40 hover:bg-muted/30 flex cursor-pointer items-center gap-2 rounded border p-2 text-[11px]">
+      <label className="border-border/40 hover:bg-muted/30 flex cursor-pointer items-center gap-2 rounded border p-2 text-xs">
         <input
           type="checkbox"
           checked={clearExisting}
@@ -120,7 +120,7 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
       </label>
 
       {generateNotice && (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2 text-[11px] text-emerald-500">
+        <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2 text-xs text-emerald-500">
           <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
           <span>{generateNotice}</span>
         </div>

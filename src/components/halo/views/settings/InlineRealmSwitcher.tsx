@@ -118,7 +118,7 @@ export function InlineRealmSwitcher({ onClose }: InlineRealmSwitcherProps) {
 
         <div className="flex items-center gap-2">
           {currentOrg && (
-            <span className="border-border/80 bg-muted/50 text-muted-foreground rounded-md border px-2 py-0.5 text-[10px] font-semibold">
+            <span className="border-border/80 bg-muted/50 text-muted-foreground rounded-md border px-2 py-0.5 text-xs font-semibold">
               {formatRoleName(currentMembership?.role)}
             </span>
           )}
@@ -173,7 +173,7 @@ export function InlineRealmSwitcher({ onClose }: InlineRealmSwitcherProps) {
                       <span className="truncate">{membership.organization.name}</span>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      <span className="border-border/60 bg-card/60 text-muted-foreground rounded border px-1.5 py-0.5 text-[9px] font-medium">
+                      <span className="border-border/60 bg-card/60 text-muted-foreground rounded border px-1.5 py-0.5 text-xs font-medium">
                         {formatRoleName(membership.role)}
                       </span>
                       {isSelected && <Check className="text-foreground h-3.5 w-3.5 shrink-0" />}
@@ -189,7 +189,7 @@ export function InlineRealmSwitcher({ onClose }: InlineRealmSwitcherProps) {
                 <Link
                   href={`/r/${currentOrg.slug || currentOrg.id}/settings`}
                   onClick={onClose}
-                  className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-[11px] font-semibold transition-colors"
+                  className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs font-semibold transition-colors"
                 >
                   <Settings className="h-3 w-3" />
                   <span>Settings</span>
@@ -201,7 +201,7 @@ export function InlineRealmSwitcher({ onClose }: InlineRealmSwitcherProps) {
               <Link
                 href="/realms/new"
                 onClick={onClose}
-                className="text-foreground flex items-center gap-1 text-[11px] font-semibold transition-colors hover:underline"
+                className="text-foreground flex items-center gap-1 text-xs font-semibold transition-colors hover:underline"
               >
                 <Plus className="h-3 w-3" />
                 <span>Create Realm</span>

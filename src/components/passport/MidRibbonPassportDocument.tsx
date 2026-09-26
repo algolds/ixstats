@@ -221,7 +221,7 @@ export function MidRibbonPassportDocument({
                         IXSTATES PASSPORT
                       </h1>
                     </div>
-                    <p className="text-muted-foreground font-mono text-[10px] tracking-wider uppercase">
+                    <p className="text-muted-foreground font-mono text-xs tracking-wider uppercase">
                       USER IDENTITY
                     </p>
                   </div>
@@ -287,7 +287,7 @@ export function MidRibbonPassportDocument({
                   </div>
 
                   <div className="w-full max-w-[175px] space-y-0.5 border-t border-black/15 pt-1.5 text-center sm:text-left dark:border-white/20">
-                    <span className="text-muted-foreground block font-mono text-[8px] tracking-wider uppercase">
+                    <span className="text-muted-foreground block font-mono text-xs tracking-wider uppercase">
                       SIGNATURE
                     </span>
                     <span className="text-foreground/90 block truncate font-serif text-sm font-medium tracking-wider italic select-none">
@@ -319,7 +319,7 @@ export function MidRibbonPassportDocument({
 
                       {/* Authoritative User Role Badge */}
                       {roleName && (
-                        <span className="rounded-lg border border-blue-500/25 bg-blue-500/10 px-2.5 py-0.5 font-mono text-[11px] font-bold tracking-wider text-blue-600 uppercase dark:text-blue-400">
+                        <span className="rounded-lg border border-blue-500/25 bg-blue-500/10 px-2.5 py-0.5 font-mono text-xs font-bold tracking-wider text-blue-600 uppercase dark:text-blue-400">
                           {roleName}
                         </span>
                       )}
@@ -329,25 +329,25 @@ export function MidRibbonPassportDocument({
                   {/* Information Grammar 4-Cell Matrix */}
                   <div className="grid grid-cols-2 gap-3 border-y border-black/8 py-3.5 font-mono text-xs sm:grid-cols-4 dark:border-white/10">
                     <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase">
+                      <span className="text-muted-foreground block text-xs uppercase">
                         IDENTITY NO.
                       </span>
                       <strong className="text-foreground font-bold">{passportNumber}</strong>
                     </div>
                     <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase">
+                      <span className="text-muted-foreground block text-xs uppercase">
                         DATE JOINED
                       </span>
                       <strong className="text-foreground font-bold">{entryDate}</strong>
                     </div>
                     <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase">
+                      <span className="text-muted-foreground block text-xs uppercase">
                         PRIMARY REALM
                       </span>
                       <strong className="text-foreground font-bold">{realmName}</strong>
                     </div>
                     <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase">
+                      <span className="text-muted-foreground block text-xs uppercase">
                         STATUS
                       </span>
                       <span className="font-bold text-emerald-500">ACTIVE</span>
@@ -365,7 +365,7 @@ export function MidRibbonPassportDocument({
                         title="Click to view Lorewards Civic Accolades"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-[9px] text-stone-400 uppercase transition-colors group-hover:text-amber-500">
+                          <span className="font-mono text-xs text-stone-400 uppercase transition-colors group-hover:text-amber-500">
                             Lorewards
                           </span>
                           <Trophy className="h-3 w-3 text-amber-500" />
@@ -373,7 +373,7 @@ export function MidRibbonPassportDocument({
                         <p className="text-foreground text-sm font-bold">
                           {lorewards?.rank ? `#${lorewards.rank}` : "Unranked"}
                         </p>
-                        <p className="font-mono text-[10px] text-amber-500">
+                        <p className="font-mono text-xs text-amber-500">
                           {lorewards?.totalScore
                             ? `${lorewards.totalScore.toLocaleString()} pts`
                             : "0 pts"}
@@ -389,13 +389,13 @@ export function MidRibbonPassportDocument({
                         className="w-full cursor-pointer space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 text-left transition-all hover:bg-black/[0.04] active:scale-[0.97] dark:border-white/8 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-[9px] text-stone-400 uppercase">
+                          <span className="font-mono text-xs text-stone-400 uppercase">
                             Focus
                           </span>
                           <Sparkles className="h-3 w-3 text-amber-500" />
                         </div>
                         <p className="text-foreground text-sm font-bold">{categorySummary.label}</p>
-                        <p className="text-muted-foreground truncate font-mono text-[10px]">
+                        <p className="text-muted-foreground truncate font-mono text-xs">
                           {categorySummary.sub}
                         </p>
                       </button>
@@ -404,7 +404,7 @@ export function MidRibbonPassportDocument({
                     {showForumStats && (
                       <div className="space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 dark:border-white/8 dark:bg-white/[0.02]">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-[9px] text-stone-400 uppercase">
+                          <span className="font-mono text-xs text-stone-400 uppercase">
                             Forum
                           </span>
                           <MessageSquare className="h-3 w-3 text-blue-500" />
@@ -412,7 +412,7 @@ export function MidRibbonPassportDocument({
                         <p className="text-foreground text-sm font-bold">
                           {data?.forum?.messageCount ?? 0} Posts
                         </p>
-                        <p className="text-muted-foreground font-mono text-[10px]">
+                        <p className="text-muted-foreground font-mono text-xs">
                           {data?.forum?.reactionScore ?? 0} reactions
                         </p>
                       </div>
@@ -425,7 +425,7 @@ export function MidRibbonPassportDocument({
                         className="block cursor-pointer space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 transition-all hover:bg-black/[0.04] active:scale-[0.97] dark:border-white/8 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-[9px] text-stone-400 uppercase">
+                          <span className="font-mono text-xs text-stone-400 uppercase">
                             IxCredits
                           </span>
                           <IxCreditsSymbol className="h-3 w-3 text-amber-500" />
@@ -434,7 +434,7 @@ export function MidRibbonPassportDocument({
                           <IxCreditsSymbol className="h-3 w-3 shrink-0 text-amber-500" />
                           {(vault as any)?.credits?.toLocaleString?.() ?? "0"}
                         </p>
-                        <p className="text-muted-foreground font-mono text-[10px]">
+                        <p className="text-muted-foreground font-mono text-xs">
                           {(vault?.totalCards ?? 0).toLocaleString()} cards · Lv{" "}
                           {vault?.collectorLevel ?? 1}
                         </p>
@@ -447,7 +447,7 @@ export function MidRibbonPassportDocument({
                     <div className="space-y-1 rounded-xl border border-black/6 bg-black/[0.015] p-3 dark:border-white/8 dark:bg-white/[0.02]">
                       <div className="flex items-center gap-1.5 text-blue-500">
                         <Sparkles className="h-3 w-3" />
-                        <span className="font-mono text-[9px] font-bold tracking-wider uppercase">
+                        <span className="font-mono text-xs font-bold tracking-wider uppercase">
                           ThinkPages Bio
                         </span>
                       </div>
@@ -479,7 +479,7 @@ export function MidRibbonPassportDocument({
                             : "hover:text-foreground text-stone-600 hover:bg-black/5 dark:text-stone-400 dark:hover:bg-white/5"
                         )}
                       >
-                        <span className="font-mono text-[10px] opacity-60">{tab.index}.</span>
+                        <span className="font-mono text-xs opacity-60">{tab.index}.</span>
                         <Icon className="h-3.5 w-3.5" />
                         <span>{tab.label}</span>
                         {tab.count !== undefined && tab.count > 0 && (
@@ -494,7 +494,7 @@ export function MidRibbonPassportDocument({
                                 ? { duration: 0.15 }
                                 : { type: "spring", bounce: 0, duration: 0.3 }
                             }
-                            className="py-0.2 rounded-full bg-black/10 px-1.5 font-mono text-[9px] dark:bg-white/15"
+                            className="py-0.2 rounded-full bg-black/10 px-1.5 font-mono text-xs dark:bg-white/15"
                             style={{ willChange: "transform, opacity" }}
                           >
                             {tab.count}
@@ -580,10 +580,10 @@ export function MidRibbonPassportDocument({
               <div className="flex items-center gap-3">
                 <IxnayPassportSeal size="sm" />
                 <div>
-                  <span className="text-foreground block font-mono text-[10px] font-bold tracking-[0.2em] uppercase sm:text-[11px]">
+                  <span className="text-foreground block font-mono text-xs font-bold tracking-[0.2em] uppercase sm:text-xs">
                     PASSPORT CONFIGURATION
                   </span>
-                  <span className="text-muted-foreground font-mono text-[9px] tracking-wider uppercase">
+                  <span className="text-muted-foreground font-mono text-xs tracking-wider uppercase">
                     SIGNATURE & PRIVACY CONTROLS
                   </span>
                 </div>
@@ -605,11 +605,11 @@ export function MidRibbonPassportDocument({
               {/* Editable Signature Block */}
               <div className="space-y-3.5 rounded-2xl border border-black/8 bg-black/[0.015] p-5 dark:border-white/10 dark:bg-white/[0.02]">
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 font-mono text-[10px] font-bold tracking-wider text-stone-400 uppercase">
+                  <span className="flex items-center gap-1.5 font-mono text-xs font-bold tracking-wider text-stone-400 uppercase">
                     <Edit3 className="h-3 w-3 text-blue-500" />
                     <span>Signature Inscription</span>
                   </span>
-                  <span className="text-muted-foreground font-mono text-[9px]">
+                  <span className="text-muted-foreground font-mono text-xs">
                     Front Biometric Panel
                   </span>
                 </div>
@@ -622,7 +622,7 @@ export function MidRibbonPassportDocument({
                     placeholder={displayName}
                     className="text-foreground placeholder:text-muted-foreground w-full rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-2 font-serif text-sm tracking-wide italic transition-all focus:ring-2 focus:ring-blue-500/30 focus:outline-none dark:border-white/15 dark:bg-white/[0.03]"
                   />
-                  <div className="text-muted-foreground flex items-center justify-between text-[11px]">
+                  <div className="text-muted-foreground flex items-center justify-between text-xs">
                     <span>Calligraphic Preview:</span>
                     <span className="text-foreground font-serif font-semibold italic">
                       {signature || displayName}
@@ -633,7 +633,7 @@ export function MidRibbonPassportDocument({
 
               {/* Telemetry Visibility Toggles */}
               <div className="space-y-3.5 rounded-2xl border border-black/8 bg-black/[0.015] p-5 dark:border-white/10 dark:bg-white/[0.02]">
-                <span className="block font-mono text-[10px] font-bold tracking-wider text-stone-400 uppercase">
+                <span className="block font-mono text-xs font-bold tracking-wider text-stone-400 uppercase">
                   Passport Visibility Toggles
                 </span>
 
@@ -641,7 +641,7 @@ export function MidRibbonPassportDocument({
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <p className="text-foreground font-semibold">Civic Accolades</p>
-                      <p className="text-muted-foreground text-[11px]">
+                      <p className="text-muted-foreground text-xs">
                         Show Lorewards score & rank
                       </p>
                     </div>
@@ -651,7 +651,7 @@ export function MidRibbonPassportDocument({
                   <div className="flex items-center justify-between border-t border-black/6 pt-2 dark:border-white/8">
                     <div className="space-y-0.5">
                       <p className="text-foreground font-semibold">Focus</p>
-                      <p className="text-muted-foreground text-[11px]">Show category breadth</p>
+                      <p className="text-muted-foreground text-xs">Show category breadth</p>
                     </div>
                     <Switch checked={showImpact} onCheckedChange={setShowImpact} />
                   </div>
@@ -659,7 +659,7 @@ export function MidRibbonPassportDocument({
                   <div className="flex items-center justify-between border-t border-black/6 pt-2 dark:border-white/8">
                     <div className="space-y-0.5">
                       <p className="text-foreground font-semibold">Forum Discussions</p>
-                      <p className="text-muted-foreground text-[11px]">
+                      <p className="text-muted-foreground text-xs">
                         Show message & reaction counters
                       </p>
                     </div>
@@ -669,7 +669,7 @@ export function MidRibbonPassportDocument({
                   <div className="flex items-center justify-between border-t border-black/6 pt-2 dark:border-white/8">
                     <div className="space-y-0.5">
                       <p className="text-foreground font-semibold">IxCredits</p>
-                      <p className="text-muted-foreground text-[11px]">
+                      <p className="text-muted-foreground text-xs">
                         Show IxCredits & collection
                       </p>
                     </div>
@@ -679,7 +679,7 @@ export function MidRibbonPassportDocument({
                   <div className="flex items-center justify-between border-t border-black/6 pt-2 dark:border-white/8">
                     <div className="space-y-0.5">
                       <p className="text-foreground font-semibold">Activity History</p>
-                      <p className="text-muted-foreground text-[11px]">
+                      <p className="text-muted-foreground text-xs">
                         Allow public activity stream
                       </p>
                     </div>

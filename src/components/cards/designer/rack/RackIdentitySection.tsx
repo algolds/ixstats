@@ -50,7 +50,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
           <Search className="text-primary h-4 w-4" />
           <span>Scan & Import Lore Archive</span>
         </div>
-        <div className="text-muted-foreground flex items-center gap-1 font-mono text-[11px]">
+        <div className="text-muted-foreground flex items-center gap-1 font-mono text-xs">
           <span>LoreScanner</span>
           <BookOpen className="text-primary h-3.5 w-3.5" />
         </div>
@@ -163,7 +163,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
                           e.stopPropagation();
                           setShowCustomSubInput((s) => !s);
                         }}
-                        className="text-muted-foreground hover:text-foreground hover:bg-muted flex cursor-pointer items-center gap-1 rounded-md p-1 text-[10.5px] transition-colors"
+                        className="text-muted-foreground hover:text-foreground hover:bg-muted flex cursor-pointer items-center gap-1 rounded-md p-1 text-xs transition-colors"
                       >
                         <Pencil className="text-primary h-3 w-3" />
                         <span>{showCustomSubInput ? "Presets" : "Edit"}</span>

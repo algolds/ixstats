@@ -68,7 +68,7 @@ export function AccountDetailsForm({
               errors.firstName && "border-red-500"
             )}
           />
-          {errors.firstName && <p className="mt-1 text-[10px] text-red-400">{errors.firstName}</p>}
+          {errors.firstName && <p className="mt-1 text-xs text-red-400">{errors.firstName}</p>}
         </div>
 
         <div>
@@ -122,7 +122,7 @@ export function AccountDetailsForm({
               : "Username is already taken"}
           </p>
         ) : (
-          <p className="mt-1 text-[11px] text-slate-500">
+          <p className="mt-1 text-xs text-slate-500">
             3-20 characters, letters, numbers, and underscores
           </p>
         )}
@@ -138,7 +138,7 @@ export function AccountDetailsForm({
           maxLength={160}
           className="block min-h-[80px] w-full rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none"
         />
-        <div className="mt-1 text-right text-[10px] text-slate-500">{formData.bio.length}/160</div>
+        <div className="mt-1 text-right text-xs text-slate-500">{formData.bio.length}/160</div>
       </div>
 
       {/* Profile Image Picker */}
@@ -155,7 +155,7 @@ export function AccountDetailsForm({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-[10px] text-slate-500">
+              <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">
                 No Image
               </div>
             )}

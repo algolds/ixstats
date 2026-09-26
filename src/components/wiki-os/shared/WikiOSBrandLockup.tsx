@@ -56,7 +56,7 @@ export function WikiOSBrandLockup({
         <div className="flex flex-col justify-center text-left">
           <IxWikiWordmark size={isCompact ? "sm" : "md"} className="text-foreground" />
           {showSubtitle && !isCompact && (
-            <span className="text-muted-foreground mt-0.5 text-[10px] font-medium tracking-wider uppercase">
+            <span className="text-muted-foreground mt-0.5 text-xs font-medium tracking-wider uppercase">
               Worldbuilding Encyclopedia
             </span>
           )}
@@ -98,7 +98,7 @@ export function WikiOSBrandLockup({
       {/* 3. Subtitle & Editorial Tagline */}
       {showSubtitle && (
         <div className="text-muted-foreground/80 mt-1 flex items-center justify-center text-xs font-medium tracking-wide">
-          <span className="text-muted-foreground/80 text-[11px] leading-none font-semibold tracking-[0.18em] uppercase sm:text-xs">
+          <span className="text-muted-foreground/80 text-xs leading-none font-semibold tracking-[0.18em] uppercase sm:text-xs">
             Worldbuilding Encyclopedia
           </span>
         </div>

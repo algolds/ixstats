@@ -84,7 +84,7 @@ function InfoRow({
         <Icon className="text-muted-foreground h-3.5 w-3.5" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <div className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           {label}
         </div>
         {loading ? (
@@ -203,7 +203,7 @@ export default function MapPinInfoPanel({
 
       {/* Footer */}
       <div className="px-4 py-2 text-center">
-        <span className="text-muted-foreground/40 text-[10px]">Tap map to update pin</span>
+        <span className="text-muted-foreground/40 text-xs">Tap map to update pin</span>
       </div>
     </>
   );

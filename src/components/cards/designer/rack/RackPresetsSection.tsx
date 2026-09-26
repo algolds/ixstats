@@ -59,7 +59,7 @@ export const RackPresetsSection = React.memo(function RackPresetsSection({
                   variant="ghost"
                   size="sm"
                   onClick={() => onLoadPreset(preset)}
-                  className="text-primary h-6 px-2 text-[10px]"
+                  className="text-primary h-6 px-2 text-xs"
                 >
                   Load
                 </Button>
@@ -67,7 +67,7 @@ export const RackPresetsSection = React.memo(function RackPresetsSection({
                   variant="ghost"
                   size="sm"
                   onClick={() => onDeletePreset(preset.id)}
-                  className="text-muted-foreground hover:text-destructive h-6 px-1.5 text-[10px]"
+                  className="text-muted-foreground hover:text-destructive h-6 px-1.5 text-xs"
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>

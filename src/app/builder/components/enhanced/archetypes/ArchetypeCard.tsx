@@ -54,7 +54,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
                 {isSelected && (
                   <Badge
                     variant="default"
-                    className="border-emerald-500/20 bg-emerald-500/15 px-1.5 py-0 text-[9px] font-semibold text-emerald-400"
+                    className="border-emerald-500/20 bg-emerald-500/15 px-1.5 py-0 text-xs font-semibold text-emerald-400"
                   >
                     Active Preset
                   </Badge>
@@ -71,7 +71,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
             <Badge
               className={cn(
                 getComplexityColor(archetype.implementationComplexity),
-                "shrink-0 px-2 py-0.5 text-[10px] font-medium capitalize"
+                "shrink-0 px-2 py-0.5 text-xs font-medium capitalize"
               )}
             >
               {archetype.implementationComplexity}

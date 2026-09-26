@@ -46,7 +46,7 @@ export function ImportVerifyStep({
         <h4 className="text-foreground text-sm font-bold">Instructions</h4>
         <ol className="text-muted-foreground list-inside space-y-2.5 text-sm">
           <li className="flex items-start gap-2">
-            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold">
               1
             </span>
             <span>
@@ -55,13 +55,13 @@ export function ImportVerifyStep({
             </span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold">
               2
             </span>
             NationStates will display a verification code
           </li>
           <li className="flex items-start gap-2">
-            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold">
               3
             </span>
             Copy that code and paste it in the field below

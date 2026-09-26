@@ -111,7 +111,7 @@ export function MessagesInputBar({
         <div className="border-border/60 bg-muted/40 mb-2 flex items-center gap-2 rounded-xl border px-3 py-1.5">
           <Reply className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
           <div className="min-w-0 flex-1">
-            <p className="text-muted-foreground text-[11px] font-medium">
+            <p className="text-muted-foreground text-xs font-medium">
               Replying to {replyingTo.account.displayName}
             </p>
             <p className="text-foreground/80 truncate text-xs">

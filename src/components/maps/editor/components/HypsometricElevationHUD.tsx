@@ -75,7 +75,7 @@ export function HypsometricElevationHUD({
             <h4 className="text-xs font-semibold tracking-tight">
               Hypsometric Elevation Cross-Section
             </h4>
-            <p className="text-muted-foreground text-[10px]">
+            <p className="text-muted-foreground text-xs">
               Terrain Slice & Hydrological Slope Gradient
             </p>
           </div>
@@ -84,12 +84,12 @@ export function HypsometricElevationHUD({
         {/* Live Cursor Altitude Badge */}
         <div className="flex items-center gap-2">
           {liveTerrain?.elevation && (
-            <span className="border-border bg-muted/60 text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-[10px]">
+            <span className="border-border bg-muted/60 text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-xs">
               {liveTerrain.elevation}
             </span>
           )}
           {liveTerrain?.climate && (
-            <span className="rounded-md bg-cyan-500/10 px-2 py-0.5 font-mono text-[10px] text-cyan-600 dark:text-cyan-400">
+            <span className="rounded-md bg-cyan-500/10 px-2 py-0.5 font-mono text-xs text-cyan-600 dark:text-cyan-400">
               {liveTerrain.climate}
             </span>
           )}
@@ -176,7 +176,7 @@ export function HypsometricElevationHUD({
           </svg>
 
           {/* Elevation Labels */}
-          <div className="text-muted-foreground pointer-events-none absolute inset-x-0 bottom-0 flex justify-between px-1 font-mono text-[9px]">
+          <div className="text-muted-foreground pointer-events-none absolute inset-x-0 bottom-0 flex justify-between px-1 font-mono text-xs">
             <span>0 km (Start)</span>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               Peak: {profileData.maxElev.toLocaleString()}m
@@ -187,7 +187,7 @@ export function HypsometricElevationHUD({
       )}
 
       {/* Environmental Slopes Indicator */}
-      <div className="border-border text-muted-foreground mt-2 flex items-center justify-between border-t pt-1.5 text-[10px]">
+      <div className="border-border text-muted-foreground mt-2 flex items-center justify-between border-t pt-1.5 text-xs">
         <div className="flex items-center gap-1">
           <Wind className="h-3 w-3 text-cyan-500" />
           <span>Windward (Precipitation Slope)</span>

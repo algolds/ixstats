@@ -172,7 +172,7 @@ export function PostComposers({
                     <Edit className="h-3.5 w-3.5" />
                     <span>Editing Post</span>
                   </div>
-                  <span className="text-muted-foreground/60 text-[10px] font-normal">
+                  <span className="text-muted-foreground/60 text-xs font-normal">
                     Esc to cancel
                   </span>
                 </div>
@@ -235,7 +235,7 @@ export function PostComposers({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground/50 hidden text-[10px] sm:inline">
+                <span className="text-muted-foreground/50 hidden text-xs sm:inline">
                   Esc to cancel
                 </span>
                 <button
@@ -351,7 +351,7 @@ export function PostComposers({
                           </div>
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="text-[11px]">
+                      <TooltipContent side="top" className="text-xs">
                         Add media / images
                       </TooltipContent>
                     </Tooltip>
@@ -364,16 +364,16 @@ export function PostComposers({
                           disabled={selectedImages.length >= 4}
                         />
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="text-[11px]">
+                      <TooltipContent side="top" className="text-xs">
                         Insert GIF
                       </TooltipContent>
                     </Tooltip>
 
                     <div className="hidden h-4 w-px bg-black/10 sm:block dark:bg-white/10" />
 
-                    <div className="text-muted-foreground hidden items-center gap-1.5 text-[11px] sm:flex">
+                    <div className="text-muted-foreground hidden items-center gap-1.5 text-xs sm:flex">
                       <span>Press</span>
-                      <kbd className="text-muted-foreground rounded-md border border-black/10 bg-black/5 px-1.5 py-0.5 text-[10px] font-medium dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
+                      <kbd className="text-muted-foreground rounded-md border border-black/10 bg-black/5 px-1.5 py-0.5 text-xs font-medium dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
                         Enter
                       </kbd>
                       <span>to reply</span>

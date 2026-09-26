@@ -115,7 +115,7 @@ export function ThinktankDirectorySidebar({
                     setSelectedCategory("All");
                   }}
                   className={cn(
-                    "relative cursor-pointer rounded-lg px-3 py-1 text-[11px] font-semibold tracking-tight transition-all select-none active:scale-[0.97]",
+                    "relative cursor-pointer rounded-lg px-3 py-1 text-xs font-semibold tracking-tight transition-all select-none active:scale-[0.97]",
                     isActive ? "text-white" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -138,7 +138,7 @@ export function ThinktankDirectorySidebar({
               soundEffects.press();
               onCreateGroup();
             }}
-            className="flex h-7.5 cursor-pointer items-center gap-1 rounded-xl bg-emerald-600 px-2.5 text-[11px] font-semibold text-white shadow-xs hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-600"
+            className="flex h-7.5 cursor-pointer items-center gap-1 rounded-xl bg-emerald-600 px-2.5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-600"
           >
             <Plus className="h-3 w-3" /> New
           </Button>
@@ -176,7 +176,7 @@ export function ThinktankDirectorySidebar({
                     setSelectedCategory(cat.name);
                   }}
                   className={cn(
-                    "group relative flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10.5px] font-medium tracking-tight transition-all select-none active:scale-[0.96]",
+                    "group relative flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium tracking-tight transition-all select-none active:scale-[0.96]",
                     isCatActive
                       ? "font-semibold text-emerald-700 dark:text-emerald-300"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -192,7 +192,7 @@ export function ThinktankDirectorySidebar({
                   <span className="relative z-10">{cat.name}</span>
                   <span
                     className={cn(
-                      "py-0.2 relative z-10 rounded-full px-1.5 text-[9px] font-bold tabular-nums transition-colors",
+                      "py-0.2 relative z-10 rounded-full px-1.5 text-xs font-bold tabular-nums transition-colors",
                       isCatActive
                         ? "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-500/30 dark:text-emerald-200"
                         : "bg-muted text-muted-foreground group-hover:text-foreground"
@@ -212,7 +212,7 @@ export function ThinktankDirectorySidebar({
         {isLoading ? (
           <div className="flex flex-col items-center justify-center gap-2 py-16">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-            <p className="text-muted-foreground text-[11px] font-medium">Loading groups...</p>
+            <p className="text-muted-foreground text-xs font-medium">Loading groups...</p>
           </div>
         ) : filteredGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
@@ -220,7 +220,7 @@ export function ThinktankDirectorySidebar({
               <Group className="h-5 w-5" />
             </div>
             <p className="text-foreground text-xs font-semibold">No groups found</p>
-            <p className="text-muted-foreground mt-1 text-[11px]">
+            <p className="text-muted-foreground mt-1 text-xs">
               {searchQuery
                 ? "Try adjusting your search or category filter."
                 : activeTab === "my"
@@ -291,7 +291,7 @@ export function ThinktankDirectorySidebar({
                     <span className="text-foreground truncate text-xs font-bold">{g.name}</span>
                     <div className="flex shrink-0 items-center gap-1">
                       {g.hasRecentActivity && g.lastActivity && (
-                        <span className="py-0.2 flex items-center gap-0.5 rounded-md bg-emerald-500/10 px-1 text-[9px] font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
+                        <span className="py-0.2 flex items-center gap-0.5 rounded-md bg-emerald-500/10 px-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
                           <Sparks className="h-2.5 w-2.5" />
                           {formatRelativeTime(g.lastActivity)}
                         </span>
@@ -308,11 +308,11 @@ export function ThinktankDirectorySidebar({
                     </div>
                   </div>
 
-                  <p className="text-muted-foreground mt-0.5 line-clamp-1 text-[11px] leading-snug">
+                  <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs leading-snug">
                     {g.description || "No description provided."}
                   </p>
 
-                  <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px]">
+                  <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
                     <span className="text-foreground/80 font-medium">
                       {g.category || "General"}
                     </span>

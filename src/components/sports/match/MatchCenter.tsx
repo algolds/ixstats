@@ -224,7 +224,7 @@ export function MatchCenter({
         <div className="flex items-center gap-2">
           {!isCompleted && (
             <>
-              <div className="flex items-center rounded-xl border border-border/40 bg-muted/20 p-0.5 text-[11px] font-bold">
+              <div className="flex items-center rounded-xl border border-border/40 bg-muted/20 p-0.5 text-xs font-bold">
                 <button
                   type="button"
                   onClick={() => setSimulationSpeed("instant")}
@@ -300,7 +300,7 @@ export function MatchCenter({
             <h3 className="text-sm sm:text-base font-black text-foreground truncate max-w-[140px] sm:max-w-[200px]">
               {match.homeTeam.name}
             </h3>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Home</span>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Home</span>
           </button>
 
           {/* Central Scoreboard */}
@@ -315,7 +315,7 @@ export function MatchCenter({
               </span>
             </div>
 
-            <span className="text-[11px] font-semibold text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground">
               {isCompleted ? "Final Result" : "Not Started"}
             </span>
           </div>
@@ -343,7 +343,7 @@ export function MatchCenter({
             <h3 className="text-sm sm:text-base font-black text-foreground truncate max-w-[140px] sm:max-w-[200px]">
               {match.awayTeam.name}
             </h3>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Away</span>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Away</span>
           </button>
         </div>
       </div>
@@ -386,7 +386,7 @@ export function MatchCenter({
               {trace.slice(0, 8).map((evt, idx) => (
                 <div
                   key={idx}
-                  className="absolute transform -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/40 bg-card/80 p-1 text-[9px] font-bold shadow-md"
+                  className="absolute transform -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/40 bg-card/80 p-1 text-xs font-bold shadow-md"
                   style={{
                     left: `${20 + (idx * 9) % 60}%`,
                     top: `${30 + (idx * 13) % 40}%`,
@@ -414,7 +414,7 @@ export function MatchCenter({
                   className="flex items-center justify-between rounded-xl border border-border/30 bg-card/50 p-3 shadow-xs backdrop-blur-md transition hover:bg-muted/30"
                 >
                   <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="text-[10px] font-mono font-bold">
+                    <Badge variant="outline" className="text-xs font-mono font-bold">
                       {event.minute ? `${event.minute}'` : `P${event.period ?? 1}`}
                     </Badge>
                     <div>
@@ -423,13 +423,13 @@ export function MatchCenter({
                         <span className="capitalize">{event.type}</span>
                       </p>
                       {event.description && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{event.description}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{event.description}</p>
                       )}
                     </div>
                   </div>
 
                   {event.teamName && (
-                    <span className="text-[10px] font-semibold text-muted-foreground">
+                    <span className="text-xs font-semibold text-muted-foreground">
                       {event.teamName}
                     </span>
                   )}
@@ -470,7 +470,7 @@ export function MatchCenter({
               {/* Conversion & Advantage Metrics */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-2xl border border-border/30 bg-card/50 p-4 text-center">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                  <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
                     Possession Delta
                   </span>
                   <p className="text-xl font-black text-foreground mt-1">
@@ -481,7 +481,7 @@ export function MatchCenter({
                 </div>
 
                 <div className="rounded-2xl border border-border/30 bg-card/50 p-4 text-center">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                  <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
                     Dominant Phase
                   </span>
                   <p className="text-xl font-black text-foreground capitalize mt-1">
@@ -496,7 +496,7 @@ export function MatchCenter({
                   <div className="flex items-center gap-3">
                     <Trophy className="h-6 w-6 text-amber-400 shrink-0" />
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                      <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
                         Standout Athlete
                       </span>
                       <p className="text-sm font-bold text-foreground">

@@ -165,11 +165,11 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
       <div className="flex flex-col justify-between gap-2 border-b border-border/40 pb-3 sm:flex-row sm:items-center">
         <div className="space-y-0.5 text-left">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-wider text-amber-500 uppercase">
+            <span className="text-xs font-bold tracking-wider text-amber-500 uppercase">
               MyCountry Builder
             </span>
             <span className="h-1.5 w-1.5 rounded-full bg-border" />
-            <span className="text-[10px] font-medium text-muted-foreground">v{BUILDER_VERSION}</span>
+            <span className="text-xs font-medium text-muted-foreground">v{BUILDER_VERSION}</span>
           </div>
           <h2 className="text-lg font-extrabold tracking-tight text-foreground">
             Building: <span className="text-amber-400">{countryName || "New Country"}</span>
@@ -200,10 +200,10 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
 
           {isConfirmingRestart ? (
             <div className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 p-0.5">
-              <span className="px-2 text-[10px] font-semibold text-red-400">Reset draft?</span>
+              <span className="px-2 text-xs font-semibold text-red-400">Reset draft?</span>
               <button
                 onClick={handleConfirmRestart}
-                className="flex h-7 items-center rounded-md bg-red-500 px-2.5 text-[11px] font-bold text-white shadow-xs transition-transform active:scale-[0.97]"
+                className="flex h-7 items-center rounded-md bg-red-500 px-2.5 text-xs font-bold text-white shadow-xs transition-transform active:scale-[0.97]"
                 type="button"
                 data-cuelume-press
               >
@@ -211,7 +211,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
               </button>
               <button
                 onClick={() => setIsConfirmingRestart(false)}
-                className="flex h-7 items-center rounded-md border border-border/40 bg-background/80 px-2 text-[11px] font-bold text-muted-foreground transition-transform hover:text-foreground active:scale-[0.97]"
+                className="flex h-7 items-center rounded-md border border-border/40 bg-background/80 px-2 text-xs font-bold text-muted-foreground transition-transform hover:text-foreground active:scale-[0.97]"
                 type="button"
                 data-cuelume-press
               >
@@ -274,7 +274,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
 
                   <div className="min-w-0">
                     <p className="text-xs leading-none font-bold">{st.label}</p>
-                    <p className="mt-1 truncate text-[10px] font-medium text-muted-foreground">{st.desc}</p>
+                    <p className="mt-1 truncate text-xs font-medium text-muted-foreground">{st.desc}</p>
                   </div>
                 </div>
               );

@@ -181,7 +181,7 @@ export function StashSettingsMenu({
                   <h4 className="truncate text-sm font-bold tracking-tight text-stone-950 dark:text-white">
                     {stash.name}
                   </h4>
-                  <p className="text-[10.5px] font-medium text-stone-500 dark:text-stone-400">
+                  <p className="text-xs font-medium text-stone-500 dark:text-stone-400">
                     {stash.itemCount} saved item{stash.itemCount === 1 ? "" : "s"}
                   </p>
                 </div>
@@ -199,7 +199,7 @@ export function StashSettingsMenu({
 
             {/* Section 1: Color Palette Selector */}
             <div className="space-y-2 rounded-xl border border-black/5 bg-stone-100/90 p-2.5 dark:border-white/8 dark:bg-zinc-800/80">
-              <span className="block text-[10px] font-bold tracking-wider text-stone-500 uppercase dark:text-stone-400">
+              <span className="block text-xs font-bold tracking-wider text-stone-500 uppercase dark:text-stone-400">
                 Theme Color
               </span>
               <div className="flex items-center justify-between gap-1">
@@ -244,7 +244,7 @@ export function StashSettingsMenu({
                     <button
                       type="button"
                       onClick={() => setIsRenaming(false)}
-                      className="cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-semibold text-stone-500 transition-all hover:bg-black/5 hover:text-stone-900 active:scale-95 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-white"
+                      className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-500 transition-all hover:bg-black/5 hover:text-stone-900 active:scale-95 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-white"
                     >
                       Cancel
                     </button>
@@ -252,7 +252,7 @@ export function StashSettingsMenu({
                       type="button"
                       onClick={handleSaveRename}
                       disabled={isUpdating || !renameValue.trim()}
-                      className="cursor-pointer rounded-lg bg-rose-500 px-3 py-1 text-[11px] font-bold text-white shadow-xs transition-all hover:bg-rose-600 active:scale-95 disabled:opacity-40"
+                      className="cursor-pointer rounded-lg bg-rose-500 px-3 py-1 text-xs font-bold text-white shadow-xs transition-all hover:bg-rose-600 active:scale-95 disabled:opacity-40"
                     >
                       Save
                     </button>
@@ -319,14 +319,14 @@ export function StashSettingsMenu({
               <div className="border-t border-black/8 pt-1 dark:border-white/10">
                 {showDeleteConfirm ? (
                   <div className="animate-in fade-in space-y-2 rounded-xl border border-rose-500/30 bg-rose-50 p-2.5 duration-150 dark:bg-rose-950/40">
-                    <p className="text-[11px] leading-tight font-medium text-rose-700 dark:text-rose-300">
+                    <p className="text-xs leading-tight font-medium text-rose-700 dark:text-rose-300">
                       Delete <strong>{stash.name}</strong> and all its saved references?
                     </p>
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         type="button"
                         onClick={() => setShowDeleteConfirm(false)}
-                        className="cursor-pointer rounded-lg px-2.5 py-1 text-[10.5px] font-semibold text-stone-500 transition-all hover:bg-black/5 hover:text-stone-900 active:scale-95 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-white"
+                        className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-500 transition-all hover:bg-black/5 hover:text-stone-900 active:scale-95 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-white"
                       >
                         Cancel
                       </button>
@@ -334,7 +334,7 @@ export function StashSettingsMenu({
                         type="button"
                         onClick={handleDelete}
                         disabled={isDeleting}
-                        className="flex cursor-pointer items-center gap-1 rounded-lg bg-rose-500 px-3 py-1 text-[10.5px] font-bold text-white shadow-xs transition-all hover:bg-rose-600 active:scale-95"
+                        className="flex cursor-pointer items-center gap-1 rounded-lg bg-rose-500 px-3 py-1 text-xs font-bold text-white shadow-xs transition-all hover:bg-rose-600 active:scale-95"
                       >
                         {isDeleting ? (
                           <Loader2 className="h-3 w-3 animate-spin" />

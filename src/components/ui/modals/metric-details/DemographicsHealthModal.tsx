@@ -228,7 +228,7 @@ export function DemographicsHealthModal({
                   <div className="text-lg font-bold text-red-400 tabular-nums">
                     {(demographics?.deathRate || 0).toFixed(1)}/1k
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
                     Death Rate
                   </div>
                 </div>
@@ -237,7 +237,7 @@ export function DemographicsHealthModal({
                     {((demographics?.birthRate || 0) - (demographics?.deathRate || 0)).toFixed(1)}
                     /1k
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
                     Natural Growth
                   </div>
                 </div>
@@ -245,7 +245,7 @@ export function DemographicsHealthModal({
                   <div className="text-lg font-bold text-cyan-400 tabular-nums">
                     {(demographics?.migrationRate || 0).toFixed(1)}/1k
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
                     Migration Rate
                   </div>
                 </div>
@@ -253,7 +253,7 @@ export function DemographicsHealthModal({
                   <div className="text-lg font-bold text-indigo-400 tabular-nums">
                     {(demographics?.dependencyRatio || 50).toFixed(0)}%
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
                     Dependency Ratio
                   </div>
                 </div>
@@ -301,7 +301,7 @@ export function DemographicsHealthModal({
             className={`facet-refraction relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden rounded-xl border p-4 ${healthLevel.bg} ${healthLevel.border}`}
           >
             <div>
-              <span className="text-muted-foreground block text-[10px] font-medium tracking-wider uppercase">
+              <span className="text-muted-foreground block text-xs font-medium tracking-wider uppercase">
                 Health Status
               </span>
               <div className="mt-2">
@@ -310,7 +310,7 @@ export function DemographicsHealthModal({
                 </span>
               </div>
             </div>
-            <p className="text-muted-foreground mt-4 flex items-center gap-1.5 text-[10.5px] leading-relaxed">
+            <p className="text-muted-foreground mt-4 flex items-center gap-1.5 text-xs leading-relaxed">
               <Stethoscope className="h-3 w-3 shrink-0" />
               General wellness index and public health quality level.
             </p>
@@ -544,7 +544,7 @@ export function DemographicsHealthModal({
               <span className="text-xl font-bold text-cyan-400">
                 {lifeExpectancy >= globalAvgLife ? "Above Average" : "Below Average"}
               </span>
-              <span className="text-muted-foreground mt-1 text-[10px]">
+              <span className="text-muted-foreground mt-1 text-xs">
                 Life: {lifeExpectancy.toFixed(1)} yrs vs {globalAvgLife} yrs Avg
               </span>
             </div>
@@ -557,7 +557,7 @@ export function DemographicsHealthModal({
                   ? "Positive"
                   : "Negative"}
               </span>
-              <span className="text-muted-foreground mt-1 text-[10px]">
+              <span className="text-muted-foreground mt-1 text-xs">
                 Natural Growth Rate:{" "}
                 {((demographics?.birthRate || 0) - (demographics?.deathRate || 0)).toFixed(1)}/1k
               </span>
@@ -573,7 +573,7 @@ export function DemographicsHealthModal({
                     ? "Balanced"
                     : "Aging"}
               </span>
-              <span className="text-muted-foreground mt-1 text-[10px]">
+              <span className="text-muted-foreground mt-1 text-xs">
                 Median Age: {(demographics?.medianAge || countryData?.medianAge || 30.0).toFixed(1)}{" "}
                 yrs
               </span>
@@ -664,7 +664,7 @@ export function DemographicsHealthModal({
                           >
                             {(level.percentage || level.percent || 0).toFixed(0)}%
                           </div>
-                          <div className="text-muted-foreground mt-1 text-[10px]">
+                          <div className="text-muted-foreground mt-1 text-xs">
                             {level.level}
                           </div>
                         </div>
@@ -680,13 +680,13 @@ export function DemographicsHealthModal({
           <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
             <CardHeader className="mb-4 p-0">
               <CardTitle className="text-sm font-semibold">Societal Structure</CardTitle>
-              <CardDescription className="text-[10px]">
+              <CardDescription className="text-xs">
                 Education & Urbanization benchmarks
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                <span className="text-muted-foreground text-xs font-semibold uppercase">
                   Literacy Rate
                 </span>
                 <div className="mt-1 text-lg font-bold text-green-400">
@@ -695,7 +695,7 @@ export function DemographicsHealthModal({
               </div>
 
               <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                <span className="text-muted-foreground text-xs font-semibold uppercase">
                   Urban Population
                 </span>
                 <div className="mt-1 text-lg font-bold text-cyan-400">
@@ -704,7 +704,7 @@ export function DemographicsHealthModal({
               </div>
 
               <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                <span className="text-muted-foreground text-xs font-semibold uppercase">
                   Rural Population
                 </span>
                 <div className="mt-1 text-lg font-bold text-emerald-400">

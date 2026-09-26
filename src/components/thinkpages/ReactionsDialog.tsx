@@ -327,12 +327,12 @@ export function ReactionsDialog({
                                     </span>
                                   )}
                                   {(reaction.account as any).bio?.startsWith("Former Nation") && (
-                                    <span className="text-muted-foreground shrink-0 text-[10px]">
+                                    <span className="text-muted-foreground shrink-0 text-xs">
                                       [Former Nation]
                                     </span>
                                   )}
                                   {reaction.account.isDiscordUser ? (
-                                    <div className="border-discord/30 bg-discord/20 text-discord flex shrink-0 items-center gap-0.5 rounded border px-1 py-0.5 text-[9px] font-bold">
+                                    <div className="border-discord/30 bg-discord/20 text-discord flex shrink-0 items-center gap-0.5 rounded border px-1 py-0.5 text-xs font-bold">
                                       <svg
                                         className="h-2.5 w-2.5"
                                         fill="currentColor"
@@ -345,7 +345,7 @@ export function ReactionsDialog({
                                   ) : (
                                     <div
                                       className={cn(
-                                        "flex shrink-0 items-center justify-center rounded px-1 py-0.5 text-[9px] font-bold",
+                                        "flex shrink-0 items-center justify-center rounded px-1 py-0.5 text-xs font-bold",
                                         accountTypeColor
                                       )}
                                     >

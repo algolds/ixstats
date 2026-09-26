@@ -42,7 +42,7 @@ export function MobileMenu({
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1">
-          <p className="text-muted-foreground/80 text-[10px] tracking-wide uppercase sm:text-[11px]">
+          <p className="text-muted-foreground/80 text-xs tracking-wide uppercase sm:text-xs">
             Currently viewing
           </p>
           <h2 className="text-foreground text-base font-semibold break-words sm:text-lg">
@@ -164,7 +164,7 @@ export function MobileMenu({
                     )}
                   </div>
                   {current && (
-                    <span className="text-primary shrink-0 text-[10px] font-semibold tracking-wide uppercase sm:text-[11px]">
+                    <span className="text-primary shrink-0 text-xs font-semibold tracking-wide uppercase sm:text-xs">
                       Active
                     </span>
                   )}
@@ -178,7 +178,7 @@ export function MobileMenu({
         <div className="border-border/40 border-t pt-5">
           <div className="mb-1 flex items-center gap-2">
             <div className="via-border/60 h-px flex-1 bg-gradient-to-r from-transparent to-transparent" />
-            <span className="text-muted-foreground/60 text-[10px] font-semibold tracking-wider uppercase">
+            <span className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
               Context Menu
             </span>
             <div className="via-border/60 h-px flex-1 bg-gradient-to-r from-transparent to-transparent" />

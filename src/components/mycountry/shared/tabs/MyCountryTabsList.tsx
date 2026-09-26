@@ -193,7 +193,7 @@ export function MyCountryTabsList({
               {tab.badge !== undefined && tab.badge > 0 && (
                 <span
                   className={cn(
-                    "ml-1 flex scale-95 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] leading-none font-bold",
+                    "ml-1 flex scale-95 items-center justify-center rounded-full px-1.5 py-0.5 text-xs leading-none font-bold",
                     isActive
                       ? "bg-foreground text-background"
                       : "bg-muted text-muted-foreground"

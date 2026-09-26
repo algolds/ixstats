@@ -204,10 +204,10 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
           {/* DEFCON Level Selector */}
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-xs">
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 DEFCON Alert Status
               </span>
-              <span className={cn("rounded-md border px-1.5 py-0.5 font-mono text-[9px] font-bold", activeDefcon.cls)}>
+              <span className={cn("rounded-md border px-1.5 py-0.5 font-mono text-xs font-bold", activeDefcon.cls)}>
                 {activeDefcon.readinessMod} · {activeDefcon.costMod}
               </span>
             </div>
@@ -229,8 +229,8 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                   )}
                   title={`${d.label}: ${d.status} (${d.costMod}, ${d.readinessMod})`}
                 >
-                  <span className="text-[11px] font-mono font-bold leading-tight">{d.level}</span>
-                  <span className="text-[8px] font-medium leading-none opacity-80">{d.status}</span>
+                  <span className="text-xs font-mono font-bold leading-tight">{d.level}</span>
+                  <span className="text-xs font-medium leading-none opacity-80">{d.status}</span>
                 </button>
               ))}
             </div>
@@ -239,10 +239,10 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
           {/* Force Projection Goal */}
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-xs">
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 Force Projection Goal
               </span>
-              <span className="text-cyan-400 font-mono text-[9px] font-bold">
+              <span className="text-cyan-400 font-mono text-xs font-bold">
                 {PROJECTION_GOALS.find((p) => p.id === projection)?.label}
               </span>
             </div>
@@ -264,8 +264,8 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                   )}
                   title={p.desc}
                 >
-                  <span className="text-[10px] font-semibold leading-tight">{p.label}</span>
-                  <span className="text-[8px] opacity-70 truncate max-w-full">{p.desc}</span>
+                  <span className="text-xs font-semibold leading-tight">{p.label}</span>
+                  <span className="text-xs opacity-70 truncate max-w-full">{p.desc}</span>
                 </button>
               ))}
             </div>

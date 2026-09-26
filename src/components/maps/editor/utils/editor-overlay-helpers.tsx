@@ -36,7 +36,7 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
           {countryName && <p className="text-muted-foreground mt-1 text-xs">{countryName}</p>}
         </div>
 
-        <div className="text-muted-foreground/60 flex gap-4 text-[10px]">
+        <div className="text-muted-foreground/60 flex gap-4 text-xs">
           <span>Geometry</span>
           <span>Features</span>
           <span>Layers</span>

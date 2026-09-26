@@ -181,7 +181,7 @@ export function MapDynamicIsland({
                 ) : (
                   <Bell className="h-3.5 w-3.5" />
                 )}
-                <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-1 text-[8px] font-bold text-white">
+                <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
                   {totalUnread > 99 ? "99+" : totalUnread}
                 </span>
               </button>
@@ -352,7 +352,7 @@ export function MapDynamicIsland({
                     )}
                     <span
                       className={cn(
-                        "ring-background absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-1 text-[8px] font-bold text-white shadow-sm ring-2 transition-colors duration-500",
+                        "ring-background absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-1 text-xs font-bold text-white shadow-sm ring-2 transition-colors duration-500",
                         messageUnreadCount > 0
                           ? isFlashing
                             ? "animate-bounce bg-red-600"
@@ -415,7 +415,7 @@ export function MapDynamicIsland({
               const Icon = meta.icon;
               return (
                 <div key={type}>
-                  <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase">
                     <Icon className="h-3 w-3" />
                     {meta.label}
                   </div>
@@ -480,7 +480,7 @@ export function MapDynamicIsland({
                 const Icon = meta.icon;
                 return (
                   <div key={type}>
-                    <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold tracking-wider uppercase">
+                    <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase">
                       <Icon className="h-3 w-3" />
                       {meta.label}
                     </div>

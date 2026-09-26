@@ -323,11 +323,11 @@ export function VaultStoreTab() {
               {activeConfig.icon}
               {activeConfig.title}
             </h3>
-            <p className="text-muted-foreground mt-1 text-[10px]">{activeConfig.description}</p>
+            <p className="text-muted-foreground mt-1 text-xs">{activeConfig.description}</p>
           </div>
           <span
             className={cn(
-              "rounded-full border px-2 py-0.5 text-[9px] font-semibold tracking-wider uppercase",
+              "rounded-full border px-2 py-0.5 text-xs font-semibold tracking-wider uppercase",
               activeConfig.badgeStyle
             )}
           >

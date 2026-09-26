@@ -174,7 +174,7 @@ export const LayerPanel = React.memo(function LayerPanel({
           className="flex min-w-0 flex-1 items-center gap-2 text-left"
         >
           <Icon className={`h-3 w-3 shrink-0 ${colorClass}`} />
-          <span className="text-foreground truncate text-[11px]">{feature.name}</span>
+          <span className="text-foreground truncate text-xs">{feature.name}</span>
           {isCapital && (
             <span title="National Capital">
               <Crown className="h-2.5 w-2.5 shrink-0 text-amber-500" />
@@ -254,8 +254,8 @@ export const LayerPanel = React.memo(function LayerPanel({
                     <ChevronRight className="text-muted-foreground h-3.5 w-3.5" />
                   )}
                   <Icon className="text-muted-foreground h-3.5 w-3.5" />
-                  <span className="flex-1 truncate text-[11px] font-medium">{group.name}</span>
-                  <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[9px]">
+                  <span className="flex-1 truncate text-xs font-medium">{group.name}</span>
+                  <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-xs">
                     {groupFeats.length}
                   </span>
                 </button>
@@ -274,7 +274,7 @@ export const LayerPanel = React.memo(function LayerPanel({
 
   return (
     <div className="flex flex-col bg-card text-xs text-foreground select-none">
-      <div className="border-b border-border/40 px-2 py-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+      <div className="border-b border-border/40 px-2 py-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
         Layers & Features
       </div>
       <div className="flex flex-col">
@@ -351,14 +351,14 @@ export const LayerPanel = React.memo(function LayerPanel({
                   onClick={() =>
                     layer.id !== "border" && layer.id !== "climate" && toggleLayerExpanded(layer.id)
                   }
-                  className="ml-1 flex-1 cursor-pointer truncate text-[11px] leading-none font-medium"
+                  className="ml-1 flex-1 cursor-pointer truncate text-xs leading-none font-medium"
                 >
                   {layer.name}
                 </span>
 
                 {/* Badge Count */}
                 {count !== undefined && count > 0 && (
-                  <span className="mr-1.5 rounded bg-muted px-1 py-0.5 text-[9px] leading-none font-semibold text-muted-foreground">
+                  <span className="mr-1.5 rounded bg-muted px-1 py-0.5 text-xs leading-none font-semibold text-muted-foreground">
                     {count}
                   </span>
                 )}
@@ -369,7 +369,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 <div className="space-y-0.5 bg-muted/20 pb-1.5">
                   {/* Opacity slider for Regions */}
                   {showOpacity && (
-                    <div className="mr-1.5 mb-1 ml-8 flex items-center gap-2 rounded bg-muted/30 px-3 py-1 text-[10px]">
+                    <div className="mr-1.5 mb-1 ml-8 flex items-center gap-2 rounded bg-muted/30 px-3 py-1 text-xs">
                       <span className="text-muted-foreground">Opacity</span>
                       <input
                         type="range"
@@ -391,7 +391,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                   {layerFeatures.length > 0 ? (
                     layerFeatures.map(renderFeatureRow)
                   ) : (
-                    <div className="py-1 pl-8 text-[10px] text-muted-foreground/60 italic">
+                    <div className="py-1 pl-8 text-xs text-muted-foreground/60 italic">
                       No features in this layer
                     </div>
                   )}
@@ -450,14 +450,14 @@ export const LayerPanel = React.memo(function LayerPanel({
               {/* Title */}
               <span
                 onClick={() => setGuidesExpanded((prev) => !prev)}
-                className="ml-1 flex-1 cursor-pointer truncate text-[11px] leading-none font-medium"
+                className="ml-1 flex-1 cursor-pointer truncate text-xs leading-none font-medium"
               >
                 Ruler Guides
               </span>
 
               {/* Count */}
               {guides.length > 0 && (
-                <span className="mr-1.5 rounded bg-muted px-1 py-0.5 text-[9px] leading-none font-semibold text-muted-foreground">
+                <span className="mr-1.5 rounded bg-muted px-1 py-0.5 text-xs leading-none font-semibold text-muted-foreground">
                   {guides.length}
                 </span>
               )}
@@ -473,10 +473,10 @@ export const LayerPanel = React.memo(function LayerPanel({
                       className="group flex items-center gap-1.5 rounded px-2 py-1 pl-8 hover:bg-accent/50"
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                        <span className="shrink-0 text-[9px] font-bold text-muted-foreground/70 uppercase">
+                        <span className="shrink-0 text-xs font-bold text-muted-foreground/70 uppercase">
                           {guide.type === "h" ? "Lat" : "Lng"}
                         </span>
-                        <span className="text-foreground truncate text-[11px]">
+                        <span className="text-foreground truncate text-xs">
                           {guide.type === "h" ? "Horizontal" : "Vertical"}: {guide.value.toFixed(5)}
                           °
                         </span>
@@ -494,7 +494,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                     </div>
                   ))
                 ) : (
-                  <div className="py-1 pl-8 text-[10px] text-muted-foreground/60 italic">
+                  <div className="py-1 pl-8 text-xs text-muted-foreground/60 italic">
                     No guides (drag from rulers to add)
                   </div>
                 )}

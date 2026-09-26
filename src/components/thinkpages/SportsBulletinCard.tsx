@@ -61,12 +61,12 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
                 {league.name}
               </h4>
               {isChampionBulletin && (
-                <Badge className="border-amber-500/30 bg-amber-500/15 text-[9px] font-bold tracking-wide text-amber-600 uppercase dark:text-amber-400">
+                <Badge className="border-amber-500/30 bg-amber-500/15 text-xs font-bold tracking-wide text-amber-600 uppercase dark:text-amber-400">
                   Champion Crowned
                 </Badge>
               )}
             </div>
-            <p className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium tracking-tight tabular-nums">
+            <p className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-tight tabular-nums">
               {isChampionBulletin ? (
                 <span>Final Season Standings</span>
               ) : isPlayoffBulletin ? (
@@ -86,7 +86,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
             <button
               onClick={() => setActiveTab("matches")}
               className={cn(
-                "rounded-lg px-2.5 py-1 text-[11px] font-bold tracking-tight transition-all duration-150 active:scale-[0.96]",
+                "rounded-lg px-2.5 py-1 text-xs font-bold tracking-tight transition-all duration-150 active:scale-[0.96]",
                 activeTab === "matches"
                   ? "border border-black/10 bg-white text-slate-900 shadow-xs dark:border-white/10 dark:bg-white/15 dark:text-white"
                   : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
@@ -98,7 +98,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
               <button
                 onClick={() => setActiveTab("movers")}
                 className={cn(
-                  "rounded-lg px-2.5 py-1 text-[11px] font-bold tracking-tight transition-all duration-150 active:scale-[0.96]",
+                  "rounded-lg px-2.5 py-1 text-xs font-bold tracking-tight transition-all duration-150 active:scale-[0.96]",
                   activeTab === "movers"
                     ? "border border-black/10 bg-white text-slate-900 shadow-xs dark:border-white/10 dark:bg-white/15 dark:text-white"
                     : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
@@ -111,7 +111,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
               <button
                 onClick={() => setActiveTab("summary")}
                 className={cn(
-                  "rounded-lg px-2.5 py-1 text-[11px] font-bold tracking-tight transition-all duration-150 active:scale-[0.96]",
+                  "rounded-lg px-2.5 py-1 text-xs font-bold tracking-tight transition-all duration-150 active:scale-[0.96]",
                   activeTab === "summary"
                     ? "border border-black/10 bg-white text-slate-900 shadow-xs dark:border-white/10 dark:bg-white/15 dark:text-white"
                     : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
@@ -132,7 +132,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
               <Trophy className="h-6 w-6 animate-pulse" />
             </div>
             <div>
-              <span className="text-[10px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400/90">
+              <span className="text-xs font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400/90">
                 League Champion
               </span>
               <h3 className="text-foreground text-base font-bold tracking-tight">{championName}</h3>
@@ -242,7 +242,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
                   {/* Score Pill & Indicators */}
                   <div className="flex shrink-0 items-center gap-2">
                     {res.isUpset && (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400">
                         <Zap className="h-2.5 w-2.5" />
                         UPSET
                       </span>
@@ -285,7 +285,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
                     {/* Rank Delta Movement Indicator */}
                     <div
                       className={cn(
-                        "flex h-5 items-center gap-0.5 rounded-lg border px-1.5 text-[10px] font-bold tracking-tight tabular-nums",
+                        "flex h-5 items-center gap-0.5 rounded-lg border px-1.5 text-xs font-bold tracking-tight tabular-nums",
                         isUp
                           ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                           : isDown

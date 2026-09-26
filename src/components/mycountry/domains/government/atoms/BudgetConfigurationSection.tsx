@@ -140,7 +140,7 @@ export function BudgetConfigurationSection({
               >
                 {ratio.toFixed(1)}% of GDP ({gdpData.countryName || "Baseline"})
               </span>
-              <span className="text-muted-foreground/80 px-0.5 text-[10px] leading-relaxed font-medium">
+              <span className="text-muted-foreground/80 px-0.5 text-xs leading-relaxed font-medium">
                 Tax Revenue: {taxPercent.toFixed(1)}% • {statusText}
               </span>
             </>

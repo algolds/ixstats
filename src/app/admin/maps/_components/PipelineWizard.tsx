@@ -830,7 +830,7 @@ function FullPipelinePanel() {
           <summary className="text-muted-foreground hover:text-muted-foreground cursor-pointer text-xs">
             Pipeline Log ({pipelineResult.metadata.log.length} entries)
           </summary>
-          <pre className="border-border bg-card text-muted-foreground mt-2 max-h-40 overflow-auto rounded border p-2 text-[10px]">
+          <pre className="border-border bg-card text-muted-foreground mt-2 max-h-40 overflow-auto rounded border p-2 text-xs">
             {pipelineResult.metadata.log.join("\n")}
           </pre>
         </details>

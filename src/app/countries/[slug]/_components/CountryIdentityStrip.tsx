@@ -66,7 +66,7 @@ export function CountryIdentityStrip({
         aria-label={`View realm ${realmName}`}
         data-cuelume-press="soft"
         className={cn(
-          "group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide transition-all duration-150 ease-out active:scale-[0.97]",
+          "group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide transition-all duration-150 ease-out active:scale-[0.97]",
           hasImage
             ? "border-white/15 bg-black/35 text-white backdrop-blur-md hover:border-white/25 hover:bg-black/45 supports-[backdrop-filter]:bg-black/30"
             : "border-border bg-card/60 text-foreground hover:bg-card hover:border-foreground/15 backdrop-blur-xl"
@@ -77,7 +77,7 @@ export function CountryIdentityStrip({
         <span className="font-bold tracking-wider">{realmName}</span>
         <span
           className={cn(
-            "hidden rounded-full px-1.5 py-0 text-[9px] font-bold tracking-widest uppercase sm:inline",
+            "hidden rounded-full px-1.5 py-0 text-xs font-bold tracking-widest uppercase sm:inline",
             hasImage ? "bg-white/15 text-white/90" : "bg-foreground/8 text-muted-foreground"
           )}
         >
@@ -90,7 +90,7 @@ export function CountryIdentityStrip({
       <span
         aria-hidden="true"
         className={cn(
-          "text-[10px] font-bold select-none",
+          "text-xs font-bold select-none",
           hasImage ? "text-white/35" : "text-muted-foreground/40"
         )}
       >
@@ -104,7 +104,7 @@ export function CountryIdentityStrip({
           aria-label={`View IxnayID passport for @${ownerHandle} in ${realmName}`}
           data-cuelume-press="soft"
           className={cn(
-            "group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide transition-all duration-150 ease-out active:scale-[0.97]",
+            "group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide transition-all duration-150 ease-out active:scale-[0.97]",
             hasImage
               ? "border-white/15 bg-black/35 text-white backdrop-blur-md hover:border-white/25 hover:bg-black/45"
               : "border-border bg-card/60 text-foreground hover:bg-card hover:border-foreground/15 backdrop-blur-xl"
@@ -114,11 +114,11 @@ export function CountryIdentityStrip({
           <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/12 dark:bg-white/10">
             <UserCircle className="h-3 w-3" />
           </span>
-          <span className="font-mono text-[11px] font-bold">@{ownerHandle}</span>
+          <span className="font-mono text-xs font-bold">@{ownerHandle}</span>
           {sovereignUser?.roleName && (
             <span
               className={cn(
-                "hidden items-center gap-1 rounded-full px-1.5 py-0 text-[9px] font-bold tracking-widest uppercase sm:inline-flex",
+                "hidden items-center gap-1 rounded-full px-1.5 py-0 text-xs font-bold tracking-widest uppercase sm:inline-flex",
                 hasImage ? "bg-white/12 text-white/85" : "bg-foreground/8 text-muted-foreground"
               )}
             >
@@ -131,21 +131,21 @@ export function CountryIdentityStrip({
       ) : (
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide",
+            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide",
             hasImage
               ? "border-white/10 bg-black/25 text-white/70 backdrop-blur-md"
               : "border-border bg-card/50 text-muted-foreground"
           )}
         >
           <UserCircle className="h-3.5 w-3.5 opacity-60" />
-          <span className="font-mono text-[10px] tracking-wider uppercase">Unclaimed</span>
+          <span className="font-mono text-xs tracking-wider uppercase">Unclaimed</span>
         </span>
       )}
 
       {/* Subtle realm provenance hint — not a link, reduces to tooltip on mobile */}
       <span
         className={cn(
-          "hidden text-[10px] font-medium tracking-wide md:inline",
+          "hidden text-xs font-medium tracking-wide md:inline",
           hasImage ? "text-white/45" : "text-muted-foreground/60"
         )}
         title="Realm — sovereign simulation instance. IxWorld is the private default."

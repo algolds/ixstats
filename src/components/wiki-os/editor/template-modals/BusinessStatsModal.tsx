@@ -226,7 +226,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                         }`}
                       >
                         <span>{b.name}</span>
-                        <span className="bg-muted text-muted-foreground rounded px-2 py-0.5 text-[10px] capitalize">
+                        <span className="bg-muted text-muted-foreground rounded px-2 py-0.5 text-xs capitalize">
                           {b.category}
                         </span>
                       </button>
@@ -251,7 +251,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                     </span>
                   </div>
                   {createSuccess && (
-                    <span className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                    <span className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-bold text-emerald-400">
                       <CheckCircle className="h-3 w-3" /> Registered
                     </span>
                   )}

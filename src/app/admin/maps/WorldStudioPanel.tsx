@@ -65,7 +65,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
       {/* Summary stats */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Total Features
           </p>
           {isLoading ? (
@@ -78,7 +78,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Political Regions
           </p>
           {isLoading ? (
@@ -91,7 +91,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Linked Countries
           </p>
           {isLoading ? (
@@ -104,7 +104,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
         </div>
 
         <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Linkage Rate
           </p>
           {isLoading ? (

@@ -69,7 +69,7 @@ export function SectionContextWidget({
           {stats!.map((s) => (
             <div key={s.label} className="bg-muted/40 rounded-lg p-2 text-center">
               <div className={cn("text-sm font-bold", s.accentText && a.text)}>{s.value}</div>
-              <div className="text-muted-foreground text-[10px]">{s.label}</div>
+              <div className="text-muted-foreground text-xs">{s.label}</div>
             </div>
           ))}
         </div>
@@ -87,14 +87,14 @@ export function SectionContextWidget({
 
       <div className="space-y-1.5">
         {recent.length === 0 && (
-          <p className="text-muted-foreground py-3 text-center text-[11px]">{emptyMessage}</p>
+          <p className="text-muted-foreground py-3 text-center text-xs">{emptyMessage}</p>
         )}
         {recent.map((e) => (
           <div key={e.id} className="flex items-start gap-2 py-1">
             <e.icon className={cn("mt-0.5 h-3 w-3 shrink-0", e.iconColor)} />
             <div className="min-w-0 flex-1">
-              <p className="line-clamp-1 text-[11px] leading-snug">{e.text}</p>
-              <span className="text-muted-foreground text-[10px]">{timeAgo(e.time)}</span>
+              <p className="line-clamp-1 text-xs leading-snug">{e.text}</p>
+              <span className="text-muted-foreground text-xs">{timeAgo(e.time)}</span>
             </div>
           </div>
         ))}

@@ -41,13 +41,13 @@ import { getCardDesignMetadata } from "~/lib/cards/card-metadata-resolver";
 const FONT_SIZES = {
   small: {
     title: "text-xs",
-    type: "text-[10px]",
-    stats: "text-[10px]",
+    type: "text-xs",
+    stats: "text-xs",
   },
   sm: {
     title: "text-xs",
-    type: "text-[10px]",
-    stats: "text-[10px]",
+    type: "text-xs",
+    stats: "text-xs",
   },
   medium: {
     title: "text-sm",
@@ -473,13 +473,13 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 const hideLabel = isNsImportLabel && !categoryLabel;
                 if (hideLabel) {
                   return (
-                    <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-amber-400 uppercase">
+                    <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-amber-400 uppercase">
                       <span>{designMeta.customSubtitle || card.rarity}</span>
                     </p>
                   );
                 }
                 return (
-                  <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/80 uppercase">
+                  <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-white/80 uppercase">
                     {showLabel ? (
                       <>
                         <span>{categoryLabel}</span>
@@ -532,10 +532,10 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               {/* Bottom Lore Excerpt Box */}
               {isLoreCard && !hideExcerpt && (excerptText || parsedExcerptHtml) && (
                 <div className="pointer-events-auto mt-1 rounded-xl border border-white/15 bg-slate-950/85 p-2 text-left shadow-inner backdrop-blur-md transition-all duration-300">
-                  <div className="line-clamp-2 text-[10px] leading-snug text-white/90">
+                  <div className="line-clamp-2 text-xs leading-snug text-white/90">
                     <WikiHtmlContent html={parsedExcerptHtml} />
                   </div>
-                  <div className="mt-1.5 flex items-center justify-between border-t border-white/10 pt-1.5 text-[8px] text-white/50">
+                  <div className="mt-1.5 flex items-center justify-between border-t border-white/10 pt-1.5 text-xs text-white/50">
                     <span className="font-semibold tracking-wider text-amber-400 uppercase">
                       {(card.wikiSource || "IXWIKI").toUpperCase()} ARCHIVE
                     </span>

@@ -140,7 +140,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
               Tax Burden Analysis
             </h4>
           </div>
-          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-extrabold text-amber-400">
+          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-xs font-extrabold text-amber-400">
             Macro Index
           </span>
         </div>
@@ -174,7 +174,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
               style={{ left: "30%", width: "20%" }}
             />
           </div>
-          <div className="text-muted-foreground/70 flex justify-between font-mono text-[10px]">
+          <div className="text-muted-foreground/70 flex justify-between font-mono text-xs">
             <span>0%</span>
             <span className="font-semibold text-emerald-400">Optimal Zone (15-35%)</span>
             <span>50%+</span>
@@ -220,13 +220,13 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
               >
                 <div className="flex min-w-0 items-center gap-1.5">
                   <div className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[seg.accent])} />
-                  <span className="text-muted-foreground truncate text-[11px] font-medium">
+                  <span className="text-muted-foreground truncate text-xs font-medium">
                     {ch.shortLabel}
                   </span>
                 </div>
                 <span
                   className={cn(
-                    "shrink-0 font-mono text-[11px] font-semibold tabular-nums",
+                    "shrink-0 font-mono text-xs font-semibold tabular-nums",
                     ch.accentClass
                   )}
                 >
@@ -254,7 +254,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
 
         <div className="grid grid-cols-3 gap-2">
           <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
-            <p className="text-muted-foreground text-[9px] font-medium tracking-wider uppercase">
+            <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
               Efficiency
             </p>
             <p className="mt-0.5 font-mono text-base font-bold text-emerald-400 tabular-nums">
@@ -262,7 +262,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
             </p>
           </div>
           <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
-            <p className="text-muted-foreground text-[9px] font-medium tracking-wider uppercase">
+            <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
               Budget Δ
             </p>
             <p
@@ -280,7 +280,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
             </p>
           </div>
           <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
-            <p className="text-muted-foreground text-[9px] font-medium tracking-wider uppercase">
+            <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
               Burden
             </p>
             <p

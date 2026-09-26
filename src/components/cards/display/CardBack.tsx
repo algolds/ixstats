@@ -415,7 +415,7 @@ const CardBackHeader = React.memo(
     const activeTheme = theme ?? RARITY_THEMES.COMMON!;
 
     return (
-      <div className="flex w-full items-center justify-between font-mono text-[9px] font-semibold tracking-wider uppercase">
+      <div className="flex w-full items-center justify-between font-mono text-xs font-semibold tracking-wider uppercase">
         {/* Top Left: Season + Rarity Badge matching Rarity Palette */}
         {showRarity ? (
           <span
@@ -458,7 +458,7 @@ const CardBackFooter = React.memo(
     return (
       <div
         className={cn(
-          "flex w-full items-center justify-between border-t pt-1 font-mono text-[9px] transition-colors duration-300",
+          "flex w-full items-center justify-between border-t pt-1 font-mono text-xs transition-colors duration-300",
           activeTheme.borderOuter
         )}
       >
@@ -741,7 +741,7 @@ export const CardBack = React.memo<CardBackProps>(
                 <IxnayEmblem size="md" pointer={pointer} theme={rarityTheme} />
                 <span
                   className={cn(
-                    "mt-1 text-[10px] font-bold tracking-widest uppercase transition-colors duration-300",
+                    "mt-1 text-xs font-bold tracking-widest uppercase transition-colors duration-300",
                     rarityTheme.textPrimary
                   )}
                 >

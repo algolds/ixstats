@@ -102,7 +102,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
             <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">
               Infrastructure Maintenance & Speed Retention
             </h3>
-            <span className="text-muted-foreground text-[10px]">
+            <span className="text-muted-foreground text-xs">
               Physical network condition across {totalOperationalKm.toLocaleString()} operational kilometers
             </span>
           </div>
@@ -126,7 +126,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
       {/* Progress & Budget Ratio */}
       <div className="mt-4 space-y-2">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+          <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
             <Coins className="h-3 w-3" /> Budgeted vs. Required Annual Maintenance
           </span>
           <span className="font-mono text-xs font-bold tabular-nums text-foreground">
@@ -151,7 +151,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {/* Speed Retention Factor */}
         <div className="bg-background/40 border-border/30 rounded-xl border p-3">
-          <div className="text-muted-foreground flex items-center gap-1 text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
             <Gauge className="h-3 w-3" /> Network Speed Factor
           </div>
           <div className="mt-1.5 flex items-baseline gap-1.5">
@@ -166,7 +166,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
               </span>
             )}
           </div>
-          <span className="text-muted-foreground mt-0.5 block text-[10px]">
+          <span className="text-muted-foreground mt-0.5 block text-xs">
             {degradation.speedPenaltyPercent === 0
               ? "Full design velocity"
               : "Transit delay penalty"}
@@ -175,7 +175,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
 
         {/* GDP Modifier Delta */}
         <div className="bg-background/40 border-border/30 rounded-xl border p-3">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             GDP Modifier Impact
           </div>
           <div className="mt-1.5 flex items-baseline gap-1.5">
@@ -189,14 +189,14 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
               {(degradation.gdpModifierDelta * 100).toFixed(2)}%
             </span>
           </div>
-          <span className="text-muted-foreground mt-0.5 block text-[10px]">
+          <span className="text-muted-foreground mt-0.5 block text-xs">
             Annual growth dividend
           </span>
         </div>
 
         {/* Trade Modifier Delta */}
         <div className="bg-background/40 border-border/30 rounded-xl border p-3">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Trade Efficiency
           </div>
           <div className="mt-1.5 flex items-baseline gap-1.5">
@@ -210,7 +210,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
               {(degradation.tradeModifierDelta * 100).toFixed(2)}%
             </span>
           </div>
-          <span className="text-muted-foreground mt-0.5 block text-[10px]">
+          <span className="text-muted-foreground mt-0.5 block text-xs">
             Supply-chain throughput
           </span>
         </div>
@@ -218,7 +218,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
 
       {/* Description & Action Callout */}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/30 bg-background/30 px-3 py-2.5 text-xs">
-        <p className="text-muted-foreground max-w-xl text-[11px] leading-relaxed">
+        <p className="text-muted-foreground max-w-xl text-xs leading-relaxed">
           {degradation.description}
         </p>
 
@@ -230,7 +230,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
               soundEffects.press();
               onDeclareDirective("Emergency Transport Infrastructure Rehabilitation");
             }}
-            className="group flex cursor-pointer items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary transition-all hover:bg-primary/20 active:scale-[0.98]"
+            className="group flex cursor-pointer items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-all hover:bg-primary/20 active:scale-[0.98]"
           >
             <Command className="h-3 w-3" />
             <span>Rehabilitation Directive</span>

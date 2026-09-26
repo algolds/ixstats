@@ -44,7 +44,7 @@ export default function RegistryBrowser() {
                 setActiveTab(tab);
                 setLimit(16); // reset
               }}
-              className={`rounded-lg border px-3 py-1.5 text-[10px] font-semibold tracking-wider uppercase transition-all ${
+              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-all ${
                 activeTab === tab
                   ? "border-amber-500/20 bg-amber-500/10 text-amber-400"
                   : "border-transparent bg-transparent text-zinc-400 hover:text-zinc-200"

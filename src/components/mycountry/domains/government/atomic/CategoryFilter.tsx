@@ -87,7 +87,7 @@ export const CategoryFilter = React.memo<CategoryFilterProps>(
               key={key}
               onClick={() => onChange(item.id)}
               className={cn(
-                "relative flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-1 text-[10px] font-bold tracking-wider uppercase shadow-xs backdrop-blur-md transition-all duration-200",
+                "relative flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold tracking-wider uppercase shadow-xs backdrop-blur-md transition-all duration-200",
                 isSelected
                   ? `${colors.active} shadow-sm`
                   : hasSelection
@@ -108,7 +108,7 @@ export const CategoryFilter = React.memo<CategoryFilterProps>(
                 <Badge
                   variant="outline"
                   className={cn(
-                    "flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-full border-transparent px-1.5 py-0 text-[9px] font-bold",
+                    "flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-full border-transparent px-1.5 py-0 text-xs font-bold",
                     isSelected
                       ? "bg-white/10 text-current"
                       : hasSelection

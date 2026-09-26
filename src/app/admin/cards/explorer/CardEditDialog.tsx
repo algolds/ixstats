@@ -131,7 +131,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
             <div>
               <label className="text-foreground mb-1 block flex items-center justify-between text-xs font-semibold">
                 <span>Lore Category</span>
-                <span className="text-muted-foreground text-[10px] font-normal">
+                <span className="text-muted-foreground text-xs font-normal">
                   Sets background theme & icon watermark
                 </span>
               </label>
@@ -214,7 +214,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
                     }
                   }}
                   placeholder="https://... image URL (optional)"
-                  className="border-border bg-card text-foreground h-9 font-mono text-xs text-[11px]"
+                  className="border-border bg-card text-foreground h-9 font-mono text-xs text-xs"
                 />
               </div>
             </div>
@@ -223,7 +223,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
             <div className="border-border bg-card/60 flex items-center justify-between rounded-xl border p-3">
               <div>
                 <div className="text-foreground text-xs font-semibold">Card Visibility Status</div>
-                <div className="text-muted-foreground text-[11px]">
+                <div className="text-muted-foreground text-xs">
                   Hidden cards are retired from packs & marketplace.
                 </div>
               </div>

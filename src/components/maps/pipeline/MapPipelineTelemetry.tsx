@@ -114,7 +114,7 @@ export function MapPipelineTelemetry({
       {/* Country Selection Dropdown */}
       {(activeTab === "geoprofile" || activeTab === "resources") && (
         <div className="border-border bg-background/30 border-b p-3">
-          <label className="text-muted-foreground mb-1 block text-[11px]">
+          <label className="text-muted-foreground mb-1 block text-xs">
             Target Nation Inspector
           </label>
           <select
@@ -137,33 +137,33 @@ export function MapPipelineTelemetry({
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="border-border bg-background/40 rounded-md border p-3">
-                <div className="text-muted-foreground text-[11px]">Execution Speed</div>
+                <div className="text-muted-foreground text-xs">Execution Speed</div>
                 <div className="text-primary font-mono text-lg font-bold">
                   {stats.generationTimeMs} ms
                 </div>
               </div>
               <div className="border-border bg-background/40 rounded-md border p-3">
-                <div className="text-muted-foreground text-[11px]">Mesh Resolution</div>
+                <div className="text-muted-foreground text-xs">Mesh Resolution</div>
                 <div className="text-foreground font-mono text-lg font-bold">
                   {stats.cellCount} cells
                 </div>
               </div>
               <div className="border-border bg-background/40 rounded-md border p-3">
-                <div className="text-muted-foreground text-[11px]">Nations Generated</div>
+                <div className="text-muted-foreground text-xs">Nations Generated</div>
                 <div className="font-mono text-lg font-bold text-emerald-500">
                   {stats.countryCount}
                 </div>
               </div>
               <div className="border-border bg-background/40 rounded-md border p-3">
-                <div className="text-muted-foreground text-[11px]">Cities Placed</div>
+                <div className="text-muted-foreground text-xs">Cities Placed</div>
                 <div className="font-mono text-lg font-bold text-cyan-500">{stats.cityCount}</div>
               </div>
               <div className="border-border bg-background/40 rounded-md border p-3">
-                <div className="text-muted-foreground text-[11px]">Rivers Traced</div>
+                <div className="text-muted-foreground text-xs">Rivers Traced</div>
                 <div className="font-mono text-lg font-bold text-blue-500">{stats.riverCount}</div>
               </div>
               <div className="border-border bg-background/40 rounded-md border p-3">
-                <div className="text-muted-foreground text-[11px]">Shared Vertices</div>
+                <div className="text-muted-foreground text-xs">Shared Vertices</div>
                 <div className="font-mono text-lg font-bold text-indigo-500">
                   {stats.sharedVerticesCount}
                 </div>
@@ -225,15 +225,15 @@ export function MapPipelineTelemetry({
                   <div className="text-foreground text-xs font-semibold">Sim Economy Modifiers</div>
                   <div className="grid grid-cols-3 gap-2 text-center font-mono text-xs">
                     <div className="bg-background border-border rounded border p-1.5">
-                      <div className="text-muted-foreground text-[10px]">GDP</div>
+                      <div className="text-muted-foreground text-xs">GDP</div>
                       <div className="font-bold text-emerald-500">{activeProfile.gdpModifier}x</div>
                     </div>
                     <div className="bg-background border-border rounded border p-1.5">
-                      <div className="text-muted-foreground text-[10px]">Trade</div>
+                      <div className="text-muted-foreground text-xs">Trade</div>
                       <div className="font-bold text-cyan-500">{activeProfile.tradeModifier}x</div>
                     </div>
                     <div className="bg-background border-border rounded border p-1.5">
-                      <div className="text-muted-foreground text-[10px]">Infra Cost</div>
+                      <div className="text-muted-foreground text-xs">Infra Cost</div>
                       <div className="text-primary font-bold">
                         {activeProfile.infraCostModifier}x
                       </div>
@@ -277,11 +277,11 @@ export function MapPipelineTelemetry({
                 >
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-foreground font-medium">{res.name}</span>
-                    <span className="bg-primary/10 text-primary border-primary/20 rounded border px-1.5 py-0.5 font-mono text-[10px] uppercase">
+                    <span className="bg-primary/10 text-primary border-primary/20 rounded border px-1.5 py-0.5 font-mono text-xs uppercase">
                       {res.resourceType}
                     </span>
                   </div>
-                  <div className="text-muted-foreground flex justify-between font-mono text-[11px]">
+                  <div className="text-muted-foreground flex justify-between font-mono text-xs">
                     <span>Qty: {(res.quantity * 100).toFixed(0)}%</span>
                     <span>Quality: {(res.quality * 100).toFixed(0)}%</span>
                     <span>
@@ -295,7 +295,7 @@ export function MapPipelineTelemetry({
         )}
 
         {activeTab === "logs" && (
-          <div className="border-border bg-background/80 text-foreground max-h-96 space-y-1 overflow-x-auto rounded-md border p-3 font-mono text-[11px]">
+          <div className="border-border bg-background/80 text-foreground max-h-96 space-y-1 overflow-x-auto rounded-md border p-3 font-mono text-xs">
             {log.length === 0 ? (
               <div className="text-muted-foreground italic">
                 No logs recorded yet. Run map pipeline.

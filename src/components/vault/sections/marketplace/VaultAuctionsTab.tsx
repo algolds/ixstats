@@ -203,7 +203,7 @@ export function VaultAuctionsTab() {
             <TextureOverlay texture="dots" opacity={0.03} />
             <stat.icon className={cn("relative z-10 h-4 w-4 shrink-0", stat.color)} />
             <div className="relative z-10 min-w-0 flex-1">
-              <p className="text-muted-foreground truncate text-[8px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground truncate text-xs font-semibold tracking-wider uppercase">
                 {stat.label}
               </p>
               <p
@@ -228,7 +228,7 @@ export function VaultAuctionsTab() {
             setFilters((f) => ({ ...f, rarity: e.target.value }));
             setOffset(0);
           }}
-          className="border-border/50 bg-muted/30 text-foreground h-7 rounded-md border px-2 text-[10px] font-medium"
+          className="border-border/50 bg-muted/30 text-foreground h-7 rounded-md border px-2 text-xs font-medium"
         >
           <option value="">All Rarities</option>
           <option value="COMMON">Common</option>
@@ -244,7 +244,7 @@ export function VaultAuctionsTab() {
             setFilters((f) => ({ ...f, cardType: e.target.value }));
             setOffset(0);
           }}
-          className="border-border/50 bg-muted/30 text-foreground h-7 rounded-md border px-2 text-[10px] font-medium"
+          className="border-border/50 bg-muted/30 text-foreground h-7 rounded-md border px-2 text-xs font-medium"
         >
           <option value="">All Types</option>
           <option value="NATION">Nation</option>
@@ -261,9 +261,9 @@ export function VaultAuctionsTab() {
             setFilters((f) => ({ ...f, minPrice: e.target.value }));
             setOffset(0);
           }}
-          className="border-border/50 bg-muted/30 text-foreground h-7 w-20 rounded-md border px-2 font-mono text-[10px] placeholder:text-slate-400 dark:placeholder:text-slate-600"
+          className="border-border/50 bg-muted/30 text-foreground h-7 w-20 rounded-md border px-2 font-mono text-xs placeholder:text-slate-400 dark:placeholder:text-slate-600"
         />
-        <span className="text-muted-foreground text-[10px]">—</span>
+        <span className="text-muted-foreground text-xs">—</span>
         <input
           type="number"
           min="0"
@@ -273,7 +273,7 @@ export function VaultAuctionsTab() {
             setFilters((f) => ({ ...f, maxPrice: e.target.value }));
             setOffset(0);
           }}
-          className="border-border/50 bg-muted/30 text-foreground h-7 w-20 rounded-md border px-2 font-mono text-[10px] placeholder:text-slate-400 dark:placeholder:text-slate-600"
+          className="border-border/50 bg-muted/30 text-foreground h-7 w-20 rounded-md border px-2 font-mono text-xs placeholder:text-slate-400 dark:placeholder:text-slate-600"
         />
         <select
           value={filters.sortBy}
@@ -281,7 +281,7 @@ export function VaultAuctionsTab() {
             setFilters((f) => ({ ...f, sortBy: e.target.value }));
             setOffset(0);
           }}
-          className="border-border/50 bg-muted/30 text-foreground ml-auto h-7 rounded-md border px-2 text-[10px] font-medium"
+          className="border-border/50 bg-muted/30 text-foreground ml-auto h-7 rounded-md border px-2 text-xs font-medium"
         >
           <option value="ending_soon">Ending Soon</option>
           <option value="newest">Newest</option>
@@ -312,7 +312,7 @@ export function VaultAuctionsTab() {
             >
               <Store className="mr-1.5 h-3.5 w-3.5" /> My Listings
               {myListings.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0 text-[8px] leading-none font-bold text-white">
+                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
                   {myListings.length}
                 </span>
               )}
@@ -323,7 +323,7 @@ export function VaultAuctionsTab() {
             >
               <Gavel className="mr-1.5 h-3.5 w-3.5" /> My Bids
               {myBids.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-blue-500 px-1.5 py-0 text-[8px] leading-none font-bold text-white">
+                <span className="ml-1.5 rounded-full bg-blue-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
                   {myBids.length}
                 </span>
               )}
@@ -334,7 +334,7 @@ export function VaultAuctionsTab() {
             >
               <History className="mr-1.5 h-3.5 w-3.5" /> History
               {myHistory.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-green-500 px-1.5 py-0 text-[8px] leading-none font-bold text-white">
+                <span className="ml-1.5 rounded-full bg-green-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
                   {myHistory.length}
                 </span>
               )}
@@ -353,7 +353,7 @@ export function VaultAuctionsTab() {
               <div className="flex flex-col items-center justify-center py-10">
                 <ShoppingCart className="text-muted-foreground/20 mb-3 h-10 w-10" />
                 <p className="text-foreground/80 text-xs font-bold">No Active Auctions</p>
-                <p className="text-muted-foreground mt-0.5 mb-3 text-[10px]">
+                <p className="text-muted-foreground mt-0.5 mb-3 text-xs">
                   Be the first to list a card for sale!
                 </p>
                 <Button
@@ -386,7 +386,7 @@ export function VaultAuctionsTab() {
                   size="sm"
                   variant="outline"
                   onClick={handleLoadMore}
-                  className="border-border/50 hover:bg-accent text-foreground bg-transparent text-[10px]"
+                  className="border-border/50 hover:bg-accent text-foreground bg-transparent text-xs"
                 >
                   Load More Auctions
                 </Button>
@@ -406,7 +406,7 @@ export function VaultAuctionsTab() {
               <div className="flex flex-col items-center justify-center py-10">
                 <Clock className="text-muted-foreground/20 mb-3 h-10 w-10" />
                 <p className="text-foreground/80 text-xs font-bold">No Auctions Ending Soon</p>
-                <p className="text-muted-foreground mt-0.5 text-[10px]">Check back later!</p>
+                <p className="text-muted-foreground mt-0.5 text-xs">Check back later!</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
@@ -437,7 +437,7 @@ export function VaultAuctionsTab() {
               <div className="flex flex-col items-center justify-center py-10">
                 <Store className="text-muted-foreground/20 mb-3 h-10 w-10" />
                 <p className="text-foreground/80 text-xs font-bold">No Active Listings</p>
-                <p className="text-muted-foreground mt-0.5 mb-3 text-[10px]">
+                <p className="text-muted-foreground mt-0.5 mb-3 text-xs">
                   Sell your card duplicate holdings on the market
                 </p>
                 <Button
@@ -466,7 +466,7 @@ export function VaultAuctionsTab() {
                           <span className="text-xs font-bold text-slate-900 dark:text-white/95">
                             {card?.title ?? "Unknown"}
                           </span>
-                          <p className="text-muted-foreground text-[9px]">
+                          <p className="text-muted-foreground text-xs">
                             {bidCount} bid{bidCount !== 1 ? "s" : ""}
                           </p>
                         </div>
@@ -479,7 +479,7 @@ export function VaultAuctionsTab() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-input hover:bg-destructive/10 hover:text-destructive text-foreground h-7 bg-transparent text-[10px]"
+                          className="border-input hover:bg-destructive/10 hover:text-destructive text-foreground h-7 bg-transparent text-xs"
                           disabled={bidCount > 0 || cancelAuction.isPending}
                           title={
                             bidCount > 0
@@ -510,7 +510,7 @@ export function VaultAuctionsTab() {
               <div className="flex flex-col items-center justify-center py-10">
                 <Gavel className="text-muted-foreground/20 mb-3 h-10 w-10" />
                 <p className="text-foreground/80 text-xs font-bold">No Active Bids</p>
-                <p className="text-muted-foreground mt-0.5 text-[10px]">
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   Browse the auction items and start bidding
                 </p>
               </div>
@@ -536,7 +536,7 @@ export function VaultAuctionsTab() {
                           <span className="text-xs font-bold text-slate-900 dark:text-white/95">
                             {card?.title ?? "Unknown"}
                           </span>
-                          <p className="text-muted-foreground flex items-center gap-1 text-[9px]">
+                          <p className="text-muted-foreground flex items-center gap-1 text-xs">
                             <Clock className="h-2.5 w-2.5" />
                             {minsLeft > 60
                               ? `${Math.floor(minsLeft / 60)}h ${minsLeft % 60}m`
@@ -568,7 +568,7 @@ export function VaultAuctionsTab() {
               <div className="flex flex-col items-center justify-center py-10">
                 <History className="text-muted-foreground/20 mb-3 h-10 w-10" />
                 <p className="text-foreground/80 text-xs font-bold">No Auction History</p>
-                <p className="text-muted-foreground mt-0.5 text-[10px]">
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   Past auctions you listed or bid on will appear here
                 </p>
               </div>
@@ -602,7 +602,7 @@ export function VaultAuctionsTab() {
                           <span className="text-xs font-bold text-slate-900 dark:text-white/95">
                             {card?.title ?? "Unknown"}
                           </span>
-                          <p className="text-muted-foreground flex items-center gap-1 text-[9px]">
+                          <p className="text-muted-foreground flex items-center gap-1 text-xs">
                             {auction.updatedAt
                               ? new Date(auction.updatedAt).toLocaleDateString()
                               : new Date(auction.endTime).toLocaleDateString()}
@@ -612,7 +612,7 @@ export function VaultAuctionsTab() {
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
-                            "rounded-full border px-1.5 py-0 text-[8px] leading-none font-bold uppercase",
+                            "rounded-full border px-1.5 py-0 text-xs leading-none font-bold uppercase",
                             badgeColor
                           )}
                         >
@@ -636,7 +636,7 @@ export function VaultAuctionsTab() {
                   size="sm"
                   variant="outline"
                   onClick={handleHistoryLoadMore}
-                  className="border-border/50 hover:bg-accent text-foreground bg-transparent text-[10px]"
+                  className="border-border/50 hover:bg-accent text-foreground bg-transparent text-xs"
                 >
                   Load More History
                 </Button>

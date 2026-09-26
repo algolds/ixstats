@@ -56,7 +56,7 @@ export const WikiSectionRow = React.memo(function WikiSectionRow({
       >
         <Icon className={cn("h-3.5 w-3.5 shrink-0", color)} />
         <span className="text-foreground flex-1 text-xs font-medium">{title}</span>
-        <span className={cn("text-[9px] font-medium tracking-wider uppercase", color)}>
+        <span className={cn("text-xs font-medium tracking-wider uppercase", color)}>
           {label}
         </span>
         {expanded ? (
@@ -78,17 +78,17 @@ export const WikiSectionRow = React.memo(function WikiSectionRow({
               {contentLoading && (
                 <div className="flex items-center gap-2 py-2">
                   <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
-                  <span className="text-muted-foreground text-[10px]">Loading...</span>
+                  <span className="text-muted-foreground text-xs">Loading...</span>
                 </div>
               )}
               {cleanContent && (
-                <p className="text-foreground/70 text-[11px] leading-relaxed">
+                <p className="text-foreground/70 text-xs leading-relaxed">
                   {cleanContent}
                   {cleanContent.length >= 600 ? "..." : ""}
                 </p>
               )}
               {!contentLoading && !cleanContent && (
-                <p className="text-muted-foreground py-1 text-[10px] italic">
+                <p className="text-muted-foreground py-1 text-xs italic">
                   No content available.
                 </p>
               )}
@@ -96,7 +96,7 @@ export const WikiSectionRow = React.memo(function WikiSectionRow({
                 href={getWikiSectionUrl(wikiUrl, title)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-[10px] text-wiki hover:text-wiki-hover hover:underline"
+                className="mt-1 inline-flex items-center gap-1 text-xs text-wiki hover:text-wiki-hover hover:underline"
               >
                 Read more <ExternalLink className="h-2.5 w-2.5" />
               </a>

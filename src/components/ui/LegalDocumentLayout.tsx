@@ -251,7 +251,7 @@ export function LegalDocumentLayout({
                   <FileText className="h-4 w-4 text-amber-500" />
                   Table of Contents
                 </h3>
-                <span className="text-muted-foreground font-mono text-[11px]">
+                <span className="text-muted-foreground font-mono text-xs">
                   {sections.length} Sections
                 </span>
               </div>
@@ -291,7 +291,7 @@ export function LegalDocumentLayout({
                       <div className="min-w-0 flex-1">
                         <p className="truncate leading-snug">{section.title}</p>
                         {section.summary && (
-                          <p className="text-muted-foreground/70 group-hover:text-muted-foreground mt-0.5 line-clamp-1 text-[11px]">
+                          <p className="text-muted-foreground/70 group-hover:text-muted-foreground mt-0.5 line-clamp-1 text-xs">
                             {section.summary}
                           </p>
                         )}
@@ -301,7 +301,7 @@ export function LegalDocumentLayout({
                 })}
               </nav>
 
-              <div className="border-border/40 text-muted-foreground border-t pt-3 text-[11px] leading-relaxed">
+              <div className="border-border/40 text-muted-foreground border-t pt-3 text-xs leading-relaxed">
                 Questions or legal inquiries? Reach out to{" "}
                 <a
                   href="mailto:admin@ixwiki.com"

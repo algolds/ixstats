@@ -127,14 +127,14 @@ export const BasicInfoCoreIndicators = React.memo(
               valueClassName="text-base font-bold text-foreground"
             />
             <div className="text-muted-foreground flex items-center justify-between text-xs pt-0.5">
-              <span className="font-mono text-[11px] opacity-75">100K min</span>
+              <span className="font-mono text-xs opacity-75">100K min</span>
               <Badge
                 variant="secondary"
-                className="border-emerald-500/20 bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400"
+                className="border-emerald-500/20 bg-emerald-500/10 text-xs font-semibold text-emerald-600 dark:text-emerald-400"
               >
                 Tier {populationTier}
               </Badge>
-              <span className="font-mono text-[11px] opacity-75">150M max</span>
+              <span className="font-mono text-xs opacity-75">150M max</span>
             </div>
           </div>
 
@@ -179,14 +179,14 @@ export const BasicInfoCoreIndicators = React.memo(
               valueClassName="text-base font-bold text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
             />
             <div className="text-muted-foreground flex items-center justify-between text-xs pt-0.5">
-              <span className="font-mono text-[11px] opacity-75">$1,000 min</span>
+              <span className="font-mono text-xs opacity-75">$1,000 min</span>
               <Badge
                 variant="secondary"
-                className="border-emerald-500/20 bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400"
+                className="border-emerald-500/20 bg-emerald-500/10 text-xs font-semibold text-emerald-600 dark:text-emerald-400"
               >
                 {economicTier}
               </Badge>
-              <span className="font-mono text-[11px] opacity-75">$100,000 max</span>
+              <span className="font-mono text-xs opacity-75">$100,000 max</span>
             </div>
           </div>
 
@@ -194,7 +194,7 @@ export const BasicInfoCoreIndicators = React.memo(
           <div className="space-y-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03] p-4 backdrop-blur-xs">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                <h5 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                   Total Nominal GDP
                 </h5>
                 <div className="mt-1 text-xl font-bold tabular-nums text-emerald-500 dark:text-emerald-400">
@@ -210,7 +210,7 @@ export const BasicInfoCoreIndicators = React.memo(
               </div>
 
               <div>
-                <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                <h5 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                   Est. Base Revenue
                 </h5>
                 <div className="mt-1 text-xl font-bold tabular-nums text-amber-500 dark:text-amber-400">
@@ -228,7 +228,7 @@ export const BasicInfoCoreIndicators = React.memo(
 
             <div className="border-border/20 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
               <div>
-                <h5 className="text-muted-foreground mb-1 text-[10px] font-bold tracking-wider uppercase">
+                <h5 className="text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase">
                   Economic Classification
                 </h5>
                 <Badge
@@ -239,7 +239,7 @@ export const BasicInfoCoreIndicators = React.memo(
                 </Badge>
               </div>
               <div>
-                <h5 className="text-muted-foreground mb-1 text-[10px] font-bold tracking-wider uppercase">
+                <h5 className="text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase">
                   Population Tier
                 </h5>
                 <Badge

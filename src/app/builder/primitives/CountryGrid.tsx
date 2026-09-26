@@ -222,7 +222,7 @@ export function CountryGrid({
               <span className="text-sm font-semibold tracking-tight text-foreground whitespace-nowrap">
                 Benchmark Templates
               </span>
-              <span className="rounded-full border border-border/40 bg-background/60 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground shadow-xs">
+              <span className="rounded-full border border-border/40 bg-background/60 px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground shadow-xs">
                 {filteredCountries.length} {filteredCountries.length === 1 ? "country" : "countries"}
               </span>
               {hasActiveFilters && (
@@ -292,7 +292,7 @@ export function CountryGrid({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56 p-1.5 backdrop-blur-xl">
-                  <DropdownMenuLabel className="px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+                  <DropdownMenuLabel className="px-2 py-1 text-xs font-semibold text-muted-foreground">
                     Economic Development Tier
                   </DropdownMenuLabel>
                   {ECONOMIC_TIERS.map((tier) => {
@@ -311,7 +311,7 @@ export function CountryGrid({
                       >
                         <div className="flex flex-col gap-0.5">
                           <span className="font-medium text-foreground">{tier.label}</span>
-                          <span className="text-[10px] text-muted-foreground">{tier.description}</span>
+                          <span className="text-xs text-muted-foreground">{tier.description}</span>
                         </div>
                         {isSelected && <Check className="h-3.5 w-3.5 text-amber-400" />}
                       </DropdownMenuItem>

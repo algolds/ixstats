@@ -75,7 +75,7 @@ export function FacetTablePagination({
 
         {pageSizeOptions && onPageSizeChange && (
           <div className="border-border/40 flex items-center gap-1.5 border-l pl-2">
-            <span className="text-[11px]">Per page:</span>
+            <span className="text-xs">Per page:</span>
             <Select value={String(pageSize)} onValueChange={(val) => onPageSizeChange(Number(val))}>
               <SelectTrigger className="border-border/40 bg-background/50 h-7 w-16 rounded-lg text-xs">
                 <SelectValue />

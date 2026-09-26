@@ -300,7 +300,7 @@ export function VaultUserDirectory() {
                 {user.country?.name ?? user.wikiUsername ?? user.clerkUserId}
               </div>
               {user.country?.name && (
-                <div className="text-muted-foreground flex max-w-[220px] flex-wrap gap-x-2 gap-y-0.5 text-[10px]">
+                <div className="text-muted-foreground flex max-w-[220px] flex-wrap gap-x-2 gap-y-0.5 text-xs">
                   {user.wikiUsername && <span>Wiki: {user.wikiUsername}</span>}
                   {user.forumUsername && <span>Forum: {user.forumUsername}</span>}
                   {user.discordUsername && <span>Discord: {user.discordUsername}</span>}
@@ -538,7 +538,7 @@ export function VaultUserDirectory() {
                     required
                     className="bg-background border-border/40 text-foreground font-mono"
                   />
-                  <span className="text-muted-foreground text-[10px]">
+                  <span className="text-muted-foreground text-xs">
                     Positive adds, negative subtracts.
                   </span>
                 </div>
@@ -593,7 +593,7 @@ export function VaultUserDirectory() {
                   <span className="text-foreground text-xs font-semibold">
                     Send Alert Notification
                   </span>
-                  <span className="text-muted-foreground text-[10px]">
+                  <span className="text-muted-foreground text-xs">
                     Send notification directly to user profile feed.
                   </span>
                 </div>
@@ -814,7 +814,7 @@ export function VaultUserDirectory() {
                   <span className="text-foreground text-xs font-semibold">
                     Send Alert Notification
                   </span>
-                  <span className="text-muted-foreground text-[10px]">
+                  <span className="text-muted-foreground text-xs">
                     Notify user they received a new pack configuration.
                   </span>
                 </div>
@@ -899,14 +899,14 @@ export function VaultUserDirectory() {
                         </div>
                         <div>
                           <div className="text-foreground text-xs font-semibold">{item.name}</div>
-                          <div className="text-muted-foreground line-clamp-1 max-w-[280px] text-[10px]">
+                          <div className="text-muted-foreground line-clamp-1 max-w-[280px] text-xs">
                             {item.description}
                           </div>
                           <div className="mt-1 flex items-center gap-1.5">
-                            <Badge variant="outline" className="px-1 py-0 text-[9px] capitalize">
+                            <Badge variant="outline" className="px-1 py-0 text-xs capitalize">
                               {item.category}
                             </Badge>
-                            <span className="font-mono text-[9px] text-amber-600 dark:text-amber-400">
+                            <span className="font-mono text-xs text-amber-600 dark:text-amber-400">
                               {item.price} IxC
                             </span>
                           </div>

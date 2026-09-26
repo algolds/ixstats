@@ -120,7 +120,7 @@ function WikiBreadcrumb() {
         </span>
 
         {activeSectionName && (
-          <span className="text-muted-foreground/75 hidden truncate text-[10px] sm:inline">
+          <span className="text-muted-foreground/75 hidden truncate text-xs sm:inline">
             · {activeSectionName}
           </span>
         )}
@@ -162,11 +162,11 @@ function WikiBreadcrumb() {
       {/* Section Popover Dropdown when not in narrator mode */}
       {hasSpecificTitle && activeSectionName && (
         <>
-          <span className="text-foreground/25 shrink-0 text-[10px]">›</span>
+          <span className="text-foreground/25 shrink-0 text-xs">›</span>
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
               <span
-                className="hover:text-foreground text-foreground/50 relative z-[60] inline-block max-w-[70px] cursor-pointer truncate overflow-hidden rounded px-1 py-0.5 text-left text-[10px] font-medium transition-all duration-200 hover:bg-white/20 active:scale-95"
+                className="hover:text-foreground text-foreground/50 relative z-[60] inline-block max-w-[70px] cursor-pointer truncate overflow-hidden rounded px-1 py-0.5 text-left text-xs font-medium transition-all duration-200 hover:bg-white/20 active:scale-95"
                 onClick={(e) => {
                   e.stopPropagation();
                   setPopoverOpen((prev) => !prev);
@@ -197,7 +197,7 @@ function WikiBreadcrumb() {
                           setPopoverOpen(false);
                         }}
                         className={cn(
-                          "flex w-full cursor-pointer items-center rounded-lg px-2.5 py-1.5 text-left text-[11px] font-semibold transition-all duration-150 select-none",
+                          "flex w-full cursor-pointer items-center rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold transition-all duration-150 select-none",
                           isActive && !themeColors
                             ? "bg-white/15 text-white"
                             : isActive
@@ -216,7 +216,7 @@ function WikiBreadcrumb() {
                         type="button"
                       >
                         {entry.level === 3 && (
-                          <span className="text-muted-foreground/60 mr-1 text-[9px]">›</span>
+                          <span className="text-muted-foreground/60 mr-1 text-xs">›</span>
                         )}
                         <span className="truncate">{entry.text}</span>
                       </button>

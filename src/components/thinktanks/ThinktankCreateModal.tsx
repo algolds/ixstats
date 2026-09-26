@@ -147,7 +147,7 @@ export function ThinktankCreateModal({
                   <button
                     type="button"
                     onClick={() => setAvatarUrl("")}
-                    className="text-muted-foreground hover:text-foreground ml-2 text-[10px]"
+                    className="text-muted-foreground hover:text-foreground ml-2 text-xs"
                   >
                     Clear
                   </button>
@@ -187,7 +187,7 @@ export function ThinktankCreateModal({
                       soundEffects.press();
                       setCategory(cat);
                     }}
-                    className={`rounded-lg px-2 py-0.5 text-[11px] font-medium transition-all ${
+                    className={`rounded-lg px-2 py-0.5 text-xs font-medium transition-all ${
                       category === cat
                         ? "bg-emerald-600 text-white shadow-sm dark:bg-emerald-500"
                         : "bg-muted/60 text-muted-foreground hover:bg-muted"
@@ -219,7 +219,7 @@ export function ThinktankCreateModal({
                   <span className="text-foreground text-xs font-bold">
                     Enable Multi-Persona Posting
                   </span>
-                  <p className="text-muted-foreground text-[10px]">
+                  <p className="text-muted-foreground text-xs">
                     Allow members to post as Government, Media, or Citizen personas.
                   </p>
                 </div>
@@ -245,7 +245,7 @@ export function ThinktankCreateModal({
                   <span className="text-foreground text-xs font-bold">
                     {type === "public" ? "Public Group" : "Private Group"}
                   </span>
-                  <p className="text-muted-foreground text-[10px]">
+                  <p className="text-muted-foreground text-xs">
                     {type === "public" ? "Open to all users" : "Invite or approval required"}
                   </p>
                 </div>
@@ -258,7 +258,7 @@ export function ThinktankCreateModal({
                   soundEffects.press();
                   setType(type === "public" ? "private" : "public");
                 }}
-                className="border-border/40 h-7 rounded-lg text-[11px]"
+                className="border-border/40 h-7 rounded-lg text-xs"
               >
                 Toggle
               </Button>

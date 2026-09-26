@@ -112,7 +112,7 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
                   Select prose in the article to highlight, start a discussion, suggest an edit, or
                   save a quote:
                 </p>
-                <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+                <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
                   <div className="flex items-center gap-2 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-2">
                     <span className="bg-margin-accent h-3 w-3 shrink-0 rounded-full" />
                     <span>Highlight</span>
@@ -162,16 +162,16 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
                   <Keyboard className="h-4 w-4" />
                   <span>Shortcuts</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 pt-0.5 text-[11px]">
+                <div className="grid grid-cols-2 gap-2 pt-0.5 text-xs">
                   <div className="flex items-center justify-between rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-2">
                     <span className="text-[var(--wikios-text-muted)]">Toggle Margin</span>
-                    <kbd className="rounded border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--wikios-text)]">
+                    <kbd className="rounded border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] px-1.5 py-0.5 font-mono text-xs text-[var(--wikios-text)]">
                       T
                     </kbd>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-2">
                     <span className="text-[var(--wikios-text-muted)]">Close Drawer</span>
-                    <kbd className="rounded border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--wikios-text)]">
+                    <kbd className="rounded border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] px-1.5 py-0.5 font-mono text-xs text-[var(--wikios-text)]">
                       Esc
                     </kbd>
                   </div>

@@ -109,7 +109,7 @@ export function TeamLineup({
         <h3 className="text-foreground text-lg leading-none font-bold tracking-tight">
           {teamName} Lineup
         </h3>
-        <span className="text-muted-foreground mt-1 inline-block text-[10px] font-semibold tracking-wider uppercase">
+        <span className="text-muted-foreground mt-1 inline-block text-xs font-semibold tracking-wider uppercase">
           Active Formation • {sportPreset}
         </span>
       </div>
@@ -162,13 +162,13 @@ export function TeamLineup({
                         {player.number ?? initials}
 
                         {/* Rating Overlay Badge */}
-                        <div className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full border border-white/20 bg-slate-950 text-[8px] font-bold text-white tabular-nums">
+                        <div className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full border border-white/20 bg-slate-950 text-xs font-bold text-white tabular-nums">
                           {player.overallRating}
                         </div>
                       </div>
 
                       {/* Mini Name underneath */}
-                      <span className="mt-1 max-w-[70px] truncate rounded bg-black/60 px-1.5 py-0.5 text-[8px] leading-none font-semibold tracking-tight text-white shadow-xs backdrop-blur-xs">
+                      <span className="mt-1 max-w-[70px] truncate rounded bg-black/60 px-1.5 py-0.5 text-xs leading-none font-semibold tracking-tight text-white shadow-xs backdrop-blur-xs">
                         {player.lastName}
                       </span>
                     </div>
@@ -178,11 +178,11 @@ export function TeamLineup({
                     <div className="text-popover-foreground text-xs leading-tight font-bold">
                       {player.firstName} {player.lastName}
                     </div>
-                    <div className="text-muted-foreground mt-0.5 text-[10px] font-semibold tracking-wider uppercase">
+                    <div className="text-muted-foreground mt-0.5 text-xs font-semibold tracking-wider uppercase">
                       {SPORTS_ABBREVIATIONS[player.position] || player.position} #
                       {player.number ?? "--"}
                     </div>
-                    <div className="border-border/50 mt-2 flex items-center justify-between border-t pt-1.5 text-[10px]">
+                    <div className="border-border/50 mt-2 flex items-center justify-between border-t pt-1.5 text-xs">
                       <span className="text-muted-foreground font-semibold">RATING:</span>
                       <span className="font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
                         {player.overallRating} Overall

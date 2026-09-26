@@ -100,7 +100,7 @@ export function TitleStep({
               onChange={(e) => onRememberChoiceChange(e.target.checked)}
               className="bg-foreground/[0.05] h-3 w-3 cursor-pointer rounded border-[var(--wikios-border)] text-[var(--wikios-accent)] focus:ring-0 focus:ring-offset-0"
             />
-            <span className="text-[10px] text-[var(--wikios-text-dim)] transition-colors hover:text-[var(--wikios-text-muted)]">
+            <span className="text-xs text-[var(--wikios-text-dim)] transition-colors hover:text-[var(--wikios-text-muted)]">
               Remember choice
             </span>
           </label>
@@ -117,7 +117,7 @@ export function TitleStep({
             )}
           >
             <span className="text-xs font-semibold text-[var(--wikios-text)]">Canvas Editor</span>
-            <span className="mt-0.5 text-[10px] text-[var(--wikios-text-dim)]">
+            <span className="mt-0.5 text-xs text-[var(--wikios-text-dim)]">
               Immersive editing experience
             </span>
           </button>
@@ -132,7 +132,7 @@ export function TitleStep({
             )}
           >
             <span className="text-xs font-semibold text-[var(--wikios-text)]">Source Editor</span>
-            <span className="mt-0.5 text-[10px] text-[var(--wikios-text-dim)]">
+            <span className="mt-0.5 text-xs text-[var(--wikios-text-dim)]">
               Old-school wikitext editing experience
             </span>
           </button>

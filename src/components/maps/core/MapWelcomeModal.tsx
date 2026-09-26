@@ -181,7 +181,7 @@ export function MapWelcomeModal({
                       </p>
                     </div>
                   </div>
-                  <span className="bg-muted/60 text-muted-foreground rounded-full px-2 py-0.5 font-mono text-[10px] dark:bg-white/5">
+                  <span className="bg-muted/60 text-muted-foreground rounded-full px-2 py-0.5 font-mono text-xs dark:bg-white/5">
                     v{IXWORLD_VERSION}
                   </span>
                 </div>
@@ -212,7 +212,7 @@ export function MapWelcomeModal({
                                 {tip.title}
                               </span>
                             </div>
-                            <p className="text-muted-foreground text-[11px] leading-relaxed">
+                            <p className="text-muted-foreground text-xs leading-relaxed">
                               {tip.description}
                             </p>
                           </div>
@@ -244,7 +244,7 @@ export function MapWelcomeModal({
                               {s.keys.map((k) => (
                                 <kbd
                                   key={k}
-                                  className="bg-muted text-foreground/80 border-border/50 inline-flex h-5 min-w-[22px] items-center justify-center rounded border px-1.5 font-mono text-[10px] dark:border-white/10 dark:bg-white/10"
+                                  className="bg-muted text-foreground/80 border-border/50 inline-flex h-5 min-w-[22px] items-center justify-center rounded border px-1.5 font-mono text-xs dark:border-white/10 dark:bg-white/10"
                                 >
                                   {k}
                                 </kbd>
@@ -259,7 +259,7 @@ export function MapWelcomeModal({
                           <Compass className="h-3.5 w-3.5 text-blue-400" />
                           <span className="text-foreground/90 text-xs font-medium">Tip</span>
                         </div>
-                        <p className="text-muted-foreground text-[11px]">
+                        <p className="text-muted-foreground text-xs">
                           Everything on this map connects to a living wiki. Hover any country or
                           place name for an instant preview, or click through to read the full
                           article.
@@ -272,7 +272,7 @@ export function MapWelcomeModal({
 
               {/* World notes */}
               <div className="px-6 pb-2">
-                <div className="text-muted-foreground/80 space-y-1.5 text-[10px] leading-relaxed">
+                <div className="text-muted-foreground/80 space-y-1.5 text-xs leading-relaxed">
                   <div>
                     IxWorld runs on{" "}
                     <Tooltip
@@ -299,7 +299,7 @@ export function MapWelcomeModal({
                       content={
                         <div className="space-y-1.5 text-xs">
                           <p className="font-semibold">Trewartha Climate System</p>
-                          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px]">
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
                             <span>
                               <span className="mr-1 inline-block h-2 w-2 rounded-full bg-red-700" />
                               Tropical Wet (Ar)

@@ -173,7 +173,7 @@ export function NarratorPanel() {
                     Global AI Narrator Configuration
                   </h3>
                 </div>
-                <p className="text-muted-foreground mt-0.5 text-[11px]">
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   Manage LLM credentials and connection parameters. Falls back to SPORTS_LLM_API_KEY
                   if left blank.
                 </p>
@@ -196,7 +196,7 @@ export function NarratorPanel() {
                   <Label className="text-foreground text-xs font-bold">
                     Enable Flavor Cards Globally
                   </Label>
-                  <p className="text-muted-foreground text-[11px]">
+                  <p className="text-muted-foreground text-xs">
                     Enable or disable AI flavorization cards globally across all events and issues.
                   </p>
                 </div>
@@ -206,7 +206,7 @@ export function NarratorPanel() {
               {/* Grid Configs */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                  <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     LLM Provider
                   </Label>
                   <Select value={provider} onValueChange={setProvider}>
@@ -224,7 +224,7 @@ export function NarratorPanel() {
 
                 <div className="space-y-1.5">
                   <div className="flex justify-between">
-                    <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                    <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                       Temperature
                     </Label>
                     <span className="font-mono text-xs font-bold text-amber-400">
@@ -243,7 +243,7 @@ export function NarratorPanel() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                  <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     API Endpoint URL
                   </Label>
                   <Input
@@ -256,7 +256,7 @@ export function NarratorPanel() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                  <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     Model Name
                   </Label>
                   <Input
@@ -270,7 +270,7 @@ export function NarratorPanel() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   API Key / Token
                 </Label>
                 <Input
@@ -289,7 +289,7 @@ export function NarratorPanel() {
               {/* System Prompt Editor */}
               <div className="space-y-1.5 pt-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                  <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     Global System Prompt
                   </Label>
                   <button
@@ -303,7 +303,7 @@ export function NarratorPanel() {
                         setSystemPrompt(DEFAULT_FLAVOR_SYSTEM_PROMPT);
                       }
                     }}
-                    className="text-[10px] font-bold text-amber-400 uppercase hover:underline"
+                    className="text-xs font-bold text-amber-400 uppercase hover:underline"
                   >
                     Reset to Default
                   </button>

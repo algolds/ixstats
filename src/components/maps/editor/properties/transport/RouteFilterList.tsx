@@ -101,7 +101,7 @@ export const RouteFilterList = memo(function RouteFilterList({
                   />
                   <div className="min-w-0">
                     <div className="truncate font-medium">{route.name}</div>
-                    <div className="text-muted-foreground flex items-center gap-1.5 text-[10px]">
+                    <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
                       <span>{style.label}</span>
                       {route.lengthKm !== undefined && (
                         <span className="font-mono tabular-nums">• {route.lengthKm.toFixed(1)} km</span>

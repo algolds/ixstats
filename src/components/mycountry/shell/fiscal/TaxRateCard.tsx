@@ -71,12 +71,12 @@ function TaxRateCardComponent({
           >
             {isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
           </button>
-          <span className="text-muted-foreground text-[11px] font-semibold">{channel.label}</span>
+          <span className="text-muted-foreground text-xs font-semibold">{channel.label}</span>
         </div>
 
         <div className="flex items-center gap-1.5">
           {!isLocked && (
-            <span className="animate-pulse text-[9px] font-semibold tracking-wider text-amber-400 uppercase">
+            <span className="animate-pulse text-xs font-semibold tracking-wider text-amber-400 uppercase">
               Editing
             </span>
           )}
@@ -118,7 +118,7 @@ function TaxRateCardComponent({
       </div>
 
       {/* Yield preview */}
-      <div className="flex items-center justify-between text-[10px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-muted-foreground font-medium">Yield Contribution</span>
         <span className={cn("font-mono font-bold", channel.accentClass)}>
           <CurrencyFlow value={yieldValue} decimalPlaces={1} className={channel.accentClass} />

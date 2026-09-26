@@ -88,7 +88,7 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
             {playerA.firstName} {playerA.lastName}
           </h4>
           <PositionTooltip position={playerA.position}>
-            <span className="text-muted-foreground mt-1 cursor-help text-[10px] font-semibold tracking-wider uppercase decoration-dotted hover:underline">
+            <span className="text-muted-foreground mt-1 cursor-help text-xs font-semibold tracking-wider uppercase decoration-dotted hover:underline">
               {playerA.position}
             </span>
           </PositionTooltip>
@@ -130,7 +130,7 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
             {playerB.firstName} {playerB.lastName}
           </h4>
           <PositionTooltip position={playerB.position}>
-            <span className="text-muted-foreground mt-1 cursor-help text-[10px] font-semibold tracking-wider uppercase decoration-dotted hover:underline">
+            <span className="text-muted-foreground mt-1 cursor-help text-xs font-semibold tracking-wider uppercase decoration-dotted hover:underline">
               {playerB.position}
             </span>
           </PositionTooltip>
@@ -156,7 +156,7 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
                 >
                   {valA}
                 </span>
-                <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                   {key}
                 </span>
                 <span

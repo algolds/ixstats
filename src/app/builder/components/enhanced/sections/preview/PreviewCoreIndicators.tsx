@@ -117,11 +117,11 @@ export const PreviewCoreIndicators = memo(function PreviewCoreIndicators({
             <div className="max-w-full truncate text-base font-bold tracking-tight text-foreground sm:text-lg">
               {item.value}
             </div>
-            <div className="max-w-full truncate text-[11px] font-medium text-muted-foreground">
+            <div className="max-w-full truncate text-xs font-medium text-muted-foreground">
               {item.label}
             </div>
             {item.subValue && (
-              <div className="mt-0.5 max-w-full truncate font-mono text-[10px] text-muted-foreground/70">
+              <div className="mt-0.5 max-w-full truncate font-mono text-xs text-muted-foreground/70">
                 {item.subValue}
               </div>
             )}

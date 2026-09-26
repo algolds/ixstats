@@ -51,7 +51,7 @@ export function MetadataStep({
         <label className="block text-xs font-medium tracking-wider text-[var(--wikios-text-muted)] uppercase">
           Template Metadata
         </label>
-        <span className="text-[10px] text-[var(--wikios-text-dim)] italic">
+        <span className="text-xs text-[var(--wikios-text-dim)] italic">
           Optional - Skip to create
         </span>
       </div>
@@ -60,7 +60,7 @@ export function MetadataStep({
         {pageType === "person" && (
           <>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Birth Date</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Birth Date</span>
               <input
                 type="text"
                 placeholder="e.g. 15 October 1985"
@@ -70,7 +70,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Birth Place</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Birth Place</span>
               <input
                 type="text"
                 placeholder="e.g. London, United Kingdom"
@@ -80,7 +80,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Nationality</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Nationality</span>
               <input
                 type="text"
                 placeholder="e.g. British"
@@ -90,7 +90,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Occupation</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Occupation</span>
               <input
                 type="text"
                 placeholder="e.g. Economist"
@@ -105,7 +105,7 @@ export function MetadataStep({
         {pageType === "company" && (
           <>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Company Type</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Company Type</span>
               <input
                 type="text"
                 placeholder="e.g. Public, Private"
@@ -115,7 +115,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Industry</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Industry</span>
               <input
                 type="text"
                 placeholder="e.g. Aerospace, Finance"
@@ -125,7 +125,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Founder</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Founder</span>
               <input
                 type="text"
                 placeholder="Founder names..."
@@ -135,7 +135,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Headquarters</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Headquarters</span>
               <input
                 type="text"
                 placeholder="e.g. Geneva, Switzerland"
@@ -152,7 +152,7 @@ export function MetadataStep({
         {pageType === "history" && (
           <>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Event Date</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Event Date</span>
               <input
                 type="text"
                 placeholder="e.g. June 19, 2026"
@@ -162,7 +162,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Location</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Location</span>
               <input
                 type="text"
                 placeholder="e.g. Brussels, Belgium"
@@ -172,7 +172,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Key Participants</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Key Participants</span>
               <input
                 type="text"
                 placeholder="e.g. Allies, Axis"
@@ -184,7 +184,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Result / Outcome</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Result / Outcome</span>
               <input
                 type="text"
                 placeholder="e.g. Treaty signed"
@@ -199,7 +199,7 @@ export function MetadataStep({
         {pageType === "country" && (
           <>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Capital</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Capital</span>
               <input
                 type="text"
                 placeholder="Capital city..."
@@ -209,7 +209,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Government Type</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Government Type</span>
               <input
                 type="text"
                 placeholder="e.g. Parliamentary Republic"
@@ -221,7 +221,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Leader Name</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Leader Name</span>
               <input
                 type="text"
                 placeholder="Current leader..."
@@ -231,7 +231,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Currency</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Currency</span>
               <input
                 type="text"
                 placeholder="e.g. Credits"
@@ -246,7 +246,7 @@ export function MetadataStep({
         {pageType === "conflict" && (
           <>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Date</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Date</span>
               <input
                 type="text"
                 placeholder="e.g. 1939 - 1945"
@@ -256,7 +256,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Place</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Place</span>
               <input
                 type="text"
                 placeholder="e.g. Global"
@@ -266,7 +266,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Combatant 1</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Combatant 1</span>
               <input
                 type="text"
                 placeholder="Combatant group 1..."
@@ -278,7 +278,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Combatant 2</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Combatant 2</span>
               <input
                 type="text"
                 placeholder="Combatant group 2..."
@@ -295,7 +295,7 @@ export function MetadataStep({
         {pageType === "politics" && (
           <>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Party Leader</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Party Leader</span>
               <input
                 type="text"
                 placeholder="Leader name..."
@@ -305,7 +305,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Founder</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Founder</span>
               <input
                 type="text"
                 placeholder="Founder name..."
@@ -315,7 +315,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Ideology</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Ideology</span>
               <input
                 type="text"
                 placeholder="e.g. Social Democracy"
@@ -325,7 +325,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Party Colors</span>
+              <span className="text-xs text-[var(--wikios-text-muted)]">Party Colors</span>
               <input
                 type="text"
                 placeholder="e.g. Red and White"
@@ -340,7 +340,7 @@ export function MetadataStep({
         {pageType === "tech" && (
           <>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">
+              <span className="text-xs text-[var(--wikios-text-muted)]">
                 Inventor / Creator
               </span>
               <input
@@ -352,7 +352,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">
+              <span className="text-xs text-[var(--wikios-text-muted)]">
                 Year / Date of Invention
               </span>
               <input
@@ -364,7 +364,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">
+              <span className="text-xs text-[var(--wikios-text-muted)]">
                 Primary Application
               </span>
               <input

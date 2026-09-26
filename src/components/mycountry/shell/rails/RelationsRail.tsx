@@ -234,10 +234,10 @@ export function RelationsRail({ countryId }: { countryId: string }) {
             <h4 className="text-foreground text-xs font-bold">Embassy & Bilateral Network</h4>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-extrabold text-cyan-400">
+            <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-extrabold text-cyan-400">
               {activeEmbassies.length} Embassies
             </span>
-            <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[10px] font-extrabold text-blue-400">
+            <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-xs font-extrabold text-blue-400">
               {liveRelations.length} Relations
             </span>
           </div>
@@ -245,12 +245,12 @@ export function RelationsRail({ countryId }: { countryId: string }) {
 
         {/* 1. Embassy Network Section */}
         <div className="space-y-1.5">
-          <div className="text-muted-foreground flex items-center justify-between text-[10px] font-bold tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center justify-between text-xs font-bold tracking-wider uppercase">
             <span>Active Embassies</span>
-            <span className="text-[9px]">{activeEmbassies.length} total</span>
+            <span className="text-xs">{activeEmbassies.length} total</span>
           </div>
           {activeEmbassies.length === 0 ? (
-            <p className="text-muted-foreground py-1.5 text-center text-[11px]">
+            <p className="text-muted-foreground py-1.5 text-center text-xs">
               No active embassies established.
             </p>
           ) : (
@@ -282,15 +282,15 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                       />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-foreground truncate text-[11px] font-semibold">
+                      <p className="text-foreground truncate text-xs font-semibold">
                         {partnerName}
                       </p>
-                      <p className="text-muted-foreground text-[9px]">
+                      <p className="text-muted-foreground text-xs">
                         {emb.guestCountryId === countryId ? "Host Embassy" : "Guest Embassy"}
                       </p>
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-400">
+                  <span className="shrink-0 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-xs font-bold text-emerald-400">
                     Active
                   </span>
                 </div>
@@ -301,12 +301,12 @@ export function RelationsRail({ countryId }: { countryId: string }) {
 
         {/* 2. Bilateral Relations Section */}
         <div className="space-y-1.5 border-t border-white/5 pt-1">
-          <div className="text-muted-foreground flex items-center justify-between text-[10px] font-bold tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center justify-between text-xs font-bold tracking-wider uppercase">
             <span>Bilateral Relationships</span>
-            <span className="text-[9px]">{liveRelations.length} partners</span>
+            <span className="text-xs">{liveRelations.length} partners</span>
           </div>
           {liveRelations.length === 0 ? (
-            <p className="text-muted-foreground py-1.5 text-center text-[11px]">
+            <p className="text-muted-foreground py-1.5 text-center text-xs">
               No diplomatic relationships recorded.
             </p>
           ) : (
@@ -323,9 +323,9 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-foreground truncate font-semibold">{rel.targetName}</span>
-                    <span className="text-[10px] font-bold text-cyan-500">{rel.strength}%</span>
+                    <span className="text-xs font-bold text-cyan-500">{rel.strength}%</span>
                   </div>
                   <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
                     <div
@@ -334,7 +334,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                     />
                   </div>
                 </div>
-                <span className="text-muted-foreground shrink-0 text-[9px] font-bold tracking-wider uppercase">
+                <span className="text-muted-foreground shrink-0 text-xs font-bold tracking-wider uppercase">
                   {rel.stance}
                 </span>
               </div>
@@ -350,14 +350,14 @@ export function RelationsRail({ countryId }: { countryId: string }) {
             <Users className="h-3.5 w-3.5 text-cyan-400" />
             <h4 className="text-foreground text-xs font-bold">Alliances & Blocs</h4>
           </div>
-          <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-extrabold text-cyan-400">
+          <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-extrabold text-cyan-400">
             {alliances.length} Active
           </span>
         </div>
 
         <div className="space-y-1.5">
           {alliances.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-center text-[11px]">
+            <p className="text-muted-foreground py-2 text-center text-xs">
               Not a member of any diplomatic alliance.
             </p>
           ) : (
@@ -367,14 +367,14 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                 className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
               >
                 <div>
-                  <p className="text-foreground text-[11px] font-semibold">
+                  <p className="text-foreground text-xs font-semibold">
                     {ally.name ?? "Defense Pact"}
                   </p>
-                  <p className="text-muted-foreground text-[9px]">
+                  <p className="text-muted-foreground text-xs">
                     {ally.memberCount ?? ally.members?.length ?? 1} Nations
                   </p>
                 </div>
-                <span className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.5 text-[9px] font-bold text-cyan-300">
+                <span className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.5 text-xs font-bold text-cyan-300">
                   {ally.myRole ?? "Member"}
                 </span>
               </div>
