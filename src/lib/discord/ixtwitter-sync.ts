@@ -9,7 +9,9 @@
  * Runs as a cron job in production.
  */
 
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
+import { db as sharedDb } from "~/server/db";
+import { withJobLock } from "~/lib/system/job-lock";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import * as path from "path";
 import { DOMParser } from "@xmldom/xmldom";
@@ -632,8 +634,15 @@ export async function syncIxTwitterToThinkPages(): Promise<{ posted: number; ski
     return { posted: 0, skipped: 0 };
   }
 
-  const db = new PrismaClient();
+  // Cross-process single-flight (plan 328): the poller ticks every 5 min with no
+  // guard of its own, so a slow sync must skip rather than overlap the next tick.
+  const outcome = await withJobLock(sharedDb, "ixtwitter-sync", () => runIxTwitterSync(sharedDb), {
+    timeoutMs: 10 * 60_000,
+  });
+  return outcome.ran ? outcome.result : { posted: 0, skipped: 0 };
+}
 
+async function runIxTwitterSync(db: PrismaClient): Promise<{ posted: number; skipped: number }> {
   try {
     await loadCountryIdCache(db);
 
@@ -698,8 +707,6 @@ export async function syncIxTwitterToThinkPages(): Promise<{ posted: number; ski
   } catch (error) {
     console.error("[DiscordPoster] Sync failed:", error);
     return { posted: 0, skipped: 0 };
-  } finally {
-    await db.$disconnect();
   }
 }
 
@@ -713,7 +720,7 @@ export async function backfillIxTwitterToThinkPages(): Promise<{
     return { posted: 0, skipped: 0, alreadyPosted: 0 };
   }
 
-  const db = new PrismaClient();
+  const db = sharedDb;
 
   try {
     await loadCountryIdCache(db);
@@ -789,8 +796,6 @@ export async function backfillIxTwitterToThinkPages(): Promise<{
   } catch (error) {
     console.error("[DiscordPoster] Backfill failed:", error);
     return { posted: 0, skipped: 0, alreadyPosted: 0 };
-  } finally {
-    await db.$disconnect();
   }
 }
 

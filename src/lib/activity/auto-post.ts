@@ -1,9 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { db as prisma } from "~/server/db";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import * as crypto from "crypto";
-
-const prisma = new PrismaClient();
 
 export async function generateAndPostCrisisEvent(crisisEventId: string) {
   const crisisEvent = await prisma.crisisEvent.findUnique({

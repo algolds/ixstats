@@ -14,7 +14,7 @@
  * - Bid validation (5% minimum increment)
  */
 
-import { vaultService, getVaultConfig } from "~/lib/vault/vault-service";
+import { vaultService, getVaultConfig, LedgerError } from "~/lib/vault/vault-service";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -219,7 +219,7 @@ export class AuctionService {
       await vaultService.earnCredits(
         params.userId,
         listingFee,
-        "EARN_ACTIVE",
+        "REFUND",
         "auction_listing_fee_refund",
         db,
         { error: String(error) }
@@ -307,6 +307,14 @@ export class AuctionService {
       });
     }
 
+    // Rejecting a self-outbid avoids charging the same user twice for one hold
+    if (auction.currentBidderId === params.userId) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "You are already the highest bidder",
+      });
+    }
+
     // 2. Validate bid amount (must exceed current by 5%)
     const minBid = Math.ceil((auction.currentBid ?? auction.startingPrice) * 1.05);
     if (params.amount < minBid) {
@@ -328,51 +336,23 @@ export class AuctionService {
     // 4. Execute bid in atomic transaction
     try {
       await db.$transaction(async (tx) => {
-        // Reserve from new bidder
-        const spendResult = await vaultService.spendCredits(
-          params.userId,
-          params.amount,
-          "SPEND_MARKET",
-          "auction_bid_reserve",
-          tx as PrismaClient,
-          {
-            auctionId: params.auctionId,
-            cardInstanceId: auction.cardInstanceId,
-          }
-        );
-
-        if (!spendResult.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spendResult.message ?? "Failed to reserve bid amount",
-          });
-        }
-
-        // Refund previous bidder (if any)
-        if (auction.currentBidderId && auction.currentBidderId !== params.userId) {
-          await vaultService.earnCredits(
-            auction.currentBidderId,
-            auction.currentBid ?? auction.startingPrice,
-            "EARN_ACTIVE",
-            "auction_bid_refund",
-            tx as PrismaClient,
-            {
-              auctionId: params.auctionId,
-              reason: "outbid",
-            }
-          );
-        }
-
-        // 5. Extend auction by 1 minute if <5min remaining
+        // 4a. Extend auction by 1 minute if <5min remaining
         const timeRemaining = new Date(auction.endTime).getTime() - now;
         const newEndTime =
           timeRemaining < 5 * 60 * 1000
             ? new Date(new Date(auction.endTime).getTime() + 60 * 1000) // +1 min
             : auction.endTime;
 
-        // 6. Update auction
-        await tx.cardAuction.update({
-          where: { id: params.auctionId },
+        // 4b. Claim the auction state read above (compare-and-swap). If another bid,
+        // a buyout or expiry changed it, nothing below runs and no money moves.
+        const claimed = await tx.cardAuction.updateMany({
+          where: {
+            id: params.auctionId,
+            status: "ACTIVE",
+            currentBid: auction.currentBid,
+            currentBidderId: auction.currentBidderId,
+            endTime: { gt: new Date(now) },
+          },
           data: {
             currentBid: params.amount,
             currentBidderId: params.userId,
@@ -380,6 +360,38 @@ export class AuctionService {
             bidCount: { increment: 1 },
           },
         });
+        if (claimed.count !== 1) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Auction changed while you were bidding — refresh and try again",
+          });
+        }
+
+        // 5. Reserve from new bidder (LedgerError rolls the transaction back)
+        await vaultService.spendCreditsTx(tx, {
+          userId: params.userId,
+          amount: params.amount,
+          type: "SPEND_MARKET",
+          source: "auction_bid_reserve",
+          metadata: {
+            auctionId: params.auctionId,
+            cardInstanceId: auction.cardInstanceId,
+          },
+        });
+
+        // 6. Refund previous bidder (if any) — REFUND is never capped
+        if (auction.currentBidderId) {
+          await vaultService.earnCreditsTx(tx, {
+            userId: auction.currentBidderId,
+            amount: auction.currentBid ?? auction.startingPrice,
+            type: "REFUND",
+            source: "auction_bid_refund",
+            metadata: {
+              auctionId: params.auctionId,
+              reason: "outbid",
+            },
+          });
+        }
 
         // 7. Create bid record
         await tx.auctionBid.create({
@@ -417,7 +429,7 @@ export class AuctionService {
       }
 
       // 9. Notify previous bidder if outbid (fire-and-forget)
-      if (auction.currentBidderId && auction.currentBidderId !== params.userId) {
+      if (auction.currentBidderId) {
         try {
           const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
           await notificationAPI.create({
@@ -435,6 +447,9 @@ export class AuctionService {
       return { success: true };
     } catch (error) {
       console.error("[Auction Service] Failed to place bid:", error);
+      if (error instanceof LedgerError) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+      }
       if (error instanceof TRPCError) {
         throw error;
       }
@@ -522,58 +537,67 @@ export class AuctionService {
     // Execute buyout transaction
     try {
       await db.$transaction(async (tx) => {
-        // 1. Refund current bidder (if any)
-        if (auction.currentBidderId) {
-          await vaultService.earnCredits(
-            auction.currentBidderId,
-            auction.currentBid ?? auction.startingPrice,
-            "EARN_ACTIVE",
-            "auction_bid_refund",
-            tx as PrismaClient,
-            {
-              auctionId: params.auctionId,
-              reason: "buyout",
-            }
-          );
+        // 1. Settle the auction (compare-and-swap on the state read above). If a bid,
+        // another buyout or the expiry cron got there first, nothing below runs.
+        const claimed = await tx.cardAuction.updateMany({
+          where: {
+            id: params.auctionId,
+            status: "ACTIVE",
+            currentBid: auction.currentBid,
+            currentBidderId: auction.currentBidderId,
+          },
+          data: {
+            status: "COMPLETED",
+            winnerId: params.userId,
+            finalPrice: buyoutPrice,
+          },
+        });
+        if (claimed.count !== 1) {
+          throw new TRPCError({ code: "CONFLICT", message: "Auction is no longer available" });
         }
 
-        // 2. Transfer IxCredits from buyer to seller
-        const marketplaceFee = buyoutPrice > 100 ? Math.floor(buyoutPrice * 0.1) : 0; // 10% fee on >100 IxC
-        const sellerProceeds = buyoutPrice - marketplaceFee;
-
-        const spendResult = await vaultService.spendCredits(
-          params.userId,
-          buyoutPrice,
-          "SPEND_MARKET",
-          "card_purchase_buyout",
-          tx as PrismaClient,
-          {
-            auctionId: params.auctionId,
-            cardInstanceId: auction.cardInstanceId,
-            marketplaceFee,
-          }
-        );
-
-        if (!spendResult.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spendResult.message ?? "Failed to process payment",
+        // 2. Refund current bidder (if any) — REFUND is never capped
+        if (auction.currentBidderId) {
+          await vaultService.earnCreditsTx(tx, {
+            userId: auction.currentBidderId,
+            amount: auction.currentBid ?? auction.startingPrice,
+            type: "REFUND",
+            source: "auction_bid_refund",
+            metadata: {
+              auctionId: params.auctionId,
+              reason: "buyout",
+            },
           });
         }
 
-        await vaultService.earnCredits(
-          auction.sellerId,
-          sellerProceeds,
-          "EARN_CARDS",
-          "card_sale_buyout",
-          tx as PrismaClient,
-          {
+        // 3. Transfer IxCredits from buyer to seller (LedgerError rolls the transaction back)
+        const marketplaceFee = buyoutPrice > 100 ? Math.floor(buyoutPrice * 0.1) : 0; // 10% fee on >100 IxC
+        const sellerProceeds = buyoutPrice - marketplaceFee;
+
+        await vaultService.spendCreditsTx(tx, {
+          userId: params.userId,
+          amount: buyoutPrice,
+          type: "SPEND_MARKET",
+          source: "card_purchase_buyout",
+          metadata: {
+            auctionId: params.auctionId,
+            cardInstanceId: auction.cardInstanceId,
+            marketplaceFee,
+          },
+        });
+
+        await vaultService.earnCreditsTx(tx, {
+          userId: auction.sellerId,
+          amount: sellerProceeds,
+          type: "EARN_CARDS",
+          source: "card_sale_buyout",
+          metadata: {
             auctionId: params.auctionId,
             cardInstanceId: auction.cardInstanceId,
             marketplaceFee,
             grossSale: buyoutPrice,
-          }
-        );
+          },
+        });
 
         // 2.5. Award nation card royalties (2% of sale price to nation owner with fallback)
         if (
@@ -583,7 +607,7 @@ export class AuctionService {
           const royaltyAmount = Math.round(buyoutPrice * 0.02 * 100) / 100; // 2% royalty
 
           // Find the nation owner
-          const nationOwner = await (tx as PrismaClient).user.findFirst({
+          const nationOwner = await tx.user.findFirst({
             where: { countryId: auction.CardOwnership.cards.countryId },
           });
 
@@ -597,7 +621,7 @@ export class AuctionService {
             royaltyRecipientClerkId = nationOwner.clerkUserId;
           } else {
             // Fallback: earliest non-system user pull of this cardId
-            const earliestOwnerships = await (tx as PrismaClient).cardOwnership.findMany({
+            const earliestOwnerships = await tx.cardOwnership.findMany({
               where: { cardId: auction.CardOwnership.cards.id },
               orderBy: { createdAt: "asc" },
               include: { User: true },
@@ -618,26 +642,30 @@ export class AuctionService {
           }
 
           if (royaltyRecipientClerkId) {
-            // Award royalty
-            await vaultService.earnCredits(
-              royaltyRecipientClerkId,
-              royaltyAmount,
-              "EARN_PASSIVE",
-              "nation_card_royalty",
-              tx as PrismaClient,
-              {
-                auctionId: params.auctionId,
-                cardId: auction.CardOwnership.cards.id,
-                countryId: auction.CardOwnership.cards.countryId,
-                salePrice: buyoutPrice,
-                royaltyRate: 0.02,
-              }
-            );
+            // Award royalty — optional; must not block the sale when earning is disabled
+            try {
+              await vaultService.earnCreditsTx(tx, {
+                userId: royaltyRecipientClerkId,
+                amount: royaltyAmount,
+                type: "EARN_PASSIVE",
+                source: "nation_card_royalty",
+                metadata: {
+                  auctionId: params.auctionId,
+                  cardId: auction.CardOwnership.cards.id,
+                  countryId: auction.CardOwnership.cards.countryId,
+                  salePrice: buyoutPrice,
+                  royaltyRate: 0.02,
+                },
+              });
 
-            console.log(
-              `[Auction Service] Awarded ${royaltyAmount} IxC royalty to ${royaltyRecipientClerkId} ` +
-                `for nation card sale`
-            );
+              console.log(
+                `[Auction Service] Awarded ${royaltyAmount} IxC royalty to ${royaltyRecipientClerkId} ` +
+                  `for nation card sale`
+              );
+            } catch (e) {
+              if (!(e instanceof LedgerError)) throw e;
+              console.warn("[Auction Service] Royalty skipped:", e.message);
+            }
           }
         }
 
@@ -664,16 +692,6 @@ export class AuctionService {
             },
           });
         }
-
-        // 5. Complete auction
-        await tx.cardAuction.update({
-          where: { id: params.auctionId },
-          data: {
-            status: "COMPLETED",
-            winnerId: params.userId,
-            finalPrice: buyoutPrice,
-          },
-        });
       });
 
       console.log(
@@ -689,6 +707,9 @@ export class AuctionService {
       return { success: true };
     } catch (error) {
       console.error("[Auction Service] Failed to execute buyout:", error);
+      if (error instanceof LedgerError) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+      }
       if (error instanceof TRPCError) {
         throw error;
       }
@@ -730,28 +751,45 @@ export class AuctionService {
       return; // Not expired yet
     }
 
+    const finalPrice = auction.currentBid ?? auction.startingPrice;
+
     try {
       await db.$transaction(async (tx) => {
+        // Settle the auction first (compare-and-swap on the state read above). A buyout,
+        // a cancel or another cron run that got there first leaves nothing to do.
+        const claimed = await tx.cardAuction.updateMany({
+          where: {
+            id: auctionId,
+            status: "ACTIVE",
+            currentBidderId: auction.currentBidderId,
+            currentBid: auction.currentBid,
+          },
+          data: auction.currentBidderId
+            ? { status: "COMPLETED", winnerId: auction.currentBidderId, finalPrice }
+            : { status: "CANCELLED" },
+        });
+        if (claimed.count !== 1) {
+          return;
+        }
+
         if (auction.currentBidderId) {
           // Auction had bids - transfer card to winner
-          const finalPrice = auction.currentBid ?? auction.startingPrice;
           const marketplaceFee = finalPrice > 100 ? Math.floor(finalPrice * 0.1) : 0;
           const sellerProceeds = finalPrice - marketplaceFee;
 
           // Credits already reserved from bidder, now finalize transfer to seller
-          await vaultService.earnCredits(
-            auction.sellerId,
-            sellerProceeds,
-            "EARN_CARDS",
-            "card_sale_auction",
-            tx as PrismaClient,
-            {
+          await vaultService.earnCreditsTx(tx, {
+            userId: auction.sellerId,
+            amount: sellerProceeds,
+            type: "EARN_CARDS",
+            source: "card_sale_auction",
+            metadata: {
               auctionId,
               cardInstanceId: auction.cardInstanceId,
               marketplaceFee,
               grossSale: finalPrice,
-            }
-          );
+            },
+          });
 
           // Award nation card royalties (2% of sale price to nation owner with fallback)
           if (
@@ -761,7 +799,7 @@ export class AuctionService {
             const royaltyAmount = Math.round(finalPrice * 0.02 * 100) / 100; // 2% royalty
 
             // Find the nation owner
-            const nationOwner = await (tx as PrismaClient).user.findFirst({
+            const nationOwner = await tx.user.findFirst({
               where: { countryId: auction.CardOwnership.cards.countryId },
             });
 
@@ -775,7 +813,7 @@ export class AuctionService {
               royaltyRecipientClerkId = nationOwner.clerkUserId;
             } else {
               // Fallback: earliest non-system user pull of this cardId
-              const earliestOwnerships = await (tx as PrismaClient).cardOwnership.findMany({
+              const earliestOwnerships = await tx.cardOwnership.findMany({
                 where: { cardId: auction.CardOwnership.cards.id },
                 orderBy: { createdAt: "asc" },
                 include: { User: true },
@@ -796,26 +834,30 @@ export class AuctionService {
             }
 
             if (royaltyRecipientClerkId) {
-              // Award royalty to nation owner (only if they're not the buyer or seller)
-              await vaultService.earnCredits(
-                royaltyRecipientClerkId,
-                royaltyAmount,
-                "EARN_PASSIVE",
-                "nation_card_royalty",
-                tx as PrismaClient,
-                {
-                  auctionId,
-                  cardId: auction.CardOwnership.cards.id,
-                  countryId: auction.CardOwnership.cards.countryId,
-                  salePrice: finalPrice,
-                  royaltyRate: 0.02,
-                }
-              );
+              // Award royalty to nation owner — optional; must not block the sale
+              try {
+                await vaultService.earnCreditsTx(tx, {
+                  userId: royaltyRecipientClerkId,
+                  amount: royaltyAmount,
+                  type: "EARN_PASSIVE",
+                  source: "nation_card_royalty",
+                  metadata: {
+                    auctionId,
+                    cardId: auction.CardOwnership.cards.id,
+                    countryId: auction.CardOwnership.cards.countryId,
+                    salePrice: finalPrice,
+                    royaltyRate: 0.02,
+                  },
+                });
 
-              console.log(
-                `[Auction Service] Awarded ${royaltyAmount} IxC royalty to ${royaltyRecipientClerkId} ` +
-                  `for nation card sale`
-              );
+                console.log(
+                  `[Auction Service] Awarded ${royaltyAmount} IxC royalty to ${royaltyRecipientClerkId} ` +
+                    `for nation card sale`
+                );
+              } catch (e) {
+                if (!(e instanceof LedgerError)) throw e;
+                console.warn("[Auction Service] Royalty skipped:", e.message);
+              }
             }
           }
 
@@ -851,16 +893,6 @@ export class AuctionService {
             "AUCTION_COMPLETE",
             JSON.stringify({ auctionId })
           );
-
-          // Complete auction
-          await tx.cardAuction.update({
-            where: { id: auctionId },
-            data: {
-              status: "COMPLETED",
-              winnerId: auction.currentBidderId,
-              finalPrice,
-            },
-          });
 
           console.log(
             `[Auction Service] Completed auction ${auctionId} - Winner: ${auction.currentBidderId} for ${finalPrice} IxC`
@@ -908,26 +940,17 @@ export class AuctionService {
             data: { isLocked: false },
           });
 
-          // Update auction status to CANCELLED (no bids = expired without sale)
-          await tx.cardAuction.update({
-            where: { id: auctionId },
-            data: {
-              status: "CANCELLED",
-            },
-          });
-
           const refund = auction.isFeatured ? 5 : 2.5; // 50% refund
-          await vaultService.earnCredits(
-            auction.sellerId,
-            refund,
-            "EARN_ACTIVE",
-            "auction_fee_refund",
-            tx as PrismaClient,
-            {
+          await vaultService.earnCreditsTx(tx, {
+            userId: auction.sellerId,
+            amount: refund,
+            type: "REFUND",
+            source: "auction_fee_refund",
+            metadata: {
               auctionId,
               reason: "no_bids",
-            }
-          );
+            },
+          });
 
           console.log(
             `[Auction Service] Expired auction ${auctionId} with no bids - Refunded ${refund} IxC to seller`
@@ -1021,6 +1044,20 @@ export class AuctionService {
 
     try {
       await db.$transaction(async (tx) => {
+        // Cancel auction (compare-and-swap: still ACTIVE, still ours, still no bids)
+        const claimed = await tx.cardAuction.updateMany({
+          where: {
+            id: params.auctionId,
+            status: "ACTIVE",
+            sellerId: params.userId,
+            bidCount: 0,
+          },
+          data: { status: "CANCELLED" },
+        });
+        if (claimed.count !== 1) {
+          throw new TRPCError({ code: "CONFLICT", message: "Auction can no longer be cancelled" });
+        }
+
         // Unlock card
         await tx.cardOwnership.update({
           where: {
@@ -1029,27 +1066,18 @@ export class AuctionService {
           data: { isLocked: false },
         });
 
-        // Cancel auction
-        await tx.cardAuction.update({
-          where: { id: params.auctionId },
-          data: {
-            status: "CANCELLED",
-          },
-        });
-
-        // Refund 50% of listing fee
+        // Refund 50% of listing fee — REFUND is never capped
         const refund = auction.isFeatured ? 5 : 2.5;
-        await vaultService.earnCredits(
-          params.userId,
-          refund,
-          "EARN_ACTIVE",
-          "auction_fee_refund",
-          tx as PrismaClient,
-          {
+        await vaultService.earnCreditsTx(tx, {
+          userId: params.userId,
+          amount: refund,
+          type: "REFUND",
+          source: "auction_fee_refund",
+          metadata: {
             auctionId: params.auctionId,
             reason: "cancelled",
-          }
-        );
+          },
+        });
       });
 
       console.log(`[Auction Service] User ${params.userId} cancelled auction ${params.auctionId}`);
@@ -1063,6 +1091,12 @@ export class AuctionService {
       return { success: true };
     } catch (error) {
       console.error("[Auction Service] Failed to cancel auction:", error);
+      if (error instanceof LedgerError) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+      }
+      if (error instanceof TRPCError) {
+        throw error;
+      }
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to cancel auction",

@@ -1,9 +1,22 @@
 import { type PrismaClient } from "@prisma/client";
 import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
-import { getOrCreateVault, earnCredits } from "~/lib/vault/vault-ledger";
+import { getOrCreateVault } from "~/lib/vault/vault-ledger";
 import { getYieldBoostMultiplier } from "~/lib/vault/vault-perks";
+import { earnCreditsOnce } from "~/lib/vault/vault-service";
 
-const activeCatchUps = new Set<string>();
+export const PASSIVE_DIVIDEND_SOURCE = "DAILY_DIVIDEND";
+/** Source written by the pre-328 daily cron; the catch-up lookback still honours it. */
+const LEGACY_PASSIVE_DIVIDEND_SOURCE = "DAILY_NATION_DIVIDEND";
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Idempotency key for one user's dividend on one UTC calendar day. */
+export function passiveIncomeKey(userId: string, day: Date): string {
+  return `passive:${userId}:${day.toISOString().slice(0, 10)}`;
+}
+
+export function utcDayStart(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
 
 /**
  * Calculate passive income based on nation performance
@@ -70,6 +83,10 @@ export async function calculatePassiveIncome(countryId: string, db: PrismaClient
 
 /**
  * Catch up passive income for a user's country if they missed days.
+ *
+ * Runs on almost every vault read (getBalance). Each day is paid through
+ * earnCreditsOnce with the per-UTC-day key, so a concurrent catch-up, or the
+ * daily cron paying the same day, cannot double-credit.
  */
 export async function catchUpPassiveIncome(
   userId: string,
@@ -91,92 +108,78 @@ export async function catchUpPassiveIncome(
       return { success: true, count: 0, totalCreditsAwarded: 0 };
     }
 
-    if (activeCatchUps.has(user.id)) {
-      console.log(`[Vault Service] Passive income catchup already in progress for user ${user.id}`);
+    const vault = await getOrCreateVault(user.id, db);
+
+    const lastTx = await db.vaultTransaction.findFirst({
+      where: {
+        vaultId: vault.id,
+        type: "EARN_PASSIVE",
+        source: { in: [PASSIVE_DIVIDEND_SOURCE, LEGACY_PASSIVE_DIVIDEND_SOURCE] },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        createdAt: true,
+      },
+    });
+
+    const today = utcDayStart(new Date());
+
+    let startDate: Date;
+    if (lastTx) {
+      startDate = new Date(lastTx.createdAt);
+    } else {
+      const yesterday = new Date(today.getTime() - DAY_MS);
+      const vaultCreated = new Date(vault.createdAt);
+      startDate = vaultCreated > yesterday ? vaultCreated : yesterday;
+    }
+
+    const lastRunDay = utcDayStart(startDate);
+
+    const daysToAward: Date[] = [];
+    let currentDay = new Date(lastRunDay.getTime() + DAY_MS);
+
+    while (currentDay <= today) {
+      daysToAward.push(new Date(currentDay));
+      currentDay = new Date(currentDay.getTime() + DAY_MS);
+    }
+
+    if (daysToAward.length === 0) {
       return { success: true, count: 0, totalCreditsAwarded: 0 };
     }
 
-    activeCatchUps.add(user.id);
+    console.log(
+      `[Vault Service] Catching up ${daysToAward.length} days of passive income for user ${user.id} / country ${user.countryId}`
+    );
 
-    try {
-      const vault = await getOrCreateVault(user.id, db);
+    let awardedCount = 0;
+    let totalCreditsAwarded = 0;
 
-      const lastTx = await db.vaultTransaction.findFirst({
-        where: {
-          vaultId: vault.id,
+    for (const day of daysToAward) {
+      const dailyIncome = await calculatePassiveIncome(user.countryId, db);
+      if (dailyIncome > 0) {
+        const earnResult = await earnCreditsOnce(db, {
+          userId: user.id,
+          amount: dailyIncome,
           type: "EARN_PASSIVE",
-          source: "DAILY_DIVIDEND",
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        select: {
-          createdAt: true,
-        },
-      });
-
-      const now = new Date();
-      const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-
-      let startDate: Date;
-      if (lastTx) {
-        startDate = new Date(lastTx.createdAt);
-      } else {
-        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-        const vaultCreated = new Date(vault.createdAt);
-        startDate = vaultCreated > yesterday ? vaultCreated : yesterday;
-      }
-
-      const lastRunDay = new Date(
-        Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate())
-      );
-
-      const daysToAward: Date[] = [];
-      let currentDay = new Date(lastRunDay.getTime() + 24 * 60 * 60 * 1000);
-
-      while (currentDay <= today) {
-        daysToAward.push(new Date(currentDay));
-        currentDay = new Date(currentDay.getTime() + 24 * 60 * 60 * 1000);
-      }
-
-      if (daysToAward.length === 0) {
-        return { success: true, count: 0, totalCreditsAwarded: 0 };
-      }
-
-      console.log(
-        `[Vault Service] Catching up ${daysToAward.length} days of passive income for user ${user.id} / country ${user.countryId}`
-      );
-
-      let awardedCount = 0;
-      let totalCreditsAwarded = 0;
-
-      for (const day of daysToAward) {
-        const dailyIncome = await calculatePassiveIncome(user.countryId, db);
-        if (dailyIncome > 0) {
-          const earnResult = await earnCredits(
-            user.id,
-            dailyIncome,
-            "EARN_PASSIVE",
-            "DAILY_DIVIDEND",
-            db,
-            {
-              countryId: user.countryId,
-              isCatchUp: true,
-              targetDate: day.toISOString(),
-            },
-            day
-          );
-          if (earnResult.success) {
-            awardedCount++;
-            totalCreditsAwarded += dailyIncome;
-          }
+          source: PASSIVE_DIVIDEND_SOURCE,
+          metadata: {
+            countryId: user.countryId,
+            isCatchUp: true,
+            targetDate: day.toISOString(),
+          },
+          createdAt: day,
+          idempotencyKey: passiveIncomeKey(user.id, day),
+        });
+        if (earnResult.success && !earnResult.alreadyApplied) {
+          awardedCount++;
+          totalCreditsAwarded += dailyIncome;
         }
       }
-
-      return { success: true, count: awardedCount, totalCreditsAwarded };
-    } finally {
-      activeCatchUps.delete(user.id);
     }
+
+    return { success: true, count: awardedCount, totalCreditsAwarded };
   } catch (error) {
     console.error(`[Vault Service] Failed to catch up passive income for ${userId}:`, error);
     return {

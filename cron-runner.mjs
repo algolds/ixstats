@@ -154,10 +154,23 @@ async function main() {
     }
   };
 
+  // Cross-process single-flight for every job (plan 328). Uses a Postgres advisory
+  // lock via the shared db singleton; a run that finds the lock held is skipped.
+  const runLocked = async (name, timeoutMs, job) => {
+    const [{ withJobLock }, { db }] = await Promise.all([
+      import("./src/lib/system/job-lock.js"),
+      import("./src/server/db.js"),
+    ]);
+    const outcome = await withJobLock(db, name, job, { timeoutMs });
+    if (!outcome.ran) console.log(`[Cron] ${name} skipped — another run holds the lock`);
+  };
+
   scheduleCron("Auction completion", "* * * * *", async () => {
     try {
-      const { processExpiredAuctions } = await import("./src/lib/auction-completion-cron.js");
-      await processExpiredAuctions();
+      await runLocked("auction-completion", 5 * 60_000, async () => {
+        const { processExpiredAuctions } = await import("./src/lib/auction-completion-cron.js");
+        await processExpiredAuctions();
+      });
     } catch (error) {
       console.error("[Cron] Auction completion failed:", error);
     }
@@ -165,10 +178,11 @@ async function main() {
 
   scheduleCron("Passive income distribution", cronSchedule_passiveIncome, async () => {
     try {
-      const { distributePassiveIncome } = await import(
-        "./src/lib/passive-income-distribution-cron.js"
-      );
-      await distributePassiveIncome();
+      await runLocked("passive-income", 30 * 60_000, async () => {
+        const { distributePassiveIncome } =
+          await import("./src/lib/passive-income-distribution-cron.js");
+        await distributePassiveIncome();
+      });
     } catch (error) {
       console.error("[Cron] Passive income distribution failed:", error);
     }
@@ -176,8 +190,10 @@ async function main() {
 
   scheduleCron("Card value tracking", cronSchedule_cardValue, async () => {
     try {
-      const { updateCardValues } = await import("./src/lib/nation-card-value-update-cron.js");
-      await updateCardValues();
+      await runLocked("card-value", 30 * 60_000, async () => {
+        const { updateCardValues } = await import("./src/lib/nation-card-value-update-cron.js");
+        await updateCardValues();
+      });
     } catch (error) {
       console.error("[Cron] Card value update failed:", error);
     }
@@ -185,8 +201,10 @@ async function main() {
 
   scheduleCron("Lore card generation", "0 2 * * *", async () => {
     try {
-      const { generateDailyLoreCards } = await import("./src/lib/lore-card-generation-cron.js");
-      await generateDailyLoreCards();
+      await runLocked("lore-card-generation", 60 * 60_000, async () => {
+        const { generateDailyLoreCards } = await import("./src/lib/lore-card-generation-cron.js");
+        await generateDailyLoreCards();
+      });
     } catch (error) {
       console.error("[Cron] Lore card generation failed:", error);
     }
@@ -197,8 +215,10 @@ async function main() {
     if (loreSyncRunning) return;
     loreSyncRunning = true;
     try {
-      const { fullSync } = await import("./src/lib/lorewards-sync.js");
-      await fullSync();
+      await runLocked("lorewards", 60 * 60_000, async () => {
+        const { fullSync } = await import("./src/lib/lorewards-sync.js");
+        await fullSync();
+      });
     } catch (error) {
       console.error("[Cron] Lorewards fullSync failed:", error);
     } finally {
@@ -214,8 +234,11 @@ async function main() {
     if (loreStateSyncRunning || loreSyncRunning) return;
     loreStateSyncRunning = true;
     try {
-      const { syncFromStateFile } = await import("./src/lib/lorewards-sync.js");
-      await syncFromStateFile();
+      // Same lock name as fullSync: the two must never overlap.
+      await runLocked("lorewards", 10 * 60_000, async () => {
+        const { syncFromStateFile } = await import("./src/lib/lorewards-sync.js");
+        await syncFromStateFile();
+      });
     } catch (error) {
       console.error("[Cron] Lorewards state-file sync failed:", error);
     } finally {
@@ -225,8 +248,10 @@ async function main() {
 
   scheduleCron("Trade expiry", "*/5 * * * *", async () => {
     try {
-      const { processExpiredTrades } = await import("./src/lib/trade-expiry-cron.js");
-      await processExpiredTrades();
+      await runLocked("trade-expiry", 5 * 60_000, async () => {
+        const { processExpiredTrades } = await import("./src/lib/trade-expiry-cron.js");
+        await processExpiredTrades();
+      });
     } catch (error) {
       console.error("[Cron] Trade expiry failed:", error);
     }
@@ -240,12 +265,12 @@ async function main() {
     if (sportsAdvanceRunning) return;
     sportsAdvanceRunning = true;
     try {
-      const { PrismaClient } = await import("@prisma/client");
-      const { advanceSportsSeasons } = await import("./src/lib/sports/season-cron.js");
-      const db = new PrismaClient();
-      const advanced = await advanceSportsSeasons(db);
-      if (advanced > 0) console.log(`[Cron] Sports: advanced ${advanced} seasons`);
-      await db.$disconnect();
+      await runLocked("sports-advance", 30 * 60_000, async () => {
+        const { advanceSportsSeasons } = await import("./src/lib/sports/season-cron.js");
+        const { db } = await import("./src/server/db.js");
+        const advanced = await advanceSportsSeasons(db);
+        if (advanced > 0) console.log(`[Cron] Sports: advanced ${advanced} seasons`);
+      });
     } catch (error) {
       console.error("[Cron] Sports season advance failed:", error.message);
     } finally {

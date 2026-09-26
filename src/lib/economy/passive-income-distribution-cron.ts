@@ -15,30 +15,46 @@
  * - Growth bonus: 9 * 1.1 = 9.9 IxCredits
  * - Total: ~10 IxCredits/day passive
  *
+ * Each payout is idempotent per user and UTC day (plan 328): re-running the job
+ * on the same day, or the on-read catch-up paying the same day, credits nothing.
+ *
  * Usage:
- *   import { distributePassiveIncome } from '~/lib/passive-income-distribution-cron';
+ *   import { distributePassiveIncome } from '~/lib/economy/passive-income-distribution-cron';
  *   await distributePassiveIncome(); // Run once per day
  */
 
 import { db } from "~/server/db";
+import { withJobLock } from "~/lib/system/job-lock";
 import { vaultService } from "~/lib/vault/vault-service";
+import {
+  PASSIVE_DIVIDEND_SOURCE,
+  passiveIncomeKey,
+  utcDayStart,
+} from "~/lib/vault/vault-passive-income";
+
+export interface PassiveIncomeSummary {
+  success: boolean;
+  processed: number;
+  distributed: number;
+  errors: number;
+  alreadyPaid: number;
+}
 
 /**
  * Distribute passive income to all users with countries
  * Processes in batches to avoid memory issues
  */
-export async function distributePassiveIncome(): Promise<{
-  success: boolean;
-  processed: number;
-  distributed: number;
-  errors: number;
-}> {
+export async function distributePassiveIncome(): Promise<PassiveIncomeSummary> {
   console.log("[Passive Income Cron] Starting daily distribution...");
-  const startTime = Date.now();
+  // Captured once so a run that crosses midnight keeps a single period key.
+  const runDate = new Date();
+  const periodDay = utcDayStart(runDate);
+  const startTime = runDate.getTime();
 
   let processedCount = 0;
   let distributedAmount = 0;
   let errorCount = 0;
+  let alreadyPaidCount = 0;
 
   try {
     // Get all users with countries
@@ -65,24 +81,26 @@ export async function distributePassiveIncome(): Promise<{
         const passiveIncome = await vaultService.calculatePassiveIncome(user.countryId, db);
 
         if (passiveIncome > 0) {
-          // Award passive income
-          const result = await vaultService.earnCredits(
-            user.clerkUserId,
-            passiveIncome,
-            "EARN_PASSIVE",
-            "DAILY_NATION_DIVIDEND",
-            db,
-            {
+          // Award passive income (at most once per user per UTC day)
+          const result = await vaultService.earnCreditsOnce(db, {
+            userId: user.id,
+            amount: passiveIncome,
+            type: "EARN_PASSIVE",
+            source: PASSIVE_DIVIDEND_SOURCE,
+            metadata: {
               countryId: user.countryId,
               countryName: user.country.name,
               gdpPerCapita: user.country.currentGdpPerCapita,
               economicTier: user.country.economicTier,
               population: user.country.currentPopulation,
               growth: user.country.adjustedGdpGrowth,
-            }
-          );
+            },
+            idempotencyKey: passiveIncomeKey(user.id, periodDay),
+          });
 
-          if (result.success) {
+          if (result.alreadyApplied) {
+            alreadyPaidCount++;
+          } else if (result.success) {
             distributedAmount += passiveIncome;
             console.log(
               `[Passive Income Cron] ✓ Distributed ${passiveIncome.toFixed(2)} IxC to user ${user.clerkUserId} (${user.country.name})`
@@ -103,17 +121,19 @@ export async function distributePassiveIncome(): Promise<{
     }
 
     const duration = Date.now() - startTime;
-    const summary = {
+    const summary: PassiveIncomeSummary = {
       success: true,
       processed: processedCount,
       distributed: Math.round(distributedAmount * 100) / 100,
       errors: errorCount,
+      alreadyPaid: alreadyPaidCount,
     };
 
     console.log(
       `[Passive Income Cron] ✓ Distribution complete in ${duration}ms\n` +
         `  Processed: ${summary.processed} users\n` +
         `  Distributed: ${summary.distributed} IxC\n` +
+        `  Already paid today: ${summary.alreadyPaid}\n` +
         `  Errors: ${summary.errors}`
     );
 
@@ -125,15 +145,26 @@ export async function distributePassiveIncome(): Promise<{
       processed: processedCount,
       distributed: distributedAmount,
       errors: errorCount + 1,
+      alreadyPaid: alreadyPaidCount,
     };
   }
 }
 
 /**
  * Manually trigger passive income distribution (for testing)
- * Should only be called by admin endpoints
+ * Should only be called by admin endpoints.
+ *
+ * Runs under the same advisory lock as the scheduled job so a manual trigger
+ * during the cron (or vice versa) skips instead of double-applying. The lock is
+ * deliberately NOT inside distributePassiveIncome: the cron runner wraps that
+ * itself, and nesting the same lock name would make every scheduled run skip.
  */
-export async function manualDistribution() {
+export async function manualDistribution(): Promise<PassiveIncomeSummary> {
   console.log("[Passive Income Cron] Manual distribution triggered");
-  return await distributePassiveIncome();
+  const outcome = await withJobLock(db, "passive-income", distributePassiveIncome, {
+    timeoutMs: 30 * 60_000,
+  });
+  if (outcome.ran) return outcome.result;
+  console.log("[Passive Income Cron] Skipped: distribution already running");
+  return { success: false, processed: 0, distributed: 0, errors: 0, alreadyPaid: 0 };
 }
