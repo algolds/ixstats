@@ -64,7 +64,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
             setOffset(0);
           }}
           placeholder="Search title, nation, or keyword..."
-          className="border-border bg-card/80 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary h-8.5 rounded-xl pl-8 text-xs transition-all focus:ring-1"
+          className="border-border bg-card/80 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary h-8.5 rounded-xl pl-8 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-1"
         />
       </div>
 
@@ -75,7 +75,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           setCardTypeFilter(e.target.value as CardTypeFilter);
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:outline-none"
+        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
       >
         <option value="all" className="bg-background text-foreground">
           All Card Sources
@@ -102,7 +102,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
             setCategoryFilter(e.target.value as any);
             setOffset(0);
           }}
-          className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:outline-none"
+          className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
         >
           <option value="all" className="bg-background text-foreground">
             All Lore Categories
@@ -123,7 +123,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
             setCteFilter(e.target.value as any);
             setOffset(0);
           }}
-          className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:outline-none"
+          className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
         >
           <option value="all" className="bg-background text-foreground">
             All Nation States
@@ -144,7 +144,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           setTakedownFilter(e.target.value as any);
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:outline-none"
+        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
       >
         <option value="all" className="bg-background text-foreground">
           All Visibility
@@ -165,7 +165,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           setSeason(val === "all" ? "all" : parseInt(val, 10));
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:outline-none"
+        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
       >
         <option value="all" className="bg-background text-foreground">
           All Seasons
@@ -188,7 +188,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           setRarity(e.target.value as any);
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:outline-none"
+        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
       >
         <option value="all" className="bg-background text-foreground">
           All Rarities
@@ -220,7 +220,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           setSortBy(e.target.value as SortByOption);
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:outline-none"
+        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
       >
         <option value="recent" className="bg-background text-foreground">
           Sort: Most Recent

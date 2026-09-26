@@ -29,7 +29,7 @@ export function MiniPlayer() {
           {/* Top edge progress bar */}
           <div className="absolute top-0 right-0 left-0 h-[2px] bg-black/5 dark:bg-white/5">
             <div
-              className="bg-primary h-full transition-all duration-100 ease-out"
+              className="bg-primary h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>

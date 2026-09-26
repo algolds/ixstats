@@ -139,7 +139,7 @@ export default function CommonsBrowserPanel({
       <div className="flex border-b border-white/5 bg-zinc-900/30">
         <button
           onClick={() => setActiveTab("category")}
-          className={`flex-1 border-b-2 py-2 text-center text-xs font-semibold transition-all ${
+          className={`flex-1 border-b-2 py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
             activeTab === "category"
               ? "border-amber-500 text-amber-400"
               : "border-transparent text-zinc-500 hover:text-zinc-300"
@@ -149,7 +149,7 @@ export default function CommonsBrowserPanel({
         </button>
         <button
           onClick={() => setActiveTab("search")}
-          className={`flex-1 border-b-2 py-2 text-center text-xs font-semibold transition-all ${
+          className={`flex-1 border-b-2 py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
             activeTab === "search"
               ? "border-amber-500 text-amber-400"
               : "border-transparent text-zinc-500 hover:text-zinc-300"
@@ -220,7 +220,7 @@ export default function CommonsBrowserPanel({
                     <img
                       src={img.thumbUrl}
                       alt={img.title}
-                      className="max-h-full max-w-full object-contain brightness-95 transition-all group-hover:brightness-100"
+                      className="max-h-full max-w-full object-contain brightness-95 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:brightness-100"
                       loading="lazy"
                     />
                     <span className="absolute right-1 bottom-1 rounded border border-emerald-400/20 bg-black/60 px-1 py-0.5 font-mono text-xs text-emerald-400">
@@ -281,7 +281,7 @@ export default function CommonsBrowserPanel({
                   ) : (
                     <button
                       onClick={() => handleStartImport(img)}
-                      className="w-full rounded border border-white/5 bg-zinc-800 py-1 text-center text-xs font-semibold text-zinc-300 transition-all hover:border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-400"
+                      className="w-full rounded border border-white/5 bg-zinc-800 py-1 text-center text-xs font-semibold text-zinc-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-400"
                     >
                       📥 Import to Library
                     </button>

@@ -287,7 +287,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
         <motion.button
           className={cn(
             "w-full rounded-xl py-4 text-lg font-bold tracking-tight",
-            "transition-all duration-300",
+            "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
             allSlotsFilled && hasEnoughCredits && !crafting
               ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-lg shadow-indigo-500/50 hover:from-indigo-600 hover:to-blue-600"
               : "cursor-not-allowed bg-white/10 text-white/40"

@@ -283,7 +283,7 @@ export function CardImageUploadModal({
                   <motion.div
                     key={idx}
                     className={cn(
-                      "relative aspect-video cursor-pointer overflow-hidden rounded-lg border-2 transition-all",
+                      "relative aspect-video cursor-pointer overflow-hidden rounded-lg border-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       selectedImage === imageUrl
                         ? "border-primary ring-primary/50 ring-2"
                         : "hover:border-primary/50 border-transparent"

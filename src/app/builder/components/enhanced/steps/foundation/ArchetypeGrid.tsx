@@ -166,7 +166,7 @@ export function ArchetypeGrid({
                 setLocalSelectedArchetype(null);
               }}
               className={cn(
-                "cursor-pointer rounded-md px-4 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-[0.98]",
+                "cursor-pointer rounded-md px-4 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
                 activeEra === "modern"
                   ? "bg-amber-500 font-bold text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -182,7 +182,7 @@ export function ArchetypeGrid({
                 setLocalSelectedArchetype(null);
               }}
               className={cn(
-                "cursor-pointer rounded-md px-4 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-[0.98]",
+                "cursor-pointer rounded-md px-4 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
                 activeEra === "historical"
                   ? "bg-amber-500 font-bold text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -318,7 +318,7 @@ export function ArchetypeGrid({
                 type="button"
                 onClick={() => setComplexityFilter(comp)}
                 className={cn(
-                  "cursor-pointer rounded-md px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
+                  "cursor-pointer rounded-md px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                   complexityFilter === comp
                     ? "bg-amber-500 font-bold text-foreground shadow-xs"
                     : "border border-border/40 bg-background/40 text-muted-foreground hover:text-foreground"
@@ -383,7 +383,7 @@ export function ArchetypeGrid({
                 <CutoutCard
                   className={cn(
                     cutoutCardSurfaceClassName,
-                    "flex h-full flex-col justify-between overflow-hidden border transition-all duration-300",
+                    "flex h-full flex-col justify-between overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                     isSelected
                       ? "border-amber-500 bg-amber-500/5 shadow-[0_0_25px_rgba(245,158,11,0.2)] ring-1 ring-amber-500/50 dark:bg-amber-500/10"
                       : "border-border hover:border-border/80"
@@ -562,7 +562,7 @@ export function ArchetypeGrid({
                         }}
                         size="sm"
                         className={cn(
-                          "h-8 flex-1 cursor-pointer text-xs font-semibold transition-all active:scale-[0.98]",
+                          "h-8 flex-1 cursor-pointer text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                           isSelected
                             ? "border border-amber-500/40 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
                             : "bg-amber-500 font-bold text-foreground shadow-xs shadow-amber-500/20 hover:bg-amber-400"

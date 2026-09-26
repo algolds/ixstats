@@ -269,7 +269,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
                 </button>
                 <button
                   onClick={handleSaveEdit}
-                  className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-xs transition-all hover:bg-emerald-700 active:scale-95"
+                  className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-700 active:scale-95"
                 >
                   Save
                 </button>
@@ -279,7 +279,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
             /* Apple-Grade iMessage Bubble */
             <div
               className={cn(
-                "relative overflow-hidden px-3.5 py-2 text-[13.5px] leading-[1.42] tracking-[-0.01em] break-words transition-all",
+                "relative overflow-hidden px-3.5 py-2 text-[13.5px] leading-[1.42] tracking-[-0.01em] break-words transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 isOwn
                   ? "rounded-[18px] rounded-br-[4px] bg-emerald-600 text-white shadow-xs selection:bg-white/20 selection:text-white dark:bg-emerald-500"
                   : "border-border/50 bg-card/85 text-foreground rounded-[18px] rounded-bl-[4px] border shadow-2xs backdrop-blur-md dark:border-white/10 dark:bg-zinc-800/90 dark:text-zinc-100",
@@ -337,7 +337,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
               {Object.entries(message.reactions).map(([emoji, count]) => (
                 <button
                   key={emoji}
-                  className="border-border/60 bg-background/90 py-0.2 text-foreground flex items-center gap-1 rounded-full border px-1.5 text-xs font-semibold shadow-xs backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+                  className="border-border/60 bg-background/90 py-0.2 text-foreground flex items-center gap-1 rounded-full border px-1.5 text-xs font-semibold shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 active:scale-95"
                   onClick={() => actions.onRemoveReaction(message.id, emoji)}
                   title="Remove reaction"
                 >
@@ -352,7 +352,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
           {!isEditing && (
             <div
               className={cn(
-                "border-border/50 bg-background/90 animate-in fade-in zoom-in-95 absolute -top-3.5 z-20 hidden items-center gap-0.5 rounded-full border px-1 py-0.5 shadow-md backdrop-blur-xl transition-all duration-150 group-hover/bubble:flex",
+                "border-border/50 bg-background/90 animate-in fade-in zoom-in-95 absolute -top-3.5 z-20 hidden items-center gap-0.5 rounded-full border px-1 py-0.5 shadow-md backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 group-hover/bubble:flex",
                 isOwn ? "right-1" : "left-1"
               )}
             >

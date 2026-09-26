@@ -83,7 +83,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
               <div className="flex items-center gap-2">
                 <Link
                   href={withBasePath("/wiki/categories")}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 transition-all hover:bg-emerald-500/15 dark:text-emerald-400"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/15 dark:text-emerald-400"
                 >
                   <span>Nations</span>
                 </Link>
@@ -103,7 +103,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
           <div className="flex shrink-0 flex-wrap items-center gap-2.5">
             <Link
               href={withBasePath(`/wiki/${slug}`)}
-              className="border-border/60 text-foreground inline-flex items-center gap-2 rounded-xl border bg-white/60 px-3.5 py-2 text-xs font-semibold shadow-sm backdrop-blur-sm transition-all hover:border-blue-500/40 hover:bg-white/90 active:scale-[0.97] dark:bg-zinc-800/60 dark:hover:bg-zinc-800/90"
+              className="border-border/60 text-foreground inline-flex items-center gap-2 rounded-xl border bg-white/60 px-3.5 py-2 text-xs font-semibold shadow-sm backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-blue-500/40 hover:bg-white/90 active:scale-[0.97] dark:bg-zinc-800/60 dark:hover:bg-zinc-800/90"
             >
               <ExternalLink className="h-3.5 w-3.5 text-blue-500" />
               <span>Wiki Article</span>
@@ -111,7 +111,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
 
             <Link
               href={withBasePath(`/countries/${country.slug ?? country.id}`)}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-500 active:scale-[0.97]"
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500 active:scale-[0.97]"
             >
               <TrendingUp className="h-3.5 w-3.5" />
               <span>National Dashboard</span>

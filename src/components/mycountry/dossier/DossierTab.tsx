@@ -408,7 +408,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                     {nativeDocs.map((doc) => (
                       <div
                         key={doc.id}
-                        className="rounded-2xl border border-white/10 bg-black/20 p-5 backdrop-blur-md transition-all hover:border-white/20 hover:bg-black/30"
+                        className="rounded-2xl border border-white/10 bg-black/20 p-5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/20 hover:bg-black/30"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">

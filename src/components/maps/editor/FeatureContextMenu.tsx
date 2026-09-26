@@ -161,7 +161,7 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
         item.onClick();
         onClose();
       }}
-      className={`active:scale-[0.98] flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs font-medium transition-all duration-100 ${
+      className={`active:scale-[0.98] flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ${
         item.danger
           ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
           : "text-foreground/90 hover:bg-accent hover:text-accent-foreground"

@@ -133,7 +133,7 @@ export function WorldTimeline() {
 
               {/* Event card */}
               <div
-                className={`rounded-xl border p-4 transition-all ${
+                className={`rounded-xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   isActive
                     ? `${colors.border} ${colors.bg}`
                     : "border-border/30 bg-muted/10 opacity-60"

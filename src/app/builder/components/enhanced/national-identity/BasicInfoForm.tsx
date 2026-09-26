@@ -397,7 +397,7 @@ export const BasicInfoForm = React.memo(
                     onClick={toggleCustomOfficialName}
                     data-cuelume-press
                     className={cn(
-                      "flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-all active:scale-[0.98]",
+                      "flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                       isCustomOfficialName
                         ? "border border-amber-500/30 bg-amber-500/10 text-amber-400"
                         : "text-muted-foreground/80 hover:bg-white/5 hover:text-foreground"
@@ -504,7 +504,7 @@ export const BasicInfoForm = React.memo(
                               soundEffects.press();
                               setIsMapPickerOpen(true);
                             }}
-                            className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 focus:outline-none dark:text-emerald-400 dark:hover:text-emerald-300 active:scale-95 transition-all"
+                            className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 focus:outline-none dark:text-emerald-400 dark:hover:text-emerald-300 active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                             title="Select Capital location on map"
                             data-cuelume-press
                           >
@@ -516,7 +516,7 @@ export const BasicInfoForm = React.memo(
                           type="button"
                           onClick={toggleLargestLock}
                           className={cn(
-                            "flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs font-semibold transition-all focus:outline-none active:scale-95",
+                            "flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none active:scale-95",
                             isLargestLocked
                               ? "text-amber-500 bg-amber-500/10 dark:text-amber-400"
                               : "text-muted-foreground hover:text-foreground hover:bg-muted/40"

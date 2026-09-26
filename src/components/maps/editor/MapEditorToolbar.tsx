@@ -214,7 +214,7 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
                     onMouseLeave={handleMouseUpOrLeave}
                     onContextMenu={(e) => handleContextMenu(e, item.id)}
                     disabled={isToolDisabled}
-                    className={`group relative flex items-center justify-center rounded-md transition-all duration-100 ease-out select-none active:scale-[0.98] ${
+                    className={`group relative flex items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out select-none active:scale-[0.98] ${
                       horizontal ? "h-8 w-8" : "h-9 w-9"
                     } ${
                       isActive
@@ -263,7 +263,7 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
                             onModeChange(subTool.mode);
                             setActivePopoverGroupId(null);
                           }}
-                          className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs transition-all duration-100 active:scale-[0.98] ${
+                          className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] ${
                             isSubActive
                               ? "bg-primary text-primary-foreground font-semibold shadow-sm"
                               : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -310,7 +310,7 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
               <button
                 onClick={() => handleSingleClick(tool.mode)}
                 disabled={isToolDisabled}
-                className={`group relative flex items-center justify-center rounded-md transition-all duration-100 ease-out active:scale-[0.98] ${
+                className={`group relative flex items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98] ${
                   horizontal ? "h-8 w-8" : "h-9 w-9"
                 } ${
                   isActive

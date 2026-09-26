@@ -101,7 +101,7 @@ export function FacetTablePagination({
             size="sm"
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="border-border/40 bg-card/60 hover:bg-muted text-foreground h-8 w-8 rounded-lg p-0 transition-all active:scale-95"
+            className="border-border/40 bg-card/60 hover:bg-muted text-foreground h-8 w-8 rounded-lg p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
             aria-label="Previous Page"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -124,7 +124,7 @@ export function FacetTablePagination({
                     size="sm"
                     onClick={() => onPageChange(p)}
                     className={cn(
-                      "h-8 min-w-8 rounded-lg px-2 text-xs font-semibold transition-all active:scale-95",
+                      "h-8 min-w-8 rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                       isCurrent
                         ? "bg-primary text-primary-foreground shadow-xs"
                         : "border-border/40 bg-card/60 hover:bg-muted text-foreground"
@@ -143,7 +143,7 @@ export function FacetTablePagination({
             size="sm"
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="border-border/40 bg-card/60 hover:bg-muted text-foreground h-8 w-8 rounded-lg p-0 transition-all active:scale-95"
+            className="border-border/40 bg-card/60 hover:bg-muted text-foreground h-8 w-8 rounded-lg p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
             aria-label="Next Page"
           >
             <ChevronRight className="h-4 w-4" />

@@ -219,7 +219,7 @@ export function WikiMarginDrawer({
                 <button
                   type="button"
                   onClick={() => setHelpOpen(true)}
-                  className="hover:bg-margin-accent/15 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-xs transition-all duration-150 hover:border-yellow-400/50 hover:text-[var(--wikios-text)] active:scale-95"
+                  className="hover:bg-margin-accent/15 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-yellow-400/50 hover:text-[var(--wikios-text)] active:scale-95"
                   title="Margin Guide & Shortcuts"
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
@@ -231,7 +231,7 @@ export function WikiMarginDrawer({
                     setIsExpandedFull(next);
                     onExpandedChange?.(next);
                   }}
-                  className="hidden h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-xs transition-all duration-150 hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95 sm:flex"
+                  className="hidden h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95 sm:flex"
                   title={isExpandedFull ? "Standard (320px)" : "Wider (440px)"}
                 >
                   {isExpandedFull ? (
@@ -246,7 +246,7 @@ export function WikiMarginDrawer({
                     soundEffects.release();
                     onClose();
                   }}
-                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-xs transition-all duration-150 hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400 active:scale-95"
+                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400 active:scale-95"
                   title="Close (Esc)"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -269,7 +269,7 @@ export function WikiMarginDrawer({
                         setActiveTab(tab.id);
                       }}
                       className={cn(
-                        "relative flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-all select-none",
+                        "relative flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
                         isActive
                           ? "font-bold text-[var(--wikios-text)] shadow-xs"
                           : "text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
@@ -354,7 +354,7 @@ export function WikiMarginDrawer({
                   onClick={() => {
                     setActiveModal("history");
                   }}
-                  className="hover:bg-margin-accent/15 flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--wikios-border)] bg-white/5 px-2 py-0.5 shadow-xs transition-all duration-150 hover:border-yellow-400/50 hover:text-[var(--wikios-text)] active:scale-95"
+                  className="hover:bg-margin-accent/15 flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--wikios-border)] bg-white/5 px-2 py-0.5 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-yellow-400/50 hover:text-[var(--wikios-text)] active:scale-95"
                   title="Revision History"
                 >
                   <Clock className="dark:text-margin-accent h-3 w-3 text-yellow-600" />
@@ -365,7 +365,7 @@ export function WikiMarginDrawer({
                   onClick={() => {
                     setActiveModal("backlinks");
                   }}
-                  className="flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--wikios-border)] bg-white/5 px-2 py-0.5 shadow-xs transition-all duration-150 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-300 active:scale-95"
+                  className="flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--wikios-border)] bg-white/5 px-2 py-0.5 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-300 active:scale-95"
                   title="What Links Here"
                 >
                   <Link2 className="h-3 w-3 text-cyan-400" />

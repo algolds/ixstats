@@ -35,7 +35,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
       {/* Flag and Coat of Arms Badges */}
       <div className="flex items-center justify-center gap-6">
         {/* Flag */}
-        <div className="relative flex h-16 w-28 items-center justify-center overflow-hidden rounded-xl border border-border/50 bg-card/60 p-1 shadow-sm backdrop-blur-md transition-all duration-300 hover:border-primary/40 hover:shadow-md">
+        <div className="relative flex h-16 w-28 items-center justify-center overflow-hidden rounded-xl border border-border/50 bg-card/60 p-1 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:border-primary/40 hover:shadow-md">
           {economicInputs?.flagUrl || nationalIdentity.countryName ? (
             <UnifiedCountryFlag
               countryName={nationalIdentity.countryName}
@@ -49,7 +49,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
 
         {/* Coat of Arms */}
         {economicInputs?.coatOfArmsUrl && (
-          <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-border/50 bg-card/60 p-1.5 shadow-sm backdrop-blur-md transition-all duration-300 hover:border-primary/40 hover:shadow-md">
+          <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-border/50 bg-card/60 p-1.5 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:border-primary/40 hover:shadow-md">
             <img
               src={economicInputs.coatOfArmsUrl}
               alt="Coat of Arms"

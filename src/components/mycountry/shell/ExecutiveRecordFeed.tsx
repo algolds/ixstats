@@ -238,7 +238,7 @@ export function ExecutiveRecordFeed({
             type="button"
             onClick={() => setFilterCat(id)}
             className={cn(
-              "shrink-0 cursor-pointer rounded-lg px-2.5 py-1 text-xs font-bold transition-all",
+              "shrink-0 cursor-pointer rounded-lg px-2.5 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               filterCat === id
                 ? "border border-amber-500/40 bg-amber-500/20 text-amber-400 shadow-xs"
                 : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
@@ -265,7 +265,7 @@ export function ExecutiveRecordFeed({
               <div
                 key={item.id}
                 className={cn(
-                  "group cursor-pointer rounded-xl border border-transparent p-2.5 transition-all duration-200 select-none",
+                  "group cursor-pointer rounded-xl border border-transparent p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
                   isExpanded ? "border-border/60 bg-muted/20 my-1.5 shadow-sm" : "hover:bg-muted/10"
                 )}
                 onClick={() => {
@@ -388,7 +388,7 @@ export function ExecutiveRecordFeed({
                         <button
                           type="button"
                           onClick={() => onOpenDrill(drill)}
-                          className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold shadow-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+                          className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 active:scale-95"
                         >
                           Inspect {meta.label} Sheet <ArrowUpRight className="h-3.5 w-3.5" />
                         </button>
@@ -406,7 +406,7 @@ export function ExecutiveRecordFeed({
           <button
             type="button"
             onClick={() => setVisibleCount((prev) => Math.min(items.length, prev + 10))}
-            className="text-muted-foreground hover:text-foreground w-full cursor-pointer rounded-lg border border-white/10 bg-white/[0.02] py-2 text-center text-xs font-semibold transition-all hover:bg-white/5 active:scale-[0.99]"
+            className="text-muted-foreground hover:text-foreground w-full cursor-pointer rounded-lg border border-white/10 bg-white/[0.02] py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5 active:scale-[0.99]"
           >
             Load more events ({items.length - visibleCount})
           </button>

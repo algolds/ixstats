@@ -75,11 +75,11 @@ export function WikiSectionCard({
       <FacetCard
         depth={1}
         interactive="none"
-        className="bg-card/30 overflow-hidden rounded-2xl border border-white/10 shadow-sm backdrop-blur-xl transition-all hover:border-white/20"
+        className="bg-card/30 overflow-hidden rounded-2xl border border-white/10 shadow-sm backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/20"
       >
         {/* Section Header Accordion Trigger */}
         <CollapsibleTrigger asChild>
-          <div className="flex cursor-pointer items-center justify-between border-b border-white/5 p-4 transition-all hover:bg-white/[0.03] active:scale-[0.995] sm:p-5">
+          <div className="flex cursor-pointer items-center justify-between border-b border-white/5 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/[0.03] active:scale-[0.995] sm:p-5">
             <div className="flex min-w-0 items-center gap-3.5">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-500/25 bg-blue-500/15 text-blue-400 shadow-sm">
                 <SectionIcon className="h-5 w-5" />
@@ -152,7 +152,7 @@ export function WikiSectionCard({
                       id: section.id,
                     })
                   }
-                  className="gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-xs font-bold text-blue-400 transition-all hover:bg-blue-500/20 hover:text-blue-300 active:scale-[0.98]"
+                  className="gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-xs font-bold text-blue-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500/20 hover:text-blue-300 active:scale-[0.98]"
                 >
                   Read Full Section <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
@@ -190,7 +190,7 @@ export function WikiSectionCard({
                             window.open(`${imgBaseUrl}File:${fileName}`, "_blank");
                           }
                         }}
-                        className="group relative aspect-video cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-sm transition-all hover:border-white/30 hover:shadow-lg"
+                        className="group relative aspect-video cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/30 hover:shadow-lg"
                       >
                         <img
                           src={resolvedSrc}
@@ -221,7 +221,7 @@ export function WikiSectionCard({
                     variant="outline"
                     size="sm"
                     asChild
-                    className="text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold transition-all hover:bg-white/[0.06] active:scale-[0.98]"
+                    className="text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/[0.06] active:scale-[0.98]"
                   >
                     <Link href={titleToWikiOSPath(section.sourcePage || section.title)}>
                       <ExternalLink className="h-3.5 w-3.5" /> View WikiOS Source
@@ -232,7 +232,7 @@ export function WikiSectionCard({
                     variant="outline"
                     size="sm"
                     asChild
-                    className="text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold transition-all hover:bg-white/[0.06] active:scale-[0.98]"
+                    className="text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/[0.06] active:scale-[0.98]"
                   >
                     <a
                       href={`${wikiSource === "iiwiki" ? "https://iiwiki.com/wiki/" : "https://althistory.fandom.com/wiki/"}${encodeURIComponent(section.sourcePage || section.title)}`}

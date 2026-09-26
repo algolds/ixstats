@@ -68,7 +68,7 @@ export function VaultMilestonesCard({
     <FacetCard
       depth={2}
       className={cn(
-        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-amber-500/30 hover:shadow-amber-500/10"
+        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:border-amber-500/30 hover:shadow-amber-500/10"
       )}
     >
       <TextureOverlay texture="dots" opacity={0.03} />
@@ -95,7 +95,7 @@ export function VaultMilestonesCard({
           return (
             <div
               key={idx}
-              className="border-border/40 bg-muted/30 hover:bg-muted/60 space-y-1.5 rounded-2xl border p-3 backdrop-blur-md transition-all dark:bg-white/5 dark:hover:bg-white/10"
+              className="border-border/40 bg-muted/30 hover:bg-muted/60 space-y-1.5 rounded-2xl border p-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:bg-white/5 dark:hover:bg-white/10"
             >
               <div className="flex items-center justify-between text-xs">
                 <span className="text-foreground font-bold tracking-tight">{m.title}</span>
@@ -106,7 +106,7 @@ export function VaultMilestonesCard({
               <div className="border-border/50 bg-muted/40 h-2 w-full overflow-hidden rounded-full border p-0.5 backdrop-blur-md">
                 <div
                   className={cn(
-                    "h-full rounded-full transition-all duration-500",
+                    "h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500",
                     isComplete ? "bg-amber-500" : "bg-indigo-500"
                   )}
                   style={{ width: `${progress}%` }}

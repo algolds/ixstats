@@ -168,7 +168,7 @@ export function GlassCanvasComposer({
           <Button
             size="sm"
             onClick={onCreateAccount}
-            className="bg-poll hover:bg-poll/90 h-8 shrink-0 cursor-pointer border-0 text-xs text-white shadow-sm transition-all active:scale-95"
+            className="bg-poll hover:bg-poll/90 h-8 shrink-0 cursor-pointer border-0 text-xs text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
           >
             Create Account
           </Button>
@@ -206,7 +206,7 @@ export function GlassCanvasComposer({
       layout
       ref={composerRef}
       className={cn(
-        "dark:border-border dark:bg-card/80 relative flex flex-col gap-0 rounded-2xl border border-black/10 bg-white/70 p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+        "dark:border-border dark:bg-card/80 relative flex flex-col gap-0 rounded-2xl border border-black/10 bg-white/70 p-3.5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
       )}
       transition={{
         type: "spring",
@@ -347,7 +347,7 @@ export function GlassCanvasComposer({
                   variant="outline"
                   size="sm"
                   onClick={() => setShowPollModal(true)}
-                  className="border-poll/30 text-poll hover:bg-poll/10 h-7 cursor-pointer px-2.5 text-xs font-semibold transition-all active:scale-95"
+                  className="border-poll/30 text-poll hover:bg-poll/10 h-7 cursor-pointer px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                 >
                   Edit Poll
                 </Button>

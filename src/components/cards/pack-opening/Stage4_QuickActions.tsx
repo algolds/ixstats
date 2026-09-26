@@ -255,7 +255,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
           stiffness: 300,
           damping: 25,
         }}
-        className={`relative rounded-xl transition-all ${
+        className={`relative rounded-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
           isSelected ? "ring-2 ring-blue-400" : ""
         } ${action ? "opacity-50" : ""}`}
       >

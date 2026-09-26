@@ -65,7 +65,7 @@ export function AtomicComponentCard({
         </div>
         <div className="bg-card/60 h-1.5 w-full overflow-hidden rounded-full">
           <div
-            className={`h-full transition-all ${
+            className={`h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
               component.effectiveness >= 75
                 ? "bg-emerald-400"
                 : component.effectiveness >= 50

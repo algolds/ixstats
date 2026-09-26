@@ -107,7 +107,7 @@ export function CountryConceptSwitcher({
                       setIsExpanded(false);
                     }}
                     className={cn(
-                      "flex w-full items-center justify-between rounded-xl p-2.5 text-left transition-all duration-150 active:scale-[0.98]",
+                      "flex w-full items-center justify-between rounded-xl p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                       isSelected
                         ? "border border-white/15 bg-white/10 text-foreground shadow-sm"
                         : "text-muted-foreground hover:bg-white/5 hover:text-foreground"

@@ -534,7 +534,7 @@ export function MapContainer({
 
       {/* Maps Private Beta Alert Banner for Non-Staff */}
       {!isStaff && showGatekeepingWarning && (
-        <div className="absolute bottom-20 left-4 z-50 max-w-sm rounded-xl border border-amber-500/20 bg-slate-950/80 p-4 shadow-xl backdrop-blur-md transition-all duration-300">
+        <div className="absolute bottom-20 left-4 z-50 max-w-sm rounded-xl border border-amber-500/20 bg-slate-950/80 p-4 shadow-xl backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
           <div className="flex items-start justify-between gap-3">
             <div className="flex gap-2.5">
               <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-xs font-bold text-amber-500">

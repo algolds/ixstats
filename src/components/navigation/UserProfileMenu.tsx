@@ -38,7 +38,7 @@ export function UserProfileMenu({
   if (!user) {
     return (
       <SignInButton mode="modal">
-        <button className="bg-accent/10 hover:bg-accent/20 text-foreground flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-200">
+        <button className="bg-accent/10 hover:bg-accent/20 text-foreground flex items-center gap-2 rounded-lg px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span className="hidden text-sm md:block">Sign In with IxnayID</span>

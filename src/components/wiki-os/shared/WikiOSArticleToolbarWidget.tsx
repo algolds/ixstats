@@ -63,7 +63,7 @@ export function WikiOSArticleToolbarWidget({
         {isSignedIn && (
           <Link
             href={withBasePath(`/wiki/${slug}/edit`)}
-            className="rail-glow-blue rail-animate-bounce flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/5 text-blue-400 shadow-md transition-all hover:scale-105 hover:bg-blue-500/15 active:scale-95"
+            className="rail-glow-blue rail-animate-bounce flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/5 text-blue-400 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 hover:bg-blue-500/15 active:scale-95"
             title="Edit Article"
           >
             <FileEdit className="h-4.5 w-4.5" />
@@ -75,7 +75,7 @@ export function WikiOSArticleToolbarWidget({
           type="button"
           onClick={() => toggleMargin()}
           className={cn(
-            "rail-glow-highlighter rail-animate-wiggle flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border shadow-md transition-all hover:scale-105 active:scale-95",
+            "rail-glow-highlighter rail-animate-wiggle flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 active:scale-95",
             isMarginOpen
               ? "border-margin-accent bg-margin-accent/25 text-margin-accent ring-margin-accent/40 shadow-margin-accent/20 ring-2"
               : "border-margin-accent/20 bg-margin-accent/10 text-margin-accent hover:bg-margin-accent/20"
@@ -89,7 +89,7 @@ export function WikiOSArticleToolbarWidget({
         <button
           type="button"
           onClick={cycleMediaThemeMode}
-          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 shadow-xs transition-all hover:scale-105 hover:bg-cyan-500/15 active:scale-95"
+          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 hover:bg-cyan-500/15 active:scale-95"
           title={`Media Theme: ${mediaThemeMode} (Click to cycle Auto / Plinth / Raw)`}
         >
           {getModeIcon(mediaThemeMode)}
@@ -125,7 +125,7 @@ export function WikiOSArticleToolbarWidget({
         {isSignedIn && (
           <Link
             href={withBasePath(`/wiki/${slug}/edit`)}
-            className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-semibold transition-all hover:bg-white/5"
+            className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5"
           >
             <FileEdit className="h-3.5 w-3.5 shrink-0 text-blue-400" />
             <span>Edit Article</span>
@@ -137,7 +137,7 @@ export function WikiOSArticleToolbarWidget({
           type="button"
           onClick={() => toggleMargin()}
           className={cn(
-            "flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-left text-xs font-semibold transition-all",
+            "flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
             isMarginOpen
               ? "bg-margin-accent/20 text-margin-accent font-bold"
               : "text-muted-foreground hover:text-foreground hover:bg-white/5"
@@ -155,7 +155,7 @@ export function WikiOSArticleToolbarWidget({
         {/* History */}
         <button
           onClick={() => setActiveModal("history")}
-          className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold transition-all hover:bg-white/5"
+          className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5"
           type="button"
         >
           <Clock className="h-3.5 w-3.5 shrink-0 text-amber-400" />
@@ -165,7 +165,7 @@ export function WikiOSArticleToolbarWidget({
         {/* Backlinks */}
         <button
           onClick={() => setActiveModal("backlinks")}
-          className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold transition-all hover:bg-white/5"
+          className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5"
           type="button"
         >
           <Link2 className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
@@ -188,7 +188,7 @@ export function WikiOSArticleToolbarWidget({
                   key={opt.value}
                   type="button"
                   onClick={() => setMediaThemeMode(opt.value)}
-                  className={`flex cursor-pointer flex-col items-center justify-center rounded-md px-1 py-1 text-[9.5px] font-semibold transition-all ${
+                  className={`flex cursor-pointer flex-col items-center justify-center rounded-md px-1 py-1 text-[9.5px] font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     isSelected
                       ? "border border-blue-500/30 bg-blue-500/20 text-blue-300 shadow-sm"
                       : "border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"

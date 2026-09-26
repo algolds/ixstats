@@ -267,7 +267,7 @@ export function LaborTab({
             <div className="flex">
               <button
                 onClick={() => toggleSection("workforce")}
-                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
+                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
                   expandedSection === "workforce"
                     ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
                     : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
@@ -400,7 +400,7 @@ export function LaborTab({
             <div className="flex">
               <button
                 onClick={() => toggleSection("compensation")}
-                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
+                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
                   expandedSection === "compensation"
                     ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
                     : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
@@ -530,7 +530,7 @@ export function LaborTab({
             <div className="flex">
               <button
                 onClick={() => toggleSection("human-capital")}
-                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
+                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
                   expandedSection === "human-capital"
                     ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
                     : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"

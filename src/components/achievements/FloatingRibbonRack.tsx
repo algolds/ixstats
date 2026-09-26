@@ -31,7 +31,7 @@ export function FloatingRibbonRack({
     <TooltipProvider delayDuration={100}>
       <div
         className={cn(
-          "inline-flex cursor-pointer items-center gap-1.5 drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] transition-all duration-200 select-none",
+          "inline-flex cursor-pointer items-center gap-1.5 drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
           className
         )}
         style={style}
@@ -53,7 +53,7 @@ export function FloatingRibbonRack({
                   {/* Frameless Vertical Ribbon Fabric Bar */}
                   <div
                     className={cn(
-                      "border-border/60 relative flex h-5 w-4 items-center justify-center overflow-hidden rounded-xs border shadow-md transition-all duration-150 group-hover/ribbon:border-amber-400 group-hover/ribbon:shadow-[0_0_12px_rgba(251,191,36,0.4)]",
+                      "border-border/60 relative flex h-5 w-4 items-center justify-center overflow-hidden rounded-xs border shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 group-hover/ribbon:border-amber-400 group-hover/ribbon:shadow-[0_0_12px_rgba(251,191,36,0.4)]",
                       isUnlocked ? `bg-gradient-to-b ${ribbon.stripeGradient}` : "bg-muted/80"
                     )}
                   >
@@ -81,7 +81,7 @@ export function FloatingRibbonRack({
                 side="bottom"
                 align="center"
                 sideOffset={8}
-                className="bg-popover/95 text-popover-foreground z-[100] max-w-xs rounded-xl border border-amber-500/30 p-3 text-xs shadow-2xl backdrop-blur-2xl transition-all duration-200 dark:border-amber-400/35"
+                className="bg-popover/95 text-popover-foreground z-[100] max-w-xs rounded-xl border border-amber-500/30 p-3 text-xs shadow-2xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 dark:border-amber-400/35"
               >
                 <div className="border-border/60 mb-1.5 flex items-center gap-2 border-b pb-1.5">
                   <Award className="h-3.5 w-3.5 shrink-0 text-amber-500 dark:text-amber-400" />

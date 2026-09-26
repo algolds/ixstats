@@ -132,7 +132,7 @@ export function PackHolographicCard({
             onClick={(e) => {
               e.stopPropagation();
             }}
-            className="absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 transition-all hover:border-white/40 hover:bg-black/85 hover:text-white active:scale-95"
+            className="absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/40 hover:bg-black/85 hover:text-white active:scale-95"
             title="View Pack Details"
           >
             <Info className="h-3.5 w-3.5" />

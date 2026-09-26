@@ -67,7 +67,7 @@ export function ArchetypeDetailsModal({
                 onClick={() => onApply(archetype)}
                 disabled={isLoading || isGloballySelected}
                 className={cn(
-                  "flex h-11 w-full shrink-0 cursor-pointer items-center gap-2 self-center px-6 font-semibold shadow-lg transition-all lg:w-auto",
+                  "flex h-11 w-full shrink-0 cursor-pointer items-center gap-2 self-center px-6 font-semibold shadow-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] lg:w-auto",
                   isGloballySelected
                     ? "cursor-default border border-emerald-500/30 bg-emerald-600/15 text-emerald-400 hover:bg-emerald-600/15 dark:bg-emerald-500/15 dark:text-emerald-400"
                     : "bg-emerald-600 text-white shadow-emerald-500/10 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"

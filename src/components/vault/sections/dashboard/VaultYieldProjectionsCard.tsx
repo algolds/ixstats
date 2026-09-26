@@ -52,7 +52,7 @@ export function VaultYieldProjectionsCard({
       depth={2}
       interactive="hover"
       className={cn(
-        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-blue-500/30 hover:shadow-blue-500/10"
+        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:border-blue-500/30 hover:shadow-blue-500/10"
       )}
     >
       <TextureOverlay texture="horizontalLines" opacity={0.04} />
@@ -71,7 +71,7 @@ export function VaultYieldProjectionsCard({
             size="sm"
             onClick={onClaimDailyBonus}
             disabled={isClaimPending}
-            className="h-8 rounded-full border border-amber-300/40 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 px-4 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 backdrop-blur-md transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
+            className="h-8 rounded-full border border-amber-300/40 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 px-4 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:brightness-110 active:scale-95 disabled:opacity-50"
           >
             {isClaimPending ? (
               <>
@@ -199,7 +199,7 @@ export function VaultYieldProjectionsCard({
                 </div>
                 <div className="border-border/50 bg-muted/40 h-2 w-full overflow-hidden rounded-full border p-0.5 backdrop-blur-md">
                   <div
-                    className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                    className="h-full rounded-full bg-emerald-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                     style={{
                       width: `${activeCapData ? ((activeCapData.cap - activeCapData.remaining) / activeCapData.cap) * 100 : 0}%`,
                     }}
@@ -225,7 +225,7 @@ export function VaultYieldProjectionsCard({
                 </div>
                 <div className="border-border/50 bg-muted/40 h-2 w-full overflow-hidden rounded-full border p-0.5 backdrop-blur-md">
                   <div
-                    className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                    className="h-full rounded-full bg-indigo-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                     style={{
                       width: `${socialCapData ? ((socialCapData.cap - socialCapData.remaining) / socialCapData.cap) * 100 : 0}%`,
                     }}

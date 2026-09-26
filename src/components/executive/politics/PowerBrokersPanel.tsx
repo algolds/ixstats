@@ -79,7 +79,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
             return (
               <FacetCard
                 key={broker.id}
-                className={`flex flex-col justify-between border p-3.5 transition-all hover:border-black/25 dark:hover:border-white/25 ${
+                className={`flex flex-col justify-between border p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-black/25 dark:hover:border-white/25 ${
                   broker.satisfied
                     ? "border-emerald-500/25 bg-emerald-500/[0.02]"
                     : "border-black/5 dark:border-white/5"
@@ -120,7 +120,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
                       <div
-                        className={`h-full transition-all duration-300 ${
+                        className={`h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
                           broker.satisfied ? "bg-emerald-500" : "bg-amber-500"
                         }`}
                         style={{ width: `${percent}%` }}

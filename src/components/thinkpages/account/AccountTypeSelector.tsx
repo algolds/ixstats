@@ -72,7 +72,7 @@ export function AccountTypeSelector({
               key={typeKey}
               onClick={() => onSelectType(typeKey)}
               className={cn(
-                "flex items-start gap-3.5 rounded-2xl border p-4 text-left transition-all duration-150 active:scale-[0.98]",
+                "flex items-start gap-3.5 rounded-2xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                 isSelected
                   ? "border-blue-500/50 bg-blue-500/10 shadow-md"
                   : "border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]"

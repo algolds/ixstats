@@ -46,7 +46,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
           {(rarestAll?.length || 0) > 3 && (
             <button
               onClick={() => setShowAll(!showAll)}
-              className="border-border/60 bg-muted/50 text-foreground/80 hover:bg-muted/80 hover:text-foreground rounded-full border px-3 py-1 font-mono text-xs font-bold backdrop-blur-md transition-all active:scale-95"
+              className="border-border/60 bg-muted/50 text-foreground/80 hover:bg-muted/80 hover:text-foreground rounded-full border px-3 py-1 font-mono text-xs font-bold backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
             >
               {showAll ? "Show Top 3 Only" : "See All Top 9"}
             </button>
@@ -91,7 +91,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                 whileHover={{ y: -3, scale: 1.015 }}
                 whileTap={{ scale: 0.98 }}
                 className={cn(
-                  "group border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative flex flex-col justify-between overflow-hidden rounded-2xl border border-t-white/15 p-4 shadow-xl backdrop-blur-2xl transition-all hover:shadow-2xl dark:border-t-white/10",
+                  "group border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative flex flex-col justify-between overflow-hidden rounded-2xl border border-t-white/15 p-4 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:shadow-2xl dark:border-t-white/10",
                   categoryTheme.cardBorderHover
                 )}
               >

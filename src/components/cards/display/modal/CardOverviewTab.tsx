@@ -338,7 +338,7 @@ export function CardOverviewTab({
               className={cn(
                 "glass-hierarchy-interactive rounded-lg px-4 py-3",
                 "text-foreground text-sm font-semibold dark:text-white",
-                "transition-all hover:scale-105"
+                "transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
               )}
             >
               Trade
@@ -350,7 +350,7 @@ export function CardOverviewTab({
               className={cn(
                 "glass-hierarchy-interactive rounded-lg px-4 py-3",
                 "text-foreground text-sm font-semibold dark:text-white",
-                "transition-all hover:scale-105"
+                "transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
               )}
             >
               List
@@ -362,7 +362,7 @@ export function CardOverviewTab({
               className={cn(
                 "glass-hierarchy-interactive col-span-2 rounded-lg px-4 py-3",
                 "text-foreground text-sm font-semibold dark:text-white",
-                "transition-all hover:scale-105"
+                "transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
               )}
             >
               View Collection

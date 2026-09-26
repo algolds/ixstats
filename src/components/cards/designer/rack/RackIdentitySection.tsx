@@ -44,7 +44,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
         variant="outline"
         size="sm"
         onClick={onOpenLoreImport}
-        className="border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary flex h-10 w-full items-center justify-between rounded-xl px-3.5 text-xs font-semibold shadow-xs transition-all active:scale-[0.98]"
+        className="border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary flex h-10 w-full items-center justify-between rounded-xl px-3.5 text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
       >
         <div className="flex items-center gap-2">
           <Search className="text-primary h-4 w-4" />
@@ -107,7 +107,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
                     }
                   }}
                   className={cn(
-                    "z-10 flex w-full cursor-pointer items-center justify-between gap-1 rounded-xl border p-2 text-left text-xs font-medium transition-all",
+                    "z-10 flex w-full cursor-pointer items-center justify-between gap-1 rounded-xl border p-2 text-left text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     isSelected
                       ? "bg-primary text-primary-foreground border-primary ring-primary/40 font-semibold shadow-xs ring-1"
                       : "border-border bg-card hover:bg-muted text-foreground"
@@ -193,7 +193,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
                                 setActivePopoverCat(null);
                               }}
                               className={cn(
-                                "flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1 text-left text-xs font-medium shadow-2xs transition-all",
+                                "flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1 text-left text-xs font-medium shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                                 isSubSelected
                                   ? "bg-primary text-primary-foreground border-primary ring-primary/40 scale-[1.02] font-semibold ring-1"
                                   : "border-border/80 bg-card hover:bg-muted text-foreground hover:border-border"
@@ -250,7 +250,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
                   type="button"
                   onClick={() => onChange((p) => ({ ...p, season: s }))}
                   className={cn(
-                    "h-6 rounded-md px-2 text-xs font-semibold transition-all",
+                    "h-6 rounded-md px-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     (state.season || 1) === s
                       ? "bg-primary text-primary-foreground shadow-2xs"
                       : "bg-muted/70 text-muted-foreground hover:text-foreground"

@@ -46,7 +46,7 @@ function ServiceRow({
   isUnlinking,
 }: ServiceRowProps) {
   return (
-    <div className="facet-hierarchy-child group relative flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/30 p-4 transition-all duration-300 hover:bg-white/50 dark:border-slate-700/50 dark:bg-slate-800/20 dark:hover:bg-slate-800/40">
+    <div className="facet-hierarchy-child group relative flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/30 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:bg-white/50 dark:border-slate-700/50 dark:bg-slate-800/20 dark:hover:bg-slate-800/40">
       <div
         className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-inner ${color}`}
       >
@@ -83,7 +83,7 @@ function ServiceRow({
           <button
             onClick={onUnlink}
             disabled={isUnlinking}
-            className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-red-600 transition-all hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+            className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-red-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
           >
             {isUnlinking ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -96,7 +96,7 @@ function ServiceRow({
           <button
             onClick={onLink}
             disabled={isLinking}
-            className="facet-interactive flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-700"
+            className="facet-interactive flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-indigo-700"
           >
             {isLinking ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -228,7 +228,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
   return (
     <div
       id="ixnayid-card"
-      className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl"
+      className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 hover:shadow-2xl"
     >
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <TextureOverlay texture="noise" opacity={0.04} />
@@ -242,7 +242,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
             {status?.passportHandle && (
               <Link
                 href={`/id/@${status.passportHandle}`}
-                className="facet-interactive flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95"
+                className="facet-interactive flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-700 active:scale-95"
               >
                 <UserIcon className="h-3.5 w-3.5" />
                 <span>View Passport</span>

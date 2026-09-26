@@ -206,7 +206,7 @@ export function WikiOSLayout({
       <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3.5 border-t border-white/5 pt-8 pb-10 text-center text-xs font-[var(--wikios-font-brand)]">
         <Popover>
           <PopoverTrigger asChild>
-            <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 opacity-80 transition-all duration-200 select-none hover:opacity-100 active:scale-95">
+            <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 opacity-80 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none hover:opacity-100 active:scale-95">
               <WikiOSLogomark className="h-7 w-auto text-zinc-900 transition-transform duration-300 group-hover:scale-105 dark:text-zinc-100" />
               <div className="text-muted-foreground/70 group-hover:text-muted-foreground flex items-center gap-1.5 text-xs font-[var(--wikios-font-brand)] font-medium tracking-wide">
                 <span className="text-foreground/80 group-hover:text-foreground font-semibold">

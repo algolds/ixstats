@@ -214,14 +214,14 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
             <div className="border-border flex items-center justify-end gap-3 border-t pt-4">
               <button
                 onClick={onClose}
-                className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-all active:scale-[0.97]"
+                className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleInsertStat}
                 disabled={!selectedCountry}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-black shadow-sm transition-all hover:bg-amber-400 active:scale-[0.97] disabled:opacity-50"
+                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-black shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-400 active:scale-[0.97] disabled:opacity-50"
               >
                 Insert Stat
               </button>

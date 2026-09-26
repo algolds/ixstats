@@ -177,14 +177,14 @@ export function CountryHeader({
         {/* Banner image area */}
         <div
           className={cn(
-            "relative h-64 w-full overflow-hidden transition-all duration-300 md:h-80 lg:h-96",
+            "relative h-64 w-full overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 md:h-80 lg:h-96",
             !hasImage && "from-primary/10 via-muted/30 to-accent/10 bg-gradient-to-br"
           )}
         >
           {/* Background Image */}
           {hasImage ? (
             <div
-              className="absolute inset-0 bg-center bg-no-repeat transition-all duration-500"
+              className="absolute inset-0 bg-center bg-no-repeat transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
               style={{
                 backgroundImage: `url(${resolvedBannerUrl})`,
                 backgroundSize: bannerMode === "flag" ? "100% auto" : "cover",
@@ -317,7 +317,7 @@ export function CountryHeader({
             <Popover open={showBannerPicker} onOpenChange={setShowBannerPicker}>
               <PopoverTrigger
                 className={cn(
-                  "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur-xl transition-all duration-100 active:scale-[0.96]",
+                  "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.96]",
                   hasImage
                     ? "border border-white/25 bg-black/50 text-white hover:bg-black/70"
                     : "border-border bg-background/80 text-foreground hover:bg-muted"
@@ -344,7 +344,7 @@ export function CountryHeader({
                         type="button"
                         onClick={() => handleModeSelect(option.mode)}
                         className={cn(
-                          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 active:scale-[0.98]",
+                          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                           isActive
                             ? "bg-primary/10 text-primary font-semibold"
                             : "text-foreground hover:bg-muted"

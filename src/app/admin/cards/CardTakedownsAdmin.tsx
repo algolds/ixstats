@@ -66,14 +66,14 @@ export function CardTakedownsAdmin() {
             onChange={(e) => setTakedownCardId(e.target.value.replace(/\D/g, ""))}
             placeholder="NS Card ID"
             inputMode="numeric"
-            className="border-border bg-card text-foreground placeholder:text-muted-foreground h-9 w-36 rounded-xl border px-3 text-xs transition-all outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+            className="border-border bg-card text-foreground placeholder:text-muted-foreground h-9 w-36 rounded-xl border px-3 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
           />
           <input
             value={takedownSeason}
             onChange={(e) => setTakedownSeason(e.target.value.replace(/\D/g, ""))}
             placeholder="Season"
             inputMode="numeric"
-            className="border-border bg-card text-foreground placeholder:text-muted-foreground h-9 w-24 rounded-xl border px-3 text-xs transition-all outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+            className="border-border bg-card text-foreground placeholder:text-muted-foreground h-9 w-24 rounded-xl border px-3 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
           />
           <Button
             size="sm"
@@ -84,7 +84,7 @@ export function CardTakedownsAdmin() {
                 nsSeason: parseInt(takedownSeason, 10),
               })
             }
-            className="h-9 rounded-xl border border-rose-500/30 bg-rose-500/20 text-xs font-semibold text-rose-600 shadow-xs transition-all hover:bg-rose-500/30 active:scale-95 dark:text-rose-200"
+            className="h-9 rounded-xl border border-rose-500/30 bg-rose-500/20 text-xs font-semibold text-rose-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/30 active:scale-95 dark:text-rose-200"
           >
             {hideNSCardMutation.isPending ? (
               <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -147,7 +147,7 @@ export function CardTakedownsAdmin() {
                           nsSeason: card.nsSeason ?? 0,
                         })
                       }
-                      className="h-7 rounded-lg border-emerald-500/30 bg-emerald-500/10 text-xs font-medium text-emerald-600 transition-all hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-300"
+                      className="h-7 rounded-lg border-emerald-500/30 bg-emerald-500/10 text-xs font-medium text-emerald-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-300"
                     >
                       <RotateCcw className="mr-1 h-3 w-3" /> Restore
                     </Button>

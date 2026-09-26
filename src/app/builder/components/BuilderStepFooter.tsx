@@ -129,7 +129,7 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
             onClick={onSubmit}
             disabled={isSubmitting}
             data-cuelume-press
-            className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 text-xs font-bold text-white shadow-md transition-all hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97] cursor-pointer"
+            className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 text-xs font-bold text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97] cursor-pointer"
           >
             {isSubmitting ? (
               <>
@@ -148,7 +148,7 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
             type="button"
             onClick={onContinue}
             data-cuelume-press
-            className="rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-500 active:scale-[0.97] cursor-pointer"
+            className="rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500 active:scale-[0.97] cursor-pointer"
           >
             <span>{nextStepLabel ? `Continue to ${nextStepLabel}` : "Continue"}</span>
             <ArrowRight className="ml-1.5 h-3.5 w-3.5" />

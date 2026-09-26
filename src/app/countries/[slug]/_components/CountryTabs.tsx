@@ -69,7 +69,7 @@ export function CountryTabs({ activeTab, onTabChange, countrySlug }: CountryTabs
               aria-current={isActive ? "page" : undefined}
               data-cuelume-press="soft"
               className={cn(
-                "group relative flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold transition-all duration-150 ease-out active:scale-[0.98] sm:text-sm",
+                "group relative flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 ease-out active:scale-[0.98] sm:text-sm",
                 isActive
                   ? "bg-[var(--flag-primary)]/12 text-[var(--flag-primary)] shadow-sm ring-1 ring-[var(--flag-primary)]/30 backdrop-blur-md"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"

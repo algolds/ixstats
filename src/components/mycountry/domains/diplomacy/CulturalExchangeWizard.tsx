@@ -394,7 +394,7 @@ export function CulturalExchangeWizard({
                           setType(key as keyof typeof EXCHANGE_TYPES);
                         }}
                         className={cn(
-                          "facet-hierarchy-child rounded-lg p-2.5 transition-all duration-200",
+                          "facet-hierarchy-child rounded-lg p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                           "pointer-events-auto cursor-pointer border hover:border-amber-500/40",
                           isSelected
                             ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/50"
@@ -452,7 +452,7 @@ export function CulturalExchangeWizard({
                                   setType(key as keyof typeof EXCHANGE_TYPES);
                                 }}
                                 className={cn(
-                                  "facet-hierarchy-child rounded-lg p-2.5 transition-all duration-200",
+                                  "facet-hierarchy-child rounded-lg p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                                   "pointer-events-auto cursor-pointer border hover:border-amber-500/40",
                                   isSelected
                                     ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/50"
@@ -536,7 +536,7 @@ export function CulturalExchangeWizard({
                       key={country.id}
                       onClick={() => setParticipantCountryId(country.id)}
                       className={cn(
-                        "facet-hierarchy-child w-full rounded-lg p-3 transition-all duration-200",
+                        "facet-hierarchy-child w-full rounded-lg p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                         "cursor-pointer border text-left hover:border-amber-500/40",
                         isSelected
                           ? "border-amber-500/50 ring-2 ring-amber-500/50"
@@ -609,7 +609,7 @@ export function CulturalExchangeWizard({
                       key={objective}
                       onClick={() => toggleObjective(objective)}
                       className={cn(
-                        "facet-hierarchy-child rounded-lg p-3 transition-all duration-200",
+                        "facet-hierarchy-child rounded-lg p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                         "cursor-pointer border text-left hover:border-amber-500/40",
                         isSelected
                           ? "border-amber-500/50 ring-2 ring-amber-500/50"
@@ -869,7 +869,7 @@ export function CulturalExchangeWizard({
             <div
               key={step}
               className={cn(
-                "h-2 flex-1 rounded-full transition-all duration-300",
+                "h-2 flex-1 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                 step <= currentStep ? "bg-primary" : "bg-muted"
               )}
             />

@@ -112,7 +112,7 @@ export function BuilderGuideSheet({
               type="button"
               onClick={() => setActiveTab("milestones")}
               className={cn(
-                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-[0.98]",
+                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 cursor-pointer active:scale-[0.98]",
                 activeTab === "milestones"
                   ? "bg-card text-foreground shadow-xs border border-border/60"
                   : "text-muted-foreground hover:text-foreground"
@@ -124,7 +124,7 @@ export function BuilderGuideSheet({
               type="button"
               onClick={() => setActiveTab("rules")}
               className={cn(
-                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-[0.98]",
+                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 cursor-pointer active:scale-[0.98]",
                 activeTab === "rules"
                   ? "bg-card text-foreground shadow-xs border border-border/60"
                   : "text-muted-foreground hover:text-foreground"
@@ -153,7 +153,7 @@ export function BuilderGuideSheet({
                 {milestones.map((step, index) => (
                   <div
                     key={index}
-                    className="group relative rounded-xl border border-border/40 bg-card/40 p-3.5 transition-all duration-150 hover:border-amber-500/30 hover:bg-card/70"
+                    className="group relative rounded-xl border border-border/40 bg-card/40 p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-amber-500/30 hover:bg-card/70"
                   >
                     <div className="flex items-start gap-3">
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-400">
@@ -192,7 +192,7 @@ export function BuilderGuideSheet({
                   return (
                     <div
                       key={idx}
-                      className="group relative rounded-xl border border-border/40 bg-card/40 p-3.5 transition-all duration-150 hover:border-border/80 hover:bg-card/70"
+                      className="group relative rounded-xl border border-border/40 bg-card/40 p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-border/80 hover:bg-card/70"
                     >
                       <div className="flex items-start gap-3">
                         <div

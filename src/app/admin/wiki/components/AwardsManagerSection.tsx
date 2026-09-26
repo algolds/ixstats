@@ -332,9 +332,9 @@ export function AwardsManagerSection() {
                   <span className="text-muted-foreground/60 mb-2 text-xs font-bold uppercase select-none">
                     Live Medal Preview
                   </span>
-                  <div className="border-border/50 bg-card/65 relative flex h-14 w-14 items-center justify-center rounded-full border shadow-inner transition-all duration-300">
+                  <div className="border-border/50 bg-card/65 relative flex h-14 w-14 items-center justify-center rounded-full border shadow-inner transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
                     <div
-                      className="absolute inset-0 rounded-full opacity-25 blur-md transition-all duration-500"
+                      className="absolute inset-0 rounded-full opacity-25 blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                       style={{
                         backgroundColor:
                           iconColor === "custom" ? customHex : getColorHex(iconColor),
@@ -348,7 +348,7 @@ export function AwardsManagerSection() {
                       return (
                         <IconComp
                           className={cn(
-                            "relative z-10 h-7.5 w-7.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-all duration-300",
+                            "relative z-10 h-7.5 w-7.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                             colorClass
                           )}
                           style={customStyle}

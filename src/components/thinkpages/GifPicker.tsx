@@ -161,7 +161,7 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
                     key={gif.id}
                     onClick={() => handleSelectGif(gif)}
                     title={gif.title}
-                    className="border-border/40 group relative aspect-video overflow-hidden rounded-lg border transition-all hover:scale-[1.02] hover:border-emerald-500/50"
+                    className="border-border/40 group relative aspect-video overflow-hidden rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.02] hover:border-emerald-500/50"
                   >
                     <img
                       src={gif.images.fixed_height.url}

@@ -45,7 +45,7 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border p-5 shadow-xl backdrop-blur-md transition-all duration-300",
+        "relative overflow-hidden rounded-xl border p-5 shadow-xl backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
         glowColor
       )}
     >

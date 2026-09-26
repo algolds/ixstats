@@ -356,7 +356,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
         <button
           onClick={onSubmit}
           disabled={!canSubmit}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80 active:scale-[0.98] flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-3 text-base font-medium shadow-sm transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 sm:py-1.5 sm:text-sm"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80 active:scale-[0.98] flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-3 text-base font-medium shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 disabled:cursor-not-allowed disabled:opacity-50 sm:py-1.5 sm:text-sm"
         >
           {isMutating ? (
             <Loader2 className="h-4 w-4 animate-spin sm:h-3.5 sm:w-3.5" />
@@ -367,7 +367,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
         </button>
         <button
           onClick={onCancel}
-          className="border-border text-foreground/80 hover:bg-accent active:bg-accent active:scale-[0.98] rounded-lg border px-3 py-3 text-base transition-all duration-150 sm:py-1.5 sm:text-sm"
+          className="border-border text-foreground/80 hover:bg-accent active:bg-accent active:scale-[0.98] rounded-lg border px-3 py-3 text-base transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 sm:py-1.5 sm:text-sm"
         >
           Cancel
         </button>

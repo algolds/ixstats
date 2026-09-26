@@ -142,7 +142,7 @@ export function StandingsTable({
           type="button"
           onClick={() => exportStandingsCsv(title, standings)}
           data-cuelume-press="subtle"
-          className="text-muted-foreground hover:text-foreground border-border/40 bg-muted/40 hover:bg-muted/70 flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-[0.98] w-fit"
+          className="text-muted-foreground hover:text-foreground border-border/40 bg-muted/40 hover:bg-muted/70 flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer active:scale-[0.98] w-fit"
           title="Export CSV"
         >
           <Download className="h-3.5 w-3.5" />
@@ -200,7 +200,7 @@ export function StandingsTable({
                     <tr
                       key={team.id || team.teamId}
                       className={cn(
-                        "group transition-all duration-150 cursor-pointer active:scale-[0.99]",
+                        "group transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 cursor-pointer active:scale-[0.99]",
                         isLeader && "bg-amber-500/5 hover:bg-amber-500/10",
                         isPromotion && !isLeader && "bg-emerald-500/5 hover:bg-emerald-500/10",
                         isRelegation && "bg-red-500/5 hover:bg-red-500/10",

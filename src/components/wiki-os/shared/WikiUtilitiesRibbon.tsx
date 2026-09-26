@@ -105,7 +105,7 @@ export function WikiUtilitiesRibbon({
               data-cuelume-press="soft"
               data-cuelume-hover="tick"
               className={cn(
-                "relative z-10 flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all active:scale-[0.98]",
+                "relative z-10 flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                 isActive
                   ? "font-semibold text-black shadow-xs dark:text-black"
                   : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
@@ -138,7 +138,7 @@ export function WikiUtilitiesRibbon({
             onClick={onSearchClick}
             data-cuelume-press="tap"
             data-cuelume-hover="tick"
-            className="border-border/40 bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium transition-all active:scale-[0.98]"
+            className="border-border/40 bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             title="Spotlight Search (⌘K)"
           >
             <Search className="text-muted-foreground h-3.5 w-3.5" />
@@ -155,7 +155,7 @@ export function WikiUtilitiesRibbon({
             onClick={onCreatePageClick}
             data-cuelume-press="tap"
             data-cuelume-hover="tick"
-            className="bg-wiki/15 border-wiki/30 text-wiki hover:bg-wiki/25 inline-flex cursor-pointer items-center gap-1 rounded-xl border px-2.5 py-1.5 text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
+            className="bg-wiki/15 border-wiki/30 text-wiki hover:bg-wiki/25 inline-flex cursor-pointer items-center gap-1 rounded-xl border px-2.5 py-1.5 text-xs font-bold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             title="Create New Page"
           >
             <Plus className="h-3.5 w-3.5" />

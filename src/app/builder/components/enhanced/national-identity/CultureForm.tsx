@@ -493,7 +493,7 @@ export const CultureForm = React.memo(
               <button
                 type="button"
                 onClick={handleToggleShowAll}
-                className="flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:underline active:scale-95 transition-all"
+                className="flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:underline active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 data-cuelume-press
               >
                 <span>{showAllMotifs ? "Show Essentials" : "Show All 10 Emblems"}</span>
@@ -528,7 +528,7 @@ export const CultureForm = React.memo(
                         key={sym.key}
                         type="button"
                         onClick={() => handleRevealMotif(sym.key)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-border/40 bg-background/50 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-600 dark:hover:text-teal-400 active:scale-[0.97] transition-all"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border/40 bg-background/50 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-600 dark:hover:text-teal-400 active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                         data-cuelume-press
                       >
                         <Plus className="h-3 w-3 text-teal-500" />

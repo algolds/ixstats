@@ -66,7 +66,7 @@ export function CountryIdentityStrip({
         aria-label={`View realm ${realmName}`}
         data-cuelume-press="soft"
         className={cn(
-          "group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide transition-all duration-150 ease-out active:scale-[0.97]",
+          "group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 ease-out active:scale-[0.97]",
           hasImage
             ? "border-white/15 bg-black/35 text-white backdrop-blur-md hover:border-white/25 hover:bg-black/45 supports-[backdrop-filter]:bg-black/30"
             : "border-border bg-card/60 text-foreground hover:bg-card hover:border-foreground/15 backdrop-blur-xl"
@@ -104,7 +104,7 @@ export function CountryIdentityStrip({
           aria-label={`View IxnayID passport for @${ownerHandle} in ${realmName}`}
           data-cuelume-press="soft"
           className={cn(
-            "group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide transition-all duration-150 ease-out active:scale-[0.97]",
+            "group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 ease-out active:scale-[0.97]",
             hasImage
               ? "border-white/15 bg-black/35 text-white backdrop-blur-md hover:border-white/25 hover:bg-black/45"
               : "border-border bg-card/60 text-foreground hover:bg-card hover:border-foreground/15 backdrop-blur-xl"

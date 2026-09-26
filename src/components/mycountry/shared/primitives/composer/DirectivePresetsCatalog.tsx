@@ -486,7 +486,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
               type="button"
               onClick={() => setSelectedCategory(cat)}
               className={cn(
-                "rounded-xl border px-3 py-1.5 text-xs font-extrabold transition-all duration-150 select-none active:scale-95",
+                "rounded-xl border px-3 py-1.5 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
                 selectedCategory === cat
                   ? "border-amber-500/50 bg-amber-500/20 text-amber-950 shadow-sm dark:text-amber-300"
                   : "border-border/40 bg-card/40 text-muted-foreground hover:border-border hover:bg-card hover:text-foreground"
@@ -520,7 +520,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
               type="button"
               onClick={() => onSelectGoal(item.label)}
               className={cn(
-                "group flex cursor-pointer items-center gap-3 rounded-2xl border p-3 text-left transition-all duration-150 active:scale-[0.98]",
+                "group flex cursor-pointer items-center gap-3 rounded-2xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                 isSelected
                   ? "border-amber-500 bg-amber-500/15 shadow-md ring-2 ring-amber-500/40"
                   : "border-border/50 bg-card/60 hover:bg-card hover:border-amber-500/40 hover:shadow-sm"

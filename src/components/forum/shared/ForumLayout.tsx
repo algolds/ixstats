@@ -195,7 +195,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
         height={40}
         squares={[50, 40]}
         className="pointer-events-auto fixed inset-0 z-0 opacity-25 dark:opacity-15"
-        squaresClassName="fill-slate-200/15 dark:fill-slate-700/15 stroke-slate-300/20 dark:stroke-slate-600/20 [&:hover]:fill-orange-500/30 [&:hover]:stroke-orange-500/50 transition-all duration-300"
+        squaresClassName="fill-slate-200/15 dark:fill-slate-700/15 stroke-slate-300/20 dark:stroke-slate-600/20 [&:hover]:fill-orange-500/30 [&:hover]:stroke-orange-500/50 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
       />
 
       {/* Mobile: horizontal pill bar */}
@@ -210,7 +210,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
           <button
             onClick={() => setSearchOpen(true)}
             className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
+              "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
             )}
           >
@@ -245,7 +245,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
             <button
               onClick={() => setSearchOpen(true)}
               className={cn(
-                "group relative flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200",
+                "group relative flex h-10 w-10 items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                 "text-muted-foreground hover:bg-orange-500/10 hover:text-orange-300"
               )}
               title="Search (⌘K)"
@@ -305,7 +305,7 @@ function RailIcon({ item, isActive }: { item: ForumNavItem; isActive: boolean })
     <Link
       href={withBasePath(item.href)}
       className={cn(
-        "group relative flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200",
+        "group relative flex h-10 w-10 items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
         isActive
           ? "bg-orange-500/15 text-orange-400"
           : "text-muted-foreground hover:bg-orange-500/10 hover:text-orange-300"
@@ -330,7 +330,7 @@ function MobilePill({ item, isActive }: { item: ForumNavItem; isActive: boolean 
     <Link
       href={withBasePath(item.href)}
       className={cn(
-        "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
+        "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         isActive
           ? "bg-orange-500/15 text-orange-400 shadow-sm"
           : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"

@@ -307,7 +307,7 @@ export function OnomaAdminPanel() {
                     onClick={handleWakeServer}
                     disabled={isWaking}
                     title="Send a wake-up ping to the Kokoro server"
-                    className="border-border/30 bg-background/50 text-foreground/80 hover:border-primary/40 hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-1 rounded-xl border px-2 py-0.5 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-50"
+                    className="border-border/30 bg-background/50 text-foreground/80 hover:border-primary/40 hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-1 rounded-xl border px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
                   >
                     {isWaking ? (
                       <Loader2 className="text-primary h-3 w-3 animate-spin" />

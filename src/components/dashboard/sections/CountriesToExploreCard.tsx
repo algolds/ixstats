@@ -67,7 +67,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
             return (
               <div
                 key={c.id}
-                className="group/c border-border/30 bg-card/40 hover:border-border/60 hover:bg-card/70 relative flex items-center gap-2 overflow-hidden rounded-xl border p-2 transition-all duration-150"
+                className="group/c border-border/30 bg-card/40 hover:border-border/60 hover:bg-card/70 relative flex items-center gap-2 overflow-hidden rounded-xl border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
               >
                 {c.flagUrl && (
                   <div className="pointer-events-none absolute inset-0 z-0 opacity-40">

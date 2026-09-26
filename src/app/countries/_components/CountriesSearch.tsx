@@ -138,7 +138,7 @@ export function CountriesSearch({
             placeholder="Search by country name..."
             value={searchTerm}
             onChange={(e) => onSearchChangeAction(e.target.value)}
-            className="bg-background text-foreground hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary placeholder:text-muted-foreground w-full border pr-10 pl-10 transition-all duration-200 focus:scale-100"
+            className="bg-background text-foreground hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary placeholder:text-muted-foreground w-full border pr-10 pl-10 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 focus:scale-100"
             autoComplete="off"
           />
           {searchTerm && (
@@ -332,7 +332,7 @@ export function CountriesSearch({
                       max: populationRange.max,
                     })
                   }
-                  className="bg-background text-foreground hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary placeholder:text-muted-foreground flex-1 border transition-all duration-200"
+                  className="bg-background text-foreground hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary placeholder:text-muted-foreground flex-1 border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
                 />
                 <Input
                   type="number"
@@ -344,7 +344,7 @@ export function CountriesSearch({
                       max: e.target.value ? parseInt(e.target.value, 10) : undefined,
                     })
                   }
-                  className="bg-background text-foreground hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary placeholder:text-muted-foreground flex-1 border transition-all duration-200"
+                  className="bg-background text-foreground hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary placeholder:text-muted-foreground flex-1 border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
                 />
               </div>
             </div>

@@ -87,7 +87,7 @@ export function VaultWidget() {
     <CutoutCard
       className={cn(
         cutoutCardSurfaceClassName,
-        "w-48 overflow-hidden rounded-2xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-xl transition-all duration-200"
+        "w-48 overflow-hidden rounded-2xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
       )}
       trackPointerHover={false}
       texture="dots"
@@ -128,7 +128,7 @@ export function VaultWidget() {
                   {passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
                     <button
                       onClick={() => setShowPassiveIncome((prev) => !prev)}
-                      className={`rounded-md p-1 text-blue-600 backdrop-blur-sm transition-all duration-150 hover:bg-blue-500/15 focus:ring-1 focus:ring-blue-500/30 focus:outline-none active:scale-[0.92] dark:text-blue-400 ${
+                      className={`rounded-md p-1 text-blue-600 backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-blue-500/15 focus:ring-1 focus:ring-blue-500/30 focus:outline-none active:scale-[0.92] dark:text-blue-400 ${
                         showPassiveIncome
                           ? "bg-blue-500/20 text-blue-700 ring-1 ring-blue-500/30 dark:text-blue-300"
                           : ""
@@ -337,7 +337,7 @@ export function VaultWidget() {
                       key={item.id}
                       href={item.href}
                       className={cn(
-                        "flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-xs font-medium backdrop-blur-md transition-all duration-150 active:scale-[0.97]",
+                        "flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-xs font-medium backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]",
                         item.isActive
                           ? cn("shadow-2xs", item.activeClass)
                           : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent"
@@ -359,7 +359,7 @@ export function VaultWidget() {
             <div className="flex flex-col gap-1.5 pt-0.5">
               <Link
                 href="/vault"
-                className="block text-center text-xs font-semibold tracking-tight text-amber-700 transition-all duration-150 hover:text-amber-800 hover:underline active:scale-[0.97] dark:text-amber-400 dark:hover:text-amber-300"
+                className="block text-center text-xs font-semibold tracking-tight text-amber-700 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:text-amber-800 hover:underline active:scale-[0.97] dark:text-amber-400 dark:hover:text-amber-300"
               >
                 View Full Vault →
               </Link>

@@ -35,7 +35,7 @@ export function VaultNetWorthCard({
       depth={2}
       interactive="hover"
       className={cn(
-        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-amber-500/30"
+        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:border-amber-500/30"
       )}
     >
       {/* Texture Overlay */}
@@ -86,7 +86,7 @@ export function VaultNetWorthCard({
 
         {/* Quick stats inline interactive pills */}
         <div className="border-border/40 mt-5 flex flex-wrap gap-2 border-t pt-4 text-xs">
-          <div className="border-border/60 bg-muted/40 text-foreground hover:bg-muted/70 flex cursor-default items-center gap-1.5 rounded-full border px-3 py-1 font-medium backdrop-blur-md transition-all select-none active:scale-95">
+          <div className="border-border/60 bg-muted/40 text-foreground hover:bg-muted/70 flex cursor-default items-center gap-1.5 rounded-full border px-3 py-1 font-medium backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-95">
             <Layers className="h-3.5 w-3.5 shrink-0 text-amber-500 dark:text-amber-400" />
             <span>
               Cards:{" "}
@@ -95,13 +95,13 @@ export function VaultNetWorthCard({
               </strong>
             </span>
           </div>
-          <div className="border-border/60 bg-muted/40 text-foreground hover:bg-muted/70 flex cursor-default items-center gap-1.5 rounded-full border px-3 py-1 font-medium backdrop-blur-md transition-all select-none active:scale-95">
+          <div className="border-border/60 bg-muted/40 text-foreground hover:bg-muted/70 flex cursor-default items-center gap-1.5 rounded-full border px-3 py-1 font-medium backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-95">
             <Package className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
             <span>
               Packs: <strong className="text-foreground font-bold">{unopenedPacks}</strong>
             </span>
           </div>
-          <div className="border-border/60 bg-muted/40 text-foreground hover:bg-muted/70 flex cursor-default items-center gap-1.5 rounded-full border px-3 py-1 font-medium backdrop-blur-md transition-all select-none active:scale-95">
+          <div className="border-border/60 bg-muted/40 text-foreground hover:bg-muted/70 flex cursor-default items-center gap-1.5 rounded-full border px-3 py-1 font-medium backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-95">
             <ShoppingBag className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
             <span>
               Auctions: <strong className="text-foreground font-bold">{activeAuctions}</strong>

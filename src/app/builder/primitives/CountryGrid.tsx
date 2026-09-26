@@ -255,7 +255,7 @@ export function CountryGrid({
                     autoComplete="off"
                     spellCheck={false}
                     placeholder="Search countries..."
-                    className="h-8 w-full rounded-lg border border-border/40 bg-background/50 pl-8 pr-7 text-xs text-foreground placeholder:text-muted-foreground/60 transition-all focus:border-amber-500/50 focus:bg-background/90 focus:outline-none focus:ring-1 focus:ring-amber-500/20"
+                    className="h-8 w-full rounded-lg border border-border/40 bg-background/50 pl-8 pr-7 text-xs text-foreground placeholder:text-muted-foreground/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-amber-500/50 focus:bg-background/90 focus:outline-none focus:ring-1 focus:ring-amber-500/20"
                   />
                   {searchTerm.length > 0 && (
                     <button
@@ -278,7 +278,7 @@ export function CountryGrid({
                     type="button"
                     data-cuelume-press
                     className={cn(
-                      "flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-all duration-150 active:scale-95 cursor-pointer",
+                      "flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95 cursor-pointer",
                       activeEconTier
                         ? "border-amber-500/40 bg-amber-500/15 text-amber-400 font-semibold shadow-xs"
                         : "border-border/40 bg-background/50 text-muted-foreground hover:border-border/70 hover:bg-background/80 hover:text-foreground"
@@ -334,7 +334,7 @@ export function CountryGrid({
                         onClick={() => scrollRail("left")}
                         data-cuelume-press
                         aria-label="Scroll left"
-                        className="pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border border-border/50 bg-background/90 text-muted-foreground shadow-xs transition-all hover:text-foreground active:scale-90"
+                        className="pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border border-border/50 bg-background/90 text-muted-foreground shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:text-foreground active:scale-90"
                       >
                         <ChevronLeft className="h-3.5 w-3.5" />
                       </button>
@@ -364,7 +364,7 @@ export function CountryGrid({
                           onClick={() => onToggleArchetype(preset.id)}
                           data-cuelume-press
                           className={cn(
-                            "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all duration-150 active:scale-[0.96] cursor-pointer",
+                            "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96] cursor-pointer",
                             isSelected
                               ? "border border-amber-500/40 bg-amber-500/15 font-semibold text-amber-400 shadow-xs"
                               : "border border-border/40 bg-background/50 text-muted-foreground hover:border-border/70 hover:bg-background/80 hover:text-foreground"
@@ -384,7 +384,7 @@ export function CountryGrid({
                         onClick={() => scrollRail("right")}
                         data-cuelume-press
                         aria-label="Scroll right"
-                        className="pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border border-border/50 bg-background/90 text-muted-foreground shadow-xs transition-all hover:text-foreground active:scale-90"
+                        className="pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border border-border/50 bg-background/90 text-muted-foreground shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:text-foreground active:scale-90"
                       >
                         <ChevronRight className="h-3.5 w-3.5" />
                       </button>
@@ -399,7 +399,7 @@ export function CountryGrid({
         {/* Scrollable Card Container */}
         <div
           ref={scrollContainerRef}
-          className="relative flex-1 min-h-0 overflow-y-auto p-3.5 pb-8 transition-all duration-300 ease-out sm:p-4"
+          className="relative flex-1 min-h-0 overflow-y-auto p-3.5 pb-8 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out sm:p-4"
           data-country-grid="true"
           onScroll={handleScroll}
         >

@@ -62,7 +62,7 @@ export function DiplomaticMatrixCard({
             {ALLIES.map((partner, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-2.5 backdrop-blur-sm transition-all hover:bg-white/[0.05]"
+                className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-2.5 backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/[0.05]"
               >
                 <div className="flex items-center gap-2">
                   <span className="text-sm">{partner.flag}</span>

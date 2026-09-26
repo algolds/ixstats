@@ -80,7 +80,7 @@ function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () =>
   } = getSystemAlertStyle(title + " " + content, item.type || item.category);
 
   return (
-    <div className="border-border/50 bg-card/60 hover:border-border/80 hover:bg-card/90 relative mx-4 my-2.5 flex gap-3.5 rounded-2xl border p-4 shadow-2xs backdrop-blur-md transition-all duration-150">
+    <div className="border-border/50 bg-card/60 hover:border-border/80 hover:bg-card/90 relative mx-4 my-2.5 flex gap-3.5 rounded-2xl border p-4 shadow-2xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150">
       <div
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-xl shadow-2xs ring-1",
@@ -122,7 +122,7 @@ function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () =>
           <div className="mt-2.5 flex items-center gap-2">
             <Link
               href={item.href}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-2xs transition-all active:scale-95"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
             >
               <span>Open Details</span>
               <ExternalLink className="h-3 w-3" />

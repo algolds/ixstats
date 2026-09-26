@@ -110,7 +110,7 @@ export function VaultSidebarLayout({
                         key={item.id}
                         href={item.href}
                         className={cn(
-                          "rounded-lg border px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all duration-200",
+                          "rounded-lg border px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                           isActive
                             ? "border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent"

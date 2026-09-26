@@ -213,7 +213,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                       variant="outline"
                       onClick={() => handlePublishToDiscord(poll.id)}
                       disabled={publishToDiscordMutation.isPending}
-                      className="border-poll/35 text-poll hover:bg-poll/10 h-7 cursor-pointer gap-1 text-xs font-semibold transition-all duration-200"
+                      className="border-poll/35 text-poll hover:bg-poll/10 h-7 cursor-pointer gap-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
                       size="sm"
                     >
                       {publishToDiscordMutation.isPending ? (
@@ -302,7 +302,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                         {/* Linear Progress Bar */}
                         <div className="bg-muted/35 relative h-2 w-full overflow-hidden rounded-full">
                           <div
-                            className="bg-poll h-full rounded-full transition-all duration-500"
+                            className="bg-poll h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>

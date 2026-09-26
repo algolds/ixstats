@@ -35,7 +35,7 @@ export function PolicyTemplateSliders({
                   key={opt.label}
                   type="button"
                   onClick={() => onSliderChange(slider.key, opt.value)}
-                  className={`flex flex-col items-center justify-center rounded-md border p-2 text-center transition-all ${
+                  className={`flex flex-col items-center justify-center rounded-md border p-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     isSelected
                       ? "border-indigo-500 bg-indigo-600 font-medium text-white shadow-sm shadow-indigo-600/20"
                       : "bg-muted/40 border-border/40 hover:bg-muted/80 text-muted-foreground text-xs"

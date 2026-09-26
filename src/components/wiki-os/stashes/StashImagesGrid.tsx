@@ -42,7 +42,7 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
           return (
             <div
               key={item.id}
-              className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-[var(--wikios-border)]/80 hover:bg-[var(--wikios-surface)]/90 hover:shadow-md"
+              className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--wikios-border)]/80 hover:bg-[var(--wikios-surface)]/90 hover:shadow-md"
               onClick={() => imgInfo && setSelectedImage(imgInfo)}
             >
               <div className="relative aspect-4/3 w-full overflow-hidden border-b border-[var(--wikios-border)]/60 bg-white/5">
@@ -72,7 +72,7 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
                     e.stopPropagation();
                     onUnstash(item.pageTitle);
                   }}
-                  className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-lg border border-white/20 bg-black/60 text-white opacity-0 shadow-xs transition-all group-hover:opacity-100 hover:border-rose-500 hover:bg-rose-500/80"
+                  className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-lg border border-white/20 bg-black/60 text-white opacity-0 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:opacity-100 hover:border-rose-500 hover:bg-rose-500/80"
                   title="Remove from stash"
                 >
                   <X className="h-3 w-3" />
@@ -230,7 +230,7 @@ export function StashedImageModal({
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 cursor-pointer rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/80 p-2.5 text-[var(--wikios-text)] transition-all hover:bg-[var(--wikios-border)]"
+        className="absolute top-4 right-4 cursor-pointer rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/80 p-2.5 text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-border)]"
         title="Close Lightbox"
         type="button"
       >
@@ -327,7 +327,7 @@ export function StashedImageModal({
               <button
                 type="button"
                 onClick={handleCopy}
-                className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg bg-[var(--wikios-accent)] py-2 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+                className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg bg-[var(--wikios-accent)] py-2 text-sm font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.98]"
               >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 {copied ? "Copied!" : format === "url" ? "Copy URL" : "Copy Wikitext"}
@@ -336,7 +336,7 @@ export function StashedImageModal({
                 type="button"
                 onClick={handleCopyImage}
                 disabled={isCopyingImage}
-                className="col-span-1 flex items-center justify-center gap-1.5 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-2 text-sm font-semibold text-[var(--wikios-text)] transition-all hover:bg-[var(--wikios-border)] active:scale-[0.98] disabled:opacity-50"
+                className="col-span-1 flex items-center justify-center gap-1.5 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-2 text-sm font-semibold text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-border)] active:scale-[0.98] disabled:opacity-50"
                 title="Copy Image to Clipboard"
               >
                 {isCopyingImage ? (
@@ -354,14 +354,14 @@ export function StashedImageModal({
               <button
                 type="button"
                 onClick={() => window.open(image.url, "_blank")}
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-2 text-xs font-semibold text-[var(--wikios-text)] transition-all hover:bg-[var(--wikios-border)]"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-2 text-xs font-semibold text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-border)]"
               >
                 <Download className="h-3.5 w-3.5" /> Download
               </button>
               <button
                 type="button"
                 onClick={onUnstash}
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 py-2 text-xs font-semibold text-red-500 transition-all hover:bg-red-500/20 dark:text-red-400"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 py-2 text-xs font-semibold text-red-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-red-500/20 dark:text-red-400"
               >
                 <Trash2 className="h-3.5 w-3.5" /> Unstash
               </button>
@@ -378,7 +378,7 @@ export function StashedImageModal({
         >
           <button
             onClick={() => setIsZoomed(false)}
-            className="absolute top-4 right-4 cursor-pointer rounded-full border border-white/10 bg-white/10 p-2.5 text-white transition-all hover:bg-white/20"
+            className="absolute top-4 right-4 cursor-pointer rounded-full border border-white/10 bg-white/10 p-2.5 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/20"
             title="Exit Fullscreen"
             type="button"
           >

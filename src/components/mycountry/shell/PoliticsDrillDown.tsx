@@ -108,7 +108,7 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
               setActiveTab(id);
             }}
             className={cn(
-              "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
+              "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
               activeTab === id
                 ? "border border-indigo-500/40 bg-indigo-500/20 text-indigo-900 dark:text-indigo-300 shadow-2xs"
                 : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"

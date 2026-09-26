@@ -150,7 +150,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
       {!cells && (
         <button
           onClick={handleGenerate}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition-all active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
         >
           <Dice5 className="h-3.5 w-3.5" />
           Generate
@@ -190,7 +190,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
             <button
               onClick={handleCommit}
               disabled={commitMutation.isPending}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-500 hover:bg-emerald-500/25 transition-all active:scale-[0.98] disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-500 hover:bg-emerald-500/25 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
             >
               {commitMutation.isPending ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -202,7 +202,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
             <button
               onClick={handleDiscard}
               disabled={commitMutation.isPending}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-destructive/15 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/25 transition-all active:scale-[0.98] disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-destructive/15 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/25 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
             >
               <X className="h-3.5 w-3.5" />
               Discard

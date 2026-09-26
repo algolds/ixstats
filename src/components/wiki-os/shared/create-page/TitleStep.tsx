@@ -50,7 +50,7 @@ export function TitleStep({
             setExistsWarning(false);
           }}
           placeholder="Enter article title..."
-          className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-4 py-2.5 text-sm text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+          className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-4 py-2.5 text-sm text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
         />
         {existsWarning && (
           <div className="flex items-start gap-2 rounded-lg border border-[var(--wikios-red)]/20 bg-[var(--wikios-red)]/10 p-2.5 text-xs text-[var(--wikios-red)]">
@@ -110,7 +110,7 @@ export function TitleStep({
             type="button"
             onClick={() => setEditorMode("visual")}
             className={cn(
-              "flex flex-col items-start rounded-xl border p-3 text-left transition-all",
+              "flex flex-col items-start rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               editorMode === "visual"
                 ? "border-[var(--wikios-accent)] bg-[var(--wikios-accent)]/[0.08] text-[var(--wikios-text)] shadow-[0_0_12px_var(--wikios-accent)]/15"
                 : "bg-foreground/[0.03] hover:bg-foreground/[0.06] border-[var(--wikios-border)] text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
@@ -125,7 +125,7 @@ export function TitleStep({
             type="button"
             onClick={() => setEditorMode("source")}
             className={cn(
-              "flex flex-col items-start rounded-xl border p-3 text-left transition-all",
+              "flex flex-col items-start rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               editorMode === "source"
                 ? "border-[var(--wikios-accent)] bg-[var(--wikios-accent)]/[0.08] text-[var(--wikios-text)] shadow-[0_0_12px_var(--wikios-accent)]/15"
                 : "bg-foreground/[0.03] hover:bg-foreground/[0.06] border-[var(--wikios-border)] text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"

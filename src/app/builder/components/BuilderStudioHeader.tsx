@@ -131,9 +131,9 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
 
   return (
     <TooltipProvider delayDuration={150}>
-      <header className="relative w-full pb-3 transition-all">
+      <header className="relative w-full pb-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
         <div className="mx-auto w-full max-w-6xl px-4">
-          <div className="border-border/50 bg-card/60 relative flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border p-2 sm:p-2.5 backdrop-blur-xl transition-all sm:flex-nowrap">
+          <div className="border-border/50 bg-card/60 relative flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border p-2 sm:p-2.5 backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] sm:flex-nowrap">
             {/* Left Group: Back Button & Step Context */}
             <div className="flex shrink-0 items-center gap-1.5">
               <button
@@ -142,7 +142,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                 disabled={isBackDisabled}
                 data-cuelume-press
                 className={cn(
-                  "flex h-8 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-xs font-semibold transition-all active:scale-[0.97]",
+                  "flex h-8 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
                   isBackDisabled
                     ? "cursor-not-allowed text-muted-foreground/30 opacity-40"
                     : "cursor-pointer text-foreground/75 hover:bg-accent/50 hover:text-foreground"
@@ -159,7 +159,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                     type="button"
                     onClick={handleReset}
                     data-cuelume-press
-                    className="hover:bg-destructive/10 hover:text-destructive flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl text-muted-foreground/60 transition-all active:scale-[0.97]"
+                    className="hover:bg-destructive/10 hover:text-destructive flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl text-muted-foreground/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
                     aria-label={mode === "edit" ? "Discard Changes & Exit" : "Restart Builder"}
                   >
                     {mode === "edit" ? (
@@ -228,7 +228,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                             disabled={!isAccessible}
                             onClick={() => isAccessible && onNavigate(stepKey)}
                             className={cn(
-                              "flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border px-2 text-xs font-medium transition-all active:scale-[0.97]",
+                              "flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border px-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
                               isCompleted
                                 ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 hover:bg-emerald-500/25 cursor-pointer"
                                 : isAccessible
@@ -283,7 +283,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                       openGuide({ tab: "milestones", section: activeSection });
                     }}
                     data-cuelume-press
-                    className="border-blue-500/30 bg-blue-500/10 text-blue-500 dark:text-blue-400 hover:border-blue-500/40 hover:bg-blue-500/20 flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 text-xs font-semibold transition-all active:scale-[0.97]"
+                    className="border-blue-500/30 bg-blue-500/10 text-blue-500 dark:text-blue-400 hover:border-blue-500/40 hover:bg-blue-500/20 flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
                     aria-label="Open Step Guide"
                   >
                     <BookOpen className="h-3.5 w-3.5" />
@@ -300,7 +300,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                   size="sm"
                   onClick={onSubmit}
                   disabled={isSubmitting}
-                  className="h-8 shrink-0 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 text-xs font-bold text-white shadow-sm transition-all hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97]"
+                  className="h-8 shrink-0 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 text-xs font-bold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97]"
                 >
                   {isSubmitting ? (
                     <>
@@ -318,7 +318,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                 <Button
                   size="sm"
                   onClick={onContinue}
-                  className="h-8 shrink-0 rounded-xl bg-emerald-600 px-3.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-500 active:scale-[0.97]"
+                  className="h-8 shrink-0 rounded-xl bg-emerald-600 px-3.5 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500 active:scale-[0.97]"
                 >
                   <span>Continue</span>
                   <ArrowRight className="ml-1 h-3.5 w-3.5" />

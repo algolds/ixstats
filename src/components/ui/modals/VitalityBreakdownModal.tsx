@@ -179,7 +179,7 @@ export function VitalityBreakdownModal({
                   key={ring.id}
                   depth={2}
                   className={cn(
-                    "flex flex-col justify-between rounded-xl p-3.5 backdrop-blur-md transition-all",
+                    "flex flex-col justify-between rounded-xl p-3.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     meta.bgClass,
                     meta.borderClass
                   )}

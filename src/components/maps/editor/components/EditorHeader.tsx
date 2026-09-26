@@ -135,7 +135,7 @@ export const EditorHeader = React.memo(function EditorHeader({
       {/* Exit button */}
       <button
         onClick={handleRequestExit}
-        className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1.5 transition-all duration-100 ease-out active:scale-[0.98]"
+        className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98]"
         title="Exit Editor (Esc)"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -174,7 +174,7 @@ export const EditorHeader = React.memo(function EditorHeader({
           <button
             disabled={!editor.historyCanUndo}
             onClick={() => editor.undo()}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-all duration-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30"
             title="Undo (Ctrl+Z)"
           >
             <Undo2 className="h-3.5 w-3.5" />
@@ -182,7 +182,7 @@ export const EditorHeader = React.memo(function EditorHeader({
           <button
             disabled={!editor.historyCanRedo}
             onClick={() => editor.redo()}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-all duration-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30"
             title="Redo (Ctrl+Shift+Z)"
           >
             <Redo2 className="h-3.5 w-3.5" />

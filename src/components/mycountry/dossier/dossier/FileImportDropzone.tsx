@@ -141,7 +141,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           className={cn(
-            "mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-all",
+            "mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
             isDragging
               ? "scale-[0.99] border-blue-500 bg-blue-500/10"
               : "border-white/15 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.04]"

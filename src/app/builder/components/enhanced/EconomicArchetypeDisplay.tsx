@@ -106,13 +106,13 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
         <TabsList className="bg-muted/50 border-border grid h-11 w-full grid-cols-2 rounded-xl border p-1">
           <TabsTrigger
             value="modern"
-            className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-all data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
+            className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
           >
             Modern Archetypes
           </TabsTrigger>
           <TabsTrigger
             value="historical"
-            className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-all data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
+            className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
           >
             Historical Archetypes
           </TabsTrigger>

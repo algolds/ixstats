@@ -77,7 +77,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
             </div>
             <div className="bg-accent h-2 w-full rounded-full">
               <div
-                className={`h-full rounded-full transition-all ${
+                className={`h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   report.coveragePercent > 95
                     ? "bg-green-500"
                     : report.coveragePercent > 80

@@ -216,7 +216,7 @@ export function BudgetManagementDashboard({
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
-            className="border-border/40 bg-card/60 text-foreground hover:border-border/60 cursor-pointer rounded-xl border px-3 py-1.5 font-mono text-xs font-semibold backdrop-blur-xl transition-all outline-none focus:ring-2 focus:ring-emerald-500/30"
+            className="border-border/40 bg-card/60 text-foreground hover:border-border/60 cursor-pointer rounded-xl border px-3 py-1.5 font-mono text-xs font-semibold backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:ring-2 focus:ring-emerald-500/30"
           >
             {Array.from({ length: 5 }, (_, i) => {
               const currentIxYear = new Date(IxTime.getCurrentIxTime()).getFullYear();

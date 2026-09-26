@@ -150,7 +150,7 @@ export function DefenseRail({ countryId }: { countryId: string }) {
                   </div>
                   <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
                     <div
-                      className="h-full bg-gradient-to-r from-red-500 to-amber-500 transition-all duration-300"
+                      className="h-full bg-gradient-to-r from-red-500 to-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
                       style={{ width: `${Math.min(100, Math.max(0, readiness))}%` }}
                     />
                   </div>

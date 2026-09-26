@@ -335,7 +335,7 @@ export default function StashesPage() {
                     <button
                       type="button"
                       onClick={() => setWelcomeOpen(true)}
-                      className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-all hover:bg-white/5 hover:text-rose-400 active:scale-95"
+                      className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5 hover:text-rose-400 active:scale-95"
                       title="Stash Guide"
                     >
                       <HelpCircle className="h-4 w-4" />
@@ -370,7 +370,7 @@ export default function StashesPage() {
                 <button
                   type="button"
                   onClick={() => setError(null)}
-                  className="cursor-pointer rounded-lg p-1 text-rose-300 transition-all hover:bg-rose-500/20 hover:text-white active:scale-95"
+                  className="cursor-pointer rounded-lg p-1 text-rose-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/20 hover:text-white active:scale-95"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -465,7 +465,7 @@ export default function StashesPage() {
                                   setStashTab(tab.id);
                                 }}
                                 className={cn(
-                                  "relative flex cursor-pointer items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all select-none",
+                                  "relative flex cursor-pointer items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
                                   isActive
                                     ? "font-bold text-[var(--wikios-text)] shadow-xs"
                                     : "text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"

@@ -349,7 +349,7 @@ function VEBtn({
         onClick();
       }}
       className={cn(
-        "wikios-ve-toolbar-btn active:scale-[0.97] transition-all duration-150",
+        "wikios-ve-toolbar-btn active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
         active && "wikios-ve-toolbar-btn-active font-semibold shadow-xs"
       )}
       title={title}

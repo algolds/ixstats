@@ -115,7 +115,7 @@ export default function GalleryMode() {
           <button
             onClick={handleRollAll}
             disabled={isLoading}
-            className="h-9 w-full rounded-lg bg-amber-500 font-bold tracking-wider text-zinc-950 transition-all hover:bg-amber-600 disabled:bg-zinc-800"
+            className="h-9 w-full rounded-lg bg-amber-500 font-bold tracking-wider text-zinc-950 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-600 disabled:bg-zinc-800"
           >
             🎲 Roll All
           </button>
@@ -141,7 +141,7 @@ export default function GalleryMode() {
               <FacetMaterial
                 key={idx}
                 material="satin"
-                className="group relative overflow-hidden rounded-xl border border-white/10 shadow-md transition-all duration-200 hover:border-amber-500/25"
+                className="group relative overflow-hidden rounded-xl border border-white/10 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-amber-500/25"
               >
                 <div className="flex flex-col items-center gap-4 p-4">
                   {/* Shield box */}
@@ -169,13 +169,13 @@ export default function GalleryMode() {
                     <div className="mt-4 flex gap-1.5 border-t border-white/5 pt-3">
                       <button
                         onClick={() => handleSelectCard(comp)}
-                        className="flex-1 rounded border border-amber-500/20 bg-amber-500/10 py-1.5 text-xs font-bold text-amber-400 transition-all hover:bg-amber-500 hover:text-zinc-950"
+                        className="flex-1 rounded border border-amber-500/20 bg-amber-500/10 py-1.5 text-xs font-bold text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500 hover:text-zinc-950"
                       >
                         ✏️ Edit Arms
                       </button>
                       <button
                         onClick={() => handleReRollSingle(idx)}
-                        className="rounded border border-white/5 bg-zinc-800 px-2.5 text-xs text-zinc-300 transition-all hover:bg-zinc-700"
+                        className="rounded border border-white/5 bg-zinc-800 px-2.5 text-xs text-zinc-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-zinc-700"
                         title="Re-roll this card"
                       >
                         🔄

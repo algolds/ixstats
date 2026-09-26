@@ -103,7 +103,7 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
             </h3>
             <button
               onClick={handleCopyBlazon}
-              className="rounded bg-white/5 px-2 py-0.5 text-xs font-semibold text-zinc-400 transition-all hover:bg-white/10 hover:text-amber-400"
+              className="rounded bg-white/5 px-2 py-0.5 text-xs font-semibold text-zinc-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/10 hover:text-amber-400"
             >
               {copied ? "✓ Copied" : "📋 Copy"}
             </button>
@@ -156,7 +156,7 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
           <div className="border-t border-white/5 pt-2">
             <button
               onClick={handleEditOrClone}
-              className="w-full rounded-lg bg-amber-500 py-2 text-center font-bold text-zinc-950 transition-all hover:bg-amber-600"
+              className="w-full rounded-lg bg-amber-500 py-2 text-center font-bold text-zinc-950 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-600"
             >
               ✏️ Open in Studio / Edit
             </button>

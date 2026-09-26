@@ -52,7 +52,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
             type="button"
             onClick={onCenter}
             disabled={disabled}
-            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-50"
+            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
           >
             <Eye className="h-3.5 w-3.5 text-primary" />
             <span>Center on map</span>
@@ -65,7 +65,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
             type="button"
             onClick={onDuplicate}
             disabled={disabled}
-            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-50"
+            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
           >
             <Copy className="h-3.5 w-3.5 opacity-70" />
             <span>Duplicate</span>
@@ -78,7 +78,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
             type="button"
             onClick={onPromoteCapital}
             disabled={disabled}
-            className="border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-50"
+            className="border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
           >
             <Crown className="h-3.5 w-3.5" />
             <span>Make Capital</span>
@@ -91,7 +91,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
             type="button"
             onClick={onSnapCoastline}
             disabled={disabled}
-            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-50"
+            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
           >
             <Waves className="h-3.5 w-3.5 text-cyan-500" />
             <span>Snap Coast</span>
@@ -104,7 +104,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
             type="button"
             onClick={onReverseRoute}
             disabled={disabled}
-            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-50"
+            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
           >
             <Reverse className="h-3.5 w-3.5 text-blue-500" />
             <span>Reverse</span>
@@ -123,7 +123,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
                     setConfirmDelete(false);
                   }}
                   disabled={disabled}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                 >
                   <Trash className="h-3.5 w-3.5" />
                   <span>Confirm Delete</span>
@@ -131,7 +131,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
                 <button
                   type="button"
                   onClick={() => setConfirmDelete(false)}
-                  className="border-border/60 bg-muted/40 hover:bg-muted text-foreground rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all active:scale-[0.98]"
+                  className="border-border/60 bg-muted/40 hover:bg-muted text-foreground rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                 >
                   Cancel
                 </button>
@@ -141,7 +141,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
                 type="button"
                 onClick={() => setConfirmDelete(true)}
                 disabled={disabled}
-                className="border-destructive/30 bg-destructive/10 hover:bg-destructive/20 text-destructive flex w-full items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-50"
+                className="border-destructive/30 bg-destructive/10 hover:bg-destructive/20 text-destructive flex w-full items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
               >
                 <Trash className="h-3.5 w-3.5" />
                 <span>Delete</span>
@@ -162,7 +162,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
               type="button"
               onClick={() => onPathfinderOperation("union")}
               disabled={disabled}
-              className="bg-card/60 hover:bg-accent/40 border-border/40 text-foreground rounded border py-1 text-center text-xs font-medium transition-all active:scale-[0.98]"
+              className="bg-card/60 hover:bg-accent/40 border-border/40 text-foreground rounded border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               Union
             </button>
@@ -170,7 +170,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
               type="button"
               onClick={() => onPathfinderOperation("subtract")}
               disabled={disabled}
-              className="bg-card/60 hover:bg-accent/40 border-border/40 text-foreground rounded border py-1 text-center text-xs font-medium transition-all active:scale-[0.98]"
+              className="bg-card/60 hover:bg-accent/40 border-border/40 text-foreground rounded border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               Subtract
             </button>
@@ -178,7 +178,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
               type="button"
               onClick={() => onPathfinderOperation("intersect")}
               disabled={disabled}
-              className="bg-card/60 hover:bg-accent/40 border-border/40 text-foreground rounded border py-1 text-center text-xs font-medium transition-all active:scale-[0.98]"
+              className="bg-card/60 hover:bg-accent/40 border-border/40 text-foreground rounded border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               Intersect
             </button>

@@ -82,7 +82,7 @@ export function MetricCard({
     <CardWrapper {...cardProps}>
       <Card
         className={cn(
-          "glass-hierarchy-interactive transition-all duration-200",
+          "glass-hierarchy-interactive transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
           statusColors[status],
           className
         )}

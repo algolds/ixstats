@@ -121,7 +121,7 @@ export function GlobalPositionRankings({
             type="button"
             data-cuelume-press="soft"
             onClick={onOpenCompare}
-            className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-foreground transition-all duration-150 active:scale-[0.96] hover:bg-white/10"
+            className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96] hover:bg-white/10"
           >
             <span>Compare</span>
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
@@ -141,7 +141,7 @@ export function GlobalPositionRankings({
               data-cuelume-press="soft"
               onClick={() => onRankClick?.(item)}
               className={cn(
-                "group relative flex flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-150 active:scale-[0.97] hover:border-white/20 hover:bg-white/[0.06]",
+                "group relative flex flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] hover:border-white/20 hover:bg-white/[0.06]",
                 isTopTier && "border-amber-500/20 bg-amber-500/[0.03]"
               )}
             >

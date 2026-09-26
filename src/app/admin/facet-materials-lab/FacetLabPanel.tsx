@@ -129,7 +129,7 @@ export default function FacetMaterialsLabPage() {
           />
           <button
             onClick={handleReset}
-            className="bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-all"
+            className="bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             title="Reset all settings to defaults"
           >
             <RotateCcw className="h-3.5 w-3.5" />
@@ -140,7 +140,7 @@ export default function FacetMaterialsLabPage() {
               handleConfigChange({ fullscreen: !config.fullscreen });
               setSidebarHidden(!sidebarHidden);
             }}
-            className="bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-all"
+            className="bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             title={config.fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           >
             {config.fullscreen ? (

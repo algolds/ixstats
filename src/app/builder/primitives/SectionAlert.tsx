@@ -29,7 +29,7 @@ export function SectionAlerts({ alerts, className }: SectionAlertsProps) {
             key={`${alert.section}-${alert.field ?? idx}-${alert.message}`}
             variant={isError ? "destructive" : "default"}
             className={cn(
-              "border py-2.5 transition-all duration-200",
+              "border py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
               isError && "border-destructive/30 bg-destructive/5 text-destructive",
               isWarning &&
                 "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/5 dark:text-amber-400",

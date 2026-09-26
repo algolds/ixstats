@@ -102,7 +102,7 @@ export default function AchievementsPage() {
       <div className="space-y-6">
         {/* Country Profile Header Card */}
         {isMounted && userProfile && (
-          <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/20 p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 dark:border-t-white/10">
+          <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/20 p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:border-t-white/10">
             <TextureOverlay texture="dots" opacity={0.03} />
 
             {/* Country Flag Background Wash & Watermark */}
@@ -116,7 +116,7 @@ export default function AchievementsPage() {
                   />
                   <div className="from-card via-card/85 to-card absolute inset-0 bg-gradient-to-r" />
                 </div>
-                <div className="pointer-events-none absolute -top-12 -right-12 h-64 w-64 overflow-hidden opacity-10 transition-all duration-700 select-none dark:opacity-20">
+                <div className="pointer-events-none absolute -top-12 -right-12 h-64 w-64 overflow-hidden opacity-10 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-700 select-none dark:opacity-20">
                   <img
                     src={countryFlagUrl}
                     alt=""
@@ -142,7 +142,7 @@ export default function AchievementsPage() {
                   {/* Global Leaderboards Badge Link */}
                   <Link
                     href="/leaderboards"
-                    className="border-border/60 bg-muted/50 text-foreground/80 hover:bg-muted/80 hover:text-foreground flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold backdrop-blur-md transition-all active:scale-95"
+                    className="border-border/60 bg-muted/50 text-foreground/80 hover:bg-muted/80 hover:text-foreground flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                   >
                     <Award className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
                     <span>Global Leaderboards</span>

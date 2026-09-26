@@ -129,7 +129,7 @@ function DomainSurfaceComponent({
           <button
             type="button"
             onClick={() => onDeclare?.(meta.prefilledGoal)}
-            className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-500 shadow-sm backdrop-blur-md transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
+            className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-500 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
           >
             <span className="flex h-5 w-5 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10">
               <Command className="h-3 w-3" />

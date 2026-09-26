@@ -247,7 +247,7 @@ export function SectorBreakdownCard({
                 <ItemWrapper key={sector.id} {...itemProps}>
                   <div
                     className={cn(
-                      "relative rounded-xl p-3 text-center transition-all hover:scale-[1.02]",
+                      "relative rounded-xl p-3 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.02]",
                       hasImage ? "overflow-hidden" : "",
                       hasImage ? "" : colors.bg,
                       colors.border,

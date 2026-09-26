@@ -56,7 +56,7 @@ export function FacetMobileCard<T extends Record<string, any>>({
       data-cuelume-press
       onClick={() => onClick?.(row)}
       className={cn(
-        "facet-surface border-border/50 bg-card/70 relative flex flex-col gap-3 rounded-2xl border p-4 shadow-sm backdrop-blur-xl transition-all duration-150",
+        "facet-surface border-border/50 bg-card/70 relative flex flex-col gap-3 rounded-2xl border p-4 shadow-sm backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
         onClick && "hover:border-border/80 hover:bg-card/90 cursor-pointer active:scale-[0.98]",
         className
       )}

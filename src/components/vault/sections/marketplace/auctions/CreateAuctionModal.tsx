@@ -140,7 +140,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                       key={card.id}
                       onClick={() => setSelectedCardId(card.id)}
                       className={cn(
-                        "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left transition-all",
+                        "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                         selectedCardId === card.id
                           ? "bg-amber-500/10 ring-1 ring-amber-500/35 dark:bg-amber-500/20 dark:ring-amber-400/50"
                           : "hover:bg-black/5 dark:hover:bg-white/5"

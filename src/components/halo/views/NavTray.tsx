@@ -144,14 +144,14 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                         onClick={onClose}
                         data-cuelume-hover="tick"
                         data-cuelume-press="press"
-                        className={`group flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-all duration-200 ${
+                        className={`group flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
                           active
                             ? "bg-foreground/10 text-foreground shadow-sm"
                             : "text-foreground/70 hover:bg-foreground/5 hover:text-foreground"
                         }`}
                       >
                         <div
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
                             active ? "shadow-sm" : "bg-foreground/5 group-hover:bg-foreground/10"
                           }`}
                           style={active ? { backgroundColor: `${item.accent}30` } : undefined}

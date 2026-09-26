@@ -81,7 +81,7 @@ function CalcNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "bg-card/90 relative min-w-[210px] rounded-xl border p-4 text-left shadow-lg backdrop-blur-md transition-all duration-300",
+        "bg-card/90 relative min-w-[210px] rounded-xl border p-4 text-left shadow-lg backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
         borderColors[category] || "border-border",
         glowColors[category],
         selected
@@ -105,7 +105,7 @@ function CalcNode({ data, selected }: NodeProps) {
             type="target"
             id={pos}
             position={position}
-            className="border-background !bg-primary !h-2.5 !w-2.5 border transition-all duration-200"
+            className="border-background !bg-primary !h-2.5 !w-2.5 border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
           />
         );
       })}
@@ -139,7 +139,7 @@ function CalcNode({ data, selected }: NodeProps) {
             type="source"
             id={pos}
             position={position}
-            className="border-background !bg-primary !h-2.5 !w-2.5 border transition-all duration-200"
+            className="border-background !bg-primary !h-2.5 !w-2.5 border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
           />
         );
       })}

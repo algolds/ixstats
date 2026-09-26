@@ -539,7 +539,7 @@ export function VaultStoreControl() {
                                   setIconSearch("");
                                 }}
                                 className={cn(
-                                  "border-border/30 text-foreground hover:bg-muted/50 flex h-9 w-9 items-center justify-center rounded-lg border p-0 transition-all duration-150 hover:scale-105",
+                                  "border-border/30 text-foreground hover:bg-muted/50 flex h-9 w-9 items-center justify-center rounded-lg border p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-105",
                                   isSelected
                                     ? "border-amber-500/50 bg-amber-500/15 text-amber-500"
                                     : "bg-background/20"

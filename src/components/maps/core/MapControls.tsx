@@ -276,7 +276,7 @@ function IconButton({
   onClick: () => void;
 }) {
   const base =
-    "relative flex items-center justify-center rounded-lg shadow-md transition-all duration-150 min-h-[40px] min-w-[40px] sm:min-h-[34px] sm:min-w-[34px]";
+    "relative flex items-center justify-center rounded-lg shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 min-h-[40px] min-w-[40px] sm:min-h-[34px] sm:min-w-[34px]";
   const colors =
     variant === "active-tool"
       ? "bg-blue-500 text-white hover:bg-blue-600"

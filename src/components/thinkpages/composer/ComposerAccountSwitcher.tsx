@@ -41,7 +41,7 @@ export function ComposerAccountSwitcher({
             className="group relative cursor-pointer transition-transform duration-150 focus:outline-none active:scale-95"
             aria-label="Switch ThinkPages Account"
           >
-            <Avatar className="h-9 w-9 border border-white/20 shadow-md transition-all duration-200 group-hover:scale-105 active:scale-95 dark:border-white/10">
+            <Avatar className="h-9 w-9 border border-white/20 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:scale-105 active:scale-95 dark:border-white/10">
               <AvatarImage src={accountAvatarUrl} alt={account.displayName} />
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
                 {account.displayName.charAt(0)}
@@ -49,7 +49,7 @@ export function ComposerAccountSwitcher({
             </Avatar>
 
             {/* Floating Chevron Down Badge */}
-            <div className="dark:border-border dark:bg-secondary dark:text-muted-foreground absolute -right-1 -bottom-1 flex h-4 w-4 items-center justify-center rounded-full border border-black/10 bg-white text-slate-600 shadow-md transition-all duration-200 group-hover:scale-110">
+            <div className="dark:border-border dark:bg-secondary dark:text-muted-foreground absolute -right-1 -bottom-1 flex h-4 w-4 items-center justify-center rounded-full border border-black/10 bg-white text-slate-600 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:scale-110">
               <ChevronDown
                 className={cn(
                   "h-2.5 w-2.5 transition-transform duration-200",
@@ -89,7 +89,7 @@ export function ComposerAccountSwitcher({
                     onCreateAccount?.();
                     setShowAccountManager(false);
                   }}
-                  className="h-5 px-1.5 text-xs font-bold text-blue-500 transition-all hover:bg-blue-500/10 hover:text-blue-600 active:scale-95 dark:text-blue-400 dark:hover:text-blue-300"
+                  className="h-5 px-1.5 text-xs font-bold text-blue-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500/10 hover:text-blue-600 active:scale-95 dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   <Plus className="mr-0.5 h-2.5 w-2.5" />
                   Add Account
@@ -106,7 +106,7 @@ export function ComposerAccountSwitcher({
                     setShowAccountManager(false);
                   }}
                   className={cn(
-                    "flex w-full cursor-pointer items-center gap-2.5 rounded-xl border p-2 text-left transition-all duration-150 active:scale-[0.98]",
+                    "flex w-full cursor-pointer items-center gap-2.5 rounded-xl border p-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                     acc.id === account.id
                       ? "border-blue-500/30 bg-blue-500/10 font-bold text-blue-600 shadow-sm dark:text-blue-400"
                       : "text-foreground dark:hover:bg-secondary/70 border-transparent hover:bg-black/5"

@@ -187,7 +187,7 @@ export function PassportLorewardsModal({
                   type="button"
                   onClick={prevMonth}
                   data-cuelume-press="soft"
-                  className="hover:text-foreground flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg border border-black/8 bg-black/[0.02] text-stone-600 transition-all active:scale-[0.95] dark:border-white/10 dark:bg-white/[0.03] dark:text-stone-300"
+                  className="hover:text-foreground flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg border border-black/8 bg-black/[0.02] text-stone-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.95] dark:border-white/10 dark:bg-white/[0.03] dark:text-stone-300"
                   title="Previous Month"
                 >
                   <ChevronLeft className="h-3 w-3" />
@@ -198,7 +198,7 @@ export function PassportLorewardsModal({
                   disabled={isCurrentMonth}
                   data-cuelume-press="soft"
                   className={cn(
-                    "flex h-6 w-6 items-center justify-center rounded-lg border border-black/8 bg-black/[0.02] transition-all dark:border-white/10 dark:bg-white/[0.03]",
+                    "flex h-6 w-6 items-center justify-center rounded-lg border border-black/8 bg-black/[0.02] transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:border-white/10 dark:bg-white/[0.03]",
                     isCurrentMonth
                       ? "cursor-not-allowed opacity-30"
                       : "hover:text-foreground cursor-pointer text-stone-600 active:scale-[0.95] dark:text-stone-300"
@@ -235,7 +235,7 @@ export function PassportLorewardsModal({
                     <div
                       key={day}
                       className={cn(
-                        "flex h-6 items-center justify-center rounded-md font-mono text-xs transition-all select-none",
+                        "flex h-6 items-center justify-center rounded-md font-mono text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
                         status === "winner" &&
                           "border border-amber-500/40 bg-amber-500/20 font-bold text-amber-600 dark:text-amber-400",
                         status === "runner-up" &&
@@ -377,7 +377,7 @@ export function PassportLorewardsModal({
             type="button"
             onClick={() => onOpenChange(false)}
             data-cuelume-press="soft"
-            className="cursor-pointer rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-[0.97] dark:bg-white dark:text-stone-950"
+            className="cursor-pointer rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.97] dark:bg-white dark:text-stone-950"
           >
             Close
           </button>

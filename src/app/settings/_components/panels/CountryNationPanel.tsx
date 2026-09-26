@@ -147,7 +147,7 @@ export function CountryNationPanel({
                 setFlagUploadMode(!flagUploadMode);
               }}
               data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               {flagUploadMode ? "Cancel" : "Change Flag"}
             </button>
@@ -159,7 +159,7 @@ export function CountryNationPanel({
             <div className="flex flex-col items-center gap-4 sm:flex-row">
               <label
                 htmlFor="flag-upload-input"
-                className="border-border/60 hover:border-border hover:bg-muted/20 flex w-full flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition-all"
+                className="border-border/60 hover:border-border hover:bg-muted/20 flex w-full flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 {isUploadingFlag ? (
                   <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
@@ -251,7 +251,7 @@ export function CountryNationPanel({
                 onClick={handleUpdateCountryName}
                 disabled={updateCountryNameMutation.isPending || !newCountryName.trim()}
                 data-cuelume-press="soft"
-                className="facet-interactive bg-foreground text-background hover:bg-foreground/90 flex h-8 w-8 items-center justify-center rounded-xl transition-all active:scale-[0.97] disabled:opacity-50"
+                className="facet-interactive bg-foreground text-background hover:bg-foreground/90 flex h-8 w-8 items-center justify-center rounded-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97] disabled:opacity-50"
               >
                 <Save className="h-3.5 w-3.5" />
               </button>
@@ -262,7 +262,7 @@ export function CountryNationPanel({
                   setIsEditingCountry(false);
                 }}
                 data-cuelume-press="soft"
-                className="facet-interactive border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-all active:scale-[0.97]"
+                className="facet-interactive border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -278,7 +278,7 @@ export function CountryNationPanel({
                   setIsEditingCountry(true);
                 }}
                 data-cuelume-press="soft"
-                className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground rounded-xl border px-2.5 py-1 text-xs font-semibold transition-all active:scale-[0.98]"
+                className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground rounded-xl border px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
                 Rename
               </button>
@@ -295,7 +295,7 @@ export function CountryNationPanel({
           <Link
             href={getCountryPath({ id: country.id, name: country.name, slug: country.slug })}
             data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-muted/40 text-foreground hover:bg-muted/70 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
+            className="facet-interactive border-border/60 bg-muted/40 text-foreground hover:bg-muted/70 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             <span>Open Dossier</span>
             <ExternalLink className="h-3 w-3 opacity-60" />
@@ -351,7 +351,7 @@ export function CountryNationPanel({
             onClick={handleRebase}
             disabled={rebaseMutation.isPending}
             data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98] disabled:opacity-50"
+            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
           >
             <RefreshCw className={`h-3 w-3 ${rebaseMutation.isPending ? "animate-spin" : ""}`} />
             <span>{rebaseMutation.isPending ? "Rebasing..." : "Rebase Stats"}</span>

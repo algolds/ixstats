@@ -182,7 +182,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
                     <Link
                       href={action.href}
                       onClick={(e) => handleActionClick(e, action.href, action.section)}
-                      className="bg-primary/5 border-border/30 hover:border-primary/30 hover:bg-primary/10 text-primary group block rounded-xl border p-2.5 transition-all duration-200 active:scale-[0.95]"
+                      className="bg-primary/5 border-border/30 hover:border-primary/30 hover:bg-primary/10 text-primary group block rounded-xl border p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.95]"
                     >
                       <action.icon className="h-4 w-4 transition-transform group-hover:scale-110" />
                     </Link>
@@ -204,7 +204,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
                   key={action.label}
                   href={action.href}
                   onClick={(e) => handleActionClick(e, action.href, action.section)}
-                  className="border-border/30 bg-card/25 hover:border-primary/40 group flex items-center justify-between rounded-2xl border p-3.5 shadow-xs backdrop-blur-md transition-all active:scale-[0.98]"
+                  className="border-border/30 bg-card/25 hover:border-primary/40 group flex items-center justify-between rounded-2xl border p-3.5 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 border-border/20 group-hover:bg-primary/20 text-primary rounded-xl border p-2 transition-colors">

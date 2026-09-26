@@ -28,7 +28,7 @@ export function SovereignNationsGrid({ countries, searchQuery }: SovereignNation
               "bg-white/60 backdrop-blur-md dark:bg-zinc-900/60",
               "shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06),0_2px_8px_rgba(0,0,0,0.25)]",
               "hover:border-emerald-500/40 hover:bg-white/90 hover:shadow-md dark:hover:bg-zinc-900/90",
-              "transition-all duration-200 active:scale-[0.98]"
+              "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]"
             )}
           >
             {country.flagUrl ? (

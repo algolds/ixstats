@@ -294,7 +294,7 @@ export function WikiRepositoryTab({
                 aria-selected={wikiSource === "commons"}
                 onClick={() => setWikiSource("commons")}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all duration-150 active:scale-[0.97] select-none cursor-pointer",
+                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer",
                   wikiSource === "commons"
                     ? "bg-background text-foreground font-semibold shadow-xs border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
@@ -309,7 +309,7 @@ export function WikiRepositoryTab({
                 aria-selected={wikiSource === "wiki"}
                 onClick={() => setWikiSource("wiki")}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all duration-150 active:scale-[0.97] select-none cursor-pointer",
+                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer",
                   wikiSource === "wiki"
                     ? "bg-background text-foreground font-semibold shadow-xs border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
@@ -324,7 +324,7 @@ export function WikiRepositoryTab({
                 aria-selected={wikiSource === "stash"}
                 onClick={() => setWikiSource("stash")}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all duration-150 active:scale-[0.97] select-none cursor-pointer",
+                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer",
                   wikiSource === "stash"
                     ? "bg-background text-foreground font-semibold shadow-xs border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
@@ -348,7 +348,7 @@ export function WikiRepositoryTab({
                   aria-checked={wikiSubSource === "ixwiki"}
                   onClick={() => setWikiSubSource("ixwiki")}
                   className={cn(
-                    "px-2.5 py-1 rounded text-xs font-medium transition-all duration-150 active:scale-[0.97] cursor-pointer select-none",
+                    "px-2.5 py-1 rounded text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] cursor-pointer select-none",
                     wikiSubSource === "ixwiki"
                       ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -362,7 +362,7 @@ export function WikiRepositoryTab({
                   aria-checked={wikiSubSource === "iiwiki"}
                   onClick={() => setWikiSubSource("iiwiki")}
                   className={cn(
-                    "px-2.5 py-1 rounded text-xs font-medium transition-all duration-150 active:scale-[0.97] cursor-pointer select-none",
+                    "px-2.5 py-1 rounded text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] cursor-pointer select-none",
                     wikiSubSource === "iiwiki"
                       ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -382,7 +382,7 @@ export function WikiRepositoryTab({
                 size="sm"
                 onClick={() => setIsCategoryExpanded((prev) => !prev)}
                 className={cn(
-                  "flex h-8 items-center gap-1.5 text-xs font-medium rounded-lg transition-all duration-150 active:scale-[0.97] cursor-pointer",
+                  "flex h-8 items-center gap-1.5 text-xs font-medium rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] cursor-pointer",
                   isCategoryExpanded
                     ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
                     : "border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/40"
@@ -414,7 +414,7 @@ export function WikiRepositoryTab({
                 <button
                   type="button"
                   onClick={() => setWikiSearchQuery("")}
-                  className="absolute top-1/2 right-2.5 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all active:scale-[0.95] cursor-pointer"
+                  className="absolute top-1/2 right-2.5 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.95] cursor-pointer"
                   title="Clear search"
                   aria-label="Clear search"
                 >
@@ -425,7 +425,7 @@ export function WikiRepositoryTab({
 
             {/* Filters bar */}
             {isCategoryExpanded && (
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs transition-all">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]">
                 <div className="flex flex-wrap items-center gap-3">
                   {/* File Type Segmented Control */}
                   <div className="flex items-center gap-1.5">
@@ -445,7 +445,7 @@ export function WikiRepositoryTab({
                           aria-checked={fileTypeFilter === type}
                           onClick={() => setFileTypeFilter(type)}
                           className={cn(
-                            "rounded px-2 py-0.5 text-xs font-medium transition-all duration-150 active:scale-[0.97] select-none cursor-pointer uppercase",
+                            "rounded px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer uppercase",
                             fileTypeFilter === type
                               ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                               : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -475,7 +475,7 @@ export function WikiRepositoryTab({
                           aria-checked={orientationFilter === orient}
                           onClick={() => setOrientationFilter(orient)}
                           className={cn(
-                            "rounded px-2 py-0.5 text-xs font-medium transition-all duration-150 active:scale-[0.97] select-none cursor-pointer",
+                            "rounded px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer",
                             orientationFilter === orient
                               ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                               : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -501,7 +501,7 @@ export function WikiRepositoryTab({
                       setFileTypeFilter("all");
                       setOrientationFilter("all");
                     }}
-                    className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.97] transition-all underline underline-offset-2"
+                    className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] underline underline-offset-2"
                   >
                     Reset Filters
                   </button>
@@ -569,7 +569,7 @@ export function WikiRepositoryTab({
           {/* Category Browser sidebar */}
           <div
             className={cn(
-              "border-border/10 bg-card/5 shrink-0 border-r transition-all duration-200",
+              "border-border/10 bg-card/5 shrink-0 border-r transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
               isCategoryExpanded ? "w-60" : "w-0 overflow-hidden"
             )}
           >
@@ -605,7 +605,7 @@ export function WikiRepositoryTab({
                         onClick={() => onSelectImage(img)}
                         onDoubleClick={onDoubleClickConfirm}
                         className={cn(
-                          "group relative flex flex-col overflow-hidden rounded-lg border bg-card text-left select-none transition-all duration-200 active:scale-[0.98]",
+                          "group relative flex flex-col overflow-hidden rounded-lg border bg-card text-left select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
                           isSelected
                             ? "border-blue-500 ring-2 ring-blue-500/30 shadow-sm"
                             : "border-border/50 hover:border-border hover:shadow-xs"

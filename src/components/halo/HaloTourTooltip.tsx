@@ -158,7 +158,7 @@ export function HaloTourTooltip() {
                   {TOUR_STEPS.map((s) => (
                     <div
                       key={s.id}
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                      className={`h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
                         s.id === currentStep
                           ? "bg-primary w-4"
                           : s.id < currentStep

@@ -327,7 +327,7 @@ function ExecutiveOpportunityHeroComponent({
           depth={2}
           interactive="none"
           className={cn(
-            "bg-card/40 dark:bg-card/30 relative overflow-hidden border p-5 shadow-lg backdrop-blur-xl transition-all duration-300 dark:shadow-2xl",
+            "bg-card/40 dark:bg-card/30 relative overflow-hidden border p-5 shadow-lg backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:shadow-2xl",
             opportunity.borderCls
           )}
         >
@@ -338,7 +338,7 @@ function ExecutiveOpportunityHeroComponent({
               e.stopPropagation();
               handleDismiss(opportunity.id);
             }}
-            className="text-muted-foreground/60 hover:text-foreground absolute top-3.5 right-3.5 z-20 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-transparent transition-all duration-150 hover:border-white/10 hover:bg-white/10 active:scale-[0.92] dark:hover:bg-white/10"
+            className="text-muted-foreground/60 hover:text-foreground absolute top-3.5 right-3.5 z-20 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-transparent transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-white/10 hover:bg-white/10 active:scale-[0.92] dark:hover:bg-white/10"
             title="Dismiss this priority card"
             aria-label="Dismiss priority card"
           >
@@ -351,7 +351,7 @@ function ExecutiveOpportunityHeroComponent({
               <img
                 src={opportunity.bgImage}
                 alt=""
-                className="h-full w-full scale-105 object-cover object-right opacity-35 transition-all duration-700 sm:object-center dark:opacity-45"
+                className="h-full w-full scale-105 object-cover object-right opacity-35 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-700 sm:object-center dark:opacity-45"
               />
               <div className="from-card via-card/80 dark:from-card dark:via-card/75 absolute inset-0 bg-gradient-to-r to-transparent dark:to-transparent" />
             </div>
@@ -412,7 +412,7 @@ function ExecutiveOpportunityHeroComponent({
                 >
                   <Compass className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
                   <span>Open Issue Brief</span>
-                  <ArrowUpRight className="h-4 w-4 shrink-0 opacity-70 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+                  <ArrowUpRight className="h-4 w-4 shrink-0 opacity-70 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
                 </motion.button>
               ) : (
                 <>
@@ -434,7 +434,7 @@ function ExecutiveOpportunityHeroComponent({
                   >
                     <Command className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
                     <span>Declare Directive to Resolve</span>
-                    <ArrowUpRight className="h-4 w-4 shrink-0 opacity-70 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+                    <ArrowUpRight className="h-4 w-4 shrink-0 opacity-70 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
                   </motion.button>
 
                   {opportunity.intentId ? (

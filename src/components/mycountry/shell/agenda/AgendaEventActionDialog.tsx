@@ -79,7 +79,7 @@ export function AgendaEventActionDialog({
                 onClose();
                 onIssueDirective?.(goal);
               }}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-2.5 text-xs font-extrabold text-amber-900 shadow-md transition-all hover:bg-amber-500/30 active:scale-95 dark:text-amber-300"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-2.5 text-xs font-extrabold text-amber-900 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/30 active:scale-95 dark:text-amber-300"
             >
               <Command className="h-4 w-4" />
               <span>Declare Directive to Resolve</span>
@@ -95,7 +95,7 @@ export function AgendaEventActionDialog({
                   onClose();
                   onOpenDrill?.(drill);
                 }}
-                className="border-border/70 bg-card/60 hover:bg-card/90 text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-all active:scale-98 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                className="border-border/70 bg-card/60 hover:bg-card/90 text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-98 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
               >
                 <Compass className="h-3.5 w-3.5" />
                 <span>
@@ -113,7 +113,7 @@ export function AgendaEventActionDialog({
                   onClose();
                   onOpenIntent?.(id);
                 }}
-                className="border-border/70 bg-card/60 hover:bg-card/90 text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-all active:scale-98 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                className="border-border/70 bg-card/60 hover:bg-card/90 text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-98 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
               >
                 <Compass className="h-3.5 w-3.5" />
                 <span>Inspect Directive Tree</span>

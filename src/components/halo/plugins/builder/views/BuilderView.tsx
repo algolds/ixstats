@@ -63,7 +63,7 @@ function BuilderViewComponent({ onClose, onSwitchMode, filter, context }: Builde
       {flagUrl && (
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] select-none">
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.12] blur-[6px] saturate-[85%] transition-all duration-700 dark:opacity-[0.06] dark:saturate-[50%]"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.12] blur-[6px] saturate-[85%] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-700 dark:opacity-[0.06] dark:saturate-[50%]"
             style={{ backgroundImage: `url(${flagUrl})` }}
           />
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 mix-blend-overlay" />
@@ -77,7 +77,7 @@ function BuilderViewComponent({ onClose, onSwitchMode, filter, context }: Builde
             <>
               <button
                 onClick={() => onSwitchMode("search" as ViewMode)}
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-all duration-150 hover:bg-accent/20 hover:text-foreground active:scale-[0.97]"
+                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-accent/20 hover:text-foreground active:scale-[0.97]"
                 title="Global Search"
                 type="button"
                 data-cuelume-press
@@ -86,7 +86,7 @@ function BuilderViewComponent({ onClose, onSwitchMode, filter, context }: Builde
               </button>
               <button
                 onClick={() => onSwitchMode("notifications" as ViewMode)}
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-all duration-150 hover:bg-accent/20 hover:text-foreground active:scale-[0.97]"
+                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-accent/20 hover:text-foreground active:scale-[0.97]"
                 title="Notifications"
                 type="button"
                 data-cuelume-press
@@ -95,7 +95,7 @@ function BuilderViewComponent({ onClose, onSwitchMode, filter, context }: Builde
               </button>
               <button
                 onClick={() => onSwitchMode("settings" as ViewMode)}
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-all duration-150 hover:bg-accent/20 hover:text-foreground active:scale-[0.97]"
+                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-accent/20 hover:text-foreground active:scale-[0.97]"
                 title="Settings"
                 type="button"
                 data-cuelume-press
@@ -107,7 +107,7 @@ function BuilderViewComponent({ onClose, onSwitchMode, filter, context }: Builde
           {filter && (
             <button
               onClick={() => filter.setWelcomeModalOpen(true)}
-              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-all duration-150 hover:bg-amber-500/15 hover:text-amber-400 active:scale-[0.97]"
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-amber-500/15 hover:text-amber-400 active:scale-[0.97]"
               title="Open Welcome Guide"
               type="button"
               data-cuelume-press
@@ -117,7 +117,7 @@ function BuilderViewComponent({ onClose, onSwitchMode, filter, context }: Builde
           )}
           <button
             onClick={onClose}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-all duration-150 hover:bg-accent/20 hover:text-foreground active:scale-[0.97]"
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-accent/20 hover:text-foreground active:scale-[0.97]"
             title="Collapse Hero"
             type="button"
             data-cuelume-press

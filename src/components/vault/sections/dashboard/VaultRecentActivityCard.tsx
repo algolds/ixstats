@@ -26,7 +26,7 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
     <FacetCard
       depth={2}
       className={cn(
-        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-all duration-300"
+        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
       )}
     >
       <TextureOverlay texture="dots" opacity={0.03} />
@@ -57,7 +57,7 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
             return (
               <div
                 key={activity.id}
-                className="border-border/40 bg-muted/30 hover:bg-muted/60 flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3 text-xs backdrop-blur-md transition-all active:scale-[0.985] dark:bg-white/5 dark:hover:bg-white/10"
+                className="border-border/40 bg-muted/30 hover:bg-muted/60 flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3 text-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.985] dark:bg-white/5 dark:hover:bg-white/10"
               >
                 <div className="flex items-center gap-3">
                   <div

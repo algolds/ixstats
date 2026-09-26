@@ -241,7 +241,7 @@ export function LeagueScheduleTab({
                 key={round}
                 onClick={() => setSelectedRound(round)}
                 className={cn(
-                  "group relative flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-black uppercase transition-all duration-200 active:scale-[0.98]",
+                  "group relative flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-black uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
                   isSelected
                     ? "border-foreground bg-foreground text-background shadow-md"
                     : isCompleted
@@ -284,7 +284,7 @@ export function LeagueScheduleTab({
               >
                 <div
                   onClick={() => onMatchClick?.(m.id)}
-                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/40 bg-card/60 p-4 shadow-sm backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md active:scale-[0.98] cursor-pointer"
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/40 bg-card/60 p-4 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md active:scale-[0.98] cursor-pointer"
                 >
                   {/* Top Bar: Match status & Rivalry Tag */}
                   <div className="flex items-center justify-between border-b border-border/20 pb-2.5 text-xs font-bold uppercase">

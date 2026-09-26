@@ -230,7 +230,7 @@ export default function SportsSeederPanel() {
                       key={preset.key}
                       onClick={() => preset.setter(!preset.state)}
                       className={cn(
-                        "flex cursor-pointer gap-3 rounded-xl border p-4 transition-all duration-300 select-none",
+                        "flex cursor-pointer gap-3 rounded-xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 select-none",
                         preset.state
                           ? "border-indigo-500/30 bg-indigo-500/5 hover:border-indigo-500/50"
                           : "bg-card/25 border-border/50 opacity-60 hover:opacity-85"

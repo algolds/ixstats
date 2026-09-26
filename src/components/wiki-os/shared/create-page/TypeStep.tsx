@@ -82,7 +82,7 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
               type="button"
               onClick={() => setPageType(item.id as PageType)}
               className={cn(
-                "flex items-start gap-2.5 rounded-xl border p-2.5 text-left transition-all",
+                "flex items-start gap-2.5 rounded-xl border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 pageType === item.id
                   ? "border-[var(--wikios-accent)] bg-[var(--wikios-accent)]/[0.08] text-[var(--wikios-text)]"
                   : "bg-foreground/[0.03] hover:bg-foreground/[0.06] border-[var(--wikios-border)] text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"

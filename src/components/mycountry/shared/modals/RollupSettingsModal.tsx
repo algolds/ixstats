@@ -296,7 +296,7 @@ function CoverageMeter({ label, percent }: { label: string; percent: number }) {
         <span className="text-foreground/80 font-mono">{clamped}%</span>
       </div>
       <div className="bg-muted/30 mt-0.5 h-1.5 overflow-hidden rounded-full">
-        <div className={`${color} h-full transition-all`} style={{ width: `${clamped}%` }} />
+        <div className={`${color} h-full transition-[color,background-color,border-color,box-shadow,opacity,transform]`} style={{ width: `${clamped}%` }} />
       </div>
     </div>
   );

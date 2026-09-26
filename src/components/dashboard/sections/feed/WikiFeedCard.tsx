@@ -309,7 +309,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
   const descHtml = descText ? formatThinkpagesContentForDisplay(descText) : "";
 
   return (
-    <div className="group bg-card/85 hover:bg-card/95 dark:bg-card/75 dark:hover:bg-card/90 relative overflow-hidden rounded-2xl border border-wiki/25 p-4 shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-wiki/40 hover:shadow-md sm:p-5 dark:border-wiki/30 dark:hover:border-wiki/50">
+    <div className="group bg-card/85 hover:bg-card/95 dark:bg-card/75 dark:hover:bg-card/90 relative overflow-hidden rounded-2xl border border-wiki/25 p-4 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-wiki/40 hover:shadow-md sm:p-5 dark:border-wiki/30 dark:hover:border-wiki/50">
       {/* ── 1. Cohesive Header Row ── */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -377,7 +377,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           </span>
           <Link
             href={wikiHref}
-            className="inline-flex items-center gap-1 rounded-full bg-wiki/10 px-2.5 py-1 text-xs font-semibold text-wiki transition-all duration-150 hover:bg-wiki/20 hover:text-wiki-hover active:scale-95"
+            className="inline-flex items-center gap-1 rounded-full bg-wiki/10 px-2.5 py-1 text-xs font-semibold text-wiki transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-wiki/20 hover:text-wiki-hover active:scale-95"
           >
             <span>Open</span>
             <ExternalLink className="h-3 w-3" />
@@ -423,7 +423,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           <button
             type="button"
             onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
-            className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium tracking-tight transition-all duration-150 active:scale-95"
+            className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95"
           >
             <ChevronDown
               className={cn(
@@ -471,7 +471,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             type="button"
             onClick={() => setIsMarginOpen((v) => !v)}
             className={cn(
-              "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none active:scale-95",
+              "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
               isMarginOpen
                 ? "bg-yellow-400/20 font-semibold text-yellow-600 ring-1 ring-yellow-400/40 dark:text-yellow-400"
                 : "text-muted-foreground hover:bg-yellow-400/15 hover:text-yellow-600 dark:hover:text-yellow-400"
@@ -491,7 +491,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           <button
             type="button"
             onClick={() => setIsRepostOpen(true)}
-            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none hover:bg-emerald-500/10 hover:text-emerald-500 active:scale-95"
+            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-emerald-500/10 hover:text-emerald-500 active:scale-95"
             title="Repost to ThinkPages feed"
           >
             <Repeat2 className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
@@ -505,7 +505,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                 type="button"
                 onClick={handleToggleLike}
                 className={cn(
-                  "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none active:scale-95",
+                  "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
                   hasLiked
                     ? "bg-red-500/15 font-semibold text-red-500"
                     : "text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
@@ -538,7 +538,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                     key={emoji}
                     type="button"
                     onClick={() => handleSelectReactionEmoji(emoji)}
-                    className="hover:bg-accent/50 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-sm transition-all duration-150 select-none hover:scale-125 active:scale-95"
+                    className="hover:bg-accent/50 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:scale-125 active:scale-95"
                   >
                     {emoji}
                   </button>
@@ -562,7 +562,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                 }}
                 disabled={isPendingStash}
                 className={cn(
-                  "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none active:scale-95",
+                  "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
                   isStashed
                     ? "bg-amber-500/15 font-semibold text-amber-600 dark:text-amber-400"
                     : "text-muted-foreground hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400"
@@ -653,7 +653,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           <button
             type="button"
             onClick={handleShare}
-            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none hover:bg-cyan-500/10 hover:text-cyan-500 active:scale-95"
+            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-cyan-500/10 hover:text-cyan-500 active:scale-95"
             title="ShareAndroid article link"
           >
             {copied ? (
@@ -722,7 +722,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                 <button
                   type="submit"
                   disabled={!marginNote.trim() || isSubmittingNote}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-semibold text-stone-950 shadow-xs transition-all hover:bg-yellow-400 active:scale-95 disabled:opacity-50"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-semibold text-stone-950 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-yellow-400 active:scale-95 disabled:opacity-50"
                 >
                   {isSubmittingNote ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
                   <span>Post Note</span>

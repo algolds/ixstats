@@ -160,7 +160,7 @@ export function MyStashTab({
             <button
               type="button"
               onClick={() => setStashSearchQuery("")}
-              className="absolute top-1/2 right-2.5 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all active:scale-[0.95] cursor-pointer"
+              className="absolute top-1/2 right-2.5 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.95] cursor-pointer"
               title="Clear search"
               aria-label="Clear search"
             >
@@ -220,7 +220,7 @@ export function MyStashTab({
                       setStashViewMode("images");
                       setStashSearchQuery("");
                     }}
-                    className="group border border-border/40 flex cursor-pointer items-center justify-between rounded-xl bg-card p-3 transition-all duration-150 hover:bg-muted/40 hover:border-border/70 active:scale-[0.98] shadow-2xs select-none"
+                    className="group border border-border/40 flex cursor-pointer items-center justify-between rounded-xl bg-card p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-muted/40 hover:border-border/70 active:scale-[0.98] shadow-2xs select-none"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       <Folder className="h-5 w-5 shrink-0" style={{ color: stash.color }} />
@@ -259,7 +259,7 @@ export function MyStashTab({
                       onClick={() => onSelectImage(img)}
                       onDoubleClick={onDoubleClickConfirm}
                       className={cn(
-                        "group relative flex flex-col overflow-hidden rounded-lg border bg-card text-left select-none transition-all duration-200 active:scale-[0.98] cursor-pointer",
+                        "group relative flex flex-col overflow-hidden rounded-lg border bg-card text-left select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98] cursor-pointer",
                         isSelected
                           ? "border-primary ring-2 ring-primary/30 shadow-sm"
                           : "border-border/50 hover:border-border hover:shadow-xs"

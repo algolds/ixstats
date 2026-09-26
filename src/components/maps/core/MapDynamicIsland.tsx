@@ -172,7 +172,7 @@ export function MapDynamicIsland({
                   router.push(messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence")
                 }
                 className={cn(
-                  "relative shrink-0 rounded-full p-1 transition-all duration-300",
+                  "relative shrink-0 rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                   isFlashing ? "scale-110 bg-red-500/20" : "text-muted-foreground"
                 )}
               >
@@ -324,7 +324,7 @@ export function MapDynamicIsland({
                       router.push(messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence")
                     }
                     className={cn(
-                      "relative shrink-0 rounded-full p-1 transition-all duration-300",
+                      "relative shrink-0 rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                       isFlashing
                         ? "scale-125 bg-red-500/20"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground"

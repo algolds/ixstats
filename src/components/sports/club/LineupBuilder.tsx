@@ -163,7 +163,7 @@ export function LineupBuilder({
                         : {}
                     }
                     className={cn(
-                      "flex items-center gap-3 rounded-lg border p-2.5 text-left transition-all",
+                      "flex items-center gap-3 rounded-lg border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       isStarter
                         ? "text-foreground border-transparent"
                         : "border-border bg-muted/40 hover:bg-muted/80 text-foreground"
@@ -233,7 +233,7 @@ export function LineupBuilder({
           <Button
             onClick={handleSave}
             disabled={setLineup.isPending}
-            className="w-full text-xs font-semibold text-white transition-all hover:opacity-90"
+            className="w-full text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90"
             size="sm"
             style={{ backgroundColor: teamColor }}
           >

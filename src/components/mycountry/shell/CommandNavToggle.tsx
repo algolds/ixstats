@@ -85,7 +85,7 @@ export function CommandNavToggle({
               }
             }}
             className={cn(
-              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-all select-none active:scale-[0.98]",
+              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.98]",
               compactMode ? "px-3 py-1.25 text-xs" : "px-3.5 py-1.5 text-xs",
               active ? activeCls : hoverCls
             )}
@@ -165,7 +165,7 @@ export function CommandRightPillNav({
                 }
               }}
               className={cn(
-                "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-all select-none active:scale-95",
+                "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-95",
                 compactMode ? "px-3 py-1.25 text-xs" : "px-3.5 py-1.5 text-xs",
                 active ? activeCls : hoverCls
               )}

@@ -332,7 +332,7 @@ export function AccountCreationModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-full p-2 text-[var(--color-text-muted)] transition-all duration-200 hover:rotate-90 hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] active:scale-95"
+                  className="rounded-full p-2 text-[var(--color-text-muted)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:rotate-90 hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] active:scale-95"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -396,7 +396,7 @@ export function AccountCreationModal({
                         <button
                           type="button"
                           onClick={() => setShowAdvanced(!showAdvanced)}
-                          className="flex items-center gap-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-2 text-xs font-semibold text-[var(--color-text-secondary)] transition-all hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
+                          className="flex items-center gap-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-2 text-xs font-semibold text-[var(--color-text-secondary)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
                         >
                           <Sparkles
                             className={cn(
@@ -430,7 +430,7 @@ export function AccountCreationModal({
                                       postingFrequency: e.target.value as any,
                                     }))
                                   }
-                                  className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30"
+                                  className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30"
                                 >
                                   <option
                                     value="low"
@@ -464,7 +464,7 @@ export function AccountCreationModal({
                                       politicalLean: e.target.value as any,
                                     }))
                                   }
-                                  className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30"
+                                  className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30"
                                 >
                                   <option
                                     value="left"
@@ -498,7 +498,7 @@ export function AccountCreationModal({
                                       personality: e.target.value as any,
                                     }))
                                   }
-                                  className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30"
+                                  className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30"
                                 >
                                   <option
                                     value="serious"
@@ -535,7 +535,7 @@ export function AccountCreationModal({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-2.5 text-xs font-semibold text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] active:scale-[0.98] sm:px-5 sm:text-sm"
+                    className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-2.5 text-xs font-semibold text-[var(--color-text-secondary)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] active:scale-[0.98] sm:px-5 sm:text-sm"
                   >
                     Cancel
                   </button>
@@ -544,7 +544,7 @@ export function AccountCreationModal({
                       type="button"
                       onClick={() => setStep("details")}
                       disabled={!canCreateMoreAccounts}
-                      className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-transparent bg-[var(--color-brand-primary)] px-4 py-2.5 text-xs font-semibold text-white transition-all duration-300 hover:scale-[1.02] hover:bg-[var(--color-brand-primary)]/90 hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 sm:px-5 sm:text-sm"
+                      className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-transparent bg-[var(--color-brand-primary)] px-4 py-2.5 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.02] hover:bg-[var(--color-brand-primary)]/90 hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 sm:px-5 sm:text-sm"
                     >
                       Continue
                     </button>
@@ -559,7 +559,7 @@ export function AccountCreationModal({
                         isCheckingUsername ||
                         createAccountMutation.isPending
                       }
-                      className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-transparent bg-[var(--color-brand-primary)] px-4 py-2.5 text-xs font-semibold text-white transition-all duration-300 hover:scale-[1.02] hover:bg-[var(--color-brand-primary)]/90 hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 sm:px-5 sm:text-sm"
+                      className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-transparent bg-[var(--color-brand-primary)] px-4 py-2.5 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.02] hover:bg-[var(--color-brand-primary)]/90 hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 sm:px-5 sm:text-sm"
                     >
                       {createAccountMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

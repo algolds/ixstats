@@ -37,7 +37,7 @@ export function AvatarGlow({
   return (
     <div
       className={cn(
-        "relative flex shrink-0 items-center justify-center transition-all duration-300",
+        "relative flex shrink-0 items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
         roundedClass,
         isSummer &&
           "animate-[pulse_1.5s_infinite] border-2 border-orange-500 shadow-[0_0_15px_#f97316]",

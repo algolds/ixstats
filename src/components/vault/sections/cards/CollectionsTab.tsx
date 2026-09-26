@@ -101,7 +101,7 @@ export function CollectionsTab({
               <button
                 onClick={() => setExpandedId(expandedId === collection.id ? null : collection.id)}
                 className={cn(
-                  "facet-hierarchy-child flex w-full items-center justify-between rounded-lg border p-3 text-left transition-all",
+                  "facet-hierarchy-child flex w-full items-center justify-between rounded-lg border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   expandedId === collection.id
                     ? "border-amber-400/30"
                     : "border-border hover:border-foreground/20"

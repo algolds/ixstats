@@ -195,7 +195,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                     title={preset.label}
                     onClick={() => onChange((p) => ({ ...p, emblemColor: preset.value }))}
                     className={cn(
-                      "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-all",
+                      "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       preset.bgClass,
                       isActive
                         ? "ring-primary ring-offset-background scale-110 border-white shadow-xs ring-2 ring-offset-2"
@@ -205,7 +205,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                 );
               })}
               <label
-                className="border-border bg-card relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-all hover:scale-105"
+                className="border-border bg-card relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
                 title="Custom Hex Color"
               >
                 <input
@@ -300,7 +300,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                     title={preset.label}
                     onClick={() => onChange((p) => ({ ...p, watermarkColor: preset.value }))}
                     className={cn(
-                      "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-all",
+                      "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       preset.bgClass,
                       isActive
                         ? "ring-primary ring-offset-background scale-110 border-white shadow-xs ring-2 ring-offset-2"
@@ -310,7 +310,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                 );
               })}
               <label
-                className="border-border bg-card relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-all hover:scale-105"
+                className="border-border bg-card relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
                 title="Custom Hex Color"
               >
                 <input

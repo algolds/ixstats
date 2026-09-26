@@ -247,7 +247,7 @@ export function PrivacySecurityPanel() {
                 setActiveFilterTab("blocked");
               }}
               className={cn(
-                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all duration-150 active:scale-[0.98]",
+                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                 activeFilterTab === "blocked"
                   ? "bg-card text-foreground font-bold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -262,7 +262,7 @@ export function PrivacySecurityPanel() {
                 setActiveFilterTab("muted");
               }}
               className={cn(
-                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all duration-150 active:scale-[0.98]",
+                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                 activeFilterTab === "muted"
                   ? "bg-card text-foreground font-bold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -277,7 +277,7 @@ export function PrivacySecurityPanel() {
                 setActiveFilterTab("keywords");
               }}
               className={cn(
-                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all duration-150 active:scale-[0.98]",
+                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                 activeFilterTab === "keywords"
                   ? "bg-card text-foreground font-bold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -734,7 +734,7 @@ export function PrivacySecurityPanel() {
             <Link
               href="/settings?tab=cards"
               data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               Manage Deck
             </Link>
@@ -745,7 +745,7 @@ export function PrivacySecurityPanel() {
                 setShowTakedownModal(true);
               }}
               data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-500 active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-500 active:scale-[0.98]"
             >
               <ShieldAlert className="h-3.5 w-3.5" />
               <span>Takedown / Opt-Out</span>
@@ -844,7 +844,7 @@ export function PrivacySecurityPanel() {
             onClick={handleExportData}
             disabled={isExporting}
             data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all active:scale-[0.98] disabled:opacity-50"
+            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
           >
             {isExporting ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -868,7 +868,7 @@ export function PrivacySecurityPanel() {
               clerk.openUserProfile();
             }}
             data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
+            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             <KeyIcon className="text-muted-foreground h-3.5 w-3.5" />
             <span>Security Profile</span>

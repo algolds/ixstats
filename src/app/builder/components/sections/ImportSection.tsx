@@ -419,13 +419,13 @@ export const ImportSection = React.memo(function ImportSection({
         )}
 
         {!parsedData && (
-          <div className="relative pb-4 transition-all duration-200">
+          <div className="relative pb-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
             {!selectedResult && (
               <div className="mb-2 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => onNavigate("foundation")}
-                  className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-accent/40 hover:text-foreground active:scale-[0.97] cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-accent/40 hover:text-foreground active:scale-[0.97] cursor-pointer"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                   <span>Back to Foundation</span>

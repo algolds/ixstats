@@ -223,7 +223,7 @@ export const Card = ({
                 <img
                   src={withBasePath(card.src)}
                   alt=""
-                  className="h-full w-full object-cover opacity-15 blur-[2px] transition-all duration-300 dark:opacity-25"
+                  className="h-full w-full object-cover opacity-15 blur-[2px] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:opacity-25"
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/80 to-white dark:from-neutral-900/20 dark:via-neutral-900/85 dark:to-neutral-900" />
               </div>

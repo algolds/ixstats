@@ -150,7 +150,7 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "facet-hierarchy-child cursor-pointer rounded-lg p-4 transition-all hover:scale-[1.01]",
+              "facet-hierarchy-child cursor-pointer rounded-lg p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.01]",
               onTradeClick && "hover:bg-white/5"
             )}
             onClick={() => onTradeClick?.(trade.id)}

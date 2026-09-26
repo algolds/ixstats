@@ -125,7 +125,7 @@ export function ScrubbableRevisionTimeline({
               <button
                 type="button"
                 onClick={() => setLayout("unified")}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   layout === "unified"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -137,7 +137,7 @@ export function ScrubbableRevisionTimeline({
               <button
                 type="button"
                 onClick={() => setLayout("split")}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   layout === "split"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -154,7 +154,7 @@ export function ScrubbableRevisionTimeline({
                 type="button"
                 onClick={() => rollbackMutation.mutate({ title })}
                 disabled={rollbackMutation.isPending}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/20 active:scale-[0.98]"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-red-500/20 active:scale-[0.98]"
               >
                 <RotateLeft className="h-3.5 w-3.5" />
                 {rollbackMutation.isPending ? "Rolling back…" : `Rollback ${revisions[0]?.author}`}
@@ -176,7 +176,7 @@ export function ScrubbableRevisionTimeline({
               {revisions.map((r, i) => (
                 <div
                   key={r.id}
-                  className={`h-3 w-1 rounded-full transition-all ${
+                  className={`h-3 w-1 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     i === targetRevIndex
                       ? "bg-wiki h-4"
                       : i === compareRevIndex
@@ -290,7 +290,7 @@ export function ScrubbableRevisionTimeline({
             <button
               type="button"
               onClick={() => setUndoTarget(compareRev)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-[0.98]"
             >
               <Undo className="h-3.5 w-3.5" />
               Revert to this version

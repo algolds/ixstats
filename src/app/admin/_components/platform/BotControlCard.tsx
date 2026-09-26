@@ -350,7 +350,7 @@ export function BotControlCard({
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id as any)}
                 className={cn(
-                  "-mb-[2px] flex cursor-pointer items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition-all select-none",
+                  "-mb-[2px] flex cursor-pointer items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
                   active
                     ? "border-primary text-foreground bg-primary/5 rounded-t-md"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/5 border-transparent"
@@ -394,7 +394,7 @@ export function BotControlCard({
                 return (
                   <div
                     key={proc.name}
-                    className="border-border/20 bg-card/15 hover:border-border/30 flex flex-col justify-between space-y-3 rounded-lg border p-3.5 transition-all"
+                    className="border-border/20 bg-card/15 hover:border-border/30 flex flex-col justify-between space-y-3 rounded-lg border p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   >
                     <div>
                       <div className="flex items-center justify-between">

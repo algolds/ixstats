@@ -158,7 +158,7 @@ export default function CardAdminDashboardPage() {
                     <FacetCard
                       depth={1}
                       interactive="hover"
-                      className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                      className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     >
                       <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                         <span>Total Sync Operations</span>
@@ -178,7 +178,7 @@ export default function CardAdminDashboardPage() {
                     <FacetCard
                       depth={1}
                       interactive="hover"
-                      className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                      className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     >
                       <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                         <span>Success Rate</span>
@@ -197,7 +197,7 @@ export default function CardAdminDashboardPage() {
                     <FacetCard
                       depth={1}
                       interactive="hover"
-                      className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                      className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     >
                       <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                         <span>Failure Rate</span>
@@ -215,7 +215,7 @@ export default function CardAdminDashboardPage() {
                     <FacetCard
                       depth={1}
                       interactive="hover"
-                      className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                      className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     >
                       <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                         <span>Avg Cards / Sync</span>
@@ -241,7 +241,7 @@ export default function CardAdminDashboardPage() {
                   <FacetCard
                     depth={1}
                     interactive="hover"
-                    className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                    className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   >
                     <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                       <span>Active Cards</span>
@@ -259,7 +259,7 @@ export default function CardAdminDashboardPage() {
                   <FacetCard
                     depth={1}
                     interactive="hover"
-                    className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                    className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   >
                     <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                       <span>Lore Categories</span>
@@ -277,7 +277,7 @@ export default function CardAdminDashboardPage() {
                   <FacetCard
                     depth={1}
                     interactive="hover"
-                    className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                    className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   >
                     <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                       <span>Pending Requests</span>
@@ -295,7 +295,7 @@ export default function CardAdminDashboardPage() {
                   <FacetCard
                     depth={1}
                     interactive="hover"
-                    className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                    className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   >
                     <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
                       <span>NS Cards</span>
@@ -332,7 +332,7 @@ export default function CardAdminDashboardPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+                  className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95 ${
                     isActive
                       ? "bg-primary/15 border-primary/40 text-foreground scale-[1.02] border shadow-sm"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
@@ -379,7 +379,7 @@ export default function CardAdminDashboardPage() {
                   <select
                     value={logCategoryFilter}
                     onChange={(e) => setLogCategoryFilter(e.target.value as any)}
-                    className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
+                    className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
                   >
                     <option value="all" className="bg-background text-foreground">
                       All Logs ({unifiedLogsData?.stats.all ?? 0})
@@ -411,7 +411,7 @@ export default function CardAdminDashboardPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => void refetchUnifiedLogs()}
-                    className="border-border/40 h-9 rounded-xl border text-xs shadow-xs transition-all active:scale-[0.98]"
+                    className="border-border/40 h-9 rounded-xl border text-xs shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   >
                     <RefreshCw className="mr-1.5 h-3 w-3" /> Refresh
                   </Button>
@@ -468,7 +468,7 @@ export default function CardAdminDashboardPage() {
                     <button
                       key={item.id}
                       onClick={() => setLogCategoryFilter(item.id as any)}
-                      className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 font-medium transition-all ${
+                      className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                         logCategoryFilter === item.id
                           ? "border-primary bg-primary text-primary-foreground font-bold shadow-xs"
                           : `${item.color} hover:opacity-80`

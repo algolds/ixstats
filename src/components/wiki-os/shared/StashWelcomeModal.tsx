@@ -235,7 +235,7 @@ export function StashWelcomeModal({
               {/* Close button */}
               <button
                 onClick={handleClose}
-                className="absolute top-3.5 right-3.5 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-stone-100 text-stone-500 transition-all hover:bg-stone-200 hover:text-stone-950 active:scale-90 dark:bg-zinc-800 dark:text-stone-400 dark:hover:bg-zinc-700 dark:hover:text-white"
+                className="absolute top-3.5 right-3.5 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-stone-100 text-stone-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-stone-200 hover:text-stone-950 active:scale-90 dark:bg-zinc-800 dark:text-stone-400 dark:hover:bg-zinc-700 dark:hover:text-white"
                 title="Close guide"
               >
                 <X className="h-4 w-4" />
@@ -268,7 +268,7 @@ export function StashWelcomeModal({
                       setActiveTab(i);
                     }}
                     className={cn(
-                      "relative cursor-pointer border-b-2 px-3 py-2.5 text-xs font-semibold transition-all",
+                      "relative cursor-pointer border-b-2 px-3 py-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       activeTab === i
                         ? "border-rose-500 font-bold text-rose-600 dark:text-rose-400"
                         : "border-transparent text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
@@ -320,7 +320,7 @@ export function StashWelcomeModal({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-rose-500 px-4 py-1.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-rose-600 active:scale-95"
+                  className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-rose-500 px-4 py-1.5 text-xs font-bold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-600 active:scale-95"
                 >
                   Start Stashing
                 </button>

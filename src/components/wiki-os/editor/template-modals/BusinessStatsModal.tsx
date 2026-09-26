@@ -168,7 +168,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
           <div className="border-border bg-muted/20 flex border-b p-1 dark:border-white/10 dark:bg-white/5">
             <button
               onClick={() => setActiveTab("search")}
-              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                 activeTab === "search"
                   ? "bg-cyan-500/20 text-cyan-400 shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -178,7 +178,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
             </button>
             <button
               onClick={() => setActiveTab("create")}
-              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                 activeTab === "create"
                   ? "bg-cyan-500/20 text-cyan-400 shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -286,14 +286,14 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
               <div className="border-border flex items-center justify-end gap-3 border-t pt-4">
                 <button
                   onClick={onClose}
-                  className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-all active:scale-[0.97]"
+                  className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleInsertBusiness}
                   disabled={!selectedBusiness}
-                  className="animate-pulse-subtle rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cyan-500 active:scale-[0.97] disabled:opacity-50"
+                  className="animate-pulse-subtle rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500 active:scale-[0.97] disabled:opacity-50"
                 >
                   Insert Business Data
                 </button>
@@ -401,14 +401,14 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                     <button
                       type="button"
                       onClick={() => setActiveTab("search")}
-                      className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-all active:scale-[0.97]"
+                      className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={createPoiMutation.isPending}
-                      className="flex items-center gap-1.5 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cyan-500 active:scale-[0.97] disabled:opacity-50"
+                      className="flex items-center gap-1.5 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500 active:scale-[0.97] disabled:opacity-50"
                     >
                       {createPoiMutation.isPending && (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />

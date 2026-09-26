@@ -103,7 +103,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
   return (
     <Card
       className={cn(
-        "overflow-hidden transition-all",
+        "overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         isOwner && "hover:ring-primary/50 cursor-pointer hover:shadow-lg hover:ring-2"
       )}
       onClick={onClick}

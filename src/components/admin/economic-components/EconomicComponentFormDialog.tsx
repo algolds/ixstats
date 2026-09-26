@@ -672,7 +672,7 @@ function AppearanceTab({
               key={color}
               type="button"
               onClick={() => setFormData((prev) => ({ ...prev, color }))}
-              className={`rounded-lg border-2 p-3 transition-all ${
+              className={`rounded-lg border-2 p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 formData.color === color
                   ? `border-${color}-400 bg-${color}-500/20`
                   : "border-white/10 hover:border-white/20"

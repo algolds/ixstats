@@ -98,7 +98,7 @@ export function ComposerActionBar({
                   size="sm"
                   onClick={() => setShowVisualizationPanel(!showVisualizationPanel)}
                   className={cn(
-                    "h-8 w-8 rounded-xl p-0 text-blue-600 transition-all duration-150 hover:bg-blue-500/10 hover:text-blue-700 active:scale-95 dark:text-blue-400 dark:hover:text-blue-300",
+                    "h-8 w-8 rounded-xl p-0 text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-blue-500/10 hover:text-blue-700 active:scale-95 dark:text-blue-400 dark:hover:text-blue-300",
                     showVisualizationPanel && "bg-blue-500/15 ring-1 ring-blue-500/30"
                   )}
                   aria-label="Add live data chart"
@@ -125,7 +125,7 @@ export function ComposerActionBar({
                   size="sm"
                   onClick={() => setShowMediaModal(true)}
                   disabled={isUploadingImage || selectedImages.length >= 4}
-                  className="h-8 w-8 rounded-xl p-0 text-emerald-600 transition-all duration-150 hover:bg-emerald-500/10 hover:text-emerald-700 active:scale-95 dark:text-emerald-400 dark:hover:text-emerald-300"
+                  className="h-8 w-8 rounded-xl p-0 text-emerald-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-emerald-500/10 hover:text-emerald-700 active:scale-95 dark:text-emerald-400 dark:hover:text-emerald-300"
                   aria-label="Add media or images"
                 >
                   {isUploadingImage ? (
@@ -182,7 +182,7 @@ export function ComposerActionBar({
                     setShowPollModal(true);
                   }}
                   className={cn(
-                    "text-poll hover:bg-poll/10 hover:text-poll h-8 w-8 rounded-xl p-0 transition-all duration-150 active:scale-95",
+                    "text-poll hover:bg-poll/10 hover:text-poll h-8 w-8 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
                     pollDraft && "bg-poll/15 ring-poll/30 ring-1"
                   )}
                   aria-label="Add Poll"
@@ -234,7 +234,7 @@ export function ComposerActionBar({
                 selectedVisualizations.length === 0 &&
                 selectedImages.length === 0)
             }
-            className="h-8 rounded-xl bg-blue-600 px-4 text-xs font-bold tracking-tight text-white shadow-md transition-all duration-150 hover:bg-blue-500 active:scale-[0.97]"
+            className="h-8 rounded-xl bg-blue-600 px-4 text-xs font-bold tracking-tight text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-blue-500 active:scale-[0.97]"
           >
             {isPending ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />

@@ -489,7 +489,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
               }}
               disabled={listPlayer.isPending}
               style={{ backgroundColor: team.color ?? "#3b82f6" }}
-              className="rounded-xl text-xs font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-[0.98]"
+              className="rounded-xl text-xs font-bold text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.98]"
             >
               {listPlayer.isPending ? "Listing..." : "Confirm Listing"}
             </Button>

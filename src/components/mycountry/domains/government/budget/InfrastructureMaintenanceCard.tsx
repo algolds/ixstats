@@ -77,7 +77,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
   return (
     <div
       className={cn(
-        "bg-card/40 border-border/40 relative overflow-hidden rounded-2xl border p-5 backdrop-blur-md transition-all duration-200",
+        "bg-card/40 border-border/40 relative overflow-hidden rounded-2xl border p-5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
         isCritical ? "border-amber-500/30" : "hover:border-white/20"
       )}
     >
@@ -139,7 +139,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
 
         <div className="bg-muted/40 h-2 w-full overflow-hidden rounded-full border border-border/20">
           <div
-            className={cn("h-full rounded-full transition-all duration-500", theme.bar)}
+            className={cn("h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500", theme.bar)}
             style={{
               width: `${Math.min(100, fundingPercent)}%`,
             }}
@@ -230,7 +230,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
               soundEffects.press();
               onDeclareDirective("Emergency Transport Infrastructure Rehabilitation");
             }}
-            className="group flex cursor-pointer items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-all hover:bg-primary/20 active:scale-[0.98]"
+            className="group flex cursor-pointer items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-primary/20 active:scale-[0.98]"
           >
             <Command className="h-3 w-3" />
             <span>Rehabilitation Directive</span>

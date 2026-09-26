@@ -45,7 +45,7 @@ function TaxRateCardComponent({
   return (
     <div
       className={cn(
-        "bg-muted/10 relative space-y-2.5 rounded-xl border p-3 shadow-sm backdrop-blur-md transition-all duration-200",
+        "bg-muted/10 relative space-y-2.5 rounded-xl border p-3 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
         isLocked
           ? (ACCENT_BORDER[channel.accent] ?? "border-border/30")
           : "border-amber-500/50 bg-amber-500/[0.03] ring-1 ring-amber-500/30"
@@ -63,7 +63,7 @@ function TaxRateCardComponent({
                 : "Editing — click to save & lock rate"
             }
             className={cn(
-              "flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border transition-all duration-200 select-none active:scale-95",
+              "flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
               isLocked
                 ? "border-border/40 bg-muted/30 text-muted-foreground/70 hover:border-border/70 hover:text-foreground"
                 : "animate-pulse border-amber-500/50 bg-amber-500/20 text-amber-400 shadow-xs shadow-amber-500/30"
@@ -112,7 +112,7 @@ function TaxRateCardComponent({
       {/* Internal Weight Progress Bar */}
       <div className="bg-muted/20 h-1 w-full overflow-hidden rounded-full">
         <div
-          className={cn("h-full transition-all duration-500 ease-out", ACCENT_BG[channel.accent])}
+          className={cn("h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ease-out", ACCENT_BG[channel.accent])}
           style={{ width: `${Math.min(contributionPct, 100)}%` }}
         />
       </div>

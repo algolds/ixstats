@@ -121,7 +121,7 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
                   {!metric.isYears && (
                     <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
                       <div
-                        className={`h-full rounded-full transition-all ${barColor(value, !!metric.invertedScale)}`}
+                        className={`h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${barColor(value, !!metric.invertedScale)}`}
                         style={{ width: `${value}%` }}
                       />
                     </div>

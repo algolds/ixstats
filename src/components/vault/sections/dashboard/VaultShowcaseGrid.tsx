@@ -43,7 +43,7 @@ export function VaultShowcaseGrid({
         <div className="relative overflow-hidden rounded-xl border border-amber-500/25 bg-amber-500/10 p-3.5 shadow-sm backdrop-blur-md dark:border-amber-500/15">
           <button
             onClick={onDismissNotice}
-            className="text-muted-foreground hover:text-foreground absolute top-2.5 right-2.5 rounded-full p-1 transition-all hover:bg-white/10"
+            className="text-muted-foreground hover:text-foreground absolute top-2.5 right-2.5 rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/10"
             aria-label="Dismiss notice"
           >
             <X className="h-3.5 w-3.5" />

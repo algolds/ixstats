@@ -75,7 +75,7 @@ function SearchViewComponent({
                 }
               }
             }}
-            className="text-foreground placeholder:text-muted-foreground/50 w-full rounded-xl border border-black/[0.06] bg-black/[0.04] py-2 pr-14 pl-9 text-sm shadow-2xs transition-all focus:border-blue-500/40 focus:bg-black/[0.06] focus:outline-none dark:border-white/10 dark:bg-white/[0.06] dark:focus:border-blue-400/40 dark:focus:bg-white/[0.09]"
+            className="text-foreground placeholder:text-muted-foreground/50 w-full rounded-xl border border-black/[0.06] bg-black/[0.04] py-2 pr-14 pl-9 text-sm shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-blue-500/40 focus:bg-black/[0.06] focus:outline-none dark:border-white/10 dark:bg-white/[0.06] dark:focus:border-blue-400/40 dark:focus:bg-white/[0.09]"
             data-command-palette-search="true"
           />
           {searchQuery && (
@@ -98,7 +98,7 @@ function SearchViewComponent({
               soundEffects.tick();
               setSearchFilter?.(f.value);
             }}
-            className={`rounded-full px-3 py-1 text-xs font-semibold transition-all active:scale-95 ${
+            className={`rounded-full px-3 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 ${
               searchFilter === f.value
                 ? "bg-foreground text-background shadow-2xs"
                 : "text-muted-foreground hover:text-foreground bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
@@ -127,7 +127,7 @@ function SearchViewComponent({
                   result.action();
                   closeDropdown();
                 }}
-                className="group flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-all select-none hover:bg-black/[0.04] active:scale-[0.985] dark:hover:bg-white/[0.06]"
+                className="group flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none hover:bg-black/[0.04] active:scale-[0.985] dark:hover:bg-white/[0.06]"
               >
                 {/* Icon or Flag */}
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/5 dark:bg-white/5">

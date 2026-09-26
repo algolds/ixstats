@@ -64,7 +64,7 @@ export function ToastBanner({ toast, onDismiss }: ToastBannerProps) {
       className={cn(
         "group pointer-events-auto relative flex w-full max-w-sm sm:max-w-md items-start gap-3 rounded-2xl border p-3.5 sm:p-4 text-left select-none",
         "bg-card/95 dark:bg-card/90 text-card-foreground backdrop-blur-2xl",
-        "border-border/60 transition-all duration-200",
+        "border-border/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
         styleConfig.glow,
         styleConfig.borderAccent
       )}

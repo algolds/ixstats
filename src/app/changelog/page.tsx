@@ -195,7 +195,7 @@ export default function ChangelogPage() {
         <div className="mb-8 flex items-center justify-between">
           <Link
             href="/dashboard"
-            className="group text-muted-foreground hover:text-foreground inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-xs font-medium backdrop-blur-md transition-all duration-150 hover:bg-white/[0.08] active:scale-[0.97]"
+            className="group text-muted-foreground hover:text-foreground inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-xs font-medium backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/[0.08] active:scale-[0.97]"
           >
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             <span>Back to Dashboard</span>

@@ -100,7 +100,7 @@ export function SystemCronScheduleWidget() {
                   key={job.id}
                   onClick={() => setSelectedId(job.id)}
                   className={cn(
-                    "flex w-full cursor-pointer items-start gap-3 rounded-lg border p-2.5 text-left transition-all duration-200",
+                    "flex w-full cursor-pointer items-start gap-3 rounded-lg border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                     isSelected
                       ? "bg-primary/5 border-primary/30 shadow-sm"
                       : "hover:bg-muted/10 hover:border-border/30 border-transparent bg-transparent"

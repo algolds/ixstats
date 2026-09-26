@@ -295,7 +295,7 @@ export function NotificationComposer() {
                 type="button"
                 onClick={() => handleField("mode", "platform_alert")}
                 className={cn(
-                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all active:scale-[0.98]",
+                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                   form.mode === "platform_alert"
                     ? "text-foreground border-rose-500/50 bg-rose-500/10 shadow-2xs"
                     : "border-border/40 bg-card/40 text-muted-foreground hover:border-border/80 hover:bg-card/80"
@@ -314,7 +314,7 @@ export function NotificationComposer() {
                 type="button"
                 onClick={() => handleField("mode", "system_message")}
                 className={cn(
-                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all active:scale-[0.98]",
+                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                   form.mode === "system_message"
                     ? "text-foreground border-amber-500/50 bg-amber-500/10 shadow-2xs"
                     : "border-border/40 bg-card/40 text-muted-foreground hover:border-border/80 hover:bg-card/80"
@@ -333,7 +333,7 @@ export function NotificationComposer() {
                 type="button"
                 onClick={() => handleField("mode", "direct_message")}
                 className={cn(
-                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all active:scale-[0.98]",
+                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                   form.mode === "direct_message"
                     ? "text-foreground border-indigo-500/50 bg-indigo-500/10 shadow-2xs"
                     : "border-border/40 bg-card/40 text-muted-foreground hover:border-border/80 hover:bg-card/80"

@@ -81,7 +81,7 @@ export function MapPipelineControls({
       <div className="border-border bg-muted/40 grid grid-cols-3 border-b text-xs font-medium">
         <button
           onClick={() => setActiveTab("generate")}
-          className={`flex items-center justify-center gap-1.5 border-b-2 px-3 py-2.5 transition-all ${
+          className={`flex items-center justify-center gap-1.5 border-b-2 px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
             activeTab === "generate"
               ? "border-primary text-primary bg-primary/5 font-semibold"
               : "text-muted-foreground hover:text-foreground border-transparent"
@@ -91,7 +91,7 @@ export function MapPipelineControls({
         </button>
         <button
           onClick={() => setActiveTab("layers")}
-          className={`flex items-center justify-center gap-1.5 border-b-2 px-3 py-2.5 transition-all ${
+          className={`flex items-center justify-center gap-1.5 border-b-2 px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
             activeTab === "layers"
               ? "border-primary text-primary bg-primary/5 font-semibold"
               : "text-muted-foreground hover:text-foreground border-transparent"
@@ -101,7 +101,7 @@ export function MapPipelineControls({
         </button>
         <button
           onClick={() => setActiveTab("claims")}
-          className={`flex items-center justify-center gap-1.5 border-b-2 px-3 py-2.5 transition-all ${
+          className={`flex items-center justify-center gap-1.5 border-b-2 px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
             activeTab === "claims"
               ? "border-primary text-primary bg-primary/5 font-semibold"
               : "text-muted-foreground hover:text-foreground border-transparent"
@@ -128,7 +128,7 @@ export function MapPipelineControls({
                     key={mode.id}
                     type="button"
                     onClick={() => onChangeProjection(mode.id as any)}
-                    className={`rounded py-1 text-center transition-all ${
+                    className={`rounded py-1 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                       projectionMode === mode.id
                         ? "bg-primary text-primary-foreground font-semibold shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -210,7 +210,7 @@ export function MapPipelineControls({
             <button
               onClick={onGenerate}
               disabled={isGenerating}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground mt-4 flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 font-medium shadow transition-all"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground mt-4 flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 font-medium shadow transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               {isGenerating ? (
                 <>
@@ -243,7 +243,7 @@ export function MapPipelineControls({
             ].map((layer) => (
               <label
                 key={layer.id}
-                className="border-border bg-background/50 hover:bg-accent/40 flex cursor-pointer items-start gap-3 rounded-md border p-2.5 transition-all"
+                className="border-border bg-background/50 hover:bg-accent/40 flex cursor-pointer items-start gap-3 rounded-md border p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 <input
                   type="checkbox"
@@ -300,7 +300,7 @@ export function MapPipelineControls({
               <button
                 type="submit"
                 disabled={!selectedFeatureId || !claimNationName.trim()}
-                className="bg-secondary hover:bg-secondary/80 text-secondary-foreground w-full rounded-md px-3 py-1.5 text-xs font-medium transition-all disabled:opacity-40"
+                className="bg-secondary hover:bg-secondary/80 text-secondary-foreground w-full rounded-md px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] disabled:opacity-40"
               >
                 Submit Claim Request
               </button>
@@ -336,13 +336,13 @@ export function MapPipelineControls({
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={() => onReviewClaim(claim.id, "approve")}
-                        className="flex flex-1 items-center justify-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-500 transition-all hover:bg-emerald-500/20"
+                        className="flex flex-1 items-center justify-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/20"
                       >
                         <Check className="h-3 w-3" /> Approve
                       </button>
                       <button
                         onClick={() => onReviewClaim(claim.id, "reject")}
-                        className="bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30 flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-all"
+                        className="bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30 flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                       >
                         <X className="h-3 w-3" /> Reject
                       </button>

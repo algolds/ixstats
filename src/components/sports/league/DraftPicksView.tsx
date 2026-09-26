@@ -165,7 +165,7 @@ export function DraftPicksView({
             <button
               onClick={() => setSelectedRound("all")}
               className={cn(
-                "rounded-md border px-3 py-1 text-xs font-medium transition-all",
+                "rounded-md border px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 selectedRound === "all"
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-background text-muted-foreground hover:text-foreground border-border"
@@ -178,7 +178,7 @@ export function DraftPicksView({
                 key={round}
                 onClick={() => setSelectedRound(round)}
                 className={cn(
-                  "rounded-md border px-3 py-1 text-xs font-medium transition-all",
+                  "rounded-md border px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   selectedRound === round
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-background text-muted-foreground hover:text-foreground border-border"

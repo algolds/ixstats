@@ -172,7 +172,7 @@ function usePollWidgetOptionContext() {
 const optionVariants = cva(
   [
     "group relative flex w-full cursor-pointer items-center gap-3 rounded-lg border p-3 text-left",
-    "transition-all duration-200 ease-out",
+    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
     "disabled:cursor-not-allowed disabled:opacity-50",
   ],
@@ -193,7 +193,7 @@ const optionVariants = cva(
 const indicatorVariants = cva(
   [
     "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-    "transition-all duration-200 ease-out",
+    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
   ],
   {
     variants: {
@@ -215,7 +215,7 @@ const indicatorVariants = cva(
 );
 
 const progressVariants = cva(
-  ["absolute inset-y-0 left-0 rounded-l-lg", "transition-all duration-500 ease-out"],
+  ["absolute inset-y-0 left-0 rounded-l-lg", "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ease-out"],
   {
     variants: {
       state: {
@@ -1151,7 +1151,7 @@ export function PollWidgetSubmit({
         </DialogClose>
         <Button
           className={cn(
-            "bg-poll hover:bg-poll/90 min-w-[120px] font-semibold text-white shadow-xs transition-all active:scale-[0.98]",
+            "bg-poll hover:bg-poll/90 min-w-[120px] font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
             className
           )}
           data-slot="poll-widget-submit"
@@ -1169,7 +1169,7 @@ export function PollWidgetSubmit({
   return (
     <Button
       className={cn(
-        "bg-poll hover:bg-poll/90 w-full overflow-hidden font-semibold text-white shadow-xs transition-all active:scale-[0.98]",
+        "bg-poll hover:bg-poll/90 w-full overflow-hidden font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
         className
       )}
       data-slot="poll-widget-submit"

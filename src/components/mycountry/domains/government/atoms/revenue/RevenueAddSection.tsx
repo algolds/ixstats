@@ -66,7 +66,7 @@ export function RevenueAddSection({
         <Button
           variant="outline"
           onClick={() => setIsAddingNew(true)}
-          className="h-12 w-full rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-100 text-zinc-600 transition-all hover:border-cyan-500/30 hover:bg-cyan-500/5 hover:text-zinc-900 dark:border-white/10 dark:bg-zinc-950/10 dark:text-zinc-300 dark:hover:text-white"
+          className="h-12 w-full rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-100 text-zinc-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-cyan-500/30 hover:bg-cyan-500/5 hover:text-zinc-900 dark:border-white/10 dark:bg-zinc-950/10 dark:text-zinc-300 dark:hover:text-white"
         >
           <Plus className="mr-2 h-4 w-4" />
           Add Custom Revenue Source

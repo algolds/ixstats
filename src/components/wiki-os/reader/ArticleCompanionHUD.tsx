@@ -123,7 +123,7 @@ export function ArticleCompanionHUD({
   return (
     <div className="wikios-companion-hud flex flex-col gap-3 select-none">
       {/* 1. Article Intelligence & Provenance Capsule */}
-      <div className="facet-surface bg-card/40 rounded-2xl border border-white/10 p-3 shadow-xs backdrop-blur-xl transition-all duration-300">
+      <div className="facet-surface bg-card/40 rounded-2xl border border-white/10 p-3 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
         <div className="border-border/30 mb-2.5 flex items-center justify-between gap-2 border-b pb-2">
           {awardsData?.hasLoreward && (
             <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-xs font-bold text-amber-400">
@@ -294,7 +294,7 @@ export function ArticleCompanionHUD({
               }
             }}
             className={cn(
-              "group flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-xs font-semibold transition-all duration-200 active:scale-[0.97]",
+              "group flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.97]",
               narrator.isPlaying
                 ? "border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 shadow-xs"
                 : "text-foreground border border-white/5 bg-white/5 hover:bg-white/10"
@@ -330,7 +330,7 @@ export function ArticleCompanionHUD({
               soundEffects.bloom();
               onOpenBacklinks?.();
             }}
-            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-xs font-medium transition-all duration-200 hover:bg-white/10 active:scale-[0.97]"
+            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10 active:scale-[0.97]"
             title="What Links Here"
           >
             <LinkIcon className="h-3 w-3 text-cyan-400" />
@@ -343,7 +343,7 @@ export function ArticleCompanionHUD({
               soundEffects.bloom();
               onOpenHistory?.();
             }}
-            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-xs font-medium transition-all duration-200 hover:bg-white/10 active:scale-[0.97]"
+            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10 active:scale-[0.97]"
             title="Revision History"
           >
             <Clock className="h-3 w-3 text-muted-foreground" />
@@ -392,7 +392,7 @@ export function ArticleCompanionHUD({
                 <Link
                   key={cleanCat}
                   href={`/wiki/categories/${encodeURIComponent(cleanCat.replace(/ /g, "_"))}`}
-                  className="text-muted-foreground hover:text-foreground max-w-[180px] truncate rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium transition-all duration-150 hover:bg-white/10 active:scale-95"
+                  className="text-muted-foreground hover:text-foreground max-w-[180px] truncate rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 active:scale-95"
                 >
                   {cleanCat}
                 </Link>

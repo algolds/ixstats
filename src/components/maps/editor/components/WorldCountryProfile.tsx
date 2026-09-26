@@ -384,7 +384,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                       }
                     }}
                     disabled={!newCountryName.trim() || createCountryFromShapePending}
-                    className="rounded bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50"
+                    className="rounded bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50"
                   >
                     {createCountryFromShapePending ? "Creating…" : "Create"}
                   </button>

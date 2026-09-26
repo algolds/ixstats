@@ -85,7 +85,7 @@ export function MatchdayTape({
               onClick={() => handleCardClick(match.id)}
               data-cuelume-press="subtle"
               className={cn(
-                "group flex min-w-[200px] shrink-0 items-center justify-between rounded-xl border border-border/40 bg-card/70 px-3 py-2 text-xs shadow-xs transition-all duration-200 hover:border-primary/50 hover:bg-muted/30 cursor-pointer active:scale-[0.98]",
+                "group flex min-w-[200px] shrink-0 items-center justify-between rounded-xl border border-border/40 bg-card/70 px-3 py-2 text-xs shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-primary/50 hover:bg-muted/30 cursor-pointer active:scale-[0.98]",
                 "snap-start"
               )}
             >

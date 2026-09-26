@@ -232,7 +232,7 @@ export function WikiNarratorPlayer({
           <span
             key={idx}
             className={cn(
-              "block max-w-[4px] min-w-[2px] flex-1 rounded-full transition-all duration-700 ease-out",
+              "block max-w-[4px] min-w-[2px] flex-1 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-700 ease-out",
               isPlaying ? "animate-pulse" : "opacity-30"
             )}
             style={{
@@ -307,7 +307,7 @@ export function WikiNarratorPlayer({
                 >
                   <div
                     className={cn(
-                      "h-1.5 w-1.5 rounded-full border transition-all duration-150",
+                      "h-1.5 w-1.5 rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
                       isActive
                         ? "scale-125 border-white shadow-[0_0_6px_rgba(96,165,250,0.9)]"
                         : "border-border/60 bg-muted group-hover/tick:border-foreground group-hover/tick:scale-125"
@@ -349,7 +349,7 @@ export function WikiNarratorPlayer({
                   narratorActions?.play?.();
                 }
               }}
-              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-white shadow-md transition-all duration-150 hover:scale-105 active:scale-92"
+              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-105 active:scale-92"
               style={{
                 backgroundColor: accentColor,
                 boxShadow: `0 2px 8px ${getRgbaColor(accentColor, 0.35)}`,
@@ -393,7 +393,7 @@ export function WikiNarratorPlayer({
               type="button"
               onClick={() => toggleTray("voice")}
               className={cn(
-                "flex h-7 cursor-pointer items-center gap-1 rounded-lg px-2 text-xs font-medium transition-all active:scale-95",
+                "flex h-7 cursor-pointer items-center gap-1 rounded-lg px-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                 activeTray === "voice"
                   ? "border font-bold shadow-xs"
                   : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
@@ -424,7 +424,7 @@ export function WikiNarratorPlayer({
               type="button"
               onClick={() => toggleTray("speed")}
               className={cn(
-                "flex h-7 cursor-pointer items-center gap-0.5 rounded-lg px-2 font-mono text-xs font-medium transition-all active:scale-95",
+                "flex h-7 cursor-pointer items-center gap-0.5 rounded-lg px-2 font-mono text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                 activeTray === "speed"
                   ? "border font-bold shadow-xs"
                   : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
@@ -449,7 +449,7 @@ export function WikiNarratorPlayer({
               type="button"
               onClick={() => toggleTray("volume")}
               className={cn(
-                "flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-all active:scale-95",
+                "flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                 activeTray === "volume"
                   ? "border shadow-xs"
                   : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
@@ -494,7 +494,7 @@ export function WikiNarratorPlayer({
                   setActiveTray("none");
                 }}
                 className={cn(
-                  "flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs transition-all",
+                  "flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   !currentVoiceId
                     ? "font-bold"
                     : "hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -525,7 +525,7 @@ export function WikiNarratorPlayer({
                       setActiveTray("none");
                     }}
                     className={cn(
-                      "flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs transition-all",
+                      "flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       isSelected
                         ? "font-bold"
                         : "hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -554,7 +554,7 @@ export function WikiNarratorPlayer({
                     narratorActions.clearCache();
                     setActiveTray("none");
                   }}
-                  className="text-destructive hover:bg-destructive/10 flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs transition-all"
+                  className="text-destructive hover:bg-destructive/10 flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 >
                   <Trash2 className="h-3 w-3" />
                   <span>Clear Voice Audio Cache</span>
@@ -587,7 +587,7 @@ export function WikiNarratorPlayer({
                       setActiveTray("none");
                     }}
                     className={cn(
-                      "flex-1 cursor-pointer rounded-lg py-1 font-mono text-xs font-bold transition-all active:scale-92",
+                      "flex-1 cursor-pointer rounded-lg py-1 font-mono text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-92",
                       isActive
                         ? "border shadow-xs"
                         : "bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent"

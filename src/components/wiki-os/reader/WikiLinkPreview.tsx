@@ -114,7 +114,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
           }
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-slate-500/[0.03] p-3.5 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20"
+          className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-slate-500/[0.03] p-3.5 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20"
         >
           <div className="min-w-0 flex-1 text-left">
             <div className="mb-1 flex items-center gap-1.5">
@@ -194,7 +194,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
 
       // Determine style classes: Minimalist Glass Pills with default light and dark mode classes
       let badgeStyle =
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold select-none transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 backdrop-blur-[2px] border ";
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.03] hover:-translate-y-0.5 backdrop-blur-[2px] border ";
       if (isLeague) {
         badgeStyle +=
           "bg-amber-600/[0.06] border-amber-600/20 text-amber-700 hover:bg-amber-600/[0.1] hover:border-amber-600/30 dark:bg-amber-500/[0.04] dark:border-amber-500/15 dark:text-amber-400/90 dark:hover:bg-amber-500/[0.08] dark:hover:border-amber-500/25";

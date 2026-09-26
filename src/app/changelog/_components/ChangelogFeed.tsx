@@ -115,7 +115,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
               placeholder="Search features, fixes, or engines…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-accent/10 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:bg-accent/20 w-full rounded-xl border border-transparent py-2 pr-4 pl-9 text-xs transition-all focus:outline-none"
+              className="bg-accent/10 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:bg-accent/20 w-full rounded-xl border border-transparent py-2 pr-4 pl-9 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
             />
             {searchQuery && (
               <button
@@ -139,7 +139,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   className={cn(
-                    "flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-[0.97]",
+                    "flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]",
                     isSelected
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/15 bg-transparent"
@@ -218,7 +218,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                       key={item.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group facet-surface border-border/40 hover:border-border/80 flex flex-col justify-between rounded-2xl border p-5 shadow-xs backdrop-blur-xl transition-all duration-200 hover:shadow-md"
+                      className="group facet-surface border-border/40 hover:border-border/80 flex flex-col justify-between rounded-2xl border p-5 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-md"
                     >
                       <div className="space-y-3">
                         {/* Item Category Header */}

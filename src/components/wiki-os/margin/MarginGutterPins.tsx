@@ -403,7 +403,7 @@ export function MarginGutterPins({
                 onClick={() => handlePinClick(pin)}
                 aria-label={pin.title}
                 className={cn(
-                  "bg-margin-accent flex cursor-pointer items-center justify-center rounded-full border border-yellow-400/60 font-bold text-stone-950 shadow-md backdrop-blur-md transition-all duration-150 active:scale-95",
+                  "bg-margin-accent flex cursor-pointer items-center justify-center rounded-full border border-yellow-400/60 font-bold text-stone-950 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
                   isHovered
                     ? "z-40 scale-110 border-yellow-400 shadow-[0_0_14px_rgba(254,240,54,0.5)]"
                     : isCluster

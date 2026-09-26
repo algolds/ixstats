@@ -292,7 +292,7 @@ export function WikiOSHeader({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={handleMouseLeave}
       style={containerStyle}
-      className="wikios-header facet-surface facet-refraction relative z-10 mb-6 flex w-full cursor-default flex-col justify-end overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 select-none"
+      className="wikios-header facet-surface facet-refraction relative z-10 mb-6 flex w-full cursor-default flex-col justify-end overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 select-none"
     >
       {/* Backdrop: Centered & Contained Vector Artwork for SVGs / Full-Bleed for Photos */}
       {backdropUrl ? (
@@ -317,7 +317,7 @@ export function WikiOSHeader({
               <img
                 src={backdropUrl}
                 alt=""
-                className="h-full max-h-[85%] w-full max-w-[92%] object-contain object-center p-3 drop-shadow-md transition-all duration-300 sm:p-5 md:p-6"
+                className="h-full max-h-[85%] w-full max-w-[92%] object-contain object-center p-3 drop-shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:p-5 md:p-6"
                 style={{
                   ...(heroMediaStyle.filter ? { filter: heroMediaStyle.filter } : {}),
                   ...(heroMediaStyle.backgroundColor
@@ -336,7 +336,7 @@ export function WikiOSHeader({
             <img
               src={backdropUrl}
               alt=""
-              className="absolute inset-0 h-full w-full object-cover object-center saturate-110 transition-all duration-300"
+              className="absolute inset-0 h-full w-full object-cover object-center saturate-110 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
               style={heroMediaStyle.filter ? { filter: heroMediaStyle.filter } : undefined}
               loading="eager"
               referrerPolicy="no-referrer"
@@ -382,7 +382,7 @@ export function WikiOSHeader({
               <Popover open={showPopover} onOpenChange={setShowPopover}>
                 <PopoverTrigger asChild>
                   <button
-                    className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-95 ${
+                    className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:shadow-md active:scale-95 ${
                       badgeConfig.classes
                     } ${
                       showCelebration && primaryAward.category === "LOREWARD"

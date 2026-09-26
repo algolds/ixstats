@@ -593,7 +593,7 @@ function CategoryRow({
         <button
           onClick={onToggle}
           className={cn(
-            "h-5 w-5 flex items-center justify-center rounded border border-border/40 text-xs text-muted-foreground hover:border-primary hover:text-primary shrink-0 transition-all cursor-pointer active:scale-95",
+            "h-5 w-5 flex items-center justify-center rounded border border-border/40 text-xs text-muted-foreground hover:border-primary hover:text-primary shrink-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer active:scale-95",
             isActive && "bg-primary/15 border-primary/40 text-primary font-bold"
           )}
           title={isActive ? "Remove filter" : "Add as filter"}

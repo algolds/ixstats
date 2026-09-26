@@ -117,7 +117,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
   const conditionTextClass = CONDITION_TEXT_THEMES[degradation.condition] ?? CONDITION_TEXT_THEMES.adequate;
 
   return (
-    <div className="bg-card/30 border-border/40 relative overflow-hidden rounded-2xl border p-5 shadow-sm backdrop-blur-md transition-all duration-200 hover:border-white/20">
+    <div className="bg-card/30 border-border/40 relative overflow-hidden rounded-2xl border p-5 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-white/20">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/20 pb-3">
         <div className="flex items-center gap-2.5">

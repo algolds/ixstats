@@ -75,7 +75,7 @@ function StatBar({
       </div>
       <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
         <div
-          className="h-full rounded-full transition-all duration-300"
+          className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
           style={{ width: `${pct}%`, backgroundColor: color }}
         />
       </div>
@@ -311,7 +311,7 @@ export function EmbassyDetailSheet({
                             <div className="mt-1.5">
                               <div className="bg-muted h-1 w-full overflow-hidden rounded-full">
                                 <div
-                                  className="h-full rounded-full bg-cyan-500 transition-all"
+                                  className="h-full rounded-full bg-cyan-500 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                                   style={{ width: `${m.progress}%` }}
                                 />
                               </div>

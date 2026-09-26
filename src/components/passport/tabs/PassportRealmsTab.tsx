@@ -163,7 +163,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
               key={`${item.id}-${country?.id || "none"}`}
               depth={1}
               interactive="none"
-              className="group/card relative flex flex-col overflow-hidden rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-all duration-200 hover:border-black/15 hover:shadow-md sm:p-6 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
+              className="group/card relative flex flex-col overflow-hidden rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-black/15 hover:shadow-md sm:p-6 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
             >
               {/* 1. Cinematic Background Flag Watermark Scrim */}
               {flagUrl && (
@@ -243,7 +243,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                         <Link
                           href={`/countries/${country.slug}`}
                           data-cuelume-press="soft"
-                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:opacity-90 active:scale-[0.97] dark:bg-white dark:text-stone-950"
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.97] dark:bg-white dark:text-stone-950"
                         >
                           <span>View Country</span>
                           <ArrowRight className="h-3.5 w-3.5" />
@@ -252,7 +252,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                         <Link
                           href={`/r/${item.slug || item.id}`}
                           data-cuelume-press="soft"
-                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:opacity-90 active:scale-[0.97] dark:bg-white dark:text-stone-950"
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.97] dark:bg-white dark:text-stone-950"
                         >
                           <span>View Realm</span>
                           <ArrowRight className="h-3.5 w-3.5" />

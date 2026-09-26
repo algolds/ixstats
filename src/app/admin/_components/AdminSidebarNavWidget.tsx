@@ -606,7 +606,7 @@ export function AdminSidebarNavWidget({
                           <button
                             key={item.href}
                             onClick={() => onNavigate(item.section)}
-                            className={`group flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-xs font-medium transition-all active:scale-[0.98] ${
+                            className={`group flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                               active
                                 ? "bg-foreground/[0.08] dark:bg-foreground/[0.12] text-foreground font-semibold shadow-xs"
                                 : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground"
@@ -630,7 +630,7 @@ export function AdminSidebarNavWidget({
                         <Link
                           key={item.href}
                           href={item.href}
-                          className={`group flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-xs font-medium transition-all active:scale-[0.98] ${
+                          className={`group flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                             active
                               ? "bg-foreground/[0.08] dark:bg-foreground/[0.12] text-foreground font-semibold shadow-xs"
                               : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground"

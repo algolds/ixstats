@@ -107,7 +107,7 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border border-border/50 bg-card/40 p-3.5 sm:px-4 sm:py-3 backdrop-blur-md shadow-xs transition-all before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-amber-500/20 before:to-transparent",
+        "relative overflow-hidden rounded-xl border border-border/50 bg-card/40 p-3.5 sm:px-4 sm:py-3 backdrop-blur-md shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-amber-500/20 before:to-transparent",
         className
       )}
     >

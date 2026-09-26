@@ -48,7 +48,7 @@ export function AccountDetailsForm({
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
-          className="rounded-full p-2 text-slate-400 transition-all duration-150 hover:bg-white/10 hover:text-white active:scale-95"
+          className="rounded-full p-2 text-slate-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 hover:text-white active:scale-95"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>

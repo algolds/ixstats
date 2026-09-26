@@ -221,7 +221,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
           ) : (
             <button
               onClick={() => setIsConfirmingRestart(true)}
-              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-border/40 bg-card/40 px-3 text-xs font-bold text-muted-foreground transition-all hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 active:scale-[0.97]"
+              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-border/40 bg-card/40 px-3 text-xs font-bold text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 active:scale-[0.97]"
               title="Restart Builder"
               type="button"
               data-cuelume-press
@@ -249,7 +249,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
                 <div
                   key={st.key}
                   className={cn(
-                    "flex items-start gap-3 rounded-lg border p-2 transition-all",
+                    "flex items-start gap-3 rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     isActive
                       ? `${theme.bg} ${theme.color} border-current`
                       : isCompleted
@@ -337,7 +337,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
 
           <button
             onClick={handleContinue}
-            className="mt-4 flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 text-xs font-bold text-zinc-950 shadow-md transition-all hover:from-amber-400 hover:to-yellow-400 active:scale-[0.98]"
+            className="mt-4 flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 text-xs font-bold text-zinc-950 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-amber-400 hover:to-yellow-400 active:scale-[0.98]"
             type="button"
             data-cuelume-press
           >

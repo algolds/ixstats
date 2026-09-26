@@ -130,7 +130,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
               data-cuelume-press="soft"
               data-cuelume-hover="tick"
               onClick={() => setActiveTab(activeTab === card.id ? null : (card.id as any))}
-              className={`group flex flex-col justify-between rounded-xl border p-4 text-left backdrop-blur-md transition-all duration-200 active:scale-[0.98] ${
+              className={`group flex flex-col justify-between rounded-xl border p-4 text-left backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98] ${
                 isSelected
                   ? "border-wiki/60 bg-card/90 ring-wiki/30 shadow-md ring-1"
                   : "border-border/40 bg-card/60 hover:border-wiki/30 hover:bg-card/80"

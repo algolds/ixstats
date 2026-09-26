@@ -86,7 +86,7 @@ export function UniversalTemplateModal({
                       setSelectedTemplate(preset.name);
                       setFieldValues({});
                     }}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                       selectedTemplate === preset.name
                         ? "bg-wiki/20 text-wiki border-wiki/30 border font-bold"
                         : "bg-secondary/60 text-muted-foreground hover:text-foreground hover:bg-secondary"

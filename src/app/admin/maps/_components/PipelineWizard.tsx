@@ -304,7 +304,7 @@ function QuickUpdatePanel() {
             onDragLeave={onDragLeave}
             onDrop={onDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-12 transition-all ${
+            className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-12 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
               isDragging
                 ? "border-blue-400 bg-blue-500/10"
                 : "border-border bg-muted/30 hover:border-border hover:bg-muted/50"

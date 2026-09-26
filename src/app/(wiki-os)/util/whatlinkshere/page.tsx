@@ -57,7 +57,7 @@ export default function WhatLinksHereHubPage() {
             <div className="flex items-center gap-2">
               <Link
                 href={withBasePath("/util")}
-                className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600 transition-all hover:bg-amber-500/15 active:scale-[0.97] dark:text-amber-400"
+                className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/15 active:scale-[0.97] dark:text-amber-400"
               >
                 <FolderTree className="h-3.5 w-3.5" />
                 <span>Special:Utilities</span>
@@ -101,11 +101,11 @@ export default function WhatLinksHereHubPage() {
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Enter target page title (e.g. Caphiria, History of Urcea, Caphirian dollar)..."
-                  className="border-border/80 placeholder:text-muted-foreground/60 text-foreground w-full rounded-2xl border bg-white/80 py-3 pr-24 pl-10 text-sm shadow-inner transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none dark:bg-zinc-950/80"
+                  className="border-border/80 placeholder:text-muted-foreground/60 text-foreground w-full rounded-2xl border bg-white/80 py-3 pr-24 pl-10 text-sm shadow-inner transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none dark:bg-zinc-950/80"
                 />
                 <button
                   type="submit"
-                  className="absolute right-2 cursor-pointer rounded-xl bg-amber-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-amber-500 active:scale-[0.97]"
+                  className="absolute right-2 cursor-pointer rounded-xl bg-amber-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500 active:scale-[0.97]"
                 >
                   Inspect
                 </button>
@@ -151,7 +151,7 @@ export default function WhatLinksHereHubPage() {
                 <Link
                   key={link.title}
                   href={withBasePath(`/wiki/${encodeURIComponent(link.title.replace(/ /g, "_"))}`)}
-                  className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/20 bg-white/60 p-3 shadow-sm backdrop-blur-md transition-all duration-150 hover:border-amber-500/40 hover:bg-white/90 hover:shadow-md active:scale-[0.98] dark:border-white/10 dark:bg-zinc-900/60 dark:hover:bg-zinc-900/90"
+                  className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/20 bg-white/60 p-3 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-amber-500/40 hover:bg-white/90 hover:shadow-md active:scale-[0.98] dark:border-white/10 dark:bg-zinc-900/60 dark:hover:bg-zinc-900/90"
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 transition-transform group-hover:scale-105">
                     <FileText className="h-4 w-4" />

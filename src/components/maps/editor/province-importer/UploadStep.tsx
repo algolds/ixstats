@@ -97,7 +97,7 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
               key={scope.id}
               type="button"
               onClick={() => importer.setImportScope(scope.id)}
-              className={`rounded-lg border px-3 py-2 text-center text-xs font-medium transition-all ${
+              className={`rounded-lg border px-3 py-2 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 importer.importScope === scope.id
                   ? "border-primary bg-primary/10 text-primary shadow-sm"
                   : "border-border hover:bg-accent text-muted-foreground hover:text-foreground"

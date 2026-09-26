@@ -76,7 +76,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
     <CutoutCard
       className={cn(
         cutoutCardSurfaceClassName,
-        "w-48 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-xl backdrop-blur-xl transition-all duration-200"
+        "w-48 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-xl backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
       )}
       trackPointerHover={false}
       texture="dots"
@@ -113,7 +113,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 key={link.label}
                 href={link.href}
                 {...extraProps}
-                className="group text-muted-foreground hover:text-foreground flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-xs font-normal tracking-normal transition-all duration-150 hover:bg-white/[0.06] active:scale-[0.97]"
+                className="group text-muted-foreground hover:text-foreground flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-xs font-normal tracking-normal transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/[0.06] active:scale-[0.97]"
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <Icon
@@ -138,7 +138,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
         <div className="border-border/30 space-y-2 border-t pt-2">
           <Link
             href="/changelog"
-            className="group block transition-all duration-150 active:scale-[0.98]"
+            className="group block transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
             title="View Release Notes & Changelog"
           >
             <StatusIndicator
@@ -146,7 +146,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
               label={`v${PLATFORM_VERSION} ${channelTheme.shortName} · Build ${BUILD_VERSION}`}
               size="sm"
               className={cn(
-                "w-full justify-center text-xs font-medium tracking-tight tabular-nums transition-all group-hover:border-white/30 group-hover:shadow-xs",
+                "w-full justify-center text-xs font-medium tracking-tight tabular-nums transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:border-white/30 group-hover:shadow-xs",
                 channelTheme.borderColor,
                 channelTheme.bgColor
               )}

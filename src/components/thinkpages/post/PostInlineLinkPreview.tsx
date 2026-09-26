@@ -13,7 +13,7 @@ export function MyLeagueInlinePreview({ leagueId }: { leagueId: string }) {
   );
 
   return (
-    <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-2.5 shadow-sm transition-all duration-150 hover:border-amber-500/35 hover:bg-amber-500/[0.08]">
+    <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-amber-500/35 hover:bg-amber-500/[0.08]">
       <div className="flex min-w-0 items-center gap-2.5">
         <span className="text-base">🏆</span>
         <div className="min-w-0">
@@ -41,7 +41,7 @@ export function MyClubInlinePreview({ teamId }: { teamId: string }) {
   const { data: teamData } = api.sports.getTeam.useQuery({ id: teamId }, { enabled: !!teamId });
 
   return (
-    <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-blue-500/20 bg-blue-500/[0.04] p-2.5 shadow-sm transition-all duration-150 hover:border-blue-500/35 hover:bg-blue-500/[0.08]">
+    <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-blue-500/20 bg-blue-500/[0.04] p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-blue-500/35 hover:bg-blue-500/[0.08]">
       <div className="flex min-w-0 items-center gap-2.5">
         <span className="text-base" style={{ color: teamData?.color || "var(--color-info)" }}>
           🛡️
@@ -73,7 +73,7 @@ export function InlineForumThreadPreview({ threadId, url }: { threadId: number; 
 
   return (
     <ForumLinkPreview threadId={threadId}>
-      <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-indigo-500/20 bg-indigo-500/[0.04] p-2.5 shadow-sm transition-all duration-150 hover:border-indigo-500/35 hover:bg-indigo-500/[0.08]">
+      <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-indigo-500/20 bg-indigo-500/[0.04] p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-indigo-500/35 hover:bg-indigo-500/[0.08]">
         <div className="flex min-w-0 items-center gap-2.5">
           <MessageCircle className="h-4 w-4 shrink-0 text-indigo-400" />
           <div className="min-w-0">

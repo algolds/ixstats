@@ -67,7 +67,7 @@ export function GallerySidebarContent({
               key={s}
               onClick={() => setSource(s)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-all",
+                "flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 source === s
                   ? "bg-amber-500/15 font-bold text-amber-600 shadow-xs dark:text-amber-400"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"

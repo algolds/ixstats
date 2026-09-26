@@ -94,7 +94,7 @@ export function MessagesFolderNav({
       {/* Settings popover button */}
       <Popover>
         <PopoverTrigger
-          className="hover:bg-accent/15 text-muted-foreground hover:text-foreground border-border/40 bg-card/50 relative z-10 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-all active:scale-95"
+          className="hover:bg-accent/15 text-muted-foreground hover:text-foreground border-border/40 bg-card/50 relative z-10 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
           aria-label="Message settings"
         >
           <Settings className="h-3.5 w-3.5" />

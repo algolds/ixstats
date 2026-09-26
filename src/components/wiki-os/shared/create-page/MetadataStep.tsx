@@ -66,7 +66,7 @@ export function MetadataStep({
                 placeholder="e.g. 15 October 1985"
                 value={personFields.birthDate}
                 onChange={(e) => setPersonFields({ ...personFields, birthDate: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -76,7 +76,7 @@ export function MetadataStep({
                 placeholder="e.g. London, United Kingdom"
                 value={personFields.birthPlace}
                 onChange={(e) => setPersonFields({ ...personFields, birthPlace: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -86,7 +86,7 @@ export function MetadataStep({
                 placeholder="e.g. British"
                 value={personFields.nationality}
                 onChange={(e) => setPersonFields({ ...personFields, nationality: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -96,7 +96,7 @@ export function MetadataStep({
                 placeholder="e.g. Economist"
                 value={personFields.occupation}
                 onChange={(e) => setPersonFields({ ...personFields, occupation: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
           </>
@@ -111,7 +111,7 @@ export function MetadataStep({
                 placeholder="e.g. Public, Private"
                 value={companyFields.type}
                 onChange={(e) => setCompanyFields({ ...companyFields, type: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -121,7 +121,7 @@ export function MetadataStep({
                 placeholder="e.g. Aerospace, Finance"
                 value={companyFields.industry}
                 onChange={(e) => setCompanyFields({ ...companyFields, industry: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -131,7 +131,7 @@ export function MetadataStep({
                 placeholder="Founder names..."
                 value={companyFields.founder}
                 onChange={(e) => setCompanyFields({ ...companyFields, founder: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -143,7 +143,7 @@ export function MetadataStep({
                 onChange={(e) =>
                   setCompanyFields({ ...companyFields, headquarters: e.target.value })
                 }
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
           </>
@@ -158,7 +158,7 @@ export function MetadataStep({
                 placeholder="e.g. June 19, 2026"
                 value={historyFields.date}
                 onChange={(e) => setHistoryFields({ ...historyFields, date: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -168,7 +168,7 @@ export function MetadataStep({
                 placeholder="e.g. Brussels, Belgium"
                 value={historyFields.location}
                 onChange={(e) => setHistoryFields({ ...historyFields, location: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -180,7 +180,7 @@ export function MetadataStep({
                 onChange={(e) =>
                   setHistoryFields({ ...historyFields, participants: e.target.value })
                 }
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -190,7 +190,7 @@ export function MetadataStep({
                 placeholder="e.g. Treaty signed"
                 value={historyFields.result}
                 onChange={(e) => setHistoryFields({ ...historyFields, result: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
           </>
@@ -205,7 +205,7 @@ export function MetadataStep({
                 placeholder="Capital city..."
                 value={countryFields.capital}
                 onChange={(e) => setCountryFields({ ...countryFields, capital: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -217,7 +217,7 @@ export function MetadataStep({
                 onChange={(e) =>
                   setCountryFields({ ...countryFields, governmentType: e.target.value })
                 }
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -227,7 +227,7 @@ export function MetadataStep({
                 placeholder="Current leader..."
                 value={countryFields.leaderName}
                 onChange={(e) => setCountryFields({ ...countryFields, leaderName: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -237,7 +237,7 @@ export function MetadataStep({
                 placeholder="e.g. Credits"
                 value={countryFields.currency}
                 onChange={(e) => setCountryFields({ ...countryFields, currency: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
           </>
@@ -252,7 +252,7 @@ export function MetadataStep({
                 placeholder="e.g. 1939 - 1945"
                 value={conflictFields.date}
                 onChange={(e) => setConflictFields({ ...conflictFields, date: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -262,7 +262,7 @@ export function MetadataStep({
                 placeholder="e.g. Global"
                 value={conflictFields.place}
                 onChange={(e) => setConflictFields({ ...conflictFields, place: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -274,7 +274,7 @@ export function MetadataStep({
                 onChange={(e) =>
                   setConflictFields({ ...conflictFields, combatant1: e.target.value })
                 }
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -286,7 +286,7 @@ export function MetadataStep({
                 onChange={(e) =>
                   setConflictFields({ ...conflictFields, combatant2: e.target.value })
                 }
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
           </>
@@ -301,7 +301,7 @@ export function MetadataStep({
                 placeholder="Leader name..."
                 value={politicsFields.leader}
                 onChange={(e) => setPoliticsFields({ ...politicsFields, leader: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -311,7 +311,7 @@ export function MetadataStep({
                 placeholder="Founder name..."
                 value={politicsFields.founder}
                 onChange={(e) => setPoliticsFields({ ...politicsFields, founder: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -321,7 +321,7 @@ export function MetadataStep({
                 placeholder="e.g. Social Democracy"
                 value={politicsFields.ideology}
                 onChange={(e) => setPoliticsFields({ ...politicsFields, ideology: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -331,7 +331,7 @@ export function MetadataStep({
                 placeholder="e.g. Red and White"
                 value={politicsFields.colors}
                 onChange={(e) => setPoliticsFields({ ...politicsFields, colors: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
           </>
@@ -348,7 +348,7 @@ export function MetadataStep({
                 placeholder="e.g. Alan Turing"
                 value={techFields.inventor}
                 onChange={(e) => setTechFields({ ...techFields, inventor: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -360,7 +360,7 @@ export function MetadataStep({
                 placeholder="e.g. 1936"
                 value={techFields.year}
                 onChange={(e) => setTechFields({ ...techFields, year: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
@@ -372,7 +372,7 @@ export function MetadataStep({
                 placeholder="e.g. Computation"
                 value={techFields.application}
                 onChange={(e) => setTechFields({ ...techFields, application: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
+                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
           </>

@@ -102,7 +102,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                     <button
                       key={item.id}
                       onClick={() => handleAddCharge(item.id)}
-                      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/5 bg-zinc-950/30 p-3 text-left text-xs transition-all outline-none hover:border-amber-500/30 hover:bg-zinc-800/40"
+                      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/5 bg-zinc-950/30 p-3 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none hover:border-amber-500/30 hover:bg-zinc-800/40"
                     >
                       <span className="text-xl">🐾</span>
                       <span className="w-full truncate text-center text-xs font-medium text-zinc-300">
@@ -134,7 +134,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                     <button
                       key={item.id}
                       onClick={() => handleAddCharge(item.id)}
-                      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/5 bg-zinc-950/30 p-3 text-left text-xs transition-all outline-none hover:border-amber-500/30 hover:bg-zinc-800/40"
+                      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/5 bg-zinc-950/30 p-3 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none hover:border-amber-500/30 hover:bg-zinc-800/40"
                     >
                       {/* SVG preview */}
                       <div

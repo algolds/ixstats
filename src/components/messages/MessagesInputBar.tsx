@@ -131,7 +131,7 @@ export function MessagesInputBar({
         <button
           type="button"
           onClick={() => setIsStashModalOpen(true)}
-          className="hover:bg-accent/15 text-muted-foreground hover:text-foreground border-border/50 bg-card/50 mb-1 flex h-[44px] w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-xl border shadow-2xs backdrop-blur-xs transition-all active:scale-95"
+          className="hover:bg-accent/15 text-muted-foreground hover:text-foreground border-border/50 bg-card/50 mb-1 flex h-[44px] w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-xl border shadow-2xs backdrop-blur-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
           title="Attach Lore Stash Link"
         >
           <BookmarkPlus className="h-4.5 w-4.5 text-indigo-400" />
@@ -158,7 +158,7 @@ export function MessagesInputBar({
           onClick={handleSend}
           disabled={!canSend}
           className={cn(
-            "mb-1 h-[44px] w-[44px] shrink-0 rounded-xl transition-all duration-200 active:scale-95",
+            "mb-1 h-[44px] w-[44px] shrink-0 rounded-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95",
             canSend
               ? "bg-blue-600 text-white shadow-md hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
               : "border-border/50 bg-muted/40 text-muted-foreground border opacity-50"

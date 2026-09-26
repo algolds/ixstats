@@ -306,7 +306,7 @@ function HeroSnapshotPanelsComponent({
               <div
                 key={ring.label}
                 onClick={() => onOpenModal("vitality")}
-                className="group flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] p-2 transition-all duration-150 hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.97]"
+                className="group flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.97]"
                 title="Click for full Vitality Breakdown"
               >
                 <HealthRing value={ring.value} size={32} color={ring.color} label={ring.label} />

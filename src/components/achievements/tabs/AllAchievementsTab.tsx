@@ -209,7 +209,7 @@ function GroupedSeriesCard({
       whileHover={isUnlocked ? { y: -3, scale: 1.008 } : { y: 0 }}
       whileTap={isUnlocked ? { scale: 0.985 } : {}}
       className={cn(
-        "group border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative flex flex-col justify-between overflow-hidden rounded-3xl border border-t-white/20 p-5 shadow-xl backdrop-blur-2xl transition-all duration-300 dark:border-t-white/10",
+        "group border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative flex flex-col justify-between overflow-hidden rounded-3xl border border-t-white/20 p-5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:border-t-white/10",
         isUnlocked && categoryTheme.cardBorderHover,
         !isUnlocked
           ? "border-border/50 bg-muted/25 border-dashed opacity-85 shadow-md select-none"
@@ -270,7 +270,7 @@ function GroupedSeriesCard({
               if (!isUnlocked) triggerLockedShake();
             }}
             className={cn(
-              "relative flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl border shadow-inner backdrop-blur-md transition-all duration-300 select-none",
+              "relative flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl border shadow-inner backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 select-none",
               isUnlocked
                 ? cn(categoryTheme.pedestal, "shadow-md group-hover:scale-105")
                 : "border-border/60 bg-muted/30 text-muted-foreground/50 cursor-not-allowed border-dashed opacity-70 backdrop-blur-md"
@@ -288,7 +288,7 @@ function GroupedSeriesCard({
             <div className="flex items-center gap-2">
               <h3
                 className={cn(
-                  "truncate text-sm font-extrabold tracking-tight transition-all",
+                  "truncate text-sm font-extrabold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   isUnlocked ? "text-foreground" : "text-muted-foreground/70 blur-[0.5px]"
                 )}
               >
@@ -299,7 +299,7 @@ function GroupedSeriesCard({
             {/* Blurred Locked Description (non-clickable) */}
             <p
               className={cn(
-                "pointer-events-none line-clamp-2 text-xs leading-snug font-medium transition-all duration-300 select-none",
+                "pointer-events-none line-clamp-2 text-xs leading-snug font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 select-none",
                 isUnlocked
                   ? "text-muted-foreground"
                   : isSecret && !isRevealed
@@ -341,7 +341,7 @@ function GroupedSeriesCard({
                         setInspectedIndex(idx);
                       }}
                       className={cn(
-                        "relative flex h-6 min-w-[24px] items-center justify-center rounded-lg px-1.5 font-mono text-xs font-bold transition-all select-none",
+                        "relative flex h-6 min-w-[24px] items-center justify-center rounded-lg px-1.5 font-mono text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
                         isCurrent
                           ? "bg-foreground text-background shadow-md"
                           : lvlUnlocked
@@ -379,7 +379,7 @@ function GroupedSeriesCard({
                   e.stopPropagation();
                   toggleSecretReveal(activeLevel.key);
                 }}
-                className="border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground flex h-7 w-7 items-center justify-center rounded-full border transition-all active:scale-95"
+                className="border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground flex h-7 w-7 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                 title={isRevealed ? "Hide Secret" : "Reveal Secret"}
               >
                 {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -471,7 +471,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
   return (
     <div className="space-y-4">
       {/* Apple Frosted Glass Filter & Search Control Center */}
-      <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/15 p-3.5 shadow-xl backdrop-blur-2xl transition-all dark:border-t-white/10">
+      <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/15 p-3.5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:border-t-white/10">
         <TextureOverlay texture="dots" opacity={0.03} />
 
         <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -483,7 +483,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
               placeholder="Search achievement series..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-border/60 bg-background/60 text-foreground placeholder:text-muted-foreground h-8.5 rounded-full pr-8 pl-8 text-xs font-medium backdrop-blur-md transition-all focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20"
+              className="border-border/60 bg-background/60 text-foreground placeholder:text-muted-foreground h-8.5 rounded-full pr-8 pl-8 text-xs font-medium backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20"
             />
             {searchQuery && (
               <button
@@ -516,7 +516,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
                     key={r}
                     onClick={() => setSelectedRarity(r)}
                     className={cn(
-                      "relative flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-xs font-bold capitalize transition-all duration-200 select-none active:scale-95",
+                      "relative flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-xs font-bold capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
                       isSelected ? config.textColor : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -554,7 +554,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
               <button
                 onClick={() => setViewMode("grid")}
                 className={cn(
-                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-xs font-bold transition-all active:scale-95",
+                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                   viewMode === "grid"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -567,7 +567,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
               <button
                 onClick={() => setViewMode("list")}
                 className={cn(
-                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-xs font-bold transition-all active:scale-95",
+                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                   viewMode === "list"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"

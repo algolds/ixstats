@@ -192,7 +192,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
             </div>
             <div className="bg-muted/40 h-1.5 w-full overflow-hidden rounded-full">
               <div
-                className="h-full rounded-full bg-amber-500 transition-all duration-300"
+                className="h-full rounded-full bg-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
                 style={{
                   width: `${(scanProgress.current / Math.max(scanProgress.total, 1)) * 100}%`,
                 }}

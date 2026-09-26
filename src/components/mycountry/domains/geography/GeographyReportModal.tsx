@@ -84,7 +84,7 @@ export function GeographyReportModal({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-xs font-medium transition-all ${
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   isActive
                     ? "bg-background text-foreground ring-border shadow-sm ring-1"
                     : "text-muted-foreground hover:text-foreground hover:bg-background/20"

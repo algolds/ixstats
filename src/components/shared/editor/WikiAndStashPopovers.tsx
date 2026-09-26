@@ -88,7 +88,7 @@ export function WikiAndStashPopovers({
             size="sm"
             disabled={disabled}
             className={cn(
-              "h-7 w-7 rounded-xl p-0 transition-all duration-150 active:scale-95",
+              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
               isWikiOpen
                 ? "bg-wiki/15 text-wiki ring-wiki/30 ring-1 dark:text-blue-400"
                 : "text-muted-foreground hover:bg-muted hover:text-wiki dark:hover:text-blue-400"
@@ -112,7 +112,7 @@ export function WikiAndStashPopovers({
                   type="button"
                   onClick={() => setWikiInsertMode("link")}
                   className={cn(
-                    "rounded px-2 py-0.5 text-xs font-semibold transition-all",
+                    "rounded px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     wikiInsertMode === "link"
                       ? "bg-white text-wiki shadow-xs dark:bg-wiki dark:text-white"
                       : "text-neutral-500 hover:text-neutral-800 dark:text-slate-400"
@@ -124,7 +124,7 @@ export function WikiAndStashPopovers({
                   type="button"
                   onClick={() => setWikiInsertMode("embed")}
                   className={cn(
-                    "rounded px-2 py-0.5 text-xs font-semibold transition-all",
+                    "rounded px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     wikiInsertMode === "embed"
                       ? "bg-white text-wiki shadow-xs dark:bg-wiki dark:text-white"
                       : "text-neutral-500 hover:text-neutral-800 dark:text-slate-400"
@@ -141,7 +141,7 @@ export function WikiAndStashPopovers({
                 type="button"
                 onClick={() => setWikiSource("ixwiki")}
                 className={cn(
-                  "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-all",
+                  "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   wikiSource === "ixwiki"
                     ? "border-wiki/50 bg-wiki/10 text-wiki"
                     : "border-neutral-200 text-neutral-500 hover:bg-neutral-50 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/5"
@@ -153,7 +153,7 @@ export function WikiAndStashPopovers({
                 type="button"
                 onClick={() => setWikiSource("iiwiki")}
                 className={cn(
-                  "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-all",
+                  "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   wikiSource === "iiwiki"
                     ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                     : "border-neutral-200 text-neutral-500 hover:bg-neutral-50 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/5"
@@ -233,7 +233,7 @@ export function WikiAndStashPopovers({
                               setSelectedWikiImageUrl(img === selectedWikiImageUrl ? "" : img)
                             }
                             className={cn(
-                              "h-10 w-10 cursor-pointer rounded border object-cover transition-all",
+                              "h-10 w-10 cursor-pointer rounded border object-cover transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                               selectedWikiImageUrl === img
                                 ? "border-wiki ring-2 ring-wiki/50"
                                 : "border-transparent opacity-60 hover:opacity-100"
@@ -270,7 +270,7 @@ export function WikiAndStashPopovers({
             size="sm"
             disabled={disabled}
             className={cn(
-              "h-7 w-7 rounded-xl p-0 transition-all duration-150 active:scale-95",
+              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
               isStashesOpen
                 ? "bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30"
                 : "text-muted-foreground hover:bg-muted hover:text-amber-500"

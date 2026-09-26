@@ -19,7 +19,7 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
   return (
     <div className="bg-background sticky top-0 z-40 mb-6 pt-2 pb-3">
       {/* Solid Opaque Apple Panel */}
-      <div className="bg-card text-card-foreground border-border relative overflow-hidden rounded-2xl border p-4 shadow-xl transition-all md:p-5">
+      <div className="bg-card text-card-foreground border-border relative overflow-hidden rounded-2xl border p-4 shadow-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] md:p-5">
         {/* Subtle Micro-Texture Overlay */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.055]"
@@ -40,7 +40,7 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
 
         {/* Prominent Inline Search Bar with Halo / Dynamic Island Pill Feeling Lucky Button */}
         <div className="relative z-10 mb-3">
-          <div className="facet-surface facet-interactive group relative flex items-center rounded-xl border border-border/80 bg-background/60 px-3.5 py-2 backdrop-blur-md transition-all focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20">
+          <div className="facet-surface facet-interactive group relative flex items-center rounded-xl border border-border/80 bg-background/60 px-3.5 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20">
             <Search className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-focus-within:text-foreground" />
             <input
               type="text"

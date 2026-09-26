@@ -105,7 +105,7 @@ export function SportsSidebarNav({
             const noteCount = notifications?.[item.id] ?? 0;
 
             const buttonClass = cn(
-              "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-150 cursor-pointer outline-none select-none",
+              "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 cursor-pointer outline-none select-none",
               isActive
                 ? "bg-foreground text-background shadow-md font-bold"
                 : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
@@ -156,7 +156,7 @@ export function SportsSidebarNav({
         const noteCount = notifications?.[item.id] ?? 0;
 
         const buttonClass = cn(
-          "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition-all duration-150 cursor-pointer outline-none select-none",
+          "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 cursor-pointer outline-none select-none",
           isActive
             ? "bg-foreground text-background shadow-sm font-bold"
             : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",

@@ -47,7 +47,7 @@ export function CountryMetricsGrid({ metrics, variant = "standard" }: CountryMet
             <Tooltip key={index}>
               <TooltipTrigger asChild>
                 <div
-                  className={`text-center ${cardSize} rounded-lg border ${metric.colorClass} flex shrink-0 cursor-pointer flex-col justify-between transition-all duration-300 hover:scale-105`}
+                  className={`text-center ${cardSize} rounded-lg border ${metric.colorClass} flex shrink-0 cursor-pointer flex-col justify-between transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-105`}
                 >
                   <div className={`${textSize} grow font-bold whitespace-nowrap`}>
                     {metric.value}

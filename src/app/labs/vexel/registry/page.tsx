@@ -19,13 +19,13 @@ export default function VexelRegistryPage() {
           <div className="flex gap-2">
             <Link
               href="/labs/vexel/generate"
-              className="rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-400 transition-all hover:bg-white/5 hover:text-zinc-100"
+              className="rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5 hover:text-zinc-100"
             >
               Generator Gallery
             </Link>
             <Link
               href="/labs/vexel"
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition-all hover:bg-amber-600"
+              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-600"
             >
               Open Studio
             </Link>

@@ -138,7 +138,7 @@ function AtomicCardComponent<TType extends string = string>({
   return (
     <div
       className={cn(
-        "group relative flex flex-col justify-between rounded-xl border p-4 text-left transition-all duration-150 select-none",
+        "group relative flex flex-col justify-between rounded-xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none",
         isSelected
           ? cn(theme.bg, theme.activeBorder, "ring-1 ring-current/20 shadow-xs")
           : "border-border/50 bg-card hover:border-border hover:bg-card/80 hover:shadow-xs",
@@ -167,7 +167,7 @@ function AtomicCardComponent<TType extends string = string>({
             size="sm"
             variant={isSelected ? "default" : "outline"}
             className={cn(
-              "group/btn h-8 w-8 shrink-0 p-0 transition-all duration-150 ease-out",
+              "group/btn h-8 w-8 shrink-0 p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 ease-out",
               "hover:scale-105 active:scale-[0.92]",
               isSelected
                 ? "shadow-xs"

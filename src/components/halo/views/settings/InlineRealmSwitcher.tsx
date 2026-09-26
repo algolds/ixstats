@@ -86,7 +86,7 @@ export function InlineRealmSwitcher({ onClose }: InlineRealmSwitcherProps) {
           setIsOpen(!isOpen);
         }}
         className={cn(
-          "flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 select-none hover:bg-black/[0.04] active:scale-[0.985] dark:hover:bg-white/[0.06]",
+          "flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-black/[0.04] active:scale-[0.985] dark:hover:bg-white/[0.06]",
           isOpen && "bg-black/[0.03] dark:bg-white/[0.05]"
         )}
       >
@@ -154,7 +154,7 @@ export function InlineRealmSwitcher({ onClose }: InlineRealmSwitcherProps) {
                     disabled={isSwitching}
                     onClick={() => handleSelectRealm(membership.organization.id)}
                     className={cn(
-                      "group flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-left text-xs transition-all active:scale-[0.985]",
+                      "group flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.985]",
                       isSelected
                         ? "bg-accent text-foreground font-semibold"
                         : "text-muted-foreground hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"

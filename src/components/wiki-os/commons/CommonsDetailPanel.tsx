@@ -152,7 +152,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
           </h3>
           <button
             onClick={onClose}
-            className="group rounded-full p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground active:scale-95 transition-all cursor-pointer"
+            className="group rounded-full p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
             title="Close Panel (Esc)"
             aria-label="Close Panel"
             type="button"
@@ -222,7 +222,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
                 aria-checked={format === fmt}
                 onClick={() => setFormat(fmt)}
                 className={cn(
-                  "py-1 text-xs font-medium rounded-md transition-all duration-150 active:scale-[0.97] cursor-pointer text-center select-none",
+                  "py-1 text-xs font-medium rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] cursor-pointer text-center select-none",
                   format === fmt
                     ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -246,7 +246,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
             size="sm"
             variant="outline"
             onClick={handleCopy}
-            className="group flex-1 text-xs active:scale-95 transition-all cursor-pointer"
+            className="group flex-1 text-xs active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
           >
             {copied ? (
               <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-400 animate-in zoom-in-50 duration-150" />
@@ -260,7 +260,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
             variant="outline"
             onClick={handleCopyImage}
             title="Copy image to clipboard"
-            className="group text-muted-foreground hover:text-foreground active:scale-95 transition-all cursor-pointer"
+            className="group text-muted-foreground hover:text-foreground active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
           >
             {copyImageSuccess ? (
               <Check className="h-3.5 w-3.5 text-emerald-400 animate-in zoom-in-50 duration-150" />
@@ -273,7 +273,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
             variant="outline"
             onClick={() => window.open(image.url, "_blank")}
             title="Download original file"
-            className="group text-muted-foreground hover:text-foreground active:scale-95 transition-all cursor-pointer"
+            className="group text-muted-foreground hover:text-foreground active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
           >
             <Download className="h-3.5 w-3.5 transition-colors duration-200 group-hover:text-primary" />
           </Button>
@@ -288,7 +288,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
                 stashMutation.isSuccess
                   ? "border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
                   : "text-muted-foreground hover:text-foreground",
-                "group active:scale-95 transition-all cursor-pointer"
+                "group active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
               )}
             >
               <Bookmark
@@ -342,7 +342,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
                 href={image.descriptionUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-foreground transition-all select-none hover:bg-muted active:scale-95"
+                className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none hover:bg-muted active:scale-95"
               >
                 <ExternalLink className="h-3 w-3" />
                 {image.descriptionUrl.includes("ixwiki.com")
@@ -359,7 +359,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
               href={image.descriptionUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-foreground transition-all select-none hover:bg-muted active:scale-95"
+              className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none hover:bg-muted active:scale-95"
             >
               <ExternalLink className="h-3 w-3" />
               {image.descriptionUrl.includes("ixwiki.com")
@@ -408,7 +408,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
           >
             <button
               onClick={() => setIsZoomed(false)}
-              className="absolute top-4 right-4 cursor-pointer rounded-full border border-white/10 bg-white/10 p-2.5 text-white transition-all hover:bg-white/20 active:scale-95"
+              className="absolute top-4 right-4 cursor-pointer rounded-full border border-white/10 bg-white/10 p-2.5 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/20 active:scale-95"
               title="Close Lightbox (Esc)"
               type="button"
             >

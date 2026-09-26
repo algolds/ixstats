@@ -167,7 +167,7 @@ export const FacetContainer = forwardRef<HTMLDivElement, FacetContainerProps>(
       "facet-container relative",
       `facet-${variant}`,
       `facet-depth-${currentDepth}`,
-      isClickable && "facet-interactive cursor-pointer active:scale-[0.98] transition-all duration-150",
+      isClickable && "facet-interactive cursor-pointer active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
       enableRefraction && "facet-refract",
       adaptToBackground && "facet-adapt",
       themeClass,

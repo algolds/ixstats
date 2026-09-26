@@ -177,7 +177,7 @@ export function MyCountryTabsList({
               key={tab.id}
               onClick={() => handleChange(tab.id)}
               className={cn(
-                "group relative flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-150 active:scale-[0.97] sm:text-sm",
+                "group relative flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] sm:text-sm",
                 isActive
                   ? tab.activeTextClassName || "text-foreground font-bold"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
@@ -232,7 +232,7 @@ export function MyCountryTabsList({
         tone="mycountry"
         size="sm"
         className={cn(
-          "w-full min-w-fit rounded-xl p-1 transition-all duration-200",
+          "w-full min-w-fit rounded-xl p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
           variant === "rail"
             ? "border-0 bg-black/10 shadow-none backdrop-blur-md dark:bg-white/[0.03]"
             : "facet-surface facet-refraction border border-white/5"

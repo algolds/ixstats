@@ -43,7 +43,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
         return (
           <div
             key={q.id}
-            className="group relative flex flex-col gap-2.5 overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-4 shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-[var(--wikios-border)]/80 hover:bg-[var(--wikios-surface)]/90 hover:shadow-md"
+            className="group relative flex flex-col gap-2.5 overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-4 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--wikios-border)]/80 hover:bg-[var(--wikios-surface)]/90 hover:shadow-md"
           >
             {/* Left Highlighter Ink Bar */}
             <div
@@ -69,7 +69,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
                 <button
                   type="button"
                   onClick={(e) => handleCopyQuote(e, q.id, q.selectedText)}
-                  className="flex h-7 cursor-pointer items-center gap-1 rounded-xl border border-[var(--wikios-border)] bg-white/5 px-2 text-xs font-semibold text-[var(--wikios-text-dim)] shadow-2xs transition-all hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
+                  className="flex h-7 cursor-pointer items-center gap-1 rounded-xl border border-[var(--wikios-border)] bg-white/5 px-2 text-xs font-semibold text-[var(--wikios-text-dim)] shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
                   title="Copy quote"
                 >
                   {copiedId === q.id ? (
@@ -88,7 +88,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
                 <Link
                   href={withBasePath(`/wiki/${q.pageSlug}`)}
                   onClick={() => soundEffects.press()}
-                  className="flex h-7 w-7 items-center justify-center rounded-xl border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-2xs transition-all hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
+                  className="flex h-7 w-7 items-center justify-center rounded-xl border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
                   title="Open article"
                 >
                   <ArrowUpRight className="h-3.5 w-3.5" />

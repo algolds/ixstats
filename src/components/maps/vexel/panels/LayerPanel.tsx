@@ -63,7 +63,7 @@ export default function LayerPanel() {
                     onClick={() =>
                       addOrdinary({ type: "chief", tincture: "or", lineStyle: "straight" })
                     }
-                    className="rounded px-1.5 py-0.5 text-amber-500 transition-all hover:bg-white/5 hover:text-amber-400"
+                    className="rounded px-1.5 py-0.5 text-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5 hover:text-amber-400"
                   >
                     + Add
                   </button>

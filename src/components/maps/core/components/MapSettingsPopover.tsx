@@ -77,7 +77,7 @@ export function MapSettingsPopover({
                 <button
                   key={t}
                   onClick={() => setTheme(t)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all ${
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     theme === t
                       ? "bg-background text-foreground ring-border shadow-sm ring-1"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -101,7 +101,7 @@ export function MapSettingsPopover({
               <button
                 key={mode}
                 onClick={() => onProjectionChange(mode)}
-                className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-all ${
+                className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   projectionMode === mode
                     ? "bg-background text-foreground ring-border shadow-sm ring-1"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"

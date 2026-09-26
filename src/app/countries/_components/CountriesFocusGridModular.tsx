@@ -83,7 +83,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
             <motion.div
               key={country.id}
               className={cn(
-                "relative transition-all duration-300",
+                "relative transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                 isHovered ? "z-20" : isExpanded ? "z-30" : "z-10"
               )}
               initial={{ opacity: 0, y: 20 }}
@@ -142,7 +142,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
           <button
             onClick={loadMore}
             data-cuelume-press="tick"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-8 py-3 font-semibold shadow-md transition-all duration-150 active:scale-[0.98]"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-8 py-3 font-semibold shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
           >
             Load More Countries
           </button>
@@ -170,7 +170,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
             <button
               onClick={onClearFilters}
               data-cuelume-press="tick"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-5 py-2.5 text-sm font-semibold shadow-md transition-all duration-150 active:scale-[0.98]"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-5 py-2.5 text-sm font-semibold shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
             >
               Clear Filters
             </button>

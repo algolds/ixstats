@@ -108,7 +108,7 @@ export function BlurbSection() {
                 e.stopPropagation();
                 setModalOpen(true);
               }}
-              className="group/btn inline-flex cursor-pointer items-center gap-1 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-1 text-xs font-medium text-indigo-700 shadow-2xs transition-all duration-150 hover:border-indigo-500/40 hover:bg-indigo-500/20 active:scale-95 dark:border-indigo-400/25 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:border-indigo-400/40 dark:hover:bg-indigo-500/25"
+              className="group/btn inline-flex cursor-pointer items-center gap-1 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-1 text-xs font-medium text-indigo-700 shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-indigo-500/40 hover:bg-indigo-500/20 active:scale-95 dark:border-indigo-400/25 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:border-indigo-400/40 dark:hover:bg-indigo-500/25"
             >
               <span>Respond</span>
               <ChevronRight className="h-3 w-3 shrink-0 text-indigo-600/80 transition-transform duration-150 group-hover/btn:translate-x-0.5 dark:text-indigo-300/80" />

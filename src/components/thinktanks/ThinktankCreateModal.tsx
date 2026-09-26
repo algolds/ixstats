@@ -187,7 +187,7 @@ export function ThinktankCreateModal({
                       soundEffects.press();
                       setCategory(cat);
                     }}
-                    className={`rounded-lg px-2 py-0.5 text-xs font-medium transition-all ${
+                    className={`rounded-lg px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                       category === cat
                         ? "bg-emerald-600 text-white shadow-sm dark:bg-emerald-500"
                         : "bg-muted/60 text-muted-foreground hover:bg-muted"

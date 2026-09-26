@@ -4,11 +4,11 @@ import React, { useState } from "react";
 import { Archery as Crosshair, Navigator as Navigation } from "iconoir-react";
 
 export const btnClass =
-  "flex h-6 items-center gap-1 rounded px-1.5 text-xs text-muted-foreground transition-all duration-100 ease-out active:scale-[0.98] hover:bg-accent hover:text-foreground";
+  "flex h-6 items-center gap-1 rounded px-1.5 text-xs text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98] hover:bg-accent hover:text-foreground";
 export const activeBtnClass =
-  "flex h-6 items-center gap-1 rounded bg-primary/10 px-1.5 text-xs font-medium text-primary shadow-xs transition-all duration-100 ease-out active:scale-[0.98]";
+  "flex h-6 items-center gap-1 rounded bg-primary/10 px-1.5 text-xs font-medium text-primary shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98]";
 export const dangerBtnClass =
-  "flex h-6 items-center gap-1 rounded px-1.5 text-xs text-red-500 transition-all duration-100 ease-out active:scale-[0.98] hover:bg-red-500/10";
+  "flex h-6 items-center gap-1 rounded px-1.5 text-xs text-red-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98] hover:bg-red-500/10";
 export const labelClass = "text-xs font-medium uppercase tracking-wider text-muted-foreground";
 export const dividerClass = "bg-border h-4 w-px";
 export const selectClass =

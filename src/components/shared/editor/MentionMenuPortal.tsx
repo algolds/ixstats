@@ -62,7 +62,7 @@ export function MentionMenuPortal({
                   }}
                   onClick={() => onSelect(idx)}
                   className={cn(
-                    "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left transition-all duration-150 select-none",
+                    "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none",
                     active
                       ? "border-l-[3px] border-blue-500 bg-blue-500/10 font-semibold text-blue-600 dark:bg-blue-500/20 dark:text-blue-300"
                       : "text-neutral-700 hover:bg-neutral-500/5 dark:text-slate-300 dark:hover:bg-white/5"

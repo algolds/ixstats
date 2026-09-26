@@ -64,7 +64,7 @@ export function OverviewTab({
                     gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
-                className="border-border/30 bg-card/40 hover:bg-card/70 cursor-pointer rounded-xl border p-3 text-left transition-all duration-150 active:scale-[0.98] backdrop-blur-md"
+                className="border-border/30 bg-card/40 hover:bg-card/70 cursor-pointer rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98] backdrop-blur-md"
               >
                 <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   {metricView.gdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
@@ -115,7 +115,7 @@ export function OverviewTab({
                     population: v.population === "total" ? "density" : "total",
                   }))
                 }
-                className="border-border/30 bg-card/40 hover:bg-card/70 cursor-pointer rounded-xl border p-3 text-left transition-all duration-150 active:scale-[0.98] backdrop-blur-md"
+                className="border-border/30 bg-card/40 hover:bg-card/70 cursor-pointer rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98] backdrop-blur-md"
               >
                 <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   {metricView.population === "total" ? "Population" : "Pop. Density"}
@@ -168,7 +168,7 @@ export function OverviewTab({
                     : undefined
                 }
                 className={cn(
-                  "border-border/30 bg-card/40 rounded-xl border p-3 text-left transition-all duration-150 backdrop-blur-md",
+                  "border-border/30 bg-card/40 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 backdrop-blur-md",
                   country.areaSqMi &&
                     country.landArea &&
                     "hover:bg-card/70 cursor-pointer active:scale-[0.98]"

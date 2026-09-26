@@ -161,7 +161,7 @@ export function ClubTransfersSection({
                           <Button
                             size="sm"
                             style={{ backgroundColor: teamColor }}
-                            className="h-8 text-xs font-semibold text-white transition-all hover:opacity-90"
+                            className="h-8 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90"
                             onClick={() => {
                               const inputEl = document.getElementById(
                                 `search-bid-${p.id}`
@@ -250,7 +250,7 @@ export function ClubTransfersSection({
                       <Button
                         size="sm"
                         style={{ backgroundColor: teamColor }}
-                        className="h-8 text-xs font-semibold text-white transition-all hover:opacity-90"
+                        className="h-8 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90"
                         onClick={() => {
                           const inputVal = (
                             document.getElementById(`bid-amount-${l.id}`) as HTMLInputElement
@@ -363,7 +363,7 @@ export function ClubTransfersSection({
                     <Button
                       size="sm"
                       style={{ backgroundColor: teamColor }}
-                      className="h-7 flex-1 text-xs font-semibold text-white transition-all hover:opacity-90"
+                      className="h-7 flex-1 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90"
                       onClick={() => respondToBid.mutate({ bidId: b.id, action: "accept" })}
                       disabled={respondToBid.isPending}
                     >

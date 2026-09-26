@@ -122,7 +122,7 @@ function AtomicSelectedListComponent<TType extends string = string>({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 active:scale-[0.92] transition-all"
+                    className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 active:scale-[0.92] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     onClick={() => onDeselect(component.type)}
                     title={`Remove ${component.name}`}
                   >

@@ -158,7 +158,7 @@ export function ClubTacticsSection({
                       : {}
                   }
                   className={cn(
-                    "cursor-pointer rounded-2xl border p-4 transition-all duration-300",
+                    "cursor-pointer rounded-2xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                     isActive
                       ? "scale-[1.01] border-transparent"
                       : "border-border/50 bg-muted/40 hover:bg-muted/80 text-foreground"
@@ -215,7 +215,7 @@ export function ClubTacticsSection({
                     cx="32"
                     cy="32"
                     r="26"
-                    className="fill-none transition-all duration-500"
+                    className="fill-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                     style={{ stroke: teamColor }}
                     strokeWidth="6"
                     strokeDasharray="163.3"
@@ -249,7 +249,7 @@ export function ClubTacticsSection({
                     cx="32"
                     cy="32"
                     r="26"
-                    className="fill-none transition-all duration-500"
+                    className="fill-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                     style={{ stroke: teamColor }}
                     strokeWidth="6"
                     strokeDasharray="163.3"

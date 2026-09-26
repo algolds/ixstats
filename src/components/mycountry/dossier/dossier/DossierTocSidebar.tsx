@@ -355,7 +355,7 @@ export function DossierTocSidebar({
                           <button
                             key={item.id}
                             onClick={() => handleItemClick(item)}
-                            className={`flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs transition-all ${
+                            className={`flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                               isSelected
                                 ? "bg-blue-500/20 font-bold text-blue-400"
                                 : item.isPage

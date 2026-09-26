@@ -204,7 +204,7 @@ export const AtomicFilterBar = React.memo(function AtomicFilterBar<TType extends
       {/* Top Search & Template Bar — Unified Inline Capsule */}
       <div
         className={cn(
-          "group relative flex w-full items-center rounded-xl border bg-card/60 shadow-xs backdrop-blur-md transition-all duration-150",
+          "group relative flex w-full items-center rounded-xl border bg-card/60 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
           isFocused
             ? "border-primary/60 ring-1 ring-primary/20 shadow-xs"
             : "border-border/50 hover:border-border/80 hover:bg-card/80"
@@ -274,7 +274,7 @@ export const AtomicFilterBar = React.memo(function AtomicFilterBar<TType extends
           onClick={() => onCategoryChange(null)}
           disabled={disabled}
           className={cn(
-            "flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all select-none active:scale-[0.96]",
+            "flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.96]",
             selectedCategory === null
               ? "bg-primary text-primary-foreground shadow-xs"
               : "border border-border/50 bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted/70 hover:text-foreground"
@@ -305,7 +305,7 @@ export const AtomicFilterBar = React.memo(function AtomicFilterBar<TType extends
               onClick={() => onCategoryChange(cat)}
               disabled={disabled}
               className={cn(
-                "flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all select-none active:scale-[0.96]",
+                "flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.96]",
                 isSelected
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "border border-border/50 bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted/70 hover:text-foreground"

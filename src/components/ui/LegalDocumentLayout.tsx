@@ -137,7 +137,7 @@ export function LegalDocumentLayout({
               variant="outline"
               size="sm"
               onClick={handleCopyLink}
-              className="border-border bg-card/60 text-muted-foreground hover:bg-accent hover:text-foreground h-8 text-xs transition-all active:scale-[0.97]"
+              className="border-border bg-card/60 text-muted-foreground hover:bg-accent hover:text-foreground h-8 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
             >
               {copied ? (
                 <>
@@ -155,7 +155,7 @@ export function LegalDocumentLayout({
               variant="outline"
               size="sm"
               onClick={handlePrint}
-              className="border-border bg-card/60 text-muted-foreground hover:bg-accent hover:text-foreground h-8 text-xs transition-all active:scale-[0.97] print:hidden"
+              className="border-border bg-card/60 text-muted-foreground hover:bg-accent hover:text-foreground h-8 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97] print:hidden"
             >
               <Printer className="mr-1.5 h-3.5 w-3.5" />
               Print
@@ -227,7 +227,7 @@ export function LegalDocumentLayout({
                   <button
                     key={section.id}
                     onClick={() => scrollToSection(section.id)}
-                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-[0.97] ${
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97] ${
                       isActive
                         ? "border border-amber-500/30 bg-amber-500/15 font-semibold text-amber-600 dark:text-amber-400"
                         : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -265,7 +265,7 @@ export function LegalDocumentLayout({
                     <button
                       key={section.id}
                       onClick={() => scrollToSection(section.id)}
-                      className={`group flex w-full items-start gap-2.5 rounded-xl p-2.5 text-left text-xs transition-all active:scale-[0.98] ${
+                      className={`group flex w-full items-start gap-2.5 rounded-xl p-2.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                         isActive
                           ? "border border-amber-500/20 bg-amber-500/10 font-semibold text-amber-600 shadow-xs dark:text-amber-400"
                           : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"

@@ -63,7 +63,7 @@ export function PlayPauseMorph({
         <path
           d={leftPath}
           fill={fill}
-          className="transition-all duration-260 ease-[cubic-bezier(0.23,1,0.32,1)]"
+          className="transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-260 ease-[cubic-bezier(0.23,1,0.32,1)]"
           style={{
             transformOrigin: "center",
           }}
@@ -73,7 +73,7 @@ export function PlayPauseMorph({
         <path
           d={rightPath}
           fill={fill}
-          className="transition-all duration-260 ease-[cubic-bezier(0.23,1,0.32,1)]"
+          className="transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-260 ease-[cubic-bezier(0.23,1,0.32,1)]"
           style={{
             transformOrigin: "center",
           }}

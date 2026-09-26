@@ -141,7 +141,7 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
               soundEffects.press();
               setActiveTab("owned");
             }}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-all ${
+            className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
               activeTab === "owned"
                 ? "bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
@@ -155,7 +155,7 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
               soundEffects.press();
               setActiveTab("verify");
             }}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-all ${
+            className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
               activeTab === "verify"
                 ? "bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
@@ -245,7 +245,7 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                                 }
                               }}
                               data-cuelume-press="soft"
-                              className={`facet-interactive flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition-all active:scale-[0.98] ${
+                              className={`facet-interactive flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                                 card.isHidden
                                   ? "border-border/60 bg-muted text-muted-foreground border"
                                   : "border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 dark:text-rose-400"

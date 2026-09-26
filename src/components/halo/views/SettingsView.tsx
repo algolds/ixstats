@@ -137,7 +137,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
   }
 
   return (
-    <div className="p-4 transition-all duration-300">
+    <div className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
       <SettingsHeader
         onClose={onClose}
         isOnWikiPage={isOnWikiPage}
@@ -147,7 +147,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
       <div
         className={cn(
-          "grid gap-4 transition-all duration-300",
+          "grid gap-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           morePrefsExpanded ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
         )}
       >
@@ -157,7 +157,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
           <SectionLabel>Appearance</SectionLabel>
 
           {/* Theme */}
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-150 select-none hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
             <div className="bg-primary/15 shrink-0 rounded-md p-1.5">
               {effectiveTheme === "dark" ? (
                 <Moon className="text-primary h-3.5 w-3.5" />
@@ -242,7 +242,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               type="button"
               onClick={() => handleToggleMorePrefs(!morePrefsExpanded)}
               className={cn(
-                "group flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 select-none active:scale-[0.985]",
+                "group flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.985]",
                 morePrefsExpanded
                   ? "border border-blue-500/25 bg-blue-500/10 text-blue-400 shadow-xs"
                   : "border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
@@ -289,7 +289,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               <SectionLabel>Account</SectionLabel>
               <button
                 onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
-                className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 select-none hover:bg-black/[0.04] active:scale-[0.985] dark:hover:bg-white/[0.06]"
+                className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-black/[0.04] active:scale-[0.985] dark:hover:bg-white/[0.06]"
               >
                 <div className="shrink-0 rounded-md bg-blue-500/15 p-1.5">
                   <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
@@ -542,7 +542,7 @@ function SettingsRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-150 select-none hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
+    <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
       {onIconClick ? (
         <button
           type="button"

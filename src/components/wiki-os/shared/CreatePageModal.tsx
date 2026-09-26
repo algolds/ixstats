@@ -190,7 +190,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh]" onClick={onClose}>
       <div className="fixed inset-0 bg-black/40 backdrop-blur-[12px] dark:bg-black/60" />
       <div
-        className="facet-depth-4 facet-refraction relative z-10 w-full max-w-lg rounded-2xl p-6 text-[var(--wikios-text)] transition-all duration-300"
+        className="facet-depth-4 facet-refraction relative z-10 w-full max-w-lg rounded-2xl p-6 text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -276,7 +276,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
                 step === 3 || (step === 2 && pageType === "blank") ? handleCreate : handleNext
               }
               disabled={!title.trim() || checkExists.isFetching}
-              className="flex items-center gap-1 rounded-xl bg-[var(--wikios-accent)] px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-[var(--wikios-accent-hover)] active:scale-95 disabled:scale-100 disabled:opacity-50"
+              className="flex items-center gap-1 rounded-xl bg-[var(--wikios-accent)] px-4 py-2 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-accent-hover)] active:scale-95 disabled:scale-100 disabled:opacity-50"
             >
               {checkExists.isFetching ? (
                 <span>Checking...</span>

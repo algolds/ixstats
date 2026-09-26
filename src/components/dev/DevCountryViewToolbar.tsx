@@ -83,7 +83,7 @@ export function DevCountryViewToolbar() {
           "fixed right-4 bottom-4 z-50",
           "flex items-center gap-2 px-3 py-2",
           "rounded-full shadow-lg",
-          "border backdrop-blur-md transition-all hover:scale-105",
+          "border backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105",
           isViewingOtherCountry
             ? "border-amber-500 bg-amber-500/20 text-amber-300"
             : "border-blue-500 bg-blue-500/20 text-blue-300"
@@ -105,7 +105,7 @@ export function DevCountryViewToolbar() {
       className={cn(
         "fixed right-4 bottom-4 z-50 w-80",
         "rounded-xl p-4 shadow-2xl",
-        "border backdrop-blur-xl transition-all",
+        "border backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         isViewingOtherCountry
           ? "border-amber-500/50 bg-slate-900/95"
           : "border-blue-500/30 bg-slate-900/95"

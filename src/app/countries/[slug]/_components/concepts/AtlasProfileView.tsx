@@ -132,7 +132,7 @@ export function AtlasProfileView({ country, slug }: AtlasProfileViewProps) {
                     data-cuelume-press="soft"
                     onClick={() => setActiveLayer(layer.id)}
                     className={cn(
-                      "rounded-lg px-2 py-1 text-xs font-bold transition-all duration-150 active:scale-[0.96]",
+                      "rounded-lg px-2 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96]",
                       activeLayer === layer.id
                         ? "bg-[var(--flag-primary)] text-white shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -166,7 +166,7 @@ export function AtlasProfileView({ country, slug }: AtlasProfileViewProps) {
                       data-cuelume-press="soft"
                       onClick={() => setSelectedProvince(isSelected ? null : prov)}
                       className={cn(
-                        "group flex flex-col justify-between rounded-2xl border p-4 text-left transition-all duration-200 active:scale-[0.97] backdrop-blur-md",
+                        "group flex flex-col justify-between rounded-2xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.97] backdrop-blur-md",
                         isSelected
                           ? "border-[var(--flag-primary)] bg-[var(--flag-primary)]/15 shadow-[0_0_20px_rgba(56,189,248,0.2)]"
                           : "border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]"
@@ -199,7 +199,7 @@ export function AtlasProfileView({ country, slug }: AtlasProfileViewProps) {
 
               <Link
                 href={createUrl("/maps")}
-                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-150 active:scale-[0.96] hover:bg-white/10"
+                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96] hover:bg-white/10"
               >
                 <span>⤢ Fullscreen IxWorld</span>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
@@ -231,7 +231,7 @@ export function AtlasProfileView({ country, slug }: AtlasProfileViewProps) {
                       data-cuelume-press="soft"
                       onClick={() => setActiveTab(tab)}
                       className={cn(
-                        "rounded-lg px-2.5 py-1 text-xs font-bold capitalize transition-all duration-150 active:scale-[0.96]",
+                        "rounded-lg px-2.5 py-1 text-xs font-bold capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96]",
                         activeTab === tab
                           ? "bg-white/10 text-foreground"
                           : "text-muted-foreground hover:text-foreground"

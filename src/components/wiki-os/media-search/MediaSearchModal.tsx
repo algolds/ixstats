@@ -116,13 +116,13 @@ export function MediaSearchModal({
           <TabsList className="border-border/40 grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0">
             <TabsTrigger
               value="wiki-repository"
-              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-muted/50 data-[state=active]:shadow-none transition-all cursor-pointer select-none"
+              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-muted/50 data-[state=active]:shadow-none transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer select-none"
             >
               Repository
             </TabsTrigger>
             <TabsTrigger
               value="upload"
-              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-muted/50 data-[state=active]:shadow-none transition-all cursor-pointer select-none"
+              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-muted/50 data-[state=active]:shadow-none transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer select-none"
             >
               Upload 
             </TabsTrigger>
@@ -170,7 +170,7 @@ export function MediaSearchModal({
               onClick={handleSelectConfirm}
               disabled={!selectedImage || isDownloading}
               size="sm"
-              className="h-8 px-4 text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer"
+              className="h-8 px-4 text-xs font-semibold active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
             >
               {isDownloading ? (
                 <>

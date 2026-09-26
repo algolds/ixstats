@@ -151,7 +151,7 @@ function IntentBranchingTree({
             <div
               key={it.id}
               className={cn(
-                "group relative flex items-center justify-between rounded-xl border p-2 text-xs transition-all",
+                "group relative flex items-center justify-between rounded-xl border p-2 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 isCurrent
                   ? "border-amber-500/40 bg-amber-500/10 shadow-xs"
                   : "border-border/40 bg-muted/10 hover:bg-muted/20"
@@ -330,7 +330,7 @@ function IntentDetail({
           <button
             type="button"
             onClick={handleChainDirective}
-            className="group inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-500 shadow-xs transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
+            className="group inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-500 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
           >
             <Command className="h-3.5 w-3.5" />
             <span>Build on this →</span>
@@ -341,7 +341,7 @@ function IntentDetail({
               <button
                 type="button"
                 onClick={handleCopySummary}
-                className="border-border/40 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/40 inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold transition-all"
+                className="border-border/40 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/40 inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 {copied ? (
                   <Check className="h-3 w-3 text-emerald-400" />
@@ -357,7 +357,7 @@ function IntentDetail({
                 type="button"
                 onClick={() => updateM.mutate({ id: intent.id, status: "completed" })}
                 disabled={updateM.isPending}
-                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-400 transition-all hover:bg-emerald-500/20"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/20"
               >
                 <CheckCircle2 className="h-3 w-3" />
                 <span>Complete Directive</span>
@@ -367,7 +367,7 @@ function IntentDetail({
             <button
               type="button"
               onClick={() => setIsShareModalOpen(true)}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-500 dark:text-blue-400 shadow-xs transition-all hover:bg-blue-500/20 active:scale-95"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-500 dark:text-blue-400 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500/20 active:scale-95"
             >
               <BookOpen className="h-3.5 w-3.5" />
               <span>Share to ThinkPages...</span>
@@ -417,7 +417,7 @@ function IntentDetail({
         <div className="bg-muted/50 h-2 overflow-hidden rounded-full dark:bg-white/10">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-500",
+              "h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500",
               (linked.data?.progress ?? 0) >= 100
                 ? "bg-emerald-500/80"
                 : (linked.data?.progress ?? 0) > 0
@@ -657,7 +657,7 @@ function DrillSheetsComponent({
               <Link
                 href={`/countries/${encodeURIComponent(countryId)}#${drill.kind}`}
                 target="_blank"
-                className="group border-border/80 bg-muted/50 hover:bg-muted text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shadow-xs transition-all active:scale-95"
+                className="group border-border/80 bg-muted/50 hover:bg-muted text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
               >
                 <span>Open Page</span>
                 <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

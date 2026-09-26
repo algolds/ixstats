@@ -124,7 +124,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
       {/* Trigger Card - Facet Compliant */}
       <button
         onClick={() => setIsOpen(true)}
-        className="facet-hierarchy-child border-border hover:bg-muted/10 flex w-full cursor-pointer items-center justify-between rounded-xl border p-4 text-left transition-all hover:shadow-md active:scale-[0.99]"
+        className="facet-hierarchy-child border-border hover:bg-muted/10 flex w-full cursor-pointer items-center justify-between rounded-xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:shadow-md active:scale-[0.99]"
       >
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-indigo-500/10 p-2.5">

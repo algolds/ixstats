@@ -176,7 +176,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border/40 bg-card/60 p-5 backdrop-blur-xl transition-all duration-300",
+        "group relative overflow-hidden rounded-2xl border border-border/40 bg-card/60 p-5 backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
         className
       )}
     >
@@ -365,7 +365,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               soundEffects.press();
               onSelectFlag();
             }}
-            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/80 px-3 py-2 text-xs font-semibold text-foreground shadow-xs transition-all hover:border-amber-500/40 hover:bg-accent active:scale-[0.98]"
+            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/80 px-3 py-2 text-xs font-semibold text-foreground shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-amber-500/40 hover:bg-accent active:scale-[0.98]"
             data-cuelume-press
           >
             <Flag className="h-3.5 w-3.5 text-amber-500" />
@@ -378,7 +378,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               soundEffects.press();
               onSelectCoatOfArms();
             }}
-            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/80 px-3 py-2 text-xs font-semibold text-foreground shadow-xs transition-all hover:border-teal-500/40 hover:bg-accent active:scale-[0.98]"
+            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/80 px-3 py-2 text-xs font-semibold text-foreground shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-teal-500/40 hover:bg-accent active:scale-[0.98]"
             data-cuelume-press
           >
             <Shield className="h-3.5 w-3.5 text-teal-500" />

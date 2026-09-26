@@ -165,7 +165,7 @@ export function VaultSidebarNav({
             const isActive = item.id === activeId;
             const Icon = item.icon;
             const cls = cn(
-              "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 border",
+              "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 border",
               isActive
                 ? cn("font-bold shadow-xs", item.activeColor)
                 : "text-muted-foreground hover:bg-muted hover:text-foreground border-transparent"
@@ -235,7 +235,7 @@ export function VaultSidebarNav({
           const rowEl = (
             <div
               className={cn(
-                "flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200 border",
+                "flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 border",
                 isActive
                   ? cn("font-bold shadow-xs", item.activeColor)
                   : "text-muted-foreground hover:text-foreground hover:bg-white/5 border-transparent"

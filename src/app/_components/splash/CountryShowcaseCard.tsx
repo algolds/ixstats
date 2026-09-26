@@ -391,7 +391,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
                     <span className="text-muted-foreground w-20 text-xs">{ind.label}</span>
                     <div className="bg-muted h-1.5 flex-1 overflow-hidden rounded-full">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-amber-600 to-yellow-500 transition-all duration-500 dark:from-amber-500 dark:to-yellow-400"
+                        className="h-full rounded-full bg-gradient-to-r from-amber-600 to-yellow-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 dark:from-amber-500 dark:to-yellow-400"
                         style={{
                           width: `${Math.min(100, ind.value)}%`,
                           opacity: ind.value >= 70 ? 1 : ind.value >= 45 ? 0.85 : 0.65,

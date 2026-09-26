@@ -181,7 +181,7 @@ export function StoreItemCard({
               size="sm"
               onClick={() => onPreview(item)}
               className={cn(
-                "h-7 w-full border text-xs font-bold transition-all duration-200",
+                "h-7 w-full border text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                 isPreviewing
                   ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-600 shadow-[0_0_8px_rgba(6,182,212,0.25)] dark:text-cyan-400"
                   : "border-border/40 hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
@@ -194,7 +194,7 @@ export function StoreItemCard({
             onClick={() => onPurchase(item)}
             disabled={isPurchasing || isOwned}
             className={cn(
-              "h-8 w-full border-none py-2 text-xs font-bold text-white transition-all duration-200",
+              "h-8 w-full border-none py-2 text-xs font-bold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
               isOwned
                 ? "bg-secondary text-muted-foreground border-border/50 cursor-not-allowed border"
                 : isPurchasing

@@ -188,7 +188,7 @@ export function ClubOverviewSection({
                 </div>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="border-border/30 bg-muted/20 hover:bg-muted/40 rounded-2xl border p-4 transition-all duration-200">
+                <div className="border-border/30 bg-muted/20 hover:bg-muted/40 rounded-2xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                   <div className="mb-2 flex items-center gap-2">
                     <Users className="h-4 w-4" style={{ color: teamColor }} />
                     <h4 className="text-foreground text-xs font-bold">Train Squad</h4>
@@ -198,7 +198,7 @@ export function ClubOverviewSection({
                   </p>
                 </div>
 
-                <div className="border-border/30 bg-muted/20 hover:bg-muted/40 rounded-2xl border p-4 transition-all duration-200">
+                <div className="border-border/30 bg-muted/20 hover:bg-muted/40 rounded-2xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                   <div className="mb-2 flex items-center gap-2">
                     <ArrowLeftRight className="h-4 w-4" style={{ color: teamColor }} />
                     <h4 className="text-foreground text-xs font-bold">Scout Transfers</h4>
@@ -208,7 +208,7 @@ export function ClubOverviewSection({
                   </p>
                 </div>
 
-                <div className="border-border/30 bg-muted/20 hover:bg-muted/40 rounded-2xl border p-4 transition-all duration-200">
+                <div className="border-border/30 bg-muted/20 hover:bg-muted/40 rounded-2xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                   <div className="mb-2 flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" style={{ color: teamColor }} />
                     <h4 className="text-foreground text-xs font-bold">Tweak Tactics</h4>
@@ -218,7 +218,7 @@ export function ClubOverviewSection({
                   </p>
                 </div>
 
-                <div className="border-border/30 bg-muted/20 hover:bg-muted/40 rounded-2xl border p-4 transition-all duration-200">
+                <div className="border-border/30 bg-muted/20 hover:bg-muted/40 rounded-2xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                   <div className="mb-2 flex items-center gap-2">
                     <DollarSign className="h-4 w-4" style={{ color: teamColor }} />
                     <h4 className="text-foreground text-xs font-bold">Collect Revenue</h4>

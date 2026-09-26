@@ -1547,7 +1547,7 @@ export function CountryInspector() {
               setIsFullscreen(!isFullscreen);
               setSidebarHidden(!sidebarHidden);
             }}
-            className="bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-all"
+            className="bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           >
             {isFullscreen ? (
@@ -1665,7 +1665,7 @@ export function CountryInspector() {
                           <button
                             onClick={() => handleToggleDbEffect(eff.id)}
                             className={cn(
-                              "rounded border px-1.5 py-0.5 text-xs font-bold transition-all",
+                              "rounded border px-1.5 py-0.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                               isDisabled
                                 ? "bg-primary/10 text-primary border-primary/20"
                                 : "bg-destructive/10 text-destructive border-destructive/20"

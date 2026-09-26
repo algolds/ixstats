@@ -76,7 +76,7 @@ export function NationStatesCardsPanel() {
             <Link
               href="/vault"
               data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <span>Full Vault</span>
               <ExternalLink className="h-3 w-3 opacity-60" />
@@ -84,7 +84,7 @@ export function NationStatesCardsPanel() {
             <Link
               href="/vault/ns-deck"
               data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <NationStatesLogo size="xs" className="h-3 w-auto" />
               <span>Import Deck</span>
@@ -95,7 +95,7 @@ export function NationStatesCardsPanel() {
               disabled={isRefetching}
               data-cuelume-press="soft"
               title="Sync deck with server"
-              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-all active:scale-[0.97] disabled:opacity-50"
+              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97] disabled:opacity-50"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", isRefetching && "animate-spin")} />
             </button>
@@ -166,7 +166,7 @@ export function NationStatesCardsPanel() {
                 {filteredCards.map((card) => (
                   <div
                     key={card.cardId}
-                    className="border-border/50 bg-card/60 hover:bg-card/90 hover:border-border flex items-center justify-between gap-3 rounded-xl border p-2.5 shadow-2xs transition-all"
+                    className="border-border/50 bg-card/60 hover:bg-card/90 hover:border-border flex items-center justify-between gap-3 rounded-xl border p-2.5 shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       <div className="border-border/60 bg-muted/60 relative flex h-9 w-12 shrink-0 overflow-hidden rounded-lg border shadow-2xs">
@@ -240,7 +240,7 @@ export function NationStatesCardsPanel() {
               setShowTakedownModal(true);
             }}
             data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-500 active:scale-[0.98]"
+            className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-500 active:scale-[0.98]"
           >
             <ShieldAlert className="h-3.5 w-3.5" />
             <span>Takedown / Opt-Out</span>

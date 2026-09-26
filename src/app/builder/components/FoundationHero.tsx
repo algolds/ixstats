@@ -95,7 +95,7 @@ function PathCard({
       <button
         type="button"
         onClick={onClick}
-        className="group relative h-full w-full text-left transition-all focus:outline-none"
+        className="group relative h-full w-full text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
         data-cuelume-press
       >
         <FacetCard
@@ -104,7 +104,7 @@ function PathCard({
           texture="chevron"
           textureOpacity={0.05}
           className={cn(
-            "h-full border p-6 transition-all duration-300",
+            "h-full border p-6 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
             accentStyles.border,
             "hover:shadow-lg hover:shadow-black/20"
           )}
@@ -389,7 +389,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                           e.stopPropagation();
                           handleConfirmDiscard();
                         }}
-                        className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold active:scale-[0.98] shadow-md shadow-destructive/25 transition-all cursor-pointer"
+                        className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold active:scale-[0.98] shadow-md shadow-destructive/25 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
                         data-cuelume-press
                       >
                         <Trash className="h-3.5 w-3.5" />
@@ -406,7 +406,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                   onClick={handleResumeClick}
-                  className="group relative cursor-pointer overflow-hidden rounded-2xl border border-amber-500/30 bg-card/60 p-4 sm:p-5 shadow-lg shadow-amber-500/5 backdrop-blur-xl transition-all duration-300 hover:border-amber-500/50 hover:bg-card/80 hover:shadow-amber-500/10 active:scale-[0.99]"
+                  className="group relative cursor-pointer overflow-hidden rounded-2xl border border-amber-500/30 bg-card/60 p-4 sm:p-5 shadow-lg shadow-amber-500/5 backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:border-amber-500/50 hover:bg-card/80 hover:shadow-amber-500/10 active:scale-[0.99]"
                   data-cuelume-press
                   role="button"
                   tabIndex={0}
@@ -496,7 +496,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                           handleResumeClick();
                         }}
                         size="sm"
-                        className="group/btn flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-xs sm:text-sm font-bold text-zinc-950 shadow-md shadow-amber-500/20 hover:from-amber-400 hover:to-yellow-400 active:scale-[0.98] transition-all cursor-pointer"
+                        className="group/btn flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-xs sm:text-sm font-bold text-zinc-950 shadow-md shadow-amber-500/20 hover:from-amber-400 hover:to-yellow-400 active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
                         data-cuelume-press
                       >
                         <span>Resume Building</span>

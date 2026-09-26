@@ -80,7 +80,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
   };
 
   const actionButtonClass = (colors: string) =>
-    `flex w-full items-center justify-start gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-3 text-xs font-semibold backdrop-blur-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${colors}`;
+    `flex w-full items-center justify-start gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-3 text-xs font-semibold backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-[1.02] active:scale-[0.98] ${colors}`;
 
   return (
     <motion.div
@@ -102,10 +102,10 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 <img
                   src={user.imageUrl}
                   alt=""
-                  className="h-7 w-7 rounded-full object-cover ring-2 ring-blue-400/30 transition-all group-hover:ring-blue-400/60"
+                  className="h-7 w-7 rounded-full object-cover ring-2 ring-blue-400/30 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:ring-blue-400/60"
                 />
               ) : (
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 ring-2 ring-blue-400/30 transition-all group-hover:ring-blue-400/60">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 ring-2 ring-blue-400/30 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:ring-blue-400/60">
                   <User className="h-3.5 w-3.5 text-blue-400" />
                 </div>
               )}
@@ -126,7 +126,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                   const slug = country.slug || country.name.replace(/\s+/g, "_");
                   window.location.href = createAbsoluteUrl(`/countries/${slug}`);
                 }}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/15 border-border/50 bg-accent/10 hover:border-border inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-all duration-150 active:scale-95"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/15 border-border/50 bg-accent/10 hover:border-border inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95"
                 title="Public Country Profile"
               >
                 <User className="h-3 w-3 text-blue-400" />
@@ -137,7 +137,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 onClick={() => {
                   window.location.href = createAbsoluteUrl("/mycountry/editor");
                 }}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/15 border-border/50 bg-accent/10 hover:border-border inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-all duration-150 active:scale-95"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/15 border-border/50 bg-accent/10 hover:border-border inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95"
                 title="Open MyCountry Map Editor"
               >
                 <Edit3 className="h-3 w-3 text-amber-400" />
@@ -268,7 +268,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                               gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                             }));
                           }}
-                          className="rounded-lg bg-white/[0.04] p-1.5 text-center transition-all hover:bg-white/[0.07] active:scale-[0.98]"
+                          className="rounded-lg bg-white/[0.04] p-1.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/[0.07] active:scale-[0.98]"
                         >
                           <PreText
                             className="text-muted-foreground/60 text-xs font-medium tracking-wider uppercase"
@@ -299,7 +299,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                               population: v.population === "total" ? "density" : "total",
                             }));
                           }}
-                          className="rounded-lg bg-white/[0.04] p-1.5 text-center transition-all hover:bg-white/[0.07] active:scale-[0.98]"
+                          className="rounded-lg bg-white/[0.04] p-1.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/[0.07] active:scale-[0.98]"
                         >
                           <PreText
                             className="text-muted-foreground/60 text-xs font-medium tracking-wider uppercase"

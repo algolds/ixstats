@@ -222,7 +222,7 @@ export function CountryActionsMenu({
     foreignPolicyMutation.isPending;
 
   const actionButtonClass = (colors: string) =>
-    `flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium backdrop-blur-sm transition-all duration-200 disabled:opacity-50 ${colors}`;
+    `flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 disabled:opacity-50 ${colors}`;
 
   if (!mounted) return null;
 
@@ -262,7 +262,7 @@ export function CountryActionsMenu({
                       </div>
                       <button
                         onClick={onClose}
-                        className="group rounded-xl p-2 transition-all duration-200 hover:bg-white/10"
+                        className="group rounded-xl p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10"
                         aria-label="Close"
                       >
                         <X className="h-5 w-5 text-white/60 transition-colors group-hover:text-white" />

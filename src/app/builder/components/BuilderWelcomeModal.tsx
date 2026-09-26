@@ -203,7 +203,7 @@ export function BuilderWelcomeModal({
                     key={tab}
                     onClick={() => setActiveTab(i)}
                     className={cn(
-                      "relative cursor-pointer border-b-2 px-3 py-2.5 text-xs font-semibold transition-all",
+                      "relative cursor-pointer border-b-2 px-3 py-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       activeTab === i
                         ? "border-amber-500 font-bold text-amber-500"
                         : "text-muted-foreground hover:text-foreground border-transparent"
@@ -244,7 +244,7 @@ export function BuilderWelcomeModal({
                       </div>
 
                       <div
-                        className="force-gpu relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.06] to-black/[0.02] p-3 shadow-lg transition-all duration-300 dark:border-white/20 dark:from-white/15 dark:to-white/5"
+                        className="force-gpu relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.06] to-black/[0.02] p-3 shadow-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:border-white/20 dark:from-white/15 dark:to-white/5"
                         style={{
                           backdropFilter: "blur(20px) saturate(145%)",
                           WebkitBackdropFilter: "blur(20px) saturate(145%)",

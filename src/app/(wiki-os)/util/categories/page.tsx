@@ -146,7 +146,7 @@ export default function CategoriesIndexPage() {
                   }
                 }}
                 placeholder="Search all categories, worldbuilding topics, or sovereign nations..."
-                className="border-border/80 placeholder:text-muted-foreground/60 text-foreground w-full rounded-2xl border bg-white/80 py-3 pr-10 pl-10 text-sm shadow-inner transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:bg-zinc-950/80"
+                className="border-border/80 placeholder:text-muted-foreground/60 text-foreground w-full rounded-2xl border bg-white/80 py-3 pr-10 pl-10 text-sm shadow-inner transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:bg-zinc-950/80"
               />
               {searchQuery && (
                 <button
@@ -166,7 +166,7 @@ export default function CategoriesIndexPage() {
             <button
               onClick={() => setActiveTab("domains")}
               className={cn(
-                "cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
+                "cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 activeTab === "domains"
                   ? "text-foreground bg-white shadow-sm dark:bg-zinc-800"
                   : "text-muted-foreground hover:text-foreground"
@@ -177,7 +177,7 @@ export default function CategoriesIndexPage() {
             <button
               onClick={() => setActiveTab("all-categories")}
               className={cn(
-                "cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
+                "cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 activeTab === "all-categories"
                   ? "text-foreground bg-white shadow-sm dark:bg-zinc-800"
                   : "text-muted-foreground hover:text-foreground"
@@ -188,7 +188,7 @@ export default function CategoriesIndexPage() {
             <button
               onClick={() => setActiveTab("nations")}
               className={cn(
-                "cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
+                "cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 activeTab === "nations"
                   ? "text-foreground bg-white shadow-sm dark:bg-zinc-800"
                   : "text-muted-foreground hover:text-foreground"

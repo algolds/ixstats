@@ -133,7 +133,7 @@ export function CardTakedownVerificationModal({
                 value={nationName}
                 onChange={(e) => setNationName(e.target.value)}
                 placeholder="e.g. The Grendels"
-                className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-xl border px-3 text-xs transition-all outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-xl border px-3 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
               />
             </div>
 
@@ -201,7 +201,7 @@ export function CardTakedownVerificationModal({
                   value={checksum}
                   onChange={(e) => setChecksum(e.target.value)}
                   placeholder="Paste one-time token"
-                  className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-xl border px-3 font-mono text-xs transition-all outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                  className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-xl border px-3 font-mono text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
                 />
               </div>
 
@@ -212,7 +212,7 @@ export function CardTakedownVerificationModal({
                 <select
                   value={selectedReason}
                   onChange={(e) => setSelectedReason(e.target.value)}
-                  className="border-border bg-background text-foreground h-9 w-full cursor-pointer rounded-xl border px-3 text-xs transition-all outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                  className="border-border bg-background text-foreground h-9 w-full cursor-pointer rounded-xl border px-3 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
                 >
                   <option value="">— Select a reason —</option>
                   <option value="I am the nation owner and rights holder of this flag artwork.">
@@ -233,7 +233,7 @@ export function CardTakedownVerificationModal({
                     onChange={(e) => setCustomReason(e.target.value)}
                     placeholder="Describe your basis for removal"
                     autoFocus
-                    className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-xl border px-3 text-xs transition-all outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                    className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-xl border px-3 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
                   />
                 )}
               </div>
@@ -261,7 +261,7 @@ export function CardTakedownVerificationModal({
                 size="sm"
                 disabled={!nationName.trim() || !checksum.trim() || takedownMutation.isPending}
                 onClick={handleVerifyAndTakedown}
-                className="h-9 rounded-xl border border-red-500/30 bg-red-600 text-xs font-semibold text-white shadow-sm transition-all hover:bg-red-700 active:scale-95"
+                className="h-9 rounded-xl border border-red-500/30 bg-red-600 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-red-700 active:scale-95"
               >
                 {takedownMutation.isPending ? (
                   <>

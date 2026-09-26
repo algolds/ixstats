@@ -68,7 +68,7 @@ export function VaultStatusPanel() {
             <Link
               href="/vault"
               data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <ShoppingCart className="h-3.5 w-3.5" />
               <span>Open Vault</span>
@@ -79,7 +79,7 @@ export function VaultStatusPanel() {
               onClick={handleRefresh}
               data-cuelume-press="soft"
               title="Sync with server"
-              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-all active:scale-[0.97]"
+              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </button>
@@ -116,7 +116,7 @@ export function VaultStatusPanel() {
             onClick={() => claimBonusMutation.mutate()}
             disabled={claimBonusMutation.isPending}
             data-cuelume-press="soft"
-            className="facet-interactive bg-foreground text-background hover:bg-foreground/90 rounded-xl px-3.5 py-1.5 text-xs font-bold shadow-xs transition-all active:scale-[0.98] disabled:opacity-50"
+            className="facet-interactive bg-foreground text-background hover:bg-foreground/90 rounded-xl px-3.5 py-1.5 text-xs font-bold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
           >
             {claimBonusMutation.isPending ? "Claiming..." : "Claim Daily Bonus"}
           </button>

@@ -73,7 +73,7 @@ export const WikiHeader: React.FC<WikiHeaderProps> = ({
                   }}
                   data-cuelume-press="soft"
                   className={cn(
-                    "facet-interactive flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all active:scale-[0.98]",
+                    "facet-interactive flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                     isActive
                       ? "bg-blue-600 text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
@@ -91,7 +91,7 @@ export const WikiHeader: React.FC<WikiHeaderProps> = ({
             href="/settings?tab=wikios"
             data-cuelume-press="soft"
             title="WikiOS Settings & Lore Scanner"
-            className="facet-interactive text-muted-foreground hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] transition-all hover:bg-white/[0.06] active:scale-[0.97]"
+            className="facet-interactive text-muted-foreground hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/[0.06] active:scale-[0.97]"
           >
             <Settings className="h-4 w-4" />
           </Link>

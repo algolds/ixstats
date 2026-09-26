@@ -122,7 +122,7 @@ export const AtomicMetricsBar = React.memo(function AtomicMetricsBar({
             }}
             title={isClickable ? `Click to view details for ${item.label}` : undefined}
             className={cn(
-              "flex items-center gap-2.5 rounded-xl border p-2.5 shadow-xs backdrop-blur-md transition-all duration-150 select-none",
+              "flex items-center gap-2.5 rounded-xl border p-2.5 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none",
               item.color,
               isClickable && "cursor-pointer active:scale-[0.98] hover:shadow-xs"
             )}

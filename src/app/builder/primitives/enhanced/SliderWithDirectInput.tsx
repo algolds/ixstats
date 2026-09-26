@@ -229,7 +229,7 @@ export function SliderWithDirectInput({
                   type="button"
                   onClick={() => setInputMode(inputMode === "slider" ? "input" : "slider")}
                   className={cn(
-                    "rounded-lg border border-border/40 bg-muted/30 p-1.5 transition-all active:scale-[0.97]",
+                    "rounded-lg border border-border/40 bg-muted/30 p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
                     "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                   )}
                   title={inputMode === "slider" ? "Switch to direct input" : "Switch to slider"}
@@ -272,7 +272,7 @@ export function SliderWithDirectInput({
               "border-border/40",
               "focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/20 focus:outline-none",
               "shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
-              "transition-all duration-200",
+              "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
               config.input,
               "font-mono", // Monospace for better number alignment
               disabled && "cursor-not-allowed opacity-60",
@@ -299,7 +299,7 @@ export function SliderWithDirectInput({
               "relative overflow-hidden rounded-full will-change-transform",
               "bg-muted/80",
               "border border-border/40",
-              "transition-all duration-300 ease-out",
+              "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out",
               orientation === "horizontal" ? "w-full" : "mx-auto h-40 w-fit"
             )}
             style={{
@@ -309,7 +309,7 @@ export function SliderWithDirectInput({
             {/* Background Track */}
             <div
               className={cn(
-                "absolute inset-0 rounded-full transition-all duration-200",
+                "absolute inset-0 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                 getGlassClasses("base", resolvedTheme, sectionId)
               )}
             />
@@ -318,7 +318,7 @@ export function SliderWithDirectInput({
             <motion.div
               className={cn(
                 "absolute rounded-full",
-                !isDragging && "transition-all duration-200",
+                !isDragging && "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                 isDragging && "scale-[1.02] shadow-lg",
                 "bg-blue-500 dark:bg-blue-600"
               )}

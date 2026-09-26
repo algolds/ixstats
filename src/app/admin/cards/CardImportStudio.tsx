@@ -120,7 +120,7 @@ export function CardImportStudio({
                 <button
                   key={tab.id}
                   onClick={() => setActiveSubtab(tab.id)}
-                  className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+                  className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95 ${
                     isActive
                       ? "bg-background border-border text-foreground border font-bold shadow-xs"
                       : "text-muted-foreground hover:text-foreground hover:bg-card/60"

@@ -44,7 +44,7 @@ export default function RegistryBrowser() {
                 setActiveTab(tab);
                 setLimit(16); // reset
               }}
-              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-all ${
+              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 activeTab === tab
                   ? "border-amber-500/20 bg-amber-500/10 text-amber-400"
                   : "border-transparent bg-transparent text-zinc-400 hover:text-zinc-200"
@@ -90,7 +90,7 @@ export default function RegistryBrowser() {
             <div className="flex justify-center pt-4">
               <button
                 onClick={() => setLimit((prev) => prev + 16)}
-                className="rounded-lg border border-white/10 bg-zinc-900/40 px-6 py-2 text-xs font-bold tracking-wider text-zinc-400 transition-all outline-none hover:border-amber-500/20 hover:bg-zinc-800/40 hover:text-amber-400"
+                className="rounded-lg border border-white/10 bg-zinc-900/40 px-6 py-2 text-xs font-bold tracking-wider text-zinc-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none hover:border-amber-500/20 hover:bg-zinc-800/40 hover:text-amber-400"
               >
                 Load More Registry Items ({totalCount - limit} remaining)
               </button>

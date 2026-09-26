@@ -373,7 +373,7 @@ export function MapWelcomeModal({
                     <button
                       key={i}
                       onClick={() => setCurrentPage(i)}
-                      className={`h-1.5 rounded-full transition-all ${
+                      className={`h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                         i === currentPage
                           ? "w-5 bg-blue-400"
                           : "bg-muted-foreground/20 hover:bg-muted-foreground/40 w-1.5"

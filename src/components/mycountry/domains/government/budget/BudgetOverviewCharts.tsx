@@ -59,7 +59,7 @@ export function BudgetOverviewCharts({
               type="button"
               onClick={() => setOverviewChartMode("allocation")}
               className={cn(
-                "cursor-pointer rounded-md px-2 py-0.5 text-xs font-bold transition-all select-none",
+                "cursor-pointer rounded-md px-2 py-0.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
                 overviewChartMode === "allocation"
                   ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
                   : "text-muted-foreground hover:text-foreground"
@@ -71,7 +71,7 @@ export function BudgetOverviewCharts({
               type="button"
               onClick={() => setOverviewChartMode("trend")}
               className={cn(
-                "cursor-pointer rounded-md px-2 py-0.5 text-xs font-bold transition-all select-none",
+                "cursor-pointer rounded-md px-2 py-0.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
                 overviewChartMode === "trend"
                   ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
                   : "text-muted-foreground hover:text-foreground"

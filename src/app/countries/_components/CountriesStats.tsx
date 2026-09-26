@@ -98,7 +98,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
           <PopoverTrigger
             data-cuelume-press="tick"
             className={cn(
-              "facet-surface facet-interactive w-full cursor-pointer rounded-xl p-4 text-left transition-all duration-150 active:scale-[0.98]",
+              "facet-surface facet-interactive w-full cursor-pointer rounded-xl p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
               continentFilter && "ring-1 ring-blue-400/40"
             )}
           >
@@ -171,7 +171,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
         <Popover>
           <PopoverTrigger
             data-cuelume-press="tick"
-            className="facet-surface facet-interactive w-full cursor-pointer rounded-xl p-4 text-left transition-all duration-150 active:scale-[0.98]"
+            className="facet-surface facet-interactive w-full cursor-pointer rounded-xl p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -229,7 +229,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
         <Popover>
           <PopoverTrigger
             data-cuelume-press="tick"
-            className="facet-surface facet-interactive w-full cursor-pointer rounded-xl p-4 text-left transition-all duration-150 active:scale-[0.98]"
+            className="facet-surface facet-interactive w-full cursor-pointer rounded-xl p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -285,7 +285,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
         <Popover>
           <PopoverTrigger
             data-cuelume-press="tick"
-            className="facet-surface facet-interactive w-full cursor-pointer rounded-xl p-4 text-left transition-all duration-150 active:scale-[0.98]"
+            className="facet-surface facet-interactive w-full cursor-pointer rounded-xl p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

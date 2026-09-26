@@ -27,7 +27,7 @@ export function GovernmentFiscalSection({
         <button
           type="button"
           onClick={onToggle}
-          className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
+          className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
             isExpanded
               ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
               : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"

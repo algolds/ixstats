@@ -91,7 +91,7 @@ export function WikiOSProfileWidget({
         <TooltipTrigger asChild>
           <Link
             href={profileHref}
-            className="hover:bg-foreground/5 flex items-center justify-center rounded-xl px-2.5 py-1 transition-all"
+            className="hover:bg-foreground/5 flex items-center justify-center rounded-xl px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           >
             {renderAvatar(true)}
           </Link>
@@ -109,7 +109,7 @@ export function WikiOSProfileWidget({
     return (
       <Link
         href={profileHref}
-        className="group relative z-50 flex w-max items-center rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] px-2.5 py-1 pr-4 shadow-lg backdrop-blur-md transition-all duration-300 ease-in-out outline-none"
+        className="group relative z-50 flex w-max items-center rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] px-2.5 py-1 pr-4 shadow-lg backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out outline-none"
       >
         {renderAvatar(true)}
         <span className="w-auto flex-1 overflow-hidden pl-3 text-left text-xs font-semibold whitespace-nowrap text-[var(--wikios-text-muted)] opacity-100 group-hover:text-[var(--wikios-text)]">
@@ -123,7 +123,7 @@ export function WikiOSProfileWidget({
   return (
     <Link
       href={profileHref}
-      className="group bg-foreground/[0.03] hover:bg-foreground/[0.06] relative block w-full overflow-hidden rounded-xl border border-[var(--wikios-border)] p-2 transition-all hover:border-[var(--hover-border-color)]"
+      className="group bg-foreground/[0.03] hover:bg-foreground/[0.06] relative block w-full overflow-hidden rounded-xl border border-[var(--wikios-border)] p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-[var(--hover-border-color)]"
       style={
         {
           "--hover-border-color": hoverBorderColor,

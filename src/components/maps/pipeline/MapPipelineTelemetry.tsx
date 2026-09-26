@@ -71,7 +71,7 @@ export function MapPipelineTelemetry({
       <div className="border-border bg-muted/40 grid grid-cols-4 border-b text-xs font-medium">
         <button
           onClick={() => setActiveTab("stats")}
-          className={`border-b-2 px-2 py-2.5 text-center transition-all ${
+          className={`border-b-2 px-2 py-2.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
             activeTab === "stats"
               ? "border-primary text-primary bg-primary/5 font-semibold"
               : "text-muted-foreground hover:text-foreground border-transparent"
@@ -81,7 +81,7 @@ export function MapPipelineTelemetry({
         </button>
         <button
           onClick={() => setActiveTab("geoprofile")}
-          className={`border-b-2 px-2 py-2.5 text-center transition-all ${
+          className={`border-b-2 px-2 py-2.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
             activeTab === "geoprofile"
               ? "border-primary text-primary bg-primary/5 font-semibold"
               : "text-muted-foreground hover:text-foreground border-transparent"
@@ -91,7 +91,7 @@ export function MapPipelineTelemetry({
         </button>
         <button
           onClick={() => setActiveTab("resources")}
-          className={`border-b-2 px-2 py-2.5 text-center transition-all ${
+          className={`border-b-2 px-2 py-2.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
             activeTab === "resources"
               ? "border-primary text-primary bg-primary/5 font-semibold"
               : "text-muted-foreground hover:text-foreground border-transparent"
@@ -101,7 +101,7 @@ export function MapPipelineTelemetry({
         </button>
         <button
           onClick={() => setActiveTab("logs")}
-          className={`border-b-2 px-2 py-2.5 text-center transition-all ${
+          className={`border-b-2 px-2 py-2.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
             activeTab === "logs"
               ? "border-primary text-primary bg-primary/5 font-semibold"
               : "text-muted-foreground hover:text-foreground border-transparent"

@@ -114,7 +114,7 @@ export function CosmeticsUpgradesPanel() {
             <Link
               href="/vault"
               data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <ShoppingCart className="h-3.5 w-3.5" />
               <span>Vault Store</span>
@@ -125,7 +125,7 @@ export function CosmeticsUpgradesPanel() {
               onClick={handleRefreshAll}
               data-cuelume-press="soft"
               title="Sync with server"
-              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-all active:scale-[0.97]"
+              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </button>
@@ -154,7 +154,7 @@ export function CosmeticsUpgradesPanel() {
             <Link
               href="/vault"
               data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-secondary text-foreground hover:bg-secondary/80 mt-3 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-secondary text-foreground hover:bg-secondary/80 mt-3 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <ShoppingCart className="h-3.5 w-3.5" />
               <span>Browse Vault Store</span>
@@ -194,7 +194,7 @@ export function CosmeticsUpgradesPanel() {
                     onClick={() => toggleEquipMutation.mutate({ itemId: item.id })}
                     data-cuelume-press="soft"
                     className={cn(
-                      "facet-interactive flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98] disabled:opacity-50",
+                      "facet-interactive flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50",
                       isEquipped
                         ? "border-foreground/20 bg-foreground text-background hover:bg-foreground/90 shadow-2xs"
                         : "border-border/60 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted/70"
@@ -231,7 +231,7 @@ export function CosmeticsUpgradesPanel() {
             <Link
               href="/vault"
               data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-secondary text-foreground hover:bg-secondary/80 mt-3 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.98]"
+              className="facet-interactive border-border/60 bg-secondary text-foreground hover:bg-secondary/80 mt-3 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <ShoppingCart className="h-3.5 w-3.5" />
               <span>Browse Vault Store</span>

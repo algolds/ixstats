@@ -261,7 +261,7 @@ export function ThinktankHeader({
                   onTabChange(tab.id);
                 }}
                 className={cn(
-                  "relative flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold tracking-tight transition-all select-none active:scale-[0.97]",
+                  "relative flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.97]",
                   isActive
                     ? "text-emerald-700 dark:text-emerald-300"
                     : "text-muted-foreground hover:text-foreground"

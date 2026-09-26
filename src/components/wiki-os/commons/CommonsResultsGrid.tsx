@@ -69,7 +69,7 @@ const CommonsCard = memo(function CommonsCard({
       className={cn(
         "wikios-commons-card group relative text-left select-none",
         "focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
-        "active:scale-[0.98] transition-all duration-200",
+        "active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
         isSelected && "wikios-commons-card--selected"
       )}
       style={{ contentVisibility: "auto", containIntrinsicSize: "auto 200px" }}
@@ -98,7 +98,7 @@ const CommonsCard = memo(function CommonsCard({
             onError={() => setImageError(true)}
             onContextMenu={(e) => e.preventDefault()}
             className={cn(
-              "h-full w-full object-cover transition-all duration-300 group-hover:scale-105",
+              "h-full w-full object-cover transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:scale-105",
               imageLoaded ? "opacity-100" : "opacity-0"
             )}
           />
@@ -246,7 +246,7 @@ export function CommonsResultsGrid({
             variant="outline"
             size="sm"
             onClick={onLoadMore}
-            className="border-white/10 text-xs hover:bg-white/5 active:scale-95 transition-all"
+            className="border-white/10 text-xs hover:bg-white/5 active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           >
             Load more images
           </Button>

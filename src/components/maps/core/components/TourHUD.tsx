@@ -219,7 +219,7 @@ export function TourHUD({
         {/* Progress Bar indicator */}
         <div className="relative h-1 w-full bg-slate-100 dark:bg-white/5">
           <div
-            className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-400 transition-all duration-100"
+            className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100"
             style={{ width: `${tourState === "paused_at_step" ? progress : 0}%` }}
           />
         </div>

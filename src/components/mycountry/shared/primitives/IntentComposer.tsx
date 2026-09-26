@@ -140,7 +140,7 @@ export const IntentComposer = React.memo(function IntentComposer({
           <button
             type="button"
             onClick={() => setShowPolicySheet(true)}
-            className="border-border/60 bg-card/60 text-foreground hover:bg-card flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-bold transition-all active:scale-95"
+            className="border-border/60 bg-card/60 text-foreground hover:bg-card flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
           >
             <span>+ Policy Sheet</span>
           </button>
@@ -160,7 +160,7 @@ export const IntentComposer = React.memo(function IntentComposer({
             setGoal(e.target.value);
           }}
           placeholder="Search directive presets or type a custom goal..."
-          className="border-border/70 bg-card/70 text-foreground placeholder:text-muted-foreground/70 focus:bg-card w-full rounded-2xl border py-4 pr-32 pl-12 text-sm font-semibold tracking-tight shadow-md backdrop-blur-xl transition-all duration-200 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/40 focus:outline-hidden sm:text-base"
+          className="border-border/70 bg-card/70 text-foreground placeholder:text-muted-foreground/70 focus:bg-card w-full rounded-2xl border py-4 pr-32 pl-12 text-sm font-semibold tracking-tight shadow-md backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/40 focus:outline-hidden sm:text-base"
         />
 
         <div className="absolute top-1/2 right-3.5 flex -translate-y-1/2 items-center gap-1.5">
@@ -171,7 +171,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 setGoal("");
                 setQueryInput("");
               }}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl p-1.5 transition-all active:scale-90"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90"
               title="Clear active directive"
             >
               <X className="h-4 w-4" />
@@ -202,7 +202,7 @@ export const IntentComposer = React.memo(function IntentComposer({
               setParentId(justCommitted.id);
               setJustCommitted(null);
             }}
-            className="ml-auto cursor-pointer rounded-lg border border-emerald-500/40 px-3 py-1 font-bold transition-all hover:bg-emerald-500/20 active:scale-95"
+            className="ml-auto cursor-pointer rounded-lg border border-emerald-500/40 px-3 py-1 font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/20 active:scale-95"
           >
             Chain Follow-Up →
           </button>
@@ -308,7 +308,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                     type="button"
                     onClick={() => setTier(tierItem.id)}
                     className={cn(
-                      "relative flex cursor-pointer flex-col justify-between rounded-2xl border p-4 text-left transition-all duration-200 active:scale-[0.98]",
+                      "relative flex cursor-pointer flex-col justify-between rounded-2xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
                       isSelected
                         ? cn(tierItem.borderCls, "shadow-sm ring-1 ring-amber-500/50")
                         : "border-border/40 bg-card/40 text-muted-foreground hover:bg-card/80 hover:text-foreground"
@@ -445,7 +445,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                       parentId: parentId ?? undefined,
                     });
                   }}
-                  className="w-full cursor-pointer rounded-2xl border border-amber-500/50 bg-amber-500 hover:bg-amber-600 px-4 py-3.5 text-xs font-bold tracking-tight text-neutral-950 shadow-sm transition-all hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full cursor-pointer rounded-2xl border border-amber-500/50 bg-amber-500 hover:bg-amber-600 px-4 py-3.5 text-xs font-bold tracking-tight text-neutral-950 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {commitMutation.isPending
                     ? "Enacting Executive Order..."

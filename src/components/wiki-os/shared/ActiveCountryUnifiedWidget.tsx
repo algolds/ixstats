@@ -123,7 +123,7 @@ export function ActiveCountryUnifiedWidget({
     <div className="relative w-full" ref={popoverRef}>
       <div
         className={cn(
-          "group relative flex items-center rounded-xl px-2.5 py-1 transition-all duration-300 ease-in-out outline-none",
+          "group relative flex items-center rounded-xl px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out outline-none",
           isLocalHoverExpanded
             ? "z-50 w-max border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] pr-4 shadow-lg backdrop-blur-md"
             : "hover:bg-foreground/5 w-full border-transparent bg-transparent"
@@ -138,7 +138,7 @@ export function ActiveCountryUnifiedWidget({
             }
           }}
           className={cn(
-            "wikios-sidebar-icon-box relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/5 shadow-md transition-all active:scale-95",
+            "wikios-sidebar-icon-box relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/5 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
             popoverOpen ? "border-amber-500/50 bg-amber-500/15" : "hover:border-amber-500/30"
           )}
           title={`Country Context: ${countryName} ${isCollapsed ? "(Click for details)" : "(Click for actions)"}`}
@@ -150,7 +150,7 @@ export function ActiveCountryUnifiedWidget({
         <button
           onClick={() => setActionsMenuOpen(true)}
           className={cn(
-            "flex-1 overflow-hidden text-left whitespace-nowrap transition-all duration-300 ease-in-out outline-none",
+            "flex-1 overflow-hidden text-left whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out outline-none",
             isRowCollapsed ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
           )}
           style={transitionStyle}
@@ -263,7 +263,7 @@ export function ActiveCountryUnifiedWidget({
                 setPopoverOpen(false);
                 setActionsMenuOpen(true);
               }}
-              className="flex w-full items-center justify-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-300 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-[0.98]"
               type="button"
             >
               {isOwnCountry ? "Manage Country" : "Country Actions"}

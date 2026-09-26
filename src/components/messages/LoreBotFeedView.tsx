@@ -187,7 +187,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                     setActiveFilter(tab.id);
                   }}
                   className={cn(
-                    "relative flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold tracking-tight transition-all duration-150 select-none active:scale-95",
+                    "relative flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
                     isActive
                       ? "text-cyan-400 shadow-2xs"
                       : "text-muted-foreground hover:bg-accent/15 hover:text-foreground"
@@ -247,7 +247,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
             </p>
             <Link
               href="/wikios"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-1.5 text-xs font-semibold text-cyan-400 transition-all hover:bg-cyan-500/20 active:scale-95"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-1.5 text-xs font-semibold text-cyan-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500/20 active:scale-95"
             >
               <span>Explore WikiOS</span>
               <ArrowUpRight className="h-3.5 w-3.5" />
@@ -262,7 +262,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                className="group border-border/50 bg-card/65 hover:bg-card/90 relative rounded-2xl border p-4 shadow-2xs backdrop-blur-xl transition-all duration-200 hover:border-cyan-500/30 hover:shadow-md"
+                className="group border-border/50 bg-card/65 hover:bg-card/90 relative rounded-2xl border p-4 shadow-2xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-cyan-500/30 hover:shadow-md"
               >
                 {/* Top Badge & Author Line */}
                 <div className="mb-2 flex items-center justify-between gap-2">
@@ -341,7 +341,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`${titleToWikiOSRoute(item.title)}?tab=history`}
-                      className="border-border/40 bg-accent/20 text-muted-foreground hover:bg-accent/40 hover:text-foreground inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95"
+                      className="border-border/40 bg-accent/20 text-muted-foreground hover:bg-accent/40 hover:text-foreground inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                     >
                       <History className="h-3 w-3" />
                       <span>History</span>
@@ -349,7 +349,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
 
                     <Link
                       href={titleToWikiOSRoute(item.title)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-cyan-600 px-3 py-1 text-xs font-semibold text-white shadow-2xs transition-all hover:bg-cyan-500 active:scale-95"
+                      className="inline-flex items-center gap-1 rounded-lg bg-cyan-600 px-3 py-1 text-xs font-semibold text-white shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500 active:scale-95"
                     >
                       <span>Read in WikiOS</span>
                       <ArrowUpRight className="h-3 w-3" />

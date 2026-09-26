@@ -114,7 +114,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                 }}
                 disabled={updatingPrice || setTicketPrice.isPending}
                 style={{ backgroundColor: team.color || "#3b82f6" }}
-                className="font-semibold text-white transition-all hover:opacity-90"
+                className="font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90"
               >
                 {setTicketPrice.isPending ? "..." : "Save"}
               </Button>
@@ -242,7 +242,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                     : undefined
                 }
                 className={cn(
-                  "flex items-center justify-between rounded-lg border p-3 text-left transition-all",
+                  "flex items-center justify-between rounded-lg border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   currentSponsor?.name === s.name
                     ? ""
                     : "border-border bg-muted/40 hover:bg-muted/80 text-foreground"
@@ -291,7 +291,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                   if (!isExpanded) setActiveCard(card.id);
                 }}
                 className={cn(
-                  "flex cursor-pointer flex-col rounded-2xl border bg-gradient-to-br p-4 transition-all",
+                  "flex cursor-pointer flex-col rounded-2xl border bg-gradient-to-br p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   card.color,
                   isExpanded
                     ? "z-10 flex-1 scale-[1.01] shadow-2xl"

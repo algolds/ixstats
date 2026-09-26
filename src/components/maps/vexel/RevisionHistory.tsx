@@ -70,7 +70,7 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
 
               <button
                 onClick={() => handleRevert(comp)}
-                className="rounded bg-zinc-800 px-2 py-1 text-xs font-semibold transition-all hover:bg-zinc-700 hover:text-amber-400"
+                className="rounded bg-zinc-800 px-2 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-zinc-700 hover:text-amber-400"
               >
                 Restore
               </button>

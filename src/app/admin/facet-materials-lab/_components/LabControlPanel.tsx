@@ -86,7 +86,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
                 key={t.id}
                 onClick={() => onChange({ template: t.id as TemplateType })}
                 className={
-                  "rounded-lg border px-2.5 py-2 text-center text-xs font-semibold transition-all " +
+                  "rounded-lg border px-2.5 py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] " +
                   (config.template === t.id
                     ? "bg-primary border-primary text-primary-foreground shadow-sm"
                     : "bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground")

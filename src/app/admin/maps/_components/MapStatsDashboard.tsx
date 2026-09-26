@@ -66,7 +66,7 @@ export function MapStatsDashboard() {
             </div>
             <div className="bg-muted h-3 overflow-hidden rounded-full">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all"
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 style={{ width: `${stats?.linkageRate ?? 0}%` }}
               />
             </div>
@@ -96,7 +96,7 @@ export function MapStatsDashboard() {
             </div>
             <div className="bg-muted h-3 overflow-hidden rounded-full">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-500 transition-all"
+                className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-500 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 style={{
                   width: `${
                     stats && stats.totalCountries > 0

@@ -277,7 +277,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       setStep(s);
                     }}
                     className={cn(
-                      "rounded-full px-4 py-1.5 text-xs font-medium transition-all",
+                      "rounded-full px-4 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       step === s
                         ? "border border-blue-500/30 bg-blue-500/10 font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
                         : "text-slate-500 hover:bg-slate-100 dark:text-white/50 dark:hover:bg-white/5"
@@ -402,7 +402,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                               type="button"
                               onClick={() => toggleYourCard(card.id)}
                               className={cn(
-                                "flex w-full items-center gap-2 rounded-md p-1.5 text-left text-xs transition-all",
+                                "flex w-full items-center gap-2 rounded-md p-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                                 selected
                                   ? "bg-blue-50 dark:bg-blue-500/10"
                                   : "hover:bg-slate-50 dark:hover:bg-white/5"
@@ -478,7 +478,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                                 type="button"
                                 onClick={() => toggleTheirCard(card.id)}
                                 className={cn(
-                                  "flex w-full items-center gap-2 rounded-md p-1.5 text-left text-xs transition-all",
+                                  "flex w-full items-center gap-2 rounded-md p-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                                   selected
                                     ? "bg-green-50 dark:bg-green-500/10"
                                     : "hover:bg-slate-50 dark:hover:bg-white/5"

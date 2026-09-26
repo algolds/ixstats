@@ -170,7 +170,7 @@ export function MarginMarkupTab({
           <button
             type="button"
             onClick={handleExportAllMarkdown}
-            className="bg-margin-accent hover:bg-margin-accent/90 flex cursor-pointer items-center gap-1 rounded-lg border border-yellow-400/50 px-2.5 py-0.5 text-xs font-bold text-stone-950 shadow-xs transition-all duration-150 active:scale-95"
+            className="bg-margin-accent hover:bg-margin-accent/90 flex cursor-pointer items-center gap-1 rounded-lg border border-yellow-400/50 px-2.5 py-0.5 text-xs font-bold text-stone-950 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95"
           >
             {copiedAll ? (
               <>
@@ -271,7 +271,7 @@ export function MarginMarkupTab({
                         e.stopPropagation();
                         setShareTarget({ quote: ann.selectedText, note: ann.comment });
                       }}
-                      className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-all duration-150 hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-90"
+                      className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-90"
                       title="Share and export"
                     >
                       <Share2 className="h-3 w-3" />
@@ -283,7 +283,7 @@ export function MarginMarkupTab({
                         e.stopPropagation();
                         handleCopy(ann.id, ann.selectedText);
                       }}
-                      className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-all duration-150 hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-90"
+                      className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-90"
                       title="Copy quote"
                     >
                       {copiedId === ann.id ? (
@@ -301,7 +301,7 @@ export function MarginMarkupTab({
                           deleteAnnotationMutation.mutate({ id: ann.id });
                         }}
                         disabled={deleteAnnotationMutation.isPending}
-                        className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-all duration-150 hover:bg-rose-500/10 hover:text-rose-400 active:scale-90"
+                        className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-rose-500/10 hover:text-rose-400 active:scale-90"
                         title="Delete highlight"
                       >
                         <Trash2 className="h-3 w-3" />

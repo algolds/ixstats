@@ -246,7 +246,7 @@ export default function SetupPage() {
               height={40}
               squares={[50, 40]}
               className="fixed inset-0 z-0 opacity-30 dark:opacity-20"
-              squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30 [&:nth-child(4n+1):hover]:fill-yellow-600/40 [&:nth-child(4n+1):hover]:stroke-yellow-600/60 [&:nth-child(4n+2):hover]:fill-blue-600/40 [&:nth-child(4n+2):hover]:stroke-blue-600/60 [&:nth-child(4n+3):hover]:fill-indigo-600/40 [&:nth-child(4n+3):hover]:stroke-indigo-600/60 [&:nth-child(4n+4):hover]:fill-red-600/40 [&:nth-child(4n+4):hover]:stroke-red-600/60 transition-all duration-200"
+              squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30 [&:nth-child(4n+1):hover]:fill-yellow-600/40 [&:nth-child(4n+1):hover]:stroke-yellow-600/60 [&:nth-child(4n+2):hover]:fill-blue-600/40 [&:nth-child(4n+2):hover]:stroke-blue-600/60 [&:nth-child(4n+3):hover]:fill-indigo-600/40 [&:nth-child(4n+3):hover]:stroke-indigo-600/60 [&:nth-child(4n+4):hover]:fill-red-600/40 [&:nth-child(4n+4):hover]:stroke-red-600/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
             />
 
             <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -284,7 +284,7 @@ export default function SetupPage() {
                     <div className="mx-auto mb-8 max-w-4xl">
                       <motion.button
                         onClick={() => setCurrentStep("create-new")}
-                        className="facet-hierarchy-parent group hover:glass-hierarchy-interactive relative w-full overflow-hidden rounded-2xl border border-amber-200/30 p-6 text-left transition-all duration-500 md:p-8 dark:border-amber-800/30"
+                        className="facet-hierarchy-parent group hover:glass-hierarchy-interactive relative w-full overflow-hidden rounded-2xl border border-amber-200/30 p-6 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 md:p-8 dark:border-amber-800/30"
                         whileHover={{
                           y: -12,
                           scale: 1.02,
@@ -308,11 +308,11 @@ export default function SetupPage() {
 
                         <div className="relative z-10">
                           <div className="mb-8 flex items-center">
-                            <div className="facet-hierarchy-child mr-6 rounded-2xl border border-amber-200/50 bg-gradient-to-br from-amber-100 to-yellow-100 p-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 dark:border-amber-700/50 dark:from-amber-900/50 dark:to-yellow-900/50">
+                            <div className="facet-hierarchy-child mr-6 rounded-2xl border border-amber-200/50 bg-gradient-to-br from-amber-100 to-yellow-100 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:scale-110 group-hover:rotate-3 dark:border-amber-700/50 dark:from-amber-900/50 dark:to-yellow-900/50">
                               <MyCountryLogo size="lg" variant="icon-only" animated={true} />
                             </div>
                             <div>
-                              <h3 className="mb-2 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 bg-clip-text text-2xl font-bold text-transparent transition-all duration-300 group-hover:from-amber-500 group-hover:via-yellow-400 group-hover:to-amber-500 md:text-3xl">
+                              <h3 className="mb-2 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 bg-clip-text text-2xl font-bold text-transparent transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:from-amber-500 group-hover:via-yellow-400 group-hover:to-amber-500 md:text-3xl">
                                 Create New Country
                               </h3>
                               <div className="flex items-center">
@@ -330,11 +330,11 @@ export default function SetupPage() {
                             structure, economy, demographics, and policies to your liking.
                           </p>
 
-                          <div className="flex items-center text-base text-amber-600 transition-all duration-300 group-hover:text-amber-500 dark:text-amber-400 dark:group-hover:text-amber-300">
+                          <div className="flex items-center text-base text-amber-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:text-amber-500 dark:text-amber-400 dark:group-hover:text-amber-300">
                             <span className="bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text font-semibold text-transparent dark:from-amber-400 dark:to-yellow-400">
                               Get Started with MyCountry© Builder
                             </span>
-                            <ArrowRight className="ml-3 h-5 w-5 transition-all duration-300 group-hover:translate-x-3 group-hover:scale-110" />
+                            <ArrowRight className="ml-3 h-5 w-5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:translate-x-3 group-hover:scale-110" />
                           </div>
                         </div>
                       </motion.button>
@@ -447,7 +447,7 @@ export default function SetupPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                className={`facet-hierarchy-child w-full rounded-2xl p-6 text-left transition-all duration-500 ${
+                                className={`facet-hierarchy-child w-full rounded-2xl p-6 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ${
                                   selectedCountryId === country.id
                                     ? "glass-hierarchy-interactive border-primary scale-105 border-2"
                                     : "hover:glass-hierarchy-interactive border-border border hover:scale-102"
@@ -583,7 +583,7 @@ export default function SetupPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="facet-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-all duration-500"
+                            className="facet-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                           >
                             <div className="facet-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
                               <Building2 className="h-10 w-10 text-blue-600 dark:text-blue-400" />
@@ -601,7 +601,7 @@ export default function SetupPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
-                            className="facet-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-all duration-500"
+                            className="facet-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                           >
                             <div className="facet-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
                               <Crown className="h-10 w-10 text-purple-600 dark:text-purple-400" />
@@ -616,7 +616,7 @@ export default function SetupPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="facet-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-all duration-500"
+                            className="facet-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                           >
                             <div className="facet-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
                               <TrendingUp className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
@@ -632,7 +632,7 @@ export default function SetupPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4 }}
-                            className="facet-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-all duration-500"
+                            className="facet-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                           >
                             <div className="facet-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
                               <Users className="h-10 w-10 text-orange-600 dark:text-orange-400" />

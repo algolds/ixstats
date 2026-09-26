@@ -242,7 +242,7 @@ export function UnifiedDashboardSection({
                 <button
                   onClick={() => setIsAccountModalOpen(true)}
                   data-cuelume-press="soft"
-                  className="text-muted-foreground hover:text-foreground relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-black/[0.08] bg-black/[0.04] shadow-sm transition-all duration-300 hover:bg-black/[0.08] dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.08]"
+                  className="text-muted-foreground hover:text-foreground relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-black/[0.08] bg-black/[0.04] shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:bg-black/[0.08] dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.08]"
                   title="Feed & Account Settings"
                 >
                   <Settings className="h-3.5 w-3.5" />

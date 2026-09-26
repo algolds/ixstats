@@ -89,7 +89,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
           <button
             onClick={() => setValidationTab("issues")}
             className={cn(
-              "flex-1 border-b py-2 text-center transition-all active:scale-[0.98]",
+              "flex-1 border-b py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
               validationTab === "issues"
                 ? "bg-primary/10 border-primary text-primary"
                 : "text-muted-foreground border-transparent hover:text-foreground"
@@ -100,7 +100,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
           <button
             onClick={() => setValidationTab("linked")}
             className={cn(
-              "flex-1 border-b py-2 text-center transition-all active:scale-[0.98]",
+              "flex-1 border-b py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
               validationTab === "linked"
                 ? "bg-primary/10 border-primary text-primary"
                 : "text-muted-foreground border-transparent hover:text-foreground"
@@ -111,7 +111,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
           <button
             onClick={() => setValidationTab("unlinked")}
             className={cn(
-              "flex-1 border-b py-2 text-center transition-all active:scale-[0.98]",
+              "flex-1 border-b py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
               validationTab === "unlinked"
                 ? "bg-primary/10 border-primary text-primary"
                 : "text-muted-foreground border-transparent hover:text-foreground"
@@ -122,7 +122,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
           <button
             onClick={() => setValidationTab("features")}
             className={cn(
-              "flex-1 border-b py-2 text-center transition-all active:scale-[0.98]",
+              "flex-1 border-b py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
               validationTab === "features"
                 ? "bg-primary/10 border-primary text-primary"
                 : "text-muted-foreground border-transparent hover:text-foreground"
@@ -154,7 +154,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                       countryId: item.countryId,
                     });
                   }}
-                  className="border-border/30 bg-muted/10 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-all hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99]"
+                  className="border-border/30 bg-muted/10 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99]"
                 >
                   <div className="flex items-center gap-1.5 truncate">
                     {item.countryFlag && (
@@ -192,7 +192,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                       countryId: item.countryId,
                     });
                   }}
-                  className="border-border/30 bg-muted/10 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-all hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99]"
+                  className="border-border/30 bg-muted/10 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99]"
                 >
                   <div className="flex items-center gap-1.5 truncate">
                     {item.countryFlag && (
@@ -290,7 +290,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                         setActiveCountryId(null);
                       }
                     }}
-                    className="border-border/30 bg-muted/10 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-all hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99]"
+                    className="border-border/30 bg-muted/10 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99]"
                   >
                     <div className="flex items-center gap-1.5 truncate">
                       <div

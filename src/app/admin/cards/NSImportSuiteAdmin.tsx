@@ -289,7 +289,7 @@ export function NSImportSuiteAdmin() {
                     </div>
                     <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
                       <div
-                        className="h-full bg-blue-500 transition-all duration-300"
+                        className="h-full bg-blue-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -308,7 +308,7 @@ export function NSImportSuiteAdmin() {
                         onClick={() => pauseJobMutation.mutate({ syncLogId: job.id })}
                         disabled={pauseJobMutation.isPending}
                         size="sm"
-                        className="border border-amber-500/30 bg-amber-500/20 text-xs text-amber-600 transition-all hover:bg-amber-500/30 active:scale-95 dark:text-amber-300"
+                        className="border border-amber-500/30 bg-amber-500/20 text-xs text-amber-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/30 active:scale-95 dark:text-amber-300"
                       >
                         <Pause className="mr-1 h-3.5 w-3.5" /> Pause
                       </Button>
@@ -318,7 +318,7 @@ export function NSImportSuiteAdmin() {
                         onClick={() => resumeJobMutation.mutate({ syncLogId: job.id })}
                         disabled={resumeJobMutation.isPending}
                         size="sm"
-                        className="border border-emerald-500/30 bg-emerald-500/20 text-xs text-emerald-600 transition-all hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
+                        className="border border-emerald-500/30 bg-emerald-500/20 text-xs text-emerald-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
                       >
                         <Play className="mr-1 h-3.5 w-3.5" /> Resume
                       </Button>
@@ -326,7 +326,7 @@ export function NSImportSuiteAdmin() {
                     <Button
                       onClick={() => setConfirmStopJobId(job.id)}
                       size="sm"
-                      className="border border-rose-500/30 bg-rose-500/20 text-xs text-rose-600 transition-all hover:bg-rose-500/30 active:scale-95 dark:text-rose-300"
+                      className="border border-rose-500/30 bg-rose-500/20 text-xs text-rose-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/30 active:scale-95 dark:text-rose-300"
                     >
                       <Square className="mr-1 h-3.5 w-3.5" /> Stop
                     </Button>
@@ -363,13 +363,13 @@ export function NSImportSuiteAdmin() {
               value={regionNames}
               onChange={(e) => setRegionNames(e.target.value)}
               placeholder="Region name(s) (e.g. greater_ixnay, the_pacific)"
-              className="border-border bg-card text-foreground placeholder:text-muted-foreground h-24 w-full rounded-xl border p-3 text-xs transition-all outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              className="border-border bg-card text-foreground placeholder:text-muted-foreground h-24 w-full rounded-xl border p-3 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             />
             <div className="flex justify-end">
               <Button
                 onClick={() => setConfirmFetchRegions(regionNames)}
                 disabled={!regionNames.trim() || fetchRegionMutation.isPending}
-                className="h-9 rounded-xl border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 shadow-xs transition-all hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-200"
+                className="h-9 rounded-xl border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-200"
               >
                 {fetchRegionMutation.isPending ? (
                   <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -404,7 +404,7 @@ export function NSImportSuiteAdmin() {
             <select
               value={discoveryTag}
               onChange={(e) => setDiscoveryTag(e.target.value)}
-              className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 flex-1 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
+              className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 flex-1 rounded-xl border px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
             >
               <option value="gargantuan" className="bg-background text-foreground">
                 Largest Regions
@@ -434,7 +434,7 @@ export function NSImportSuiteAdmin() {
             <Button
               onClick={() => discoverRegionsMutation.mutate({ limit: 15, tag: discoveryTag })}
               disabled={discoverRegionsMutation.isPending}
-              className="h-9 rounded-xl border border-purple-500/30 bg-purple-500/20 text-xs font-semibold text-purple-600 shadow-xs transition-all hover:bg-purple-500/30 active:scale-95 dark:text-purple-200"
+              className="h-9 rounded-xl border border-purple-500/30 bg-purple-500/20 text-xs font-semibold text-purple-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-purple-500/30 active:scale-95 dark:text-purple-200"
             >
               {discoverRegionsMutation.isPending ? (
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -483,7 +483,7 @@ export function NSImportSuiteAdmin() {
                       variant="outline"
                       onClick={() => setConfirmFetchRegions(region.id)}
                       disabled={fetchRegionMutation.isPending}
-                      className="h-7 rounded-lg border-emerald-500/30 bg-emerald-500/10 text-xs font-medium text-emerald-600 transition-all hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-300"
+                      className="h-7 rounded-lg border-emerald-500/30 bg-emerald-500/10 text-xs font-medium text-emerald-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-300"
                     >
                       <Globe className="mr-1 h-3 w-3" /> Fetch
                     </Button>
@@ -517,7 +517,7 @@ export function NSImportSuiteAdmin() {
         <Button
           onClick={() => filterCTENationsMutation.mutate()}
           disabled={filterCTENationsMutation.isPending}
-          className="h-9 rounded-xl border border-amber-500/30 bg-amber-500/20 text-xs font-semibold text-amber-600 shadow-xs transition-all hover:bg-amber-500/30 active:scale-95 dark:text-amber-200"
+          className="h-9 rounded-xl border border-amber-500/30 bg-amber-500/20 text-xs font-semibold text-amber-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/30 active:scale-95 dark:text-amber-200"
         >
           {filterCTENationsMutation.isPending ? (
             <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -563,7 +563,7 @@ export function NSImportSuiteAdmin() {
                   if (val) setActiveLogTab("cards");
                   else setActiveLogTab("logs");
                 }}
-                className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 max-w-[240px] truncate rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
+                className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 max-w-[240px] truncate rounded-xl border px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
               >
                 <option value="ALL" className="bg-background text-foreground">
                   All Imports ({rawLogsData?.length ?? 0} runs)
@@ -589,7 +589,7 @@ export function NSImportSuiteAdmin() {
             <select
               value={syncTypeFilter}
               onChange={(e) => setSyncTypeFilter(e.target.value as "all" | "region")}
-              className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
+              className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
             >
               <option value="all" className="bg-background text-foreground">
                 All Types
@@ -603,7 +603,7 @@ export function NSImportSuiteAdmin() {
               variant="outline"
               size="sm"
               onClick={handleRefreshAll}
-              className="border-border bg-card/80 text-foreground hover:bg-accent h-8.5 rounded-xl border text-xs shadow-xs transition-all active:scale-95"
+              className="border-border bg-card/80 text-foreground hover:bg-accent h-8.5 rounded-xl border text-xs shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
             >
               <RefreshCw className="mr-1.5 h-3 w-3" /> Refresh
             </Button>
@@ -637,7 +637,7 @@ export function NSImportSuiteAdmin() {
                 <div className="border-border bg-card/80 flex rounded-lg border p-0.5">
                   <button
                     onClick={() => setActiveLogTab("logs")}
-                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                       activeLogTab === "logs"
                         ? "bg-primary text-primary-foreground shadow-xs"
                         : "text-muted-foreground hover:text-foreground"
@@ -647,7 +647,7 @@ export function NSImportSuiteAdmin() {
                   </button>
                   <button
                     onClick={() => setActiveLogTab("cards")}
-                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                       activeLogTab === "cards"
                         ? "bg-primary text-primary-foreground shadow-xs"
                         : "text-muted-foreground hover:text-foreground"
@@ -733,7 +733,7 @@ export function NSImportSuiteAdmin() {
                             selectedSyncLog.syncType.replace("NS_REGION_", "").toLowerCase()
                           )
                         }
-                        className="h-6.5 rounded-lg border-rose-500/40 bg-rose-500/20 text-xs text-rose-600 transition-all hover:bg-rose-500/30 active:scale-95 dark:text-rose-200"
+                        className="h-6.5 rounded-lg border-rose-500/40 bg-rose-500/20 text-xs text-rose-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/30 active:scale-95 dark:text-rose-200"
                       >
                         <RefreshCw className="mr-1 h-3 w-3" /> Retry Region Fetch
                       </Button>
@@ -897,7 +897,7 @@ export function NSImportSuiteAdmin() {
                       key={card.id}
                       depth={1}
                       interactive="hover"
-                      className="group border-border bg-card/60 hover:border-primary/40 flex flex-col justify-between space-y-2 rounded-xl border p-3 backdrop-blur-md transition-all"
+                      className="group border-border bg-card/60 hover:border-primary/40 flex flex-col justify-between space-y-2 rounded-xl border p-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     >
                       <div className="space-y-2">
                         <div className="border-border/40 relative aspect-3/2 w-full overflow-hidden rounded-lg border bg-black/40">
@@ -1007,7 +1007,7 @@ export function NSImportSuiteAdmin() {
                 }
               }}
               disabled={fetchRegionMutation.isPending}
-              className="bg-emerald-500 font-semibold text-black transition-all hover:bg-emerald-400 active:scale-95"
+              className="bg-emerald-500 font-semibold text-black transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-400 active:scale-95"
             >
               {fetchRegionMutation.isPending ? "Starting..." : "Start Fetch"}
             </Button>
@@ -1036,7 +1036,7 @@ export function NSImportSuiteAdmin() {
                 }
               }}
               disabled={stopJobMutation.isPending}
-              className="bg-rose-500 font-semibold text-white transition-all hover:bg-rose-600 active:scale-95"
+              className="bg-rose-500 font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-600 active:scale-95"
             >
               {stopJobMutation.isPending ? "Stopping..." : "Stop Job"}
             </Button>

@@ -120,7 +120,7 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
               setActiveTab(id);
             }}
             className={cn(
-              "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
+              "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
               activeTab === id
                 ? "border border-red-500/40 bg-red-500/20 text-red-400 shadow-sm"
                 : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"

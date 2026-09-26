@@ -87,7 +87,7 @@ export function ComposerLiveDataDrawer({
             size="sm"
             onClick={() => addVisualization("economic_chart")}
             disabled={isGeneratingVisualization || isLoadingHistory || !hasHistoricalData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-all duration-150 hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-emerald-400"
+            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-emerald-400"
           >
             {isLoadingHistory ? (
               <Loader2 className="mb-1 h-4 w-4 animate-spin text-emerald-500" />
@@ -102,7 +102,7 @@ export function ComposerLiveDataDrawer({
             size="sm"
             onClick={() => addVisualization("diplomatic_map")}
             disabled={isGeneratingVisualization || isLoadingDiplomatic || !hasDiplomaticData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-all duration-150 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-cyan-400"
+            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-cyan-400"
           >
             {isLoadingDiplomatic ? (
               <Loader2 className="mb-1 h-4 w-4 animate-spin text-cyan-500" />
@@ -117,7 +117,7 @@ export function ComposerLiveDataDrawer({
             size="sm"
             onClick={() => addVisualization("trade_flow")}
             disabled={isGeneratingVisualization || isLoadingTrade || !hasTradeData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-all duration-150 hover:border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-amber-400"
+            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-amber-400"
           >
             {isLoadingTrade ? (
               <Loader2 className="mb-1 h-4 w-4 animate-spin text-amber-500" />
@@ -132,7 +132,7 @@ export function ComposerLiveDataDrawer({
             size="sm"
             onClick={() => addVisualization("gdp_growth")}
             disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-all duration-150 hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-emerald-400"
+            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-emerald-400"
           >
             {isLoadingEconomic ? (
               <Loader2 className="mb-1 h-4 w-4 animate-spin text-emerald-500" />
@@ -147,7 +147,7 @@ export function ComposerLiveDataDrawer({
             size="sm"
             onClick={() => addVisualization("demographics")}
             disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-all duration-150 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-cyan-400"
+            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-cyan-400"
           >
             {isLoadingEconomic ? (
               <Loader2 className="mb-1 h-4 w-4 animate-spin text-cyan-500" />
@@ -162,7 +162,7 @@ export function ComposerLiveDataDrawer({
             size="sm"
             onClick={() => addVisualization("budget_debt")}
             disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-all duration-150 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-red-400"
+            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-red-400"
           >
             {isLoadingEconomic ? (
               <Loader2 className="mb-1 h-4 w-4 animate-spin text-red-500" />
@@ -177,7 +177,7 @@ export function ComposerLiveDataDrawer({
             size="sm"
             onClick={() => addVisualization("labor_market")}
             disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-all duration-150 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-cyan-400"
+            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-cyan-400"
           >
             {isLoadingEconomic ? (
               <Loader2 className="mb-1 h-4 w-4 animate-spin text-cyan-500" />
@@ -192,7 +192,7 @@ export function ComposerLiveDataDrawer({
             size="sm"
             onClick={() => addVisualization("national_vitality")}
             disabled={isGeneratingVisualization || isLoadingVitality || !hasVitalityData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-all duration-150 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-red-400"
+            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-red-400"
           >
             {isLoadingVitality ? (
               <Loader2 className="mb-1 h-4 w-4 animate-spin text-red-500" />

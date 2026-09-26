@@ -148,7 +148,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
           onClick={handleSubmit}
           disabled={!canSubmit}
           className={cn(
-            "h-9 gap-1.5 rounded-xl px-5 text-xs font-semibold transition-all duration-200 active:scale-95",
+            "h-9 gap-1.5 rounded-xl px-5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95",
             canSubmit
               ? "bg-amber-600 text-white shadow-md hover:bg-amber-500"
               : "border border-white/10 bg-white/5 text-zinc-500 opacity-50"

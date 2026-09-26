@@ -28,7 +28,7 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
   return (
     <div
       className={cn(
-        "bg-card/60 relative space-y-3 rounded-xl border p-4 backdrop-blur-md transition-all",
+        "bg-card/60 relative space-y-3 rounded-xl border p-4 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         ACCENT_BORDER[sector.accent] || "border-border/40"
       )}
     >

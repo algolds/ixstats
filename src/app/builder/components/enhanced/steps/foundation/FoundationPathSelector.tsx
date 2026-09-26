@@ -58,7 +58,7 @@ export function FoundationPathSelector({
           <button
             type="button"
             onClick={onSkipBenchmark}
-            className="group flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 transition-all cursor-pointer active:scale-95 shadow-xs shadow-amber-500/10"
+            className="group flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer active:scale-95 shadow-xs shadow-amber-500/10"
             title="Skip benchmark country and choose an archetype directly"
             data-cuelume-press
           >

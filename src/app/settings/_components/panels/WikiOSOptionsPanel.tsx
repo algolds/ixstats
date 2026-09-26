@@ -62,7 +62,7 @@ export function WikiOSOptionsPanel() {
           <Link
             href="/wiki"
             data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.98]"
+            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             <WikiOSLogomark className="h-3.5 w-auto" />
             <span>Open WikiOS</span>

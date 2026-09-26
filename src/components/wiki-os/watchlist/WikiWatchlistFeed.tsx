@@ -87,7 +87,7 @@ export function WikiWatchlistFeed() {
                 type="button"
                 onClick={() => markAllVisitedMutation.mutate()}
                 disabled={markAllVisitedMutation.isPending}
-                className="border-border/40 bg-secondary/60 text-foreground hover:bg-secondary inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all duration-160 active:scale-[0.98]"
+                className="border-border/40 bg-secondary/60 text-foreground hover:bg-secondary inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98]"
               >
                 <Check className="h-3.5 w-3.5 text-emerald-400" />
                 Mark all as visited
@@ -98,7 +98,7 @@ export function WikiWatchlistFeed() {
               type="button"
               onClick={() => void refetch()}
               disabled={isRefetching}
-              className="border-border/40 bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground inline-flex h-8 w-8 items-center justify-center rounded-xl border transition-all duration-160 active:scale-[0.98]"
+              className="border-border/40 bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground inline-flex h-8 w-8 items-center justify-center rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98]"
               title="Refresh Watchlist"
             >
               <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
@@ -121,7 +121,7 @@ export function WikiWatchlistFeed() {
                 key={t.val}
                 type="button"
                 onClick={() => setDays(t.val)}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all duration-160 active:scale-[0.98] ${
+                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98] ${
                   days === t.val
                     ? "bg-wiki/20 border-wiki/40 text-wiki border font-semibold"
                     : "bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -172,7 +172,7 @@ export function WikiWatchlistFeed() {
             return (
               <div
                 key={item.id}
-                className="border-border/40 bg-card/60 hover:border-border hover:bg-card/80 overflow-hidden rounded-2xl border transition-all duration-160"
+                className="border-border/40 bg-card/60 hover:border-border hover:bg-card/80 overflow-hidden rounded-2xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160"
               >
                 {/* Row Header */}
                 <div className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -245,7 +245,7 @@ export function WikiWatchlistFeed() {
                     <button
                       type="button"
                       onClick={() => setExpandedRevId(isExpanded ? null : item.id)}
-                      className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-all duration-160 active:scale-[0.98] ${
+                      className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98] ${
                         isExpanded
                           ? "bg-wiki/20 border-wiki/40 text-wiki border"
                           : "border-border/40 bg-secondary/60 text-foreground hover:bg-secondary border"

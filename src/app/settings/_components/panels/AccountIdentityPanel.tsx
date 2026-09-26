@@ -201,7 +201,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           <Link
             href={passportUrl}
             data-cuelume-press="soft"
-            className="facet-interactive flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2 text-xs font-bold text-indigo-600 transition-all hover:bg-indigo-500/20 active:scale-[0.98] dark:text-indigo-400"
+            className="facet-interactive flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2 text-xs font-bold text-indigo-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-indigo-500/20 active:scale-[0.98] dark:text-indigo-400"
           >
             <ExternalLink className="h-3.5 w-3.5" />
             <span>View Public Passport</span>
@@ -325,7 +325,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             type="button"
             onClick={() => setShowSensitive((prev) => !prev)}
             data-cuelume-press="soft"
-            className="facet-interactive border-border/40 bg-card/60 text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-all active:scale-[0.98]"
+            className="facet-interactive border-border/40 bg-card/60 text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             {showSensitive ? (
               <>
@@ -607,7 +607,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           <Link
             href="/realms/new"
             data-cuelume-press="soft"
-            className="facet-interactive border-border/40 bg-card/60 text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-all active:scale-[0.98]"
+            className="facet-interactive border-border/40 bg-card/60 text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Found Realm</span>
@@ -628,7 +628,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
               <Link
                 href="/realms/new"
                 data-cuelume-press="soft"
-                className="facet-interactive bg-foreground text-background mt-4 flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all hover:opacity-90 active:scale-[0.98]"
+                className="facet-interactive bg-foreground text-background mt-4 flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.98]"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span>Found a Realm</span>
@@ -653,7 +653,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                 <div
                   key={membership.organization.id}
                   className={cn(
-                    "flex flex-col gap-3 p-4 transition-all sm:flex-row sm:items-center sm:justify-between",
+                    "flex flex-col gap-3 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] sm:flex-row sm:items-center sm:justify-between",
                     isSelected ? "bg-accent/20" : "hover:bg-muted/10"
                   )}
                 >

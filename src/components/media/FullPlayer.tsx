@@ -93,14 +93,14 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
           {isPlaying ? (
             <button
               onClick={pauseTrack}
-              className="bg-primary text-primary-foreground rounded-full p-3.5 shadow-md transition-all hover:scale-105"
+              className="bg-primary text-primary-foreground rounded-full p-3.5 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
             >
               <Pause className="h-6 w-6 fill-current" />
             </button>
           ) : (
             <button
               onClick={resumeTrack}
-              className="bg-primary text-primary-foreground rounded-full p-3.5 shadow-md transition-all hover:scale-105"
+              className="bg-primary text-primary-foreground rounded-full p-3.5 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
             >
               <Play className="ml-0.5 h-6 w-6 fill-current" />
             </button>

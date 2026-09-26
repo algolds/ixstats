@@ -106,7 +106,7 @@ export function WikiDeepScanPanel({
           </p>
           <Button
             onClick={() => onDataExtracted(undefined, data.pages)}
-            className="bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] transition-all"
+            className="bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           >
             Continue to Builder <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
@@ -212,12 +212,12 @@ export function WikiDeepScanPanel({
           <Button
             variant="outline"
             onClick={() => onDataExtracted(undefined, data.pages)}
-            className="active:scale-[0.98] transition-all"
+            className="active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           >
             Skip Deep Data
           </Button>
           <Button
-            className="bg-emerald-500 text-white hover:bg-emerald-600 active:scale-[0.98] transition-all"
+            className="bg-emerald-500 text-white hover:bg-emerald-600 active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             onClick={() => onDataExtracted(extractedData, data.pages)}
           >
             Import Enhanced Data <ChevronRight className="ml-2 h-4 w-4" />

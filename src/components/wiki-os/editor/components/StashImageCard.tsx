@@ -25,7 +25,7 @@ export function StashImageCard({ imgInfo, cleanTitle, filename, onInsert }: Stas
   return (
     <div
       onClick={onInsert}
-      className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-white/5 bg-white/5 text-white transition-all hover:border-white/10 hover:bg-white/10"
+      className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-white/5 bg-white/5 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/10 hover:bg-white/10"
       title={`Click to insert [[File:${filename}]]`}
     >
       {imgInfo?.thumbUrl ? (

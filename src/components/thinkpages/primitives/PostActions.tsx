@@ -469,7 +469,7 @@ export function PostActions({
           type="button"
           onClick={() => onReply?.(postId)}
           className={cn(
-            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-all duration-200 select-none active:scale-95",
+            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
             pillPadding,
             "text-muted-foreground hover:bg-blue-500/10 hover:text-blue-500 dark:hover:bg-blue-500/15"
           )}
@@ -492,7 +492,7 @@ export function PostActions({
           type="button"
           onClick={handleRepost}
           className={cn(
-            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-all duration-200 select-none active:scale-95",
+            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
             pillPadding,
             isReposted
               ? "bg-emerald-500/10 font-semibold text-emerald-500 dark:bg-emerald-500/15"
@@ -527,7 +527,7 @@ export function PostActions({
               setShowReactionPopup(!showReactionPopup);
             }}
             className={cn(
-              "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-all duration-200 select-none active:scale-95",
+              "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
               pillPadding,
               isLiked
                 ? "bg-rose-500/10 font-semibold text-rose-500 dark:bg-rose-500/15"
@@ -545,7 +545,7 @@ export function PostActions({
             <Heart
               className={cn(
                 iconSize,
-                "transition-all duration-200 group-hover:scale-115 group-active:scale-90",
+                "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:scale-115 group-active:scale-90",
                 isLiked && "scale-105 fill-current"
               )}
             />
@@ -600,7 +600,7 @@ export function PostActions({
           type="button"
           onClick={handleShare}
           className={cn(
-            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-all duration-200 select-none active:scale-95",
+            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
             pillPadding,
             "text-muted-foreground hover:bg-cyan-500/10 hover:text-cyan-500 dark:hover:bg-cyan-500/15"
           )}

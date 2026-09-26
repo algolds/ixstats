@@ -172,14 +172,14 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
               {/* Progress Bar with Split */}
               <div className="bg-muted/40 relative flex h-2 w-full overflow-hidden rounded-full">
                 <div
-                  className="h-full transition-all duration-500"
+                  className="h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                   style={{
                     width: `${pctA}%`,
                     backgroundColor: colorA,
                   }}
                 />
                 <div
-                  className="h-full flex-1 transition-all duration-500"
+                  className="h-full flex-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                   style={{
                     backgroundColor: colorB,
                   }}

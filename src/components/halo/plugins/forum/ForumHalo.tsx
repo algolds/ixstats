@@ -24,7 +24,7 @@ function ForumBreadcrumb() {
 
   return (
     <span
-      className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 ${
+      className={`flex items-center gap-1.5 overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
         isCollapsed ? "max-w-[100px]" : "max-w-[220px]"
       }`}
     >

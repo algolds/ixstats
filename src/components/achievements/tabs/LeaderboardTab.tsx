@@ -180,7 +180,7 @@ function PodiumCard({
       whileTap={{ scale: 0.985 }}
       transition={{ type: "spring", stiffness: 400, damping: 28 }}
       className={cn(
-        "relative overflow-hidden rounded-3xl border border-t-white/15 bg-gradient-to-b p-5 shadow-xl backdrop-blur-2xl transition-all",
+        "relative overflow-hidden rounded-3xl border border-t-white/15 bg-gradient-to-b p-5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         styles.cardBg
       )}
     >
@@ -239,7 +239,7 @@ function Row({
       whileHover={{ y: -2, scale: 1.004 }}
       whileTap={{ scale: 0.985 }}
       className={cn(
-        "border-border/60 hover:border-border flex items-center justify-between rounded-2xl border border-t-white/10 p-4 backdrop-blur-2xl transition-all hover:shadow-lg",
+        "border-border/60 hover:border-border flex items-center justify-between rounded-2xl border border-t-white/10 p-4 backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:shadow-lg",
         index < 3
           ? "via-card/75 to-card/75 border-amber-500/30 bg-gradient-to-r from-amber-500/10"
           : "bg-card/70 dark:bg-card/50"
@@ -326,7 +326,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
         }));
 
   const mainContent = (
-    <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/20 p-6 shadow-xl backdrop-blur-2xl transition-all dark:border-t-white/10">
+    <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/20 p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:border-t-white/10">
       <TextureOverlay texture="dots" opacity={0.03} />
 
       <div className="relative z-10 space-y-6">
@@ -358,7 +358,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
                   key={l}
                   onClick={() => setLimit(l)}
                   className={cn(
-                    "rounded-full px-2.5 py-0.5 font-bold transition-all active:scale-95",
+                    "rounded-full px-2.5 py-0.5 font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                     limit === l
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -377,7 +377,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
               key={cat.id}
               onClick={() => setActiveDomain(cat.id)}
               className={cn(
-                "rounded-full px-3 py-1 text-xs font-bold transition-all active:scale-95",
+                "rounded-full px-3 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                 activeDomain === cat.id
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground border"
@@ -396,7 +396,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
                 key={f.id}
                 onClick={() => setFilter(f.id)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition-all active:scale-95",
+                  "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                   filter === f.id
                     ? "border-amber-500/30 bg-amber-500/15 text-amber-600 shadow-sm dark:text-amber-300"
                     : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground"

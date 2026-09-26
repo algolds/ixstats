@@ -71,7 +71,7 @@ export function OnomaBrandLogo({
         onMouseEnter={() => setIsSelfHovered(true)}
         onMouseLeave={() => setIsSelfHovered(false)}
         className={cn(
-          "group/logo transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] select-none",
+          "group/logo transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] select-none",
           SIZE_MAP.symbol[size],
           tone === "monochrome" ? "text-foreground fill-current" : "fill-onoma-primary",
           isWinking && "scale-105 -rotate-2",
@@ -162,7 +162,7 @@ export function OnomaBrandLogo({
         onMouseEnter={() => setIsSelfHovered(true)}
         onMouseLeave={() => setIsSelfHovered(false)}
         className={cn(
-          "group/logo transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] select-none",
+          "group/logo transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] select-none",
           SIZE_MAP.lockup[size],
           className
         )}
@@ -195,7 +195,7 @@ export function OnomaBrandLogo({
         <g
           id="Logo"
           className={cn(
-            "transition-all duration-300",
+            "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
             tone === "monochrome" ? "text-foreground fill-current" : "fill-onoma-primary"
           )}
         >
@@ -224,7 +224,7 @@ export function OnomaBrandLogo({
   return (
     <div
       className={cn(
-        "border-border/40 bg-card/60 hover:border-onoma-primary/30 relative flex items-center justify-center overflow-hidden border shadow-sm backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-md",
+        "border-border/40 bg-card/60 hover:border-onoma-primary/30 relative flex items-center justify-center overflow-hidden border shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-105 hover:shadow-md",
         SIZE_MAP["app-icon"][size],
         className
       )}
@@ -254,7 +254,7 @@ export function OnomaNavIcon(props: { className?: string }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "group/logo h-4 w-4 fill-current transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] select-none",
+        "group/logo h-4 w-4 fill-current transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] select-none",
         props.className
       )}
     >

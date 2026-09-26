@@ -115,7 +115,7 @@ export function ThinktankDirectorySidebar({
                     setSelectedCategory("All");
                   }}
                   className={cn(
-                    "relative cursor-pointer rounded-lg px-3 py-1 text-xs font-semibold tracking-tight transition-all select-none active:scale-[0.97]",
+                    "relative cursor-pointer rounded-lg px-3 py-1 text-xs font-semibold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.97]",
                     isActive ? "text-white" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -176,7 +176,7 @@ export function ThinktankDirectorySidebar({
                     setSelectedCategory(cat.name);
                   }}
                   className={cn(
-                    "group relative flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium tracking-tight transition-all select-none active:scale-[0.96]",
+                    "group relative flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.96]",
                     isCatActive
                       ? "font-semibold text-emerald-700 dark:text-emerald-300"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -256,7 +256,7 @@ export function ThinktankDirectorySidebar({
                   onSelectGroup(g.id);
                 }}
                 className={cn(
-                  "group relative flex w-full items-start gap-3 rounded-xl p-2.5 text-left transition-all duration-150 active:scale-[0.98]",
+                  "group relative flex w-full items-start gap-3 rounded-xl p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                   isSelected
                     ? "text-foreground border border-emerald-500/30 bg-emerald-500/15 shadow-xs dark:bg-emerald-500/20"
                     : "hover:bg-muted/40 text-foreground border border-transparent"

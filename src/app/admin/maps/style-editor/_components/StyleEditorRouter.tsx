@@ -50,7 +50,7 @@ export function StyleEditorRouter() {
             <button
               key={theme}
               onClick={() => handleThemeChange(theme)}
-              className={`rounded-md px-3 py-1 text-xs font-medium capitalize transition-all ${
+              className={`rounded-md px-3 py-1 text-xs font-medium capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 selectedTheme === theme
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"

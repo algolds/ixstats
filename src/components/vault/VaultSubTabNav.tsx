@@ -74,7 +74,7 @@ export function VaultSubTabNav<T extends string>({
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-transparent px-3 py-2 text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95",
+              "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-transparent px-3 py-2 text-xs font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
               isActive
                 ? cn(configColor.text, "font-bold drop-shadow-sm")
                 : "text-muted-foreground hover:text-foreground"

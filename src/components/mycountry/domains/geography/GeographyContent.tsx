@@ -102,14 +102,14 @@ export function GeographyContent() {
 
       {/* Header stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
+        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-white/20 hover:bg-white/[0.06]">
           <div className="text-muted-foreground/80 flex items-center gap-1.5 text-xs font-extrabold tracking-wider uppercase">
             <Building2 className="h-3 w-3 text-[var(--flag-primary)]" />
             Cities
           </div>
           <div className="text-foreground text-lg font-bold tracking-tight">{cities.length}</div>
         </div>
-        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
+        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-white/20 hover:bg-white/[0.06]">
           <div className="text-muted-foreground/80 flex items-center gap-1.5 text-xs font-extrabold tracking-wider uppercase">
             <MapPin className="h-3 w-3 text-[var(--flag-secondary)]" />
             Subdivisions
@@ -118,7 +118,7 @@ export function GeographyContent() {
             {subdivisions.length}
           </div>
         </div>
-        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
+        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-white/20 hover:bg-white/[0.06]">
           <div className="text-muted-foreground/80 flex items-center gap-1.5 text-xs font-extrabold tracking-wider uppercase">
             <Pin className="h-3 w-3 text-[var(--flag-accent)]" />
             POIs

@@ -172,7 +172,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
     const buttonClass = (extra = "") =>
       cn(
-        "flex w-full items-center gap-2.5 rounded-xl border border-border/70 bg-muted/40 px-3.5 py-2.5 text-xs font-semibold text-foreground shadow-xs backdrop-blur-md transition-all duration-150 hover:bg-muted/80 hover:border-border active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40",
+        "flex w-full items-center gap-2.5 rounded-xl border border-border/70 bg-muted/40 px-3.5 py-2.5 text-xs font-semibold text-foreground shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-muted/80 hover:border-border active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40",
         extra
       );
 

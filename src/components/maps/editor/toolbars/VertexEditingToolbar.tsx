@@ -18,14 +18,14 @@ export function VertexEditingToolbar({
   if (!isVertexEditing) return null;
 
   return (
-    <div className="border-border bg-card/90 ring-border/50 absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full border p-1.5 shadow-xl ring-1 backdrop-blur-md transition-all">
+    <div className="border-border bg-card/90 ring-border/50 absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full border p-1.5 shadow-xl ring-1 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]">
       <span className="text-muted-foreground hidden px-2.5 text-xs font-medium sm:inline">
         Drag vertices · Midpoints to add · Right-click to remove
       </span>
       <div className="bg-border hidden h-4 w-px sm:block" />
       <button
         onClick={handleSimplifyAndSave}
-        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 active:scale-[0.98] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 active:scale-[0.98] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]"
         title="Simplify vertices, snap to country border, and save"
       >
         <svg
@@ -45,20 +45,20 @@ export function VertexEditingToolbar({
       </button>
       <button
         onClick={handleSave}
-        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 active:scale-[0.98] rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 active:scale-[0.98] rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]"
         title="Save current geometry"
       >
         Save
       </button>
       <button
         onClick={finishVertexEdit}
-        className="bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition-all"
+        className="bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform]"
       >
         Done
       </button>
       <button
         onClick={cancelVertexEdit}
-        className="text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+        className="text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]"
       >
         Cancel
       </button>

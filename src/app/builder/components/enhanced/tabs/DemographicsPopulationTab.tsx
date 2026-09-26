@@ -419,7 +419,7 @@ export function DemographicsPopulationTab({
               size="sm"
               onClick={() => setActiveSection(section.id)}
               className={cn(
-                "flex-1 rounded-lg transition-all duration-205",
+                "flex-1 rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-205",
                 activeSection === section.id
                   ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"

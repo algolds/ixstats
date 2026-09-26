@@ -116,7 +116,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
           <button
             onClick={() => handleItemClick(-1)}
             disabled={isMutating}
-            className={`group relative flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-xs transition-all active:scale-[0.98] ${
+            className={`group relative flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
               position === -1
                 ? "bg-primary/10 text-primary font-semibold ring-1 ring-primary/30"
                 : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
@@ -152,7 +152,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
                 key={`${action.featureId}-${idx}`}
                 onClick={() => handleItemClick(idx)}
                 disabled={isMutating}
-                className={`group relative flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-xs transition-all active:scale-[0.98] ${
+                className={`group relative flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                   isCurrent
                     ? "bg-primary/10 text-primary font-semibold ring-1 ring-primary/30"
                     : isActive

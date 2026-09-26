@@ -257,7 +257,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             type="button"
             onClick={() => setWikiTab("workspace")}
             className={cn(
-              "flex-1 cursor-pointer rounded-md py-1 text-center text-xs font-semibold transition-all",
+              "flex-1 cursor-pointer rounded-md py-1 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               wikiTab === "workspace"
                 ? "bg-white text-zinc-900 shadow-sm dark:bg-white/15 dark:text-white"
                 : "text-muted-foreground hover:text-foreground"
@@ -269,7 +269,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             type="button"
             onClick={() => setWikiTab("narrator")}
             className={cn(
-              "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md py-1 text-center text-xs font-semibold transition-all",
+              "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md py-1 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               wikiTab === "narrator"
                 ? "bg-white text-blue-600 shadow-sm dark:bg-white/15 dark:text-blue-400"
                 : "text-muted-foreground hover:text-foreground"

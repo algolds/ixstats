@@ -155,7 +155,7 @@ export const LayerPanel = React.memo(function LayerPanel({
     const row = (
       <div
         key={feature.id}
-        className={`group flex items-center gap-1.5 rounded px-2 py-1.5 pl-8 transition-all duration-100 ease-out select-none active:scale-[0.99] ${
+        className={`group flex items-center gap-1.5 rounded px-2 py-1.5 pl-8 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out select-none active:scale-[0.99] ${
           isSelected
             ? "bg-primary/10 ring-primary/30 font-semibold shadow-xs ring-1"
             : isMultiSelected
@@ -192,7 +192,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 e.stopPropagation();
                 onEditFeature(feature);
               }}
-              className="rounded p-0.5 text-muted-foreground transition-all duration-100 hover:bg-accent hover:text-foreground active:scale-[0.98]"
+              className="rounded p-0.5 text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 hover:bg-accent hover:text-foreground active:scale-[0.98]"
               title="Edit"
             >
               <Pencil className="h-3 w-3" />
@@ -204,7 +204,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 e.stopPropagation();
                 onDeleteFeature(feature);
               }}
-              className="rounded p-0.5 text-muted-foreground transition-all duration-100 hover:bg-destructive/15 hover:text-destructive active:scale-[0.98]"
+              className="rounded p-0.5 text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 hover:bg-destructive/15 hover:text-destructive active:scale-[0.98]"
               title="Delete"
             >
               <Trash2 className="h-3 w-3" />

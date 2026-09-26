@@ -117,7 +117,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
   return (
     <div
       onClick={() => onView(issue.id)}
-      className={`group w-full cursor-pointer rounded-lg border border-l-4 border-white/10 p-3 text-left transition-all hover:border-white/20 hover:bg-white/5 ${severityStyle}`}
+      className={`group w-full cursor-pointer rounded-lg border border-l-4 border-white/10 p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/20 hover:bg-white/5 ${severityStyle}`}
     >
       <div className="flex items-start gap-3">
         <div className={`mt-0.5 rounded-full bg-white/10 p-1.5 ${domainConfig.color}`}>
@@ -170,7 +170,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
                     e.stopPropagation();
                     onDismiss(issue.id);
                   }}
-                  className="ml-auto cursor-pointer rounded border border-white/15 bg-white/5 px-2 py-0.5 text-xs font-medium text-slate-300 transition-all hover:border-white/30 hover:bg-white/10"
+                  className="ml-auto cursor-pointer rounded border border-white/15 bg-white/5 px-2 py-0.5 text-xs font-medium text-slate-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/30 hover:bg-white/10"
                 >
                   Delegate (-15 CivCap)
                 </button>

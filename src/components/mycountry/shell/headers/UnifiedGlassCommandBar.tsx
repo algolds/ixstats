@@ -53,7 +53,7 @@ export function UnifiedGlassCommandBar({
       depth={2}
       interactive="none"
       enableRefraction={false}
-      className="border-border bg-card/70 relative flex w-full flex-col gap-3.5 rounded-2xl border p-3.5 shadow-sm backdrop-blur-md transition-all duration-200"
+      className="border-border bg-card/70 relative flex w-full flex-col gap-3.5 rounded-2xl border p-3.5 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
     >
       {/* Top Executive Navigation Row */}
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
@@ -69,7 +69,7 @@ export function UnifiedGlassCommandBar({
           {/* Public Profile Button */}
           <Link
             href={profileHref}
-            className="text-muted-foreground hover:text-foreground hover:bg-card/80 flex items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-1.5 text-xs font-semibold transition-all hover:border-white/10 active:scale-[0.98]"
+            className="text-muted-foreground hover:text-foreground hover:bg-card/80 flex items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/10 active:scale-[0.98]"
             title="Open Sovereign Public Profile"
             onClick={() => soundEffects.press()}
           >
@@ -84,7 +84,7 @@ export function UnifiedGlassCommandBar({
               soundEffects.press();
               router.push("/mycountry/editor");
             }}
-            className="text-muted-foreground hover:text-foreground hover:bg-card/80 flex cursor-pointer items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-1.5 text-xs font-semibold transition-all hover:border-white/10 active:scale-[0.98]"
+            className="text-muted-foreground hover:text-foreground hover:bg-card/80 flex cursor-pointer items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/10 active:scale-[0.98]"
             title="Open Territory Map Editor"
           >
             <Edit3 className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
@@ -103,7 +103,7 @@ export function UnifiedGlassCommandBar({
               }
             }}
             className={cn(
-              "flex cursor-pointer items-center gap-2 rounded-xl border px-3.5 py-1.5 text-xs font-bold shadow-sm transition-all duration-200 select-none active:scale-[0.98]",
+              "flex cursor-pointer items-center gap-2 rounded-xl border px-3.5 py-1.5 text-xs font-bold shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.98]",
               isExecutiveMode
                 ? "border-amber-500/50 bg-amber-500 font-extrabold text-black shadow-md"
                 : "border-amber-500/40 bg-amber-500/15 text-amber-900 hover:bg-amber-500/25 dark:text-amber-300 dark:hover:bg-amber-500/20"
@@ -127,7 +127,7 @@ export function UnifiedGlassCommandBar({
                 soundEffects.press();
                 onNavigate?.(id);
               }}
-              className="group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border p-2.5 shadow-2xs backdrop-blur-md transition-all duration-150 select-none active:scale-[0.98]"
+              className="group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border p-2.5 shadow-2xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98]"
             >
               {/* Subtle Natural Architectural Watermark */}
               <Graphic />
@@ -153,7 +153,7 @@ export function UnifiedGlassCommandBar({
               </div>
 
               {/* Right: Arrow indicator */}
-              <ArrowUpRight className="text-muted-foreground group-hover:text-foreground relative z-10 h-3 w-3 shrink-0 opacity-60 transition-all duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+              <ArrowUpRight className="text-muted-foreground group-hover:text-foreground relative z-10 h-3 w-3 shrink-0 opacity-60 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
             </FacetCard>
           ))}
         </div>
@@ -168,7 +168,7 @@ export function UnifiedGlassCommandBar({
                 onChangeMode("home");
                 onNavigate?.("overview");
               }}
-              className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.25 text-xs font-semibold transition-all hover:bg-white/5 active:scale-[0.98]"
+              className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.25 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5 active:scale-[0.98]"
             >
               <LayoutGrid className="h-3.5 w-3.5" />
               <span>Overview</span>
@@ -188,7 +188,7 @@ export function UnifiedGlassCommandBar({
                     onNavigate?.(id);
                   }}
                   className={cn(
-                    "flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.25 text-xs font-semibold transition-all select-none active:scale-[0.98]",
+                    "flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.25 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.98]",
                     isActive
                       ? "bg-card text-foreground border-border/70 border font-bold shadow-xs dark:border-white/15 dark:bg-white/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-white/5"

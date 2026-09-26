@@ -210,7 +210,7 @@ export function SmartPlacement(props: SmartPlacementProps) {
             return (
               <div
                 key={i}
-                className="group border-border/40 bg-card/40 hover:bg-card/90 flex flex-col gap-1 rounded-md border p-1.5 transition-all"
+                className="group border-border/40 bg-card/40 hover:bg-card/90 flex flex-col gap-1 rounded-md border p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-medium">

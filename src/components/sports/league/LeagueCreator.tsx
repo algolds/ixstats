@@ -320,7 +320,7 @@ export function LeagueCreator({
             )}
             <div
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-all duration-300",
+                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                 isActive &&
                   "bg-primary text-primary-foreground ring-primary/40 ring-offset-background shadow-md ring-2 ring-offset-2",
                 isDone && "bg-primary/20 text-primary",
@@ -366,7 +366,7 @@ export function LeagueCreator({
                 whileTap="tap"
                 onClick={() => handleSportSelect(preset.key)}
                 className={cn(
-                  "facet-hierarchy-interactive group focus:ring-primary/30 relative cursor-pointer rounded-xl border p-4 text-left transition-all focus:ring-2 focus:outline-none",
+                  "facet-hierarchy-interactive group focus:ring-primary/30 relative cursor-pointer rounded-xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:outline-none",
                   isSelected
                     ? "border-primary/60 bg-primary/5 ring-primary ring-2"
                     : "border-border/60 bg-card/50 hover:border-border hover:bg-card/80"

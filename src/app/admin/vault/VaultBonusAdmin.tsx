@@ -195,7 +195,7 @@ export function VaultBonusAdmin() {
                           setForm((p) => ({ ...p, [field.key]: parseFloat(e.target.value) || 0 }))
                         }
                         placeholder="0"
-                        className="border-border bg-background/60 text-foreground h-8 w-full rounded-lg border px-3 font-mono text-xs transition-all focus:border-emerald-500 focus:outline-none"
+                        className="border-border bg-background/60 text-foreground h-8 w-full rounded-lg border px-3 font-mono text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-emerald-500 focus:outline-none"
                       />
                       <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 font-mono text-xs uppercase">
                         Credits
@@ -214,7 +214,7 @@ export function VaultBonusAdmin() {
         <Button
           onClick={() => saveMutation.mutate(form)}
           disabled={saveMutation.isPending}
-          className="h-10 rounded-xl border border-emerald-400/30 bg-emerald-500/20 px-6 text-xs font-semibold text-emerald-600 shadow-sm transition-all hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
+          className="h-10 rounded-xl border border-emerald-400/30 bg-emerald-500/20 px-6 text-xs font-semibold text-emerald-600 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
         >
           {saveMutation.isPending ? (
             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

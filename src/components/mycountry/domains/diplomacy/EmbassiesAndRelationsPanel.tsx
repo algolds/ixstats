@@ -152,7 +152,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
             setActiveTab("embassies");
           }}
           className={cn(
-            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
+            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
             activeTab === "embassies"
               ? "border border-amber-500/40 bg-amber-500/20 text-amber-500 shadow-sm"
               : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
@@ -173,7 +173,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
             setActiveTab("relations");
           }}
           className={cn(
-            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
+            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
             activeTab === "relations"
               ? "border border-blue-500/40 bg-blue-500/20 text-blue-400 shadow-sm"
               : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
@@ -194,7 +194,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
             setActiveTab("alliances");
           }}
           className={cn(
-            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
+            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
             activeTab === "alliances"
               ? "border border-cyan-500/40 bg-cyan-500/20 text-cyan-400 shadow-sm"
               : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
@@ -215,7 +215,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
             setActiveTab("exchanges");
           }}
           className={cn(
-            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
+            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
             activeTab === "exchanges"
               ? "border border-blue-500/40 bg-blue-500/20 text-blue-400 shadow-sm"
               : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
@@ -229,7 +229,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           type="button"
           onClick={() => setActiveTab("events")}
           className={cn(
-            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
+            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
             activeTab === "events"
               ? "border border-amber-500/40 bg-amber-500/20 text-amber-400 shadow-sm"
               : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"

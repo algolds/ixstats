@@ -90,7 +90,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
   const IconComponent = config.icon;
 
   return (
-    <div className="facet-hierarchy-child group rounded-lg p-4 transition-all hover:scale-[1.01] sm:p-6">
+    <div className="facet-hierarchy-child group rounded-lg p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.01] sm:p-6">
       {/* Header */}
       <div className="mb-3 flex items-start gap-3 sm:mb-4 sm:gap-4">
         {/* Icon */}

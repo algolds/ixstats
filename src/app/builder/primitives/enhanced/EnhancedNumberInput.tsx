@@ -455,7 +455,7 @@ export function EnhancedNumberInput({
         <div
           className={cn(
             "relative w-full",
-            "rounded-lg transition-all duration-200 ease-out",
+            "rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
             "border border-white/[0.08] bg-white/[0.02] dark:border-white/[0.06] dark:bg-white/[0.015]",
             "hover:border-white/[0.12] hover:bg-white/[0.04] dark:hover:border-white/[0.1] dark:hover:bg-white/[0.03]",
             "shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
@@ -514,7 +514,7 @@ export function EnhancedNumberInput({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={cn(
-                    "flex items-center justify-center rounded transition-all",
+                    "flex items-center justify-center rounded transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     "hover:bg-white/[0.08] hover:text-[var(--primitive-primary)] dark:hover:bg-white/[0.05]",
                     "h-6 w-6",
                     "disabled:cursor-not-allowed disabled:opacity-20",
@@ -531,7 +531,7 @@ export function EnhancedNumberInput({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={cn(
-                    "flex items-center justify-center rounded transition-all",
+                    "flex items-center justify-center rounded transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     "hover:bg-white/[0.08] hover:text-[var(--primitive-primary)] dark:hover:bg-white/[0.05]",
                     "h-6 w-6",
                     "disabled:cursor-not-allowed disabled:opacity-20",
@@ -549,7 +549,7 @@ export function EnhancedNumberInput({
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className={cn(
-                      "flex items-center justify-center rounded transition-all",
+                      "flex items-center justify-center rounded transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       "hover:bg-white/[0.08] hover:text-[var(--primitive-primary)] dark:hover:bg-white/[0.05]",
                       "h-6 w-6",
                       "disabled:cursor-not-allowed disabled:opacity-20",

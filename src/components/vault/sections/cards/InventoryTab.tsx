@@ -71,7 +71,7 @@ const InventoryCardItem = React.memo(function InventoryCardItem({
         hideValue={hideValue}
         performanceMode={performanceMode}
         className={cn(
-          "transition-all",
+          "transition-[color,background-color,border-color,box-shadow,opacity,transform]",
           selectMode && isSelected && "ring-2 ring-amber-400 ring-offset-2 ring-offset-black"
         )}
       />

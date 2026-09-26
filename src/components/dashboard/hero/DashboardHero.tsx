@@ -192,7 +192,7 @@ export function DashboardHeroComponent({
     <div className="group relative overflow-hidden rounded-2xl border border-white/15 bg-white/[0.05] shadow-xl backdrop-blur-2xl before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent dark:border-white/10 dark:bg-black/35">
       {/* Cinematic Background Flag Watermark Scrim */}
       {flagUrl && (
-        <div className="pointer-events-none absolute -top-12 -right-12 h-80 w-80 overflow-hidden opacity-[0.14] transition-all duration-700 select-none group-hover:scale-105 group-hover:opacity-[0.25] dark:opacity-[0.18]">
+        <div className="pointer-events-none absolute -top-12 -right-12 h-80 w-80 overflow-hidden opacity-[0.14] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-700 select-none group-hover:scale-105 group-hover:opacity-[0.25] dark:opacity-[0.18]">
           <img
             src={flagUrl}
             alt=""
@@ -272,7 +272,7 @@ export function DashboardHeroComponent({
 
               <Link
                 href="/mycountry"
-                className="group/btn flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-700 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-amber-500/60 hover:bg-amber-500/25 active:scale-95 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:border-amber-400/50 dark:hover:bg-amber-500/20"
+                className="group/btn flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-700 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-amber-500/60 hover:bg-amber-500/25 active:scale-95 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:border-amber-400/50 dark:hover:bg-amber-500/20"
               >
                 <span>MyCountry</span>
                 <ChevronRight className="h-3 w-3 shrink-0 text-amber-700 transition-transform duration-200 group-hover/btn:translate-x-0.5 dark:text-amber-300" />

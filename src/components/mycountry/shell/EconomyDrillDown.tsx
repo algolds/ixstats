@@ -204,7 +204,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
               setActiveTab(id);
             }}
             className={cn(
-              "flex w-full cursor-pointer items-center justify-center gap-2 truncate rounded-xl px-3 py-2 text-center text-xs font-extrabold transition-all duration-200 select-none active:scale-95",
+              "flex w-full cursor-pointer items-center justify-center gap-2 truncate rounded-xl px-3 py-2 text-center text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
               activeTab === id
                 ? "border border-emerald-500/40 bg-emerald-500/20 text-emerald-950 dark:text-emerald-300 shadow-xs"
                 : "text-muted-foreground hover:bg-muted/20 hover:text-foreground border border-transparent"

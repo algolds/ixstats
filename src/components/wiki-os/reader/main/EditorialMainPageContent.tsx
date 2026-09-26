@@ -116,7 +116,7 @@ export function EditorialMainPageContent({
                     data-cuelume-hover="tick"
                     className={cn(
                       "flex items-start gap-2.5 rounded-xl p-2 sm:p-2.5",
-                      "hover:bg-foreground/[0.04] group transition-all duration-150 active:scale-[0.98]"
+                      "hover:bg-foreground/[0.04] group transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
                     )}
                   >
                     <div
@@ -175,7 +175,7 @@ export function EditorialMainPageContent({
                   return (
                     <li
                       key={idx}
-                      className="hover:bg-foreground/[0.04] group flex flex-1 items-start justify-between gap-3 rounded-2xl px-3 py-2.5 transition-all duration-200"
+                      className="hover:bg-foreground/[0.04] group flex flex-1 items-start justify-between gap-3 rounded-2xl px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
                     >
                       <div className="flex min-w-0 flex-1 items-start gap-2.5">
                         <ActivityItemThumbnail src={rc.thumbnail} title={rc.title} />

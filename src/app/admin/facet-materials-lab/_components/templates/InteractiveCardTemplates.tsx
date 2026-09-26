@@ -185,7 +185,7 @@ export function InteractiveCardTemplates({
               <button
                 onClick={() => setActiveNode(activeNode === 1 ? null : 1)}
                 className={cn(
-                  "facet-hierarchy-interactive relative z-20 flex-1 cursor-pointer px-3 py-2 text-center text-xs font-semibold transition-all",
+                  "facet-hierarchy-interactive relative z-20 flex-1 cursor-pointer px-3 py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeNode === 1 ? "text-foreground border-2 font-bold" : "text-muted-foreground"
                 )}
                 style={{
@@ -198,7 +198,7 @@ export function InteractiveCardTemplates({
               <button
                 onClick={() => setActiveNode(activeNode === 2 ? null : 2)}
                 className={cn(
-                  "facet-hierarchy-interactive relative z-20 flex-1 cursor-pointer px-3 py-2 text-center text-xs font-semibold transition-all",
+                  "facet-hierarchy-interactive relative z-20 flex-1 cursor-pointer px-3 py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeNode === 2 ? "text-foreground border-2 font-bold" : "text-muted-foreground"
                 )}
                 style={{

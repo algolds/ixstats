@@ -64,7 +64,7 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
       whileHover={{ scale: isDisabled ? 1 : 1.02 }}
       whileTap={{ scale: isDisabled ? 1 : 0.98 }}
       transition={{ duration: 0.2 }}
-      className={cn("cursor-pointer rounded-lg p-2 transition-all", getCardClasses(), className)}
+      className={cn("cursor-pointer rounded-lg p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]", getCardClasses(), className)}
       onClick={isDisabled ? undefined : onToggle}
     >
       {/* Header */}

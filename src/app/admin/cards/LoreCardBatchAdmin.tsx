@@ -821,7 +821,7 @@ export function LoreCardBatchAdmin() {
         >
           <button
             onClick={() => setActiveTab("generator")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
               activeTab === "generator"
                 ? "bg-primary/15 border-primary/40 text-foreground border shadow-xs"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
@@ -832,7 +832,7 @@ export function LoreCardBatchAdmin() {
           </button>
           <button
             onClick={() => setActiveTab("requests")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
               activeTab === "requests"
                 ? "bg-primary/15 border-primary/40 text-foreground border shadow-xs"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
@@ -867,7 +867,7 @@ export function LoreCardBatchAdmin() {
                 <select
                   value={globalWikiSource}
                   onChange={(e) => setGlobalWikiSource(e.target.value as any)}
-                  className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 w-full rounded-xl border px-3 text-xs font-medium transition-all focus:ring-1 focus:outline-none"
+                  className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 w-full rounded-xl border px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-1 focus:outline-none"
                 >
                   <option value="ixwiki" className="bg-card text-card-foreground">
                     IxWiki (Primary)
@@ -886,7 +886,7 @@ export function LoreCardBatchAdmin() {
                 <select
                   value={globalTargetRarity}
                   onChange={(e) => setGlobalTargetRarity(e.target.value as any)}
-                  className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 w-full rounded-xl border px-3 text-xs font-medium transition-all focus:ring-1 focus:outline-none"
+                  className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 w-full rounded-xl border px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-1 focus:outline-none"
                 >
                   <option value="AUTO" className="bg-card text-card-foreground">
                     Auto (AI-determined)
@@ -920,7 +920,7 @@ export function LoreCardBatchAdmin() {
                 <select
                   value={globalSeason}
                   onChange={(e) => setGlobalSeason(parseInt(e.target.value, 10))}
-                  className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 w-full rounded-xl border px-3 text-xs font-medium transition-all focus:ring-1 focus:outline-none"
+                  className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 w-full rounded-xl border px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-1 focus:outline-none"
                 >
                   <option value={1} className="bg-card text-card-foreground">
                     Season 1
@@ -964,7 +964,7 @@ export function LoreCardBatchAdmin() {
                     disabled={Boolean(crawlingPresetName)}
                     onClick={() => handleApplyPreset(preset)}
                     title={`Add all ${liveCount.toLocaleString()} verified ${preset.name} articles & files to batch queue\nCategory: Category:${preset.categoryName}\nSynonyms & Keywords: ${preset.synonyms.slice(0, 10).join(", ")}...`}
-                    className="border-border bg-card/60 text-foreground hover:bg-accent hover:text-accent-foreground inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold shadow-2xs transition-all active:scale-95 disabled:opacity-60"
+                    className="border-border bg-card/60 text-foreground hover:bg-accent hover:text-accent-foreground inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 disabled:opacity-60"
                   >
                     {isPresetCrawling ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-400" />
@@ -992,7 +992,7 @@ export function LoreCardBatchAdmin() {
                 size="sm"
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                className="border-border bg-card text-foreground hover:bg-accent h-8 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                className="border-border bg-card text-foreground hover:bg-accent h-8 rounded-xl text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
               >
                 <Upload className="mr-1.5 h-3.5 w-3.5" /> Import CSV/JSON
               </Button>
@@ -1001,7 +1001,7 @@ export function LoreCardBatchAdmin() {
                   size="sm"
                   variant="outline"
                   onClick={handleExportJSON}
-                  className="border-border bg-card text-foreground hover:bg-accent h-8 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                  className="border-border bg-card text-foreground hover:bg-accent h-8 rounded-xl text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                 >
                   <Download className="mr-1.5 h-3.5 w-3.5" /> Export JSON
                 </Button>
@@ -1035,7 +1035,7 @@ export function LoreCardBatchAdmin() {
                       size="sm"
                       disabled={isCrawlingCategory}
                       onClick={() => handleCrawlCategory(categorySearchQuery)}
-                      className="bg-primary/20 hover:bg-primary/30 text-primary border-primary/30 absolute right-1 h-6.5 rounded-lg border px-2.5 text-xs font-semibold transition-all active:scale-95"
+                      className="bg-primary/20 hover:bg-primary/30 text-primary border-primary/30 absolute right-1 h-6.5 rounded-lg border px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                     >
                       {isCrawlingCategory ? (
                         <Loader2 className="mr-1 h-3 w-3 animate-spin" />
@@ -1065,7 +1065,7 @@ export function LoreCardBatchAdmin() {
                         <button
                           key={cat}
                           onClick={() => handleCrawlCategory(cat)}
-                          className="text-foreground hover:bg-accent/80 group flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-all"
+                          className="text-foreground hover:bg-accent/80 group flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                         >
                           <span className="flex items-center gap-1.5 font-medium">
                             <BookOpen className="h-3 w-3 text-purple-400" />
@@ -1087,7 +1087,7 @@ export function LoreCardBatchAdmin() {
                 disabled={isCrawlingAllPages}
                 onClick={handleCrawlAllMainPages}
                 title={`Fetch all articles in the main namespace (namespace 0) on ${globalWikiSource.toUpperCase()}`}
-                className="h-8.5 shrink-0 rounded-xl border-purple-500/40 bg-purple-500/10 text-xs font-semibold text-purple-400 transition-all hover:bg-purple-500/20 active:scale-95"
+                className="h-8.5 shrink-0 rounded-xl border-purple-500/40 bg-purple-500/10 text-xs font-semibold text-purple-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-purple-500/20 active:scale-95"
               >
                 {isCrawlingAllPages ? (
                   <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -1114,7 +1114,7 @@ export function LoreCardBatchAdmin() {
                 size="sm"
                 onClick={handleAddArticlesFromText}
                 disabled={!articleInput.trim()}
-                className="border-primary/30 bg-primary/20 text-primary hover:bg-primary/30 h-7 rounded-lg border text-xs font-semibold transition-all active:scale-95"
+                className="border-primary/30 bg-primary/20 text-primary hover:bg-primary/30 h-7 rounded-lg border text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
               >
                 Add to Queue
               </Button>
@@ -1123,7 +1123,7 @@ export function LoreCardBatchAdmin() {
               value={articleInput}
               onChange={(e) => setArticleInput(e.target.value)}
               placeholder="e.g. Caphiria, Daxia, Category:IXWB, Category:Wars, Category:Treaties, Urcea..."
-              className="border-border bg-card text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary h-20 w-full rounded-xl border p-3 text-xs transition-all outline-none focus:ring-1"
+              className="border-border bg-card text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary h-20 w-full rounded-xl border p-3 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:ring-1"
             />
             <p className="text-muted-foreground text-xs">
               💡 Supports individual article titles, comma-separated lists, and{" "}
@@ -1155,7 +1155,7 @@ export function LoreCardBatchAdmin() {
                     variant="outline"
                     onClick={handleDeduplicateQueue}
                     disabled={isProcessingBatch || candidates.length <= 1}
-                    className="border-border text-foreground hover:bg-accent h-7.5 rounded-lg border px-2.5 text-xs font-semibold shadow-xs transition-all active:scale-95"
+                    className="border-border text-foreground hover:bg-accent h-7.5 rounded-lg border px-2.5 text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                     title="Remove duplicate articles currently in this queue"
                   >
                     <Layers className="mr-1 h-3.5 w-3.5 text-purple-500" /> Deduplicate Queue
@@ -1167,7 +1167,7 @@ export function LoreCardBatchAdmin() {
                     variant="outline"
                     onClick={() => setIsPurgeDialogOpen(true)}
                     disabled={isProcessingBatch}
-                    className="h-7.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 text-xs font-semibold text-rose-600 shadow-xs transition-all hover:bg-rose-500/20 active:scale-95 dark:text-rose-400"
+                    className="h-7.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 text-xs font-semibold text-rose-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/20 active:scale-95 dark:text-rose-400"
                     title="Scan and purge duplicate cards from the database"
                   >
                     <Trash2 className="mr-1 h-3.5 w-3.5" /> Purge DB Duplicates (
@@ -1180,7 +1180,7 @@ export function LoreCardBatchAdmin() {
                     variant="outline"
                     onClick={() => setIsBackfillDialogOpen(true)}
                     disabled={isProcessingBatch}
-                    className="h-7.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 text-xs font-semibold text-amber-600 shadow-xs transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
+                    className="h-7.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 text-xs font-semibold text-amber-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
                     title="Backfill page creator and contributor attribution for existing lore cards"
                   >
                     <Sparkles className="mr-1 h-3.5 w-3.5 text-amber-500" /> Backfill Wiki Authors
@@ -1192,7 +1192,7 @@ export function LoreCardBatchAdmin() {
                     variant="outline"
                     onClick={() => setIsReclassifyDialogOpen(true)}
                     disabled={isProcessingBatch}
-                    className="h-7.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 text-xs font-semibold text-purple-600 shadow-xs transition-all hover:bg-purple-500/20 active:scale-95 dark:text-purple-300"
+                    className="h-7.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 text-xs font-semibold text-purple-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-purple-500/20 active:scale-95 dark:text-purple-300"
                     title="Re-scan and categorize lore cards with multi-signal infobox & category tree classifier"
                   >
                     <Layers className="mr-1 h-3.5 w-3.5 text-purple-500" /> Re-Catalog Categories
@@ -1212,7 +1212,7 @@ export function LoreCardBatchAdmin() {
                     size="sm"
                     onClick={handleProcessBatch}
                     disabled={isProcessingBatch || candidates.every((c) => c.status !== "idle")}
-                    className="h-8 rounded-xl border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 shadow-xs transition-all hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
+                    className="h-8 rounded-xl border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
                   >
                     {isProcessingBatch ? (
                       <>
@@ -1235,7 +1235,7 @@ export function LoreCardBatchAdmin() {
                 <button
                   type="button"
                   onClick={() => setCandidateStatusFilter("ALL")}
-                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     candidateStatusFilter === "ALL"
                       ? "bg-primary/20 text-primary border-primary/30 border"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
@@ -1246,7 +1246,7 @@ export function LoreCardBatchAdmin() {
                 <button
                   type="button"
                   onClick={() => setCandidateStatusFilter("idle")}
-                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     candidateStatusFilter === "idle"
                       ? "bg-muted text-foreground border-border border"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
@@ -1257,7 +1257,7 @@ export function LoreCardBatchAdmin() {
                 <button
                   type="button"
                   onClick={() => setCandidateStatusFilter("generating")}
-                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     candidateStatusFilter === "generating"
                       ? "border border-blue-500/30 bg-blue-500/20 text-blue-500"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
@@ -1268,7 +1268,7 @@ export function LoreCardBatchAdmin() {
                 <button
                   type="button"
                   onClick={() => setCandidateStatusFilter("success")}
-                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     candidateStatusFilter === "success"
                       ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-500"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
@@ -1280,7 +1280,7 @@ export function LoreCardBatchAdmin() {
                   <button
                     type="button"
                     onClick={() => setCandidateStatusFilter("error")}
-                    className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                    className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                       candidateStatusFilter === "error"
                         ? "border border-rose-500/40 bg-rose-500/25 text-rose-500 shadow-xs"
                         : "text-rose-500/80 hover:bg-rose-500/10 hover:text-rose-500"
@@ -1462,7 +1462,7 @@ export function LoreCardBatchAdmin() {
                                 <button
                                   type="button"
                                   onClick={() => setSelectedErrorCandidate(c)}
-                                  className="inline-flex w-fit cursor-pointer items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-xs font-bold text-rose-600 transition-all hover:bg-rose-500/25 dark:text-rose-400"
+                                  className="inline-flex w-fit cursor-pointer items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-xs font-bold text-rose-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/25 dark:text-rose-400"
                                   title="Click to view full failure diagnostic"
                                 >
                                   <XCircle className="h-3 w-3 text-rose-500" />
@@ -1492,7 +1492,7 @@ export function LoreCardBatchAdmin() {
                                   type="button"
                                   onClick={() => handleRetryCandidate(c.id)}
                                   disabled={isProcessingBatch}
-                                  className="text-muted-foreground cursor-pointer rounded p-1 transition-all hover:bg-blue-500/10 hover:text-blue-400"
+                                  className="text-muted-foreground cursor-pointer rounded p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500/10 hover:text-blue-400"
                                   title="Retry Import"
                                 >
                                   <RotateCcw className="h-3.5 w-3.5" />
@@ -1512,7 +1512,7 @@ export function LoreCardBatchAdmin() {
                                       season: c.season,
                                     })
                                   }
-                                  className="text-muted-foreground cursor-pointer rounded p-1 transition-all hover:bg-purple-500/10 hover:text-purple-400"
+                                  className="text-muted-foreground cursor-pointer rounded p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-purple-500/10 hover:text-purple-400"
                                   title="Inspect Artwork"
                                 >
                                   <Eye className="h-3.5 w-3.5" />
@@ -1523,7 +1523,7 @@ export function LoreCardBatchAdmin() {
                                 onClick={() =>
                                   setCandidates((prev) => prev.filter((item) => item.id !== c.id))
                                 }
-                                className="text-muted-foreground cursor-pointer rounded p-1 transition-all hover:bg-rose-500/10 hover:text-rose-500"
+                                className="text-muted-foreground cursor-pointer rounded p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/10 hover:text-rose-500"
                                 title="Remove Candidate"
                               >
                                 <X className="h-3.5 w-3.5" />
@@ -1597,7 +1597,7 @@ export function LoreCardBatchAdmin() {
               <select
                 value={requestStatusFilter}
                 onChange={(e) => setRequestStatusFilter(e.target.value)}
-                className="border-border bg-card text-foreground hover:bg-accent h-8.5 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
+                className="border-border bg-card text-foreground hover:bg-accent h-8.5 rounded-xl border px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
               >
                 <option value="ALL" className="bg-card text-card-foreground">
                   All Requests
@@ -2003,7 +2003,7 @@ export function LoreCardBatchAdmin() {
                 purgeDuplicatesMutation.isPending || (duplicateStats?.totalDuplicates ?? 0) === 0
               }
               onClick={() => purgeDuplicatesMutation.mutate({ mode: "wiki_lore" })}
-              className="rounded-xl bg-rose-500 text-xs font-semibold text-white shadow-xs transition-all hover:bg-rose-600 active:scale-95"
+              className="rounded-xl bg-rose-500 text-xs font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-600 active:scale-95"
             >
               {purgeDuplicatesMutation.isPending ? (
                 <>
@@ -2054,7 +2054,7 @@ export function LoreCardBatchAdmin() {
                     key={src.id}
                     type="button"
                     onClick={() => setBackfillSource(src.id as "all" | "ixwiki" | "iiwiki")}
-                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-all ${
+                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                       backfillSource === src.id
                         ? "border-amber-500 bg-amber-500/20 text-amber-600 dark:text-amber-400"
                         : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
@@ -2075,7 +2075,7 @@ export function LoreCardBatchAdmin() {
                     key={num}
                     type="button"
                     onClick={() => setBackfillLimit(num)}
-                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-all ${
+                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                       backfillLimit === num
                         ? "border-amber-500 bg-amber-500/20 text-amber-600 dark:text-amber-400"
                         : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
@@ -2115,7 +2115,7 @@ export function LoreCardBatchAdmin() {
               onClick={() =>
                 backfillAuthorsMutation.mutate({ limit: backfillLimit, wikiSource: backfillSource })
               }
-              className="rounded-xl bg-amber-500 text-xs font-bold text-black shadow-xs transition-all hover:bg-amber-600 active:scale-95"
+              className="rounded-xl bg-amber-500 text-xs font-bold text-black shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-600 active:scale-95"
             >
               {backfillAuthorsMutation.isPending ? (
                 <>
@@ -2164,7 +2164,7 @@ export function LoreCardBatchAdmin() {
                     key={src.id}
                     type="button"
                     onClick={() => setReclassifySource(src.id as "all" | "ixwiki" | "iiwiki")}
-                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-all ${
+                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                       reclassifySource === src.id
                         ? "border-purple-500 bg-purple-500/20 text-purple-600 dark:text-purple-300"
                         : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
@@ -2185,7 +2185,7 @@ export function LoreCardBatchAdmin() {
                     key={num}
                     type="button"
                     onClick={() => setReclassifyLimit(num)}
-                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-all ${
+                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                       reclassifyLimit === num
                         ? "border-purple-500 bg-purple-500/20 text-purple-600 dark:text-purple-300"
                         : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
@@ -2242,7 +2242,7 @@ export function LoreCardBatchAdmin() {
                   forceOverwrite: reclassifyForce,
                 })
               }
-              className="rounded-xl bg-purple-600 text-xs font-bold text-white shadow-xs transition-all hover:bg-purple-700 active:scale-95"
+              className="rounded-xl bg-purple-600 text-xs font-bold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-purple-700 active:scale-95"
             >
               {reclassifyCategoriesMutation.isPending ? (
                 <>
@@ -2349,7 +2349,7 @@ export function LoreCardBatchAdmin() {
                   void handleRetryCandidate(id);
                 }}
                 disabled={isProcessingBatch}
-                className="bg-primary text-primary-foreground rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95"
+                className="bg-primary text-primary-foreground rounded-xl text-xs font-bold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
               >
                 <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Retry Import Now
               </Button>

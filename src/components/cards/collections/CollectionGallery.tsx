@@ -168,7 +168,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                   key={cat}
                   onClick={() => setLeaderboardCategory(cat)}
                   className={cn(
-                    "rounded-lg px-3 py-1 text-xs font-medium transition-all",
+                    "rounded-lg px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     leaderboardCategory === cat
                       ? "glass-hierarchy-interactive text-white"
                       : "text-white/60 hover:text-white/80"
@@ -238,7 +238,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 transition={{ duration: 0.3, delay: index * 0.05 }}
               >
                 <Link href={`/vault/collections/${collection.id}`}>
-                  <Card className="facet-hierarchy-child h-full cursor-pointer transition-all duration-300 hover:scale-105">
+                  <Card className="facet-hierarchy-child h-full cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-105">
                     <CardContent className="space-y-3 p-4">
                       {/* Header */}
                       <div className="flex items-start justify-between">

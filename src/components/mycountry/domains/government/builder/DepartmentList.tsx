@@ -366,7 +366,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                     {/* Priority Indicator */}
                     <div className="h-1.5 w-full overflow-hidden rounded-full border border-zinc-200/50 bg-zinc-200 dark:border-white/5 dark:bg-black/40">
                       <div
-                        className={`h-full rounded-full transition-all duration-300 ${tokens.progressBar}`}
+                        className={`h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${tokens.progressBar}`}
                         style={{
                           width: `${Math.max(1, Math.min(10, Math.round((department.priority || 50) / 10))) * 10}%`,
                         }}

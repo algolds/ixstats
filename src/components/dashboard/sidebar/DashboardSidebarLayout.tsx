@@ -200,7 +200,7 @@ export function DashboardSidebarLayout({
                 {!disableCollapse && variant !== "rail" && (
                   <button
                     onClick={handleToggleSidebar}
-                    className="text-muted-foreground hover:text-foreground border-border bg-muted/30 hover:bg-muted/60 flex w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium tracking-tight shadow-xs backdrop-blur-md transition-all duration-150 active:scale-[0.97]"
+                    className="text-muted-foreground hover:text-foreground border-border bg-muted/30 hover:bg-muted/60 flex w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium tracking-tight shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]"
                     title="Collapse sidebar"
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
@@ -216,7 +216,7 @@ export function DashboardSidebarLayout({
               {isCollapsedNow && showFloatingExpand && variant !== "rail" && (
                 <button
                   onClick={handleToggleSidebar}
-                  className="text-muted-foreground hover:text-foreground border-border bg-card/90 hover:bg-card fixed top-24 left-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border shadow-xl backdrop-blur-xl transition-all duration-150 hover:scale-105 active:scale-[0.95]"
+                  className="text-muted-foreground hover:text-foreground border-border bg-card/90 hover:bg-card fixed top-24 left-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border shadow-xl backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-105 active:scale-[0.95]"
                   title="Expand sidebar"
                 >
                   <ChevronRight className="h-4 w-4" />

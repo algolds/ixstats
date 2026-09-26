@@ -108,7 +108,7 @@ export function MatchCommentary({
   };
 
   return (
-    <div className="relative mt-3 space-y-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-left shadow-2xl backdrop-blur-md transition-all duration-300">
+    <div className="relative mt-3 space-y-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-left shadow-2xl backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
 
       {/* Volatility & Volumetric metrics */}
       {evaluation && (
@@ -189,7 +189,7 @@ export function MatchCommentary({
                 </p>
                 <Button
                   onClick={handleGenerate}
-                  className="relative h-auto overflow-hidden rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white shadow-md transition-all group-hover:border-cyan-500/30 group-hover:shadow-cyan-500/10 hover:bg-white/20"
+                  className="relative h-auto overflow-hidden rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:border-cyan-500/30 group-hover:shadow-cyan-500/10 hover:bg-white/20"
                 >
                   <span className="relative z-10 flex items-center gap-1.5">
                     <Sparkles className="h-3 w-3 text-cyan-300" />

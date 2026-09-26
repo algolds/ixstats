@@ -302,7 +302,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 onClose?.();
                 onDeclare(chosenDirective);
               }}
-              className="mt-1 flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-extrabold text-amber-800 shadow-xs transition-all hover:bg-amber-500/20 dark:text-amber-300"
+              className="mt-1 flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-extrabold text-amber-800 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 dark:text-amber-300"
             >
               <Command className="h-4 w-4" />
               <span>Declare Follow-Up Directive →</span>
@@ -332,7 +332,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 type="button"
                 onClick={() => commissionRecon.mutate({ issueId: issue.id })}
                 disabled={commissionRecon.isPending}
-                className="shrink-0 cursor-pointer rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-400 transition-all hover:bg-cyan-500/20"
+                className="shrink-0 cursor-pointer rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500/20"
               >
                 {commissionRecon.isPending ? "..." : "Commission"}
               </button>
@@ -507,7 +507,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                   key={option.id}
                   depth={1}
                   className={cn(
-                    "flex items-start justify-between gap-3 p-4 backdrop-blur-md transition-all",
+                    "flex items-start justify-between gap-3 p-4 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     isConfirming
                       ? option.isRisky
                         ? "border-red-500/50 bg-red-500/10"
@@ -582,7 +582,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                         <button
                           type="button"
                           onClick={() => setConfirmingOptionId(null)}
-                          className="border-border/50 text-muted-foreground hover:text-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border transition-all"
+                          className="border-border/50 text-muted-foreground hover:text-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -593,7 +593,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                           }
                           disabled={respondM.isPending}
                           className={cn(
-                            "h-7 cursor-pointer rounded-lg px-3 text-xs font-bold text-white transition-all",
+                            "h-7 cursor-pointer rounded-lg px-3 text-xs font-bold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                             option.isRisky
                               ? "bg-red-600 hover:bg-red-700"
                               : "bg-amber-600 hover:bg-amber-700"
@@ -607,7 +607,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                         type="button"
                         onClick={() => setConfirmingOptionId(option.id)}
                         className={cn(
-                          "h-7 cursor-pointer rounded-lg border px-3 text-xs font-bold transition-all",
+                          "h-7 cursor-pointer rounded-lg border px-3 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                           option.isRisky
                             ? "border-red-500/30 text-red-400 hover:bg-red-500/10"
                             : "border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/20"

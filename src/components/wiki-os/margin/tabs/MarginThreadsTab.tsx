@@ -743,7 +743,7 @@ export function MarginThreadsTab({
                   type="button"
                   onClick={() => setFilter(f.id)}
                   className={cn(
-                    "cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-150 select-none active:scale-95",
+                    "cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
                     isActive
                       ? "border border-yellow-400/50 bg-[var(--wikios-surface)] font-bold text-[var(--wikios-text)] shadow-xs"
                       : "text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
@@ -759,7 +759,7 @@ export function MarginThreadsTab({
             <button
               type="button"
               onClick={() => setShowNewThread((prev) => !prev)}
-              className="bg-margin-accent hover:bg-margin-accent/90 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-yellow-400/50 px-3 py-1 text-xs font-bold text-stone-950 shadow-xs transition-all duration-150 select-none active:scale-95"
+              className="bg-margin-accent hover:bg-margin-accent/90 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-yellow-400/50 px-3 py-1 text-xs font-bold text-stone-950 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>New Thread</span>
@@ -775,7 +775,7 @@ export function MarginThreadsTab({
             placeholder="Search discussions..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-[var(--wikios-border)] bg-white/5 py-1.5 pr-3 pl-8 text-xs text-[var(--wikios-text)] transition-all duration-150 outline-none placeholder:text-[var(--wikios-text-dim)] focus:border-yellow-400/60 focus:bg-[var(--wikios-surface)]"
+            className="w-full rounded-xl border border-[var(--wikios-border)] bg-white/5 py-1.5 pr-3 pl-8 text-xs text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 outline-none placeholder:text-[var(--wikios-text-dim)] focus:border-yellow-400/60 focus:bg-[var(--wikios-surface)]"
           />
         </div>
       </div>

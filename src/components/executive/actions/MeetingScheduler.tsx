@@ -425,7 +425,7 @@ export function MeetingScheduler({
                         INTENT_TEMPLATES.find((t) => t.id === selectedTemplateId) ||
                         INTENT_TEMPLATES[0];
                       return (
-                        <div className="flex flex-col items-start rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-left transition-all duration-300 dark:bg-amber-500/10">
+                        <div className="flex flex-col items-start rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:bg-amber-500/10">
                           <span className="text-xs font-semibold text-amber-900 dark:text-amber-100">
                             {activeTpl.name}
                           </span>
@@ -448,7 +448,7 @@ export function MeetingScheduler({
                               setIsChangingIntent(false);
                             }}
                             className={cn(
-                              "flex cursor-pointer flex-col items-start rounded-lg border p-2.5 text-left text-xs transition-all select-none",
+                              "flex cursor-pointer flex-col items-start rounded-lg border p-2.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
                               isSelected
                                 ? "border-amber-500/40 bg-amber-500/10 shadow-sm dark:bg-amber-500/15"
                                 : "text-muted-foreground hover:text-foreground border-white/5 hover:border-white/10 hover:bg-white/[0.02]"
@@ -610,7 +610,7 @@ export function MeetingScheduler({
                           type="button"
                           onClick={() => setTimePreset(preset.id as any)}
                           className={cn(
-                            "cursor-pointer rounded-md border py-2 text-xs font-semibold transition-all",
+                            "cursor-pointer rounded-md border py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                             isActive
                               ? "border-amber-500/25 bg-amber-500/10 font-bold text-amber-900 dark:bg-amber-500/15 dark:text-amber-400"
                               : "text-muted-foreground hover:text-foreground border-white/5 hover:border-white/10 hover:bg-white/[0.02]"
@@ -735,7 +735,7 @@ export function MeetingScheduler({
                           <div
                             key={id}
                             className={cn(
-                              "flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs transition-all",
+                              "flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                               isRecommended
                                 ? "border-amber-500/20 bg-amber-500/10 text-amber-500/90 dark:text-amber-400"
                                 : "border-white/5 bg-white/5 text-slate-300"
@@ -811,7 +811,7 @@ export function MeetingScheduler({
                     return (
                       <div
                         key={index}
-                        className="overflow-hidden rounded-lg border border-white/5 bg-white/[0.01] transition-all"
+                        className="overflow-hidden rounded-lg border border-white/5 bg-white/[0.01] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                       >
                         <div
                           onClick={() => setExpandedAgendaIndex(isExpanded ? null : index)}

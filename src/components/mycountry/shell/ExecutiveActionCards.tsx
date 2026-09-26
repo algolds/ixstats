@@ -187,7 +187,7 @@ export const DomainActionTiles = React.memo(function DomainActionTiles({
                 onOpenDrill(drillKind);
               }
             }}
-            className="group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border p-3 shadow-xs backdrop-blur-md transition-all duration-150 select-none active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
+            className="group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border p-3 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
           >
             {/* Subtle Radial-Masked Architectural Watermark */}
             <Graphic />
@@ -213,7 +213,7 @@ export const DomainActionTiles = React.memo(function DomainActionTiles({
             </div>
 
             {/* Right: Arrow indicator */}
-            <ArrowUpRight className="text-muted-foreground group-hover:text-foreground relative z-10 h-3.5 w-3.5 shrink-0 opacity-60 transition-all duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+            <ArrowUpRight className="text-muted-foreground group-hover:text-foreground relative z-10 h-3.5 w-3.5 shrink-0 opacity-60 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
           </FacetCard>
         )
       )}

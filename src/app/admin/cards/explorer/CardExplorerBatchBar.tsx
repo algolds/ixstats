@@ -69,7 +69,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
           <Button
             size="sm"
             onClick={() => setIsBulkModalOpen(true)}
-            className="border-primary/30 bg-primary/20 text-primary hover:bg-primary/30 h-8 rounded-xl border text-xs font-semibold shadow-xs transition-all active:scale-95"
+            className="border-primary/30 bg-primary/20 text-primary hover:bg-primary/30 h-8 rounded-xl border text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
           >
             <EyeOff className="mr-1.5 h-3.5 w-3.5" />
             Bulk Visibility Controls

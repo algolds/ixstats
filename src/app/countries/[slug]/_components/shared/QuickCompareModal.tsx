@@ -84,7 +84,7 @@ export function QuickCompareModal({ isOpen, onClose, currentCountry }: QuickComp
               data-cuelume-press="soft"
               onClick={() => setSelectedPeer(peer)}
               className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-bold transition-all duration-150 active:scale-[0.96]",
+                "rounded-lg px-3 py-1.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96]",
                 selectedPeer.name === peer.name
                   ? "border border-[var(--flag-primary)] bg-[var(--flag-primary)]/15 text-[var(--flag-primary)]"
                   : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground"

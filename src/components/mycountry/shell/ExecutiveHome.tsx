@@ -139,9 +139,9 @@ export function ExecutiveHomeComponent({
                 soundEffects.bloom();
                 onDeclare();
               }}
-              className="group border-border/50 bg-card/40 hover:bg-card/70 text-foreground relative flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3 text-sm font-bold shadow-xs backdrop-blur-md transition-all duration-200 hover:border-amber-500/40 hover:shadow-md active:scale-[0.98]"
+              className="group border-border/50 bg-card/40 hover:bg-card/70 text-foreground relative flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3 text-sm font-bold shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-amber-500/40 hover:shadow-md active:scale-[0.98]"
             >
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500 transition-all group-hover:scale-105 group-hover:bg-amber-500/20 dark:text-amber-400">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:scale-105 group-hover:bg-amber-500/20 dark:text-amber-400">
                 <Command className="h-3.5 w-3.5" />
               </span>
               <span className="transition-colors group-hover:text-amber-500 dark:group-hover:text-amber-400">
@@ -155,7 +155,7 @@ export function ExecutiveHomeComponent({
                   <button
                     type="button"
                     disabled
-                    className="border-border/40 bg-card/20 text-muted-foreground flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-2xl border p-3 text-sm font-bold opacity-75 backdrop-blur-md transition-all"
+                    className="border-border/40 bg-card/20 text-muted-foreground flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-2xl border p-3 text-sm font-bold opacity-75 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   >
                     <span className="border-border/40 bg-muted/20 text-muted-foreground flex h-7 w-7 items-center justify-center rounded-lg border">
                       <FileClock className="h-3.5 w-3.5" />

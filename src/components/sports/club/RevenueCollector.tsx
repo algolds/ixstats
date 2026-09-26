@@ -97,7 +97,7 @@ export function RevenueCollector({
         <Button
           onClick={() => collect.mutate({ teamId })}
           disabled={collect.isPending}
-          className="w-full text-xs font-semibold text-white transition-all hover:opacity-90"
+          className="w-full text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90"
           size="sm"
           style={{ backgroundColor: teamColor || "var(--color-info)" }}
         >

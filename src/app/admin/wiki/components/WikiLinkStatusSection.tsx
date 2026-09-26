@@ -75,7 +75,7 @@ export function WikiLinkStatusSection({
               key={tab.key}
               onClick={() => setFilter(tab.key)}
               className={cn(
-                "rounded-lg px-2.5 py-1 text-xs font-semibold transition-all active:scale-[0.98]",
+                "rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                 filter === tab.key
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"

@@ -323,7 +323,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
               <div className="border-border bg-secondary flex shrink-0 rounded-lg border p-0.5">
                 <button
                   onClick={() => setActiveTab("coords")}
-                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-all active:scale-[0.98] ${
+                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                     activeTab === "coords"
                       ? "bg-emerald-500/20 text-emerald-400 shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
@@ -333,7 +333,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                 </button>
                 <button
                   onClick={() => setActiveTab("mapembed")}
-                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-all active:scale-[0.98] ${
+                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                     activeTab === "mapembed"
                       ? "bg-emerald-500/20 text-emerald-400 shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
@@ -507,7 +507,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
               <button
                 onClick={handleInsertLink}
                 disabled={activeTab === "coords" && !label.trim()}
-                className="w-full shrink-0 rounded-lg bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-500 active:scale-[0.97] disabled:opacity-50"
+                className="w-full shrink-0 rounded-lg bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500 active:scale-[0.97] disabled:opacity-50"
               >
                 Insert Map Feature
               </button>

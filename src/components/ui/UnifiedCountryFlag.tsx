@@ -96,7 +96,7 @@ export function UnifiedCountryFlag({
   const flagClasses = cn(
     dimensionsClass,
     objectFit === "cover" ? "object-cover" : "object-contain",
-    "transition-all duration-200",
+    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
     rounded && "rounded",
     shadow && "shadow-sm",
     border && "border border-gray-200",
@@ -110,7 +110,7 @@ export function UnifiedCountryFlag({
     "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-900",
     "flex items-center justify-center",
     "text-gray-500 dark:text-gray-400 font-medium",
-    "transition-all duration-200",
+    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
     rounded && "rounded",
     shadow && "shadow-sm",
     border && "border border-gray-200 dark:border-gray-700",

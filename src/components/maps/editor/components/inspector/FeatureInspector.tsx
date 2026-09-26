@@ -381,7 +381,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                       key={t}
                       type="button"
                       onClick={() => handleCityTypeChange(t)}
-                      className={`rounded-md px-2 py-1 text-xs font-medium capitalize transition-all active:scale-[0.98] ${
+                      className={`rounded-md px-2 py-1 text-xs font-medium capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                         cityType === t
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "border-border/60 bg-card/60 text-muted-foreground hover:bg-accent/40 hover:text-foreground border"
@@ -727,7 +727,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                 href={`/wiki/${encodeURIComponent(wikiPageTitle)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs font-medium transition-all active:scale-[0.98]"
+                className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
                 <ExternalLink className="h-3.5 w-3.5 opacity-70" />
                 <span>Open in Wiki</span>

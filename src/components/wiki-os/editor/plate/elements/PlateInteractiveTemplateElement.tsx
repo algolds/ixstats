@@ -147,7 +147,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
       <div
         contentEditable={false}
         onDoubleClick={() => !readOnly && setIsModalOpen(true)}
-        className="group relative flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/75 px-3 py-2 text-xs shadow-xs backdrop-blur-xs transition-all hover:border-wiki/50 hover:bg-card/95"
+        className="group relative flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/75 px-3 py-2 text-xs shadow-xs backdrop-blur-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-wiki/50 hover:bg-card/95"
       >
         {/* Left: Icon, Template Name & Summary */}
         <div className="flex min-w-0 items-center gap-2.5">
@@ -193,7 +193,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                   soundEffects.bloom();
                   setIsModalOpen(true);
                 }}
-                className="flex items-center gap-1 rounded-lg bg-wiki/10 px-2.5 py-1 text-xs font-semibold text-wiki hover:bg-wiki/20 active:scale-[0.97] transition-all cursor-pointer shadow-xs"
+                className="flex items-center gap-1 rounded-lg bg-wiki/10 px-2.5 py-1 text-xs font-semibold text-wiki hover:bg-wiki/20 active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer shadow-xs"
                 title="Edit template parameters"
               >
                 <EditIcon className="h-3 w-3" />
@@ -204,7 +204,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 type="button"
                 data-cuelume-press="droplet"
                 onClick={handleDelete}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-red-500/10 hover:text-red-500 active:scale-[0.97] transition-all cursor-pointer"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-red-500/10 hover:text-red-500 active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
                 title="Remove template"
               >
                 <TrashIcon className="h-3.5 w-3.5" />
@@ -245,7 +245,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 <button
                   type="button"
                   onClick={() => setActiveTab("form")}
-                  className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     activeTab === "form"
                       ? "bg-background text-foreground shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
@@ -257,7 +257,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 <button
                   type="button"
                   onClick={() => setActiveTab("preview")}
-                  className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     activeTab === "preview"
                       ? "bg-background text-foreground shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
@@ -269,7 +269,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 <button
                   type="button"
                   onClick={() => setActiveTab("raw")}
-                  className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     activeTab === "raw"
                       ? "bg-background text-foreground shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
@@ -392,7 +392,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                         />
                         <button
                           type="submit"
-                          className="rounded-lg bg-wiki px-3 py-1.5 text-xs font-semibold text-white hover:bg-wiki/90 active:scale-[0.97] transition-all"
+                          className="rounded-lg bg-wiki px-3 py-1.5 text-xs font-semibold text-white hover:bg-wiki/90 active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                         >
                           Add
                         </button>
@@ -489,7 +489,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
             <button
               type="button"
               onClick={handleDelete}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 active:scale-[0.97] transition-all cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
             >
               <TrashIcon className="h-3.5 w-3.5" />
               <span>Remove Template</span>
@@ -499,7 +499,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="rounded-lg border border-border/60 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.97] transition-all cursor-pointer"
+                className="rounded-lg border border-border/60 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
               >
                 Close
               </button>
@@ -510,7 +510,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                   soundEffects.bloom();
                   setIsModalOpen(false);
                 }}
-                className="rounded-lg bg-wiki px-4 py-1.5 text-xs font-bold text-white hover:bg-wiki/90 active:scale-[0.97] transition-all cursor-pointer shadow-xs"
+                className="rounded-lg bg-wiki px-4 py-1.5 text-xs font-bold text-white hover:bg-wiki/90 active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer shadow-xs"
               >
                 Done
               </button>

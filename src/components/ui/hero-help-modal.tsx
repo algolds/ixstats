@@ -98,7 +98,7 @@ export function HeroHelpModal({
                 <span
                   key={i}
                   className={cn(
-                    "h-1.5 rounded-full transition-all",
+                    "h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     i === index ? cn("w-4 bg-current", accentClass) : "bg-muted-foreground/30 w-1.5"
                   )}
                 />

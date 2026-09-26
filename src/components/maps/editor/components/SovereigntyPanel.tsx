@@ -64,7 +64,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
               resetSovereigntyForm();
               setShowSovereigntyForm(true);
             }}
-            className="flex items-center gap-1 rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
+            className="flex items-center gap-1 rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-primary/90 active:scale-[0.98]"
           >
             <Plus className="h-3 w-3" /> New Relation
           </button>
@@ -183,7 +183,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
                 !sovereigntyForm.sovereignId ||
                 !sovereigntyForm.subjectId
               }
-              className="rounded bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
+              className="rounded bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-primary/90 active:scale-[0.98]"
             >
               Save
             </button>
@@ -254,13 +254,13 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
               <div className="ml-1 flex shrink-0 items-center gap-1">
                 <button
                   onClick={() => handleEditSovereignty(rel)}
-                  className="rounded p-0.5 text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:scale-[0.98]"
+                  className="rounded p-0.5 text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-accent hover:text-foreground active:scale-[0.98]"
                 >
                   <Edit className="h-3 w-3" />
                 </button>
                 <button
                   onClick={() => handleDeleteSovereignty(rel.id)}
-                  className="rounded p-0.5 text-muted-foreground transition-all hover:bg-destructive/15 hover:text-destructive active:scale-[0.98]"
+                  className="rounded p-0.5 text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-destructive/15 hover:text-destructive active:scale-[0.98]"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>

@@ -98,14 +98,14 @@ export const EditorDialogs = React.memo(function EditorDialogs({
             <div className="border-border/30 flex justify-end gap-2 border-t pt-3">
               <button
                 onClick={() => setShowConfirmSaveModal(false)}
-                className="text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] rounded-lg px-3 py-2 text-xs transition-all"
+                className="text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] rounded-lg px-3 py-2 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmBorderSave}
                 disabled={!saveReason.trim() || isSubmitting}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition-all"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Confirm & Save
@@ -129,7 +129,7 @@ export const EditorDialogs = React.memo(function EditorDialogs({
             <div className="border-border/30 flex justify-end gap-2 border-t pt-3">
               <button
                 onClick={() => setShowExitConfirm(false)}
-                className="text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] rounded-lg px-3 py-2 text-xs transition-all"
+                className="text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] rounded-lg px-3 py-2 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 Keep Editing
               </button>
@@ -138,7 +138,7 @@ export const EditorDialogs = React.memo(function EditorDialogs({
                   setShowExitConfirm(false);
                   onExit();
                 }}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-[0.98] rounded-lg px-4 py-2 text-xs font-semibold transition-all"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-[0.98] rounded-lg px-4 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 Discard & Leave
               </button>

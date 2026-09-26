@@ -77,7 +77,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                   key={season.seasonId}
                   onClick={() => setSelectedSeasonNumber(season.seasonNumber)}
                   className={cn(
-                    "group facet-hierarchy-child relative flex flex-col justify-between overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 active:scale-[0.98]",
+                    "group facet-hierarchy-child relative flex flex-col justify-between overflow-hidden rounded-2xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
                     isSelected
                       ? "border-amber-500/50 bg-amber-500/10 shadow-md"
                       : "border-border/40 bg-card/60 hover:border-border hover:bg-muted/30"

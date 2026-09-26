@@ -99,7 +99,7 @@ export function VitalityRings({
       return (
         <div
           key={ring.key ?? index}
-          className="facet-hierarchy-child group flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-all duration-300 hover:scale-102"
+          className="facet-hierarchy-child group flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-102"
           onClick={ring.onClick}
           role={isClickable ? "button" : undefined}
           tabIndex={isClickable ? 0 : undefined}
@@ -174,7 +174,7 @@ export function VitalityRings({
     return (
       <div
         key={ring.key ?? index}
-        className={`facet-hierarchy-child flex items-center gap-3 rounded-lg p-2.5 transition-all duration-200 ${isClickable ? "hover:ring-foreground/20 cursor-pointer hover:scale-[1.02] hover:ring-1" : ""}`}
+        className={`facet-hierarchy-child flex items-center gap-3 rounded-lg p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${isClickable ? "hover:ring-foreground/20 cursor-pointer hover:scale-[1.02] hover:ring-1" : ""}`}
         onClick={ring.onClick}
         role={isClickable ? "button" : undefined}
         tabIndex={isClickable ? 0 : undefined}

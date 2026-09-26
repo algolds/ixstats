@@ -194,7 +194,7 @@ export function NotificationTestCard() {
             <Button
               variant="outline"
               onClick={() => triggerPreset("crisis")}
-              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-red-500/20 bg-red-500/5 text-red-500 transition-all hover:border-red-500/30 hover:bg-red-500/10 dark:text-red-400"
+              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-red-500/20 bg-red-500/5 text-red-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-red-500/30 hover:bg-red-500/10 dark:text-red-400"
             >
               <ShieldAlert className="h-5 w-5" />
               <span className="text-xs font-semibold">Crisis Alert</span>
@@ -202,7 +202,7 @@ export function NotificationTestCard() {
             <Button
               variant="outline"
               onClick={() => triggerPreset("achievement")}
-              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-emerald-500/20 bg-emerald-500/5 text-emerald-500 transition-all hover:border-emerald-500/30 hover:bg-emerald-500/10 dark:text-emerald-400"
+              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-emerald-500/20 bg-emerald-500/5 text-emerald-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-emerald-500/30 hover:bg-emerald-500/10 dark:text-emerald-400"
             >
               <Award className="h-5 w-5" />
               <span className="text-xs font-semibold">Achievement</span>
@@ -210,7 +210,7 @@ export function NotificationTestCard() {
             <Button
               variant="outline"
               onClick={() => triggerPreset("security")}
-              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-amber-500/20 bg-amber-500/5 text-amber-500 transition-all hover:border-amber-500/30 hover:bg-amber-500/10 dark:text-amber-400"
+              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-amber-500/20 bg-amber-500/5 text-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-amber-500/30 hover:bg-amber-500/10 dark:text-amber-400"
             >
               <AlertTriangle className="h-5 w-5" />
               <span className="text-xs font-semibold">Security Intel</span>
@@ -218,7 +218,7 @@ export function NotificationTestCard() {
             <Button
               variant="outline"
               onClick={() => triggerPreset("trade")}
-              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-blue-500/20 bg-blue-500/5 text-blue-500 transition-all hover:border-blue-500/30 hover:bg-blue-500/10 dark:text-blue-400"
+              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-blue-500/20 bg-blue-500/5 text-blue-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-blue-500/30 hover:bg-blue-500/10 dark:text-blue-400"
             >
               <Sparkles className="h-5 w-5" />
               <span className="text-xs font-semibold">Trade Pact</span>

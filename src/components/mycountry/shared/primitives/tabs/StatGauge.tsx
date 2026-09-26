@@ -191,7 +191,7 @@ export function StatGauge({
   return (
     <div
       className={cn(
-        "rounded-xl border transition-all hover:scale-[1.02]",
+        "rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.02]",
         colors.bg,
         colors.border,
         sizes.padding,

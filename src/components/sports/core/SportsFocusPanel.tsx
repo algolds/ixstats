@@ -422,7 +422,7 @@ export function SportsFocusPanel({
   return (
     <aside
       className={cn(
-        "facet-hierarchy-parent w-80 xl:w-96 shrink-0 rounded-3xl border border-border/40 bg-card/85 p-5 shadow-xl backdrop-blur-2xl transition-all duration-300",
+        "facet-hierarchy-parent w-80 xl:w-96 shrink-0 rounded-3xl border border-border/40 bg-card/85 p-5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
         className
       )}
     >

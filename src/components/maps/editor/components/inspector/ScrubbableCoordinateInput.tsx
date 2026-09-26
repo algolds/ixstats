@@ -127,7 +127,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
 
       <div className="flex items-center gap-1.5">
         {/* Longitude */}
-        <div className="border-border/60 bg-muted/20 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary flex flex-1 items-center rounded-lg border px-2 py-1 transition-all">
+        <div className="border-border/60 bg-muted/20 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary flex flex-1 items-center rounded-lg border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
           <span
             onPointerDown={(e) => handlePointerDown("lng", e)}
             onPointerMove={(e) => handlePointerMove("lng", e)}
@@ -155,7 +155,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
         </div>
 
         {/* Latitude */}
-        <div className="border-border/60 bg-muted/20 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary flex flex-1 items-center rounded-lg border px-2 py-1 transition-all">
+        <div className="border-border/60 bg-muted/20 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary flex flex-1 items-center rounded-lg border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
           <span
             onPointerDown={(e) => handlePointerDown("lat", e)}
             onPointerMove={(e) => handlePointerMove("lat", e)}
@@ -188,7 +188,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             type="button"
             onClick={onTogglePickLocation}
             disabled={disabled}
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all active:scale-[0.98] ${
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
               isPickingLocation
                 ? "bg-primary text-primary-foreground border-primary shadow-sm animate-pulse"
                 : "border-border/60 bg-muted/20 text-muted-foreground hover:bg-accent/40 hover:text-foreground"

@@ -22,7 +22,7 @@ export const ValidationCategory = React.memo(function ValidationCategory({
   const overallStatus = failures > 0 ? "fail" : warnings > 0 ? "warn" : "pass";
 
   return (
-    <Card className={`border ${getStatusBgColor(overallStatus)} transition-all`}>
+    <Card className={`border ${getStatusBgColor(overallStatus)} transition-[color,background-color,border-color,box-shadow,opacity,transform]`}>
       <CardHeader
         className="cursor-pointer pb-3 select-none"
         onClick={() => setIsExpanded(!isExpanded)}

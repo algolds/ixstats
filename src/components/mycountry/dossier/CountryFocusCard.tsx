@@ -117,7 +117,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
     return (
       <motion.div
         className={cn(
-          "country-focus-card relative cursor-pointer transition-all duration-300",
+          "country-focus-card relative cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           isHovered ? "z-20" : isExpanded ? "z-30" : "z-10"
         )}
         onMouseEnter={() => {
@@ -148,7 +148,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
       >
         <div
           className={cn(
-            "facet-floating facet-refraction relative overflow-hidden rounded-2xl border border-white/15 bg-background/60 shadow-lg transition-all duration-300",
+            "facet-floating facet-refraction relative overflow-hidden rounded-2xl border border-white/15 bg-background/60 shadow-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
             isExpanded
               ? "flex h-auto flex-col border-white/25 shadow-[0_25px_60px_rgba(0,0,0,0.5)]"
               : isHovered
@@ -169,7 +169,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
               }
               alt={`${country.name} flag`}
               className={cn(
-                "absolute inset-0 h-full w-full object-cover transition-all duration-500",
+                "absolute inset-0 h-full w-full object-cover transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500",
                 isExpanded ? "scale-110 blur-md" : isHovered ? "scale-105" : "scale-100"
               )}
             />
@@ -180,7 +180,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
           {/* Permanent Ambient Contrast Scrim */}
           <div
             className={cn(
-              "pointer-events-none absolute inset-0 transition-all duration-300",
+              "pointer-events-none absolute inset-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
               isExpanded
                 ? "bg-card/95 backdrop-blur-xl dark:bg-slate-950/95"
                 : "bg-gradient-to-t from-black/95 via-black/50 to-transparent",
@@ -191,7 +191,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
           {/* Content Overlay — always legible; stats and actions reveal on hover */}
           <div
             className={cn(
-              "absolute inset-0 flex flex-col justify-end p-5 md:p-6 transition-all duration-300",
+              "absolute inset-0 flex flex-col justify-end p-5 md:p-6 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
               isExpanded && "pointer-events-none opacity-0"
             )}
           >

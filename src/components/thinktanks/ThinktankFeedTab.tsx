@@ -116,12 +116,12 @@ export function ThinktankFeedTab({
       {/* ── Main Content / Feed Container (Frosted Blur if not joined) ── */}
       <div
         className={cn(
-          "mx-auto max-w-3xl space-y-6 p-4 transition-all duration-300 md:p-6",
+          "mx-auto max-w-3xl space-y-6 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 md:p-6",
           !isMember && "pointer-events-none opacity-40 blur-[5px] filter select-none"
         )}
       >
         {/* ── Group Feed Composer ── */}
-        <div className="border-border/50 bg-card/60 overflow-hidden rounded-2xl border p-4 shadow-lg backdrop-blur-xl transition-all dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="border-border/50 bg-card/60 overflow-hidden rounded-2xl border p-4 shadow-lg backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:border-white/10 dark:bg-white/[0.03]">
           <form onSubmit={handlePublish} className="space-y-3">
             {/* Multi-Persona Selector Chips */}
             {allowPersonaPosting && accounts.length > 0 && (
@@ -140,7 +140,7 @@ export function ThinktankFeedTab({
                         setSelectedAccountId(acc.id);
                       }}
                       className={cn(
-                        "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all duration-150",
+                        "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
                         isSelected
                           ? "bg-emerald-600 text-white shadow-sm dark:bg-emerald-500"
                           : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -180,7 +180,7 @@ export function ThinktankFeedTab({
                       setPostContent((prev) => `${item.label}\n\n${prev}`.trim());
                     }
                   }}
-                  className="border-border/40 bg-muted/30 text-muted-foreground hover:bg-accent/40 hover:text-foreground rounded-md border px-2 py-0.5 text-xs font-medium transition-all"
+                  className="border-border/40 bg-muted/30 text-muted-foreground hover:bg-accent/40 hover:text-foreground rounded-md border px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 >
                   {item.label}
                 </button>
@@ -297,7 +297,7 @@ export function ThinktankFeedTab({
               return (
                 <div
                   key={post.id}
-                  className="border-border/40 bg-card/60 hover:border-border/80 overflow-hidden rounded-2xl border p-4.5 shadow-sm backdrop-blur-xl transition-all duration-200 dark:border-white/10 dark:bg-white/[0.02]"
+                  className="border-border/40 bg-card/60 hover:border-border/80 overflow-hidden rounded-2xl border p-4.5 shadow-sm backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 dark:border-white/10 dark:bg-white/[0.02]"
                 >
                   {/* Author row */}
                   <div className="flex items-start justify-between">
@@ -420,7 +420,7 @@ export function ThinktankFeedTab({
                 soundEffects.press();
                 joinMutation.mutate({ groupId, userId: currentUserId });
               }}
-              className="mt-5 w-full max-w-xs cursor-pointer rounded-xl bg-emerald-600 font-semibold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-[0.97] dark:bg-emerald-500 dark:hover:bg-emerald-600"
+              className="mt-5 w-full max-w-xs cursor-pointer rounded-xl bg-emerald-600 font-semibold text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-700 active:scale-[0.97] dark:bg-emerald-500 dark:hover:bg-emerald-600"
             >
               <Plus className="mr-1.5 h-4 w-4" />
               {joinMutation.isPending ? "Joining Group..." : "Join Group"}

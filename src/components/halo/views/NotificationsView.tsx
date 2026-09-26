@@ -285,7 +285,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
             <button
               onClick={handleMarkAllRead}
               disabled={markAllAsReadMutation.isPending || markAllMessagesMutation.isPending}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold transition-all active:scale-95 disabled:opacity-40"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 disabled:opacity-40"
               title="Mark all notifications and messages as read"
             >
               <CheckCircle className="h-3 w-3 text-emerald-400" />
@@ -320,7 +320,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               data-cuelume-hover="tick"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all select-none active:scale-[0.97]",
+                "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.97]",
                 isSelected
                   ? "text-foreground shadow-2xs"
                   : "text-muted-foreground hover:text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
@@ -350,7 +350,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       {/* Main Content Area */}
       <div
         className={cn(
-          "space-y-2 overflow-y-auto pr-0.5 transition-all duration-300",
+          "space-y-2 overflow-y-auto pr-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           isUltra ? "max-h-[540px]" : "max-h-80"
         )}
         style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}
@@ -481,7 +481,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
           onClick={() => {
             setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
           }}
-          className="text-muted-foreground hover:text-foreground border-border/40 hover:bg-accent/15 flex h-7 w-7 items-center justify-center rounded-full border shadow-xs transition-all active:scale-[0.98]"
+          className="text-muted-foreground hover:text-foreground border-border/40 hover:bg-accent/15 flex h-7 w-7 items-center justify-center rounded-full border shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           title={isUltra ? "Standard View" : "Expanded View"}
           aria-label={isUltra ? "Standard View" : "Expanded View"}
         >

@@ -275,7 +275,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
           <button
             onClick={() => onChange({ simulatedTheme: "light" })}
             className={cn(
-              "flex items-center gap-1.5 rounded-md p-1.5 text-xs font-semibold transition-all",
+              "flex items-center gap-1.5 rounded-md p-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               simulatedTheme === "light"
                 ? "bg-background text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
@@ -287,7 +287,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
           <button
             onClick={() => onChange({ simulatedTheme: "dark" })}
             className={cn(
-              "flex items-center gap-1.5 rounded-md p-1.5 text-xs font-semibold transition-all",
+              "flex items-center gap-1.5 rounded-md p-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               simulatedTheme === "dark"
                 ? "bg-background text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
@@ -302,7 +302,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
       {/* Live Interactive Rendering Canvas */}
       <div
         className={cn(
-          "relative flex min-h-[360px] items-center justify-center overflow-hidden rounded-xl border p-12 transition-all duration-350",
+          "relative flex min-h-[360px] items-center justify-center overflow-hidden rounded-xl border p-12 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-350",
           getBgClasses(bgStyle, simulatedTheme)
         )}
         style={
@@ -319,7 +319,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
           <>
             {/* Background element — shifts backward with depth */}
             <div
-              className="pointer-events-none absolute z-[2] transition-all duration-500 select-none"
+              className="pointer-events-none absolute z-[2] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
               style={{
                 top: `${15 - dofStrength * 0.08}%`,
                 left: `${10 - dofStrength * 0.05}%`,
@@ -335,7 +335,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
               }}
             />
             <div
-              className="pointer-events-none absolute z-[2] transition-all duration-500 select-none"
+              className="pointer-events-none absolute z-[2] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
               style={{
                 bottom: `${12 - dofStrength * 0.06}%`,
                 right: `${8 - dofStrength * 0.04}%`,
@@ -353,7 +353,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
 
             {/* Foreground element — shifts forward with depth */}
             <div
-              className="pointer-events-none absolute z-[15] transition-all duration-500 select-none"
+              className="pointer-events-none absolute z-[15] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
               style={{
                 top: `${75 + dofStrength * 0.05}%`,
                 left: `${80 + dofStrength * 0.08}%`,
@@ -369,7 +369,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
               }}
             />
             <div
-              className="pointer-events-none absolute z-[15] transition-all duration-500 select-none"
+              className="pointer-events-none absolute z-[15] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
               style={{
                 top: `${20 - dofStrength * 0.03}%`,
                 right: `${5 + dofStrength * 0.06}%`,
@@ -400,7 +400,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
       <button
         onClick={() => setShowDebug(!showDebug)}
         className={cn(
-          "flex items-center gap-1.5 self-end rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all",
+          "flex items-center gap-1.5 self-end rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
           showDebug
             ? "bg-primary border-primary text-primary-foreground"
             : "bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground"

@@ -169,7 +169,7 @@ export function MarginShareModal({
                 soundEffects.release();
                 onClose();
               }}
-              className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-all hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
+              className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
             >
               <X className="h-4 w-4" />
             </button>
@@ -200,7 +200,7 @@ export function MarginShareModal({
                       type="button"
                       disabled={isSending}
                       onClick={() => handleDispatchToChat(c.id)}
-                      className="hover:bg-margin-bg hover:border-margin-border group flex w-full cursor-pointer items-center justify-between rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 p-2 text-left text-xs transition-all active:scale-[0.98]"
+                      className="hover:bg-margin-bg hover:border-margin-border group flex w-full cursor-pointer items-center justify-between rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 p-2 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                     >
                       <div className="flex items-center gap-2 truncate">
                         <MessageSquare className="text-margin-accent h-3.5 w-3.5 shrink-0" />
@@ -233,7 +233,7 @@ export function MarginShareModal({
                     key={fmt.id}
                     type="button"
                     onClick={() => handleCopy(fmt.id, fmt.getContent())}
-                    className="hover:bg-margin-bg hover:border-margin-border group flex cursor-pointer items-center justify-between rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 p-2.5 text-left transition-all active:scale-[0.98]"
+                    className="hover:bg-margin-bg hover:border-margin-border group flex cursor-pointer items-center justify-between rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   >
                     <div className="flex items-center gap-2.5">
                       <div className="text-margin-accent group-hover:border-margin-border flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)]">

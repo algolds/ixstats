@@ -243,7 +243,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
           widthClass,
           heightClass,
           onClick && "cursor-pointer",
-          "transition-all duration-300",
+          "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           className
         )}
         rotateDepth={enable3D && !performanceMode ? 12 : 0}
@@ -513,7 +513,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                       <div key={key} className="flex-1 space-y-0.5">
                         <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
                           <div
-                            className="h-full rounded-full transition-all duration-500"
+                            className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                             style={{
                               width: `${stat.value}%`,
                               backgroundColor: stat.def.color,
@@ -531,7 +531,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
               {/* Bottom Lore Excerpt Box */}
               {isLoreCard && !hideExcerpt && (excerptText || parsedExcerptHtml) && (
-                <div className="pointer-events-auto mt-1 rounded-xl border border-white/15 bg-slate-950/85 p-2 text-left shadow-inner backdrop-blur-md transition-all duration-300">
+                <div className="pointer-events-auto mt-1 rounded-xl border border-white/15 bg-slate-950/85 p-2 text-left shadow-inner backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
                   <div className="line-clamp-2 text-xs leading-snug text-white/90">
                     <WikiHtmlContent html={parsedExcerptHtml} />
                   </div>

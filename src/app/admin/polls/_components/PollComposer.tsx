@@ -168,7 +168,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                   <div className="bg-muted/40 h-1 overflow-hidden rounded-full">
                     <div
                       className={cn(
-                        "h-full rounded-full transition-all duration-300",
+                        "h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                         step >= s.number ? "bg-poll" : "bg-transparent"
                       )}
                     />

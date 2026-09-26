@@ -362,7 +362,7 @@ export default function RepositoryPage() {
                 aria-selected={tab === "commons"}
                 onClick={() => handleTabChange("commons")}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all duration-150 active:scale-[0.97] select-none cursor-pointer",
+                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer",
                   tab === "commons"
                     ? "bg-background text-foreground font-semibold shadow-xs border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
@@ -377,7 +377,7 @@ export default function RepositoryPage() {
                 aria-selected={tab === "wiki"}
                 onClick={() => handleTabChange("wiki")}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all duration-150 active:scale-[0.97] select-none cursor-pointer",
+                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer",
                   tab === "wiki"
                     ? "bg-background text-foreground font-semibold shadow-xs border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
@@ -401,7 +401,7 @@ export default function RepositoryPage() {
                   aria-checked={wikiSubSource === "ixwiki"}
                   onClick={() => handleWikiSubSourceChange("ixwiki")}
                   className={cn(
-                    "px-2.5 py-1 rounded text-xs font-medium transition-all duration-150 active:scale-[0.97] cursor-pointer select-none",
+                    "px-2.5 py-1 rounded text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] cursor-pointer select-none",
                     wikiSubSource === "ixwiki"
                       ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -415,7 +415,7 @@ export default function RepositoryPage() {
                   aria-checked={wikiSubSource === "iiwiki"}
                   onClick={() => handleWikiSubSourceChange("iiwiki")}
                   className={cn(
-                    "px-2.5 py-1 rounded text-xs font-medium transition-all duration-150 active:scale-[0.97] cursor-pointer select-none",
+                    "px-2.5 py-1 rounded text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] cursor-pointer select-none",
                     wikiSubSource === "iiwiki"
                       ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -459,7 +459,7 @@ export default function RepositoryPage() {
                   handleSearch("");
                   setAllImages([]);
                 }}
-                className="p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-full active:scale-95 transition-all cursor-pointer"
+                className="p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-full active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
                 title="Clear search"
                 aria-label="Clear search"
               >
@@ -490,7 +490,7 @@ export default function RepositoryPage() {
                     aria-checked={fileTypeFilter === type}
                     onClick={() => setFileTypeFilter(type)}
                     className={cn(
-                      "rounded px-2 py-0.5 text-xs font-medium transition-all duration-150 active:scale-[0.97] select-none cursor-pointer uppercase",
+                      "rounded px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer uppercase",
                       fileTypeFilter === type
                         ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -520,7 +520,7 @@ export default function RepositoryPage() {
                     aria-checked={orientationFilter === orient}
                     onClick={() => setOrientationFilter(orient)}
                     className={cn(
-                      "rounded px-2 py-0.5 text-xs font-medium transition-all duration-150 active:scale-[0.97] select-none cursor-pointer",
+                      "rounded px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer",
                       orientationFilter === orient
                         ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -544,7 +544,7 @@ export default function RepositoryPage() {
             <button
               type="button"
               onClick={handleClearFilters}
-              className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.97] transition-all underline underline-offset-2"
+              className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] underline underline-offset-2"
             >
               Clear Filters
             </button>
@@ -562,7 +562,7 @@ export default function RepositoryPage() {
               <button
                 key={cat.category}
                 onClick={() => handleBrowseCategory(cat.category)}
-                className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-[var(--wikios-text-muted)] hover:border-blue-500/30 hover:bg-blue-500/10 hover:text-blue-400 active:scale-95 transition-all"
+                className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-[var(--wikios-text-muted)] hover:border-blue-500/30 hover:bg-blue-500/10 hover:text-blue-400 active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 {cat.label}
               </button>

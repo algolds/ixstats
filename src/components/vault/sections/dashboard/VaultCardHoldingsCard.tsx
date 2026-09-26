@@ -32,7 +32,7 @@ export function VaultCardHoldingsCard({
     <FacetCard
       depth={2}
       className={cn(
-        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-amber-500/30"
+        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:border-amber-500/30"
       )}
     >
       <TextureOverlay texture="dots" opacity={0.04} />
@@ -95,7 +95,7 @@ export function VaultCardHoldingsCard({
               {featuredCards.slice(1, 3).map((card) => (
                 <div
                   key={card.id}
-                  className="border-border/40 bg-muted/30 hover:bg-muted/60 flex cursor-pointer items-center justify-between rounded-xl border px-3 py-2 text-xs backdrop-blur-md transition-all active:scale-[0.985] dark:bg-white/5 dark:hover:bg-white/10"
+                  className="border-border/40 bg-muted/30 hover:bg-muted/60 flex cursor-pointer items-center justify-between rounded-xl border px-3 py-2 text-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.985] dark:bg-white/5 dark:hover:bg-white/10"
                 >
                   <span className="text-foreground max-w-[130px] truncate font-semibold">
                     {card.title}

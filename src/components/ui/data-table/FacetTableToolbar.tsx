@@ -67,7 +67,7 @@ export function FacetTableToolbar({
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="border-border/50 bg-background/50 focus:border-primary/50 focus-visible:ring-primary/20 text-foreground h-9 rounded-xl pr-8 pl-9 text-xs backdrop-blur-md transition-all"
+              className="border-border/50 bg-background/50 focus:border-primary/50 focus-visible:ring-primary/20 text-foreground h-9 rounded-xl pr-8 pl-9 text-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             />
             {searchTerm && (
               <button

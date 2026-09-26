@@ -216,7 +216,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
               <button
                 type="button"
                 onClick={onBack}
-                className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/40 px-3 py-2 text-xs font-medium text-foreground transition-all hover:bg-accent/40 active:scale-[0.97] cursor-pointer shrink-0 mt-0.5"
+                className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/40 px-3 py-2 text-xs font-medium text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-accent/40 active:scale-[0.97] cursor-pointer shrink-0 mt-0.5"
                 title="Back to search"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
@@ -313,7 +313,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
           <div className="shrink-0 flex sm:self-start">
             <Button
               size="default"
-              className="group h-10 gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-md shadow-blue-600/25 transition-all hover:bg-blue-500 hover:shadow-blue-600/35 active:scale-[0.96] cursor-pointer w-full sm:w-auto justify-center"
+              className="group h-10 gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-md shadow-blue-600/25 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500 hover:shadow-blue-600/35 active:scale-[0.96] cursor-pointer w-full sm:w-auto justify-center"
               onClick={onContinue}
               disabled={isLoading}
             >
@@ -405,7 +405,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
               type="button"
               variant="outline"
               size="lg"
-              className="h-12 gap-2 rounded-xl border-border/60 bg-muted/30 px-6 text-sm font-medium text-foreground transition-all hover:bg-accent/40 active:scale-[0.98] cursor-pointer"
+              className="h-12 gap-2 rounded-xl border-border/60 bg-muted/30 px-6 text-sm font-medium text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-accent/40 active:scale-[0.98] cursor-pointer"
               onClick={onBack}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -415,7 +415,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
 
           <Button
             size="lg"
-            className="group h-12 gap-2.5 rounded-xl bg-blue-600 px-8 text-base font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-500 hover:shadow-blue-600/35 active:scale-[0.98] cursor-pointer"
+            className="group h-12 gap-2.5 rounded-xl bg-blue-600 px-8 text-base font-semibold text-white shadow-lg shadow-blue-600/25 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500 hover:shadow-blue-600/35 active:scale-[0.98] cursor-pointer"
             onClick={onContinue}
             disabled={isLoading}
           >

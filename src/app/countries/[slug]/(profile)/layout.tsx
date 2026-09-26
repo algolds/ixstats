@@ -208,7 +208,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
           <Button
             size="sm"
             onClick={() => setShowCountryActions(true)}
-            className="group flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black shadow-md backdrop-blur-xl transition-all duration-100 ease-out hover:scale-105 active:scale-95"
+            className="group flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black shadow-md backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out hover:scale-105 active:scale-95"
             style={{
               borderColor: "var(--flag-border-primary)",
               color: "var(--flag-primary)",

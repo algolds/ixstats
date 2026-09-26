@@ -225,7 +225,7 @@ export function AssetManager({
                       key={asset.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className={`relative overflow-hidden rounded-lg border transition-all hover:shadow-lg ${asset.imageUrl ? "cursor-pointer hover:border-orange-400" : ""}`}
+                      className={`relative overflow-hidden rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:shadow-lg ${asset.imageUrl ? "cursor-pointer hover:border-orange-400" : ""}`}
                       onClick={(e) => {
                         // Only trigger if clicking the card itself, not buttons
                         const target = e.target as HTMLElement;
@@ -248,7 +248,7 @@ export function AssetManager({
                       <div className="bg-card/90 relative flex items-start justify-between p-3 backdrop-blur-sm">
                         {/* Equipment image thumbnail */}
                         {asset.imageUrl ? (
-                          <div className="group/img relative mr-4 h-28 w-28 shrink-0 overflow-hidden rounded-lg border-2 border-orange-400 shadow-md transition-all hover:border-orange-500 hover:shadow-lg dark:border-orange-700">
+                          <div className="group/img relative mr-4 h-28 w-28 shrink-0 overflow-hidden rounded-lg border-2 border-orange-400 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-orange-500 hover:shadow-lg dark:border-orange-700">
                             <img
                               src={asset.imageUrl}
                               alt={asset.name}
@@ -258,7 +258,7 @@ export function AssetManager({
                                 e.currentTarget.style.display = "none";
                               }}
                             />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover/img:bg-black/60">
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/img:bg-black/60">
                               <div className="flex flex-col items-center gap-1 opacity-0 transition-opacity group-hover/img:opacity-100">
                                 <Image className="h-6 w-6 text-white" />
                                 <span className="text-xs font-medium text-white">
@@ -654,7 +654,7 @@ function AssetDialog({
                 return (
                   <div
                     key={equipment.key}
-                    className="hover:border-primary/50 group relative cursor-pointer overflow-hidden rounded-lg border transition-all"
+                    className="hover:border-primary/50 group relative cursor-pointer overflow-hidden rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     onClick={() => loadEquipment(equipment)}
                   >
                     {/* Background Image with Glass Blur Effect */}

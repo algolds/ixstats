@@ -135,7 +135,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
         {onFocusCountry && (
           <button
             onClick={onFocusCountry}
-            className="border-border/60 bg-background/60 hover:bg-accent/40 text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs font-medium transition-all active:scale-[0.98]"
+            className="border-border/60 bg-background/60 hover:bg-accent/40 text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             <Eye className="h-3.5 w-3.5" />
             <span>Center on canvas</span>
@@ -317,7 +317,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => onModeChange("add-subdivision")}
-            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition-all active:scale-[0.98]"
+            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             <Hexagon className="text-amber-500 h-4 w-4" />
             <span className="text-xs font-medium">Region</span>
@@ -328,7 +328,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
 
           <button
             onClick={() => onModeChange("add-city")}
-            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition-all active:scale-[0.98]"
+            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             <MapPin className="text-primary h-4 w-4" />
             <span className="text-xs font-medium">City</span>
@@ -339,7 +339,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
 
           <button
             onClick={() => onModeChange("add-route")}
-            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition-all active:scale-[0.98]"
+            className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             <Route className="text-blue-500 h-4 w-4" />
             <span className="text-xs font-medium">Route</span>

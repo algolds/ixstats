@@ -152,7 +152,7 @@ function BracketRounds({
                     <div
                       key={b.id}
                       className={cn(
-                        "flex items-center justify-between gap-3 rounded-2xl border border-border/40 bg-background/50 px-4 py-3.5 shadow-sm backdrop-blur-md transition-all active:scale-[0.99]",
+                        "flex items-center justify-between gap-3 rounded-2xl border border-border/40 bg-background/50 px-4 py-3.5 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]",
                         isCompleted && "border-border/60 bg-background/70"
                       )}
                     >

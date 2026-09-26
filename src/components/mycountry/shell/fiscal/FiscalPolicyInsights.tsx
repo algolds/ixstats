@@ -201,7 +201,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
             <div
               key={seg.key}
               className={cn(
-                "transition-all duration-500 ease-out first:rounded-l-full last:rounded-r-full",
+                "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ease-out first:rounded-l-full last:rounded-r-full",
                 ACCENT_BG[seg.accent]
               )}
               style={{ width: `${seg.pct}%` }}

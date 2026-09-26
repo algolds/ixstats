@@ -206,7 +206,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
         className={cn(
           variant === "seamless"
             ? "group relative flex flex-col bg-transparent"
-            : "group relative flex flex-col rounded-2xl border border-black/10 bg-black/[0.02] backdrop-blur-xl transition-all duration-200 dark:border-white/10 dark:bg-white/[0.03]",
+            : "group relative flex flex-col rounded-2xl border border-black/10 bg-black/[0.02] backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 dark:border-white/10 dark:bg-white/[0.03]",
           variant !== "seamless" &&
             isFocused &&
             "border-black/20 bg-black/[0.04] shadow-lg ring-1 ring-black/10 dark:border-white/20 dark:bg-white/[0.06] dark:ring-white/10",

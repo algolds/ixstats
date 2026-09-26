@@ -236,7 +236,7 @@ export function BaseMetricDetailsModal({
                   key={tab.id}
                   value={tab.id}
                   className={cn(
-                    "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all sm:flex-none sm:text-sm",
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] sm:flex-none sm:text-sm",
                     "data-[state=active]:text-foreground text-muted-foreground hover:text-foreground data-[state=active]:bg-white/10 data-[state=active]:shadow-inner"
                   )}
                 >

@@ -135,7 +135,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
                 type="button"
                 onClick={() => setWikiSource("ixwiki")}
                 className={cn(
-                  "flex-1 rounded-lg py-1 text-xs font-semibold transition-all active:scale-[0.98]",
+                  "flex-1 rounded-lg py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                   wikiSource === "ixwiki"
                     ? "bg-primary text-primary-foreground shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
@@ -147,7 +147,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
                 type="button"
                 onClick={() => setWikiSource("iiwiki")}
                 className={cn(
-                  "flex-1 rounded-lg py-1 text-xs font-semibold transition-all active:scale-[0.98]",
+                  "flex-1 rounded-lg py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                   wikiSource === "iiwiki"
                     ? "bg-primary text-primary-foreground shadow-xs"
                     : "text-muted-foreground hover:text-foreground"

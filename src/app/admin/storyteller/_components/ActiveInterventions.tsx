@@ -90,7 +90,7 @@ function CountryInterventionRow({
     detail?.country?.storytellerEffects?.filter((d: { isActive: boolean }) => d.isActive) ?? [];
 
   return (
-    <div className="facet-surface border-border/30 hover:border-border/60 rounded-xl border shadow-sm transition-all duration-200">
+    <div className="facet-surface border-border/30 hover:border-border/60 rounded-xl border shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center justify-between p-3 text-left"

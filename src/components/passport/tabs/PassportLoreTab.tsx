@@ -95,7 +95,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
             aria-pressed={selectedCategory === "all"}
             data-cuelume-press="soft"
             className={cn(
-              "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97]",
+              "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
               selectedCategory === "all"
                 ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
                 : "hover:text-foreground text-stone-600 dark:text-stone-400"
@@ -110,7 +110,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
               onClick={() => setSelectedCategory("articles")}
               data-cuelume-press="soft"
               className={cn(
-                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97]",
+                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
                 selectedCategory === "articles"
                   ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
                   : "hover:text-foreground text-stone-600 dark:text-stone-400"
@@ -126,7 +126,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
               onClick={() => setSelectedCategory("languages")}
               data-cuelume-press="soft"
               className={cn(
-                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97]",
+                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
                 selectedCategory === "languages"
                   ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
                   : "hover:text-foreground text-stone-600 dark:text-stone-400"
@@ -142,7 +142,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
               onClick={() => setSelectedCategory("directives")}
               data-cuelume-press="soft"
               className={cn(
-                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97]",
+                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
                 selectedCategory === "directives"
                   ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
                   : "hover:text-foreground text-stone-600 dark:text-stone-400"
@@ -158,7 +158,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
               onClick={() => setSelectedCategory("sports")}
               data-cuelume-press="soft"
               className={cn(
-                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97]",
+                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
                 selectedCategory === "sports"
                   ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
                   : "hover:text-foreground text-stone-600 dark:text-stone-400"
@@ -174,7 +174,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
               onClick={() => setSelectedCategory("feed")}
               data-cuelume-press="soft"
               className={cn(
-                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-all active:scale-[0.97]",
+                "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
                 selectedCategory === "feed"
                   ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
                   : "hover:text-foreground text-stone-600 dark:text-stone-400"
@@ -223,7 +223,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                 key={item.id}
                 depth={1}
                 interactive="hover"
-                className="flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-all hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
+                className="flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -288,7 +288,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                   key={item.id}
                   depth={1}
                   interactive="hover"
-                  className="flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-all hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
+                  className="flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -338,7 +338,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                   key={item.id}
                   depth={1}
                   interactive="hover"
-                  className="flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-all hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
+                  className="flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -381,7 +381,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                   key={item.id}
                   depth={1}
                   interactive="hover"
-                  className="flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-all hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
+                  className="flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -451,7 +451,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                 key={`${item.id}-${idx}`}
                 depth={1}
                 interactive="hover"
-                className="flex flex-col justify-between gap-3.5 rounded-2xl border border-black/8 bg-black/[0.015] p-4 shadow-xs transition-all hover:border-black/15 sm:flex-row sm:items-center sm:p-4.5 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
+                className="flex flex-col justify-between gap-3.5 rounded-2xl border border-black/8 bg-black/[0.015] p-4 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-black/15 sm:flex-row sm:items-center sm:p-4.5 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
               >
                 <div className="flex min-w-0 flex-1 items-start gap-3.5">
                   <div
@@ -546,7 +546,7 @@ export const PassportLoreTab = React.memo(function PassportLoreTab({
                   <Link
                     href={item.url}
                     data-cuelume-press="soft"
-                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white shadow-2xs transition-all hover:opacity-90 active:scale-[0.97] dark:bg-white dark:text-stone-950"
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.97] dark:bg-white dark:text-stone-950"
                   >
                     <span>View in WikiOS</span>
                     <ArrowRight className="h-3 w-3" />

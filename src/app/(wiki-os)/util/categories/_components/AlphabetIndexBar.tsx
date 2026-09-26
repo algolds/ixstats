@@ -35,7 +35,7 @@ export function AlphabetIndexBar({
               key={char}
               onClick={() => onSelectLetter(char)}
               className={cn(
-                "flex h-8 min-w-[32px] cursor-pointer items-center justify-center rounded-lg px-2 text-xs font-bold transition-all",
+                "flex h-8 min-w-[32px] cursor-pointer items-center justify-center rounded-lg px-2 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 isActive
                   ? "scale-105 bg-blue-600 text-white shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
@@ -66,7 +66,7 @@ export function AlphabetIndexBar({
                 "bg-white/60 backdrop-blur-md dark:bg-zinc-900/60",
                 "shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06),0_2px_8px_rgba(0,0,0,0.25)]",
                 "hover:border-blue-500/40 hover:bg-white/90 hover:shadow-md dark:hover:bg-zinc-900/90",
-                "transition-all duration-200 active:scale-[0.98]"
+                "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]"
               )}
             >
               <div className="flex items-start gap-2.5">

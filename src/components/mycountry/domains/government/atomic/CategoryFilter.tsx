@@ -87,7 +87,7 @@ export const CategoryFilter = React.memo<CategoryFilterProps>(
               key={key}
               onClick={() => onChange(item.id)}
               className={cn(
-                "relative flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold tracking-wider uppercase shadow-xs backdrop-blur-md transition-all duration-200",
+                "relative flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold tracking-wider uppercase shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                 isSelected
                   ? `${colors.active} shadow-sm`
                   : hasSelection

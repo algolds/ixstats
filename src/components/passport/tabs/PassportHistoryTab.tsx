@@ -109,7 +109,7 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
               {/* Dot on timeline */}
               <div className="border-background absolute top-1.5 -left-[31px] h-3.5 w-3.5 rounded-full border-2 bg-stone-400 transition-colors group-hover:bg-blue-500" />
 
-              <div className="space-y-2 rounded-2xl border border-black/6 bg-black/[0.015] p-4 transition-all hover:border-black/15 dark:border-white/8 dark:bg-white/[0.02] dark:hover:border-white/20">
+              <div className="space-y-2 rounded-2xl border border-black/6 bg-black/[0.015] p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-black/15 dark:border-white/8 dark:bg-white/[0.02] dark:hover:border-white/20">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span

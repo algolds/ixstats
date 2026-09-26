@@ -222,7 +222,7 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                     setDefcon(d.level);
                   }}
                   className={cn(
-                    "flex cursor-pointer flex-col items-center justify-center rounded-lg border py-1.5 transition-all text-center select-none active:scale-95",
+                    "flex cursor-pointer flex-col items-center justify-center rounded-lg border py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] text-center select-none active:scale-95",
                     defcon === d.level
                       ? `${d.cls} font-bold shadow-xs scale-[1.02]`
                       : "border-white/5 bg-white/[0.02] text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
@@ -257,7 +257,7 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                     setProjection(p.id);
                   }}
                   className={cn(
-                    "flex cursor-pointer flex-col items-start rounded-lg border px-2 py-1.5 transition-all select-none active:scale-95",
+                    "flex cursor-pointer flex-col items-start rounded-lg border px-2 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-95",
                     projection === p.id
                       ? "border-cyan-500/40 bg-cyan-500/20 text-cyan-300 font-bold shadow-xs"
                       : "border-white/5 bg-white/[0.02] text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"

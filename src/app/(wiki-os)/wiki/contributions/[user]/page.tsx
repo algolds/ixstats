@@ -49,7 +49,7 @@ export default function ContributionsPage() {
             <div className="flex items-center gap-2">
               <Link
                 href={withBasePath("/wiki/utilities")}
-                className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 transition-all hover:bg-emerald-500/15 active:scale-[0.97] dark:text-emerald-400"
+                className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/15 active:scale-[0.97] dark:text-emerald-400"
               >
                 <FolderTree className="h-3.5 w-3.5" />
                 <span>Special:Utilities</span>
@@ -91,11 +91,11 @@ export default function ContributionsPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter editor username (e.g. Admin, LoreKeeper, your handle)..."
-                  className="border-border/80 placeholder:text-muted-foreground/60 text-foreground w-full rounded-2xl border bg-white/80 py-3 pr-24 pl-10 text-sm shadow-inner transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:bg-zinc-950/80"
+                  className="border-border/80 placeholder:text-muted-foreground/60 text-foreground w-full rounded-2xl border bg-white/80 py-3 pr-24 pl-10 text-sm shadow-inner transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:bg-zinc-950/80"
                 />
                 <button
                   type="submit"
-                  className="absolute right-2 cursor-pointer rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-500 active:scale-[0.97]"
+                  className="absolute right-2 cursor-pointer rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500 active:scale-[0.97]"
                 >
                   Lookup
                 </button>
@@ -139,7 +139,7 @@ export default function ContributionsPage() {
                 }) => (
                   <div
                     key={c.revid}
-                    className="group relative flex flex-col justify-between gap-3 rounded-2xl border border-white/20 bg-white/60 p-4 shadow-sm backdrop-blur-md transition-all duration-150 hover:border-emerald-500/40 hover:bg-white/90 sm:flex-row sm:items-center dark:border-white/10 dark:bg-zinc-900/60 dark:hover:bg-zinc-900/90"
+                    className="group relative flex flex-col justify-between gap-3 rounded-2xl border border-white/20 bg-white/60 p-4 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-emerald-500/40 hover:bg-white/90 sm:flex-row sm:items-center dark:border-white/10 dark:bg-zinc-900/60 dark:hover:bg-zinc-900/90"
                   >
                     <div className="flex min-w-0 items-start gap-3 sm:items-center">
                       <div className="flex shrink-0 items-center gap-1">

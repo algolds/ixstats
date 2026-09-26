@@ -130,7 +130,7 @@ export function EnhancedAccountManager({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
         className={cn(
-          "rounded-lg border p-3 transition-all hover:scale-102",
+          "rounded-lg border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-102",
           isSelected
             ? "border-blue-500/50 bg-blue-500/20 shadow-lg shadow-blue-500/25"
             : "border-border/40 bg-muted/10 hover:bg-muted/20"
@@ -258,7 +258,7 @@ export function EnhancedAccountManager({
               type="button"
               onClick={() => setFilterType(type)}
               className={cn(
-                "flex flex-1 cursor-pointer items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-xs tracking-wide uppercase transition-all",
+                "flex flex-1 cursor-pointer items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-xs tracking-wide uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 isActive
                   ? "border-primary bg-primary/10 font-bold shadow-xs"
                   : "border-transparent opacity-75 hover:opacity-100",

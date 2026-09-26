@@ -48,7 +48,7 @@ export function RevenueItemRow({
 
   return (
     <div
-      className="relative overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 transition-all hover:bg-zinc-100/50 dark:border-white/5 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/60"
+      className="relative overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-zinc-100/50 dark:border-white/5 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/60"
       style={{ borderLeft: `3px solid ${color}` }}
     >
       {!isReadOnly && (

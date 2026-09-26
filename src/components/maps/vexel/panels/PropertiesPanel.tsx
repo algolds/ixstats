@@ -64,7 +64,7 @@ export default function PropertiesPanel() {
             type="button"
             title={getTinctureLabel(key)}
             onClick={() => onChange(key)}
-            className={`relative h-7 w-full rounded border transition-all ${
+            className={`relative h-7 w-full rounded border transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
               isSelected
                 ? "scale-105 border-amber-500 shadow-md"
                 : "border-white/10 opacity-70 hover:opacity-100"

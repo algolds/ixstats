@@ -318,7 +318,7 @@ export function TrendingSectionWidget() {
               key={tab}
               onClick={() => setActiveFilter(tab)}
               className={cn(
-                "cursor-pointer rounded-lg py-1 text-center text-xs font-medium capitalize transition-all duration-150 active:scale-[0.97]",
+                "cursor-pointer rounded-lg py-1 text-center text-xs font-medium capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]",
                 activeFilter === tab
                   ? "border-border/60 bg-card text-foreground border font-semibold shadow-xs"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/15 font-medium"
@@ -393,7 +393,7 @@ export function TrendingSectionWidget() {
                 <W
                   key={item.id}
                   {...(linkProps as any)}
-                  className="group/item border-border/40 bg-card/40 hover:bg-card/80 flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 shadow-2xs transition-all duration-200 hover:border-amber-500/40 active:scale-[0.98]"
+                  className="group/item border-border/40 bg-card/40 hover:bg-card/80 flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-amber-500/40 active:scale-[0.98]"
                 >
                   <div
                     className={cn(

@@ -75,7 +75,7 @@ export function EditorialMastheadHeader({
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
                 )}
-                className="group/author text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-[11.5px] font-semibold transition-all hover:border-wiki/40 hover:bg-wiki/10 hover:text-wiki active:scale-95 dark:border-white/10 dark:bg-white/5"
+                className="group/author text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-[11.5px] font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-wiki/40 hover:bg-wiki/10 hover:text-wiki active:scale-95 dark:border-white/10 dark:bg-white/5"
               >
                 {creatorAvatar ? (
                   <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
@@ -110,7 +110,7 @@ export function EditorialMastheadHeader({
                   href={withBasePath(
                     `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
                   )}
-                  className="group/editor text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-[11.5px] font-semibold transition-all hover:border-wiki/40 hover:bg-wiki/10 hover:text-wiki active:scale-95 dark:border-white/10 dark:bg-white/5"
+                  className="group/editor text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-[11.5px] font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-wiki/40 hover:bg-wiki/10 hover:text-wiki active:scale-95 dark:border-white/10 dark:bg-white/5"
                 >
                   {lastEditorAvatar ? (
                     <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
@@ -155,7 +155,7 @@ export function EditorialMastheadHeader({
           <Popover open={showPopover} onOpenChange={setShowPopover}>
             <PopoverTrigger asChild>
               <button
-                className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-95 ${
+                className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-bold shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:shadow-md active:scale-95 ${
                   badgeConfig.classes
                 } ${
                   showCelebration && primaryAward.category === "LOREWARD"

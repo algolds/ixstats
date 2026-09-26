@@ -75,7 +75,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
             <button
               onClick={() => setFilter("all")}
               className={cn(
-                "rounded-lg px-3 py-1 text-xs font-bold uppercase transition-all active:scale-[0.98] cursor-pointer",
+                "rounded-lg px-3 py-1 text-xs font-bold uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] cursor-pointer",
                 filter === "all"
                   ? "bg-foreground text-background shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -86,7 +86,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
             <button
               onClick={() => setFilter("managed")}
               className={cn(
-                "rounded-lg px-3 py-1 text-xs font-bold uppercase transition-all active:scale-[0.98] cursor-pointer",
+                "rounded-lg px-3 py-1 text-xs font-bold uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] cursor-pointer",
                 filter === "managed"
                   ? "bg-cyan-500 text-white shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -97,7 +97,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
             <button
               onClick={() => setFilter("unclaimed")}
               className={cn(
-                "rounded-lg px-3 py-1 text-xs font-bold uppercase transition-all active:scale-[0.98] cursor-pointer",
+                "rounded-lg px-3 py-1 text-xs font-bold uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] cursor-pointer",
                 filter === "unclaimed"
                   ? "bg-amber-500 text-black shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -138,7 +138,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
                 depth={2}
                 interactive="hover"
                 onClick={() => onTeamClick(team.id)}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/40 bg-card/75 shadow-lg backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-border hover:shadow-2xl active:scale-[0.98] cursor-pointer"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/40 bg-card/75 shadow-lg backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-1 hover:border-border hover:shadow-2xl active:scale-[0.98] cursor-pointer"
               >
                 {/* Header Ambient Color Band */}
                 <div
@@ -204,7 +204,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
                     <span className="text-muted-foreground group-hover:text-foreground transition-colors">
                       Inspect Squad
                     </span>
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/40 bg-background/50 shadow-xs group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/40 bg-background/50 shadow-xs group-hover:bg-primary group-hover:text-primary-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform]">
                       <ArrowRight className="h-3.5 w-3.5" />
                     </div>
                   </div>

@@ -125,7 +125,7 @@ export function SectorCard({
     <motion.div
       whileHover={{ scale: isLocked ? 1 : isActive ? 1 : 1.01 }}
       className={cn(
-        "relative flex flex-col justify-between rounded-xl p-4 transition-all duration-200 select-none",
+        "relative flex flex-col justify-between rounded-xl p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
         getCardClasses()
       )}
       onClick={!isActive && !isLocked ? onToggle : undefined}
@@ -183,7 +183,7 @@ export function SectorCard({
                   e.stopPropagation();
                   onToggle();
                 }}
-                className="text-muted-foreground h-7 w-7 rounded-full p-0 transition-all hover:bg-red-500/10 hover:text-red-400"
+                className="text-muted-foreground h-7 w-7 rounded-full p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-red-500/10 hover:text-red-400"
                 title="Deactivate Sector"
               >
                 <Minus className="h-4 w-4 text-red-400/80" />

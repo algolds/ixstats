@@ -119,7 +119,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
               type="button"
               onClick={() => onOpen3DViewer(card)}
               title="Click to view interactive 3D card"
-              className="border-border bg-muted/60 hover:border-primary/60 group/thumb relative flex h-11 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-md border shadow-xs transition-all hover:scale-110 hover:shadow-md active:scale-95"
+              className="border-border bg-muted/60 hover:border-primary/60 group/thumb relative flex h-11 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-md border shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-110 hover:shadow-md active:scale-95"
             >
               <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-1">
                 <CategoryIcon category={card.category || "SPECIAL"} treatment="seal" />
@@ -195,7 +195,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
                   setEditingTitleId(card.id);
                   setEditingTitleValue(card.title);
                 }}
-                className="text-muted-foreground hover:text-primary hover:bg-accent rounded p-1 opacity-0 transition-all group-hover/title:opacity-100"
+                className="text-muted-foreground hover:text-primary hover:bg-accent rounded p-1 opacity-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:opacity-100"
                 title="Edit Title"
               >
                 <Edit2 className="h-3 w-3" />
@@ -281,7 +281,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
                   setEditingValueId(card.id);
                   setEditingValueNum(card.marketValue || 0);
                 }}
-                className="text-muted-foreground hover:text-primary hover:bg-accent rounded p-1 opacity-0 transition-all group-hover/val:opacity-100"
+                className="text-muted-foreground hover:text-primary hover:bg-accent rounded p-1 opacity-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/val:opacity-100"
                 title="Edit Value"
               >
                 <Edit2 className="h-3 w-3" />
@@ -357,7 +357,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
                 onToggleTakedown(card.id, isRetired);
               }}
               disabled={isPending}
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition-all active:scale-95 ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 ${
                 isRetired
                   ? "border border-amber-500/30 bg-amber-500/20 text-amber-600 hover:bg-amber-500/30 dark:text-amber-300"
                   : "bg-muted/80 border-border text-muted-foreground hover:bg-accent hover:text-foreground border"
@@ -392,7 +392,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
               e.stopPropagation();
               onOpenEditModal(card);
             }}
-            className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 h-7 rounded-lg text-xs font-semibold shadow-xs transition-all active:scale-95"
+            className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 h-7 rounded-lg text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
           >
             <Eye className="mr-1 h-3 w-3" /> Edit Studio
           </Button>

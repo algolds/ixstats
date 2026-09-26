@@ -392,7 +392,7 @@ export function EconomicControlCard({
         <Button
           onClick={onForceCalculation}
           disabled={calculationPending}
-          className="h-10 w-full text-xs font-bold transition-all duration-250 hover:scale-[1.01]"
+          className="h-10 w-full text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-250 hover:scale-[1.01]"
         >
           {calculationPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

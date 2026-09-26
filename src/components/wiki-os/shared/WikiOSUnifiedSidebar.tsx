@@ -214,7 +214,7 @@ export function WikiOSUnifiedSidebar({
 
     const activeColorClass = getActiveColorClass(id);
     const itemClass = cn(
-      "wikios-sidebar-icon-box flex h-9 w-9 items-center justify-center rounded-xl border transition-all shadow-md active:scale-95 shrink-0",
+      "wikios-sidebar-icon-box flex h-9 w-9 items-center justify-center rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] shadow-md active:scale-95 shrink-0",
       isActive
         ? cn("font-semibold", activeColorClass)
         : cn(
@@ -236,7 +236,7 @@ export function WikiOSUnifiedSidebar({
         )}
         <span
           className={cn(
-            "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap transition-all duration-300 ease-in-out",
+            "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out",
             !isRowExpanded ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100",
             isActive
               ? id === "margin"
@@ -255,7 +255,7 @@ export function WikiOSUnifiedSidebar({
     );
 
     const wrapperClass = cn(
-      "flex items-center px-2.5 py-1 rounded-xl transition-all duration-300 ease-in-out group outline-none relative",
+      "flex items-center px-2.5 py-1 rounded-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out group outline-none relative",
       isLocalHoverExpanded
         ? "w-max z-50 border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] shadow-lg backdrop-blur-md pr-4"
         : "w-full border-transparent bg-transparent hover:bg-foreground/5",
@@ -412,7 +412,7 @@ export function WikiOSUnifiedSidebar({
                 type="button"
                 onClick={handleToggleCurrentPageStash}
                 className={cn(
-                  "cursor-pointer rounded-md p-1 shadow-xs transition-all active:scale-90",
+                  "cursor-pointer rounded-md p-1 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90",
                   isCurrentPageStashed
                     ? "border border-rose-500/40 bg-rose-500/25 text-rose-300 hover:bg-rose-500/35"
                     : "border border-white/10 bg-white/5 text-[var(--wikios-text-dim)] hover:bg-white/10 hover:text-rose-400"
@@ -515,7 +515,7 @@ export function WikiOSUnifiedSidebar({
                       <button
                         type="button"
                         className={cn(
-                          "group relative flex cursor-pointer items-center rounded-xl px-2.5 py-1.5 transition-all duration-200 ease-in-out",
+                          "group relative flex cursor-pointer items-center rounded-xl px-2.5 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-in-out",
                           isMoreHovered
                             ? "z-50 w-max border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] pr-4 shadow-lg backdrop-blur-md"
                             : "hover:bg-foreground/5 w-full border-transparent bg-transparent"
@@ -526,7 +526,7 @@ export function WikiOSUnifiedSidebar({
                         </div>
                         <span
                           className={cn(
-                            "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap text-[var(--wikios-text-muted)] transition-all duration-200 ease-in-out group-hover:text-[var(--wikios-text)]",
+                            "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap text-[var(--wikios-text-muted)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-in-out group-hover:text-[var(--wikios-text)]",
                             !isMoreExpanded
                               ? "pointer-events-none w-0 opacity-0"
                               : "w-auto pl-3 opacity-100"

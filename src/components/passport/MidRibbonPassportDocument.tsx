@@ -233,7 +233,7 @@ export function MidRibbonPassportDocument({
                       type="button"
                       onClick={() => setIsFlipped(true)}
                       data-cuelume-press="soft"
-                      className="bg-foreground text-background inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold shadow-xs transition-all duration-150 hover:opacity-90 active:scale-[0.96]"
+                      className="bg-foreground text-background inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:opacity-90 active:scale-[0.96]"
                     >
                       <Settings className="h-3.5 w-3.5" />
                       <span>Edit Passport</span>
@@ -242,7 +242,7 @@ export function MidRibbonPassportDocument({
                     <Link
                       href={`/messages?user=${encodeURIComponent(cleanUsername)}`}
                       data-cuelume-press="soft"
-                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-all duration-150 hover:bg-blue-700 active:scale-[0.96]"
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-blue-700 active:scale-[0.96]"
                     >
                       <Send className="h-3.5 w-3.5" />
                       <span>Send Message</span>
@@ -253,7 +253,7 @@ export function MidRibbonPassportDocument({
                     type="button"
                     onClick={handleShareLink}
                     data-cuelume-press="soft"
-                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-2 text-xs font-semibold transition-all duration-150 hover:bg-black/[0.05] active:scale-[0.96] dark:border-white/15 dark:bg-white/[0.03] dark:hover:bg-white/[0.05]"
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-black/[0.05] active:scale-[0.96] dark:border-white/15 dark:bg-white/[0.03] dark:hover:bg-white/[0.05]"
                   >
                     {copiedLink ? (
                       <Check className="h-3.5 w-3.5 text-emerald-500" />
@@ -361,7 +361,7 @@ export function MidRibbonPassportDocument({
                         type="button"
                         onClick={() => setIsLorewardsModalOpen(true)}
                         data-cuelume-press="soft"
-                        className="group w-full cursor-pointer space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 text-left transition-all hover:border-amber-500/30 hover:bg-black/[0.04] active:scale-[0.97] dark:border-white/8 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
+                        className="group w-full cursor-pointer space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-amber-500/30 hover:bg-black/[0.04] active:scale-[0.97] dark:border-white/8 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
                         title="Click to view Lorewards Civic Accolades"
                       >
                         <div className="flex items-center justify-between">
@@ -386,7 +386,7 @@ export function MidRibbonPassportDocument({
                         type="button"
                         onClick={() => onSelectTab("vault")}
                         data-cuelume-press="soft"
-                        className="w-full cursor-pointer space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 text-left transition-all hover:bg-black/[0.04] active:scale-[0.97] dark:border-white/8 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
+                        className="w-full cursor-pointer space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/[0.04] active:scale-[0.97] dark:border-white/8 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-mono text-xs text-stone-400 uppercase">
@@ -422,7 +422,7 @@ export function MidRibbonPassportDocument({
                       <Link
                         href="/vault"
                         data-cuelume-press="soft"
-                        className="block cursor-pointer space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 transition-all hover:bg-black/[0.04] active:scale-[0.97] dark:border-white/8 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
+                        className="block cursor-pointer space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/[0.04] active:scale-[0.97] dark:border-white/8 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-mono text-xs text-stone-400 uppercase">
@@ -473,7 +473,7 @@ export function MidRibbonPassportDocument({
                         onClick={() => onSelectTab(tab.id)}
                         data-cuelume-press="soft"
                         className={cn(
-                          "flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 active:scale-[0.97]",
+                          "flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]",
                           isActive
                             ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
                             : "hover:text-foreground text-stone-600 hover:bg-black/5 dark:text-stone-400 dark:hover:bg-white/5"
@@ -593,7 +593,7 @@ export function MidRibbonPassportDocument({
                 type="button"
                 onClick={() => setIsFlipped(false)}
                 data-cuelume-press="soft"
-                className="bg-foreground text-background inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold shadow-xs transition-all hover:opacity-90 active:scale-[0.97]"
+                className="bg-foreground text-background inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.97]"
               >
                 <Check className="h-3.5 w-3.5 text-emerald-400" />
                 <span>Done</span>
@@ -620,7 +620,7 @@ export function MidRibbonPassportDocument({
                     value={signature}
                     onChange={(e) => setSignature(e.target.value)}
                     placeholder={displayName}
-                    className="text-foreground placeholder:text-muted-foreground w-full rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-2 font-serif text-sm tracking-wide italic transition-all focus:ring-2 focus:ring-blue-500/30 focus:outline-none dark:border-white/15 dark:bg-white/[0.03]"
+                    className="text-foreground placeholder:text-muted-foreground w-full rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-2 font-serif text-sm tracking-wide italic transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:ring-blue-500/30 focus:outline-none dark:border-white/15 dark:bg-white/[0.03]"
                   />
                   <div className="text-muted-foreground flex items-center justify-between text-xs">
                     <span>Calligraphic Preview:</span>
@@ -695,7 +695,7 @@ export function MidRibbonPassportDocument({
                 type="button"
                 onClick={() => setIsFlipped(false)}
                 data-cuelume-press="soft"
-                className="bg-foreground text-background inline-flex cursor-pointer items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold shadow-md transition-all hover:opacity-90 active:scale-[0.97]"
+                className="bg-foreground text-background inline-flex cursor-pointer items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.97]"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 <span>Return to Passport</span>

@@ -27,7 +27,7 @@ export default function VexelRegistryDetailPage({ params }: VexelRegistryDetailP
           </div>
           <Link
             href="/labs/vexel"
-            className="animate-pulse rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition-all hover:bg-amber-600"
+            className="animate-pulse rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-600"
           >
             Create Your Own
           </Link>

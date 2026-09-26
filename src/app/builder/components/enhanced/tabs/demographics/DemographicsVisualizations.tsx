@@ -71,7 +71,7 @@ export function DemographicsVisualizations({
                 variant={activeChart === "age" ? "default" : "ghost"}
                 onClick={() => setActiveChart("age")}
                 className={cn(
-                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-all",
+                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "age"
                     ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500"
                     : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
@@ -84,7 +84,7 @@ export function DemographicsVisualizations({
                 variant={activeChart === "urbanRural" ? "default" : "ghost"}
                 onClick={() => setActiveChart("urbanRural")}
                 className={cn(
-                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-all",
+                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "urbanRural"
                     ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500"
                     : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
@@ -97,7 +97,7 @@ export function DemographicsVisualizations({
                 variant={activeChart === "regional" ? "default" : "ghost"}
                 onClick={() => setActiveChart("regional")}
                 className={cn(
-                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-all",
+                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "regional"
                     ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500"
                     : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"

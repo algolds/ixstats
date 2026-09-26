@@ -176,7 +176,7 @@ export default function CollectionDetailPage() {
           <TabsTrigger
             value="grid"
             className={cn(
-              "rounded-lg px-4 py-2 text-sm font-medium transition-all",
+              "rounded-lg px-4 py-2 text-sm font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               activeTab === "grid"
                 ? "glass-hierarchy-interactive text-white"
                 : "text-white/60 hover:text-white/80"
@@ -188,7 +188,7 @@ export default function CollectionDetailPage() {
           <TabsTrigger
             value="carousel"
             className={cn(
-              "rounded-lg px-4 py-2 text-sm font-medium transition-all",
+              "rounded-lg px-4 py-2 text-sm font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               activeTab === "carousel"
                 ? "glass-hierarchy-interactive text-white"
                 : "text-white/60 hover:text-white/80"
@@ -200,7 +200,7 @@ export default function CollectionDetailPage() {
           <TabsTrigger
             value="comments"
             className={cn(
-              "rounded-lg px-4 py-2 text-sm font-medium transition-all",
+              "rounded-lg px-4 py-2 text-sm font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               activeTab === "comments"
                 ? "glass-hierarchy-interactive text-white"
                 : "text-white/60 hover:text-white/80"

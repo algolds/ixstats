@@ -149,7 +149,7 @@ export function SettingsSidebarNav({
                     data-cuelume-press="soft"
                     data-cuelume-hover="tick"
                     className={cn(
-                      "group flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-left text-xs transition-all duration-150 outline-none active:scale-[0.98]",
+                      "group flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 outline-none active:scale-[0.98]",
                       isActive
                         ? "bg-foreground/[0.08] dark:bg-foreground/[0.12] text-foreground font-bold shadow-2xs"
                         : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground font-medium"
@@ -170,7 +170,7 @@ export function SettingsSidebarNav({
 
                     <div
                       className={cn(
-                        "h-1.5 w-1.5 shrink-0 rounded-full transition-all duration-200",
+                        "h-1.5 w-1.5 shrink-0 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                         isActive
                           ? "bg-primary scale-125 shadow-xs"
                           : "group-hover:bg-muted-foreground/30 bg-transparent"

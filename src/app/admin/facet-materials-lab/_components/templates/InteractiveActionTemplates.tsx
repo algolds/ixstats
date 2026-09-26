@@ -88,7 +88,7 @@ export function InteractiveActionTemplates({
                   key={item}
                   onClick={() => setActiveNav(item)}
                   className={cn(
-                    "cursor-pointer rounded-md px-2 py-0.5 text-xs font-semibold transition-all",
+                    "cursor-pointer rounded-md px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     activeNav === item
                       ? "text-foreground bg-white/10 font-bold shadow-xs dark:bg-black/25"
                       : "text-muted-foreground hover:text-foreground hover:bg-white/5 dark:hover:bg-black/10"
@@ -162,7 +162,7 @@ export function InteractiveActionTemplates({
                       strokeLinecap="round"
                       strokeDasharray={circumference}
                       strokeDashoffset={offset}
-                      className="transition-all duration-700"
+                      className="transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-700"
                     />
                   </svg>
                   <span className="font-mono text-xs font-bold" style={{ color: ring.color }}>
@@ -212,7 +212,7 @@ export function InteractiveActionTemplates({
                   onClick={() =>
                     setGlassClickStates((prev) => ({ ...prev, [btn.label]: !isClicked }))
                   }
-                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold tracking-wide backdrop-blur-sm transition-all hover:opacity-90 active:scale-98"
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold tracking-wide backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-98"
                   style={{
                     backgroundColor: isClicked ? `${btn.color}33` : `${btn.color}18`,
                     borderColor: isClicked ? btn.color : `${btn.color}30`,

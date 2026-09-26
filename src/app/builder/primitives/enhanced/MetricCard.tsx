@@ -72,7 +72,7 @@ export function MetricCard({
     <motion.div
       {...MOTION_VARIANTS.scaleIn}
       className={cn(
-        "relative overflow-hidden rounded-lg p-4 transition-all duration-200 hover:shadow-lg",
+        "relative overflow-hidden rounded-lg p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-lg",
         getGlassClasses("base", resolvedTheme, sectionId),
         className
       )}

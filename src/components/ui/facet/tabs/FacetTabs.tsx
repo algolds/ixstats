@@ -268,7 +268,7 @@ export function FacetTabs({
     <div
       ref={containerRef}
       className={cn(
-        "group/tabs relative flex items-center overflow-hidden transition-all duration-200 select-none",
+        "group/tabs relative flex items-center overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
         "border-border/60 bg-secondary/40 dark:bg-muted/30 border",
         "shadow-xs",
         metrics.container,

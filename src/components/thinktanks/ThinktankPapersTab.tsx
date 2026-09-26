@@ -217,7 +217,7 @@ export function ThinktankPapersTab({
                     setIsEditing(false);
                   }}
                   className={cn(
-                    "flex w-full flex-col items-start rounded-xl p-2.5 text-left transition-all duration-150",
+                    "flex w-full flex-col items-start rounded-xl p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
                     isSelected
                       ? "bg-emerald-500/15 text-emerald-700 shadow-sm dark:bg-emerald-500/20 dark:text-emerald-300"
                       : "hover:bg-accent/40 text-foreground"

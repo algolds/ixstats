@@ -53,7 +53,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
         <Link
           href="/vault"
           data-cuelume-press="soft"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-amber-500 active:scale-[0.97]"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500 active:scale-[0.97]"
         >
           <span>Explore Vault</span>
           <ArrowRight className="h-3.5 w-3.5" />

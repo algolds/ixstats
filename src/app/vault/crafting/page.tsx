@@ -52,7 +52,7 @@ export default function VaultCraftingPage() {
             <button
               key={recipe.id}
               onClick={() => setSelectedRecipeId(recipe.id)}
-              className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-bold transition-all ${
+              className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 selectedRecipeId === recipe.id
                   ? "border-purple-400/50 bg-purple-500/20 text-purple-400"
                   : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"

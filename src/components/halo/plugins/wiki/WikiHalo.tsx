@@ -97,7 +97,7 @@ function WikiBreadcrumb() {
             }
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-white shadow-xs transition-all duration-150 hover:scale-105 active:scale-88"
+          className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-105 active:scale-88"
           style={{
             backgroundColor: accentColor,
             boxShadow: `0 1px 6px ${getRgbaColor(accentColor, 0.35)}`,
@@ -166,7 +166,7 @@ function WikiBreadcrumb() {
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
               <span
-                className="hover:text-foreground text-foreground/50 relative z-[60] inline-block max-w-[70px] cursor-pointer truncate overflow-hidden rounded px-1 py-0.5 text-left text-xs font-medium transition-all duration-200 hover:bg-white/20 active:scale-95"
+                className="hover:text-foreground text-foreground/50 relative z-[60] inline-block max-w-[70px] cursor-pointer truncate overflow-hidden rounded px-1 py-0.5 text-left text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/20 active:scale-95"
                 onClick={(e) => {
                   e.stopPropagation();
                   setPopoverOpen((prev) => !prev);
@@ -197,7 +197,7 @@ function WikiBreadcrumb() {
                           setPopoverOpen(false);
                         }}
                         className={cn(
-                          "flex w-full cursor-pointer items-center rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold transition-all duration-150 select-none",
+                          "flex w-full cursor-pointer items-center rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none",
                           isActive && !themeColors
                             ? "bg-white/15 text-white"
                             : isActive

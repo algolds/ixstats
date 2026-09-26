@@ -38,7 +38,7 @@ export default function AchievementCard({ achievement }: AchievementCardProps) {
   return (
     <FacetMaterial
       material="satin"
-      className="group block overflow-hidden rounded-xl border border-white/10 shadow-md transition-all duration-200 outline-none hover:border-amber-500/25"
+      className="group block overflow-hidden rounded-xl border border-white/10 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 outline-none hover:border-amber-500/25"
     >
       <Link href={`/labs/vexel/registry/${achievement.id}`} className="block">
         <div className="flex flex-col items-center gap-4 p-4">

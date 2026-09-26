@@ -298,7 +298,7 @@ export function IxTimeVisualizer() {
         {/* === TOP SECTION: Current Time Overview === */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {/* Current IxTime */}
-          <div className="rounded-lg border border-blue-500/10 bg-blue-500/5 p-4 transition-all duration-200 hover:border-blue-500/20">
+          <div className="rounded-lg border border-blue-500/10 bg-blue-500/5 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-blue-500/20">
             <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-blue-400">
               <Clock className="h-3.5 w-3.5" /> Current IxTime
             </div>
@@ -311,7 +311,7 @@ export function IxTimeVisualizer() {
           </div>
 
           {/* Multiplier + Rate */}
-          <div className="rounded-lg border border-green-500/10 bg-green-500/5 p-4 transition-all duration-200 hover:border-green-500/20">
+          <div className="rounded-lg border border-green-500/10 bg-green-500/5 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-green-500/20">
             <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-green-400">
               <Activity className="h-3.5 w-3.5" /> Speed & Rate
             </div>
@@ -329,7 +329,7 @@ export function IxTimeVisualizer() {
           </div>
 
           {/* System Health */}
-          <div className="rounded-lg border border-purple-500/10 bg-purple-500/5 p-4 transition-all duration-200 hover:border-purple-500/20">
+          <div className="rounded-lg border border-purple-500/10 bg-purple-500/5 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-purple-500/20">
             <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-purple-400">
               <Target className="h-3.5 w-3.5" /> System Health
             </div>
@@ -494,16 +494,16 @@ export function IxTimeVisualizer() {
             {/* === VISUAL TIMELINE === */}
             <div className="space-y-3">
               <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-3">
-                <div className="rounded-md border border-blue-500/10 bg-blue-500/5 px-2.5 py-2 text-center transition-all hover:border-blue-500/20">
+                <div className="rounded-md border border-blue-500/10 bg-blue-500/5 px-2.5 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-blue-500/20">
                   <div className="font-semibold text-blue-400">Real World Epoch</div>
                   <div className="text-muted-foreground mt-0.5 font-mono">Oct 4, 2020</div>
                 </div>
-                <div className="rounded-md border border-green-500/10 bg-green-500/5 px-2.5 py-2 text-center transition-all hover:border-green-500/20">
+                <div className="rounded-md border border-green-500/10 bg-green-500/5 px-2.5 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-green-500/20">
                   <div className="font-semibold text-green-400">4x → 2x Transition</div>
                   <div className="text-muted-foreground mt-0.5 font-mono">Jul 27, 2025 IRL</div>
                   <div className="text-muted-foreground font-mono">Jan 1, 2040 IX</div>
                 </div>
-                <div className="rounded-md border border-purple-500/10 bg-purple-500/5 px-2.5 py-2 text-center transition-all hover:border-purple-500/20">
+                <div className="rounded-md border border-purple-500/10 bg-purple-500/5 px-2.5 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-purple-500/20">
                   <div className="font-semibold text-purple-400">Now</div>
                   <div className="text-muted-foreground mt-0.5 font-semibold">
                     Year {timeData.currentGameYear}

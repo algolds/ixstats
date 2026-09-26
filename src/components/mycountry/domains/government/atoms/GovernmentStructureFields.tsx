@@ -137,7 +137,7 @@ export function GovernmentStructureFields({
               type="button"
               onClick={toggleGovHeadLock}
               className={cn(
-                "flex items-center gap-1 text-xs font-semibold transition-all duration-150 focus:outline-none",
+                "flex items-center gap-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 focus:outline-none",
                 isGovHeadLocked
                   ? "text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300"
                   : "text-muted-foreground hover:text-foreground"

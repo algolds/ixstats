@@ -138,7 +138,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
               rel={tool.isExternal ? "noreferrer" : undefined}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
-              className="group border-border/40 bg-card/60 hover:border-wiki/40 hover:bg-card/90 relative flex flex-col justify-between rounded-xl border p-4 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]"
+              className="group border-border/40 bg-card/60 hover:border-wiki/40 hover:bg-card/90 relative flex flex-col justify-between rounded-xl border p-4 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]"
             >
               <div>
                 <div className="mb-3 flex items-center justify-between">

@@ -144,7 +144,7 @@ export function BudgetAllocationForm({
     <FacetCard
       depth={1}
       className={cn(
-        "facet-surface facet-refraction relative overflow-hidden bg-card/60 backdrop-blur-md border-zinc-200/50 transition-all duration-200 dark:border-white/5",
+        "facet-surface facet-refraction relative overflow-hidden bg-card/60 backdrop-blur-md border-zinc-200/50 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 dark:border-white/5",
         isCollapsed
           ? "hover:border-cyan-500/20 hover:bg-zinc-50/50 dark:hover:bg-white/[0.01]"
           : "border-cyan-500/20 shadow-lg dark:border-cyan-500/10"
@@ -383,7 +383,7 @@ export function BudgetAllocationForm({
 
                     <div className="relative h-2 w-full overflow-hidden rounded-full border border-zinc-200/50 bg-zinc-200 dark:border-white/5 dark:bg-zinc-950">
                       <div
-                        className="h-full rounded-full transition-all duration-300"
+                        className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
                         style={{
                           width: `${utilizationRate}%`,
                           backgroundColor: departmentColor,

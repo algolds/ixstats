@@ -10,7 +10,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       className={cn(
         "file:text-foreground placeholder:text-muted-foreground/70 selection:bg-primary selection:text-primary-foreground",
         "border-border/70 bg-background/40 flex h-9 w-full min-w-0 rounded-md border",
-        "px-3 py-1 text-base shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-150 outline-none hover:shadow-xs dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)]",
+        "px-3 py-1 text-base shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 outline-none hover:shadow-xs dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)]",
         "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium",
         "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
         "hover:border-border hover:bg-background/60",

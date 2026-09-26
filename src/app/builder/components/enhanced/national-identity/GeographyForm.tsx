@@ -167,7 +167,7 @@ export const GeographyForm = React.memo(
                 <button
                   type="button"
                   onClick={handleSuggestCodes}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 active:scale-95 transition-all"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   title="Fill codes from country name"
                   data-cuelume-press
                 >
@@ -316,7 +316,7 @@ export const GeographyForm = React.memo(
                     <button
                       type="button"
                       onClick={() => handleDrivingSideSelect("right")}
-                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-all active:scale-[0.98] ${
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                         identity.drivingSide !== "left"
                           ? "border border-border/50 bg-background text-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -336,7 +336,7 @@ export const GeographyForm = React.memo(
                     <button
                       type="button"
                       onClick={() => handleDrivingSideSelect("left")}
-                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-all active:scale-[0.98] ${
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                         identity.drivingSide === "left"
                           ? "border border-border/50 bg-background text-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -371,7 +371,7 @@ export const GeographyForm = React.memo(
                           key={value}
                           type="button"
                           onClick={() => handleWeekStartDaySelect(value)}
-                          className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-all active:scale-[0.98] ${
+                          className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                             isSelected
                               ? "border border-border/50 bg-background text-foreground shadow-xs"
                               : "text-muted-foreground hover:text-foreground"
@@ -416,7 +416,7 @@ export const GeographyForm = React.memo(
                   <button
                     type="button"
                     onClick={handleSyncWithCapital}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     title={`Use capital coordinates (${capitalCity.name || "Capital"})`}
                     data-cuelume-press
                   >
@@ -432,7 +432,7 @@ export const GeographyForm = React.memo(
                       soundEffects.press();
                       setIsMapPickerOpen(true);
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/50 px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-muted active:scale-95 transition-all"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/50 px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-muted active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     title="Pick coordinates on map"
                     data-cuelume-press
                   >

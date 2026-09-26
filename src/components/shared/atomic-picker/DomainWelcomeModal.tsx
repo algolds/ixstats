@@ -250,7 +250,7 @@ export const DomainWelcomeModal = React.memo(function DomainWelcomeModal({
                 onClick={() => setCurrentIndex(idx)}
                 title={`Go to step ${idx + 1}`}
                 className={cn(
-                  "h-1.5 rounded-full transition-all duration-200",
+                  "h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                   idx === currentIndex ? cn("w-5", colors.activeDot) : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50"
                 )}
               />

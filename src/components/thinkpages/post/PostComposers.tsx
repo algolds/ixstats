@@ -155,7 +155,7 @@ export function PostComposers({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 6 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="relative mt-3 flex flex-col gap-0 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:shadow-2xl"
+            className="relative mt-3 flex flex-col gap-0 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3.5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-2xl"
           >
             <TextureOverlay texture="paperGrain" opacity={0.03} className="rounded-2xl" />
 
@@ -189,7 +189,7 @@ export function PostComposers({
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowEditComposer(false)}
-                    className="text-muted-foreground hover:bg-muted/30 hover:text-foreground h-8 rounded-xl px-3 text-xs font-medium transition-all active:scale-95"
+                    className="text-muted-foreground hover:bg-muted/30 hover:text-foreground h-8 rounded-xl px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                   >
                     Cancel
                   </Button>
@@ -197,7 +197,7 @@ export function PostComposers({
                     size="sm"
                     onClick={handleSubmitEdit}
                     disabled={!editText.trim() || editText === post.content || isEditPending}
-                    className="h-8 rounded-xl bg-amber-600 px-4 text-xs font-bold text-white shadow-md shadow-amber-600/25 transition-all hover:bg-amber-500 active:scale-95"
+                    className="h-8 rounded-xl bg-amber-600 px-4 text-xs font-bold text-white shadow-md shadow-amber-600/25 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500 active:scale-95"
                   >
                     {isEditPending ? "Saving..." : "Save Changes"}
                   </Button>
@@ -221,7 +221,7 @@ export function PostComposers({
               damping: 30,
             }}
             className={cn(
-              "dark:border-border/80 dark:bg-card/90 relative mt-3 flex flex-col gap-0 rounded-2xl border border-black/10 bg-white/70 p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              "dark:border-border/80 dark:bg-card/90 relative mt-3 flex flex-col gap-0 rounded-2xl border border-black/10 bg-white/70 p-3.5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
             )}
           >
             <TextureOverlay texture="paperGrain" opacity={0.03} className="rounded-2xl" />
@@ -335,7 +335,7 @@ export function PostComposers({
                           size="sm"
                           onClick={() => setShowMediaModal(true)}
                           disabled={selectedImages.length >= 4}
-                          className="h-8 w-8 rounded-xl p-0 text-emerald-600 transition-all hover:bg-emerald-500/10 hover:text-emerald-700 active:scale-95 dark:text-emerald-400 dark:hover:text-emerald-300"
+                          className="h-8 w-8 rounded-xl p-0 text-emerald-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/10 hover:text-emerald-700 active:scale-95 dark:text-emerald-400 dark:hover:text-emerald-300"
                           aria-label="Add media / images"
                         >
                           <div className="relative">
@@ -388,7 +388,7 @@ export function PostComposers({
                         setShowReplyComposer(false);
                         setSelectedImages([]);
                       }}
-                      className="text-muted-foreground hover:text-foreground h-8 rounded-xl px-3 text-xs font-semibold transition-all hover:bg-black/5 active:scale-95 dark:hover:bg-white/10 dark:hover:text-white"
+                      className="text-muted-foreground hover:text-foreground h-8 rounded-xl px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/5 active:scale-95 dark:hover:bg-white/10 dark:hover:text-white"
                     >
                       Cancel
                     </Button>
@@ -399,7 +399,7 @@ export function PostComposers({
                         (!replyText.trim() && selectedImages.length === 0) || isReplyPending
                       }
                       className={cn(
-                        "h-8 gap-1.5 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-md transition-all hover:bg-blue-500 active:scale-95",
+                        "h-8 gap-1.5 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500 active:scale-95",
                         isReplyPending && "opacity-60"
                       )}
                     >

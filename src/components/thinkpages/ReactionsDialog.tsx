@@ -133,7 +133,7 @@ export function ReactionsDialog({
                 </div>
                 <button
                   onClick={onClose}
-                  className="text-muted-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center justify-center rounded-full p-1.5 transition-all active:scale-95 dark:hover:bg-white/10"
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center justify-center rounded-full p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 dark:hover:bg-white/10"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -173,7 +173,7 @@ export function ReactionsDialog({
                     href={discordMsgUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="from-discord to-discord-hover shadow-discord/20 inline-flex w-full max-w-[260px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r px-6 py-3 font-semibold text-white shadow-lg transition-all duration-200 active:scale-[0.98]"
+                    className="from-discord to-discord-hover shadow-discord/20 inline-flex w-full max-w-[260px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r px-6 py-3 font-semibold text-white shadow-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]"
                   >
                     <MessageSquare className="h-4 w-4" />
                     Open Original Discord Post
@@ -186,7 +186,7 @@ export function ReactionsDialog({
                     <button
                       onClick={() => setSelectedTab("all")}
                       className={cn(
-                        "cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all",
+                        "cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                         selectedTab === "all"
                           ? "bg-blue-600 text-white shadow-sm"
                           : "bg-muted text-muted-foreground hover:bg-muted/80 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:text-white"
@@ -205,7 +205,7 @@ export function ReactionsDialog({
                             key={type}
                             onClick={() => setSelectedTab(type)}
                             className={cn(
-                              "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all",
+                              "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                               selectedTab === type
                                 ? "bg-blue-600 text-white shadow-sm"
                                 : "bg-muted text-muted-foreground hover:bg-muted/80 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:text-white"
@@ -269,7 +269,7 @@ export function ReactionsDialog({
                             ] || "text-gray-400 bg-white/5 border border-white/10";
 
                           return (
-                            <div className="hover:bg-muted/40 hover:border-border/30 mb-2.5 flex items-center gap-3 rounded-xl border border-transparent p-2 transition-all dark:hover:border-white/5 dark:hover:bg-white/5">
+                            <div className="hover:bg-muted/40 hover:border-border/30 mb-2.5 flex items-center gap-3 rounded-xl border border-transparent p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:hover:border-white/5 dark:hover:bg-white/5">
                               <button
                                 onClick={
                                   reaction.account.isDiscordUser

@@ -130,7 +130,7 @@ export function MessagesConversationPanel({
           {activeFolder === "conversations" && (
             <Button
               size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 shrink-0 cursor-pointer gap-1.5 rounded-xl px-3 text-xs font-semibold shadow-xs transition-all duration-150 active:scale-[0.96]"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 shrink-0 cursor-pointer gap-1.5 rounded-xl px-3 text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96]"
               onClick={onNewConversation}
               title="Start a new conversation"
             >
@@ -150,7 +150,7 @@ export function MessagesConversationPanel({
                   key={filter.id}
                   onClick={() => setActiveFilter(filter.id)}
                   className={cn(
-                    "relative cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold tracking-tight transition-all select-none active:scale-95",
+                    "relative cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-95",
                     isActive
                       ? "text-foreground shadow-2xs"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
@@ -182,7 +182,7 @@ export function MessagesConversationPanel({
             <button
               onClick={() => onSelectConversation(SYSTEM_CONVERSATION_ID)}
               className={cn(
-                "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-150 select-none active:scale-[0.985]",
+                "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.985]",
                 isSystemSelected
                   ? "bg-accent/80 text-accent-foreground ring-border/50 shadow-2xs ring-1"
                   : "hover:bg-accent/20 text-foreground/90 hover:text-foreground"
@@ -233,7 +233,7 @@ export function MessagesConversationPanel({
             <button
               onClick={() => onSelectConversation(LOREBOT_CONVERSATION_ID)}
               className={cn(
-                "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-150 select-none active:scale-[0.985]",
+                "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.985]",
                 isLoreBotSelected
                   ? "bg-accent/80 text-accent-foreground ring-border/50 shadow-2xs ring-1"
                   : "hover:bg-accent/20 text-foreground/90 hover:text-foreground"

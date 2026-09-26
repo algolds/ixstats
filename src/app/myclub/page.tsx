@@ -158,7 +158,7 @@ export default function MyClubPage() {
                 <div
                   key={team.id}
                   onClick={() => router.push(withBasePath(`/myclub/${team.id}`))}
-                  className="group border-border/40 bg-card/60 hover:border-border flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border shadow-md backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-[0.98]"
+                  className="group border-border/40 bg-card/60 hover:border-border flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-[0.98]"
                 >
                   {/* Header Banner */}
                   <div

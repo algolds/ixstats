@@ -343,7 +343,7 @@ function Step1EventType({
             <button
               key={type.value}
               onClick={() => onSelect(type.value)}
-              className={`rounded-xl border p-4 text-left transition-all ${
+              className={`rounded-xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 isSelected
                   ? `${type.bg} border-2 shadow-sm`
                   : "border-border/50 hover:border-border hover:bg-muted/20"

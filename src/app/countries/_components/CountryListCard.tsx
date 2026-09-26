@@ -102,7 +102,7 @@ export function CountryListCard({
   return (
     <Card
       className={cn(
-        "group facet-card relative flex h-full cursor-pointer flex-col overflow-hidden transition-all duration-200 hover:shadow-lg active:scale-[0.98]",
+        "group facet-card relative flex h-full cursor-pointer flex-col overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-lg active:scale-[0.98]",
         dominantColor && "border-l-2"
       )}
       style={dominantColor ? { borderLeftColor: dominantColor } : undefined}
@@ -183,7 +183,7 @@ export function CountryListCard({
             >
               <BookOpen className="text-muted-foreground h-3.5 w-3.5" />
             </Button>
-            <ArrowRight className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-all group-hover:translate-x-0.5" />
+            <ArrowRight className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5" />
           </div>
         </div>
 

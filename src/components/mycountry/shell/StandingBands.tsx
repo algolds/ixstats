@@ -118,7 +118,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
       <FacetCard
         depth={1}
         interactive="none"
-        className="group/card border-border/60 bg-card/60 relative flex flex-col gap-3 overflow-hidden rounded-2xl border p-3.5 shadow-sm backdrop-blur-md transition-all duration-300"
+        className="group/card border-border/60 bg-card/60 relative flex flex-col gap-3 overflow-hidden rounded-2xl border p-3.5 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
       >
         {/* Cinematic Background Flag Watermark Scrim */}
         {flagUrl && (
@@ -164,7 +164,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
               }}
               whileTap={{ scale: 0.96 }}
               onClick={handleOpenBreakdown}
-              className="border-border/80 bg-muted/50 hover:bg-muted text-foreground group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold shadow-2xs backdrop-blur-md transition-all active:scale-95"
+              className="border-border/80 bg-muted/50 hover:bg-muted text-foreground group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold shadow-2xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
               title="Click for full Vitality Breakdown"
             >
               <Activity className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-colors" />
@@ -264,7 +264,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={handleOpenBreakdown}
-                className="group/ring border-border/50 bg-card/40 hover:border-border/80 hover:bg-card/70 flex cursor-pointer items-center gap-2 rounded-xl border p-2 text-left backdrop-blur-md transition-all duration-150 active:scale-[0.97]"
+                className="group/ring border-border/50 bg-card/40 hover:border-border/80 hover:bg-card/70 flex cursor-pointer items-center gap-2 rounded-xl border p-2 text-left backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]"
               >
                 <HealthRing value={ring.value} size={34} color={ring.color} label={ring.label} />
                 <div className="min-w-0 flex-1">

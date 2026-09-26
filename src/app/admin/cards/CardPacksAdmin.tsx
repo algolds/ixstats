@@ -301,7 +301,7 @@ export function CardPacksAdmin() {
             return (
               <Card
                 key={pack.id}
-                className={`facet-hierarchy-child border p-4 transition-all hover:border-amber-400/50 ${!pack.isActive ? "opacity-60" : ""} ${colors.border}`}
+                className={`facet-hierarchy-child border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-amber-400/50 ${!pack.isActive ? "opacity-60" : ""} ${colors.border}`}
               >
                 <div className="mb-3 flex items-start justify-between">
                   <div className="flex min-w-0 flex-1 items-start gap-3">

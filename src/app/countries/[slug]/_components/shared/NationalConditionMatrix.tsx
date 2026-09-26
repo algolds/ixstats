@@ -147,7 +147,7 @@ export function NationalConditionMatrix({
               key={pillar.key}
               data-cuelume-press="soft"
               className={cn(
-                "group relative flex flex-col justify-between overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br p-3.5 backdrop-blur-md transition-all duration-150 active:scale-[0.98] hover:border-white/20",
+                "group relative flex flex-col justify-between overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br p-3.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98] hover:border-white/20",
                 pillar.bgGradient
               )}
             >

@@ -86,7 +86,7 @@ export function SportsShell({
 
           {/* Main Content Workspace */}
           <main className="min-w-0 flex-1 w-full">
-            <div className="facet-hierarchy-parent rounded-2xl border border-border/40 bg-card/40 p-4 sm:p-6 shadow-lg backdrop-blur-xl transition-all duration-300">
+            <div className="facet-hierarchy-parent rounded-2xl border border-border/40 bg-card/40 p-4 sm:p-6 shadow-lg backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
               {children}
             </div>
           </main>

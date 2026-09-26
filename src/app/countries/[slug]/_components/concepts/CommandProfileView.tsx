@@ -91,7 +91,7 @@ export function CommandProfileView({ country, slug }: CommandProfileViewProps) {
                     data-cuelume-press="soft"
                     onClick={() => scrollTo(item.id)}
                     className={cn(
-                      "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition-all duration-150 active:scale-[0.97]",
+                      "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]",
                       isActive
                         ? "bg-[var(--flag-primary)]/15 text-[var(--flag-primary)] shadow-sm ring-1 ring-[var(--flag-primary)]/30"
                         : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
@@ -114,21 +114,21 @@ export function CommandProfileView({ country, slug }: CommandProfileViewProps) {
                   type="button"
                   data-cuelume-press="soft"
                   onClick={() => setIsCompareOpen(true)}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-foreground transition-all duration-150 active:scale-[0.97] hover:bg-white/10"
+                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] hover:bg-white/10"
                 >
                   <span>⚖️ Benchmark Peer</span>
                   <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
                 <Link
                   href={createUrl(`/countries/${slug}/modeling`)}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-foreground transition-all duration-150 active:scale-[0.97] hover:bg-white/10"
+                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] hover:bg-white/10"
                 >
                   <span>📈 Economic Modeling</span>
                   <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                 </Link>
                 <Link
                   href={createUrl("/maps")}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-foreground transition-all duration-150 active:scale-[0.97] hover:bg-white/10"
+                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] hover:bg-white/10"
                 >
                   <span>🗺️ IxWorld Atlas</span>
                   <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />

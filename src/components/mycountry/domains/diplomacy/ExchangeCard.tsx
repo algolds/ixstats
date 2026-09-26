@@ -76,7 +76,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
         transition={{ delay: index * 0.05 }}
         onClick={onClick}
         className={cn(
-          "group cursor-pointer overflow-hidden rounded-lg border transition-all",
+          "group cursor-pointer overflow-hidden rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
           "border-border/60 bg-card/60 hover:border-cyan-500/30 hover:bg-muted/40",
           isSelected && "border-cyan-500/50 bg-cyan-500/10"
         )}

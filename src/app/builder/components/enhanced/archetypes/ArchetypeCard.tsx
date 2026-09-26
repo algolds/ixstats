@@ -34,7 +34,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
     <div className="group relative">
       <div
         className={cn(
-          "flex h-full flex-col justify-between gap-4 rounded-xl border p-5 transition-all duration-300",
+          "flex h-full flex-col justify-between gap-4 rounded-xl border p-5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           isSelected
             ? "border-emerald-500 bg-emerald-500/5 shadow-[0_0_20px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50 dark:bg-emerald-500/10"
             : "border-border bg-card/40 hover:border-emerald-500/30 hover:bg-emerald-500/[0.01] hover:shadow-lg hover:shadow-emerald-500/5 dark:hover:border-emerald-500/40 dark:hover:bg-emerald-500/[0.03]"
@@ -93,7 +93,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
               }}
               disabled={isSelected}
               className={cn(
-                "h-8 flex-1 cursor-pointer text-xs font-semibold transition-all",
+                "h-8 flex-1 cursor-pointer text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 isSelected
                   ? "cursor-default border border-emerald-500/30 bg-emerald-600/15 text-emerald-400 hover:bg-emerald-600/15 dark:bg-emerald-500/15 dark:text-emerald-400"
                   : "bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"

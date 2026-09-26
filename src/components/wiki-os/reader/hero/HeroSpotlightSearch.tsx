@@ -173,7 +173,7 @@ export function HeroSpotlightSearch({
           setIsOpen(true);
         }}
         className={cn(
-          "flex w-full cursor-text items-center justify-between gap-2.5 rounded-xl px-3.5 py-2 transition-all duration-200 sm:px-4",
+          "flex w-full cursor-text items-center justify-between gap-2.5 rounded-xl px-3.5 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 sm:px-4",
           "border border-black/[0.08] dark:border-white/[0.1]",
           "bg-white/75 backdrop-blur-2xl dark:bg-zinc-900/75",
           "shadow-[inset_0_1px_1px_rgba(255,255,255,0.7),0_4px_16px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_24px_rgba(0,0,0,0.3)]",
@@ -258,7 +258,7 @@ export function HeroSpotlightSearch({
                 onClick={() => handleCreatePage(query.trim())}
                 onMouseEnter={() => setSelectedIndex(results.length)}
                 className={cn(
-                  "group mb-1 flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl border px-3 py-2 text-left transition-all",
+                  "group mb-1 flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl border px-3 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   selectedIndex === results.length
                     ? "border-blue-500/35 bg-blue-500/15 font-semibold text-blue-600 dark:text-blue-400"
                     : "border-blue-500/20 bg-blue-500/5 text-blue-600 hover:bg-blue-500/10 dark:text-blue-400"
@@ -278,7 +278,7 @@ export function HeroSpotlightSearch({
                     </span>
                   </div>
                 </div>
-                <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-60 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" />
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-60 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5 group-hover:opacity-100" />
               </button>
             )}
 

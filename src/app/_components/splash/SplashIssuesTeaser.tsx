@@ -222,7 +222,7 @@ export function SplashIssuesTeaser() {
                 aria-current={i === index}
                 onClick={() => setIndex(i)}
                 className={cn(
-                  "h-1.5 rounded-full transition-all duration-300",
+                  "h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                   i === index
                     ? "w-7 bg-amber-500 opacity-95 dark:bg-amber-400"
                     : "bg-muted-foreground/35 hover:bg-muted-foreground/55 w-1.5"

@@ -123,7 +123,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                   key={type}
                   type="button"
                   onClick={() => onSelectReaction(type)}
-                  className="text-muted-foreground hover:text-foreground rounded-full p-2 transition-all duration-150 hover:scale-125 hover:bg-black/5 active:scale-95 dark:hover:bg-white/10"
+                  className="text-muted-foreground hover:text-foreground rounded-full p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-125 hover:bg-black/5 active:scale-95 dark:hover:bg-white/10"
                   title={type}
                   aria-label={type}
                 >
@@ -142,7 +142,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                 key={emoji.id}
                 type="button"
                 onClick={() => onSelectReaction(`discord:${emoji.name}`)}
-                className="rounded-lg p-1.5 transition-all duration-150 hover:scale-125 hover:bg-black/5 active:scale-95 dark:hover:bg-white/10"
+                className="rounded-lg p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-125 hover:bg-black/5 active:scale-95 dark:hover:bg-white/10"
                 title={`:${emoji.name}:`}
                 aria-label={emoji.name}
               >
@@ -170,7 +170,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                       key={emoji.id}
                       type="button"
                       onClick={() => onSelectReaction(`discord:${emoji.name}`)}
-                      className="rounded-lg p-1.5 transition-all duration-150 hover:scale-125 hover:bg-black/5 active:scale-95 dark:hover:bg-white/10"
+                      className="rounded-lg p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-125 hover:bg-black/5 active:scale-95 dark:hover:bg-white/10"
                       title={`:${emoji.name}:`}
                       aria-label={emoji.name}
                     >
@@ -191,7 +191,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                   <button
                     type="button"
                     onClick={() => setShowMoreEmojis(!showMoreEmojis)}
-                    className="border-muted-foreground/30 rounded-lg border border-dashed p-1.5 transition-all hover:bg-black/5 dark:hover:bg-white/10"
+                    className="border-muted-foreground/30 rounded-lg border border-dashed p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/5 dark:hover:bg-white/10"
                     title={
                       showMoreEmojis
                         ? "Show less"

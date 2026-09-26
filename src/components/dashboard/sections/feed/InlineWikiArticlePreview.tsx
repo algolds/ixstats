@@ -308,7 +308,7 @@ export function InlineWikiArticlePreview({
   const marginHref = `${titleToWikiOSRoute(cleanTitle)}?modal=margin`;
 
   return (
-    <div className="group/preview mt-2.5 overflow-hidden rounded-2xl border border-wiki/20 bg-wiki/[0.04] p-3.5 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-wiki/35 hover:bg-wiki/[0.07] sm:p-4 dark:border-wiki/30 dark:bg-wiki/[0.04] dark:hover:border-wiki/50 dark:hover:bg-wiki/[0.08]">
+    <div className="group/preview mt-2.5 overflow-hidden rounded-2xl border border-wiki/20 bg-wiki/[0.04] p-3.5 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-wiki/35 hover:bg-wiki/[0.07] sm:p-4 dark:border-wiki/30 dark:bg-wiki/[0.04] dark:hover:border-wiki/50 dark:hover:bg-wiki/[0.08]">
       {/* Content & Lead Image Row */}
       <div className="flex items-start gap-3.5">
         <div className="min-w-0 flex-1 space-y-1">
@@ -347,7 +347,7 @@ export function InlineWikiArticlePreview({
             type="button"
             onClick={() => setIsMarginOpen((v) => !v)}
             className={cn(
-              "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none active:scale-95",
+              "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
               isMarginOpen
                 ? "bg-yellow-400/20 font-semibold text-yellow-600 ring-1 ring-yellow-400/40 dark:text-yellow-400"
                 : "text-muted-foreground hover:bg-yellow-400/15 hover:text-yellow-600 dark:hover:text-yellow-400"
@@ -367,7 +367,7 @@ export function InlineWikiArticlePreview({
           <button
             type="button"
             onClick={() => setIsRepostOpen(true)}
-            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none hover:bg-emerald-500/10 hover:text-emerald-500 active:scale-95"
+            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-emerald-500/10 hover:text-emerald-500 active:scale-95"
             title="Repost to ThinkPages feed"
           >
             <Repeat2 className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
@@ -381,7 +381,7 @@ export function InlineWikiArticlePreview({
                 type="button"
                 onClick={handleToggleLike}
                 className={cn(
-                  "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none active:scale-95",
+                  "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
                   hasLiked
                     ? "bg-red-500/15 font-semibold text-red-500"
                     : "text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
@@ -414,7 +414,7 @@ export function InlineWikiArticlePreview({
                     key={emoji}
                     type="button"
                     onClick={() => handleSelectReactionEmoji(emoji)}
-                    className="hover:bg-accent/50 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-sm transition-all duration-150 select-none hover:scale-125 active:scale-95"
+                    className="hover:bg-accent/50 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:scale-125 active:scale-95"
                   >
                     {emoji}
                   </button>
@@ -438,7 +438,7 @@ export function InlineWikiArticlePreview({
                 }}
                 disabled={isPendingStash}
                 className={cn(
-                  "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none active:scale-95",
+                  "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
                   isStashed
                     ? "bg-amber-500/15 font-semibold text-amber-600 dark:text-amber-400"
                     : "text-muted-foreground hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400"
@@ -529,7 +529,7 @@ export function InlineWikiArticlePreview({
           <button
             type="button"
             onClick={handleShare}
-            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none hover:bg-cyan-500/10 hover:text-cyan-500 active:scale-95"
+            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-cyan-500/10 hover:text-cyan-500 active:scale-95"
             title="ShareAndroid article link"
           >
             {copied ? (
@@ -544,7 +544,7 @@ export function InlineWikiArticlePreview({
         {/* Open in Wiki Link */}
         <Link
           href={wikiHref}
-          className="inline-flex items-center gap-1 rounded-full bg-wiki/10 px-3 py-1 text-xs font-semibold text-wiki transition-all duration-150 hover:bg-wiki/20 hover:text-wiki-hover active:scale-95"
+          className="inline-flex items-center gap-1 rounded-full bg-wiki/10 px-3 py-1 text-xs font-semibold text-wiki transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-wiki/20 hover:text-wiki-hover active:scale-95"
         >
           <span>Open in Wiki</span>
           <ExternalLink className="h-3 w-3" />
@@ -607,7 +607,7 @@ export function InlineWikiArticlePreview({
                 <button
                   type="submit"
                   disabled={!marginNote.trim() || isSubmittingNote}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-semibold text-stone-950 shadow-xs transition-all hover:bg-yellow-400 active:scale-95 disabled:opacity-50"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-semibold text-stone-950 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-yellow-400 active:scale-95 disabled:opacity-50"
                 >
                   {isSubmittingNote ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
                   <span>Post Note</span>

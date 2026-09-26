@@ -54,7 +54,7 @@ function ForumRow({
   return (
     <Component
       onClick={onClick}
-      className={`group hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-all duration-200 ${
+      className={`group hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
         onClick ? "cursor-pointer" : "cursor-default"
       }`}
     >
@@ -78,7 +78,7 @@ function ForumRow({
       {rightElement !== undefined ? (
         rightElement
       ) : onClick ? (
-        <ChevronRight className="text-muted-foreground/30 group-hover:text-muted-foreground/60 h-3.5 w-3.5 transition-all group-hover:translate-x-0.5" />
+        <ChevronRight className="text-muted-foreground/30 group-hover:text-muted-foreground/60 h-3.5 w-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5" />
       ) : null}
     </Component>
   );
@@ -269,7 +269,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
             <div className="bg-accent/15 flex max-w-[140px] flex-1 rounded-lg p-0.5">
               <button
                 onClick={() => setActiveTab("recent")}
-                className={`flex-1 rounded-md py-0.5 text-center text-xs font-bold tracking-wide uppercase transition-all ${
+                className={`flex-1 rounded-md py-0.5 text-center text-xs font-bold tracking-wide uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   activeTab === "recent"
                     ? "bg-white text-orange-500 shadow-sm dark:bg-white/10 dark:text-orange-400"
                     : "text-muted-foreground hover:text-foreground"
@@ -281,7 +281,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
               </button>
               <button
                 onClick={() => setActiveTab("stash")}
-                className={`flex-1 rounded-md py-0.5 text-center text-xs font-bold tracking-wide uppercase transition-all ${
+                className={`flex-1 rounded-md py-0.5 text-center text-xs font-bold tracking-wide uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   activeTab === "stash"
                     ? "bg-white text-orange-500 shadow-sm dark:bg-white/10 dark:text-orange-400"
                     : "text-muted-foreground hover:text-foreground"

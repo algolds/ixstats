@@ -205,7 +205,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
           <div
             key={rel.id}
             data-focus-id={rel.targetCountryId ?? rel.id}
-            className="facet-hierarchy-child border-border/40 bg-card/40 flex flex-col justify-between rounded-xl border p-4 shadow-sm backdrop-blur-sm transition-all hover:scale-[1.01] hover:shadow-md"
+            className="facet-hierarchy-child border-border/40 bg-card/40 flex flex-col justify-between rounded-xl border p-4 shadow-sm backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.01] hover:shadow-md"
           >
             {/* Header info */}
             <div className="flex items-start justify-between gap-3">

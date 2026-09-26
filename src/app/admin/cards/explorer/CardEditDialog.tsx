@@ -88,7 +88,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
               Live Real-Time Card Preview
             </div>
             {livePreviewCard && (
-              <div className="scale-90 transition-all sm:scale-100">
+              <div className="scale-90 transition-[color,background-color,border-color,box-shadow,opacity,transform] sm:scale-100">
                 <CardDisplay card={livePreviewCard} size="md" />
               </div>
             )}
@@ -230,7 +230,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
               <button
                 type="button"
                 onClick={() => setEditIsRetired(!editIsRetired)}
-                className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${
+                className={`rounded-full px-3 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   editIsRetired
                     ? "border border-rose-500/30 bg-rose-500/20 text-rose-500"
                     : "border border-emerald-500/30 bg-emerald-500/20 text-emerald-500"

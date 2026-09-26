@@ -177,7 +177,7 @@ export function MyCountrySidebarNav({
     const mobileEditButton = (
       <Link
         href="/mycountry/editor"
-        className="text-muted-foreground/60 rounded p-1 transition-all duration-150 hover:text-amber-500 active:scale-95"
+        className="text-muted-foreground/60 rounded p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:text-amber-500 active:scale-95"
         title="Edit Country Profile"
       >
         <Edit2 className="h-3 w-3 shrink-0" />
@@ -196,7 +196,7 @@ export function MyCountrySidebarNav({
             const noteCount = notifications?.[item.id] ?? 0;
             const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
             const cls = cn(
-              "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 overflow-hidden",
+              "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 overflow-hidden",
               isActive
                 ? cn(item.activeBg, "text-white shadow-sm pl-3.5")
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -286,7 +286,7 @@ export function MyCountrySidebarNav({
     const editButton = (
       <Link
         href="/mycountry/editor"
-        className="text-muted-foreground/60 rounded-md p-1.5 transition-all duration-150 hover:bg-white/10 hover:text-amber-500 active:scale-95 dark:hover:bg-white/5"
+        className="text-muted-foreground/60 rounded-md p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 hover:text-amber-500 active:scale-95 dark:hover:bg-white/5"
         title="Edit Country Profile"
       >
         <Edit2 className="h-3.5 w-3.5 shrink-0" />
@@ -304,7 +304,7 @@ export function MyCountrySidebarNav({
           const noteCount = notifications?.[item.id] ?? 0;
           const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
           const cls = cn(
-            "relative flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200 overflow-hidden",
+            "relative flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 overflow-hidden",
             isActive
               ? cn(item.activeBg, "text-white shadow-sm pl-3.5")
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -403,7 +403,7 @@ export function MyCountrySidebarNav({
   const editRailIcon = (
     <Link
       href="/mycountry/editor"
-      className="group/edit text-muted-foreground/65 hover:bg-muted relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 hover:text-amber-500"
+      className="group/edit text-muted-foreground/65 hover:bg-muted relative flex h-9 w-9 items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:text-amber-500"
       aria-label="Edit Country Profile"
     >
       <Edit2 className="h-4 w-4 transition-transform duration-150 group-hover/edit:scale-110" />
@@ -428,7 +428,7 @@ export function MyCountrySidebarNav({
         const iconEl = (
           <div
             className={cn(
-              "group/tip relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg transition-all duration-200",
+              "group/tip relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
               isActive
                 ? cn(item.activeBg, "text-white shadow-sm")
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"

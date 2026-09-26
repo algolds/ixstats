@@ -40,7 +40,7 @@ export const ComponentSearch = React.memo<ComponentSearchProps>(
     return (
       <div
         className={cn(
-          "flex h-12 w-full items-center gap-3 overflow-hidden rounded-xl border px-3 shadow-md backdrop-blur-md transition-all duration-300",
+          "flex h-12 w-full items-center gap-3 overflow-hidden rounded-xl border px-3 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           isFocused
             ? "border-cyan-500/60 bg-white/85 shadow-[0_0_18px_rgba(6,182,212,0.12)] dark:border-cyan-400/50 dark:bg-zinc-950/60 dark:shadow-[0_0_22px_rgba(34,211,238,0.2)]"
             : "border-slate-200/80 bg-white/50 hover:border-slate-300 dark:border-white/10 dark:bg-zinc-900/30 dark:hover:border-cyan-500/20"

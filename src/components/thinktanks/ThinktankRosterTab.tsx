@@ -162,7 +162,7 @@ export function ThinktankRosterTab({
             return (
               <div
                 key={member.id || member.userId}
-                className="border-border/40 bg-card/60 hover:bg-card/80 flex items-center justify-between rounded-2xl border p-3.5 shadow-sm backdrop-blur-xl transition-all duration-150 hover:border-emerald-500/30 dark:border-white/10 dark:bg-white/[0.02]"
+                className="border-border/40 bg-card/60 hover:bg-card/80 flex items-center justify-between rounded-2xl border p-3.5 shadow-sm backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-emerald-500/30 dark:border-white/10 dark:bg-white/[0.02]"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   {/* Avatar / Flag Icon */}

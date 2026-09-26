@@ -178,7 +178,7 @@ export default function SaveControls() {
             <button
               onClick={handleAttach}
               disabled={attachMutation.isPending}
-              className="h-9 rounded-lg bg-indigo-600 px-4 font-bold text-zinc-100 transition-all hover:bg-indigo-700 disabled:bg-zinc-800"
+              className="h-9 rounded-lg bg-indigo-600 px-4 font-bold text-zinc-100 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-indigo-700 disabled:bg-zinc-800"
             >
               {attachMutation.isPending ? "Attaching..." : "🔗 Attach to Map"}
             </button>
@@ -189,7 +189,7 @@ export default function SaveControls() {
             <button
               onClick={handlePublishToggle}
               disabled={isPublishing}
-              className={`h-9 rounded-lg px-4 font-bold transition-all ${
+              className={`h-9 rounded-lg px-4 font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 currentAchievement?.isPublished
                   ? "border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20"
                   : "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
@@ -203,7 +203,7 @@ export default function SaveControls() {
           <button
             onClick={handleSave}
             disabled={saveMutation.isPending}
-            className="h-9 rounded-lg bg-amber-500 px-4 font-bold text-zinc-950 transition-all hover:bg-amber-600 disabled:bg-zinc-800"
+            className="h-9 rounded-lg bg-amber-500 px-4 font-bold text-zinc-950 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-600 disabled:bg-zinc-800"
           >
             {saveMutation.isPending ? "Saving..." : "💾 Save Changes"}
           </button>
@@ -211,7 +211,7 @@ export default function SaveControls() {
           {/* Export Button */}
           <button
             onClick={() => setIsExportOpen(true)}
-            className="h-9 rounded-lg border border-white/10 px-4 font-bold text-zinc-300 transition-all hover:bg-white/5"
+            className="h-9 rounded-lg border border-white/10 px-4 font-bold text-zinc-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5"
           >
             📤 Export
           </button>

@@ -120,7 +120,7 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
                       key={suggestion.id}
                       type="button"
                       onClick={() => handleValueChange(suggestion.value)}
-                      className="rounded-md border border-border/50 bg-background/80 px-2 py-0.5 text-xs hover:bg-accent active:scale-95 transition-all"
+                      className="rounded-md border border-border/50 bg-background/80 px-2 py-0.5 text-xs hover:bg-accent active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     >
                       {suggestion.value}
                     </button>

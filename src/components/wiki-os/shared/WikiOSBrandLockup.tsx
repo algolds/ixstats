@@ -33,7 +33,7 @@ export function WikiOSBrandLockup({
             "relative flex items-center justify-center overflow-hidden rounded-2xl border border-white/15 dark:border-white/10",
             "bg-gradient-to-b from-white/90 via-white/70 to-white/50 dark:from-zinc-800/80 dark:via-zinc-900/80 dark:to-black/80",
             "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_8px_24px_rgba(0,0,0,0.4)]",
-            "backdrop-blur-xl transition-all duration-300 ease-out group-hover:scale-105 group-active:scale-95",
+            "backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out group-hover:scale-105 group-active:scale-95",
             isCompact ? "h-9 w-9 rounded-xl" : "h-11 w-11 rounded-2xl"
           )}
         >
@@ -91,7 +91,7 @@ export function WikiOSBrandLockup({
       <div className="mb-1 flex items-center justify-center">
         <IxWikiWordmark
           size="2xl"
-          className="leading-none transition-all duration-300 group-hover:brightness-110"
+          className="leading-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:brightness-110"
         />
       </div>
 

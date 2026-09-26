@@ -178,7 +178,7 @@ export function CalculationEditor() {
                   setSelectedModule(module);
                   setIsEditing(false);
                 }}
-                className={`flex w-full items-start gap-2.5 rounded-xl p-2.5 text-left transition-all active:scale-[0.98] ${
+                className={`flex w-full items-start gap-2.5 rounded-xl p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                   isSelected
                     ? "border-primary/40 bg-primary/10 text-foreground border font-semibold"
                     : "text-muted-foreground hover:text-foreground border border-transparent hover:bg-white/5"

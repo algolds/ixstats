@@ -222,7 +222,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
                 onClick={handleRefresh}
                 disabled={isLoading}
                 size="sm"
-                className="border border-white/30 bg-white/10 text-white transition-all duration-150 hover:bg-white/20 active:scale-95"
+                className="border border-white/30 bg-white/10 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/20 active:scale-95"
               >
                 <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
                 Refresh All

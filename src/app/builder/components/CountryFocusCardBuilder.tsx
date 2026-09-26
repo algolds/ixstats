@@ -109,7 +109,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
         >
           <div
             className={cn(
-              "relative h-full w-full overflow-hidden rounded-xl border transition-all duration-200 ease-out",
+              "relative h-full w-full overflow-hidden rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
               "shadow-md shadow-black/10 dark:shadow-black/35",
               "group-hover:shadow-2xl group-hover:shadow-black/25 group-hover:brightness-105 group-hover:saturate-110 dark:group-hover:shadow-black/60",
               isSelected
@@ -204,7 +204,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                         e.stopPropagation();
                         onConfirmSelect?.(country.id);
                       }}
-                      className="flex-1 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 py-1.5 px-2 text-xs font-bold text-foreground shadow-md shadow-amber-500/20 transition-all hover:from-amber-400 hover:to-yellow-400 active:scale-[0.96] cursor-pointer"
+                      className="flex-1 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 py-1.5 px-2 text-xs font-bold text-foreground shadow-md shadow-amber-500/20 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-amber-400 hover:to-yellow-400 active:scale-[0.96] cursor-pointer"
                       data-cuelume-press
                     >
                       Yes →

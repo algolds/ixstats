@@ -228,7 +228,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
 
         {/* ─── Unified Search & Filter Island ─── */}
         {!isParsing && !isParsed && (
-          <div className="border-border/70 bg-card/85 relative w-full rounded-2xl border p-2 sm:p-2.5 shadow-lg backdrop-blur-md transition-all">
+          <div className="border-border/70 bg-card/85 relative w-full rounded-2xl border p-2 sm:p-2.5 shadow-lg backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]">
             <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
               {/* Left Group: Wiki Source Selector + Search Input */}
               <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -238,7 +238,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                     <button
                       type="button"
                       data-cuelume-press
-                      className="hover:bg-accent/50 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-border/50 bg-background/60 px-2.5 py-1.5 text-xs font-semibold text-foreground transition-all active:scale-[0.97] shadow-xs"
+                      className="hover:bg-accent/50 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-border/50 bg-background/60 px-2.5 py-1.5 text-xs font-semibold text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97] shadow-xs"
                       title="Switch Wiki Source"
                     >
                       <img
@@ -347,7 +347,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                         }}
                         data-cuelume-press
                         className={cn(
-                          "relative rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150 active:scale-[0.97] cursor-pointer",
+                          "relative rounded-md px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] cursor-pointer",
                           isSelected
                             ? "bg-card text-foreground font-semibold shadow-xs border border-border/60"
                             : "text-muted-foreground hover:text-foreground"
@@ -366,7 +366,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                       type="button"
                       data-cuelume-press
                       className={cn(
-                        "flex h-7 sm:h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-all duration-150 active:scale-95 cursor-pointer shadow-xs",
+                        "flex h-7 sm:h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95 cursor-pointer shadow-xs",
                         sortOption !== "default"
                           ? "border-amber-500/40 bg-amber-500/15 text-amber-400 font-semibold"
                           : "border-border/50 bg-background/50 text-muted-foreground hover:border-border/70 hover:bg-background/80 hover:text-foreground"
@@ -515,7 +515,7 @@ function SearchResultItemInline({
       onClick={onSelect}
       onFocus={onFocus}
       className={cn(
-        "group flex cursor-pointer items-start gap-3 rounded-xl border p-2.5 text-left transition-all duration-150 active:scale-[0.98]",
+        "group flex cursor-pointer items-start gap-3 rounded-xl border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
         isFocused && "ring-2 ring-blue-500/50",
         isSelected
           ? "border-blue-500/40 bg-blue-500/10"

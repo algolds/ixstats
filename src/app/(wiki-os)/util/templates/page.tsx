@@ -147,7 +147,7 @@ export default function WikiTemplatesPage() {
                   data-cuelume-press="soft"
                   data-cuelume-hover="tick"
                   onClick={() => setActiveCategory(c.id)}
-                  className={`cursor-pointer rounded-xl px-3 py-1 text-xs font-semibold transition-all active:scale-[0.98] ${
+                  className={`cursor-pointer rounded-xl px-3 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                     activeCategory === c.id
                       ? "bg-wiki/20 text-wiki border-wiki/30 border font-bold shadow-xs"
                       : "bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent"
@@ -180,7 +180,7 @@ export default function WikiTemplatesPage() {
                   data-cuelume-press="soft"
                   data-cuelume-hover="tick"
                   onClick={() => setSelectedTemplateName(tmpl.name)}
-                  className={`flex w-full cursor-pointer flex-col gap-1 rounded-2xl px-3.5 py-3 text-left text-xs transition-all active:scale-[0.98] ${
+                  className={`flex w-full cursor-pointer flex-col gap-1 rounded-2xl px-3.5 py-3 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                     selectedTemplateName.toLowerCase() === tmpl.name.toLowerCase()
                       ? "bg-wiki/15 border-wiki/30 text-foreground border font-semibold shadow-sm"
                       : "hover:bg-muted/50 text-muted-foreground hover:text-foreground border border-transparent"
@@ -232,7 +232,7 @@ export default function WikiTemplatesPage() {
                       type="button"
                       data-cuelume-press="tap"
                       onClick={() => setViewMode("visual")}
-                      className={`relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all active:scale-[0.98] ${
+                      className={`relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                         viewMode === "visual"
                           ? "font-bold text-black shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -253,7 +253,7 @@ export default function WikiTemplatesPage() {
                       type="button"
                       data-cuelume-press="tap"
                       onClick={() => setViewMode("schema")}
-                      className={`relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all active:scale-[0.98] ${
+                      className={`relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                         viewMode === "schema"
                           ? "font-bold text-black shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -274,7 +274,7 @@ export default function WikiTemplatesPage() {
                       type="button"
                       data-cuelume-press="tap"
                       onClick={() => setViewMode("wikitext")}
-                      className={`relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all active:scale-[0.98] ${
+                      className={`relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                         viewMode === "wikitext"
                           ? "font-bold text-black shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -296,7 +296,7 @@ export default function WikiTemplatesPage() {
                     type="button"
                     data-cuelume-press="tap"
                     onClick={handleCopy}
-                    className="border-border/60 bg-secondary/80 text-foreground hover:bg-secondary inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold shadow-xs transition-all active:scale-[0.98]"
+                    className="border-border/60 bg-secondary/80 text-foreground hover:bg-secondary inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   >
                     {copied ? (
                       <Check className="h-3.5 w-3.5 text-emerald-400" />
@@ -326,7 +326,7 @@ export default function WikiTemplatesPage() {
                         type="button"
                         data-cuelume-press="soft"
                         onClick={() => setSelectedVariantId(v.id)}
-                        className={`cursor-pointer rounded-xl px-3 py-1 text-xs font-semibold transition-all active:scale-[0.98] ${
+                        className={`cursor-pointer rounded-xl px-3 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                           selectedVariantId === v.id
                             ? "bg-wiki font-bold text-black shadow-md"
                             : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"

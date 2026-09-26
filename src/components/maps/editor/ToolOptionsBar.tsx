@@ -165,7 +165,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
 
   if (mode === "split-subdivision") {
     return (
-      <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-all duration-200 ease-out">
+      <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out">
         <ToolLabel icon={Scissors} label="Split Subdivision" />
         <span className="text-muted-foreground text-xs">
           Click on the map to draw a split-line slicing through the subdivision.
@@ -191,7 +191,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
   }
 
   return (
-    <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-all duration-200 ease-out">
+    <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out">
       {/* ── Auto-Create Cities button when gaps/empty highlighting is active ── */}
       {props.showGaps &&
         props.emptyRegionsCount! > 0 &&

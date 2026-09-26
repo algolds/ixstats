@@ -193,7 +193,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
             <Link
               key={country.id}
               href={createUrl(`/countries/${country.slug}`)}
-              className="hover:bg-muted/50 group flex items-center gap-4 rounded-lg border p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
+              className="hover:bg-muted/50 group flex items-center gap-4 rounded-lg border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.02] hover:shadow-lg"
             >
               <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-full">
                 {getRankIcon(rank)}
@@ -238,7 +238,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
 
   return (
     <Card
-      className="group/card transition-all duration-300 hover:scale-[1.01] hover:shadow-xl"
+      className="group/card transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.01] hover:shadow-xl"
       style={{
         backdropFilter: "blur(8px)",
         WebkitBackdropFilter: "blur(8px)",

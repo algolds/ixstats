@@ -229,13 +229,13 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
               <button
                 type="button"
                 onClick={onClose}
-                className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-all active:scale-[0.97]"
+                className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-500 active:scale-[0.97]"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500 active:scale-[0.97]"
               >
                 Insert Template
               </button>

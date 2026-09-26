@@ -40,7 +40,7 @@ export function DiplomaticScenarioCard({
     : 0;
 
   return (
-    <Card className="facet-card-child flex flex-col justify-between p-4 transition-all hover:border-[--intel-gold]/50">
+    <Card className="facet-card-child flex flex-col justify-between p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-[--intel-gold]/50">
       <div>
         {/* Header */}
         <div className="mb-3 flex items-start justify-between">

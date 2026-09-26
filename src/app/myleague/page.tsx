@@ -188,7 +188,7 @@ export default function MyLeaguePage() {
           </div>
 
           <div
-            className="group relative overflow-hidden rounded-3xl border border-border/40 bg-card/80 p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 md:p-8"
+            className="group relative overflow-hidden rounded-3xl border border-border/40 bg-card/80 p-6 shadow-2xl backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 md:p-8"
             style={
               featuredSportColors
                 ? {
@@ -282,7 +282,7 @@ export default function MyLeaguePage() {
             <button
               onClick={() => setSelectedSport("all")}
               className={cn(
-                "flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition-all outline-none select-none active:scale-[0.98]",
+                "flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none select-none active:scale-[0.98]",
                 selectedSport === "all"
                   ? "border-foreground bg-foreground text-background shadow-md"
                   : "border-border/60 bg-card/40 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
@@ -295,7 +295,7 @@ export default function MyLeaguePage() {
                 key={sport}
                 onClick={() => setSelectedSport(sport)}
                 className={cn(
-                  "flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition-all outline-none select-none active:scale-[0.98]",
+                  "flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none select-none active:scale-[0.98]",
                   selectedSport === sport
                     ? "border-foreground bg-foreground text-background shadow-md"
                     : "border-border/60 bg-card/40 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
@@ -379,7 +379,7 @@ export default function MyLeaguePage() {
                   >
                     <div
                       onClick={() => router.push(withBasePath(`/myleague/${league.id}`))}
-                      className="group flex h-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-border/40 bg-card/60 shadow-md backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-border hover:shadow-xl active:scale-[0.98]"
+                      className="group flex h-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-border/40 bg-card/60 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-1 hover:border-border hover:shadow-xl active:scale-[0.98]"
                     >
                       {/* Image Banner */}
                       <div className="relative h-40 overflow-hidden bg-muted">

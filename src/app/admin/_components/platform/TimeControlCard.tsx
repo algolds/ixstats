@@ -213,7 +213,7 @@ export function TimeControlCard({
                 size="sm"
                 onClick={() => onTimeMultiplierChange(preset.value)}
                 className={cn(
-                  "flex h-9 items-center justify-center gap-1.5 text-xs font-semibold transition-all duration-200 hover:scale-102",
+                  "flex h-9 items-center justify-center gap-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-102",
                   isSelected ? "bg-primary/10 border-primary/30 text-primary" : preset.color
                 )}
               >
@@ -226,7 +226,7 @@ export function TimeControlCard({
             variant="outline"
             size="sm"
             onClick={onResetToRealTime}
-            className="border-border/30 bg-muted/20 text-foreground hover:bg-muted/30 col-span-2 flex h-9 items-center justify-center gap-1.5 text-xs font-semibold transition-all duration-200 hover:scale-102 sm:col-span-1"
+            className="border-border/30 bg-muted/20 text-foreground hover:bg-muted/30 col-span-2 flex h-9 items-center justify-center gap-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-102 sm:col-span-1"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>Reset Flow</span>
@@ -252,7 +252,7 @@ export function TimeControlCard({
                       size="sm"
                       disabled={isPast}
                       onClick={() => handleJumpToYear(year)}
-                      className="border-border/30 bg-card/20 hover:bg-muted/20 flex h-9 items-center justify-center gap-1 text-xs font-semibold transition-all duration-200 hover:scale-102"
+                      className="border-border/30 bg-card/20 hover:bg-muted/20 flex h-9 items-center justify-center gap-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-102"
                     >
                       <Calendar className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                       <span>{year}</span>
@@ -307,7 +307,7 @@ export function TimeControlCard({
               <Button
                 onClick={onSetCustomTime}
                 disabled={!customDate || !customTime || setTimePending}
-                className="h-10 w-full text-xs font-bold transition-all duration-250 hover:scale-[1.01]"
+                className="h-10 w-full text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-250 hover:scale-[1.01]"
               >
                 {setTimePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {setTimePending ? "Setting..." : "Apply Custom Time"}

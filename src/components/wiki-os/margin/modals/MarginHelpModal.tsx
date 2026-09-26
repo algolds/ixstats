@@ -93,7 +93,7 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
                   soundEffects.release();
                   onClose();
                 }}
-                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] text-[var(--wikios-text-dim)] shadow-xs transition-all hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] text-[var(--wikios-text-dim)] shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
                 title="Close"
               >
                 <X className="h-4 w-4" />
@@ -187,7 +187,7 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
                   soundEffects.press();
                   onClose();
                 }}
-                className="bg-margin-accent hover:bg-margin-accent/90 cursor-pointer rounded-xl px-5 py-2 text-xs font-bold text-stone-950 shadow-md transition-all active:scale-95"
+                className="bg-margin-accent hover:bg-margin-accent/90 cursor-pointer rounded-xl px-5 py-2 text-xs font-bold text-stone-950 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
               >
                 Done
               </button>

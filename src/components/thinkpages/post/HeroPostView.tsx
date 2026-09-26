@@ -105,7 +105,7 @@ export function HeroPostView({
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="group border-border/60 bg-card/85 hover:border-border hover:bg-card/95 relative space-y-4 overflow-hidden rounded-2xl border p-5 shadow-sm backdrop-blur-2xl transition-all duration-200 hover:shadow-md"
+      className="group border-border/60 bg-card/85 hover:border-border hover:bg-card/95 relative space-y-4 overflow-hidden rounded-2xl border p-5 shadow-sm backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-md"
     >
       {/* Header section */}
       <div className="flex items-center justify-between">

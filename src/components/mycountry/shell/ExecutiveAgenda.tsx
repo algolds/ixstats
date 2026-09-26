@@ -356,12 +356,12 @@ function ExecutiveAgendaComponent({
                     transition={{ type: "spring", stiffness: 450, damping: 30, delay: idx * 0.03 }}
                     onClick={() => setSelectedEvent(item)}
                     className={cn(
-                      "group relative flex cursor-pointer flex-col items-start justify-between gap-3 rounded-xl border p-3.5 shadow-xs backdrop-blur-md transition-all active:scale-[0.985] sm:flex-row sm:items-center",
+                      "group relative flex cursor-pointer flex-col items-start justify-between gap-3 rounded-xl border p-3.5 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.985] sm:flex-row sm:items-center",
                       item.accentCls
                     )}
                   >
                     <div className="flex min-w-0 flex-1 items-start gap-3.5">
-                      <div className="border-border/60 bg-card/60 mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border shadow-inner transition-all group-hover:scale-105 group-hover:border-amber-500/40 group-hover:bg-amber-500/15 group-hover:text-amber-600 dark:border-white/10 dark:bg-white/5 dark:group-hover:text-amber-400">
+                      <div className="border-border/60 bg-card/60 mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border shadow-inner transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:scale-105 group-hover:border-amber-500/40 group-hover:bg-amber-500/15 group-hover:text-amber-600 dark:border-white/10 dark:bg-white/5 dark:group-hover:text-amber-400">
                         <Icon className="h-4.5 w-4.5 shrink-0" />
                       </div>
                       <div className="flex min-w-0 flex-col space-y-0.5 text-left">
@@ -394,7 +394,7 @@ function ExecutiveAgendaComponent({
                         e.stopPropagation();
                         setSelectedEvent(item);
                       }}
-                      className="border-border/80 bg-card/80 text-foreground flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold shadow-xs transition-all group-hover:border-amber-500/50 group-hover:bg-amber-500/20 group-hover:text-amber-950 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:group-hover:text-amber-200"
+                      className="border-border/80 bg-card/80 text-foreground flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:border-amber-500/50 group-hover:bg-amber-500/20 group-hover:text-amber-950 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:group-hover:text-amber-200"
                     >
                       <span>Action</span>
                       <ArrowUpRight className="h-3 w-3 opacity-70 transition-opacity group-hover:opacity-100" />

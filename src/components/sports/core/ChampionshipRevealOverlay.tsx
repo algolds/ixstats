@@ -139,7 +139,7 @@ export function ChampionshipRevealOverlay({
               <Button
                 onClick={onClose}
                 data-cuelume-press="subtle"
-                className="rounded-xl border border-amber-500/40 bg-amber-500 text-black font-bold px-8 py-2.5 shadow-lg hover:bg-amber-400 active:scale-[0.98] transition-all cursor-pointer"
+                className="rounded-xl border border-amber-500/40 bg-amber-500 text-black font-bold px-8 py-2.5 shadow-lg hover:bg-amber-400 active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
               >
                 Continue Campaign
               </Button>

@@ -82,7 +82,7 @@ export function StateStructureTree({
           return (
             <div
               key={i}
-              className="flex flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md transition-all duration-150 hover:border-white/20 hover:bg-white/[0.06]"
+              className="flex flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-white/20 hover:bg-white/[0.06]"
             >
               <div className="space-y-3">
                 <div className="flex items-center gap-2.5">
