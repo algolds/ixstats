@@ -142,7 +142,10 @@ export const createRateLimitMiddleware = (options: RateLimitOptions) => {
     const identifier = ctx.rateLimitIdentifier;
     const namespace = options.namespace || "default";
 
-    const result = await rateLimiter.check(identifier, namespace);
+    const result = await rateLimiter.check(identifier, namespace, {
+      maxRequests: options.max,
+      windowMs: options.windowMs,
+    });
 
     if (!result.success) {
       console.warn(
@@ -426,8 +429,11 @@ export const readOnlyRateLimit = createRateLimitMiddleware({
   namespace: "queries",
 });
 
+// Until plan 340 the limiter ignored per-procedure limits and every namespace got the env default
+// (100/min). Keep that effective ceiling for the 49 public procedures on this tier rather than
+// silently tightening it to the 30/min that was declared but never enforced.
 export const publicRateLimit = createRateLimitMiddleware({
-  max: 30,
+  max: 100,
   windowMs: 60000,
   namespace: "public",
 });

@@ -153,7 +153,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
             homeScore: input.homeScore,
             awayScore: input.awayScore,
             status: "completed",
-            resolvedIxTime: Date.now() / 1000,
+            resolvedIxTime: IxTime.getCurrentIxTime(),
           },
         });
 
