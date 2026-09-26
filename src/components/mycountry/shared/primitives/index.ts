@@ -8,9 +8,6 @@ export { CountryDataProvider, CountryDataContext, useCountryData } from "./Count
 
 // Tab animation primitives
 export {
-  AnimatedTabContent,
-  AnimatedTabTrigger,
-  TabIndicator,
   tabVariants,
   tabFadeVariants,
   tabSpring,
@@ -40,12 +37,6 @@ export {
   QuickSectorGrid,
   type SectorData,
   type SectorBreakdownCardProps,
-  // Policy badge components
-  PolicyBadgeGrid,
-  createPoliciesFromSpending,
-  defaultPolicies,
-  type PolicyBadge,
-  type PolicyBadgeGridProps,
   // Stat gauge components
   StatGauge,
   StatGaugeGrid,
@@ -54,11 +45,6 @@ export {
   type StatGaugeGridProps,
   type DistributionSegment,
   type DistributionBarProps,
-  // Interactive metric components
-  InteractiveMetric,
-  MetricTooltip,
-  AnimatedValue,
-  type InteractiveMetricProps,
 } from "./tabs";
 
 // Tab hero banner

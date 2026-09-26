@@ -3,9 +3,7 @@
 
 // Core Input Primitives
 export { EnhancedNumberInput } from "./EnhancedNumberInput";
-export { EnhancedSlider } from "./EnhancedSlider";
 export { SliderWithDirectInput } from "./SliderWithDirectInput";
-export { EnhancedToggle } from "./EnhancedToggle";
 export { GlassSelectBox } from "./GlassSelectBox";
 
 // Composite Components

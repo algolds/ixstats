@@ -4,7 +4,6 @@ export type { FacetTabItem, FacetTabsProps } from "./tabs";
 // Re-export all swipeable components
 export { SwipeableRow, SwipeableGroup, SwipeActionButton } from "./swipeable/SwipeableRow";
 export { useSwipePhysics } from "./swipeable/useSwipePhysics";
-export { useSwipeableDI } from "./swipeable/useSwipeableDI";
 export type {
   SwipeableRowProps,
   SwipeAction,

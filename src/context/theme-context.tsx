@@ -430,35 +430,3 @@ export const themeConfig = {
     "--shadow-lg": "0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2)",
   },
 } as const;
-
-// Hook to get current theme values
-export function useThemeValues() {
-  const { effectiveTheme } = useTheme();
-  return themeConfig[effectiveTheme];
-}
-export function useStatusColors() {
-  return {
-    online: "var(--color-success)",
-    offline: "var(--color-error)",
-    warning: "var(--color-warning)",
-    info: "var(--color-info)",
-  };
-}
-
-export function useChartTheme() {
-  return {
-    background: "var(--color-bg-secondary)",
-    gridColor: "var(--color-border-primary)",
-    textColor: "var(--color-text-muted)",
-    axisColor: "var(--color-border-secondary)",
-    tooltipBg: "var(--color-surface-blur)",
-    colors: [
-      "var(--color-chart-1)",
-      "var(--color-chart-2)",
-      "var(--color-chart-3)",
-      "var(--color-chart-4)",
-      "var(--color-chart-5)",
-      "var(--color-chart-6)",
-    ],
-  };
-}
