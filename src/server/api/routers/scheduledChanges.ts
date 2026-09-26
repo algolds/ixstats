@@ -1,9 +1,14 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { adminProcedure, createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { StorytellerEffectType } from "~/types/ixstats";
-import { IxTime } from "~/lib/ixtime";
-import { notificationAPI } from "~/lib/notifications/api";
+import {
+  ALLOWED_FIELD_PATHS,
+  isAllowedFieldPath,
+} from "~/server/modules/scheduled-changes/effect-value";
+import {
+  applyDueScheduledChanges,
+  applyScheduledChangeForUser,
+} from "~/server/modules/scheduled-changes/service";
 
 /**
  * Scheduled Changes Router
@@ -13,62 +18,9 @@ import { notificationAPI } from "~/lib/notifications/api";
  * - next_day: Applied next IxDay (minor changes)
  * - short_term: Applied in 3-5 IxDays (medium impact)
  * - long_term: Applied in 1 IxWeek (major changes)
+ *
+ * Applying lives in `~/server/modules/scheduled-changes/service` (shared with the cron job).
  */
-
-const ALLOWED_FIELD_PATHS = [
-  "currentGdpPerCapita",
-  "currentTotalGdp",
-  "currentPopulation",
-  "adjustedGdpGrowth",
-  "populationGrowthRate",
-  "unemploymentRate",
-  "inflationRate",
-  "taxRevenueGDPPercent",
-] as const;
-
-type AllowedFieldPath = (typeof ALLOWED_FIELD_PATHS)[number];
-
-function validateFieldPath(fieldPath: string): asserts fieldPath is AllowedFieldPath {
-  if (!ALLOWED_FIELD_PATHS.includes(fieldPath as AllowedFieldPath)) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Invalid field path: "${fieldPath}". Allowed: ${ALLOWED_FIELD_PATHS.join(", ")}`,
-    });
-  }
-}
-
-const FIELD_TO_EFFECT_TYPE: Record<AllowedFieldPath, StorytellerEffectType> = {
-  currentGdpPerCapita: StorytellerEffectType.GDP_ADJUSTMENT,
-  currentTotalGdp: StorytellerEffectType.GDP_ADJUSTMENT,
-  currentPopulation: StorytellerEffectType.POPULATION_ADJUSTMENT,
-  adjustedGdpGrowth: StorytellerEffectType.GROWTH_RATE_MODIFIER,
-  populationGrowthRate: StorytellerEffectType.GROWTH_RATE_MODIFIER,
-  unemploymentRate: StorytellerEffectType.ECONOMIC_POLICY,
-  inflationRate: StorytellerEffectType.ECONOMIC_POLICY,
-  taxRevenueGDPPercent: StorytellerEffectType.ECONOMIC_POLICY,
-};
-
-const IMPACT_TO_DURATION: Record<string, number> = {
-  none: 0,
-  low: 1,
-  medium: 2,
-  high: 4,
-};
-
-const IMPACT_TO_PRIORITY: Record<string, "low" | "medium" | "high"> = {
-  none: "low",
-  low: "medium",
-  medium: "high",
-  high: "high",
-};
-
-async function fireAndForgetNotify(promise: Promise<unknown>): Promise<void> {
-  try {
-    await promise;
-  } catch {
-    // fire-and-forget — notification failure must not fail the operation
-  }
-}
 
 export const scheduledChangesRouter = createTRPCRouter({
   /**
@@ -142,7 +94,12 @@ export const scheduledChangesRouter = createTRPCRouter({
         });
       }
 
-      validateFieldPath(input.fieldPath);
+      if (!isAllowedFieldPath(input.fieldPath)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Invalid field path: "${input.fieldPath}". Allowed: ${ALLOWED_FIELD_PATHS.join(", ")}`,
+        });
+      }
 
       const scheduledChange = await ctx.db.scheduledChange.create({
         data: {
@@ -264,9 +221,9 @@ export const scheduledChangesRouter = createTRPCRouter({
     }),
 
   /**
-   * Get changes ready to be applied (for cron job)
+   * Get changes ready to be applied (admin/cron only — lists every user's changes)
    */
-  getChangesReadyToApply: protectedProcedure.query(async ({ ctx }) => {
+  getChangesReadyToApply: adminProcedure.query(async ({ ctx }) => {
     const now = new Date();
 
     const changes = await ctx.db.scheduledChange.findMany({
@@ -292,7 +249,7 @@ export const scheduledChangesRouter = createTRPCRouter({
   }),
 
   /**
-   * Apply a scheduled change (for cron job or manual trigger)
+   * Apply one of the caller's own due scheduled changes (manual trigger)
    */
   applyScheduledChange: protectedProcedure
     .input(
@@ -301,69 +258,15 @@ export const scheduledChangesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const change = await ctx.db.scheduledChange.findUnique({
-        where: { id: input.changeId },
-        include: { user: true },
-      });
-
-      if (!change) {
+      const userId = ctx.user?.id;
+      if (!userId) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Scheduled change not found",
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
         });
       }
 
-      if (change.status !== "pending") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Change has already been applied or cancelled",
-        });
-      }
-
-      const fieldPath = change.fieldPath;
-      validateFieldPath(fieldPath);
-      const newValue = JSON.parse(change.newValue) as number;
-      const effectType = FIELD_TO_EFFECT_TYPE[fieldPath];
-      const duration = IMPACT_TO_DURATION[change.impactLevel] ?? 0;
-      const priority = IMPACT_TO_PRIORITY[change.impactLevel] ?? "medium";
-
-      // Create StorytellerEffect (the validated, narrative-wired write path)
-      await ctx.db.storytellerEffect.create({
-        data: {
-          countryId: change.countryId,
-          ixTimeTimestamp: new Date(IxTime.getCurrentIxTime() * 1000),
-          inputType: effectType,
-          value: newValue,
-          description: `Scheduled change: ${fieldPath} → ${newValue} (impact: ${change.impactLevel})`,
-          duration,
-          isActive: true,
-          createdBy: change.userId,
-        },
-      });
-
-      // Notify the country (fire-and-forget)
-      fireAndForgetNotify(
-        notificationAPI.create({
-          title: "Scheduled Change Applied",
-          message: `${fieldPath} updated to ${newValue} (${change.impactLevel} impact)`,
-          countryId: change.countryId,
-          category: "economic",
-          type: "update",
-          priority,
-          source: "scheduled-changes",
-        })
-      );
-
-      // Mark change as applied
-      const applied = await ctx.db.scheduledChange.update({
-        where: { id: input.changeId },
-        data: {
-          status: "applied",
-          appliedAt: new Date(),
-        },
-      });
-
-      return applied;
+      return applyScheduledChangeForUser(ctx.db, { changeId: input.changeId, userId });
     }),
 
   /**
@@ -395,7 +298,7 @@ export const scheduledChangesRouter = createTRPCRouter({
           countryId: userProfile.countryId,
           userId: userProfile.id,
           status: {
-            in: ["applied", "cancelled"],
+            in: ["applied", "cancelled", "failed"],
           },
         },
         orderBy: {
@@ -408,106 +311,9 @@ export const scheduledChangesRouter = createTRPCRouter({
     }),
 
   /**
-   * Bulk apply changes for a specific IxDay (cron job endpoint)
+   * Bulk apply every user's due changes (admin/cron only)
    */
-  applyDueChanges: protectedProcedure.mutation(async ({ ctx }) => {
-    const now = new Date();
-
-    const dueChanges = await ctx.db.scheduledChange.findMany({
-      where: {
-        status: "pending",
-        scheduledFor: {
-          lte: now,
-        },
-      },
-      include: {
-        user: {
-          include: {
-            country: true,
-          },
-        },
-      },
-    });
-
-    // Filter to only valid field paths before writing
-    const validChanges = dueChanges.filter((c) =>
-      ALLOWED_FIELD_PATHS.includes(c.fieldPath as AllowedFieldPath)
-    );
-
-    const appliedChanges: string[] = [];
-    const errors: Array<{ changeId: string; error: string }> = [];
-
-    for (const change of validChanges) {
-      try {
-        const fieldPath = change.fieldPath as AllowedFieldPath;
-        const newValue = JSON.parse(change.newValue) as number;
-        const effectType = FIELD_TO_EFFECT_TYPE[fieldPath];
-        const duration = IMPACT_TO_DURATION[change.impactLevel] ?? 0;
-        const priority = IMPACT_TO_PRIORITY[change.impactLevel] ?? "medium";
-        const ixTimeTimestamp = new Date(IxTime.getCurrentIxTime() * 1000);
-
-        await ctx.db.$transaction(async (tx) => {
-          // Create StorytellerEffect
-          await tx.storytellerEffect.create({
-            data: {
-              countryId: change.countryId,
-              ixTimeTimestamp,
-              inputType: effectType,
-              value: newValue,
-              description: `Scheduled change: ${fieldPath} → ${newValue} (impact: ${change.impactLevel})`,
-              duration,
-              isActive: true,
-              createdBy: change.userId,
-            },
-          });
-
-          // Mark as applied
-          await tx.scheduledChange.update({
-            where: { id: change.id },
-            data: {
-              status: "applied",
-              appliedAt: now,
-            },
-          });
-        });
-
-        // Fire-and-forget notification
-        fireAndForgetNotify(
-          notificationAPI.create({
-            title: "Scheduled Change Applied",
-            message: `${fieldPath} updated to ${newValue} (${change.impactLevel} impact)`,
-            countryId: change.countryId,
-            category: "economic",
-            type: "update",
-            priority,
-            source: "scheduled-changes",
-          })
-        );
-
-        appliedChanges.push(change.id);
-      } catch (error) {
-        errors.push({
-          changeId: change.id,
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
-      }
-    }
-
-    // Log invalid field paths as errors without applying
-    for (const change of dueChanges) {
-      if (!ALLOWED_FIELD_PATHS.includes(change.fieldPath as AllowedFieldPath)) {
-        errors.push({
-          changeId: change.id,
-          error: `Invalid field path: "${change.fieldPath}"`,
-        });
-      }
-    }
-
-    return {
-      appliedCount: appliedChanges.length,
-      errorCount: errors.length,
-      appliedChanges,
-      errors,
-    };
+  applyDueChanges: adminProcedure.mutation(async ({ ctx }) => {
+    return applyDueScheduledChanges({ db: ctx.db });
   }),
 });

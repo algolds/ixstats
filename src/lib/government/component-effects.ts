@@ -194,7 +194,7 @@ export async function applyGovernmentComponentEffects(
   }
 
   // Build StorytellerEffect records per category
-  const now = new Date(IxTime.getCurrentIxTime() * 1000);
+  const now = new Date(IxTime.getCurrentIxTime());
   const effectsData: Array<{
     countryId: string;
     ixTimeTimestamp: Date;
