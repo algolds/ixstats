@@ -18,16 +18,10 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
-    "importHelpers": true,
+    "importHelpers": false,
     "paths": {
       "*": ["./*"],
       "~/*": ["./src/*"],
-      "~/components/*": ["./src/components/*"],
-      "~/lib/utils": ["./src/lib/utils"],
-      "~/components/ui/*": ["./src/components/ui/*"],
-      "~/lib/*": ["./src/lib/*"],
-      "~/hooks/*": ["./src/hooks/*"],
-      "~/server/*": ["./src/server/*"],
       "@/*": ["./src/*"],
       "@turf/turf": ["./node_modules/@turf/turf/index.d.ts"]
     },

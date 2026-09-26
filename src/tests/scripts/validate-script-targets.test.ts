@@ -82,8 +82,9 @@ describe("validate-script-targets", () => {
 
   test("validateScriptTargets runs cleanly on actual repository root after fixes", () => {
     const result = validateScriptTargets();
-    // We will check that validator executes without throwing and returns a result object
-    expect(result).toHaveProperty("valid");
-    expect(result).toHaveProperty("issues");
+    // Every package.json script must point at a file that exists (plan 343 guard).
+    const missing = result.issues.filter((i) => i.type === "missing_target");
+    expect(missing).toEqual([]);
+    expect(result.valid).toBe(true);
   });
 });

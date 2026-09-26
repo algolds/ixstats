@@ -41,7 +41,7 @@ export const IxnayPassportSeal = memo(function IxnayPassportSeal({
         "group relative flex shrink-0 items-center justify-center overflow-hidden select-none",
         "border border-black/[0.08] dark:border-white/[0.12]",
         "bg-black/[0.03] backdrop-blur-md dark:bg-white/[0.06]",
-        "shd-vault-recess",
+        "shadow-[inset_0_2px_6px_rgba(0,0,0,0.35)]",
         "transition-transform duration-150 ease-out active:scale-[0.96]",
         config.container,
         className

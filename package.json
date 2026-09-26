@@ -4,11 +4,9 @@
   "private": true,
   "type": "module",
   "sideEffects": [
-    "src/lib/performance-monitor.ts",
     "*.css"
   ],
   "scripts": {
-    "add-system-owner": "bun scripts/add-system-owner.ts",
     "audit:arch": "bun scripts/audit/audit-arch.ts",
     "audit:arch:update": "bun scripts/audit/audit-arch.ts --update",
     "audit:components": "bun scripts/audit/audit-components.ts",
@@ -36,7 +34,6 @@
     "clean": "rm -rf .next dist build",
     "clean:all": "bun run clean && rm -rf node_modules",
     "cleanup:logs": "bun scripts/cleanup-logs.ts",
-    "clerk:config": "echo 'See scripts/clerk-dashboard-config.md for Clerk dashboard configuration'",
     "clerk:setup": "node scripts/setup/setup-clerk-dev.js",
     "db:backup": "bun scripts/setup/backup-db.ts",
     "db:generate": "prisma generate",
@@ -55,11 +52,7 @@
     "generate:pack-assets": "bun scripts/setup/generate-pack-assets.ts",
     "db:setup": "bun run db:generate && bun run db:push && bun run db:init",
     "db:studio": "prisma studio",
-    "db:studio:prod": "prisma studio",
-    "db:sync": "./scripts/sync-prod-db.sh",
     "db:sync:check": "echo 'Checking database sync status...' && bunx prisma validate",
-    "db:sync:prod-from-dev": "./scripts/sync-dev-to-prod.sh",
-    "db:sync:prod-to-dev": "./scripts/sync-prod-to-dev.sh",
     "db:watch": "./scripts/watch-schema.sh",
     "deploy:local": "./scripts/deploy-local.sh",
     "deploy:prod": "./scripts/deploy-production.sh",
@@ -83,32 +76,16 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "fresh": "bun run clean:all && bun install && bun run db:setup",
-    "ixtwitter:backfill": "bun scripts/backfill-ixtwitter.ts",
     "lint": "oxlint src 2>&1 | tail -n 50 || echo 'Note: Pre-existing lint issues. Build still passes.'",
     "lint:fix": "oxlint --fix --fix-suggestions src",
     "lint:fix:safe": "oxlint --fix src",
     "lint:manual": "oxlint src",
     "lint:strict": "oxlint --max-warnings 2100 src",
     "lint:strict:deny": "oxlint --deny-warnings src",
-    "lint:eslint": "eslint src --cache || echo 'Note: Pre-existing lint issues. Build still passes.'",
-    "lint:eslint:strict": "eslint src --cache --max-warnings 0",
-    "load:all": "./scripts/load-testing/run-all-tests.sh",
-    "load:api": "bun scripts/load-testing/test-api-load.ts",
-    "load:api:stress": "bun scripts/load-testing/test-api-load.ts --users=200 --duration=60",
-    "load:builder": "bun scripts/load-testing/test-builder-flow.ts",
-    "load:builder:stress": "bun scripts/load-testing/test-builder-flow.ts --iterations=50 --concurrent=10",
-    "load:database": "bun scripts/load-testing/test-database-performance.ts",
-    "load:database:stress": "bun scripts/load-testing/test-database-performance.ts --concurrent=20 --iterations=100",
-    "load:messaging": "bun scripts/load-testing/test-messaging-load.ts",
-    "load:messaging:query": "bun scripts/load-testing/test-messaging-load.ts --mode=query --iterations=100",
-    "load:messaging:stress": "bun scripts/load-testing/test-messaging-load.ts --conversations=200 --messages=100 --concurrent=20 --iterations=100",
-    "load:quick": "./scripts/load-testing/run-all-tests.sh --quick",
-    "load:rate-limiting": "bun scripts/load-testing/test-rate-limiting.ts",
     "post:deploy:validate": "bun scripts/deployment/post-deployment-validation.ts",
     "postbuild": "./scripts/post-build.sh",
     "postinstall": "prisma generate && mkdir -p public/maplibre && cp node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs node_modules/maplibre-gl/dist/maplibre-gl-shared.mjs public/maplibre/",
     "prebuild": "node ./scripts/write-build-version.js",
-    "preproduction": "bun run load:all && bun run verify:production",
     "preview": "bun run build && bun run start:next",
     "redis:start": "./scripts/setup-redis.sh start",
     "redis:stats": "./scripts/setup-redis.sh stats",
@@ -131,15 +108,7 @@
     "test:unit": "bun test src/tests/lib --parallel",
     "test:watch": "jest --watch",
     "test:wiring": "bun scripts/audit/verify-live-data-wiring.ts",
-    "ts:build": "tsc --build tsconfig.lib.json tsconfig.server.json",
-    "ts:check": "tsc --noEmit -p tsconfig.check.json",
-    "ts:check:components": "tsc --noEmit -p tsconfig.components.json",
-    "ts:check:lib": "tsc --noEmit -p tsconfig.lib.json",
     "ts:check:server": "tsc --noEmit -p tsconfig.server.json",
-    "ts:diagnostics": "tsc --extendedDiagnostics --noEmit -p tsconfig.lib.json",
-    "ts:explain": "tsc --explainFiles -p tsconfig.lib.json > traces/explain-files.txt",
-    "ts:listfiles": "tsc --listFilesOnly -p tsconfig.lib.json",
-    "ts:profile": "tsc --generateCpuProfile traces/tsc-profile.cpuprofile --noEmit -p tsconfig.lib.json",
     "typecheck": "bun run typecheck:ui && bun run typecheck:server && bun run typecheck:trpc && bun run typecheck:db",
     "wiki:seed:categories": "bun scripts/sync-wikios-categories.ts",
     "wiki:clean:categories": "bun scripts/cleanup-wikios-categories.ts",
@@ -147,12 +116,8 @@
     "wiki:sync:media": "bun scripts/sync-ixwiki-media.ts",
     "wiki:sync:full": "bun scripts/sync-ixwiki-full.ts",
     "wiki:sync:live": "bun scripts/sync-ixwiki-live.ts",
-    "typecheck:components": "bun scripts/verification/run-typecheck.ts tsconfig.components.json",
     "typecheck:db": "bun scripts/verification/run-typecheck.ts tsconfig.db.json",
-    "typecheck:diag": "bun scripts/verification/run-typecheck.ts tsconfig.typecheck.json --extendedDiagnostics",
     "typecheck:file": "tsc --noEmit --skipLibCheck",
-    "typecheck:full": "bun scripts/verification/run-typecheck.ts tsconfig.typecheck.json",
-    "typecheck:quick": "bun scripts/verification/run-typecheck.ts tsconfig.check.json",
     "typecheck:server": "bun scripts/verification/run-typecheck.ts tsconfig.server.json",
     "typecheck:trpc": "bun scripts/verification/run-typecheck.ts tsconfig.trpc.json",
     "typecheck:ui": "bun scripts/verification/run-typecheck.ts tsconfig.ui.json",
@@ -180,7 +145,6 @@
     "@deck.gl/geo-layers": "^9.4.0",
     "@deck.gl/layers": "^9.4.0",
     "@deck.gl/mapbox": "^9.4.0",
-    "@nevil5249/shadowcraft": "^1.1.0",
     "@number-flow/react": "^0.5.14",
     "@prisma/client": "^6.19.3",
     "@radix-ui/react-accordion": "^1.2.20",
@@ -202,7 +166,6 @@
     "@radix-ui/react-tooltip": "^1.2.16",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tanstack/react-query": "^5.101.4",
-    "@tanstack/react-table": "^8.21.3",
     "@trpc/client": "^11.18.0",
     "@trpc/react-query": "^11.18.0",
     "@trpc/server": "^11.18.0",
@@ -214,7 +177,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "country-flag-icons": "^1.6.20",
     "cuelume": "^0.2.2",
     "d3-delaunay": "^6.0.4",
     "date-fns": "^4.4.0",
@@ -232,7 +194,6 @@
     "react-virtuoso": "^4.18.12",
     "recharts": "^3.10.1",
     "remark-gfm": "^4.0.1",
-    "shiki": "^4.4.3",
     "slate": "0.124.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
@@ -243,45 +204,36 @@
     "topojson-client": "^3.1.0",
     "topojson-server": "^3.0.1",
     "topojson-simplify": "^3.0.3",
-    "tslib": "^2.8.1",
     "ws": "^8.21.3",
     "zod": "^4.4.3",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.6",
-    "@oxlint/migrate": "^1.80.0",
     "@swc/core": "^1.16.1",
     "@swc/jest": "^0.2.39",
     "@tailwindcss/postcss": "^4.3.3",
-    "@tanstack/eslint-plugin-query": "^5.101.4",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.10.0",
     "@testing-library/react": "^16.3.2",
-    "@types/dompurify": "^3.2.0",
+    "@types/geojson": "^7946.0.16",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.9.5",
     "@types/papaparse": "^5.5.2",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@types/ws": "^8.18.1",
-    "eslint": "10.8.1",
-    "eslint-config-next": "16.3.6",
-    "eslint-plugin-unused-imports": "^4.4.1",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "mysql2": "^3.24.2",
+    "node-fetch-native": "^1.6.7",
     "oxlint": "^1.80.0",
-    "playwright": "^1.62.1",
     "postcss": "^8.5.26",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.7.4",
     "prisma": "^6.19.3",
-    "shadcn": "^4.18.0",
     "tailwindcss": "^4.3.3",
     "ts-morph": "^28.0.0",
-    "typescript": "^7.0.2",
-    "typescript-eslint": "^8.67.0"
+    "typescript": "^7.0.2"
   },
   "overrides": {
     "@clerk/clerk-react": "^5.61.8",
@@ -298,9 +250,6 @@
     "yaml": "^2.7.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4"
-  },
-  "ct3aMetadata": {
-    "initVersion": "7.39.3"
   },
   "packageManager": "bun@1.4.0",
   "engines": {
@@ -349,7 +298,7 @@
       "^superjson$": "<rootDir>/jest-mocks/superjson.ts"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(@t3-oss|zod|node-fetch|d3-delaunay|delaunator|robust-predicates)/)"
+      "node_modules/(?!(@t3-oss|zod|d3-delaunay|delaunator|robust-predicates)/)"
     ],
     "transform": {
       "^.+\\.(t|j)sx?$": [
@@ -387,16 +336,5 @@
     "plugins": [
       "prettier-plugin-tailwindcss"
     ]
-  },
-  "eslintConfig": {
-    "extends": [
-      "next/core-web-vitals",
-      "@typescript-eslint/recommended"
-    ],
-    "rules": {
-      "@typescript-eslint/no-unused-vars": "warn",
-      "@typescript-eslint/no-explicit-any": "warn",
-      "prefer-const": "warn"
-    }
   }
 }

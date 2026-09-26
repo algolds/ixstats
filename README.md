@@ -288,7 +288,6 @@ bun run audit:arch             # Architecture guard: enforces ≤700L ceilings &
 bun run format:write           # Format TypeScript, TSX, and CSS with Prettier + Tailwind plugin
 bun run lint                   # Run ESLint with cache
 bun run db:studio              # Launch Prisma Studio GUI
-bun run db:sync                # Sync production database snapshot to local dev
 ```
 
 ---

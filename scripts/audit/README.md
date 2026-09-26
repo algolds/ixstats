@@ -2,7 +2,7 @@
 
 **Last updated:** May 2026
 
-Automation under `scripts/audit` provides fast confidence in API wiring, database health, and economic calculations. Invoke these scripts via `tsx` or the corresponding bun scripts.
+Automation under `scripts/audit` provides fast confidence in API wiring, database health, and economic calculations. Invoke these scripts with `bun <path>` or the corresponding `bun run` alias.
 
 ## Script Catalog
 | Script | bun alias | Purpose |

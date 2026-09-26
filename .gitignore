@@ -52,7 +52,6 @@ prisma/*.backup-*
 # --------------------------------------------------------------------------------
 # TypeScript
 # --------------------------------------------------------------------------------
-*.tsbuildinfo
 next-env.d.ts
 .tsbuild/
 
@@ -87,7 +86,6 @@ CLAUDE.md
 arch.md
 maps.md
 plans/
-ws-backend.mjs
 c15t-backend.config.ts
 typecheck-*.log
 
@@ -103,7 +101,6 @@ functions/node_modules/
 # --------------------------------------------------------------------------------
 # Testing & Mocks
 # --------------------------------------------------------------------------------
-coverage/
 test-results/
 .jest/
 cypress/screenshots/
@@ -116,7 +113,6 @@ cypress/videos/
 *.key
 *.crt
 *.cert
-*.log
 *.bak
 *.old
 *.backup
@@ -169,25 +165,17 @@ scripts/world-roster-data.json
 # --------------------------------------------------------------------------------
 # IDE / Tool Settings
 # --------------------------------------------------------------------------------
-.claude/
-.agents/
-.superpowers/
 .antigravitycli/
 .antigravityignore
-.cursor/
 .cursorrules
-.opencode/
 .diagnostics/
 
 
 # --------------------------------------------------------------------------------
 # Specific Config Files & Local Tooling (keep on disk, not in repo)
 # --------------------------------------------------------------------------------
-c15t-backend.config.ts
 eslint.config.js
 next.config.js
-opencode.json
-skills-lock.json
 
 # --------------------------------------------------------------------------------
 # Session Data & Temp Drafts
@@ -247,5 +235,11 @@ scripts/onoma/raw/
 # --------------------------------------------------------------------------------
 # Kokoro TTS Service local caches
 # --------------------------------------------------------------------------------
-kokoro-cache/
 scripts/merge-and-cleanup.ts
+
+# regenerable pipeline output / one-off report output (audit 2026-09-23, plan 343)
+scripts/archive/geojson_dumps/
+scripts/reports/
+data/political-audit/
+scripts/*.json
+scripts/*_report.md

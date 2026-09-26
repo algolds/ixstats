@@ -1,30 +1,6 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    /* Base Options: */
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "target": "es2022",
-    "allowJs": false,
-    "resolveJsonModule": true,
-    "moduleDetection": "force",
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
-    /* Strictness */
-    "strict": true,
-    "noUncheckedIndexedAccess": false,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "checkJs": false,
-    /* Bundled projects */
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "ES2022"
-    ],
-    "noEmit": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
     "plugins": [
       {
         "name": "next"
@@ -32,8 +8,7 @@
     ],
     "incremental": true,
     "tsBuildInfoFile": ".next/cache/tsbuildinfo",
-    "importHelpers": true,
-    /* Path Aliases */
+    /* `paths` is not merged with the base config, so the app aliases are repeated here. */
     "paths": {
       "server-only": [
         "./jest-mocks/server-only.ts"
@@ -44,24 +19,6 @@
       "~/*": [
         "./src/*"
       ],
-      "~/components/*": [
-        "./src/components/*"
-      ],
-      "~/lib/utils": [
-        "./src/lib/utils"
-      ],
-      "~/components/ui/*": [
-        "./src/components/ui/*"
-      ],
-      "~/lib/*": [
-        "./src/lib/*"
-      ],
-      "~/hooks/*": [
-        "./src/hooks/*"
-      ],
-      "~/server/*": [
-        "./src/server/*"
-      ],
       "@/*": [
         "./src/*"
       ],
@@ -69,16 +26,10 @@
         "./node_modules/@turf/turf/index.d.ts"
       ]
     },
-    /* Performance Optimizations */
     "types": [
       "node",
       "jest"
-    ],
-    "assumeChangesOnlyAffectDirectDependencies": true,
-    "disableSourceOfProjectReferenceRedirect": true,
-    "skipDefaultLibCheck": true,
-    /* Disable expensive type checks */
-    "noPropertyAccessFromIndexSignature": false
+    ]
   },
   "include": [
     "src",
@@ -102,8 +53,6 @@
     "build",
     "out",
     "coverage",
-    "playwright.config.ts",
-    "jest.config.js",
     "odysseus"
   ],
   "typeAcquisition": {
