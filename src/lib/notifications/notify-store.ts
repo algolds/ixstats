@@ -1,5 +1,6 @@
 // src/lib/notifications/notify-store.ts
-// Non-hook notification dispatcher for service files, utilities, and background callbacks
+// The one toast/notification dispatcher. `useNotify()` is a thin hook over this; call it
+// directly from service files, utilities, and background callbacks.
 
 import {
   useToastQueueStore,
@@ -18,28 +19,39 @@ export interface NotifyStoreOptions {
   priority?: ToastPriority;
   category?: NotificationCategory;
   duration?: number;
+  /** Reusing an id replaces the visible toast instead of stacking a new one. */
+  id?: string;
+  /** Persist to the notification center. */
   persistent?: boolean;
   actions?: ToastAction[];
   href?: string;
   metadata?: Record<string, unknown>;
+  /** Suppress the toast banner (only add to the notification center). */
   silent?: boolean;
 }
 
 function toSeverity(priority: ToastPriority): "urgent" | "important" | "informational" {
   switch (priority) {
     case "critical":
-    case "high":
       return "urgent";
-    case "medium":
+    case "high":
       return "important";
     default:
       return "informational";
   }
 }
 
+function playToastSound(type: ToastType, priority: ToastPriority): void {
+  if (priority === "critical") soundEffects.pulse();
+  else if (type === "success") soundEffects.success();
+  else if (type === "error") soundEffects.error();
+  else if (type === "warning") soundEffects.bloom();
+  else soundEffects.chime();
+}
+
 /**
- * Dispatches notifications directly through the Zustand store.
- * Safe to call from non-component code, callbacks, or services.
+ * Shows a toast (Facet `ToastBanner` via sonner, with a cuelume cue) and, when
+ * `persistent`, adds the entry to the notification center.
  */
 export function notifyFromStore(options: NotifyStoreOptions): void {
   const {
@@ -49,6 +61,7 @@ export function notifyFromStore(options: NotifyStoreOptions): void {
     priority = "medium",
     category = "system",
     duration,
+    id,
     actions,
     silent = false,
     href,
@@ -56,36 +69,15 @@ export function notifyFromStore(options: NotifyStoreOptions): void {
     persistent = false,
   } = options;
 
-  // 1. Toast queue
   if (!silent && priority !== "low") {
-    const toastStore = useToastQueueStore.getState();
-    toastStore.enqueue({
-      title,
-      message,
-      type,
-      priority,
-      category,
-      duration,
-      actions,
-    });
-
-    if (priority === "critical") {
-      soundEffects.pulse();
-    } else if (type === "success") {
-      soundEffects.success();
-    } else if (type === "error") {
-      soundEffects.error();
-    } else if (type === "warning") {
-      soundEffects.bloom();
-    } else {
-      soundEffects.chime();
-    }
+    useToastQueueStore
+      .getState()
+      .enqueue({ id, title, message, type, priority, category, duration, actions });
+    playToastSound(type, priority);
   }
 
-  // 2. Notification store (only if persistent)
   if (persistent) {
-    const notifStore = useNotificationStore.getState();
-    void notifStore.addNotification({
+    void useNotificationStore.getState().addNotification({
       source: "user",
       title,
       message: message ?? "",
@@ -108,7 +100,7 @@ export function notifyFromStore(options: NotifyStoreOptions): void {
         deviceType: "desktop",
         screenSize: "large",
         networkQuality: "high",
-        userPreferences: {} as any,
+        userPreferences: {},
         historicalEngagement: [],
         interactionHistory: [],
         contextualFactors: {},

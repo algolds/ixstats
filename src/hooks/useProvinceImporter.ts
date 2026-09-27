@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 import type {
   ProvinceFeature,
@@ -49,6 +49,7 @@ const DEFAULT_MANUAL_TRANSFORM: ManualTransform = {
 };
 
 export function useProvinceImporter(countryId: string) {
+  const notify = useNotify();
   // ── Session State ──
   const [step, setStep] = useState<ImportStep>("upload");
   const [uploadId, setUploadId] = useState<string | null>(null);
@@ -103,10 +104,10 @@ export function useProvinceImporter(countryId: string) {
       void utils.geoCore.getCountryGeometry.invalidate();
 
       const summary = data?.created ? `${data.created} cities added/updated` : "no changes";
-      toast.success(`Cities imported (${summary})`);
+      notify.success(`Cities imported (${summary})`);
     },
     onError: (err) => {
-      toast.error(err?.message || "City import failed");
+      notify.error(err?.message || "City import failed");
     },
   });
   const commitMutation = api.geoAdmin.commitProvinceImport.useMutation({
@@ -129,12 +130,12 @@ export function useProvinceImporter(countryId: string) {
       if (data?.citiesCreated)
         parts.push(`${data.citiesCreated} cit${data.citiesCreated === 1 ? "y" : "ies"}`);
       const summary = parts.length > 0 ? parts.join(", ") : "no changes";
-      toast.success(
+      notify.success(
         data?.replaced ? `Provinces replaced (${summary})` : `Provinces imported (${summary})`
       );
     },
     onError: (err) => {
-      toast.error(err?.message || "Province import failed");
+      notify.error(err?.message || "Province import failed");
     },
   });
   const previewQuery = api.geoAdmin.getProvinceImportPreview.useQuery(

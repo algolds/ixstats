@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { create } from "zustand";
 import { toast as sonnerToast } from "sonner";
 import type { NotificationCategory } from "~/types/unified-notifications";
@@ -35,7 +36,11 @@ interface ToastQueueState {
 
 interface ToastQueueActions {
   enqueue: (
-    item: Omit<ToastQueueItem, "id" | "timestamp" | "duration"> & { duration?: number }
+    item: Omit<ToastQueueItem, "id" | "timestamp" | "duration"> & {
+      /** Reusing an id replaces the visible toast instead of stacking a new one. */
+      id?: string;
+      duration?: number;
+    }
   ) => string;
   dismiss: (id: string) => void;
   dismissAll: () => void;
@@ -45,7 +50,7 @@ interface ToastQueueActions {
 
 export type ToastQueueStore = ToastQueueState & ToastQueueActions;
 
-export type ToastCustomRenderer = (toast: ToastQueueItem, onDismiss: () => void) => unknown;
+export type ToastCustomRenderer = (toast: ToastQueueItem, onDismiss: () => void) => ReactElement;
 
 let toastRenderer: ToastCustomRenderer | null = null;
 
@@ -75,7 +80,7 @@ export const useToastQueueStore = create<ToastQueueStore>()((set, get) => ({
   maxVisible: 3,
 
   enqueue: (item) => {
-    const id = `toast-${Date.now()}-${++idCounter}`;
+    const id = item.id ?? `toast-${Date.now()}-${++idCounter}`;
     const duration = item.duration ?? DURATION_BY_PRIORITY[item.priority] ?? 5000;
 
     const toast: ToastQueueItem = {
@@ -86,16 +91,18 @@ export const useToastQueueStore = create<ToastQueueStore>()((set, get) => ({
     };
 
     set((state) => ({
-      queue: [toast, ...state.queue].slice(0, 20),
+      queue: [toast, ...state.queue.filter((t) => t.id !== id)].slice(0, 20),
     }));
 
-    if (toastRenderer) {
+    // The renderer (Facet ToastBanner) is registered by the <Toaster /> mount in ~/components/ui/toast.
+    const renderer = toastRenderer;
+    if (renderer) {
       sonnerToast.custom(
         (t) =>
-          toastRenderer!(toast, () => {
+          renderer(toast, () => {
             sonnerToast.dismiss(t);
             get().dismiss(id);
-          }) as any,
+          }),
         {
           id,
           duration: item.persistent ? Infinity : duration,
@@ -103,23 +110,6 @@ export const useToastQueueStore = create<ToastQueueStore>()((set, get) => ({
           onAutoClose: () => get().dismiss(id),
         }
       );
-    } else {
-      const sonnerMethod =
-        toast.type === "error"
-          ? sonnerToast.error
-          : toast.type === "success"
-            ? sonnerToast.success
-            : toast.type === "warning"
-              ? sonnerToast.warning
-              : sonnerToast.info;
-
-      sonnerMethod(toast.title, {
-        id,
-        description: toast.message,
-        duration: item.persistent ? Infinity : duration,
-        onDismiss: () => get().dismiss(id),
-        onAutoClose: () => get().dismiss(id),
-      });
     }
 
     return id;

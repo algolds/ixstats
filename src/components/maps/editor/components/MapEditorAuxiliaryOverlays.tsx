@@ -2,7 +2,7 @@
 
 import React, { useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { BatchActionsBar, type EditableField } from "~/components/maps/editor/BatchActionsBar";
 import { EditorDialogs } from "./EditorDialogs";
 import { EditorContextMenuWrapper } from "./EditorContextMenuWrapper";
@@ -62,6 +62,7 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
   brushTargetId,
   setBrushTargetId,
 }: MapEditorAuxiliaryOverlaysProps) {
+  const notify = useNotify();
   const { editor, importer } = state;
 
   const handleSelectFeature = useCallback((feat: EditorFeature | null) => {
@@ -88,23 +89,23 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
     const count = editor.selectedIds.size;
     try {
       await editor.bulkDeleteSelected();
-      toast.success(`Deleted ${count} features`);
+      notify.success(`Deleted ${count} features`);
     } catch {
-      toast.error("Failed to delete selected features");
+      notify.error("Failed to delete selected features");
     }
-  }, [editor]);
+  }, [editor, notify]);
 
   const handleBulkEdit = useCallback(async (field: EditableField, value: string | number) => {
     const result = await editor.bulkEditSelected(field, value);
     if (result.failCount > 0) {
-      toast.error(
+      notify.error(
         `Bulk edit: ${result.successCount} updated, ${result.failCount} failed.`
       );
     } else if (result.successCount > 0) {
-      toast.success(`Updated ${result.successCount} features`);
+      notify.success(`Updated ${result.successCount} features`);
     }
     return result;
-  }, [editor]);
+  }, [editor, notify]);
 
   const renderRightPanelContent = () => (
     <PropertiesPanelContent

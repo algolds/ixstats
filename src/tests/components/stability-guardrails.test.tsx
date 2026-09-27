@@ -7,18 +7,11 @@
 
 import { NPCPersonalitySystem } from "~/lib/diplomacy/npc-personality";
 import { nsApiClient } from "~/lib/nationstates/api-client";
-import { toast } from "sonner";
 import { renderHook } from "@testing-library/react";
 import { useWebGLErrorHandler } from "~/hooks/use-webgl-error-handler";
+import { useToastQueueStore } from "~/stores/toastQueueStore";
 
-// Mock sonner toast
-jest.mock("sonner", () => ({
-  toast: {
-    error: jest.fn(),
-    warning: jest.fn(),
-    success: jest.fn(),
-  },
-}));
+const latestToast = () => useToastQueueStore.getState().queue[0];
 
 describe("Stability Guardrails", () => {
   let warnSpy: any;
@@ -27,6 +20,7 @@ describe("Stability Guardrails", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    useToastQueueStore.setState({ queue: [] });
     warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
@@ -60,10 +54,10 @@ describe("Stability Guardrails", () => {
       expect(onWebGLError).toHaveBeenCalled();
 
       // Verify user-facing error toast was triggered
-      expect(toast.error).toHaveBeenCalledWith(
-        expect.stringContaining("Graphics rendering error detected"),
-        expect.any(Object)
-      );
+      expect(latestToast()).toMatchObject({
+        type: "error",
+        title: expect.stringContaining("Graphics rendering error detected"),
+      });
 
       // Clean up event listener
       window.removeEventListener("webgl-error", onWebGLError);
@@ -82,20 +76,20 @@ describe("Stability Guardrails", () => {
       window.dispatchEvent(contextLostEvent);
 
       expect(onContextLost).toHaveBeenCalled();
-      expect(toast.warning).toHaveBeenCalledWith(
-        expect.stringContaining("context lost"),
-        expect.any(Object)
-      );
+      expect(latestToast()).toMatchObject({
+        type: "warning",
+        title: expect.stringContaining("context lost"),
+      });
 
       // Trigger context restored
       const contextRestoredEvent = new Event("webglcontextrestored");
       window.dispatchEvent(contextRestoredEvent);
 
       expect(onContextRestored).toHaveBeenCalled();
-      expect(toast.success).toHaveBeenCalledWith(
-        expect.stringContaining("context restored successfully"),
-        expect.any(Object)
-      );
+      expect(latestToast()).toMatchObject({
+        type: "success",
+        title: expect.stringContaining("context restored successfully"),
+      });
 
       window.removeEventListener("webgl-context-lost", onContextLost);
       window.removeEventListener("webgl-context-restored", onContextRestored);

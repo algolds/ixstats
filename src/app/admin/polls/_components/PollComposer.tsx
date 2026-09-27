@@ -26,7 +26,7 @@ import {
   InfoCircle as Info,
   CheckCircle,
 } from "iconoir-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 
 interface PollComposerProps {
@@ -34,6 +34,7 @@ interface PollComposerProps {
 }
 
 export function PollComposer({ onSuccess }: PollComposerProps) {
+  const notify = useNotify();
   // Wizard Step State
   const [step, setStep] = useState(1);
 
@@ -51,7 +52,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
   const createMutation = api.polls.create.useMutation({
     onSuccess: () => {
-      toast.success("Poll created and broadcasted successfully!");
+      notify.success("Poll created and broadcasted successfully!");
       if (onSuccess) onSuccess();
       // Reset form
       setQuestion("");
@@ -65,7 +66,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
       setStep(1);
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to create poll");
+      notify.error(err.message || "Failed to create poll");
     },
   });
 
@@ -86,11 +87,11 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
   const nextStep = () => {
     if (step === 1 && !question.trim()) {
-      toast.error("Please enter a question or topic");
+      notify.error("Please enter a question or topic");
       return;
     }
     if (step === 2 && targetScope === "country" && !countryId) {
-      toast.error("Please select a target country");
+      notify.error("Please select a target country");
       return;
     }
     setStep((prev) => Math.min(prev + 1, 3));
@@ -104,13 +105,13 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
     e.preventDefault();
 
     if (!question.trim()) {
-      toast.error("Please enter a question");
+      notify.error("Please enter a question");
       return;
     }
 
     const filteredOptions = options.map((opt) => opt.trim()).filter((opt) => opt.length > 0);
     if (filteredOptions.length < 2) {
-      toast.error("At least 2 options are required");
+      notify.error("At least 2 options are required");
       return;
     }
 

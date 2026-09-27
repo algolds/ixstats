@@ -149,18 +149,6 @@ body:has([data-maps-page]) {
     height 300ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* Fallback card styling for direct, uncustomized Sonner toasts */
-[data-sonner-toaster].dynamic-island-toaster [data-sonner-toast]:not(:has([role="alert"])) {
-  background: var(--color-bg-secondary, rgba(24, 24, 27, 0.95)) !important;
-  border: 1px solid var(--color-border-primary, rgba(255, 255, 255, 0.1)) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
-  border-radius: 16px !important;
-  padding: 12px 16px !important;
-  color: var(--color-text-primary, #ffffff) !important;
-  font-size: 13px !important;
-  backdrop-filter: blur(16px) !important;
-}
-
 /* Custom entrance state: emerges directly from behind the Dynamic Island / Halo */
 [data-sonner-toaster].dynamic-island-toaster [data-sonner-toast][data-mounted="false"] {
   transform: translateY(-24px) scale(0.85) !important;

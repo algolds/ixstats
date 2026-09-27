@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Cut as Scissors,
   Undo as Undo2,
@@ -40,6 +40,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
   onSubmit,
   onExit,
 }: BorderEditorToolOptionsProps) {
+  const notify = useNotify();
   return (
     <div className="border-border bg-card/85 pointer-events-auto flex h-8 shrink-0 items-center justify-between border-b px-3 backdrop-blur-sm">
       {/* Left Side: Active Tool Options */}
@@ -158,11 +159,8 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
               <button
                 onClick={() => {
                   void borderActions.repair();
-                  toast("Repaired geometry spikes", {
-                    action: {
-                      label: "Undo",
-                      onClick: () => borderActions.undo(),
-                    },
+                  notify.info("Repaired geometry spikes", undefined, {
+                    actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
                   });
                 }}
                 className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors active:scale-[0.98]"
@@ -174,11 +172,8 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
               <button
                 onClick={() => {
                   void borderActions.smooth();
-                  toast("Applied Chaikin smoothing", {
-                    action: {
-                      label: "Undo",
-                      onClick: () => borderActions.undo(),
-                    },
+                  notify.info("Applied Chaikin smoothing", undefined, {
+                    actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
                   });
                 }}
                 className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors active:scale-[0.98]"
@@ -190,11 +185,8 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
               <button
                 onClick={() => {
                   void borderActions.naturalize();
-                  toast("Naturalized coastline", {
-                    action: {
-                      label: "Undo",
-                      onClick: () => borderActions.undo(),
-                    },
+                  notify.info("Naturalized coastline", undefined, {
+                    actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
                   });
                 }}
                 className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors active:scale-[0.98]"
@@ -206,11 +198,8 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
               <button
                 onClick={() => {
                   void borderActions.simplify();
-                  toast("Simplified border vertices", {
-                    action: {
-                      label: "Undo",
-                      onClick: () => borderActions.undo(),
-                    },
+                  notify.info("Simplified border vertices", undefined, {
+                    actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
                   });
                 }}
                 className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors active:scale-[0.98]"

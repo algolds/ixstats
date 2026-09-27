@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   DiceFive as Dice5,
   Check,
@@ -24,6 +24,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
   countryId,
   onClose,
 }: ProvinceGeneratorPanelProps) {
+  const notify = useNotify();
   const [count, setCount] = useState(10);
   const [seed, setSeed] = useState(42);
   const [names, setNames] = useState("");
@@ -34,7 +35,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
     onSuccess: (data) => {
       setCells(null);
       setError(null);
-      toast.success(
+      notify.success(
         `Created ${data.created} subdivisions (${data.skipped} skipped, ${data.totalCells} total cells).`
       );
     },

@@ -17,13 +17,14 @@ import {
   Send,
   SystemRestart as Loader2,
 } from "iconoir-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface PollManagerProps {
   onCreateNew: () => void;
 }
 
 export function PollManager({ onCreateNew }: PollManagerProps) {
+  const notify = useNotify();
   const { data: polls, refetch } = api.polls.list.useQuery();
   const { data: countriesData } = api.countries.getSelectList.useQuery({ limit: 250 });
 
@@ -38,30 +39,30 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
 
   const toggleActiveMutation = api.polls.toggleActive.useMutation({
     onSuccess: () => {
-      toast.success("Poll status updated successfully");
+      notify.success("Poll status updated successfully");
       void refetch();
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to update status");
+      notify.error(err.message || "Failed to update status");
     },
   });
 
   const deleteMutation = api.polls.delete.useMutation({
     onSuccess: () => {
-      toast.success("Poll deleted successfully");
+      notify.success("Poll deleted successfully");
       void refetch();
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to delete poll");
+      notify.error(err.message || "Failed to delete poll");
     },
   });
 
   const publishToDiscordMutation = api.polls.publishToDiscord.useMutation({
     onSuccess: () => {
-      toast.success("Poll announced on Discord channel!");
+      notify.success("Poll announced on Discord channel!");
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to publish to Discord");
+      notify.error(err.message || "Failed to publish to Discord");
     },
   });
 

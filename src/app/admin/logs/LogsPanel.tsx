@@ -4,7 +4,7 @@ import { useState, useDeferredValue } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { api } from "~/trpc/react";
-import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
+import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/admin/log-viewer";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
@@ -22,13 +22,14 @@ import {
   Search,
   SystemRestart as Loader2,
 } from "iconoir-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 export function LogsPanel() {
   return <DedicatedLogsPage />;
 }
 
 export default function DedicatedLogsPage() {
+  const notify = useNotify();
   usePageTitle({ title: "Admin - System Logs" });
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -68,11 +69,11 @@ export default function DedicatedLogsPage() {
 
   const clearLogsMutation = api.admin.clearSystemLogs.useMutation({
     onSuccess: () => {
-      toast.success("System logs cleared successfully");
+      notify.success("System logs cleared successfully");
       void refetch();
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to clear logs");
+      notify.error(err.message || "Failed to clear logs");
     },
   });
 

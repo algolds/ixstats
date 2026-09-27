@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { useTheme } from "~/context/theme-context";
 import { cn } from "~/lib/utils";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import { useNotify } from "~/hooks/useNotify";
 import { UnifiedGlassCommandBar } from "./headers/UnifiedGlassCommandBar";
 import { ExecutiveHome } from "./ExecutiveHome";
 import { ExecutiveConsole } from "./ExecutiveConsole";
@@ -24,12 +24,12 @@ function CommandSurfaceComponent({
 }: CommandSurfaceProps): React.JSX.Element {
   const { country } = useCountryData();
   const { compactMode } = useTheme();
+  const notify = useNotify();
   const countryId = country?.id ?? "";
 
   const [mode, setMode] = useState<CommandNavMode>("home");
   const [drill, setDrill] = useState<DrillSheetKind>(null);
   const [goal, setGoal] = useState("");
-  const [toast, setToast] = useState<string | null>(null);
 
   // Sync mode with route section: set executive mode if on executive section, or reset to home when navigating to a specific domain surface
   useEffect(() => {
@@ -87,10 +87,7 @@ function CommandSurfaceComponent({
           onDone={(msg) => {
             setMode("home");
             setGoal("");
-            if (msg) {
-              setToast(msg);
-              setTimeout(() => setToast(null), 5000);
-            }
+            if (msg) notify.success("Directive committed", msg);
           }}
         />
       ) : DOMAIN_SECTIONS.has(section) ? (
@@ -117,14 +114,6 @@ function CommandSurfaceComponent({
         countryId={countryId}
         onDeclare={declare}
       />
-
-      {/* Committed toast */}
-      {toast && (
-        <div className="border-border bg-secondary animate-in fade-in slide-in-from-bottom-2 fixed bottom-5 left-1/2 z-50 flex max-w-lg -translate-x-1/2 items-center gap-3 rounded-xl border px-4 py-3 shadow-2xl">
-          <MyCountryLogo size="sm" variant="icon-only" animated={true} />
-          <span className="text-foreground/90 text-[13px] leading-snug">{toast}</span>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   ArrowLeft,
   Map,
@@ -111,6 +111,7 @@ export const EditorHeader = React.memo(function EditorHeader({
   panelsLocked,
   setPanelsLocked,
 }: EditorHeaderProps) {
+  const notify = useNotify();
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   const resolvedCountryName = useMemo(() => {
@@ -349,11 +350,11 @@ export const EditorHeader = React.memo(function EditorHeader({
                             countryId: activeCountryId,
                             targetVerticesPerProvince: 100,
                           });
-                          toast.success(
+                          notify.success(
                             `Simplified ${result.updated}/${result.total} regions (${result.reduction}% vertex reduction)`
                           );
                         } catch (e) {
-                          toast.error(`Simplification error: ${e instanceof Error ? e.message : "Unknown"}`);
+                          notify.error(`Simplification error: ${e instanceof Error ? e.message : "Unknown"}`);
                         }
                       }}
                       disabled={simplifyAll.isPending || !activeCountryId}
@@ -450,11 +451,11 @@ export const EditorHeader = React.memo(function EditorHeader({
                               routeTypes: ["rail", "highway"],
                               clearExisting: true,
                             });
-                            toast.success(
+                            notify.success(
                               `Generated ${result.routesCreated} routes (${result.totalLengthKm} km)`
                             );
                           } catch (e) {
-                            toast.error(`Transport generation error: ${e instanceof Error ? e.message : "Unknown"}`);
+                            notify.error(`Transport generation error: ${e instanceof Error ? e.message : "Unknown"}`);
                           }
                         }}
                         disabled={generateTransport.isPending}
@@ -471,9 +472,9 @@ export const EditorHeader = React.memo(function EditorHeader({
                           setIsSettingsOpen(false);
                           try {
                             await recalculateGeo.mutateAsync({ countryId: activeCountryId });
-                            toast.success("Geographic profile recalculated successfully");
+                            notify.success("Geographic profile recalculated successfully");
                           } catch (e) {
-                            toast.error(`Recalculation error: ${e instanceof Error ? e.message : "Unknown"}`);
+                            notify.error(`Recalculation error: ${e instanceof Error ? e.message : "Unknown"}`);
                           }
                         }}
                         disabled={recalculateGeo.isPending}

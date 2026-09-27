@@ -17,7 +17,7 @@ import {
   ChunkLoadErrorBoundary,
   ChunkLoadErrorHandler,
 } from "~/components/ui/ChunkLoadErrorBoundary";
-import { ToastProvider } from "~/components/ui/toast";
+import { Toaster } from "~/components/ui/toast";
 import { withBasePath } from "~/lib/base-path";
 import { headers } from "next/headers";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
@@ -74,21 +74,20 @@ function AppContent({
             <IxTimeProvider>
               <ExecutiveNotificationProvider>
                 <WikiContextProvider>
-                  <ToastProvider>
-                    <LazyGameProviders>
-                      <WebGLErrorHandler />
-                      <MapPrefetcher />
-                      <GlobalLinkTooltips />
-                      <NavigationTransitionHandler />
-                      <CuelumeSoundProvider />
-                      <div className="flex min-h-screen flex-col">
-                        <Navigation />
-                        {!isStandalone && <SetupRedirect />}
-                        {/* Media providers + MiniPlayer live in the (wiki-os) layout (narrator only). */}
-                        <main className="flex flex-1 flex-col">{children}</main>
-                      </div>
-                    </LazyGameProviders>
-                  </ToastProvider>
+                  <LazyGameProviders>
+                    <WebGLErrorHandler />
+                    <MapPrefetcher />
+                    <GlobalLinkTooltips />
+                    <NavigationTransitionHandler />
+                    <CuelumeSoundProvider />
+                    <div className="flex min-h-screen flex-col">
+                      <Navigation />
+                      {!isStandalone && <SetupRedirect />}
+                      {/* Media providers + MiniPlayer live in the (wiki-os) layout (narrator only). */}
+                      <main className="flex flex-1 flex-col">{children}</main>
+                    </div>
+                  </LazyGameProviders>
+                  <Toaster />
                 </WikiContextProvider>
               </ExecutiveNotificationProvider>
             </IxTimeProvider>
