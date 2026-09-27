@@ -73,7 +73,7 @@ export default function UserProfilePage() {
                 <span>Unified account profile available for @{username}</span>
               </div>
               <Link
-                href={`/id/@${encodeURIComponent(username)}`}
+                href={`/@${encodeURIComponent(username)}`}
                 className="flex items-center gap-1 font-bold text-blue-400 hover:text-blue-300 hover:underline"
               >
                 <span>View Full Profile</span>

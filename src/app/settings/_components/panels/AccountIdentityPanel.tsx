@@ -38,7 +38,7 @@ import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
 import { formatMembershipTier } from "~/lib/tier-utils";
 import { soundEffects } from "~/lib/sound/cuelume";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 
 function formatRoleName(role?: string | null): string {
   if (!role) return "Member";
@@ -169,7 +169,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
     (user?.username ? user.username.replace(/_$/, "") : null) ||
     user?.username ||
     "me";
-  const passportUrl = `/id/@${passportHandle}`;
+  const passportUrl = `/@${passportHandle}`;
   const countryFactbookUrl = userProfile?.country?.slug
     ? `/countries/${userProfile.country.slug}`
     : null;

@@ -25,7 +25,7 @@ export const PassportMasthead = React.memo(function PassportMasthead({
       const url =
         typeof window !== "undefined"
           ? window.location.href
-          : `https://ixstats.com/id/@${cleanUsername}`;
+          : `https://ixstats.com/@${cleanUsername}`;
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);

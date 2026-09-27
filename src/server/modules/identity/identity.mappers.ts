@@ -157,7 +157,7 @@ export function buildHistoryEvents(sources: HistorySources): IdentityEventPayloa
       title: "Established IxStates Identity",
       description: "Registered canonical digital passport on IxStates",
       timestamp: new Date(joinedAt),
-      objectUrl: `/id/@${handle}`,
+      objectUrl: `/@${handle}`,
     });
   }
 

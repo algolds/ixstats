@@ -241,7 +241,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
           <div className="flex items-center gap-2.5">
             {status?.passportHandle && (
               <Link
-                href={`/id/@${status.passportHandle}`}
+                href={`/@${status.passportHandle}`}
                 className="facet-interactive flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-700 active:scale-95"
               >
                 <UserIcon className="h-3.5 w-3.5" />

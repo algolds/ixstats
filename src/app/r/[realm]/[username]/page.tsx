@@ -86,7 +86,7 @@ export default function RealmPassportPage({
             <Globe className="text-muted-foreground h-4 w-4" />
             <span>{realmName}</span>
           </Link>
-          <Link href={`/id/@${encodeURIComponent(handle)}`} className={LINK_CLASS}>
+          <Link href={`/@${encodeURIComponent(handle)}`} className={LINK_CLASS}>
             <span>Full Passport</span>
             <ArrowRight className="h-4 w-4" />
           </Link>

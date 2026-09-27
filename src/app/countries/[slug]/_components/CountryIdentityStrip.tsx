@@ -31,7 +31,7 @@ function realmHref(slug: string) {
 function passportHref(username: string | null | undefined, fallbackSlug: string) {
   const handle = (username || fallbackSlug || "").replace(/^@/, "").trim();
   if (!handle) return createUrl("/id");
-  return createUrl(`/id/@${handle}`);
+  return createUrl(`/@${handle}`);
 }
 
 export function CountryIdentityStrip({
@@ -97,7 +97,7 @@ export function CountryIdentityStrip({
         ·
       </span>
 
-      {/* IxnayID passport pill — links to /id/@handle */}
+      {/* IxnayID passport pill — links to /@handle */}
       {showOwner ? (
         <Link
           href={passportHref(ownerHandle, fallbackSlugForPassport)}

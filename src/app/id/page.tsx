@@ -39,7 +39,7 @@ export default function IdAccountHubPage() {
             </UserProfile.Page>
             <UserProfile.Link
               label="Public Passport"
-              url={`/id/@${username}`}
+              url={`/@${username}`}
               labelIcon={<ExternalLink className="h-4 w-4" />}
             />
           </UserProfile>

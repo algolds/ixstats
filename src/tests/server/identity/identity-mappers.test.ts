@@ -174,7 +174,7 @@ describe("buildWikiActivityFeed + buildHistoryEvents", () => {
       description: "Category: Governance · Tier: measured · Status: active",
     });
     expect(events[1]?.title).toBe('Published "Imperial Senate"');
-    expect(events[3]).toMatchObject({ identityId: "u1", objectUrl: "/id/@alex" });
+    expect(events[3]).toMatchObject({ identityId: "u1", objectUrl: "/@alex" });
   });
 });
 
