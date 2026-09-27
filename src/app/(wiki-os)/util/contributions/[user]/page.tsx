@@ -129,7 +129,7 @@ export default function ContributionsPage() {
             <div className="space-y-2">
               {contribs.map(
                 (c: {
-                  revid: number;
+                  revid: number | string;
                   title: string;
                   timestamp: string;
                   comment: string;

@@ -22,13 +22,13 @@ export default function HistoryPage() {
 
   const rawRevisions = data?.revisions ?? [];
   const mappedRevisions = rawRevisions.map((r) => ({
-    id: String(r.revid),
+    id: r.revid,
     articleId: title,
     author: r.user || "Community Contributor",
     summary: r.comment || null,
     minor: r.minor || false,
     byteSize: r.size || 0,
-    byteDelta: 0,
+    byteDelta: r.byteDelta,
     createdAt: r.timestamp || new Date().toISOString(),
   }));
 

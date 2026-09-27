@@ -34,6 +34,17 @@ interface ScrubbableRevisionTimelineProps {
   isLoading?: boolean;
 }
 
+/** Size change of a revision against its predecessor, e.g. "(+1,420)" or "(-320)". */
+function ByteDelta({ delta }: { delta?: number }) {
+  if (!delta) return null;
+  return (
+    <span className={`ml-1.5 ${delta > 0 ? "text-emerald-500" : "text-rose-500"}`}>
+      ({delta > 0 ? "+" : ""}
+      {delta.toLocaleString()})
+    </span>
+  );
+}
+
 export function ScrubbableRevisionTimeline({
   title,
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -69,12 +80,12 @@ export function ScrubbableRevisionTimeline({
 
   // Fetch full wikitext for both revisions if needed
   const { data: targetContent } = api.wikios.getRevisionContent.useQuery(
-    { revid: targetRev?.id ? parseInt(targetRev.id.replace(/^mw-/, ""), 10) : 0 },
+    { revid: targetRev?.id ?? "" },
     { enabled: !!targetRev && !targetRev.wikitext, staleTime: 300_000 }
   );
 
   const { data: compareContent } = api.wikios.getRevisionContent.useQuery(
-    { revid: compareRev?.id ? parseInt(compareRev.id.replace(/^mw-/, ""), 10) : 0 },
+    { revid: compareRev?.id ?? "" },
     { enabled: !!compareRev && !compareRev.wikitext, staleTime: 300_000 }
   );
 
@@ -209,6 +220,7 @@ export function ScrubbableRevisionTimeline({
               </span>
               <span className="text-foreground font-mono text-xs font-semibold">
                 {targetRev?.byteSize?.toLocaleString()} bytes
+                <ByteDelta delta={targetRev?.byteDelta} />
               </span>
             </div>
             <div className="text-foreground flex items-center gap-2 text-xs">
@@ -317,7 +329,7 @@ export function ScrubbableRevisionTimeline({
                 onClick={() => {
                   revertMutation.mutate({
                     title,
-                    revid: parseInt(undoTarget.id.replace(/^mw-/, ""), 10) || 0,
+                    revid: undoTarget.id,
                     summary: `Reverted to revision ${undoTarget.id} by ${undoTarget.author}`,
                   });
                 }}

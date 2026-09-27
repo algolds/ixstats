@@ -33,6 +33,7 @@ import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
 import { autocompletion, closeBrackets } from "@codemirror/autocomplete";
 
 import { wikitextHighlightPlugin, wrapSelectionCM } from "./utils/codemirror-wikitext";
+import { findSectionLine } from "~/lib/wiki-os/wikitext/section-locator";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
 import { EditorModalProvider } from "./context/EditorModalContext";
 import { getDraft } from "~/lib/wiki-os/editor/draft-store";
@@ -43,6 +44,8 @@ import { WikiEditorStatusBar } from "./components/WikiEditorStatusBar";
 
 export interface WikiSourceEditorProps {
   initialWikitext: string;
+  /** Heading text to place the cursor at and scroll to on open. */
+  initialSection?: string;
   title: string;
   onSave: (
     wikitext: string,
@@ -56,6 +59,7 @@ export interface WikiSourceEditorProps {
 
 export function WikiSourceEditor({
   initialWikitext,
+  initialSection,
   title,
   onSave,
   onCancel,
@@ -269,6 +273,16 @@ export function WikiSourceEditor({
     });
 
     viewRef.current = view;
+
+    const sectionLine = initialSection ? findSectionLine(initialWikitext, initialSection) : null;
+    if (sectionLine) {
+      const pos = view.state.doc.line(sectionLine).from;
+      view.dispatch({
+        selection: { anchor: pos },
+        effects: EditorView.scrollIntoView(pos, { y: "start" }),
+      });
+      view.focus();
+    }
 
     const text = initialWikitext;
     state.setWordCount(text.split(/\s+/).filter(Boolean).length);

@@ -23,6 +23,18 @@ export const toArticleId = (id: string): ArticleId => id as ArticleId;
 export const toRevisionId = (id: string): RevisionId => id as RevisionId;
 export const toUserId = (id: string): UserId => id as UserId;
 
+/**
+ * Public revision reference shared by history, diff and undo: the MediaWiki rev_id for
+ * revisions synced from MediaWiki, else the WikiOS revision row id (native edits have no
+ * rev_id). Row ids are cuids, so an all-digit reference is always a rev_id.
+ */
+export const toRevisionRef = (rev: { id: string; mwRevId?: number | null }): string =>
+  rev.mwRevId ? String(rev.mwRevId) : rev.id;
+
+/** Inverse of `toRevisionRef`: the lookup key for a revision reference. */
+export const parseRevisionRef = (ref: string): { mwRevId: number } | { id: string } =>
+  /^\d+$/.test(ref) ? { mwRevId: Number(ref) } : { id: ref };
+
 // ---------------------------------------------------------------------------
 // Structured Block AST
 // ---------------------------------------------------------------------------
@@ -182,6 +194,8 @@ export interface WikiArticleEntity {
 
 export interface WikiRevisionSummary {
   id: RevisionId;
+  /** MediaWiki rev_id; null for native WikiOS edits. */
+  mwRevId?: number | null;
   articleId: ArticleId;
   format: WikiContentFormat;
   summary: string | null;

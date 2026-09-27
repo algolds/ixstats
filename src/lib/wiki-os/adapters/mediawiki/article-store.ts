@@ -7,7 +7,7 @@
 
 import { db } from "~/server/db";
 import { ArticleRepository } from "../../core/article-repository";
-import { toArticleSlug, type WikiRevisionSummary } from "../../core/domain-types";
+import { toArticleSlug, toRevisionRef } from "../../core/domain-types";
 import { getArticleWikitext, getPageHistory, getRevisionWikitext, type WikiSource } from "./bridge";
 import { fetchMediaWikiPageAuthorsAndRevisions } from "./bridge/http-reader";
 import type { ArticleAuthorInfo } from "~/lib/wiki-os/types/canonical";
@@ -23,12 +23,13 @@ export interface ShadowResult {
 }
 
 export interface HistoryRevision {
-  revid: number;
-  parentid: number | null;
+  /** Revision reference accepted by getRevisionWikitext (see `toRevisionRef`). */
+  revid: string;
   timestamp: string;
   user: string;
   comment: string;
   size: number;
+  byteDelta: number;
   minor: boolean;
 }
 
@@ -67,23 +68,13 @@ export async function getArticleWikitextShadow(
 }
 
 /**
- * Read revision wikitext by revision ID.
+ * Read a revision's wikitext by the `revid` a history entry carries.
  */
 export async function getRevisionWikitextShadow(
-  revid: number,
-  title?: string,
-  _source: WikiSource = "ixwiki"
+  revid: string
 ): Promise<{ wikitext: string; title: string; timestamp: string; fromShadow: boolean } | null> {
-  const direct = await getRevisionWikitext(revid);
-  if (direct) {
-    return {
-      wikitext: direct,
-      title: title || "",
-      timestamp: new Date().toISOString(),
-      fromShadow: false,
-    };
-  }
-  return null;
+  const revision = await getRevisionWikitext(revid);
+  return revision ? { ...revision, fromShadow: true } : null;
 }
 
 /**
@@ -138,16 +129,16 @@ export async function getPageHistoryShadow(
   source: WikiSource = "ixwiki"
 ): Promise<{ revisions: HistoryRevision[]; hasMore: boolean; fromShadow: boolean }> {
   // 1. Check PostgreSQL revision records
-  const pgRevs: WikiRevisionSummary[] = await ArticleRepository.getHistory(title, source, limit);
+  const pgRevs = await ArticleRepository.getHistory(title, source, limit);
   if (pgRevs.length > 0) {
     return {
-      revisions: pgRevs.map((r: WikiRevisionSummary, idx: number) => ({
-        revid: idx + 1,
-        parentid: null,
+      revisions: pgRevs.map((r) => ({
+        revid: toRevisionRef(r),
         timestamp: r.createdAt.toISOString(),
         user: r.author || "Wiki Contributor",
         comment: r.summary || "",
         size: r.byteSize || 0,
+        byteDelta: r.byteDelta ?? 0,
         minor: r.minor,
       })),
       hasMore: false,
@@ -156,17 +147,16 @@ export async function getPageHistoryShadow(
   }
 
   // 2. Fall back to MediaWiki
-  const mwHistory = await getPageHistory(title, limit, offset);
-  const revList = Array.isArray(mwHistory) ? mwHistory : ((mwHistory as any)?.revisions ?? []);
+  const revList = await getPageHistory(title, limit, offset);
   return {
-    revisions: revList.map((r: any) => ({
-      revid: r.rev_id || r.revid || 0,
-      parentid: r.parentid ?? null,
-      timestamp: r.rev_timestamp || r.timestamp || new Date().toISOString(),
-      user: r.rev_user_text || r.user || "Wiki Contributor",
-      comment: r.rev_comment || r.comment || "",
-      size: r.rev_len || r.size || 0,
-      minor: Boolean(r.rev_minor_edit ?? r.minor),
+    revisions: revList.map((r) => ({
+      revid: String(r.rev_id),
+      timestamp: r.rev_timestamp,
+      user: r.rev_user_text || "Wiki Contributor",
+      comment: r.rev_comment || "",
+      size: r.rev_len || 0,
+      byteDelta: r.diff || 0,
+      minor: r.rev_minor_edit === 1,
     })),
     hasMore: revList.length >= limit,
     fromShadow: false,
@@ -396,55 +386,6 @@ export async function getArticleAuthors(
     contributors: [],
     totalContributors: 0,
   };
-}
-
-/**
- * Check whether a revision has already been recorded
- */
-export async function hasRevision(revid: number, _source: WikiSource = "ixwiki"): Promise<boolean> {
-  const existing = await db.wikiRevision.findFirst({
-    where: {
-      mwRevId: revid,
-    },
-    select: { id: true },
-  });
-  return Boolean(existing);
-}
-
-/**
- * Record an article revision directly into PostgreSQL via authoritative ArticleRepository
- */
-export async function recordArticleRevision(opts: {
-  title: string;
-  wikitext: string;
-  mwRevId?: number | null;
-  author?: string | null;
-  authorId?: string | null;
-  summary?: string | null;
-  minor?: boolean;
-  source?: WikiSource;
-}): Promise<boolean> {
-  try {
-    const realm = opts.source || "ixwiki";
-    await ArticleRepository.saveArticle(
-      {
-        slug: toArticleSlug(opts.title),
-        title: opts.title,
-        source: realm,
-        wikitext: opts.wikitext,
-        summary: opts.summary || undefined,
-        minor: opts.minor,
-      },
-      opts.authorId || undefined,
-      opts.author || "Wiki Contributor"
-    );
-
-    return true;
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[ArticleStore] Failed to record article revision:", msg);
-    return false;
-  }
 }
 
 /**

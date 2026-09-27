@@ -28,6 +28,8 @@ function EditorLoading({ text = "Loading editor..." }: { text?: string }) {
 interface WikiEditBridgeProps {
   title: string;
   initialMode?: "source" | "visual";
+  /** Heading text to open the source editor at. */
+  initialSection?: string;
   onClose: () => void;
   onSaveSuccess?: () => void;
 }
@@ -35,6 +37,7 @@ interface WikiEditBridgeProps {
 export function WikiEditBridge({
   title,
   initialMode = "source",
+  initialSection,
   onClose,
   onSaveSuccess,
 }: WikiEditBridgeProps) {
@@ -199,6 +202,7 @@ export function WikiEditBridge({
         <WikiSourceEditor
           title={title}
           initialWikitext={initialWikitextValue}
+          initialSection={initialSection}
           onSave={handleSourceSave}
           onCancel={onClose}
           onSwitchToVisual={(dirty, wt) => handleModeSwitch("visual", dirty, wt)}

@@ -14,7 +14,7 @@ import {
   CategoryService,
   MediaAssetService,
 } from "~/lib/wiki-os/core";
-import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
+import { toArticleSlug, parseRevisionRef } from "~/lib/wiki-os/core/domain-types";
 import { cleanExcerpt, calculateRawTextBytes } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { fetchMediaWikiPageAuthorsAndRevisions } from "./http-reader";
 import type { WikiArticle, WikiSearchResult, WikiRecentChange, WikiCategoryMembers } from "./types";
@@ -75,13 +75,28 @@ export async function ixwikiGetWikitext(title: string): Promise<WikiArticle | nu
   return null;
 }
 
-export async function ixwikiGetRevisionWikitext(revid: number): Promise<string | null> {
+export interface RevisionContent {
+  wikitext: string;
+  /** Title of the article the revision belongs to. */
+  title: string;
+  timestamp: string;
+}
+
+/** Look up a revision by the reference history entries carry (see `toRevisionRef`). */
+export async function ixwikiGetRevisionWikitext(ref: string): Promise<RevisionContent | null> {
+  const key = parseRevisionRef(ref);
   try {
-    const rev: any = await (db as any).wikiRevision.findFirst({
-      where: { mwRevId: revid },
-      select: { wikitext: true },
+    const rev = await db.wikiRevision.findFirst({
+      where: "mwRevId" in key ? { source: "ixwiki", mwRevId: key.mwRevId } : { id: key.id },
+      select: { wikitext: true, createdAt: true, article: { select: { title: true } } },
     });
-    if (rev?.wikitext) return rev.wikitext;
+    if (rev) {
+      return {
+        wikitext: rev.wikitext,
+        title: rev.article.title,
+        timestamp: rev.createdAt.toISOString(),
+      };
+    }
   } catch (err) {
     if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
   }
@@ -400,8 +415,8 @@ export async function ixwikiGetHistory(
     });
 
     if (revs.length > 1) {
-      return revs.map((r, idx) => ({
-        rev_id: r.mwRevId || idx + 1,
+      return revs.map((r) => ({
+        rev_id: r.mwRevId || 0,
         rev_timestamp: new Date(r.createdAt).toISOString(),
         rev_user_text: r.author || "MediaWiki Editor",
         rev_comment: r.summary || "",
@@ -429,7 +444,7 @@ export async function ixwikiGetHistory(
       const r = revs[0];
       return [
         {
-          rev_id: r.mwRevId || 1,
+          rev_id: r.mwRevId || 0,
           rev_timestamp: new Date(r.createdAt).toISOString(),
           rev_user_text: r.author || "MediaWiki Editor",
           rev_comment: r.summary || "",

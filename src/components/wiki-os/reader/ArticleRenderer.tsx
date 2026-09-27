@@ -6,7 +6,7 @@
 import React, { useRef, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
-import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
+import { addSectionEditLinks, type TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { AppleBooksTocDrawer } from "~/components/wiki-os/reader/AppleBooksTocDrawer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
 import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
@@ -141,7 +141,6 @@ export function ArticleRenderer({
     setMarginTab,
     toggleMargin,
   } = useWikiContext();
-  const _narrator = useWikiNarrator(contentRef);
   const { isSignedIn } = useWikiAuth();
   const isAuthenticated = isSignedIn;
   const [tocOpen, setTocOpen] = useState(false);
@@ -364,7 +363,10 @@ export function ArticleRenderer({
     }
   }, []);
 
-  const processedHtml = useMemo(() => injectPlaceholderElements(contentHtml), [contentHtml]);
+  const processedHtml = useMemo(() => {
+    const html = injectPlaceholderElements(contentHtml);
+    return isAuthenticated ? addSectionEditLinks(html, slug) : html;
+  }, [contentHtml, isAuthenticated, slug]);
   const processedInfoboxHtml = useMemo(
     () => (infoboxHtml ? injectPlaceholderElements(infoboxHtml) : null),
     [infoboxHtml]

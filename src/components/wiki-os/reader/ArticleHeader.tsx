@@ -17,6 +17,7 @@ import { detectMediaType } from "~/lib/wiki-os/transformers/media-theme";
 import type { ActiveCountryData } from "~/components/wiki-os/shared/ActiveCountryUnifiedWidget";
 import type { FlagColors } from "~/lib/flags/flag-color-extractor";
 import { EditorialMastheadHeader } from "./headers/EditorialMastheadHeader";
+import { WatchButton } from "./WatchButton";
 
 export type ArticleThemeColors =
   | FlagColors
@@ -377,6 +378,8 @@ export function WikiOSHeader({
             <h1 className="text-foreground text-xl leading-tight font-bold tracking-tight sm:text-2xl">
               {title.replace(/_/g, " ")}
             </h1>
+
+            <WatchButton title={title} />
 
             {awardsData?.hasAwards && primaryAward && badgeConfig && (
               <Popover open={showPopover} onOpenChange={setShowPopover}>

@@ -194,7 +194,13 @@ export class ArticleRepository {
         },
       });
 
-      // 2. Create append-only revision
+      // 2. Create append-only revision, sized against the previous one
+      const byteSize = Buffer.byteLength(wikitext, "utf8");
+      const previous = await tx.wikiRevision.findFirst({
+        where: { articleId: article.id },
+        orderBy: { createdAt: "desc" },
+        select: { byteSize: true },
+      });
       const revision = await tx.wikiRevision.create({
         data: {
           articleId: article.id,
@@ -205,6 +211,8 @@ export class ArticleRepository {
           source,
           author: authorName,
           authorId: resolvedDbUserId,
+          byteSize,
+          byteDelta: byteSize - (previous?.byteSize ?? 0),
         },
         select: {
           id: true,
@@ -271,6 +279,22 @@ export class ArticleRepository {
   }
 
   /**
+   * Of `titles`, the ones with no article in this realm — one query, used to mark red links.
+   */
+  static async findMissingTitles(titles: string[], source = "ixwiki"): Promise<string[]> {
+    if (titles.length === 0) return [];
+    const found = await db.wikiArticle.findMany({
+      where: {
+        source,
+        OR: [{ slug: { in: titles.map((t) => toArticleSlug(t)) } }, { title: { in: titles } }],
+      },
+      select: { slug: true, title: true },
+    });
+    const existing = new Set(found.flatMap((a) => [toArticleSlug(a.slug), toArticleSlug(a.title)]));
+    return titles.filter((t) => !existing.has(toArticleSlug(t)));
+  }
+
+  /**
    * Get full chronological revision history for an article
    */
   static async getHistory(
@@ -297,6 +321,7 @@ export class ArticleRepository {
       take: limit,
       select: {
         id: true,
+        mwRevId: true,
         articleId: true,
         summary: true,
         minor: true,
@@ -312,6 +337,7 @@ export class ArticleRepository {
 
     return revisions.map((r) => ({
       id: toRevisionId(r.id),
+      mwRevId: r.mwRevId,
       articleId: toArticleId(r.articleId),
       format: (r.format || "STRUCTURED_JSON") as WikiRevisionSummary["format"],
       summary: r.summary ?? null,

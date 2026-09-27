@@ -1,16 +1,13 @@
 import { db } from "~/server/db";
 import {
   getArticleWikitextShadow,
-  recordArticleRevision,
   getArticleHistoryShadow,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
-import { syncWikiRecentChanges } from "~/server/cron/sync-wiki-recentchanges";
 
 const mockGetArticleWikitext = jest.fn();
 const mockGetCurrentRevMeta = jest.fn();
 const mockGetPageHistory = jest.fn();
 const mockGetRevisionWikitext = jest.fn();
-const mockGetRecentChanges = jest.fn();
 
 const mockWikiArticleFindFirst = jest.fn();
 const mockWikiArticleUpsert = jest.fn();
@@ -44,7 +41,6 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getCurrentRevMeta: (...a: unknown[]) => mockGetCurrentRevMeta(...a),
   getPageHistory: (...a: unknown[]) => mockGetPageHistory(...a),
   getRevisionWikitext: (...a: unknown[]) => mockGetRevisionWikitext(...a),
-  getRecentChanges: (...a: unknown[]) => mockGetRecentChanges(...a),
 }));
 
 const row = (overrides: Record<string, unknown> = {}) => ({
@@ -114,36 +110,6 @@ test("page deleted on MediaWiki returns null when not in DB", async () => {
   expect(res).toBeNull();
 });
 
-// ──────────────────────────────────────────────
-// Stage 2b — write-through + revision history
-// ──────────────────────────────────────────────
-
-test("recordArticleRevision upserts the article and inserts a revision", async () => {
-  mockWikiArticleUpsert.mockResolvedValue(row({ id: "art1", title: "Foo_Bar" }));
-  mockWikiRevisionCreate.mockResolvedValue({ id: "rev1" });
-
-  const ok = await recordArticleRevision({
-    title: "Foo Bar",
-    wikitext: "new body",
-    mwRevId: 99,
-    author: "alice",
-    summary: "tweak",
-    minor: true,
-  });
-
-  expect(ok).toBe(true);
-  expect(mockWikiArticleUpsert).toHaveBeenCalled();
-  expect(mockWikiRevisionCreate).toHaveBeenCalled();
-});
-
-test("recordArticleRevision returns false (no throw) when the table is missing", async () => {
-  mockTransaction.mockRejectedValue(new Error("relation does not exist"));
-
-  const ok = await recordArticleRevision({ title: "Foo", wikitext: "x" });
-
-  expect(ok).toBe(false);
-});
-
 test("history read-through serves local revisions when present", async () => {
   mockWikiRevisionFindMany.mockResolvedValue([
     {
@@ -155,67 +121,51 @@ test("history read-through serves local revisions when present", async () => {
       wikitext: "body",
       minor: false,
       byteSize: 4,
+      byteDelta: -2,
+    },
+    {
+      id: "rev-0",
+      mwRevId: 9001,
+      articleId: "art1",
+      createdAt: new Date("2026-05-01T00:00:00Z"),
+      author: "alice",
+      summary: "synced",
+      wikitext: "bodyxx",
+      minor: false,
+      byteSize: 6,
+      byteDelta: 6,
     },
   ]);
 
   const res = await getArticleHistoryShadow("Foo", 50);
 
-  expect(res.revisions[0]).toMatchObject({ revid: 1, user: "bob", comment: "edit" });
+  // Native edits are referenced by row id, MediaWiki-synced ones by rev_id.
+  expect(res.revisions[0]).toMatchObject({
+    revid: "rev-1",
+    user: "bob",
+    comment: "edit",
+    byteDelta: -2,
+  });
+  expect(res.revisions[1]).toMatchObject({ revid: "9001", byteDelta: 6 });
   expect(mockGetPageHistory).not.toHaveBeenCalled();
 });
 
 test("history read-through falls back to MediaWiki bridge when no local revisions", async () => {
   mockWikiRevisionFindMany.mockResolvedValue([]);
-  mockGetPageHistory.mockResolvedValue({ revisions: [{ revid: 7 }], hasMore: false });
+  mockGetPageHistory.mockResolvedValue([
+    {
+      rev_id: 7,
+      rev_timestamp: "2026-06-01T00:00:00Z",
+      rev_user_text: "carol",
+      rev_comment: "",
+      rev_len: 10,
+      rev_minor_edit: 0,
+      diff: 3,
+    },
+  ]);
 
   const res = await getArticleHistoryShadow("Foo", 50);
 
   expect(mockGetPageHistory).toHaveBeenCalled();
-  expect(res.revisions[0]).toMatchObject({ revid: 7 });
-});
-
-test("recentchanges sync skips a page whose latest mwRevId is already recorded", async () => {
-  mockGetRecentChanges.mockResolvedValue([
-    {
-      title: "Foo",
-      user: "carol",
-      comment: "c",
-      timestamp: "t",
-      type: "edit",
-      oldLen: 0,
-      newLen: 1,
-    },
-  ]);
-  mockGetCurrentRevMeta.mockResolvedValue({ revid: 500, timestamp: "t" });
-  mockWikiRevisionFindFirst.mockResolvedValue({ id: "existing" }); // already known
-
-  const res = await syncWikiRecentChanges();
-
-  expect(res.skipped).toBe(1);
-  expect(res.recorded).toBe(0);
-  expect(mockGetArticleWikitext).not.toHaveBeenCalled();
-});
-
-test("recentchanges sync records a page with a new mwRevId", async () => {
-  mockGetRecentChanges.mockResolvedValue([
-    {
-      title: "Bar",
-      user: "dave",
-      comment: "d",
-      timestamp: "t",
-      type: "edit",
-      oldLen: 0,
-      newLen: 1,
-    },
-  ]);
-  mockGetCurrentRevMeta.mockResolvedValue({ revid: 600, timestamp: "t" });
-  mockWikiRevisionFindFirst.mockResolvedValue(null); // not yet known
-  mockGetArticleWikitext.mockResolvedValue({ wikitext: "bar body", pageId: 2, length: 8 });
-  mockWikiArticleUpsert.mockResolvedValue(row({ id: "art2", title: "Bar" }));
-  mockWikiRevisionCreate.mockResolvedValue({ id: "rev2" });
-
-  const res = await syncWikiRecentChanges();
-
-  expect(res.recorded).toBe(1);
-  expect(mockWikiRevisionCreate).toHaveBeenCalled();
+  expect(res.revisions[0]).toMatchObject({ revid: "7", user: "carol", byteDelta: 3 });
 });

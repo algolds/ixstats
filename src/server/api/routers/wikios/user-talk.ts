@@ -23,6 +23,7 @@ import {
 import { db } from "~/server/db";
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 import { ArticleRepository, LinkGraphService } from "~/lib/wiki-os/core";
+import { toRevisionRef } from "~/lib/wiki-os/core/domain-types";
 
 export const wikiosUserTalkRouter = createTRPCRouter({
   /**
@@ -220,7 +221,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
       const sliced = hasMore ? nativeRevisions.slice(0, input.limit) : nativeRevisions;
 
       const fallbackContribs = sliced.map((rev) => ({
-        revid: rev.mwRevId ?? 0,
+        revid: toRevisionRef(rev),
         title: rev.article?.title ?? "Untitled",
         timestamp: rev.createdAt.toISOString(),
         comment: rev.summary ?? "",

@@ -13,7 +13,7 @@ import {
   getPageProtection,
   getPageLog,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { syncWikiRecentChanges } from "~/server/cron/sync-wiki-recentchanges";
+import { runAutoSyncCycle } from "~/lib/wiki-os/services/auto-sync-service";
 import { computeWikitextDiff } from "~/lib/wiki-os/transformers/wikitext-diff";
 import {
   getArticleHistoryShadow,
@@ -43,43 +43,37 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
         revisions: result.revisions,
         continueToken:
           result.hasMore && result.revisions.length > 0
-            ? String(result.revisions[result.revisions.length - 1]!.revid)
+            ? result.revisions[result.revisions.length - 1]!.revid
             : null,
       };
     }),
 
   /**
-   * Get a visual diff between two revisions.
+   * Get a visual diff between two revisions. Revision ids are history `revid`s; without
+   * `fromrev` the diff is against the revision before `torev`.
    */
   getDiff: publicProcedure
     .input(
       z.object({
-        fromrev: z.number().optional().default(0),
-        torev: z.number(),
+        fromrev: z.string().max(64).optional(),
+        torev: z.string().min(1).max(64),
       })
     )
     .query(async ({ input }) => {
-      const toData = await getRevisionWikitextShadow(input.torev, undefined, "ixwiki");
+      const toData = await getRevisionWikitextShadow(input.torev);
       if (!toData) throw new Error(`Revision r${input.torev} not found`);
 
-      const pageTitle = toData.title;
-      const history = await getArticleHistoryShadow(pageTitle, 100, undefined, "ixwiki");
-
-      let resolvedFromRevId = input.fromrev;
+      const history = await getArticleHistoryShadow(toData.title, 100, undefined, "ixwiki");
       const toIndex = history.revisions.findIndex((r) => r.revid === input.torev);
       const toRev = toIndex >= 0 ? history.revisions[toIndex] : null;
 
-      // In history list, revisions are ordered DESC (newest first). So previous rev is at toIndex + 1.
-      if (!resolvedFromRevId || resolvedFromRevId === 0) {
-        if (toIndex >= 0 && toIndex + 1 < history.revisions.length) {
-          resolvedFromRevId = history.revisions[toIndex + 1]!.revid;
-        }
-      }
+      // History is newest-first, so the previous revision sits at toIndex + 1.
+      const previousRevId = toIndex >= 0 ? history.revisions[toIndex + 1]?.revid : undefined;
+      const resolvedFromRevId = input.fromrev || previousRevId || "";
 
-      const fromData =
-        resolvedFromRevId && resolvedFromRevId > 0
-          ? await getRevisionWikitextShadow(resolvedFromRevId, undefined, "ixwiki")
-          : null;
+      const fromData = resolvedFromRevId
+        ? await getRevisionWikitextShadow(resolvedFromRevId)
+        : null;
 
       const fromRev = history.revisions.find((r) => r.revid === resolvedFromRevId);
 
@@ -94,9 +88,8 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
         oldWikitext: fromWikitext,
         newWikitext: toWikitext,
         from: {
-          revid: resolvedFromRevId || 0,
-          user:
-            fromRev?.user ?? (resolvedFromRevId === 0 ? "Initial Document" : "Previous Revision"),
+          revid: resolvedFromRevId,
+          user: fromRev?.user ?? (resolvedFromRevId ? "Previous Revision" : "Initial Document"),
           timestamp: fromData?.timestamp ?? "",
           comment: fromRev?.comment ?? "",
         },
@@ -113,9 +106,9 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
    * Get the wikitext of a specific revision (for undo preview).
    */
   getRevisionContent: publicProcedure
-    .input(z.object({ revid: z.number() }))
+    .input(z.object({ revid: z.string().min(1).max(64) }))
     .query(async ({ input }) => {
-      const result = await getRevisionWikitextShadow(input.revid, undefined, "ixwiki");
+      const result = await getRevisionWikitextShadow(input.revid);
       if (!result) throw new Error("Revision not found");
       return result;
     }),
@@ -154,6 +147,6 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
   syncRecentChanges: adminProcedure
     .input(z.object({ limit: z.number().min(1).max(100).default(50) }).optional())
     .mutation(async ({ input }) => {
-      return syncWikiRecentChanges(input?.limit ?? 50);
+      return runAutoSyncCycle(input?.limit ?? 50);
     }),
 });

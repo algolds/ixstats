@@ -7,6 +7,7 @@ import { CategoryBreadcrumb } from "../CategoryBreadcrumb";
 import { withBasePath } from "~/lib/base-path";
 import type { ArticleHeaderProps } from "../ArticleHeader";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { WatchButton } from "../WatchButton";
 
 interface EditorialMastheadProps extends ArticleHeaderProps {
   primaryAward: any;
@@ -62,6 +63,7 @@ export function EditorialMastheadHeader({
         <h1 className="text-foreground font-['Host_Grotesk'] text-3xl leading-[1.15] font-bold tracking-tight sm:text-4xl lg:text-[42px]">
           {title.replace(/_/g, " ")}
         </h1>
+        <WatchButton title={title} />
       </div>
 
       {/* Metadata & Awards Ledger */}

@@ -1497,6 +1497,36 @@ html:not([data-theme="dark"]) .wikios-link-preview {
   display: none;
 }
 
+/* WikiOS section edit links (signed-in readers): quiet until the heading is hovered */
+.wikios-article-content .wikios-section-edit-link {
+  margin-left: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  vertical-align: middle;
+  color: var(--wikios-text-dim);
+  text-decoration: none;
+  border-bottom: none;
+  user-select: none;
+  transition:
+    opacity 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.wikios-article-content .wikios-section-edit-link:hover {
+  color: var(--wikios-link);
+}
+
+@media (hover: hover) {
+  .wikios-article-content .wikios-section-edit-link {
+    opacity: 0;
+  }
+
+  .wikios-article-content :is(h2, h3):hover > .wikios-section-edit-link,
+  .wikios-article-content .wikios-section-edit-link:focus-visible {
+    opacity: 1;
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Recent Changes
    --------------------------------------------------------------------------- */

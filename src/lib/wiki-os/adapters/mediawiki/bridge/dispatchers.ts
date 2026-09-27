@@ -353,10 +353,10 @@ export async function resolveRedirect(title: string) {
 }
 
 /**
- * Get wikitext of a specific revision by ID via direct MySQL.
+ * Get a revision's wikitext (plus its article title and timestamp) by revision reference.
  */
-export async function getRevisionWikitext(revid: number) {
-  return ixwikiGetRevisionWikitext(revid);
+export async function getRevisionWikitext(ref: string) {
+  return ixwikiGetRevisionWikitext(ref);
 }
 
 /**

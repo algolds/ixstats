@@ -68,6 +68,19 @@ const IMG_SRC_COMMON_REGEX =
 
 const STYLE_DEDUPLICATE_REGEX = /<style[^>]*data-mw-deduplicate[^>]*>([\s\S]*?)<\/style>/giu;
 
+const SECTION_HEADING_REGEX = /<(h[23])\b([^>]*)>([\s\S]*?)<\/\1>/giu;
+const HTML_ENTITY_REGEX = /&(amp|lt|gt|quot|#39|nbsp);/gu;
+const HTML_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  "#39": "'",
+  nbsp: " ",
+};
+const ATTR_UNSAFE_REGEX = /[&"<]/gu;
+const ATTR_ESCAPES: Record<string, string> = { "&": "&amp;", '"': "&quot;", "<": "&lt;" };
+
 // ---------------------------------------------------------------------------
 // Main transformer
 // ---------------------------------------------------------------------------
@@ -385,6 +398,23 @@ export function transformImages(
   result = result.replace(IMG_REFERRER_REGEX, '<img referrerpolicy="no-referrer"');
 
   return result;
+}
+
+/**
+ * Append an "Edit" link to every h2/h3 heading, opening the source editor at that section
+ * (`/wiki/{slug}/edit?section={heading text}`). `slug` must already be URI-encoded.
+ */
+export function addSectionEditLinks(html: string, slug: string): string {
+  return html.replace(SECTION_HEADING_REGEX, (match, tag: string, attrs: string, inner: string) => {
+    const text = inner
+      .replace(TAG_STRIP_REGEX, "")
+      .replace(HTML_ENTITY_REGEX, (_entity, name: string) => HTML_ENTITIES[name] ?? "")
+      .trim();
+    if (!text) return match;
+    const href = withBasePath(`/wiki/${slug}/edit?section=${encodeURIComponent(text)}`);
+    const label = text.replace(ATTR_UNSAFE_REGEX, (c) => ATTR_ESCAPES[c] ?? c);
+    return `<${tag}${attrs}>${inner}<a class="wikios-section-edit-link" href="${href}" aria-label="Edit section: ${label}">Edit</a></${tag}>`;
+  });
 }
 
 function styleEditSectionLinks(html: string): string {

@@ -85,7 +85,63 @@ const STRICT_TABLE_ELEMENTS = new Set([
   "select",
 ]);
 
-function domNodeToReact(node: Node, index: number): React.ReactNode {
+const NO_MISSING_PAGES: ReadonlySet<string> = new Set();
+const RED_LINK_CLASS =
+  "text-destructive underline decoration-destructive/30 transition-colors hover:decoration-destructive";
+
+/** Article title a `/wiki/...` href points at; null for namespaced (File:, Category:…) targets. */
+function wikiLinkTitle(href: string): string | null {
+  const path = href.slice("/wiki/".length).split(/[?#]/)[0] ?? "";
+  try {
+    const title = decodeURIComponent(path).replace(/_/g, " ").trim();
+    return title && title.length <= 255 && !title.includes(":") ? title : null;
+  } catch {
+    return null;
+  }
+}
+
+function collectWikiLinkTitles(root: Element): string[] {
+  const titles = new Set<string>();
+  root.querySelectorAll('a[href^="/wiki/"]').forEach((link) => {
+    const title = wikiLinkTitle(link.getAttribute("href") ?? "");
+    if (title) titles.add(title);
+  });
+  return Array.from(titles).slice(0, 200);
+}
+
+/** Wiki link; links to pages that do not exist render as red links. */
+function renderWikiLink(
+  element: HTMLElement,
+  index: number,
+  missing: ReadonlySet<string>
+): React.ReactNode {
+  const href = element.getAttribute("href") || "";
+  const title = wikiLinkTitle(href);
+  const isRedLink = title !== null && missing.has(title);
+  const className = isRedLink
+    ? RED_LINK_CLASS
+    : element.className ||
+      "text-wiki hover:text-wiki-hover font-semibold underline transition-colors";
+
+  return (
+    <a
+      key={index}
+      href={href}
+      className={className}
+      title={isRedLink ? `${title} (page does not exist)` : undefined}
+    >
+      {Array.from(element.childNodes).map((child, childIdx) =>
+        domNodeToReact(child, childIdx, missing)
+      )}
+    </a>
+  );
+}
+
+function domNodeToReact(
+  node: Node,
+  index: number,
+  missing: ReadonlySet<string> = NO_MISSING_PAGES
+): React.ReactNode {
   if (node.nodeType === Node.TEXT_NODE) {
     return node.textContent;
   }
@@ -144,16 +200,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
 
   // Custom Handler: Wiki Link
   if (tagName === "a" && element.getAttribute("href")?.startsWith("/wiki/")) {
-    const href = element.getAttribute("href") || "";
-    const className =
-      element.className ||
-      "text-wiki hover:text-wiki-hover font-semibold underline transition-colors";
-
-    return (
-      <a key={index} href={href} className={className}>
-        {Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx))}
-      </a>
-    );
+    return renderWikiLink(element, index, missing);
   }
 
   // Custom Handler: Hashtag Link
@@ -164,7 +211,9 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
 
     return (
       <Link key={index} href={withBasePath(href)} className={className}>
-        {Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx))}
+        {Array.from(element.childNodes).map((child, childIdx) =>
+          domNodeToReact(child, childIdx, missing)
+        )}
       </Link>
     );
   }
@@ -231,7 +280,9 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
     const cleanHref = href.replace(/^\/projects\/ixstates/, "");
     return (
       <Link key={index} href={withBasePath(cleanHref)} className={element.className}>
-        {Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx))}
+        {Array.from(element.childNodes).map((child, childIdx) =>
+          domNodeToReact(child, childIdx, missing)
+        )}
       </Link>
     );
   }
@@ -245,7 +296,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
   });
 
   const children = childNodes
-    .map((child, childIdx) => domNodeToReact(child, childIdx))
+    .map((child, childIdx) => domNodeToReact(child, childIdx, missing))
     .filter((child) => child !== null && child !== undefined);
 
   const props: any = { key: index };
@@ -532,21 +583,39 @@ export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiH
     setIsMounted(true);
   }, []);
 
-  const parsedContent = useMemo(() => {
+  const root = useMemo(() => {
     if (!isMounted || typeof window === "undefined" || !html) return null;
     try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
-      const root = doc.body.firstElementChild;
-      if (!root) return null;
-      return Array.from(root.childNodes)
-        .map((node, idx) => domNodeToReact(node, idx))
-        .filter((node) => node !== null && node !== undefined);
+      const doc = new DOMParser().parseFromString(`<div>${html}</div>`, "text/html");
+      return doc.body.firstElementChild;
     } catch (err) {
       console.warn("Failed to parse HTML in WikiHtmlContent:", err);
       return null;
     }
   }, [html, isMounted]);
+
+  // One batched existence check per rendered content marks links to missing pages red.
+  const linkTitles = useMemo(() => (root ? collectWikiLinkTitles(root) : []), [root]);
+  const { data: missingTitles } = api.wikios.getMissingPages.useQuery(
+    { titles: linkTitles },
+    { enabled: linkTitles.length > 0, staleTime: 5 * 60_000, retry: false }
+  );
+  const missing = useMemo(
+    () => (missingTitles ? new Set(missingTitles) : NO_MISSING_PAGES),
+    [missingTitles]
+  );
+
+  const parsedContent = useMemo(() => {
+    if (!root) return null;
+    try {
+      return Array.from(root.childNodes)
+        .map((node, idx) => domNodeToReact(node, idx, missing))
+        .filter((node) => node !== null && node !== undefined);
+    } catch (err) {
+      console.warn("Failed to render HTML in WikiHtmlContent:", err);
+      return null;
+    }
+  }, [root, missing]);
 
   if (!isMounted || !parsedContent) {
     return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;

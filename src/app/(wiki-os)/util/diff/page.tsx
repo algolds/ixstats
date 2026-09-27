@@ -13,24 +13,25 @@ import { withBasePath } from "~/lib/base-path";
 
 export default function DiffPage() {
   const searchParams = useSearchParams();
-  const fromParam = searchParams.get("from") || searchParams.get("oldid") || "0";
+  const fromParam = searchParams.get("from") || searchParams.get("oldid") || "";
   const toParam =
-    searchParams.get("to") || searchParams.get("diff") || searchParams.get("revid") || "0";
-  const fromrev = fromParam !== "prev" ? parseInt(fromParam, 10) || 0 : 0;
-  const torev = parseInt(toParam, 10) || 0;
+    searchParams.get("to") || searchParams.get("diff") || searchParams.get("revid") || "";
+  // Revision ids are opaque history `revid`s; "prev" and "0" mean "the previous revision".
+  const fromrev = fromParam && fromParam !== "prev" && fromParam !== "0" ? fromParam : undefined;
+  const torev = toParam === "0" ? "" : toParam;
   const [layout, setLayout] = useState<"unified" | "split">("unified");
   const [undoConfirm, setUndoConfirm] = useState(false);
 
   const { data, isLoading, error } = api.wikios.getDiff.useQuery(
     { fromrev, torev },
-    { enabled: torev > 0, staleTime: 60_000 }
+    { enabled: torev.length > 0, staleTime: 60_000 }
   );
 
-  const effectiveFromRev = data?.from?.revid ?? fromrev;
+  const effectiveFromRev = data?.from?.revid || fromrev || "";
 
   const { data: revContent } = api.wikios.getRevisionContent.useQuery(
     { revid: effectiveFromRev },
-    { enabled: effectiveFromRev > 0 && undoConfirm, staleTime: 300_000 }
+    { enabled: effectiveFromRev.length > 0 && undoConfirm, staleTime: 300_000 }
   );
 
   const revertMutation = api.wikios.revertToRevision.useMutation({
@@ -169,7 +170,7 @@ export default function DiffPage() {
           </div>
         )}
 
-        {!isLoading && !data && torev === 0 && (
+        {!isLoading && !data && !torev && (
           <div className="border-border/50 bg-card/30 text-muted-foreground rounded-2xl border border-dashed p-12 text-center text-xs">
             No revisions selected for comparison. Specify <code>?to=REV</code> or{" "}
             <code>?from=REV&to=REV</code> in the URL.

@@ -22,8 +22,10 @@ export default function WikiOSEditPage() {
     }
   }, [slug]);
 
-  const initialMode = (searchParams.get("mode") === "visual" ? "visual" : "source") as
-    "source" | "visual";
+  // Section edit links open the source editor at the heading they came from.
+  const section = searchParams.get("section") ?? undefined;
+  const initialMode: "source" | "visual" =
+    !section && searchParams.get("mode") === "visual" ? "visual" : "source";
 
   const handleClose = useCallback(() => {
     router.push(withBasePath(`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`));
@@ -35,6 +37,7 @@ export default function WikiOSEditPage() {
         <WikiEditBridge
           title={title}
           initialMode={initialMode}
+          initialSection={section}
           onClose={handleClose}
           onSaveSuccess={handleClose}
         />
