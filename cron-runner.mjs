@@ -24,7 +24,10 @@ function loadEnvVariables() {
   const cwd = process.cwd();
   const mode = process.env.NODE_ENV || "development";
   const envFiles =
-    mode === "production" ? [".env.production", ".env.local"] : [".env.local.dev", ".env.local"];
+    mode === "production"
+      ? // .env.production.local holds the prod secrets (same list as ws-backend.mjs); first file wins.
+        [".env.production", ".env.local", ".env.production.local"]
+      : [".env.local.dev", ".env.local"];
   envFiles.push(".env");
 
   for (const file of envFiles) {

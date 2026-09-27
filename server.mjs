@@ -21,6 +21,8 @@ function loadEnvVariables() {
   } else if (mode === "production") {
     envFiles.push(".env.production");
     envFiles.push(".env.local");
+    // Prod secrets live here (same list as ws-backend.mjs); first file wins.
+    envFiles.push(".env.production.local");
   }
 
   envFiles.push(".env");
