@@ -9,5 +9,4 @@ export * from "./types";
 export * from "./theming";
 export * from "./contracts";
 export * from "./analysis";
-export * from "./definitions";
 

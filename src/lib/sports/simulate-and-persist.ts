@@ -204,8 +204,7 @@ export function resolveFromSnapshot(snapshot: SimulationSnapshot): ExtendedMatch
 
 /**
  * Standings increments for one side. Every sport uses POINTS_FOR_WIN / POINTS_FOR_DRAW;
- * definitions/*.scoringRules (e.g. hockey's 2-point win + OTL point) is not wired yet —
- * owner decision, plan 322.
+ * a hockey-style 2-point win + overtime-loss point is not modelled — owner decision, plan 322.
  */
 export function standingDelta(scored: number, conceded: number) {
   const wins = scored > conceded ? 1 : 0;

@@ -3,7 +3,6 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
-import { getSportDefinition } from "~/lib/sports/definitions";
 
 export interface TeamInfo {
   id: string;
@@ -21,7 +20,6 @@ export interface ScoreboardProps {
   title?: string;
   status?: string;
   date?: string;
-  sportPreset?: string | null;
   onTeamClick?: (teamId: string) => void;
   className?: string;
 }
@@ -34,11 +32,9 @@ export function Scoreboard({
   title = "Matchup",
   status = "scheduled",
   date,
-  sportPreset,
   onTeamClick,
   className,
 }: ScoreboardProps) {
-  const definition = getSportDefinition(sportPreset);
   const isCompleted = status === "completed";
   const homeColor = homeTeam.color ?? "#3b82f6";
   const awayColor = awayTeam.color ?? "#ef4444";
