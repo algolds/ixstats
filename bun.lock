@@ -7,6 +7,7 @@
       "dependencies": {
         "@audio-ui/react": "^0.1.2",
         "@chenglou/pretext": "^0.0.7",
+        "@clerk/backend": "^2.33.6",
         "@clerk/nextjs": "^6.39.6",
         "@codemirror/autocomplete": "^6.20.3",
         "@codemirror/commands": "^6.10.3",
@@ -56,6 +57,7 @@
         "dompurify": "^3.4.14",
         "iconoir-react": "^7.12.1",
         "ioredis": "^5.11.1",
+        "jsdom": "^26.1.0",
         "maplibre-gl": "^6.11.0",
         "motion": "^12.43.0",
         "next": "16.3.6",
@@ -90,6 +92,7 @@
         "@testing-library/react": "^16.3.2",
         "@types/geojson": "^7946.0.16",
         "@types/jest": "^30.0.0",
+        "@types/jsdom": "^21.1.7",
         "@types/node": "^25.9.5",
         "@types/papaparse": "^5.5.2",
         "@types/react": "19.2.18",
