@@ -2,6 +2,8 @@
 
 import React from "react";
 import { SliderWithDirectInput, EnhancedNumberInput } from "../../../../primitives/enhanced";
+import { AdvancedFieldsDisclosure } from "../../../../primitives/AdvancedFieldsDisclosure";
+import { BASELINE_ECONOMY_BUILDER } from "../../economy-builder/economyStateUtils";
 import { Heart, GraduationCap, Lullaby as Baby } from "iconoir-react";
 import type { DemographicsConfiguration } from "~/types/economy-builder";
 
@@ -113,50 +115,59 @@ export function SocialIndicatorsSection({
         />
       </div>
 
-      {showAdvanced && (
-        <div className="space-y-4 border-t pt-4">
-          <EnhancedNumberInput
-            label="Infant Mortality Rate"
-            description="Deaths per 1000 live births"
-            value={demographics.infantMortalityRate}
-            onChange={(value) => onChange("infantMortalityRate", Number(value) || 0)}
-            min={0}
-            max={100}
-            step={0.1}
-            sectionId="demographics"
-            icon={Baby}
-            showButtons={true}
-          />
+      <AdvancedFieldsDisclosure
+        section="economics"
+        id="demographics-social"
+        values={{
+          infantMortalityRate: demographics.infantMortalityRate,
+          maternalMortalityRate: demographics.maternalMortalityRate,
+          healthExpenditureGDP: demographics.healthExpenditureGDP,
+        }}
+        defaults={BASELINE_ECONOMY_BUILDER.demographics}
+        defaultOpen={showAdvanced}
+        className="border-t pt-4"
+      >
+        <EnhancedNumberInput
+          label="Infant Mortality Rate"
+          description="Deaths per 1000 live births"
+          value={demographics.infantMortalityRate}
+          onChange={(value) => onChange("infantMortalityRate", Number(value) || 0)}
+          min={0}
+          max={100}
+          step={0.1}
+          sectionId="demographics"
+          icon={Baby}
+          showButtons={true}
+        />
 
-          <EnhancedNumberInput
-            label="Maternal Mortality Rate"
-            description="Deaths per 100,000 live births"
-            value={demographics.maternalMortalityRate}
-            onChange={(value) => onChange("maternalMortalityRate", Number(value) || 0)}
-            min={0}
-            max={1000}
-            step={1}
-            sectionId="demographics"
-            icon={Heart}
-            showButtons={true}
-          />
+        <EnhancedNumberInput
+          label="Maternal Mortality Rate"
+          description="Deaths per 100,000 live births"
+          value={demographics.maternalMortalityRate}
+          onChange={(value) => onChange("maternalMortalityRate", Number(value) || 0)}
+          min={0}
+          max={1000}
+          step={1}
+          sectionId="demographics"
+          icon={Heart}
+          showButtons={true}
+        />
 
-          <SliderWithDirectInput
-            label="Health Expenditure (GDP %)"
-            description="Health spending as percentage of GDP"
-            value={demographics.healthExpenditureGDP}
-            onChange={(value) => onChange("healthExpenditureGDP", value)}
-            min={1}
-            max={20}
-            step={0.1}
-            unit="%"
-            sectionId="demographics"
-            icon={Heart}
-            showValue={true}
-            defaultMode="slider"
-          />
-        </div>
-      )}
+        <SliderWithDirectInput
+          label="Health Expenditure (GDP %)"
+          description="Health spending as percentage of GDP"
+          value={demographics.healthExpenditureGDP}
+          onChange={(value) => onChange("healthExpenditureGDP", value)}
+          min={1}
+          max={20}
+          step={0.1}
+          unit="%"
+          sectionId="demographics"
+          icon={Heart}
+          showValue={true}
+          defaultMode="slider"
+        />
+      </AdvancedFieldsDisclosure>
     </div>
   );
 }

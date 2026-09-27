@@ -2,6 +2,8 @@
 
 import React from "react";
 import { EnhancedNumberInput, SliderWithDirectInput } from "../../../../primitives/enhanced";
+import { AdvancedFieldsDisclosure } from "../../../../primitives/AdvancedFieldsDisclosure";
+import { BASELINE_ECONOMY_BUILDER } from "../../economy-builder/economyStateUtils";
 import { Dollar as DollarSign, Group as Users, Shield } from "iconoir-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import type { LaborBounds } from "../utils/laborCalculations";
@@ -52,39 +54,47 @@ export function IncomeSection({
         format={(value) => `$${Number(value).toFixed(2)}`}
       />
 
-      {showAdvanced && (
-        <div className="space-y-4 border-t pt-4">
-          <SliderWithDirectInput
-            label="Unionization Rate"
-            description="Percentage of workers in unions"
-            value={laborMarket.unionizationRate}
-            onChange={(value) => onChange("unionizationRate", value)}
-            min={0}
-            max={50}
-            step={0.1}
-            unit="%"
-            sectionId="labor"
-            icon={Users}
-            showValue={true}
-            defaultMode="slider"
-          />
+      <AdvancedFieldsDisclosure
+        section="economics"
+        id="labor-income"
+        values={{
+          unionizationRate: laborMarket.unionizationRate,
+          collectiveBargainingCoverage: laborMarket.collectiveBargainingCoverage,
+        }}
+        defaults={BASELINE_ECONOMY_BUILDER.laborMarket}
+        defaultOpen={showAdvanced}
+        className="border-t pt-4"
+      >
+        <SliderWithDirectInput
+          label="Unionization Rate"
+          description="Percentage of workers in unions"
+          value={laborMarket.unionizationRate}
+          onChange={(value) => onChange("unionizationRate", value)}
+          min={0}
+          max={50}
+          step={0.1}
+          unit="%"
+          sectionId="labor"
+          icon={Users}
+          showValue={true}
+          defaultMode="slider"
+        />
 
-          <SliderWithDirectInput
-            label="Collective Bargaining Coverage"
-            description="Percentage covered by collective agreements"
-            value={laborMarket.collectiveBargainingCoverage}
-            onChange={(value) => onChange("collectiveBargainingCoverage", value)}
-            min={0}
-            max={80}
-            step={0.1}
-            unit="%"
-            sectionId="labor"
-            icon={Shield}
-            showValue={true}
-            defaultMode="slider"
-          />
-        </div>
-      )}
+        <SliderWithDirectInput
+          label="Collective Bargaining Coverage"
+          description="Percentage covered by collective agreements"
+          value={laborMarket.collectiveBargainingCoverage}
+          onChange={(value) => onChange("collectiveBargainingCoverage", value)}
+          min={0}
+          max={80}
+          step={0.1}
+          unit="%"
+          sectionId="labor"
+          icon={Shield}
+          showValue={true}
+          defaultMode="slider"
+        />
+      </AdvancedFieldsDisclosure>
     </div>
   );
 }

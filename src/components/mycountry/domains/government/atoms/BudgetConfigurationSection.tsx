@@ -14,6 +14,7 @@ import { safeFormatCurrency, cn } from "~/lib/utils";
 import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { EnhancedNumberInput } from "~/app/builder/primitives/enhanced/EnhancedNumberInput";
 import { FieldHelpTooltip } from "~/app/builder/components/help/FieldHelpTooltip";
+import { AdvancedFieldsDisclosure } from "~/app/builder/primitives/AdvancedFieldsDisclosure";
 import type { GovernmentStructureInput } from "~/types/government";
 import {
   validStances,
@@ -25,6 +26,13 @@ import {
   reserveDetails,
   debtDetails,
 } from "./governmentStructureConstants";
+
+/** Values used when fiscalYear does not name them; also the "untouched" baseline for the disclosure. */
+const ADVANCED_BUDGET_DEFAULTS = {
+  auditLevel: "Standard Executive Audit",
+  reserveTarget: "5%",
+  debtLimit: "5%",
+};
 
 interface BudgetConfigurationSectionProps {
   data: GovernmentStructureInput;
@@ -51,9 +59,9 @@ export function BudgetConfigurationSection({
     : [data.fiscalYear];
 
   let fiscalStance = "Balanced Budget Directive";
-  let auditLevel = "Standard Executive Audit";
-  let reserveTarget = "5%";
-  let debtLimit = "5%";
+  let auditLevel = ADVANCED_BUDGET_DEFAULTS.auditLevel;
+  let reserveTarget = ADVANCED_BUDGET_DEFAULTS.reserveTarget;
+  let debtLimit = ADVANCED_BUDGET_DEFAULTS.debtLimit;
 
   const isLegacyComposite =
     parts.length === 2 &&
@@ -107,190 +115,202 @@ export function BudgetConfigurationSection({
   }
 
   const content = (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-      {/* Total Budget */}
-      <div className="space-y-2">
-        <EnhancedNumberInput
-          label="Total Budget Limit"
-          value={data.totalBudget}
-          onChange={(val) =>
-            onChange("totalBudget", typeof val === "string" ? parseFloat(val) || 0 : val)
-          }
-          min={0}
-          step={1000000}
-          disabled={isReadOnly}
-          showButtons={true}
-          dynamicStep={true}
-          sectionId="spending"
-          size="sm"
-          format={(val) =>
-            safeFormatCurrency(Number(val), data.budgetCurrency || "USD", false)
-          }
-          placeholder="Enter budget limit..."
-          className="animate-fade-in text-zinc-900 dark:text-white"
-        />
-        <div className="flex flex-col gap-1">
-          {gdpData?.nominalGDP && gdpData.nominalGDP > 0 && (
-            <>
-              <span
-                className={cn(
-                  "mt-0.5 w-max rounded-full border px-2 py-0.5 text-xs font-semibold",
-                  colorClass
-                )}
-              >
-                {ratio.toFixed(1)}% of GDP ({gdpData.countryName || "Baseline"})
-              </span>
-              <span className="text-muted-foreground/80 px-0.5 text-xs leading-relaxed font-medium">
-                Tax Revenue: {taxPercent.toFixed(1)}% • {statusText}
-              </span>
-            </>
-          )}
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Total Budget */}
+        <div className="space-y-2">
+          <EnhancedNumberInput
+            label="Total Budget Limit"
+            value={data.totalBudget}
+            onChange={(val) =>
+              onChange("totalBudget", typeof val === "string" ? parseFloat(val) || 0 : val)
+            }
+            min={0}
+            step={1000000}
+            disabled={isReadOnly}
+            showButtons={true}
+            dynamicStep={true}
+            sectionId="spending"
+            size="sm"
+            format={(val) =>
+              safeFormatCurrency(Number(val), data.budgetCurrency || "USD", false)
+            }
+            placeholder="Enter budget limit..."
+            className="animate-fade-in text-zinc-900 dark:text-white"
+          />
+          <div className="flex flex-col gap-1">
+            {gdpData?.nominalGDP && gdpData.nominalGDP > 0 && (
+              <>
+                <span
+                  className={cn(
+                    "mt-0.5 w-max rounded-full border px-2 py-0.5 text-xs font-semibold",
+                    colorClass
+                  )}
+                >
+                  {ratio.toFixed(1)}% of GDP ({gdpData.countryName || "Baseline"})
+                </span>
+                <span className="text-muted-foreground/80 px-0.5 text-xs leading-relaxed font-medium">
+                  Tax Revenue: {taxPercent.toFixed(1)}% • {statusText}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Fiscal Stance & Strategy */}
+        <div className="space-y-2">
+          <Label
+            htmlFor="fiscalStance"
+            className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+          >
+            Fiscal Stance & Strategy
+            <FieldHelpTooltip
+              content="Determines the overriding objective of the government's annual budget plan, impacting public savings, economic growth, and austerity directives."
+              title="Fiscal Stance & Strategy"
+            />
+          </Label>
+          <Select
+            value={fiscalStance}
+            onValueChange={(value) => handleConfigChange("stance", value)}
+            disabled={isReadOnly}
+          >
+            <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+              <SelectValue placeholder="Select budget stance" />
+            </SelectTrigger>
+            <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+              {Object.entries(stanceDetails).map(([val, info]) => (
+                <SelectItem
+                  key={val}
+                  value={val}
+                  className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
+                  title={info.tooltip}
+                  description={info.desc}
+                >
+                  {val}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Fiscal Stance & Strategy */}
-      <div className="space-y-2">
-        <Label
-          htmlFor="fiscalStance"
-          className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
-        >
-          Fiscal Stance & Strategy
-          <FieldHelpTooltip
-            content="Determines the overriding objective of the government's annual budget plan, impacting public savings, economic growth, and austerity directives."
-            title="Fiscal Stance & Strategy"
-          />
-        </Label>
-        <Select
-          value={fiscalStance}
-          onValueChange={(value) => handleConfigChange("stance", value)}
-          disabled={isReadOnly}
-        >
-          <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
-            <SelectValue placeholder="Select budget stance" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
-            {Object.entries(stanceDetails).map(([val, info]) => (
-              <SelectItem
-                key={val}
-                value={val}
-                className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                title={info.tooltip}
-                description={info.desc}
-              >
-                {val}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Audit, reserve and debt limits (advanced tier in FIELD_IMPORTANCE.government) */}
+      <AdvancedFieldsDisclosure
+        section="government"
+        id="budget"
+        values={{ auditLevel, reserveTarget, debtLimit }}
+        defaults={ADVANCED_BUDGET_DEFAULTS}
+      >
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {/* Auditing & Transparency */}
+          <div className="space-y-2">
+            <Label
+              htmlFor="auditLevel"
+              className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+            >
+              Auditing & Transparency
+              <FieldHelpTooltip
+                content="Defines the degree of access and oversight of national accounts, balancing anti-corruption measures against covert and strategic intelligence flexibility."
+                title="Auditing & Transparency"
+              />
+            </Label>
+            <Select
+              value={auditLevel}
+              onValueChange={(value) => handleConfigChange("audit", value)}
+              disabled={isReadOnly}
+            >
+              <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+                <SelectValue placeholder="Select transparency level" />
+              </SelectTrigger>
+              <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+                {Object.entries(auditDetails).map(([val, info]) => (
+                  <SelectItem
+                    key={val}
+                    value={val}
+                    className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
+                    title={info.tooltip}
+                    description={info.desc}
+                  >
+                    {val}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      {/* Auditing & Transparency */}
-      <div className="space-y-2">
-        <Label
-          htmlFor="auditLevel"
-          className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
-        >
-          Auditing & Transparency
-          <FieldHelpTooltip
-            content="Defines the degree of access and oversight of national accounts, balancing anti-corruption measures against covert and strategic intelligence flexibility."
-            title="Auditing & Transparency"
-          />
-        </Label>
-        <Select
-          value={auditLevel}
-          onValueChange={(value) => handleConfigChange("audit", value)}
-          disabled={isReadOnly}
-        >
-          <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
-            <SelectValue placeholder="Select transparency level" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
-            {Object.entries(auditDetails).map(([val, info]) => (
-              <SelectItem
-                key={val}
-                value={val}
-                className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                title={info.tooltip}
-                description={info.desc}
-              >
-                {val}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+          {/* Emergency Reserve Target */}
+          <div className="space-y-2">
+            <Label
+              htmlFor="reserveTarget"
+              className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+            >
+              Emergency Reserve Target
+              <FieldHelpTooltip
+                content="The portion of annual revenues systematically allocated to sovereign wealth or contingency reserve accounts to mitigate economic shocks."
+                title="Emergency Reserve Target"
+              />
+            </Label>
+            <Select
+              value={reserveTarget}
+              onValueChange={(value) => handleConfigChange("reserve", value)}
+              disabled={isReadOnly}
+            >
+              <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+                <SelectValue placeholder="Select reserve target" />
+              </SelectTrigger>
+              <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+                {Object.entries(reserveDetails).map(([val, info]) => (
+                  <SelectItem
+                    key={val}
+                    value={val}
+                    className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
+                    title={info.tooltip}
+                    description={info.desc}
+                  >
+                    {info.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      {/* Emergency Reserve Target */}
-      <div className="space-y-2">
-        <Label
-          htmlFor="reserveTarget"
-          className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
-        >
-          Emergency Reserve Target
-          <FieldHelpTooltip
-            content="The portion of annual revenues systematically allocated to sovereign wealth or contingency reserve accounts to mitigate economic shocks."
-            title="Emergency Reserve Target"
-          />
-        </Label>
-        <Select
-          value={reserveTarget}
-          onValueChange={(value) => handleConfigChange("reserve", value)}
-          disabled={isReadOnly}
-        >
-          <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
-            <SelectValue placeholder="Select reserve target" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
-            {Object.entries(reserveDetails).map(([val, info]) => (
-              <SelectItem
-                key={val}
-                value={val}
-                className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                title={info.tooltip}
-                description={info.desc}
-              >
-                {info.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Debt Financing Limit */}
-      <div className="space-y-2">
-        <Label
-          htmlFor="debtLimit"
-          className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
-        >
-          Debt Financing Limit
-          <FieldHelpTooltip
-            content="The statutory maximum limit for annual borrowing to finance capital projects or deficits, expressed as a percent of the total budget."
-            title="Debt Financing Limit"
-          />
-        </Label>
-        <Select
-          value={debtLimit}
-          onValueChange={(value) => handleConfigChange("debt", value)}
-          disabled={isReadOnly}
-        >
-          <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
-            <SelectValue placeholder="Select debt limit" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
-            {Object.entries(debtDetails).map(([val, info]) => (
-              <SelectItem
-                key={val}
-                value={val}
-                className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                title={info.tooltip}
-                description={info.desc}
-              >
-                {info.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+          {/* Debt Financing Limit */}
+          <div className="space-y-2">
+            <Label
+              htmlFor="debtLimit"
+              className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+            >
+              Debt Financing Limit
+              <FieldHelpTooltip
+                content="The statutory maximum limit for annual borrowing to finance capital projects or deficits, expressed as a percent of the total budget."
+                title="Debt Financing Limit"
+              />
+            </Label>
+            <Select
+              value={debtLimit}
+              onValueChange={(value) => handleConfigChange("debt", value)}
+              disabled={isReadOnly}
+            >
+              <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+                <SelectValue placeholder="Select debt limit" />
+              </SelectTrigger>
+              <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+                {Object.entries(debtDetails).map(([val, info]) => (
+                  <SelectItem
+                    key={val}
+                    value={val}
+                    className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
+                    title={info.tooltip}
+                    description={info.desc}
+                  >
+                    {info.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </AdvancedFieldsDisclosure>
     </div>
   );
 

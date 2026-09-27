@@ -1,5 +1,6 @@
 import type { EconomyBuilderState, SectorConfiguration } from "~/types/economy-builder";
 import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
+import { createDefaultEconomicInputs } from "~/app/builder/lib/default-economic-inputs";
 import { getRegionColor } from "../tabs/utils/demographicsCalculations";
 
 export const DEFAULT_SECTORS: SectorConfiguration[] = [
@@ -504,3 +505,9 @@ export function createDefaultEconomyBuilderState(
     demographics: mergeDemographics(p.demographics),
   };
 }
+
+/**
+ * A fresh builder with no reference country: the baseline the economy tabs'
+ * "advanced options" disclosures compare against to decide whether a field was changed.
+ */
+export const BASELINE_ECONOMY_BUILDER = createDefaultEconomyBuilderState(createDefaultEconomicInputs());

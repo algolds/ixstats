@@ -3,6 +3,8 @@
 import React from "react";
 import { Badge } from "~/components/ui/badge";
 import { SliderWithDirectInput } from "../../../../primitives/enhanced";
+import { AdvancedFieldsDisclosure } from "../../../../primitives/AdvancedFieldsDisclosure";
+import { BASELINE_ECONOMY_BUILDER } from "../../economy-builder/economyStateUtils";
 import {
   Group as Users,
   StatUp as TrendingUp,
@@ -55,54 +57,63 @@ export function PopulationSection({
         </p>
       </div>
 
-      {showAdvanced && (
-        <div className="space-y-4 border-t pt-4">
-          <SliderWithDirectInput
-            label="Net Migration Rate"
-            description="Net migration per 1000 population"
-            value={demographics.netMigrationRate}
-            onChange={(value) => onChange("netMigrationRate", value)}
-            min={-20}
-            max={20}
-            step={0.1}
-            unit="per 1000"
-            sectionId="demographics"
-            icon={Globe}
-            showValue={true}
-            defaultMode="slider"
-          />
+      <AdvancedFieldsDisclosure
+        section="economics"
+        id="demographics-population"
+        values={{
+          netMigrationRate: demographics.netMigrationRate,
+          immigrationRate: demographics.immigrationRate,
+          emigrationRate: demographics.emigrationRate,
+        }}
+        defaults={BASELINE_ECONOMY_BUILDER.demographics}
+        defaultOpen={showAdvanced}
+        className="border-t pt-4"
+      >
+        <SliderWithDirectInput
+          label="Net Migration Rate"
+          description="Net migration per 1000 population"
+          value={demographics.netMigrationRate}
+          onChange={(value) => onChange("netMigrationRate", value)}
+          min={-20}
+          max={20}
+          step={0.1}
+          unit="per 1000"
+          sectionId="demographics"
+          icon={Globe}
+          showValue={true}
+          defaultMode="slider"
+        />
 
-          <SliderWithDirectInput
-            label="Immigration Rate"
-            description="Immigration per 1000 population"
-            value={demographics.immigrationRate}
-            onChange={(value) => onChange("immigrationRate", value)}
-            min={0}
-            max={50}
-            step={0.1}
-            unit="per 1000"
-            sectionId="demographics"
-            icon={TrendingUp}
-            showValue={true}
-            defaultMode="slider"
-          />
+        <SliderWithDirectInput
+          label="Immigration Rate"
+          description="Immigration per 1000 population"
+          value={demographics.immigrationRate}
+          onChange={(value) => onChange("immigrationRate", value)}
+          min={0}
+          max={50}
+          step={0.1}
+          unit="per 1000"
+          sectionId="demographics"
+          icon={TrendingUp}
+          showValue={true}
+          defaultMode="slider"
+        />
 
-          <SliderWithDirectInput
-            label="Emigration Rate"
-            description="Emigration per 1000 population"
-            value={demographics.emigrationRate}
-            onChange={(value) => onChange("emigrationRate", value)}
-            min={0}
-            max={50}
-            step={0.1}
-            unit="per 1000"
-            sectionId="demographics"
-            icon={TrendingDown}
-            showValue={true}
-            defaultMode="slider"
-          />
-        </div>
-      )}
+        <SliderWithDirectInput
+          label="Emigration Rate"
+          description="Emigration per 1000 population"
+          value={demographics.emigrationRate}
+          onChange={(value) => onChange("emigrationRate", value)}
+          min={0}
+          max={50}
+          step={0.1}
+          unit="per 1000"
+          sectionId="demographics"
+          icon={TrendingDown}
+          showValue={true}
+          defaultMode="slider"
+        />
+      </AdvancedFieldsDisclosure>
     </div>
   );
 }

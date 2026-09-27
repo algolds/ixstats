@@ -30,6 +30,7 @@ import type { ExtractedColors } from "~/lib/media";
 import type { GovernmentBuilderState, GovernmentStructureInput } from "~/types/government";
 import { GovernmentStructureForm } from "~/components/mycountry/domains/government/atoms/GovernmentStructureForm";
 import { TemplateFieldIndicator } from "../../../primitives/TemplateFieldIndicator";
+import { AdvancedFieldsDisclosure } from "../../../primitives/AdvancedFieldsDisclosure";
 import { deriveDemonym, formatCeremonialName } from "./identityUtils";
 
 interface BasicInfoFormProps {
@@ -130,6 +131,7 @@ export const BasicInfoForm = React.memo(
     inputs,
     onInputsChange,
     referenceCountry,
+    showAdvanced = false,
     mode = "create",
     countryId,
   }: BasicInfoFormProps) {
@@ -545,6 +547,27 @@ export const BasicInfoForm = React.memo(
                   />
 
                   <IdentityAutocomplete
+                    fieldName="demonym"
+                    label="Demonym"
+                    value={String(identity.demonym || "")}
+                    onChange={handleDemonymChange}
+                    placeholder="Demonym (e.g. American, Eldorian)"
+                    icon={Users}
+                    iconClassName="text-teal-400"
+                    onSave={onFieldSave}
+                  />
+                </div>
+
+                {/* Advanced tier in FIELD_IMPORTANCE.identity; linked-to-capital counts as default */}
+                <AdvancedFieldsDisclosure
+                  section="identity"
+                  id="basic-info"
+                  values={{ largestCity: identity.largestCity }}
+                  defaults={{ largestCity: identity.capitalCity }}
+                  defaultOpen={showAdvanced}
+                  className="pt-1"
+                >
+                  <IdentityAutocomplete
                     fieldName="largestCity"
                     label="Largest City"
                     value={
@@ -559,20 +582,7 @@ export const BasicInfoForm = React.memo(
                     onSave={onFieldSave}
                     disabled={isLargestLocked}
                   />
-                </div>
-
-                <div className="pt-1">
-                  <IdentityAutocomplete
-                    fieldName="demonym"
-                    label="Demonym"
-                    value={String(identity.demonym || "")}
-                    onChange={handleDemonymChange}
-                    placeholder="Demonym (e.g. American, Eldorian)"
-                    icon={Users}
-                    iconClassName="text-teal-400"
-                    onSave={onFieldSave}
-                  />
-                </div>
+                </AdvancedFieldsDisclosure>
               </div>
             </FacetCardContent>
           </FacetCard>
@@ -667,6 +677,7 @@ export const BasicInfoForm = React.memo(
       prevProps.inputs.fiscalSystem?.taxRevenueGDPPercent ===
         nextProps.inputs.fiscalSystem?.taxRevenueGDPPercent &&
       prevProps.mode === nextProps.mode &&
+      prevProps.showAdvanced === nextProps.showAdvanced &&
       prevProps.governmentStructure?.structure?.governmentName ===
         nextProps.governmentStructure?.structure?.governmentName &&
       prevProps.governmentStructure?.structure?.governmentType ===

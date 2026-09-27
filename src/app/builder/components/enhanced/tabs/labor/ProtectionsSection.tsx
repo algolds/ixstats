@@ -2,6 +2,8 @@
 
 import React from "react";
 import { SliderWithDirectInput, EnhancedNumberInput } from "../../../../primitives/enhanced";
+import { AdvancedFieldsDisclosure } from "../../../../primitives/AdvancedFieldsDisclosure";
+import { BASELINE_ECONOMY_BUILDER } from "../../economy-builder/economyStateUtils";
 import { Shield, Heart } from "iconoir-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import type { LaborBounds } from "../utils/laborCalculations";
@@ -82,48 +84,57 @@ export function ProtectionsSection({
         defaultMode="slider"
       />
 
-      {showAdvanced && (
-        <div className="space-y-4 border-t pt-4">
-          <EnhancedNumberInput
-            label="Paid Vacation Days"
-            description="Average annual paid vacation days"
-            value={laborMarket.paidVacationDays}
-            onChange={(value) => onChange("paidVacationDays", Number(value) || 0)}
-            min={0}
-            max={50}
-            step={1}
-            sectionId="labor"
-            icon={Heart}
-            showButtons={true}
-          />
+      <AdvancedFieldsDisclosure
+        section="economics"
+        id="labor-protections"
+        values={{
+          paidVacationDays: laborMarket.paidVacationDays,
+          paidSickLeaveDays: laborMarket.paidSickLeaveDays,
+          parentalLeaveWeeks: laborMarket.parentalLeaveWeeks,
+        }}
+        defaults={BASELINE_ECONOMY_BUILDER.laborMarket}
+        defaultOpen={showAdvanced}
+        className="border-t pt-4"
+      >
+        <EnhancedNumberInput
+          label="Paid Vacation Days"
+          description="Average annual paid vacation days"
+          value={laborMarket.paidVacationDays}
+          onChange={(value) => onChange("paidVacationDays", Number(value) || 0)}
+          min={0}
+          max={50}
+          step={1}
+          sectionId="labor"
+          icon={Heart}
+          showButtons={true}
+        />
 
-          <EnhancedNumberInput
-            label="Paid Sick Leave Days"
-            description="Average annual paid sick leave days"
-            value={laborMarket.paidSickLeaveDays}
-            onChange={(value) => onChange("paidSickLeaveDays", Number(value) || 0)}
-            min={0}
-            max={30}
-            step={1}
-            sectionId="labor"
-            icon={Heart}
-            showButtons={true}
-          />
+        <EnhancedNumberInput
+          label="Paid Sick Leave Days"
+          description="Average annual paid sick leave days"
+          value={laborMarket.paidSickLeaveDays}
+          onChange={(value) => onChange("paidSickLeaveDays", Number(value) || 0)}
+          min={0}
+          max={30}
+          step={1}
+          sectionId="labor"
+          icon={Heart}
+          showButtons={true}
+        />
 
-          <EnhancedNumberInput
-            label="Parental Leave Weeks"
-            description="Paid parental leave duration"
-            value={laborMarket.parentalLeaveWeeks}
-            onChange={(value) => onChange("parentalLeaveWeeks", Number(value) || 0)}
-            min={0}
-            max={52}
-            step={1}
-            sectionId="labor"
-            icon={Heart}
-            showButtons={true}
-          />
-        </div>
-      )}
+        <EnhancedNumberInput
+          label="Parental Leave Weeks"
+          description="Paid parental leave duration"
+          value={laborMarket.parentalLeaveWeeks}
+          onChange={(value) => onChange("parentalLeaveWeeks", Number(value) || 0)}
+          min={0}
+          max={52}
+          step={1}
+          sectionId="labor"
+          icon={Heart}
+          showButtons={true}
+        />
+      </AdvancedFieldsDisclosure>
     </div>
   );
 }

@@ -10,11 +10,9 @@ import {
   Suitcase as Briefcase,
   Link as Link2,
   LinkSlash as Link2Off,
-  Settings,
-  NavArrowDown as ChevronDown,
 } from "iconoir-react";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "~/components/ui/collapsible";
 import { cn } from "~/lib/utils";
+import { AdvancedFieldsDisclosure } from "~/app/builder/primitives/AdvancedFieldsDisclosure";
 import type { GovernmentStructureInput } from "~/types/government";
 import { governmentTypes } from "./governmentStructureConstants";
 
@@ -33,10 +31,6 @@ export function GovernmentStructureFields({
 }: GovernmentStructureFieldsProps) {
   const [isGovHeadLocked, setIsGovHeadLocked] = useState(() => {
     return data.headOfState === data.headOfGovernment && !!data.headOfState;
-  });
-
-  const [showAdvancedBranches, setShowAdvancedBranches] = useState(() => {
-    return Boolean(data.legislatureName || data.executiveName || data.judicialName);
   });
 
   const toggleGovHeadLock = useCallback(() => {
@@ -190,78 +184,70 @@ export function GovernmentStructureFields({
         </div>
       </div>
 
-      {/* Advanced Branches of Government (Progressive Disclosure) */}
-      <Collapsible open={showAdvancedBranches} onOpenChange={setShowAdvancedBranches} className="pt-1">
-        <CollapsibleTrigger asChild>
-          <button
-            type="button"
-            className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <Settings className="h-3.5 w-3.5" />
-            <span>{showAdvancedBranches ? "Hide institutional branches" : "Show institutional branches"}</span>
-            <ChevronDown
-              className={cn(
-                "h-3.5 w-3.5 transition-transform duration-200",
-                showAdvancedBranches && "rotate-180"
-              )}
+      {/* Institutional branches (advanced tier in FIELD_IMPORTANCE.government) */}
+      <AdvancedFieldsDisclosure
+        section="government"
+        id="branches"
+        values={{
+          legislatureName: data.legislatureName,
+          executiveName: data.executiveName,
+          judicialName: data.judicialName,
+        }}
+        className="pt-1"
+      >
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="space-y-2">
+            <Label
+              htmlFor="legislatureName"
+              className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+            >
+              <Users className="mr-1 h-4 w-4" />
+              Legislature
+            </Label>
+            <Input
+              id="legislatureName"
+              value={data.legislatureName || ""}
+              onChange={(e) => onChange("legislatureName", e.target.value)}
+              placeholder="e.g., Imperial Senate, Parliament"
+              disabled={isReadOnly}
             />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-3 space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label
-                htmlFor="legislatureName"
-                className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
-              >
-                <Users className="mr-1 h-4 w-4" />
-                Legislature
-              </Label>
-              <Input
-                id="legislatureName"
-                value={data.legislatureName || ""}
-                onChange={(e) => onChange("legislatureName", e.target.value)}
-                placeholder="e.g., Imperial Senate, Parliament"
-                disabled={isReadOnly}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="executiveName"
-                className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
-              >
-                <Briefcase className="mr-1 h-4 w-4" />
-                Executive
-              </Label>
-              <Input
-                id="executiveName"
-                value={data.executiveName || ""}
-                onChange={(e) => onChange("executiveName", e.target.value)}
-                placeholder="e.g., Imperial Cabinet, Executive Council"
-                disabled={isReadOnly}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="judicialName"
-                className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
-              >
-                <Scale className="mr-1 h-4 w-4" />
-                Judiciary
-              </Label>
-              <Input
-                id="judicialName"
-                value={data.judicialName || ""}
-                onChange={(e) => onChange("judicialName", e.target.value)}
-                placeholder="e.g., Supreme Court, High Court"
-                disabled={isReadOnly}
-              />
-            </div>
           </div>
-        </CollapsibleContent>
-      </Collapsible>
+
+          <div className="space-y-2">
+            <Label
+              htmlFor="executiveName"
+              className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+            >
+              <Briefcase className="mr-1 h-4 w-4" />
+              Executive
+            </Label>
+            <Input
+              id="executiveName"
+              value={data.executiveName || ""}
+              onChange={(e) => onChange("executiveName", e.target.value)}
+              placeholder="e.g., Imperial Cabinet, Executive Council"
+              disabled={isReadOnly}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label
+              htmlFor="judicialName"
+              className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+            >
+              <Scale className="mr-1 h-4 w-4" />
+              Judiciary
+            </Label>
+            <Input
+              id="judicialName"
+              value={data.judicialName || ""}
+              onChange={(e) => onChange("judicialName", e.target.value)}
+              placeholder="e.g., Supreme Court, High Court"
+              disabled={isReadOnly}
+            />
+          </div>
+        </div>
+      </AdvancedFieldsDisclosure>
     </>
   );
 }
