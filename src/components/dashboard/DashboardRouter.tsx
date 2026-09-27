@@ -10,9 +10,11 @@ import { api } from "~/trpc/react";
 
 interface DashboardRouterProps {
   discordBadge?: ReactNode;
+  /** Country id resolved on the server, used until getProfile loads so map status fetches in parallel. */
+  initialCountryId?: string;
 }
 
-export function DashboardRouter({ discordBadge }: DashboardRouterProps) {
+export function DashboardRouter({ discordBadge, initialCountryId = "" }: DashboardRouterProps) {
   const { data: globalStats } = api.countries.getGlobalStats.useQuery(undefined, {
     staleTime: 300_000,
   });
@@ -29,7 +31,7 @@ export function DashboardRouter({ discordBadge }: DashboardRouterProps) {
     enabled: !!user?.id,
     staleTime: 60_000,
   });
-  const countryId = userProfile?.countryId || (user as any)?.countryId || "";
+  const countryId: string = (userProfile ? userProfile.countryId : initialCountryId) || "";
   const { data: mapStatus } = api.countries.getMapLinkStatus.useQuery(
     { countryId },
     { enabled: !!countryId && countryId.trim() !== "", staleTime: 60_000 }

@@ -49,7 +49,8 @@ Every route below renders `<DashboardRouter />` (wrapped in
 ## Architecture
 
 ```
-page.tsx → DashboardErrorBoundary → DashboardRouter
+page.tsx (server: resolves signed-in country id) → DashboardPageClient
+  → DashboardErrorBoundary → DashboardRouter(initialCountryId)
   DashboardSidebarLayout (icon rail + content; collapse disabled here)
     ├ heroSection:  DashboardHero      (collapsible, premium-gated pills)
     ├ alerts:       NewVersionNotice

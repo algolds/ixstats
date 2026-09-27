@@ -12,7 +12,12 @@ import { EnhancedAccountManager } from "./EnhancedAccountManager";
 import { AccountCreationModal } from "./AccountCreationModal";
 import { AccountSettingsModal } from "./AccountSettingsModal";
 
-function ThinkPagesAccountHubInner() {
+interface ThinkPagesAccountHubProps {
+  /** Country id resolved on the server, used until getProfile loads so the country query runs in parallel. */
+  initialCountryId?: string;
+}
+
+function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountHubProps) {
   const { user } = useUser();
 
   const [selectedAccount, setSelectedAccount] = useState<any>(null);
@@ -25,7 +30,8 @@ function ThinkPagesAccountHubInner() {
     staleTime: 5 * 60_000,
   });
 
-  const effectiveCountryId = userProfile?.countryId || (user as any)?.countryId || "";
+  const effectiveCountryId: string =
+    (userProfile ? userProfile.countryId : initialCountryId) || "";
 
   const { data: countryData } = api.countries.getMapSummary.useQuery(
     { countryId: effectiveCountryId },
@@ -160,10 +166,10 @@ function ThinkPagesAccountHubInner() {
   );
 }
 
-export function ThinkPagesAccountHub() {
+export function ThinkPagesAccountHub({ initialCountryId }: ThinkPagesAccountHubProps) {
   return (
     <AuthenticationGuard redirectPath="/thinkpages">
-      <ThinkPagesAccountHubInner />
+      <ThinkPagesAccountHubInner initialCountryId={initialCountryId} />
     </AuthenticationGuard>
   );
 }

@@ -1,20 +1,10 @@
-"use client";
+import { getSignedInCountryId } from "~/lib/auth/signed-in-country.server";
+import { DashboardPageClient } from "./DashboardPageClient";
 
-import { usePageTitle } from "~/hooks/usePageTitle";
-import { DashboardRouter } from "~/components/dashboard/DashboardRouter";
-import { DashboardErrorBoundary } from "~/components/dashboard/DashboardErrorBoundary";
+export default async function DashboardPage() {
+  // Resolved on the server so the dashboard's country-scoped queries start on the first client
+  // render instead of waiting for users.getProfile to return the country id.
+  const initialCountryId = await getSignedInCountryId();
 
-export default function DashboardPage() {
-  usePageTitle({ title: "Dashboard" });
-
-  // Enhanced home page with social activity feed and platform-wide engagement
-  // Combines the best of the original CommandCenter with new social features
-  return (
-    <DashboardErrorBoundary
-      title="Dashboard Error"
-      description="An error occurred while loading the dashboard. Please try again."
-    >
-      <DashboardRouter />
-    </DashboardErrorBoundary>
-  );
+  return <DashboardPageClient initialCountryId={initialCountryId} />;
 }
