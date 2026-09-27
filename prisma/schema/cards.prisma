@@ -290,22 +290,6 @@ model UserPack {
   @@map("user_packs")
 }
 
-model NSImport {
-  id           String    @id @default(cuid())
-  userId       String
-  nationName   String
-  cardCount    Int
-  totalValue   Float
-  status       String    @default("PENDING")
-  errorMessage String?
-  createdAt    DateTime  @default(now())
-  completedAt  DateTime?
-
-  @@index([userId])
-  @@index([status])
-  @@map("ns_imports")
-}
-
 model SyncLog {
   id             String    @id @default(cuid())
   syncType       String

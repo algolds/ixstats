@@ -499,29 +499,6 @@ model BudgetScenarioCategory {
   @@index([scenarioId])
 }
 
-model FiscalPolicy {
-  id             String    @id @default(cuid())
-  countryId      String
-  name           String
-  policyType     String
-  impact         Float
-  implementation String
-  cost           Float
-  benefits       Float
-  description    String?
-  isActive       Boolean   @default(true)
-  appliedDate    DateTime?
-  expiryDate     DateTime?
-  measuredImpact Float?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  country        Country   @relation("CountryFiscalPolicies", fields: [countryId], references: [id], onDelete: Cascade)
-
-  @@index([countryId])
-  @@index([policyType])
-  @@index([isActive])
-}
-
 model AtomicEffectiveness {
   id                  String   @id @default(cuid())
   countryId           String   @unique
@@ -541,24 +518,6 @@ model AtomicEffectiveness {
   @@index([countryId])
   @@index([overallScore])
   @@index([lastCalculated])
-}
-
-model AtomicEconomicImpact {
-  id               String        @id @default(cuid())
-  countryId        String
-  componentType    ComponentType
-  economicMetric   String
-  impactMultiplier Float
-  effectiveDate    DateTime      @default(now())
-  isActive         Boolean       @default(true)
-  createdAt        DateTime      @default(now())
-  country          Country       @relation("AtomicEconomicImpacts", fields: [countryId], references: [id], onDelete: Cascade)
-
-  @@index([countryId])
-  @@index([componentType])
-  @@index([economicMetric])
-  @@index([effectiveDate])
-  @@index([isActive])
 }
 
 model EconomicArchetype {

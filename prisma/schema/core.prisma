@@ -101,7 +101,6 @@ model Country {
   createdAt                   DateTime                  @default(now())
   updatedAt                   DateTime                  @updatedAt
   geom_postgis                Unsupported("geometry")?
-  atomicEconomicImpacts       AtomicEconomicImpact[]    @relation("AtomicEconomicImpacts")
   atomicEffectiveness         AtomicEffectiveness?
   borderSecurity              BorderSecurity?           @relation("CountryBorderSecurity")
   budgetScenarios             BudgetScenario[]          @relation("CountryBudgetScenarios")
@@ -109,7 +108,6 @@ model Country {
   changeLogs                  CountryChangeLog[]        @relation("CountryChangeLogs")
   intents                     Intent[]                  @relation("CountryIntents")
   componentSynergies          ComponentSynergy[]        @relation("CountrySynergies")
-  archetypeMatches            CountryArchetypeMatch[]   @relation("CountryArchetypes")
   followers                   CountryFollow[]           @relation("CountryFollowing")
   following                   CountryFollow[]           @relation("CountryFollowers")
   moodMetrics                 CountryMoodMetric[]
@@ -123,7 +121,6 @@ model Country {
   economicProfile             EconomicProfile?
   embassiesGuest              Embassy[]                 @relation("GuestCountryEmbassies")
   embassiesHosting            Embassy[]                 @relation("HostCountryEmbassies")
-  fiscalPolicies              FiscalPolicy[]            @relation("CountryFiscalPolicies")
   policies                    Policy[]                  @relation("CountryPolicies")
   fiscalSystem                FiscalSystem?
   governmentBudget            GovernmentBudget?
@@ -236,7 +233,6 @@ model User {
   scheduledChanges    ScheduledChange[]        @relation("UserScheduledChanges")
   country             Country?                 @relation("UserCountry", fields: [countryId], references: [id])
   role                Role?                    @relation(fields: [roleId], references: [id])
-  archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
   vault               MyVault?
   nsVerifications     NSVerification[]
   craftingHistory     CraftingHistory[]
@@ -257,10 +253,6 @@ model User {
   CardWatchlist       CardWatchlist[]
   // Exchange (market & corporate system)
   exchangeWallet      ExchangeWallet?
-  companiesFounded    Company[]                @relation("UserCompaniesFounded")
-  shareholdings       Shareholding[]           @relation("UserShareholdings")
-  sectorPositions     SectorPosition[]         @relation("UserSectorPositions")
-  conversionLogs      ConversionLog[]          @relation("UserConversionLogs")
   nameBankEntries     NameBank[]               @relation("UserNameBank")
   generationEvents    GenerationEvent[]        @relation("UserGenerationEvents")
   generationFavorites GenerationFavorite[]     @relation("UserGenerationFavorites")
@@ -590,17 +582,6 @@ model SystemLog {
   @@index([requestId])
 }
 
-model LogRetentionPolicy {
-  id               String   @id @default(cuid())
-  logLevel         String   @unique
-  retentionDays    Int
-  archiveAfterDays Int?
-  deleteAfterDays  Int
-  enabled          Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-}
-
 model ExternalApiCache {
   id               String   @id @default(cuid())
   key              String   @unique
@@ -625,42 +606,6 @@ model ExternalApiCache {
   @@index([lastValidatedAt])
   @@index([validationStatus])
   @@index([countryName])
-}
-
-model EncryptionKey {
-  id                         String    @id
-  countryId                  String
-  publicKey                  String
-  encryptedPrivateKey        String
-  signingPublicKey           String
-  encryptedSigningPrivateKey String
-  version                    String    @default("v1")
-  status                     String    @default("ACTIVE")
-  expiresAt                  DateTime
-  createdAt                  DateTime  @default(now())
-  revokedAt                  DateTime?
-
-  @@index([countryId])
-  @@index([status])
-  @@index([expiresAt])
-}
-
-model EncryptionAuditLog {
-  id             String   @id @default(cuid())
-  countryId      String
-  operation      String
-  classification String
-  success        Boolean
-  errorMessage   String?
-  metadata       String?
-  userId         String?
-  ipAddress      String?
-  userAgent      String?
-  createdAt      DateTime @default(now())
-
-  @@index([countryId])
-  @@index([operation])
-  @@index([createdAt])
 }
 
 model UserConnection {
@@ -771,41 +716,11 @@ model Archetype {
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
   category       ArchetypeCategory        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  countryMatches CountryArchetypeMatch[]
-  userSelections UserArchetypeSelection[]
 
   @@index([categoryId])
   @@index([priority])
   @@index([isSelectable])
   @@index([isActive])
-}
-
-model UserArchetypeSelection {
-  id          String    @id @default(cuid())
-  userId      String
-  archetypeId String
-  selectedAt  DateTime  @default(now())
-  archetype   Archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
-  user        User      @relation("UserArchetypes", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, archetypeId])
-  @@index([userId])
-  @@index([archetypeId])
-}
-
-model CountryArchetypeMatch {
-  id          String    @id @default(cuid())
-  countryId   String
-  archetypeId String
-  matchScore  Float     @default(1.0)
-  lastChecked DateTime  @default(now())
-  archetype   Archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
-  country     Country   @relation("CountryArchetypes", fields: [countryId], references: [id], onDelete: Cascade)
-
-  @@unique([countryId, archetypeId])
-  @@index([countryId])
-  @@index([archetypeId])
-  @@index([matchScore])
 }
 
 model NationalIdentity {

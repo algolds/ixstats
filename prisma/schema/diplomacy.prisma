@@ -577,43 +577,6 @@ model ScenarioGeneration {
   @@index([expiresAt])
 }
 
-model ScenarioTemplate {
-  id                   String   @id @default(cuid())
-  templateKey          String   @unique
-  scenarioType         String
-  titleTemplate        String
-  introductionTemplate String
-  contextTemplate      String
-  situationTemplate    String
-  implicationsTemplate String
-  requiredVariables    String
-  isActive             Boolean  @default(true)
-  usageCount           Int      @default(0)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  @@index([scenarioType, isActive])
-}
-
-model ScenarioUsageAnalytics {
-  id                        String   @id @default(cuid())
-  scenarioId                String   @unique
-  choiceId                  String?
-  totalGenerations          Int      @default(0)
-  totalCompletions          Int      @default(0)
-  completionRate            Float    @default(0.0)
-  choiceDistribution        String
-  averageRelationshipChange Float    @default(0.0)
-  averageEconomicImpact     Float    @default(0.0)
-  averageReputationChange   Float    @default(0.0)
-  averageSecurityImpact     Float    @default(0.0)
-  averageResponseTime       Float    @default(0.0)
-  lastUpdated               DateTime @default(now())
-
-  @@index([totalGenerations])
-  @@index([completionRate])
-}
-
 model NPCPersonality {
   id                  String                     @id @default(cuid())
   name                String
