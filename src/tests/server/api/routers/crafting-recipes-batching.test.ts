@@ -40,6 +40,8 @@ describe("Plan 159: Crafting Recipes Query Batching", () => {
 
     // Assert query batching
     expect(userFindUniqueMock).toHaveBeenCalledTimes(1);
+    // Plan 340 Step 2: crafting looks users up by the internal User.id, never the Clerk id.
+    expect(userFindUniqueMock.mock.calls[0][0].where).toEqual({ id: "user_db_id_1" });
     expect(historyGroupByMock).toHaveBeenCalledTimes(1);
     expect(historyCountMock).toHaveBeenCalledTimes(0);
 

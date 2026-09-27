@@ -35,7 +35,7 @@ export const craftingRecipesRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       // Fetch all recipes
       const recipes = await ctx.db.craftingRecipe.findMany({
@@ -111,7 +111,7 @@ export const craftingRecipesRouter = createTRPCRouter({
   getRecipeById: protectedProcedure
     .input(z.object({ recipeId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       const recipe = await ctx.db.craftingRecipe.findUnique({
         where: { id: input.recipeId },
@@ -168,7 +168,7 @@ export const craftingRecipesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       // Check crafting switch or maintenance mode
       const config = await getVaultConfig(ctx.db);
