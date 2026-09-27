@@ -10,9 +10,7 @@ const srcDir = path.resolve(__dirname, "../..");
 
 const CREATE_SITES = [
   "server/api/routers/countries/management/create.ts",
-  "server/api/routers/geo/editor/linkage/validation.ts",
   "server/api/routers/geo/editor/linkage/assignment.ts",
-  "server/api/routers/studio/generation.ts",
   "lib/maps/pipeline/realm-map-committer.ts",
 ];
 

@@ -235,37 +235,6 @@ export const commonsRouter = createTRPCRouter({
     }),
 
   /**
-   * File/subcategory counts for up to 20 categories (batched).
-   */
-  getCategoryInfo: commonsProcedure
-    .input(
-      z.object({
-        categories: z.array(z.string().min(1).max(300)).min(1).max(20),
-      })
-    )
-    .query(async ({ input }) => {
-      const titles = input.categories.map((c) => `Category:${c}`).join("|");
-
-      const data = await commonsApiFetch({
-        action: "query",
-        prop: "categoryinfo",
-        titles,
-      });
-
-      const result: Record<string, { files: number; subcats: number }> = {};
-      for (const page of data?.query?.pages ?? []) {
-        const name = String(page.title).replace(/^Category:/, "");
-        const info = page.categoryinfo ?? {};
-        result[name] = {
-          files: info.files ?? 0,
-          subcats: info.subcats ?? 0,
-        };
-      }
-
-      return result;
-    }),
-
-  /**
    * Category prefix autocomplete.
    */
   autocompleteCategories: commonsProcedure

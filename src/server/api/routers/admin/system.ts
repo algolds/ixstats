@@ -14,34 +14,9 @@ import {
   prepareBaseCountryData,
   getCountryComponentsStatsData,
 } from "~/server/shared/country-helpers";
+import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 
 export const adminSystemRouter = createTRPCRouter({
-  // Internal calculation formulas management
-  getCalculationFormulas: adminProcedure.query(async ({ ctx }) => {
-    const lastCalc = await ctx.db.calculationLog.findFirst({ orderBy: { timestamp: "desc" } });
-    const lastModified = lastCalc?.timestamp ?? new Date();
-
-    return {
-      formulas: [
-        {
-          id: "gdp-growth",
-          name: "GDP Effective Growth Rate",
-          description: "Computes effective GDP growth applying global/local factors and tier caps",
-          category: "economic",
-          isActive: true,
-          version: "1.0.0",
-          lastModified,
-          variables: {
-            baseGrowthRate: 0.02,
-            gdpPerCapita: 20000,
-            globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
-            localGrowthFactor: 1.0,
-          },
-        },
-      ],
-    };
-  }),
-
   // Get global platform statistics
   getGlobalStats: adminProcedure.query(async ({ ctx }) => {
     try {
@@ -116,8 +91,6 @@ export const adminSystemRouter = createTRPCRouter({
     }
   }),
 
-  // Get bot status with health check
-
   // Get system configuration (includes all economic control parameters)
   getConfig: adminProcedure.query(async ({ ctx }) => {
     const ALL_CONFIG_KEYS = [
@@ -139,17 +112,7 @@ export const adminSystemRouter = createTRPCRouter({
     ];
 
     try {
-      const configs = await ctx.db.systemConfig.findMany({
-        where: { key: { in: ALL_CONFIG_KEYS } },
-      });
-
-      const m = configs.reduce(
-        (acc, config) => {
-          acc[config.key] = config.value;
-          return acc;
-        },
-        {} as Record<string, string>
-      );
+      const m = await readConfigKeys(ctx.db, ALL_CONFIG_KEYS);
 
       return {
         globalGrowthFactor: parseFloat(
@@ -260,19 +223,7 @@ export const adminSystemRouter = createTRPCRouter({
           configUpdates.push({ key: "minGrowthFloor", value: input.minGrowthFloor.toString() });
         }
 
-        await ctx.db.$transaction(
-          configUpdates.map((config) =>
-            ctx.db.systemConfig.upsert({
-              where: { key: config.key },
-              update: { value: config.value, updatedAt: new Date() },
-              create: {
-                key: config.key,
-                value: config.value,
-                description: `System configuration for ${config.key}`,
-              },
-            })
-          )
-        );
+        await writeConfigKeys(ctx.db, configUpdates, (key) => `System configuration for ${key}`);
 
         // Invalidate config cache so next calculation uses fresh values
         invalidateConfigCache();
@@ -322,8 +273,6 @@ export const adminSystemRouter = createTRPCRouter({
       }
     }),
 
-  // Bot control operations
-
   // Get calculation logs
   getCalculationLogs: adminProcedure
     .input(
@@ -363,10 +312,6 @@ export const adminSystemRouter = createTRPCRouter({
         );
       }
     }),
-
-  // Analyze import file
-
-  // Import roster data
 
   // Sync epoch time with imported data
   syncEpochWithData: adminProcedure
@@ -505,42 +450,6 @@ export const adminSystemRouter = createTRPCRouter({
     }
   }),
 
-  // Get system health
-  getSystemHealth: adminProcedure.query(async ({ ctx }) => {
-    try {
-      const [countryCount, recentCalculations, botHealth] = await Promise.all([
-        ctx.db.country.count(),
-        ctx.db.calculationLog.count({
-          where: {
-            timestamp: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
-            },
-          },
-        }),
-        IxTime.checkBotHealth(),
-      ]);
-
-      return {
-        database: {
-          connected: true,
-          countries: countryCount,
-          recentCalculations,
-        },
-        bot: botHealth,
-        ixTime: {
-          current: IxTime.getCurrentIxTime(),
-          formatted: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
-          multiplier: IxTime.getTimeMultiplier(),
-          isPaused: IxTime.isPaused(),
-        },
-        lastUpdate: new Date().toISOString(),
-      };
-    } catch (error) {
-      console.error("Failed to get system health:", error);
-      throw new Error("Failed to retrieve system health status", { cause: error });
-    }
-  }),
-
   getSystemLogs: adminProcedure
     .input(
       z.object({
@@ -634,5 +543,3 @@ export const adminSystemRouter = createTRPCRouter({
     }
   }),
 });
-
-// getWikiDbPool is now imported from "~/lib/wiki-os/adapters/mediawiki/bridge"

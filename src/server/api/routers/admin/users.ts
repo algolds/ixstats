@@ -4,6 +4,7 @@ import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/
 import { isSystemOwner } from "~/lib/auth";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache, globalCache } from "~/lib/cache";
+import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 
 export const adminUsersRouter = createTRPCRouter({
   // List all users and their claimed countries
@@ -98,29 +99,18 @@ export const adminUsersRouter = createTRPCRouter({
   // Get navigation settings (wiki/cards/labs visibility)
   getNavigationSettings: publicProcedure.query(async ({ ctx }) => {
     try {
-      const settings = await ctx.db.systemConfig.findMany({
-        where: {
-          key: {
-            in: [
-              "showWikiTab",
-              "showCardsTab",
-              "showLabsTab",
-              "showIntelligenceTab",
-              "showDefenseTab",
-              "showMapsTab",
-              "showForumTab",
-              "showHelpTab",
-            ],
-          },
-        },
-      });
-
-      const settingsMap = settings.reduce(
-        (acc, setting) => {
-          acc[setting.key] = setting.value === "true";
-          return acc;
-        },
-        {} as Record<string, boolean>
+      const stored = await readConfigKeys(ctx.db, [
+        "showWikiTab",
+        "showCardsTab",
+        "showLabsTab",
+        "showIntelligenceTab",
+        "showDefenseTab",
+        "showMapsTab",
+        "showForumTab",
+        "showHelpTab",
+      ]);
+      const settingsMap: Record<string, boolean> = Object.fromEntries(
+        Object.entries(stored).map(([key, value]) => [key, value === "true"] as const)
       );
 
       return {
@@ -175,19 +165,10 @@ export const adminUsersRouter = createTRPCRouter({
           { key: "showHelpTab", value: input.showHelpTab.toString() },
         ];
 
-        // Batch upserts using transaction for better performance (avoids N+1 pattern)
-        await ctx.db.$transaction(
-          configUpdates.map((config) =>
-            ctx.db.systemConfig.upsert({
-              where: { key: config.key },
-              update: { value: config.value, updatedAt: new Date() },
-              create: {
-                key: config.key,
-                value: config.value,
-                description: `Navigation tab visibility setting for ${config.key}`,
-              },
-            })
-          )
+        await writeConfigKeys(
+          ctx.db,
+          configUpdates,
+          (key) => `Navigation tab visibility setting for ${key}`
         );
 
         return { success: true, message: "Navigation settings updated successfully" };

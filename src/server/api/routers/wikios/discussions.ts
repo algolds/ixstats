@@ -358,41 +358,6 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     }),
 
   /**
-   * Toggle an emoji reaction on a comment.
-   */
-  toggleCommentReaction: protectedProcedure
-    .input(
-      z.object({
-        commentId: z.string(),
-        emoji: z.string().min(1).max(10),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const _userId = requireWikiUserId(ctx);
-      const prismaClient = db as any;
-
-      const comment = await prismaClient.wikiDiscussionComment.findUnique({
-        where: { id: input.commentId },
-      });
-
-      if (!comment) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Comment not found" });
-      }
-
-      const existingReactions = (comment.reactions as Record<string, number> | null) || {};
-      const currentCount = existingReactions[input.emoji] || 0;
-      const updatedReactions = {
-        ...existingReactions,
-        [input.emoji]: Math.max(0, currentCount + 1),
-      };
-
-      return prismaClient.wikiDiscussionComment.update({
-        where: { id: input.commentId },
-        data: { reactions: updatedReactions },
-      });
-    }),
-
-  /**
    * Delete a discussion thread (creator or admin only).
    */
   deleteThread: protectedProcedure
@@ -419,38 +384,6 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
 
       await prismaClient.wikiDiscussionThread.delete({
         where: { id: input.threadId },
-      });
-
-      return { success: true };
-    }),
-
-  /**
-   * Delete a discussion comment (author or admin only).
-   */
-  deleteComment: protectedProcedure
-    .input(z.object({ commentId: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      const userId = requireWikiUserId(ctx);
-      const admin = isWikiAdmin(ctx);
-      const prismaClient = db as any;
-
-      const comment = await prismaClient.wikiDiscussionComment.findUnique({
-        where: { id: input.commentId },
-      });
-
-      if (!comment) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Comment not found" });
-      }
-
-      if (comment.userId !== userId && !admin) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You are not authorized to delete this comment.",
-        });
-      }
-
-      await prismaClient.wikiDiscussionComment.delete({
-        where: { id: input.commentId },
       });
 
       return { success: true };

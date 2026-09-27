@@ -27,30 +27,11 @@ const coordinatesSchema = z
     message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
   });
 
-import { syncGeographicDemographics } from "~/lib/country-geo/sync";
-export { syncGeographicDemographics };
-
 // ──────────────────────────────────────────────
 // Router
 // ──────────────────────────────────────────────
 
 export const geoFeaturesLabelsRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Border Editor
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Story Pins — Narrative markers on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Storylines — Narrative chains connecting story pins
-  // ──────────────────────────────────────────────
-
   // ──────────────────────────────────────────────
   // Map Labels — Custom styled text on the map
   // ──────────────────────────────────────────────
@@ -206,16 +187,6 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       return { id: input.labelId, deleted: true };
     }),
 
-  getMapLabelsByCountry: cachedPublicProcedure
-    .input(z.object({ countryId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db.mapLabel.findMany({
-        where: { countryId: input.countryId, status: "approved" },
-        take: 500,
-        orderBy: { text: "asc" },
-      });
-    }),
-
   getAllMapLabels: cachedPublicProcedure.query(async ({ ctx }) => {
     const labels = await ctx.db.mapLabel.findMany({
       where: { status: "approved" },
@@ -249,34 +220,4 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
         })),
     };
   }),
-
-  // ──────────────────────────────────────────────
-  // Sovereignty / dependency management
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Linkage validation & repair
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // SVG Upload & Processing Pipeline
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // World Template / Clone System (Phase 3)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // Procedural World Generation (Phase 4)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Province Import Endpoints
-  // ──────────────────────────────────────────────
-
-  // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
 });

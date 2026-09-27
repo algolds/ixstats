@@ -1,6 +1,7 @@
 // src/server/api/routers/admin/thinkpages.ts
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 
 export const adminThinkpagesRouter = createTRPCRouter({
   // Get ThinkPages statistics (real DB values)
@@ -46,28 +47,14 @@ export const adminThinkpagesRouter = createTRPCRouter({
   // Get ThinkPages Configuration from SystemConfig
   getThinkPagesConfig: adminProcedure.query(async ({ ctx }) => {
     try {
-      const configs = await ctx.db.systemConfig.findMany({
-        where: {
-          key: {
-            in: [
-              "thinkpages_maxAccountsPerUser",
-              "thinkpages_maxCharLength",
-              "thinkpages_autoNewsElections",
-              "thinkpages_autoNewsPolicies",
-              "thinkpages_commentAttachments",
-              "thinkpages_feedLimit",
-            ],
-          },
-        },
-      });
-
-      const m = configs.reduce(
-        (acc, c) => {
-          acc[c.key] = c.value;
-          return acc;
-        },
-        {} as Record<string, string>
-      );
+      const m = await readConfigKeys(ctx.db, [
+        "thinkpages_maxAccountsPerUser",
+        "thinkpages_maxCharLength",
+        "thinkpages_autoNewsElections",
+        "thinkpages_autoNewsPolicies",
+        "thinkpages_commentAttachments",
+        "thinkpages_feedLimit",
+      ]);
 
       return {
         maxAccountsPerUser: parseInt(m.thinkpages_maxAccountsPerUser || "25") || 25,
@@ -121,15 +108,7 @@ export const adminThinkpagesRouter = createTRPCRouter({
         { key: "thinkpages_feedLimit", value: input.feedLimit.toString() },
       ];
 
-      await Promise.all(
-        updates.map((u) =>
-          ctx.db.systemConfig.upsert({
-            where: { key: u.key },
-            update: { value: u.value },
-            create: { key: u.key, value: u.value },
-          })
-        )
-      );
+      await writeConfigKeys(ctx.db, updates);
 
       return { success: true };
     }),

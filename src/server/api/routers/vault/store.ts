@@ -12,7 +12,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { vaultService, getVaultConfig } from "~/lib/vault/vault-service";
+import { vaultService } from "~/lib/vault/vault-service";
 import { type VaultTransactionType } from "@prisma/client";
 import { resolveVaultUserId } from "./_resolveUserId";
 
@@ -127,114 +127,6 @@ export const vaultStoreRouter = createTRPCRouter({
       console.error("[Vault Router] Error getting purchased items:", error);
       throw new Error("Failed to retrieve purchased items", { cause: error });
     }
-  }),
-
-  /**
-   * Spend credits to purchase a storefront item (cosmetic or upgrade)
-   */
-  purchaseStoreItem: protectedProcedure
-    .input(z.object({ itemId: z.string().min(1) }))
-    .mutation(async ({ ctx, input }) => {
-      try {
-        if (!ctx.auth?.userId) {
-          throw new Error("Unauthorized");
-        }
-
-        // 1. Fetch item definition from DB
-        const item = await ctx.db.vaultStoreItem.findUnique({
-          where: { id: input.itemId },
-        });
-
-        if (!item || !item.isActive) {
-          throw new Error("Store item not found or inactive");
-        }
-
-        // 2. Fetch existing cosmetic/boost transactions to check if already owned
-        const purchaserUserId = await resolveVaultUserId(ctx);
-        const existingPurchases = await ctx.db.vaultTransaction.findMany({
-          where: {
-            vault: { userId: purchaserUserId },
-            type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] },
-          },
-          select: { metadata: true },
-        });
-
-        const purchaseCount = existingPurchases.filter((tx) => {
-          let meta = tx.metadata;
-          if (typeof meta === "string") {
-            try {
-              meta = JSON.parse(meta);
-            } catch {}
-          }
-          return meta && typeof meta === "object" && (meta as any).itemId === input.itemId;
-        }).length;
-
-        if (input.itemId === "upgrade_card_capacity") {
-          if (purchaseCount >= 5) {
-            throw new Error(
-              "You have reached the maximum purchase limit of 5 for Card Capacity Boost"
-            );
-          }
-        } else if (input.itemId === "upgrade_card_capacity_mega") {
-          const standardCount = existingPurchases.filter((tx) => {
-            let meta = tx.metadata;
-            if (typeof meta === "string") {
-              try {
-                meta = JSON.parse(meta);
-              } catch {}
-            }
-            return (
-              meta && typeof meta === "object" && (meta as any).itemId === "upgrade_card_capacity"
-            );
-          }).length;
-
-          if (standardCount < 5) {
-            throw new Error(
-              "You must purchase 5 standard Card Capacity Boosts to unlock the Mega Boost"
-            );
-          }
-          if (purchaseCount >= 1) {
-            throw new Error("You have already purchased the Mega Card Capacity Boost");
-          }
-        } else {
-          if (purchaseCount >= 1) {
-            throw new Error("You already own this item");
-          }
-        }
-
-        // 3. Spend credits using vaultService helper
-        const transactionType = item.category === "cosmetics" ? "SPEND_COSMETIC" : "SPEND_BOOST";
-        const result = await vaultService.spendCredits(
-          ctx.auth.userId,
-          item.price,
-          transactionType,
-          `Purchase: ${item.name}`,
-          ctx.db as any,
-          { itemId: item.id }
-        );
-
-        if (!result.success) {
-          throw new Error(result.message || "Failed to purchase item");
-        }
-
-        return {
-          success: true,
-          message: `Successfully purchased ${item.name}!`,
-          newBalance: result.newBalance,
-        };
-      } catch (error) {
-        console.error("[Vault Router] purchaseStoreItem error:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to purchase store item", {
-          cause: error,
-        });
-      }
-    }),
-
-  /**
-   * Get vault configuration for store prices and caps (accessible to all authenticated users)
-   */
-  getStoreConfig: protectedProcedure.query(async ({ ctx }) => {
-    return getVaultConfig(ctx.db as any);
   }),
 
   // Get vault configuration (DB-backed)

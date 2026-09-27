@@ -556,10 +556,4 @@ export const geoProfileProcedures = {
         crisisRisk,
       };
     }),
-
-  /**
-   * Admin endpoint: Recalculate and persist geographic profiles for all countries
-   * (or a single country). Stores results in CountryGeoProfile table for use
-   * by the economic engine and NPC personality drift.
-   */
 };

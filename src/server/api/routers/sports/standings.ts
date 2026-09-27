@@ -12,10 +12,6 @@ import { TRPCError } from "@trpc/server";
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export const sportsStandingsRouter = createTRPCRouter({
-  // ═══ League Management ══════════════════════════════════════════════════════
-
-  // ═══ Team Management ═════════════════════════════════════════════════════════
-
   // ═══ Season & Simulation ════════════════════════════════════════════════════
 
   getStandings: publicProcedure
@@ -92,34 +88,6 @@ export const sportsStandingsRouter = createTRPCRouter({
 
   // ═══ History & Records ══════════════════════════════════════════════════════
 
-  getLeagueHistory: publicProcedure
-    .input(z.object({ leagueId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const seasons = await ctx.db.sportSeason.findMany({
-          where: { leagueId: input.leagueId, status: "completed" },
-          include: {
-            champion: { select: { id: true, name: true } },
-          },
-          orderBy: { seasonNumber: "desc" },
-        });
-
-        return seasons.map((s) => ({
-          seasonId: s.id,
-          seasonNumber: s.seasonNumber,
-          championTeamId: s.championTeamId,
-          championTeamName: s.champion?.name ?? null,
-          startIxTime: s.startIxTime,
-          endIxTime: s.endIxTime,
-        }));
-      } catch (_error) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch league history",
-        });
-      }
-    }),
-
   getTeamHistory: publicProcedure
     .input(z.object({ teamId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -173,81 +141,6 @@ export const sportsStandingsRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to fetch team history",
-        });
-      }
-    }),
-
-  getRecords: publicProcedure
-    .input(z.object({ leagueId: z.string(), recordType: z.string().optional() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const records = await ctx.db.sportSeasonRecord.findMany({
-          where: {
-            leagueId: input.leagueId,
-            ...(input.recordType && { recordType: input.recordType }),
-          },
-          include: {
-            season: { select: { seasonNumber: true } },
-          },
-          orderBy: { createdAt: "desc" },
-        });
-
-        if (records.length === 0) {
-          // Compute live records if none exist in DB
-          const standings = await ctx.db.sportStanding.findMany({
-            where: {
-              season: {
-                leagueId: input.leagueId,
-                status: "completed",
-              },
-            },
-            include: {
-              team: { select: { id: true, name: true } },
-              season: { select: { seasonNumber: true } },
-            },
-          });
-
-          const teamWins: Record<string, { teamId: string; teamName: string; wins: number }> = {};
-          for (const s of standings) {
-            const key = s.teamId;
-            if (!teamWins[key]) {
-              teamWins[key] = { teamId: s.teamId, teamName: s.team.name, wins: 0 };
-            }
-            teamWins[key].wins += s.wins;
-          }
-
-          const mostWins = Object.values(teamWins)
-            .sort((a, b) => b.wins - a.wins)
-            .slice(0, 5);
-
-          // Count championships
-          const seasons = await ctx.db.sportSeason.findMany({
-            where: { leagueId: input.leagueId, status: "completed", championTeamId: { not: null } },
-            select: { championTeamId: true },
-          });
-          const champCount: Record<string, number> = {};
-          for (const s of seasons) {
-            if (s.championTeamId) {
-              champCount[s.championTeamId] = (champCount[s.championTeamId] ?? 0) + 1;
-            }
-          }
-          const mostChampionships = Object.entries(champCount)
-            .sort(([, a], [, b]) => b - a)
-            .slice(0, 5)
-            .map(([teamId, count]) => ({ teamId, championships: count }));
-
-          return {
-            mostWins,
-            mostChampionships,
-            totalSeasons: standings.length > 0 ? new Set(standings.map((s) => s.seasonId)).size : 0,
-          };
-        }
-
-        return records;
-      } catch (_error) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch records",
         });
       }
     }),

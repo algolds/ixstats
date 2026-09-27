@@ -6,10 +6,8 @@
  *
  * Domains:
  *  - crud:      policy CRUD + lifecycle (create/read/update/delete/activate/suspend/repeal)
- *  - templates: quick action template CRUD
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { policiesCrudRouter } from "./crud";
-import { policiesTemplatesRouter } from "./templates";
 
-export const policiesRouter = mergeRouters(policiesCrudRouter, policiesTemplatesRouter);
+export const policiesRouter = mergeRouters(policiesCrudRouter);

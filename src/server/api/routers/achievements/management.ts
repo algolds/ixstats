@@ -1,23 +1,8 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { achievementService } from "~/lib/achievements/service";
 
 export const achievementsManagementRouter = createTRPCRouter({
-  // Get recent achievements for a country
-
-  // Get all achievements for a country
-
-  // Get achievement leaderboard
-
-  // Get current user's achievement progress statistics
-
-  // Admin action: Manually trigger baseline sync
-  adminSync: adminProcedure.mutation(async ({ ctx }) => {
-    const { syncAchievements } = await import("~/lib/achievements/sync");
-    await syncAchievements(ctx.db);
-    return { success: true };
-  }),
-
   // User action: Retroactively sync collector achievements and titles
   syncMyCollectorAchievements: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.user.clerkUserId;

@@ -7,10 +7,6 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { EconomicArchetype as PrismaArchetype } from "@prisma/client";
 
-// Import hardcoded fallback data
-import { modernArchetypes } from "~/lib/economy/archetypes/modern";
-import { historicalArchetypes } from "~/lib/economy/archetypes/historical";
-
 /**
  * Parse JSON string fields back to objects
  * Transforms database representation to TypeScript interface
@@ -96,10 +92,6 @@ const archetypeInputSchema = z.object({
 });
 
 export const economicArchetypesAdminRouter = createTRPCRouter({
-  // ============================================================================
-  // PUBLIC ENDPOINTS
-  // ============================================================================
-
   // ============================================================================
   // ADMIN ENDPOINTS
   // ============================================================================

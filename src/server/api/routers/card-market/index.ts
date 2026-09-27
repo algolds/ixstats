@@ -8,20 +8,17 @@
  *  - auctionManagement: auction create/cancel/buyout + demo seeding (mutations)
  *  - auctionQueries:    active/by-id/history/featured/ending-soon/my-auctions reads
  *  - bids:              place bid, bid history, my active bids, my participation
- *  - watchlist:         add/remove/get card watchlist
  *  - analytics:         market trends, value/transfer history, dust, inscribe
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { cardMarketAuctionManagementRouter } from "./auctionManagement";
 import { cardMarketAuctionQueriesRouter } from "./auctionQueries";
 import { cardMarketBidsRouter } from "./bids";
-import { cardMarketWatchlistRouter } from "./watchlist";
 import { cardMarketAnalyticsRouter } from "./analytics";
 
 export const cardMarketRouter = mergeRouters(
   cardMarketAuctionManagementRouter,
   cardMarketAuctionQueriesRouter,
   cardMarketBidsRouter,
-  cardMarketWatchlistRouter,
   cardMarketAnalyticsRouter
 );

@@ -294,47 +294,6 @@ export const nsImportSyncRouter = createTRPCRouter({
       };
     }),
 
-  /**
-   * Admin: Get status of a specific sync operation
-   * Used by frontend to poll progress of background jobs
-   */
-  getRegionSyncStatus: adminProcedure
-    .input(
-      z.object({
-        syncLogId: z.string().min(1),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const log = await ctx.db.syncLog.findUnique({
-        where: { id: input.syncLogId },
-      });
-
-      if (!log) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Sync log not found",
-        });
-      }
-
-      const meta = (log.metadata as Record<string, unknown>) || {};
-      return {
-        id: log.id,
-        syncType: log.syncType,
-        status: log.status,
-        itemsProcessed: log.itemsProcessed,
-        cardsProcessed: log.cardsProcessed ?? 0,
-        cardsCreated: log.cardsCreated ?? 0,
-        cardsUpdated: log.cardsUpdated ?? 0,
-        errorCount: log.itemsFailed,
-        totalCards: (meta.totalCards as number) ?? 0,
-        regionNames: (meta.regionNames as string[]) ?? [],
-        seasons: (meta.seasons as number[]) ?? [],
-        startedAt: log.startedAt,
-        completedAt: log.completedAt,
-        errorMessage: log.errorMessage,
-      };
-    }),
-
   // ─── Pause / Play / Stop controls ───
 
   /**

@@ -7,18 +7,12 @@
  * Domains:
  *  - officials:  government officials listing
  *  - meetings:   cabinet meeting scheduling + listing
- *  - policies:   policy listing + policy recommendations
- *  - activities: activity schedule (planner) + dashboard / meeting-outcome summaries
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { quickActionsOfficialsRouter } from "./officials";
 import { quickActionsMeetingsRouter } from "./meetings";
-import { quickActionsPoliciesRouter } from "./policies";
-import { quickActionsActivitiesRouter } from "./activities";
 
 export const quickActionsRouter = mergeRouters(
   quickActionsOfficialsRouter,
-  quickActionsMeetingsRouter,
-  quickActionsPoliciesRouter,
-  quickActionsActivitiesRouter
+  quickActionsMeetingsRouter
 );

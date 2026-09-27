@@ -1,18 +1,8 @@
-import { z } from "zod";
-import { globalCache } from "~/lib/cache";
 import { getArticleIntro } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
 // Cache helpers
 export function getCacheKey(operation: string, params: any): string {
   return `countries:${operation}:${JSON.stringify(params)}`;
-}
-
-export async function getCachedData<T = unknown>(key: string): Promise<T | null> {
-  return globalCache.get<T>(key);
-}
-
-export async function setCachedData(key: string, data: unknown, ttlMs = 30000): Promise<void> {
-  await globalCache.set(key, data, { ttl: Math.round(ttlMs / 1000) });
 }
 
 export {
@@ -36,42 +26,6 @@ const STATIC_RELATIONS: Record<string, boolean> = {
 export const safelyIncludeRelations = async (_db?: any) => {
   return STATIC_RELATIONS;
 };
-
-// Economic data schema with all optional fields
-export const economicDataSchema = z.object({
-  nominalGDP: z.number().optional(),
-  realGDPGrowthRate: z.number().optional(),
-  inflationRate: z.number().optional(),
-  currencyExchangeRate: z.number().optional(),
-  laborForceParticipationRate: z.number().optional(),
-  employmentRate: z.number().optional(),
-  unemploymentRate: z.number().optional(),
-  totalWorkforce: z.number().optional(),
-  averageWorkweekHours: z.number().optional(),
-  minimumWage: z.number().optional(),
-  averageAnnualIncome: z.number().optional(),
-  taxRevenueGDPPercent: z.number().optional(),
-  governmentRevenueTotal: z.number().optional(),
-  taxRevenuePerCapita: z.number().optional(),
-  governmentBudgetGDPPercent: z.number().optional(),
-  budgetDeficitSurplus: z.number().optional(),
-  internalDebtGDPPercent: z.number().optional(),
-  externalDebtGDPPercent: z.number().optional(),
-  totalDebtGDPRatio: z.number().optional(),
-  debtPerCapita: z.number().optional(),
-  interestRates: z.number().optional(),
-  debtServiceCosts: z.number().optional(),
-  povertyRate: z.number().optional(),
-  incomeInequalityGini: z.number().optional(),
-  socialMobilityIndex: z.number().optional(),
-  totalGovernmentSpending: z.number().optional(),
-  spendingGDPPercent: z.number().optional(),
-  spendingPerCapita: z.number().optional(),
-  lifeExpectancy: z.number().optional(),
-  urbanPopulationPercent: z.number().optional(),
-  ruralPopulationPercent: z.number().optional(),
-  literacyRate: z.number().optional(),
-});
 
 /** Fetch a single wiki intro from ixwiki or iiwiki fallback. */
 export async function fetchWikiIntro(

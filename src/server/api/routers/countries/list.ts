@@ -327,29 +327,6 @@ export const listProcedures = {
       return scored.map((c) => c.name);
     }),
 
-  getTopCountriesByGdpPerCapita: cachedPublicProcedure
-    .input(z.object({ limit: z.number().min(1).max(100).default(10) }))
-    .query(async ({ ctx, input }) => {
-      const countries = await ctx.db.country.findMany({
-        where: { isDemo: false },
-        orderBy: { currentGdpPerCapita: "desc" },
-        take: input.limit,
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          flag: true,
-          currentGdpPerCapita: true,
-          economicTier: true,
-        },
-      });
-
-      return countries.map((c) => ({
-        ...c,
-        flagUrl: normalizeFlagUrl(c.flag),
-      }));
-    }),
-
   getTopCountriesByPopulation: cachedPublicProcedure
     .input(z.object({ limit: z.number().min(1).max(100).default(10) }))
     .query(async ({ ctx, input }) => {
@@ -417,33 +394,5 @@ export const listProcedures = {
         continent: c.continent,
         region: c.region,
       }));
-    }),
-
-  getChangeLogs: publicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        limit: z.number().int().optional().default(20),
-        offset: z.number().int().optional().default(0),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const [logs, total] = await Promise.all([
-        (ctx.db as any).countryChangeLog.findMany({
-          where: { countryId: input.countryId },
-          orderBy: { createdAt: "desc" },
-          take: input.limit,
-          skip: input.offset,
-        }),
-        (ctx.db as any).countryChangeLog.count({
-          where: { countryId: input.countryId },
-        }),
-      ]);
-
-      return {
-        logs,
-        total,
-        hasMore: input.offset + logs.length < total,
-      };
     }),
 };

@@ -17,22 +17,6 @@ import {
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 
-/**
- * Vault transaction type enum for validation
- */
-const _vaultTransactionTypeEnum = z.enum([
-  "EARN_PASSIVE",
-  "EARN_ACTIVE",
-  "EARN_CARDS",
-  "EARN_SOCIAL",
-  "SPEND_PACKS",
-  "SPEND_MARKET",
-  "SPEND_CRAFT",
-  "SPEND_BOOST",
-  "SPEND_COSMETIC",
-  "ADMIN_ADJUSTMENT",
-]);
-
 export const vaultCollectionsRouter = createTRPCRouter({
   /**
    * Get vault balance and stats for a user
@@ -475,8 +459,4 @@ export const vaultCollectionsRouter = createTRPCRouter({
         throw new Error("Failed to retrieve collection details", { cause: error });
       }
     }),
-
-  /**
-   * List all user vaults for admin credit controls
-   */
 });

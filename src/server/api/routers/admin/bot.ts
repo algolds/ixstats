@@ -49,12 +49,6 @@ export const adminBotRouter = createTRPCRouter({
     }
   }),
 
-  // Get system configuration (includes all economic control parameters)
-
-  // Save system configuration (all economic control parameters)
-
-  // Set custom time via bot or local override
-
   // Bot control operations
   syncBot: adminProcedure.mutation(async ({ ctx: _ctx }) => {
     try {
@@ -288,15 +282,4 @@ export const adminBotRouter = createTRPCRouter({
         });
       }
     }),
-
-  // Sync with Discord bot
-  syncWithBot: adminProcedure.mutation(async () => {
-    try {
-      const result = await IxTime.syncWithBot();
-      return result;
-    } catch (error) {
-      console.error("Failed to sync with bot:", error);
-      throw new Error("Failed to sync with Discord bot", { cause: error });
-    }
-  }),
 });

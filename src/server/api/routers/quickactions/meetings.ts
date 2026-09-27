@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
@@ -43,63 +43,6 @@ const meetingInputSchema = z.object({
 });
 
 export const quickActionsMeetingsRouter = createTRPCRouter({
-  /**
-   * Get all meetings for a country
-   */
-  getMeetings: publicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        userId: z.string().optional(),
-        status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).optional(),
-        fromDate: z.date().optional(),
-        toDate: z.date().optional(),
-        limit: z.number().int().min(1).max(100).default(50),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const meetings = await ctx.db.cabinetMeeting.findMany({
-        where: {
-          countryId: input.countryId,
-          ...(input.userId && { userId: input.userId }),
-          ...(input.status && { status: input.status }),
-          ...(input.fromDate && { scheduledDate: { gte: input.fromDate } }),
-          ...(input.toDate && { scheduledDate: { lte: input.toDate } }),
-        },
-        include: {
-          attendances: {
-            include: {
-              official: {
-                select: {
-                  id: true,
-                  name: true,
-                  title: true,
-                  role: true,
-                },
-              },
-            },
-          },
-          agendaItems: {
-            orderBy: { order: "asc" },
-          },
-        },
-        orderBy: { scheduledDate: "desc" },
-        take: input.limit,
-      });
-
-      return meetings.map((meeting) => ({
-        ...meeting,
-        attendances: meeting.attendances.map((attendance) => ({
-          ...attendance,
-        })),
-        agendaItems: meeting.agendaItems.map((item) => ({
-          ...item,
-          tags: item.tags ? JSON.parse(item.tags) : [],
-          relatedMetrics: item.relatedMetrics ? JSON.parse(item.relatedMetrics) : null,
-        })),
-      }));
-    }),
-
   /**
    * Create a new cabinet meeting with IxTime sync
    */

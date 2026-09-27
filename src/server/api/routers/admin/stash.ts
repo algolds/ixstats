@@ -1,6 +1,7 @@
 // src/server/api/routers/admin/stash.ts
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 
 export const adminStashRouter = createTRPCRouter({
   // Get stash statistics (real DB values)
@@ -24,27 +25,13 @@ export const adminStashRouter = createTRPCRouter({
   // Get Stash Configuration from SystemConfig
   getStashConfig: adminProcedure.query(async ({ ctx }) => {
     try {
-      const configs = await ctx.db.systemConfig.findMany({
-        where: {
-          key: {
-            in: [
-              "stash_maxCount",
-              "stash_offlineCacheEnabled",
-              "stash_autoCategorization",
-              "stash_highlightTracking",
-              "stash_welcomeVersion",
-            ],
-          },
-        },
-      });
-
-      const m = configs.reduce(
-        (acc, c) => {
-          acc[c.key] = c.value;
-          return acc;
-        },
-        {} as Record<string, string>
-      );
+      const m = await readConfigKeys(ctx.db, [
+        "stash_maxCount",
+        "stash_offlineCacheEnabled",
+        "stash_autoCategorization",
+        "stash_highlightTracking",
+        "stash_welcomeVersion",
+      ]);
 
       return {
         maxStashCount: parseInt(m.stash_maxCount || "100") || 100,
@@ -90,15 +77,7 @@ export const adminStashRouter = createTRPCRouter({
         updates.push({ key: "stash_welcomeVersion", value: input.welcomeVersion });
       }
 
-      await Promise.all(
-        updates.map((u) =>
-          ctx.db.systemConfig.upsert({
-            where: { key: u.key },
-            update: { value: u.value },
-            create: { key: u.key, value: u.value },
-          })
-        )
-      );
+      await writeConfigKeys(ctx.db, updates);
 
       return { success: true };
     }),

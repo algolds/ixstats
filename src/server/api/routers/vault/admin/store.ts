@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { getVaultConfig, invalidateVaultConfigCache } from "~/lib/vault/vault-service";
 import { getCurrentIxCardSeason, setCurrentIxCardSeason } from "~/lib/cards/season";
 
@@ -264,13 +264,6 @@ export const vaultAdminStoreRouter = createTRPCRouter({
         throw new Error("Failed to retrieve price history", { cause: error });
       }
     }),
-
-  /**
-   * Admin: Get all storefront purchase transactions.
-   */
-  getIxCardSeason: protectedProcedure.query(async ({ ctx }) => {
-    return getCurrentIxCardSeason(ctx.db);
-  }),
 
   adminGetIxCardSeason: adminProcedure.query(async ({ ctx }) => {
     return getCurrentIxCardSeason(ctx.db);

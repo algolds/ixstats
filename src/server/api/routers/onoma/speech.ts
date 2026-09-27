@@ -393,49 +393,4 @@ export const onomaSpeechRouter = createTRPCRouter({
       );
       return { success: true };
     }),
-
-  /** Admin: persist the Onoma brand configuration. */
-  updateBrandConfig: adminProcedure
-    .input(
-      z.object({
-        variation: z.string().max(32),
-        nucleusSymbol: z.string().max(8),
-        flankingStyle: z.string().max(32),
-        fontFamily: z.string().max(64),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const entries = [
-        {
-          key: "onoma.brand.variation",
-          value: input.variation,
-          desc: "Onoma brand logo variation",
-        },
-        {
-          key: "onoma.brand.nucleusSymbol",
-          value: input.nucleusSymbol,
-          desc: "Onoma brand nucleus phonetic symbol",
-        },
-        {
-          key: "onoma.brand.flankingStyle",
-          value: input.flankingStyle,
-          desc: "Onoma brand flanking notation style",
-        },
-        {
-          key: "onoma.brand.fontFamily",
-          value: input.fontFamily,
-          desc: "Onoma brand typography font family",
-        },
-      ];
-      await ctx.db.$transaction(
-        entries.map((e) =>
-          ctx.db.systemConfig.upsert({
-            where: { key: e.key },
-            update: { value: e.value, updatedAt: new Date() },
-            create: { key: e.key, value: e.value, description: e.desc },
-          })
-        )
-      );
-      return { success: true };
-    }),
 });

@@ -11,7 +11,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
 import { type VaultTransactionType } from "@prisma/client";
@@ -129,24 +129,6 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
   }),
 
   /**
-   * Get today's earnings summary
-   */
-  getEarningsSummary: protectedProcedure.query(async ({ ctx }) => {
-    try {
-      if (!ctx.auth?.userId) {
-        throw new Error("User ID not found in authentication context");
-      }
-
-      const summary = await vaultService.getEarningsSummary(ctx.auth.userId, ctx.db as any);
-
-      return summary;
-    } catch (error) {
-      console.error("[Vault Router] Error getting earnings summary:", error);
-      throw new Error("Failed to retrieve earnings summary", { cause: error });
-    }
-  }),
-
-  /**
    * Get today's earnings breakdown by source
    */
   getTodayEarnings: protectedProcedure.query(async ({ ctx }) => {
@@ -211,59 +193,6 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       } catch (error) {
         console.error("[Vault Router] Error calculating passive income:", error);
         throw new Error("Failed to calculate passive income", { cause: error });
-      }
-    }),
-
-  /**
-   * Check daily earning cap
-   */
-  earnCredits: adminProcedure
-    .input(
-      z.object({
-        amount: z.number().min(0.01, "Amount must be positive"),
-        type: vaultTransactionTypeEnum,
-        source: z.string().min(1, "Source is required"),
-        metadata: z.record(z.string(), z.any()).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        if (!ctx.auth?.userId) {
-          throw new Error("User ID not found in authentication context");
-        }
-
-        // Validate earning type
-        if (!input.type.startsWith("EARN_") && input.type !== "ADMIN_ADJUSTMENT") {
-          throw new Error("Invalid transaction type for earning");
-        }
-
-        const result = await vaultService.earnCredits(
-          ctx.auth.userId,
-          input.amount,
-          input.type as VaultTransactionType,
-          input.source,
-          ctx.db as any,
-          input.metadata
-        );
-
-        if (!result.success) {
-          throw new Error(result.message || "Failed to earn credits");
-        }
-
-        await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
-
-        return {
-          success: true,
-          newBalance: result.newBalance,
-          amountEarned: input.amount,
-          message: `Earned ${input.amount} IxCredits. New balance: ${result.newBalance} IxCredits`,
-        };
-      } catch (error) {
-        console.error("[Vault Router] Error earning credits:", error);
-        if (error instanceof Error) {
-          throw error;
-        }
-        throw new Error("Failed to earn credits", { cause: error });
       }
     }),
 
@@ -354,44 +283,4 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
         throw new Error("Failed to retrieve budget multiplier", { cause: error });
       }
     }),
-
-  /**
-   * Get detailed budget multiplier breakdown by department
-   */
-  getBudgetMultiplierBreakdown: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string().min(1, "Country ID is required"),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const breakdown = await budgetVaultCalculator.getBudgetBreakdown(
-          input.countryId,
-          ctx.db as any
-        );
-        const totalMultiplier = await budgetVaultCalculator.calculateBudgetMultiplier(
-          input.countryId,
-          ctx.db as any
-        );
-
-        return {
-          countryId: input.countryId,
-          totalMultiplier,
-          breakdown,
-          totalCategories: breakdown.length,
-        };
-      } catch (error) {
-        console.error("[Vault Router] Error getting budget breakdown:", error);
-        throw new Error("Failed to retrieve budget multiplier breakdown", { cause: error });
-      }
-    }),
-
-  // ============================================
-  // COLLECTION CRUD
-  // ============================================
-
-  /**
-   * Get current user's collections
-   */
 });

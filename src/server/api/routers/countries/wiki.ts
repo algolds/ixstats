@@ -1,12 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { cachedStaticProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
-import {
-  getArticleIntro,
-  getPageSections,
-  getPageImages as wikiBridgePageImages,
-  getInfobox as wikiBridgeInfobox,
-} from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getArticleIntro, getPageSections, getPageImages as wikiBridgePageImages } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { searchWiki as searchWikiService } from "~/lib/wiki-os/core/native-search-service";
 import { parseInfobox as parseInfoboxParser } from "~/lib/wiki-os/transformers/infobox-parser";
@@ -266,25 +261,6 @@ async function fetchWikiRichIntro(
 }
 
 /**
- * Fetch wiki infobox server-side via WikiBridge.
- */
-async function fetchWikiInfoboxCached(name: string): Promise<Record<string, unknown> | null> {
-  try {
-    const infobox =
-      (await wikiBridgeInfobox(name, "ixwiki")) ?? (await wikiBridgeInfobox(name, "iiwiki"));
-    if (!infobox) return null;
-    const result: Record<string, unknown> = { templateName: infobox.templateName };
-    for (const field of infobox.fields) {
-      result[field.key] = field.value;
-    }
-    return result;
-  } catch (err) {
-    console.error(`[Wiki] Error fetching infobox for ${name}:`, err);
-    return null;
-  }
-}
-
-/**
  * Fetch wiki sections with plain-text previews for level-2 headers.
  */
 async function fetchWikiSectionPreviews(name: string): Promise<Array<{
@@ -365,20 +341,6 @@ export const wikiProcedures = {
       return fetchWikiIntro(name);
     }),
 
-  getBulkWikiIntros: cachedStaticProcedure
-    .input(z.object({ countryNames: z.array(z.string()).max(50) }))
-    .query(async ({ input }) => {
-      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      if (names.length === 0) return {};
-      const results: Record<string, Awaited<ReturnType<typeof fetchWikiIntro>>> = {};
-      await Promise.all(
-        names.map(async (n) => {
-          results[n] = await fetchWikiIntro(n);
-        })
-      );
-      return results;
-    }),
-
   getWikiSections: cachedStaticProcedure
     .input(z.object({ countryName: z.string() }))
     .query(async ({ input }) => {
@@ -387,40 +349,12 @@ export const wikiProcedures = {
       return fetchWikiSections(name);
     }),
 
-  getBulkWikiSections: cachedStaticProcedure
-    .input(z.object({ countryNames: z.array(z.string()).max(50) }))
-    .query(async ({ input }) => {
-      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, Awaited<ReturnType<typeof fetchWikiSections>>> = {};
-      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 50. (audit B5)
-      await Promise.all(
-        names.map(async (name) => {
-          results[name] = await fetchWikiSections(name);
-        })
-      );
-      return results;
-    }),
-
   getWikiPageImages: cachedStaticProcedure
     .input(z.object({ countryName: z.string() }))
     .query(async ({ input }) => {
       const name = input.countryName.trim();
       if (!name) return null;
       return fetchWikiPageImages(name);
-    }),
-
-  getBulkWikiPageImages: cachedStaticProcedure
-    .input(z.object({ countryNames: z.array(z.string()).max(30) }))
-    .query(async ({ input }) => {
-      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, Awaited<ReturnType<typeof fetchWikiPageImages>>> = {};
-      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 30. (audit B5)
-      await Promise.all(
-        names.map(async (name) => {
-          results[name] = await fetchWikiPageImages(name);
-        })
-      );
-      return results;
     }),
 
   getWikiRichIntro: cachedStaticProcedure
@@ -445,48 +379,12 @@ export const wikiProcedures = {
       return results;
     }),
 
-  getWikiInfoboxCached: cachedStaticProcedure
-    .input(z.object({ countryName: z.string() }))
-    .query(async ({ input }) => {
-      const name = input.countryName.trim();
-      if (!name) return null;
-      return fetchWikiInfoboxCached(name);
-    }),
-
-  getBulkWikiInfoboxes: cachedStaticProcedure
-    .input(z.object({ countryNames: z.array(z.string()).max(30) }))
-    .query(async ({ input }) => {
-      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, Awaited<ReturnType<typeof fetchWikiInfoboxCached>>> = {};
-      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 30. (audit B5)
-      await Promise.all(
-        names.map(async (name) => {
-          results[name] = await fetchWikiInfoboxCached(name);
-        })
-      );
-      return results;
-    }),
-
   getWikiSectionPreviews: cachedStaticProcedure
     .input(z.object({ countryName: z.string() }))
     .query(async ({ input }) => {
       const name = input.countryName.trim();
       if (!name) return null;
       return fetchWikiSectionPreviews(name);
-    }),
-
-  getBulkWikiSectionPreviews: cachedStaticProcedure
-    .input(z.object({ countryNames: z.array(z.string()).max(30) }))
-    .query(async ({ input }) => {
-      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, Awaited<ReturnType<typeof fetchWikiSectionPreviews>>> = {};
-      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 30. (audit B5)
-      await Promise.all(
-        names.map(async (name) => {
-          results[name] = await fetchWikiSectionPreviews(name);
-        })
-      );
-      return results;
     }),
 
   searchWiki: rateLimitedPublicProcedure

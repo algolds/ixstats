@@ -20,7 +20,6 @@ import {
   NativeSearchService,
 } from "~/lib/wiki-os/core/native-search-service";
 import { db } from "~/server/db";
-import { getImageUrl } from "~/lib/wiki-os/transformers/image-url";
 
 export const wikiosSearchRouter = createTRPCRouter({
   /**
@@ -340,16 +339,6 @@ export const wikiosSearchRouter = createTRPCRouter({
       }
 
       return [];
-    }),
-
-  /**
-   * Get direct static image URL for an IxWiki file.
-   */
-  getImageUrl: publicProcedure
-    .input(z.object({ filename: z.string().min(1) }))
-    .query(async ({ input }) => {
-      const url = getImageUrl(input.filename);
-      return { url };
     }),
 
   /**

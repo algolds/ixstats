@@ -1,49 +1,11 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { getFlavorText } from "~/lib/narrator/flavorization";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { DEFAULT_FLAVOR_SYSTEM_PROMPT } from "~/lib/narrator/constants";
 import { buildCanonContext, formatCanonContext } from "~/lib/narrator/canon-context";
 import { queryLLM } from "~/lib/narrator/client";
 
 export const narratorRouter = createTRPCRouter({
-  getFlavorText: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        type: z.enum(["issue", "policy", "decision"]),
-        title: z.string(),
-        description: z.string(),
-        countryId: z.string().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        // Check global system configuration toggle
-        const globalSetting = await ctx.db.systemConfig.findUnique({
-          where: { key: "narrator:flavor:enabled" },
-        });
-
-        if (globalSetting?.value === "false") {
-          return { flavorText: "" };
-        }
-
-        const flavorText = await getFlavorText({
-          id: input.id,
-          type: input.type,
-          title: input.title,
-          description: input.description,
-          countryId: input.countryId,
-          db: ctx.db as any,
-        });
-
-        return { flavorText };
-      } catch (error) {
-        console.error("[narrator-router] Failed to get flavor text:", error);
-        return { flavorText: "" };
-      }
-    }),
-
   getNarratorSettings: adminProcedure.query(async ({ ctx }) => {
     try {
       const configs = await ctx.db.systemConfig.findMany({
@@ -315,5 +277,3 @@ Reference ONLY facts from the [Canon Context]. Do not invent leaders, places, wa
     }
   }),
 });
-
-export type NarratorRouter = typeof narratorRouter;

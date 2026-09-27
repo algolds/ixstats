@@ -349,12 +349,4 @@ export const achievementsCountryRouter = createTRPCRouter({
         return [];
       }
     }),
-
-  // Get current user's achievement progress statistics
-
-  // Admin action: Manually trigger baseline sync
-
-  // User action: Retroactively sync collector achievements and titles
-
-  // Unlock achievement (internal use & backward compatibility)
 });

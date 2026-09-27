@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  cachedStaticProcedure,
-  rateLimitedPublicProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, cachedStaticProcedure } from "~/server/api/trpc";
 import { serverFlagResolver } from "~/lib/flags/server";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 
@@ -60,19 +56,4 @@ export const flagsProcedures = createTRPCRouter({
 
       return result;
     }),
-
-  getAll: rateLimitedPublicProcedure.query(async ({ ctx }) => {
-    const countries = await ctx.db.country.findMany({
-      select: {
-        name: true,
-        flag: true,
-      },
-    });
-
-    const result: Record<string, string | null> = {};
-    for (const c of countries) {
-      result[c.name] = normalizeFlagUrl(c.flag);
-    }
-    return result;
-  }),
 });

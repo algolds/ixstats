@@ -120,43 +120,6 @@ export const cardMarketBidsRouter = createTRPCRouter({
     }),
 
   /**
-   * Get bid history for an auction
-   * Admin-only endpoint
-   */
-  getBidHistory: protectedProcedure
-    .input(
-      z.object({
-        auctionId: z.string().min(1, "Auction ID is required"),
-        limit: z.number().int().min(1).max(100).optional().default(20),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const bids = await ctx.db.auctionBid.findMany({
-          where: { auctionId: input.auctionId },
-          orderBy: { createdAt: "desc" },
-          take: input.limit,
-          include: {
-            User: {
-              select: {
-                id: true,
-                clerkUserId: true,
-              },
-            },
-          },
-        });
-
-        return { bids };
-      } catch (error) {
-        console.error("[Card Market Router] Error getting bid history:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch bid history",
-        });
-      }
-    }),
-
-  /**
    * Get user's active bids
    * Admin-only endpoint
    */

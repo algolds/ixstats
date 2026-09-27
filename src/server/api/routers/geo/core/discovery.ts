@@ -202,8 +202,4 @@ export const discoveryProcedures = {
 
       return results.slice(0, limit);
     }),
-
-  /**
-   * Get neighboring countries using PostGIS ST_Touches / ST_Intersects.
-   */
 };

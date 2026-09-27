@@ -14,11 +14,9 @@ import {
   createTRPCRouter,
   countryOwnerProcedure,
   standardMutationCountryOwnerProcedure,
-  cachedPublicProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { buildProvinceMergePlan } from "~/lib/maps/province-importer/merge-plan";
-import { geometryAreaSqKm } from "~/lib/maps/geo-math";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "~/server/shared/layer-cache";
@@ -28,50 +26,6 @@ import { clearLayerCache } from "~/server/shared/layer-cache";
 // ──────────────────────────────────────────────
 
 export const geoAdminProvincesRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Border Editor
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Story Pins — Narrative markers on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Storylines — Narrative chains connecting story pins
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Labels — Custom styled text on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Sovereignty / dependency management
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Linkage validation & repair
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // SVG Upload & Processing Pipeline
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // World Template / Clone System (Phase 3)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // Procedural World Generation (Phase 4)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
   // ──────────────────────────────────────────────
   // Province Import Endpoints
   // ──────────────────────────────────────────────
@@ -196,88 +150,6 @@ export const geoAdminProvincesRouter = createTRPCRouter({
         countryBorder: mapLayer?.geometry ?? null,
         cityData,
       };
-    }),
-
-  /**
-   * Validate province geometries against the country border using PostGIS.
-   */
-  validateProvinceImport: countryOwnerProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        provinces: z.array(
-          z.object({
-            name: z.string(),
-            geometry: z.record(z.string(), z.unknown()),
-          })
-        ),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only validate provinces for your own country",
-        });
-      }
-
-      const validationResults: Array<{
-        name: string;
-        isValid: boolean;
-        isContained: boolean;
-        issues: string[];
-      }> = [];
-
-      for (const province of input.provinces) {
-        const issues: string[] = [];
-        let isValid = true;
-        let isContained = true;
-
-        try {
-          const geoJson = JSON.stringify(province.geometry);
-
-          // Check geometry validity
-          const validResult = await ctx.db.$queryRawUnsafe<
-            Array<{ is_valid: boolean; reason: string | null }>
-          >(
-            `SELECT ST_IsValid(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) as is_valid,
-                    ST_IsValidReason(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) as reason`,
-            geoJson
-          );
-          if (validResult[0] && !validResult[0].is_valid) {
-            isValid = false;
-            issues.push(`Invalid geometry: ${validResult[0].reason}`);
-          }
-
-          // Check containment within country
-          const containResult = await ctx.db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
-            `SELECT ST_Covers(
-               ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
-               ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
-             ) as is_inside`,
-            input.countryId,
-            geoJson
-          );
-          if (containResult[0] && !containResult[0].is_inside) {
-            isContained = false;
-            issues.push("Province extends beyond country borders");
-          }
-        } catch (err) {
-          issues.push(
-            `PostGIS validation failed: ${err instanceof Error ? err.message : "unknown error"}`
-          );
-        }
-
-        validationResults.push({
-          name: province.name,
-          isValid,
-          isContained,
-          issues,
-        });
-      }
-
-      return { results: validationResults };
     }),
 
   /**
@@ -526,22 +398,4 @@ export const geoAdminProvincesRouter = createTRPCRouter({
         featureId: mapLayer?.featureId ?? null,
       };
     }),
-
-  /**
-   * `sampleAreaSqKm` — compute the area of a GeoJSON Polygon or MultiPolygon in km².
-   * Pure calculation, no DB writes. Returns 0 for unsupported geometry
-   * types (Point, LineString, etc.) — callers should validate geometry
-   * type before calling.
-   */
-  sampleAreaSqKm: cachedPublicProcedure
-    .input(
-      z.object({
-        geometry: z.object({ type: z.string(), coordinates: z.any() }),
-      })
-    )
-    .query(async ({ input }) => {
-      return geometryAreaSqKm(input.geometry as Parameters<typeof geometryAreaSqKm>[0]);
-    }),
-
-  // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
 });

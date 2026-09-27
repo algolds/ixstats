@@ -26,46 +26,6 @@ export const lorewardsAdminRouter = createTRPCRouter({
   // WikiOS Scoring Engine + Cross-Validation
   // ---------------------------------------------------------------------------
 
-  /** Run WikiOS scoring for a specific date. Returns full candidate breakdowns. */
-  scoreDay: adminProcedure
-    .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
-    .query(async ({ input }) => {
-      const result = await scoreDailyWikiOS(input.date);
-      return {
-        date: result.date,
-        editCount: result.editCount,
-        winner: result.winner
-          ? {
-              user: result.winner.user,
-              page: result.winner.page,
-              finalScore: result.winner.finalScore,
-              bytesAdded: result.winner.bytesAdded,
-              scoreBreakdown: result.winner.scoreBreakdown,
-              proseRatio: result.winner.proseRatio,
-              isCollaborative: result.winner.isCollaborative,
-              editDepth: result.winner.editDepth,
-              isNewArticle: result.winner.isNewArticle,
-              inlinkCount: result.winner.inlinkCount,
-            }
-          : null,
-        runnerUp: result.runnerUp
-          ? {
-              user: result.runnerUp.user,
-              page: result.runnerUp.page,
-              finalScore: result.runnerUp.finalScore,
-              scoreBreakdown: result.runnerUp.scoreBreakdown,
-            }
-          : null,
-        candidates: result.candidates.map((c) => ({
-          user: c.user,
-          page: c.page,
-          finalScore: c.finalScore,
-          bytesAdded: c.bytesAdded,
-          scoreBreakdown: c.scoreBreakdown,
-        })),
-      };
-    }),
-
   /** Cross-validate: compare bot picks vs WikiOS picks for a date. */
   crossValidate: protectedProcedure
     .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))

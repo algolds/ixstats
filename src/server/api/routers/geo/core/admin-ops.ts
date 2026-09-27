@@ -61,26 +61,6 @@ export const adminOpsProcedures = {
       });
     }),
 
-  /**
-   * Admin: Bulk recalculate areas for all political features.
-   */
-  recalculateAllAreas: adminProcedure.mutation(async ({ ctx }) => {
-    try {
-      const result = await ctx.db.$executeRawUnsafe(`
-        UPDATE map_layers
-        SET "areaSqKm" = ST_Area(geom_postgis::geography) / 1000000.0
-        WHERE "layerType" = 'political'
-          AND geom_postgis IS NOT NULL
-      `);
-      return { updated: result };
-    } catch {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "PostGIS bulk area recalculation failed",
-      });
-    }
-  }),
-
   // ──────────────────────────────────────────────
   // User map editor endpoints (country owners)
   // ──────────────────────────────────────────────
@@ -298,11 +278,4 @@ export const adminOpsProcedures = {
 
       return { processed, failed, total: countries.length, errors: errors.slice(0, 20) };
     }),
-
-  // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
-
-  /**
-   * 4.5 — Choropleth: Return per-country metric values with geometries
-   * for data-driven fill coloring on the map.
-   */
 };

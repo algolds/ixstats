@@ -7,6 +7,15 @@ import { invalidateCache } from "~/lib/cache";
 import { scoreDailyWikiOS } from "~/lib/lorewards";
 import type { ScoringWeights } from "~/lib/lorewards";
 import { fetchTemplateData, categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
+import { readConfigKeys, writeConfigKeys } from "./_config-kv";
+
+const LOREWARD_WEIGHT_DEFAULTS: Record<string, number> = {
+  lorewardWeight_bytesAdded: 1.0,
+  lorewardWeight_proseRatio: 1.5,
+  lorewardWeight_editDepth: 1.2,
+  lorewardWeight_collaborationBonus: 1.3,
+  lorewardWeight_newArticleBonus: 1.5,
+};
 
 export const adminWikiRouter = createTRPCRouter({
   setWikiLink: adminProcedure
@@ -61,60 +70,6 @@ export const adminWikiRouter = createTRPCRouter({
       );
       await invalidateCache(["countries."]);
       return { updated: results.length, countries: results };
-    }),
-
-  resyncWikiCache: adminProcedure
-    .input(z.object({ countryId: z.string().optional() }))
-    .mutation(async ({ ctx, input }) => {
-      if (input.countryId) {
-        const country = await ctx.db.country.findUnique({
-          where: { id: input.countryId },
-          select: { name: true },
-        });
-        if (country) {
-          await ctx.db.wikiCache.deleteMany({ where: { countryName: country.name } });
-          await ctx.db.country.update({
-            where: { id: input.countryId },
-            data: { wikiLastSynced: new Date() },
-          });
-        }
-        await invalidateCache(["countries."]);
-        return { cleared: 1 };
-      }
-      // Clear all wiki cache
-      const result = await ctx.db.wikiCache.deleteMany();
-      await ctx.db.country.updateMany({
-        data: { wikiLastSynced: new Date() },
-      });
-      await invalidateCache(["countries."]);
-      return { cleared: result.count };
-    }),
-
-  createWikiArticleAward: adminProcedure
-    .input(
-      z.object({
-        pageTitle: z.string(),
-        category: z.string(),
-        name: z.string(),
-        description: z.string().optional(),
-        recipientUsers: z.array(z.string()).optional(),
-        metadata: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const award = await ctx.db.wikiArticleAward.create({
-        data: {
-          pageTitle: input.pageTitle,
-          pageSlug: generateSlug(input.pageTitle),
-          category: input.category,
-          name: input.name,
-          description: input.description ?? null,
-          recipientUsers: input.recipientUsers ? input.recipientUsers : undefined,
-          metadata: input.metadata ?? null,
-        },
-      });
-      await invalidateCache(["wiki."]);
-      return award;
     }),
 
   deleteWikiArticleAward: adminProcedure
@@ -296,29 +251,9 @@ export const adminWikiRouter = createTRPCRouter({
   }),
 
   getLorewardWeights: adminProcedure.query(async ({ ctx }) => {
-    const keys = [
-      "lorewardWeight_bytesAdded",
-      "lorewardWeight_proseRatio",
-      "lorewardWeight_editDepth",
-      "lorewardWeight_collaborationBonus",
-      "lorewardWeight_newArticleBonus",
-    ];
-    const configs = await ctx.db.systemConfig.findMany({
-      where: { key: { in: keys } },
-    });
-    const weights = configs.reduce(
-      (acc, config) => {
-        acc[config.key] = parseFloat(config.value);
-        return acc;
-      },
-      {
-        lorewardWeight_bytesAdded: 1.0,
-        lorewardWeight_proseRatio: 1.5,
-        lorewardWeight_editDepth: 1.2,
-        lorewardWeight_collaborationBonus: 1.3,
-        lorewardWeight_newArticleBonus: 1.5,
-      } as Record<string, number>
-    );
+    const stored = await readConfigKeys(ctx.db, Object.keys(LOREWARD_WEIGHT_DEFAULTS));
+    const weights: Record<string, number> = { ...LOREWARD_WEIGHT_DEFAULTS };
+    for (const [key, value] of Object.entries(stored)) weights[key] = parseFloat(value);
     return weights;
   }),
 
@@ -333,23 +268,8 @@ export const adminWikiRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const updates = Object.entries(input).map(([key, value]) => ({
-        key,
-        value: value.toString(),
-      }));
-      await ctx.db.$transaction(
-        updates.map((cfg) =>
-          ctx.db.systemConfig.upsert({
-            where: { key: cfg.key },
-            update: { value: cfg.value, updatedAt: new Date() },
-            create: {
-              key: cfg.key,
-              value: cfg.value,
-              description: `Loreward weight parameter for ${cfg.key}`,
-            },
-          })
-        )
-      );
+      const updates = Object.entries(input).map(([key, value]) => ({ key, value: String(value) }));
+      await writeConfigKeys(ctx.db, updates, (key) => `Loreward weight parameter for ${key}`);
       invalidateConfigCache();
       return { success: true };
     }),

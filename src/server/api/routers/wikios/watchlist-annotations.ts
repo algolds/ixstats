@@ -70,31 +70,6 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       });
     }),
 
-  /** Update an annotation's comment or color. */
-  updateAnnotation: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        comment: z.string().max(5000).optional(),
-        color: z.string().max(20).optional(),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const ann = await db.stashAnnotation.findUnique({
-        where: { id: input.id },
-        include: { item: { include: { stash: true } } },
-      });
-      if (!ann || ann.item.stash.userId !== requireWikiUserId(ctx))
-        throw new Error("Annotation not found");
-      return db.stashAnnotation.update({
-        where: { id: input.id },
-        data: {
-          ...(input.comment !== undefined && { comment: input.comment }),
-          ...(input.color && { color: input.color }),
-        },
-      });
-    }),
-
   /** Delete an annotation. */
   deleteAnnotation: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -129,34 +104,6 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
         color: a.color,
       }));
     }),
-
-  // ---------------------------------------------------------------------------
-  // User Info (for WikiOS profiles)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Rollback / Undo endpoints
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Talk / Discussion Pages
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // File Upload
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Page Properties & Protection (direct MySQL)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Advanced Search (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Category Tree (Phase 1)
-  // ---------------------------------------------------------------------------
 
   // ---------------------------------------------------------------------------
   // Watchlist endpoints (backed by the LoreStash "Watchlist" stash)

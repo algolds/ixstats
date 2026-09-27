@@ -20,8 +20,6 @@ import {
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export const sportsSeasonsLifecycleRouter = createTRPCRouter({
-  // ═══ League Management ══════════════════════════════════════════════════════
-
   // ═══ Team Management ═════════════════════════════════════════════════════════
 
   collectMatchRevenue: protectedProcedure
@@ -442,10 +440,4 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         });
       }
     }),
-
-  // ═══ History & Records ══════════════════════════════════════════════════════
-
-  // ═══ MyClub ══════════════════════════════════════════════════════════════════
-
-  // ═══ Utility ═════════════════════════════════════════════════════════════════
 });

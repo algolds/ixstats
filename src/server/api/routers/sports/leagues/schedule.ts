@@ -8,7 +8,6 @@ import { TRPCError } from "@trpc/server";
 import { generateSchedule, matchIntervalMs, raceIntervalMs } from "~/lib/sports";
 import { isSystemOwner } from "~/lib/auth";
 import { IxTime } from "~/lib/ixtime";
-import { generateMatchReport, generateMatchPreview } from "~/lib/sports/commentary/narrator";
 import { recalculateStandings } from "./helpers";
 
 export const leaguesScheduleRouter = createTRPCRouter({
@@ -275,118 +274,6 @@ export const leaguesScheduleRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to regenerate schedule",
-        });
-      }
-    }),
-
-  generateMatchReport: publicProcedure
-    .input(
-      z.object({
-        matchId: z.string(),
-        config: z
-          .object({
-            provider: z.string().optional(),
-            apiKey: z.string().optional(),
-            apiUrl: z.string().optional(),
-            modelName: z.string().optional(),
-            temperature: z.number().optional(),
-            reasoning: z.boolean().optional(),
-          })
-          .optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const match = await ctx.db.sportMatch.findUnique({
-          where: { id: input.matchId },
-          include: {
-            homeTeam: { select: { id: true, name: true } },
-            awayTeam: { select: { id: true, name: true } },
-            playerStats: {
-              include: {
-                player: { select: { firstName: true, lastName: true } },
-              },
-            },
-            season: {
-              include: {
-                league: { select: { sportPreset: true } },
-              },
-            },
-          },
-        });
-
-        if (!match) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
-        }
-
-        const stats = match.matchStats as any;
-        const events = stats?.trace ?? [];
-
-        const report = await generateMatchReport({
-          homeTeamName: match.homeTeam.name,
-          awayTeamName: match.awayTeam.name,
-          homeScore: match.homeScore ?? 0,
-          awayScore: match.awayScore ?? 0,
-          sport: match.season.league.sportPreset,
-          events: events,
-          playerStats: match.playerStats as any[],
-          config: input.config,
-        });
-
-        return { report };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate match report",
-        });
-      }
-    }),
-
-  generateMatchPreview: publicProcedure
-    .input(
-      z.object({
-        homeTeamId: z.string(),
-        awayTeamId: z.string(),
-        sport: z.string(),
-        standingsContext: z.string().optional(),
-        config: z
-          .object({
-            provider: z.string().optional(),
-            apiKey: z.string().optional(),
-            apiUrl: z.string().optional(),
-            modelName: z.string().optional(),
-            temperature: z.number().optional(),
-            reasoning: z.boolean().optional(),
-          })
-          .optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const [homeTeam, awayTeam] = await Promise.all([
-          ctx.db.sportTeam.findUnique({ where: { id: input.homeTeamId } }),
-          ctx.db.sportTeam.findUnique({ where: { id: input.awayTeamId } }),
-        ]);
-
-        if (!homeTeam || !awayTeam) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "One or both teams not found" });
-        }
-
-        const preview = await generateMatchPreview(
-          { name: homeTeam.name },
-          { name: awayTeam.name },
-          input.sport,
-          input.standingsContext,
-          input.config
-        );
-
-        return { preview };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate match preview",
         });
       }
     }),

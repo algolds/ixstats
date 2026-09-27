@@ -97,30 +97,6 @@ export const cardsCollectionsRouter = createTRPCRouter({
       });
     }),
 
-  removeFromCollection: protectedProcedure
-    .input(
-      z.object({
-        collectionId: z.string().min(1),
-        cardOwnershipId: z.string().min(1),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user.id;
-      // Verify collection ownership
-      const collection = await ctx.db.cardCollection.findFirst({
-        where: { id: input.collectionId, userId },
-      });
-      if (!collection) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Collection not found" });
-      }
-      return ctx.db.cardCollectionItem.deleteMany({
-        where: {
-          collectionId: input.collectionId,
-          cardOwnershipId: input.cardOwnershipId,
-        },
-      });
-    }),
-
   deleteCollection: protectedProcedure
     .input(z.object({ collectionId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {

@@ -285,38 +285,7 @@ export const policiesCrudRouter = createTRPCRouter({
       });
     }),
 
-  getPolicy: publicProcedure
-    .input(
-      z.object({
-        id: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.policy.findUnique({
-        where: { id: input.id },
-        include: {
-          policyEffectLog: {
-            orderBy: { appliedAt: "desc" },
-          },
-        },
-      });
-    }),
-
-  // ==================== POLICY EFFECT LOGS ====================
-
-  // ==================== ACTIVITY SCHEDULES ====================
-
-  // ==================== QUICK ACTION TEMPLATES ====================
-
   // ==================== ENHANCED POLICY INTEGRATION ====================
-
-  // Save policy selections from builder
-
-  // Calculate real-time policy effects
-
-  // Get policies by selected atomic components
-
-  // Recalculate all policy effects
 
   getPolicyReconContext: publicProcedure
     .input(z.object({ countryId: z.string() }))

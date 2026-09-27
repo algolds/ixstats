@@ -5,22 +5,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { globalCache } from "~/lib/cache";
 
-// Input schemas
-const activityFilterSchema = z.object({
-  limit: z.number().min(1).max(80).default(20),
-  cursor: z.string().optional(),
-  filter: z
-    .enum(["all", "achievements", "diplomatic", "economic", "social", "meta"])
-    .default("all"),
-  category: z.enum(["all", "game", "platform", "social"]).default("all"),
-  userId: z.string().optional(),
-});
-
 export const activitiesFeedPersonalRouter = createTRPCRouter({
-  // Test mutation to debug parameter passing
-
-  // Get global activity feed
-
   // Get feed from countries the user follows
   getFollowingFeed: protectedProcedure
     .input(z.object({ limit: z.number().min(1).max(50).default(30) }))
@@ -375,90 +360,6 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
       }
     }),
 
-  // Get user-specific activity feed
-  getUserFeed: publicProcedure
-    .input(
-      activityFilterSchema.extend({
-        userId: z.string(),
-        includeFollowing: z.boolean().default(false),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        // Get user's connections if including following
-        let followingCountries: string[] = [];
-        let friendIds: string[] = [];
-
-        if (input.includeFollowing) {
-          const connections = await ctx.db.userConnection.findMany({
-            where: {
-              userId: input.userId,
-              status: "active",
-            },
-          });
-
-          followingCountries = connections
-            .filter((c) => c.connectionType === "following_country" && c.targetCountryId)
-            .map((c) => c.targetCountryId!);
-
-          friendIds = connections
-            .filter((c) => c.connectionType === "friend" && c.targetUserId)
-            .map((c) => c.targetUserId!);
-        }
-
-        // Build where clause
-        const where: any = {
-          OR: [
-            { userId: input.userId }, // User's own activities
-            { countryId: { in: followingCountries } }, // Followed countries
-            { userId: { in: friendIds } }, // Friends' activities
-            { visibility: "public" }, // Public activities
-          ],
-        };
-
-        if (input.filter !== "all") {
-          where.type = input.filter;
-        }
-
-        // Get activities
-        const activities = await ctx.db.activityFeed.findMany({
-          where,
-          orderBy: { createdAt: "desc" },
-          take: input.limit + 1,
-          cursor: input.cursor ? { id: input.cursor } : undefined,
-          skip: input.cursor ? 1 : 0,
-        });
-
-        let nextCursor: string | undefined = undefined;
-        if (activities.length > input.limit) {
-          const nextItem = activities.pop();
-          nextCursor = nextItem!.id;
-        }
-
-        return {
-          activities,
-          nextCursor,
-        };
-      } catch (error) {
-        console.error("Error fetching user activity feed:", error);
-        throw new Error("Failed to fetch user activity feed", { cause: error });
-      }
-    }),
-
-  // Create new activity
-
-  // Handle engagement actions (like, unlike, share, view)
-
-  // Add comment to activity
-
-  // Get comments for an activity
-
-  // Get user engagement state for activities
-
-  // Get trending topics based on activity data
-
-  // Get activity statistics
-
   // Get country-specific activity feed combining ActivityFeed and ThinkPages posts
   getCountryActivity: publicProcedure
     .input(
@@ -622,17 +523,4 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
         return { activities: [], nextCursor: undefined };
       }
     }),
-
-  // Country Follow System
-  // Follow a country
-
-  // Unfollow a country
-
-  // Get countries that a country is following
-
-  // Get countries that follow a country (followers)
-
-  // Check if a country is following another
-
-  // Get follow statistics for a country
 });

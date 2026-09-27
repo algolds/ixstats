@@ -31,20 +31,6 @@ export const wikiosStashRouter = createTRPCRouter({
     }));
   }),
 
-  /** Get or auto-create the user's default stash. */
-  getDefaultStash: protectedProcedure.query(async ({ ctx }) => {
-    const userId = requireWikiUserId(ctx);
-    let stash = await db.stash.findFirst({
-      where: { userId, isDefault: true },
-    });
-    if (!stash) {
-      stash = await db.stash.create({
-        data: { userId, name: "My Stash", color: "#3b82f6", isDefault: true },
-      });
-    }
-    return { id: stash.id, name: stash.name, color: stash.color };
-  }),
-
   /** Create a new stash. Max 25 per user. */
   createStash: protectedProcedure
     .input(
@@ -103,19 +89,6 @@ export const wikiosStashRouter = createTRPCRouter({
       if (!stash || stash.userId !== userId) throw new Error("Stash not found");
       if (stash.isDefault) throw new Error("Cannot delete default stash");
       await db.stash.delete({ where: { id: input.id } });
-      return { success: true };
-    }),
-
-  /** Reorder stashes. */
-  reorderStashes: protectedProcedure
-    .input(z.object({ ids: z.array(z.string()) }))
-    .mutation(async ({ input, ctx }) => {
-      const userId = requireWikiUserId(ctx);
-      await Promise.all(
-        input.ids.map((id, idx) =>
-          db.stash.updateMany({ where: { id, userId }, data: { order: idx } })
-        )
-      );
       return { success: true };
     }),
 
@@ -264,102 +237,4 @@ export const wikiosStashRouter = createTRPCRouter({
         nextCursor: hasMore ? results[results.length - 1]?.id : null,
       };
     }),
-
-  /** Get a single stash item by ID. */
-  getStashItem: protectedProcedure
-    .input(z.object({ itemId: z.string() }))
-    .query(async ({ input, ctx }) => {
-      const item = await db.stashItem.findUnique({
-        where: { id: input.itemId },
-        include: {
-          stash: true,
-          annotations: {
-            orderBy: { createdAt: "desc" },
-          },
-        },
-      });
-      if (!item || item.stash.userId !== requireWikiUserId(ctx)) {
-        throw new Error("Item not found");
-      }
-      return {
-        id: item.id,
-        pageTitle: item.pageTitle,
-        pageSlug: item.pageSlug,
-        note: item.note,
-        savedAt: item.savedAt.toISOString(),
-        stashId: item.stashId,
-        stashName: item.stash.name,
-        stashColor: item.stash.color,
-        annotations: item.annotations.map((a) => ({
-          id: a.id,
-          selectedText: a.selectedText,
-          comment: a.comment,
-          color: a.color,
-          createdAt: a.createdAt.toISOString(),
-        })),
-      };
-    }),
-
-  /** Move an item to a different stash. */
-  moveItem: protectedProcedure
-    .input(z.object({ itemId: z.string(), toStashId: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      const item = await db.stashItem.findUnique({
-        where: { id: input.itemId },
-        include: { stash: true },
-      });
-      if (!item || item.stash.userId !== requireWikiUserId(ctx)) throw new Error("Item not found");
-      return db.stashItem.update({
-        where: { id: input.itemId },
-        data: { stashId: input.toStashId },
-      });
-    }),
-
-  /** Update a stash item's note (rich text). */
-  updateItemNote: protectedProcedure
-    .input(z.object({ itemId: z.string(), note: z.string().max(50000) }))
-    .mutation(async ({ input, ctx }) => {
-      const item = await db.stashItem.findUnique({
-        where: { id: input.itemId },
-        include: { stash: true },
-      });
-      if (!item || item.stash.userId !== requireWikiUserId(ctx)) throw new Error("Item not found");
-      return db.stashItem.update({ where: { id: input.itemId }, data: { note: input.note } });
-    }),
-
-  // ---------------------------------------------------------------------------
-  // Annotations
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // User Info (for WikiOS profiles)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Rollback / Undo endpoints
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Talk / Discussion Pages
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // File Upload
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Page Properties & Protection (direct MySQL)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Advanced Search (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Category Tree (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Watchlist endpoints (backed by the LoreStash "Watchlist" stash)
-  // ---------------------------------------------------------------------------
 });

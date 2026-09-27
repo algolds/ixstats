@@ -5,7 +5,6 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { PhonologyRulesSchema, MorphologyRulesSchema } from "~/lib/onoma/types";
 
 export const onomaMarketplaceRouter = createTRPCRouter({
   /**
@@ -72,73 +71,6 @@ export const onomaMarketplaceRouter = createTRPCRouter({
       }
 
       return { packs, nextCursor };
-    }),
-
-  /**
-   * Publish a language pack (create pack + version).
-   */
-  publish: protectedProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-        description: z.string().optional(),
-        culturalFamily: z.string().optional(),
-        tags: z.array(z.string()).default([]),
-        phonologyRules: PhonologyRulesSchema.optional(),
-        morphologyRules: MorphologyRulesSchema.optional(),
-        orthographyRules: z.record(z.string(), z.string()).optional(),
-        namingConventions: z.record(z.string(), z.unknown()).optional(),
-        dictionaries: z
-          .array(
-            z.object({
-              name: z.string(),
-              category: z.string(),
-              values: z.array(z.string()),
-            })
-          )
-          .optional(),
-        sampleOutputs: z.array(z.string()).optional(),
-        changelog: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user.id;
-      const slug = `${input.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${Date.now().toString().slice(-4)}`;
-
-      // Try fetching country ID from user
-      const userObj = await ctx.db.user.findUnique({
-        where: { id: userId },
-        select: { countryId: true },
-      });
-
-      const pack = await ctx.db.languagePack.create({
-        data: {
-          userId,
-          countryId: userObj?.countryId,
-          name: input.name,
-          slug,
-          description: input.description,
-          culturalFamily: input.culturalFamily,
-          visibility: "public",
-          tags: input.tags,
-        },
-      });
-
-      await ctx.db.languagePackVersion.create({
-        data: {
-          packId: pack.id,
-          version: 1,
-          phonologyRules: (input.phonologyRules ?? {}) as Prisma.InputJsonValue,
-          morphologyRules: (input.morphologyRules ?? {}) as Prisma.InputJsonValue,
-          orthographyRules: (input.orthographyRules ?? {}) as Prisma.InputJsonValue,
-          namingConventions: (input.namingConventions ?? {}) as Prisma.InputJsonValue,
-          dictionaries: (input.dictionaries ?? []) as unknown as Prisma.InputJsonValue,
-          sampleOutputs: (input.sampleOutputs ?? []) as unknown as Prisma.InputJsonValue,
-          changelog: input.changelog || "Initial Release",
-        },
-      });
-
-      return pack;
     }),
 
   /**

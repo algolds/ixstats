@@ -22,27 +22,17 @@ jest.mock("~/lib/cache/advanced-cache-system", () => ({
     delete: jest.fn(),
   },
 }));
-jest.mock("~/lib/activity", () => ({
-  __esModule: true,
-  generateAndPostCitizenReaction: jest.fn(),
-}));
-jest.mock("~/lib/ai", () => ({
-  __esModule: true,
-  analyzePostSentiment: jest.fn(),
-}));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { vaultBalanceCreditsRouter } from "~/server/api/routers/vault/balance-credits";
 import { notificationsUserRouter } from "~/server/api/routers/notifications/user";
-import { thinkpagesFeedRouter } from "~/server/api/routers/thinkpages/feed";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb } from "~/tests/helpers/transactional-mock-db";
 import { vaultService } from "~/lib/vault/vault-service";
 
 const createVaultCaller = createCallerFactory(vaultBalanceCreditsRouter);
 const createNotificationsCaller = createCallerFactory(notificationsUserRouter);
-const createThinkpagesCaller = createCallerFactory(thinkpagesFeedRouter);
 
 describe("Self-scoped vault/notification queries (Finding 6)", () => {
   beforeEach(() => {
@@ -72,21 +62,5 @@ describe("Self-scoped vault/notification queries (Finding 6)", () => {
 
     expect(result).toEqual({ count: 0 });
     expect(db.user.findFirst).not.toHaveBeenCalled();
-  });
-
-  it("rejects an anonymous caller for thinkpages.calculateCountryMoodMetrics", async () => {
-    const db = createMockDb();
-    const ctx = createMockRouterContext({ auth: null, user: null, db });
-    const caller = createThinkpagesCaller(ctx as never);
-
-    await expect(caller.calculateCountryMoodMetrics()).rejects.toThrow();
-  });
-
-  it("rejects an anonymous caller for thinkpages.triggerCitizenReaction", async () => {
-    const db = createMockDb();
-    const ctx = createMockRouterContext({ auth: null, user: null, db });
-    const caller = createThinkpagesCaller(ctx as never);
-
-    await expect(caller.triggerCitizenReaction({ postId: "p" })).rejects.toThrow();
   });
 });

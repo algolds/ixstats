@@ -10,48 +10,8 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 
 export const studioAdminRouter = createTRPCRouter({
   // ──────────────────────────────────────────────
-  // Realm CRUD
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
   // Admin — Realm & World Management
   // ──────────────────────────────────────────────
-
-  /** Admin: get overview stats for realms, world configs, users */
-  adminGetStats: adminProcedure.query(async ({ ctx }) => {
-    const [realmCount, activeRealmCount, worldConfigCount, userCount, countryCount, templateCount] =
-      await Promise.all([
-        ctx.db.realm.count(),
-        ctx.db.realm.count({ where: { status: "active" } }),
-        ctx.db.worldConfig.count(),
-        ctx.db.user.count(),
-        ctx.db.country.count(),
-        ctx.db.worldTemplate.count(),
-      ]);
-
-    // Countries per realm breakdown
-    const realmBreakdown = await ctx.db.realm.findMany({
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        status: true,
-        visibility: true,
-        _count: { select: { countries: true } },
-      },
-      orderBy: { updatedAt: "desc" },
-    });
-
-    return {
-      realmCount,
-      activeRealmCount,
-      worldConfigCount,
-      userCount,
-      countryCount,
-      templateCount,
-      realmBreakdown,
-    };
-  }),
 
   /** Admin: list all realms with full details */
   adminListRealms: adminProcedure.query(async ({ ctx }) => {
@@ -143,23 +103,4 @@ export const studioAdminRouter = createTRPCRouter({
       const { id, ...data } = input;
       return ctx.db.worldConfig.update({ where: { id }, data });
     }),
-
-  /** Admin: list world templates */
-  adminListTemplates: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db.worldTemplate.findMany({
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        createdBy: true,
-        isPublic: true,
-        createdAt: true,
-        metadata: true,
-      },
-    });
-  }),
-
-  // ──────────────────────────────────────────────
-  // World Generation
-  // ──────────────────────────────────────────────
 });

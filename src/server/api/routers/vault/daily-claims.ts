@@ -16,22 +16,6 @@ import { vaultService } from "~/lib/vault/vault-service";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
 
-/**
- * Vault transaction type enum for validation
- */
-const _vaultTransactionTypeEnum = z.enum([
-  "EARN_PASSIVE",
-  "EARN_ACTIVE",
-  "EARN_CARDS",
-  "EARN_SOCIAL",
-  "SPEND_PACKS",
-  "SPEND_MARKET",
-  "SPEND_CRAFT",
-  "SPEND_BOOST",
-  "SPEND_COSMETIC",
-  "ADMIN_ADJUSTMENT",
-]);
-
 export const vaultDailyClaimsRouter = createTRPCRouter({
   /**
    * Get vault balance and stats for a user
@@ -136,30 +120,6 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
     }),
 
   /**
-   * Claim streak bonus (updates login streak)
-   */
-  claimStreakBonus: protectedProcedure.mutation(async ({ ctx }) => {
-    try {
-      if (!ctx.auth?.userId) {
-        throw new Error("User ID not found in authentication context");
-      }
-
-      const newStreak = await vaultService.updateLoginStreak(ctx.auth.userId, ctx.db as any);
-
-      await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
-
-      return {
-        success: true,
-        streak: newStreak,
-        message: `Login streak updated: ${newStreak} days`,
-      };
-    } catch (error) {
-      console.error("[Vault Router] Error claiming streak bonus:", error);
-      throw new Error("Failed to update login streak", { cause: error });
-    }
-  }),
-
-  /**
    * Spend IxCredits
    */
   checkDailyCap: protectedProcedure
@@ -237,8 +197,4 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
         throw new Error("Failed to adjust user streak", { cause: error });
       }
     }),
-
-  /**
-   * Admin: List user vault transactions
-   */
 });

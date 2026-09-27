@@ -12,11 +12,6 @@ jest.mock("~/lib/cards/valuation", () => ({
   __esModule: true,
   recomputeAllCardValues: jest.fn(),
 }));
-jest.mock("~/lib/cards/card-service", () => ({
-  __esModule: true,
-  updateCardStats: jest.fn(),
-  transferCard: jest.fn(),
-}));
 
 import { describe, it, expect } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";

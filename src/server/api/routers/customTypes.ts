@@ -174,25 +174,4 @@ export const customTypesRouter = createTRPCRouter({
         });
       }
     }),
-
-  /**
-   * Get all unique field values for a specific field (for debugging/admin)
-   */
-  getAllFieldValues: protectedProcedure
-    .input(
-      z.object({
-        fieldName: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return ctx.db.customFieldValue.findMany({
-        where: {
-          fieldName: input.fieldName,
-          OR: [{ isGlobal: true }, { userId: ctx.user.id }],
-        },
-        orderBy: {
-          usageCount: "desc",
-        },
-      });
-    }),
 });

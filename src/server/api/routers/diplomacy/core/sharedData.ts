@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 // Helper functions for cultural exchange <-> embassy mission integration
@@ -511,61 +511,5 @@ export const diplomaticCoreSharedDataRouter = createTRPCRouter({
           cause: error,
         });
       }
-    }),
-
-  shareData: protectedProcedure
-    .input(
-      z.object({
-        embassyId: z.string(),
-        dataType: z.enum(["economic", "intelligence", "research", "cultural", "policy"]),
-        dataContent: z.object({
-          title: z.string(),
-          content: z.string(),
-          metadata: z.record(z.string(), z.any()).optional(),
-          expiresAt: z.string().optional(),
-        }),
-        shareLevel: z.enum(["view", "collaborate"]).default("view"),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.countryId) {
-        throw new Error("You must be associated with a country to share data.");
-      }
-
-      // Verify user owns the embassy (guestCountryId)
-      const embassy = await ctx.db.embassy.findUnique({
-        where: { id: input.embassyId },
-      });
-
-      if (!embassy || embassy.guestCountryId !== ctx.user.countryId) {
-        throw new Error("You can only share data from your own embassies.");
-      }
-
-      // In production, this would create a SharedData record
-      // For now, return success with mock data
-      return {
-        success: true,
-        message: `${input.dataContent.title} has been shared with ${embassy.hostCountryId}`,
-        dataType: input.dataType,
-        shareLevel: input.shareLevel,
-      };
-    }),
-
-  revokeSharedData: protectedProcedure
-    .input(
-      z.object({
-        sharedDataId: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input: _input }) => {
-      if (!ctx.user?.countryId) {
-        throw new Error("You must be associated with a country to revoke shared data.");
-      }
-
-      // In production, this would delete from SharedData table after verifying ownership
-      return {
-        success: true,
-        message: "Data sharing has been revoked",
-      };
     }),
 });

@@ -27,22 +27,11 @@ const coordinatesSchema = z
     message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
   });
 
-import { syncGeographicDemographics } from "~/lib/country-geo/sync";
-export { syncGeographicDemographics };
-
 // ──────────────────────────────────────────────
 // Router
 // ──────────────────────────────────────────────
 
 export const geoFeaturesStoryPinsRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Border Editor
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
   // ──────────────────────────────────────────────
   // Story Pins — Narrative markers on the map
   // ──────────────────────────────────────────────
@@ -251,18 +240,6 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
       return { id: input.pinId, deleted: true };
     }),
 
-  getStoryPin: cachedPublicProcedure
-    .input(z.object({ pinId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db.storyPin.findUnique({
-        where: { id: input.pinId },
-        include: {
-          country: { select: { name: true, slug: true } },
-          storyline: { select: { id: true, title: true, color: true } },
-        },
-      });
-    }),
-
   /** Full story pin data with wiki enrichment for the modal view. */
   getStoryPinFull: cachedPublicProcedure
     .input(z.object({ pinId: z.string() }))
@@ -334,15 +311,6 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
       return { pin, wikiEnrichment, relatedPins };
     }),
 
-  getStoryPinsByCountry: cachedPublicProcedure
-    .input(z.object({ countryId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db.storyPin.findMany({
-        where: { countryId: input.countryId, status: "approved" },
-        orderBy: { ixTimeYear: "asc" },
-      });
-    }),
-
   getAllStoryPins: cachedPublicProcedure
     .input(
       z
@@ -395,42 +363,4 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
           })),
       };
     }),
-
-  // ──────────────────────────────────────────────
-  // Storylines — Narrative chains connecting story pins
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Labels — Custom styled text on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Sovereignty / dependency management
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Linkage validation & repair
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // SVG Upload & Processing Pipeline
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // World Template / Clone System (Phase 3)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // Procedural World Generation (Phase 4)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Province Import Endpoints
-  // ──────────────────────────────────────────────
-
-  // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
 });

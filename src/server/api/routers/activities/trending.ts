@@ -8,24 +8,6 @@ import { getForumTrendingThreads } from "~/server/modules/forum";
 
 // Input schemas
 export const activitiesTrendingRouter = createTRPCRouter({
-  // Test mutation to debug parameter passing
-
-  // Get global activity feed
-
-  // Get feed from countries the user follows
-
-  // Get user-specific activity feed
-
-  // Create new activity
-
-  // Handle engagement actions (like, unlike, share, view)
-
-  // Add comment to activity
-
-  // Get comments for an activity
-
-  // Get user engagement state for activities
-
   // Get trending topics based on activity data
   getTrendingTopics: publicProcedure
     .input(
@@ -115,23 +97,6 @@ export const activitiesTrendingRouter = createTRPCRouter({
         return [];
       }
     }),
-
-  // Get activity statistics
-
-  // Get country-specific activity feed combining ActivityFeed and ThinkPages posts
-
-  // Country Follow System
-  // Follow a country
-
-  // Unfollow a country
-
-  // Get countries that a country is following
-
-  // Get countries that follow a country (followers)
-
-  // Check if a country is following another
-
-  // Get follow statistics for a country
 
   /**
    * Unified trending — cross-platform trending topics scored by engagement.

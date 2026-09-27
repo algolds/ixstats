@@ -145,21 +145,4 @@ export const messagesConversationsRouter = createTRPCRouter({
         source: input.source as any,
       });
     }),
-
-  /**
-   * Manually sync discussions from wiki talk pages and forum conversations.
-   */
-  syncDiscussions: protectedProcedure
-    .input(z.object({ userId: z.string() }))
-    .mutation(async ({ ctx }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesServer(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
-
-      return await messagingService.syncDiscussions(ctx.auth.userId);
-    }),
 });

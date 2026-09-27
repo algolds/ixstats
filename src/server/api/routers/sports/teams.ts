@@ -11,37 +11,6 @@ import { exchangeService } from "~/lib/vault/exchange-service";
 import { isSystemOwner } from "~/lib/auth";
 
 export const sportsTeamsRouter = createTRPCRouter({
-  getTeams: publicProcedure
-    .input(
-      z.object({
-        leagueId: z.string().optional(),
-        nationId: z.string().optional(),
-        ownerUserId: z.string().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const teams = await ctx.db.sportTeam.findMany({
-          where: {
-            ...(input.leagueId && { leagueId: input.leagueId }),
-            ...(input.nationId && { nationId: input.nationId }),
-            ...(input.ownerUserId && { ownerUserId: input.ownerUserId }),
-          },
-          include: {
-            league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
-          },
-          orderBy: { name: "asc" },
-        });
-
-        return teams;
-      } catch (_error) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch teams",
-        });
-      }
-    }),
-
   getTeam: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     try {
       const team = await ctx.db.sportTeam.findUnique({
@@ -239,4 +208,3 @@ export const sportsTeamsRouter = createTRPCRouter({
       }
     }),
 });
-

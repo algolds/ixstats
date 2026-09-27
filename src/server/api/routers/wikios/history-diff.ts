@@ -6,14 +6,7 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
-import {
-  getArticleWikitext,
-  getPageProps,
-  getPageProtection,
-  getPageLog,
-} from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { runAutoSyncCycle } from "~/lib/wiki-os/services/auto-sync-service";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { computeWikitextDiff } from "~/lib/wiki-os/transformers/wikitext-diff";
 import {
   getArticleHistoryShadow,
@@ -111,42 +104,5 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
       const result = await getRevisionWikitextShadow(input.revid);
       if (!result) throw new Error("Revision not found");
       return result;
-    }),
-
-  /** Get page properties (displaytitle, defaultsort, page_image, etc.) */
-  getPageProps: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      const article = await getArticleWikitext(input.title, "ixwiki");
-      if (!article) return { props: {} };
-      return { props: await getPageProps(article.pageId) };
-    }),
-
-  /** Get page protection status (edit/move restrictions). */
-  getPageProtection: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      return { restrictions: await getPageProtection(input.title) };
-    }),
-
-  /** Get page action log (moves, deletes, protections). */
-  getPageLog: publicProcedure
-    .input(
-      z.object({
-        title: z.string().min(1).max(500),
-        limit: z.number().min(1).max(100).default(50),
-      })
-    )
-    .query(async ({ input }) => {
-      return { entries: await getPageLog(input.title, input.limit) };
-    }),
-
-  /**
-   * Sync recent changes from MediaWiki into local shadow store.
-   */
-  syncRecentChanges: adminProcedure
-    .input(z.object({ limit: z.number().min(1).max(100).default(50) }).optional())
-    .mutation(async ({ input }) => {
-      return runAutoSyncCycle(input?.limit ?? 50);
     }),
 });

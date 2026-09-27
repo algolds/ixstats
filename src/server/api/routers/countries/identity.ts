@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
-import { fetchWikiIntro } from "./utils";
 
 export const identityProcedures = {
   getByIdBasic: rateLimitedPublicProcedure
@@ -59,8 +58,4 @@ export const identityProcedures = {
       });
       return { isMapped: !!country?.centroid };
     }),
-
-  getWikiIntro: publicProcedure.input(z.object({ name: z.string() })).query(async ({ input }) => {
-    return fetchWikiIntro(input.name);
-  }),
 };

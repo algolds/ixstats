@@ -1,14 +1,7 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  rateLimitedPublicProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
 // Import the wiki search service
-import { validateNoXSS } from "~/lib/utils";
 import { globalCache } from "~/lib/cache";
 
 interface PostDateFields {
@@ -106,8 +99,6 @@ const GetFeedSchema = z.object({
   cursor: z.string().optional(),
 });
 export const thinkpagesFeedRouter = createTRPCRouter({
-  // Search Unsplash images
-
   // Fetch Discord Channel Topic (Easter Egg)
   getDiscordChannelTopic: publicProcedure.query(async () => {
     const discordBotToken = process.env.DISCORD_BOT_TOKEN;
@@ -135,88 +126,6 @@ export const thinkpagesFeedRouter = createTRPCRouter({
       return null;
     }
   }),
-
-  // Search Wiki Commons images
-
-  // Calculate trending topics
-  calculateTrendingTopics: publicProcedure.mutation(async ({ ctx }) => {
-    const { db } = ctx;
-
-    const posts = await db.thinkpagesPost.findMany({
-      where: {
-        ixTimeTimestamp: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        },
-      },
-      select: {
-        hashtags: true,
-        likeCount: true,
-        repostCount: true,
-        replyCount: true,
-      },
-      take: 500,
-    });
-
-    const hashtagCounts: Record<string, { count: number; engagement: number }> = {};
-
-    for (const post of posts) {
-      const hashtags = post.hashtags ? JSON.parse(post.hashtags) : [];
-      for (const hashtag of hashtags) {
-        if (!hashtagCounts[hashtag]) {
-          hashtagCounts[hashtag] = { count: 0, engagement: 0 };
-        }
-        hashtagCounts[hashtag].count++;
-        hashtagCounts[hashtag].engagement +=
-          (post.likeCount ?? 0) + (post.repostCount ?? 0) + (post.replyCount ?? 0);
-      }
-    }
-
-    await Promise.all(
-      Object.entries(hashtagCounts).map(([hashtag, hashtagData]) =>
-        db.trendingTopic.upsert({
-          where: { hashtag },
-          create: {
-            hashtag,
-            postCount: hashtagData.count,
-            engagement: hashtagData.engagement,
-            peakTimestamp: new Date(),
-          },
-          update: {
-            postCount: hashtagData.count,
-            engagement: hashtagData.engagement,
-            peakTimestamp: new Date(),
-          },
-        })
-      )
-    );
-
-    return { success: true };
-  }),
-
-  // Search users globally for ThinkTanks/ThinkShare
-
-  // Update ThinkPages Feed Account
-  // Username availability check for ThinkPages Feed Accounts
-
-  // Generate random profile picture
-
-  // Create ThinkPages Feed Account - For Feed only (not ThinkTanks/ThinkShare)
-
-  // Get ThinkPages Feed Accounts by Country - For Feed only
-
-  // Get current user's ThinkPages accounts
-
-  // Get Account Counts by Type - For Feed only
-
-  // Post creation
-
-  // Update post content (edit post)
-
-  // Delete post (soft delete)
-
-  // Add reaction to post
-
-  // Remove reaction
 
   // Get feed
   getFeed: rateLimitedPublicProcedure.input(GetFeedSchema).query(async ({ ctx, input }) => {
@@ -386,179 +295,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
     }
   }),
 
-  // Get trending topics
-
-  // Get account details
-
-  // Get Thinkpages account by Clerk User ID
-
-  // Get post details with replies
-
-  // Get posts by Clerk User ID - shows all posts from all accounts owned by this user
-
-  // Trigger citizen reaction to a post
-  triggerCitizenReaction: adminProcedure
-    .input(z.object({ postId: z.string() }))
-    .mutation(async ({ input }) => {
-      const { generateAndPostCitizenReaction } = await import("~/lib/activity");
-      await generateAndPostCitizenReaction(input.postId);
-      return { success: true, message: "Citizen reaction triggered" };
-    }),
-
-  // Calculate and store country mood metrics
-  calculateCountryMoodMetrics: adminProcedure.mutation(async ({ ctx }) => {
-    const { db } = ctx;
-    const { analyzePostSentiment } = await import("~/lib/ai");
-    const currentIxTime = IxTime.getCurrentIxTime();
-    const twentyFourHoursAgo = new Date(currentIxTime - 24 * 60 * 60 * 1000);
-
-    const countries = await db.country.findMany({
-      take: 250,
-      select: { id: true, name: true },
-    });
-
-    // Batch-fetch all active users and recent posts in 2 queries instead of per-country
-    const allUsers = await db.user.findMany({
-      where: {
-        countryId: { in: countries.map((c: any) => c.id) },
-        isActive: true,
-      },
-      select: { id: true, countryId: true },
-    });
-
-    // Group users by countryId
-    const usersByCountry = new Map<string, string[]>();
-    for (const u of allUsers) {
-      if (!u.countryId) continue;
-      const existing = usersByCountry.get(u.countryId) ?? [];
-      existing.push(u.id);
-      usersByCountry.set(u.countryId, existing);
-    }
-
-    // Batch-fetch all recent posts for all active users
-    const allUserIds = allUsers.map((u: any) => u.id);
-    const allRecentPosts =
-      allUserIds.length > 0
-        ? await db.thinkpagesPost.findMany({
-            where: {
-              accountId: { in: allUserIds },
-              ixTimeTimestamp: { gte: twentyFourHoursAgo },
-            },
-            include: { reactions: true },
-          })
-        : [];
-
-    // Group posts by accountId for fast lookup
-    const postsByAccount = new Map<string, typeof allRecentPosts>();
-    for (const post of allRecentPosts) {
-      const existing = postsByAccount.get(post.accountId) ?? [];
-      existing.push(post);
-      postsByAccount.set(post.accountId, existing);
-    }
-
-    const dailyTimestamp = new Date(currentIxTime);
-    dailyTimestamp.setHours(0, 0, 0, 0);
-    const upsertPromises: Promise<any>[] = [];
-
-    for (const country of countries) {
-      const citizenIds = usersByCountry.get(country.id);
-      if (!citizenIds || citizenIds.length === 0) continue;
-
-      // Collect posts for this country's citizens
-      const countryPosts: typeof allRecentPosts = [];
-      for (const userId of citizenIds) {
-        const userPosts = postsByAccount.get(userId);
-        if (userPosts) countryPosts.push(...userPosts);
-      }
-
-      if (countryPosts.length === 0) continue;
-
-      let totalSentiment = 0;
-      for (const post of countryPosts) {
-        totalSentiment += analyzePostSentiment(post as any);
-      }
-      const averageSentiment = totalSentiment / countryPosts.length;
-
-      upsertPromises.push(
-        db.countryMoodMetric.upsert({
-          where: {
-            countryId_timestamp: {
-              countryId: country.id,
-              timestamp: dailyTimestamp,
-            },
-          },
-          update: {
-            sentimentScore: averageSentiment,
-            postCount: countryPosts.length,
-            timestamp: dailyTimestamp,
-          },
-          create: {
-            countryId: country.id,
-            sentimentScore: averageSentiment,
-            postCount: countryPosts.length,
-            timestamp: dailyTimestamp,
-          },
-        })
-      );
-    }
-
-    // Execute all upserts in parallel
-    await Promise.allSettled(upsertPromises);
-
-    return { success: true, message: "Country mood metrics calculated" };
-  }),
-
-  // ===== THINKTANKS (GROUPS) ENDPOINTS =====
-
-  // Create a new ThinkTank group
-
-  // Get ThinkTanks globally (no country restriction)
-
-  // Join a ThinkTank group
-
-  // Leave a ThinkTank group
-
-  // Get ThinkTank messages
-
-  // Send message to ThinkTank
-
-  // Update a ThinkTank group
-
-  // Invite users to a ThinkTank group
-
-  // Get collaborative documents for a ThinkTank
-
-  // Create a collaborative document
-
-  // Update a collaborative document
-
-  // Delete a collaborative document
-
-  // Get a single document
-
-  // Add reaction to a Thinkshare message
-
-  // Remove reaction from a Thinkshare message
-
-  // Edit a Thinkshare message
-
-  // Delete a Thinkshare message
-
   // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
-
-  // Create a new conversation
-
-  // Get conversations for a user
-
-  // Get messages for a conversation
-
-  // Send message to conversation
-
-  // Mark messages as read
-
-  // Update user presence/online status
-
-  // Get presence for multiple users
 
   // Get Discord server emojis
   getDiscordEmojis: publicProcedure

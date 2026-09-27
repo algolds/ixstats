@@ -7,15 +7,12 @@
  * Domains:
  *  - global:    cross-source global activity feed (ActivityFeed + ThinkPages + wiki + forum)
  *  - personal:  user-scoped feeds (following, user-specific, country-specific)
- *  - headlines: aggregated news-style headlines from game systems for the ThinkPages ticker
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { activitiesFeedGlobalRouter } from "./global";
 import { activitiesFeedPersonalRouter } from "./personal";
-import { activitiesFeedHeadlinesRouter } from "./headlines";
 
 export const activitiesFeedRouter = mergeRouters(
   activitiesFeedGlobalRouter,
-  activitiesFeedPersonalRouter,
-  activitiesFeedHeadlinesRouter
+  activitiesFeedPersonalRouter
 );

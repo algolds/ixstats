@@ -22,25 +22,6 @@ import { type ParsedComponent, transformDatabaseComponent } from "./serializer";
 
 const componentTypeSchema = z.nativeEnum(ComponentType);
 
-const _getAllComponentsSchema = z
-  .object({
-    category: z.string().optional(),
-    isActive: z.boolean().optional(),
-  })
-  .optional();
-
-const _getComponentByTypeSchema = z.object({
-  componentType: componentTypeSchema,
-});
-
-const _getSynergiesSchema = z.object({
-  componentType: componentTypeSchema,
-});
-
-const _incrementUsageSchema = z.object({
-  componentType: componentTypeSchema,
-});
-
 const createSynergySchema = z.object({
   component1: componentTypeSchema,
   component2: componentTypeSchema,
@@ -143,32 +124,6 @@ function getFallbackComponentByType(componentType: ComponentType): ParsedCompone
     usageCount: 0,
     isActive: true,
   };
-}
-
-/**
- * Get components grouped by category
- */
-// oxlint-disable-next-line typescript/no-unused-vars
-function getComponentsByCategory(): Record<string, ParsedComponent[]> {
-  const fallbackComponents = getFallbackComponents();
-  const grouped: Record<string, ParsedComponent[]> = {};
-
-  // Initialize all categories
-  Object.keys(COMPONENT_CATEGORIES).forEach((category) => {
-    grouped[category] = [];
-  });
-
-  // Group components by category
-  fallbackComponents.forEach((component) => {
-    for (const [categoryName, componentTypes] of Object.entries(COMPONENT_CATEGORIES)) {
-      if ((componentTypes as ComponentType[]).includes(component.type)) {
-        grouped[categoryName].push(component);
-        break;
-      }
-    }
-  });
-
-  return grouped;
 }
 
 // ============================================================================

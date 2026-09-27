@@ -19,39 +19,7 @@ import type { BaseCountryData } from "~/types/ixstats";
 import { globalCache } from "~/lib/cache";
 import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
 
-// Temporary storage for user-country mappings until we fix the User model
-
-// oxlint-disable-next-line typescript/no-unused-vars
-function hydrateProfileDates(profile: any) {
-  if (!profile) return profile;
-  if (profile.createdAt) {
-    profile.createdAt = new Date(profile.createdAt);
-  }
-  if (profile.country) {
-    const c = profile.country;
-    if (c.baselineDate) c.baselineDate = new Date(c.baselineDate);
-    if (c.lastCalculated) c.lastCalculated = new Date(c.lastCalculated);
-    if (c.createdAt) c.createdAt = new Date(c.createdAt);
-    if (c.updatedAt) c.updatedAt = new Date(c.updatedAt);
-    if (Array.isArray(c.storytellerEffects)) {
-      c.storytellerEffects = c.storytellerEffects.map((e: any) => ({
-        ...e,
-        ixTimeTimestamp: e.ixTimeTimestamp ? new Date(e.ixTimeTimestamp) : undefined,
-      }));
-    }
-  }
-  return profile;
-}
-
 export const usersCountryLinkingRouter = createTRPCRouter({
-  // Get current user's profile using auth context (no input required)
-
-  // Get current user's abilities and role permissions for CASL
-
-  // Get user profile by ID (for admin use)
-
-  // Get multiple user profiles by IDs (batch)
-
   // Link user to existing country
   linkCountry: protectedProcedure
     .input(
@@ -419,64 +387,6 @@ export const usersCountryLinkingRouter = createTRPCRouter({
       }
     }),
 
-  // Get user's linked country with full details
-  getLinkedCountry: publicProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const user = await ctx.db.user.findUnique({
-          where: { clerkUserId: input.userId },
-          include: { country: true },
-        });
-        if (!user || !user.countryId) {
-          return null;
-        }
-        const country = await ctx.db.country.findUnique({
-          where: { id: user.countryId },
-          include: {
-            storytellerEffects: {
-              where: { isActive: true },
-              orderBy: { ixTimeTimestamp: "desc" },
-            },
-            historicalData: {
-              orderBy: { ixTimeTimestamp: "desc" },
-              take: 100, // Limit to last 100 data points
-            },
-          },
-        });
-        return country;
-      } catch (error) {
-        console.error("Error fetching linked country:", error);
-        throw new Error("Failed to fetch linked country", { cause: error });
-      }
-    }),
-
-  // Update user profile settings
-
-  // Get user social data
-
-  // Get active users/members for finding friends
-
-  // Get current user with role and permissions
-
-  // Create user record if it doesn't exist and ensure roles exist
-
-  // Setup database with roles and permissions
-
-  // Get user's admin favorites
-
-  // Add admin panel to favorites
-
-  // Remove admin panel from favorites
-
-  // Reorder admin favorites
-
-  // Get user by Clerk ID with role (for admin use)
-
   // Get user's membership status
   getMembershipStatus: publicProcedure.query(async ({ ctx }) => {
     try {
@@ -579,6 +489,4 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         throw new Error("Failed to update membership tier", { cause: error });
       }
     }),
-
-  // ─── Wiki Preferences ────────────────────────────────────────────────
 });

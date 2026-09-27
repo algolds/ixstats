@@ -49,8 +49,6 @@ const archetypeEnum = z.enum([
 // ==================== TRPC ROUTER ====================
 
 export const npcPersonalitiesAdminRouter = createTRPCRouter({
-  // ==================== PUBLIC ENDPOINTS ====================
-
   // ==================== ADMIN ENDPOINTS ====================
 
   /**
@@ -278,74 +276,6 @@ export const npcPersonalitiesAdminRouter = createTRPCRouter({
 
       return { success: true, assignment };
     }),
-
-  /**
-   * Get personality usage statistics (Admin only)
-   */
-  getPersonalityStats: adminProcedure.query(async ({ ctx }) => {
-    const personalities = await ctx.db.nPCPersonality.findMany({
-      include: { npcAssignments: true },
-      orderBy: { usageCount: "desc" },
-    });
-
-    const totalPersonalities = personalities.length;
-    const activePersonalities = personalities.filter((p) => p.isActive).length;
-    const totalUsage = personalities.reduce((sum, p) => sum + p.usageCount, 0);
-    const totalAssignments = await ctx.db.nPCPersonalityAssignment.count();
-
-    const archetypeStats = personalities.reduce(
-      (acc, p) => {
-        acc[p.archetype] = (acc[p.archetype] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
-
-    const topPersonalities = personalities.slice(0, 10).map(parsePersonalityJSON);
-    const leastUsed = personalities.filter((p) => p.usageCount === 0).map(parsePersonalityJSON);
-
-    // Trait averages across all personalities
-    const traitAverages = {
-      assertiveness: Math.round(
-        personalities.reduce((sum, p) => sum + p.assertiveness, 0) / totalPersonalities
-      ),
-      cooperativeness: Math.round(
-        personalities.reduce((sum, p) => sum + p.cooperativeness, 0) / totalPersonalities
-      ),
-      economicFocus: Math.round(
-        personalities.reduce((sum, p) => sum + p.economicFocus, 0) / totalPersonalities
-      ),
-      culturalOpenness: Math.round(
-        personalities.reduce((sum, p) => sum + p.culturalOpenness, 0) / totalPersonalities
-      ),
-      riskTolerance: Math.round(
-        personalities.reduce((sum, p) => sum + p.riskTolerance, 0) / totalPersonalities
-      ),
-      ideologicalRigidity: Math.round(
-        personalities.reduce((sum, p) => sum + p.ideologicalRigidity, 0) / totalPersonalities
-      ),
-      militarism: Math.round(
-        personalities.reduce((sum, p) => sum + p.militarism, 0) / totalPersonalities
-      ),
-      isolationism: Math.round(
-        personalities.reduce((sum, p) => sum + p.isolationism, 0) / totalPersonalities
-      ),
-    };
-
-    return {
-      summary: {
-        totalPersonalities,
-        activePersonalities,
-        totalUsage,
-        totalAssignments,
-        averageUsage: (totalUsage / totalPersonalities).toFixed(2),
-      },
-      archetypeStats,
-      traitAverages,
-      topPersonalities,
-      leastUsed,
-    };
-  }),
 });
 
 // ==================== HELPER FUNCTIONS ====================
@@ -366,31 +296,6 @@ function parsePersonalityJSON(personality: any) {
       ? JSON.parse(personality.scenarioResponses)
       : {},
     eventModifiers: personality.eventModifiers ? JSON.parse(personality.eventModifiers) : {},
-  };
-}
-
-/**
- * Fallback to hardcoded personalities if database empty
- */
-// oxlint-disable-next-line typescript/no-unused-vars
-function getFallbackPersonalities() {
-  // In production, this would return hardcoded data
-  // For now, return empty array to encourage database population
-  return [];
-}
-
-/**
- * Generate generic response based on personality traits
- */
-// oxlint-disable-next-line typescript/no-unused-vars
-function generateGenericResponse(personality: any, scenario: string, context: any) {
-  // Use personality traits to generate a generic response
-  const cooperationScore = (personality.cooperativeness + context.relationshipStrength) / 2;
-
-  return {
-    action: cooperationScore > 50 ? "negotiate" : "defer",
-    confidence: 50,
-    reasoning: ["Generic scenario uses cooperation baseline"],
   };
 }
 

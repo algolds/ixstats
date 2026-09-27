@@ -52,9 +52,6 @@ const respondToTradeSchema = z.object({
   counterMessage: z.string().max(500).optional(),
 });
 
-type _CreateTradeOfferInput = z.infer<typeof createtradeOfferSchema>;
-type _RespondToTradeInput = z.infer<typeof respondToTradeSchema>;
-
 export const tradingOffersRouter = createTRPCRouter({
   /**
    * Create a new trade offer

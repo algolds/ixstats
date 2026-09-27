@@ -1,23 +1,7 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  rateLimitedPublicProcedure,
-} from "~/server/api/trpc";
-import { achievementService } from "~/lib/achievements/service";
+import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 
 export const achievementsProgressRouter = createTRPCRouter({
-  // Get recent achievements for a country
-
-  // Get all achievements for a country
-
-  // Get achievement leaderboard
-
-  // Get current user's achievement progress statistics
-  getProgress: protectedProcedure.query(async ({ ctx }) => {
-    return achievementService.getProgress(ctx.user.clerkUserId, ctx.db);
-  }),
-
   getAllWithStatus: rateLimitedPublicProcedure
     .input(
       z.object({
@@ -435,10 +419,4 @@ export const achievementsProgressRouter = createTRPCRouter({
         return [];
       }
     }),
-
-  // Admin action: Manually trigger baseline sync
-
-  // User action: Retroactively sync collector achievements and titles
-
-  // Unlock achievement (internal use & backward compatibility)
 });

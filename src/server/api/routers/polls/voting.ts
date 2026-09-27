@@ -2,17 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 
-const _pollTypeSchema = z.enum(["choice", "feature-poll", "feature-voting"]);
-
 export const pollsVotingRouter = createTRPCRouter({
-  // Create a new poll (Admin only)
-
-  // List polls (Admin management)
-
-  // Toggle active status (Admin only)
-
-  // Delete a poll (Admin only)
-
   // Register user vote
   vote: protectedProcedure
     .input(

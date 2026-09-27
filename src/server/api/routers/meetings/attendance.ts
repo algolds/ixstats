@@ -2,13 +2,11 @@
 // Cabinet meetings, government officials, and meeting management
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { assertCountryResourceWriteAccess } from "~/server/shared/country-authorization";
 import { resolveMeetingCountryId } from "~/server/shared/country-resource-owner";
 
 export const meetingsAttendanceRouter = createTRPCRouter({
-  // ==================== CABINET MEETINGS ====================
-
   // ==================== MEETING ATTENDANCE ====================
 
   recordAttendance: protectedProcedure
@@ -66,29 +64,4 @@ export const meetingsAttendanceRouter = createTRPCRouter({
         },
       });
     }),
-
-  getAttendance: publicProcedure
-    .input(
-      z.object({
-        meetingId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.meetingAttendance.findMany({
-        where: { meetingId: input.meetingId },
-        include: {
-          official: true,
-        },
-      });
-    }),
-
-  // ==================== AGENDA ITEMS ====================
-
-  // ==================== DECISIONS ====================
-
-  // ==================== ACTION ITEMS ====================
-
-  // ==================== GOVERNMENT OFFICIALS ====================
-
-  // ==================== GOVERNMENT DEPARTMENTS ====================
 });

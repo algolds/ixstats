@@ -161,58 +161,6 @@ export const economicArchetypesPublicRouter = createTRPCRouter({
     }),
 
   /**
-   * Get single archetype by ID
-   */
-  getArchetypeById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const archetype = await ctx.db.economicArchetype.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!archetype) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Archetype not found",
-        });
-      }
-
-      return parseArchetypeJSON(archetype);
-    }),
-
-  /**
-   * Get archetypes grouped by category (modern/historical)
-   */
-  getArchetypesByCategory: publicProcedure.query(async ({ ctx }) => {
-    try {
-      const archetypes = await ctx.db.economicArchetype.findMany({
-        where: { isActive: true },
-        orderBy: { usageCount: "desc" },
-      });
-
-      // If database empty, use fallback
-      if (archetypes.length === 0) {
-        return {
-          modern: Array.from(modernArchetypes.values()),
-          historical: Array.from(historicalArchetypes.values()),
-        };
-      }
-
-      return {
-        modern: archetypes.filter((a) => a.era === "modern").map(parseArchetypeJSON),
-        historical: archetypes.filter((a) => a.era === "historical").map(parseArchetypeJSON),
-      };
-    } catch (error) {
-      console.error("Error fetching archetypes by category:", error);
-      // Fallback on error
-      return {
-        modern: Array.from(modernArchetypes.values()),
-        historical: Array.from(historicalArchetypes.values()),
-      };
-    }
-  }),
-
-  /**
    * Increment archetype usage count
    * Called when user selects an archetype
    */
@@ -230,8 +178,4 @@ export const economicArchetypesPublicRouter = createTRPCRouter({
         return null;
       }
     }),
-
-  // ============================================================================
-  // ADMIN ENDPOINTS
-  // ============================================================================
 });

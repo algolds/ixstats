@@ -10,7 +10,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, adminProcedure, countryOwnerProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { clearLayerCache } from "../core";
 import { ActivityGenerator } from "~/lib/activity";
@@ -339,102 +339,4 @@ export const geoEditorQueueRouter = createTRPCRouter({
 
       return { id: input.editId, status: "rejected" as const };
     }),
-
-  // ──────────────────────────────────────────────
-  // Border Editor
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Story Pins — Narrative markers on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Storylines — Narrative chains connecting story pins
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Labels — Custom styled text on the map
-  // ──────────────────────────────────────────────
-
-  /**
-   * Get edit history for the user's country.
-   */
-  getMyEditHistory: countryOwnerProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        limit: z.number().int().min(1).max(50).default(20),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only view your own edit history",
-        });
-      }
-
-      const edits = await ctx.db.mapEditRequest.findMany({
-        where: { countryId: input.countryId },
-        orderBy: { createdAt: "desc" },
-        take: input.limit,
-      });
-
-      return edits.map(
-        (e: {
-          id: string;
-          editType: string;
-          operation: string;
-          status: string;
-          createdAt: Date;
-          reviewedAt: Date | null;
-          reviewNote: string | null;
-          proposedData: unknown;
-        }) => ({
-          id: e.id,
-          editType: e.editType,
-          operation: e.operation,
-          status: e.status,
-          createdAt: e.createdAt,
-          reviewedAt: e.reviewedAt,
-          reviewNote: e.reviewNote,
-          summary: (e.proposedData as Record<string, unknown>)?.name ?? "Unknown",
-        })
-      );
-    }),
-
-  // ──────────────────────────────────────────────
-  // Sovereignty / dependency management
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Linkage validation & repair
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // SVG Upload & Processing Pipeline
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // World Template / Clone System (Phase 3)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // Procedural World Generation (Phase 4)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Province Import Endpoints
-  // ──────────────────────────────────────────────
-
-  // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
 });

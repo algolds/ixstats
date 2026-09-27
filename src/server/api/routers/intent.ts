@@ -136,13 +136,6 @@ export const intentRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => cooldownStatus(ctx.db, input.countryId)),
 
-  /** Get a single intent by ID. */
-  getIntent: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
-    return await ctx.db.intent.findUnique({
-      where: { id: input.id },
-    });
-  }),
-
   /** Update status of an intent (e.g. mark completed, abandoned). */
   updateStatus: protectedProcedure
     .input(

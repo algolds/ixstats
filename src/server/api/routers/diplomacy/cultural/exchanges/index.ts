@@ -8,13 +8,10 @@
  *
  * Domains:
  *  - core:    cultural exchange read/create/join (queries + mutations)
- *  - missions: linking existing cultural exchanges to embassy missions
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { diplomaticCulturalExchangesCoreRouter } from "./core";
-import { diplomaticCulturalExchangesMissionsRouter } from "./missions";
 
 export const diplomaticCulturalExchangesRouter = mergeRouters(
-  diplomaticCulturalExchangesCoreRouter,
-  diplomaticCulturalExchangesMissionsRouter
+  diplomaticCulturalExchangesCoreRouter
 );

@@ -4,40 +4,12 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { updateCardStats, transferCard } from "~/lib/cards/card-service";
 import { CardRarity } from "@prisma/client";
-import { globalCache } from "~/lib/cache";
 import { recomputeAllCardValues } from "~/lib/cards/valuation";
 import { commonsFlagImporter } from "~/lib/flags/commons-flag-importer";
 import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
 
 export const cardsAdminRouter = createTRPCRouter({
-  /**
-   * Update card stats from nation data
-   * Admin-only endpoint
-   */
-  updateCardStats: adminProcedure
-    .input(
-      z.object({
-        cardId: z.string().min(1),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const updatedCard = await updateCardStats(ctx.db, input.cardId);
-        return updatedCard;
-      } catch (error) {
-        console.error("[CARDS_ROUTER] Error in updateCardStats:", error);
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update card stats",
-        });
-      }
-    }),
-
   /**
    * Admin inline edit card details (title, marketValue, isRetired, rarity, category, artwork)
    */
@@ -290,62 +262,6 @@ export const cardsAdminRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to import Wikimedia Commons flags",
-        });
-      }
-    }),
-
-  /**
-   * Transfer card to another user
-   * Admin-only endpoint
-   */
-  transferCard: adminProcedure
-    .input(
-      z.object({
-        cardId: z.string().min(1),
-        toUserId: z.string().min(1),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        if (!ctx.user?.id) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "User ID not found",
-          });
-        }
-
-        const result = await transferCard(ctx.db, ctx.user.id, input.toUserId, input.cardId);
-
-        const targetUser = await ctx.db.user.findFirst({
-          where: {
-            OR: [{ id: input.toUserId }, { clerkUserId: input.toUserId }],
-          },
-          select: { id: true, clerkUserId: true },
-        });
-        const recipientDbId = targetUser?.id ?? input.toUserId;
-        const recipientClerkId = targetUser?.clerkUserId;
-
-        await Promise.all([
-          globalCache.delete(`user_vault_stats:${ctx.user.id}`),
-          globalCache.delete(`user_vault_stats:${recipientDbId}`),
-          ...(ctx.auth?.userId
-            ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)]
-            : []),
-          ...(recipientClerkId
-            ? [globalCache.delete(`user_vault_balance:${recipientClerkId}`)]
-            : []),
-          globalCache.delete(`user_vault_balance:${recipientDbId}`),
-        ]);
-
-        return result;
-      } catch (error) {
-        console.error("[CARDS_ROUTER] Error in transferCard:", error);
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to transfer card",
         });
       }
     }),

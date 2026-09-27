@@ -7,15 +7,8 @@
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
-import { getArticleHtml, getArticleHtmlViaParsoid } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
-import {
-  getArticleWikitext,
-  getPageSections,
-  resolveRedirect,
-  getCurrentRevMeta,
-  getInfobox,
-  getImageMeta,
-} from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getArticleHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
+import { getArticleWikitext, resolveRedirect, getInfobox, getImageMeta } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import {
   transformArticleHtml,
   stripConflictingStyles,
@@ -441,103 +434,6 @@ export const wikiosPageContentRouter = createTRPCRouter({
     .query(({ input }) => ArticleRepository.findMissingTitles(input.titles, "ixwiki")),
 
   /**
-   * Get Parsoid HTML for the visual editor.
-   * Returns raw Parsoid output with data-mw attributes preserved.
-   * This is the HTML that can round-trip back to wikitext via Parsoid.
-  /**
-   * @deprecated Plan 305 — Visual and source editors use getWikitext directly. Retained for API compatibility.
-   */
-  getEditorHtml: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      try {
-        const [article, revMeta] = await Promise.all([
-          getArticleHtmlViaParsoid(input.title),
-          getCurrentRevMeta(input.title),
-        ]);
-
-        // Extract just the <body> content from the full Parsoid HTML document
-        const bodyMatch = article.html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-        const bodyHtml = bodyMatch ? bodyMatch[1]! : article.html;
-
-        return {
-          html: bodyHtml,
-          title: article.title,
-          revid: revMeta?.revid ?? null,
-          timestamp: revMeta?.timestamp ?? null,
-        };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        if (message.includes("404")) {
-          return {
-            html: "",
-            title: input.title,
-            revid: null,
-            timestamp: null,
-          };
-        }
-        throw err;
-      }
-    }),
-
-  /**
-   * Get article intro with redirect resolution — for link preview tooltips.
-   * Resolves redirects server-side so tooltips never show "#REDIRECT".
-   */
-  getIntroResolved: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      const resolvedTitle = await resolveRedirect(input.title);
-      const article = await getArticleWikitext(resolvedTitle, "ixwiki");
-      if (!article) return { title: resolvedTitle, text: "", redirectedFrom: null };
-
-      // Clean wiki markup, infoboxes, and templates from the full wikitext
-      const intro = cleanExcerpt(article.wikitext, 400);
-
-      return {
-        title: resolvedTitle,
-        text: intro,
-        redirectedFrom: resolvedTitle !== input.title ? input.title : null,
-      };
-    }),
-
-  /**
-   * Get fast article intro/summary (plain text) for preview cards and tooltips.
-   * Serves from PostgreSQL shadow store in <3ms.
-   */
-  getArticleSummary: publicProcedure
-    .input(
-      z.object({
-        title: z.string().min(1).max(500),
-        source: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
-      })
-    )
-    .query(async ({ input }) => {
-      const summary = await getArticleSummaryFromShadow(input.title, input.source);
-      return {
-        title: summary.title,
-        intro: summary.intro,
-        text: summary.intro,
-        source: input.source,
-      };
-    }),
-
-  /**
-   * Resolve dynamic stat placeholders (e.g. {{CountryData:...}}) in arbitrary text.
-   */
-  resolvePlaceholders: publicProcedure
-    .input(
-      z.object({
-        placeholders: z.array(z.string()).optional(),
-        text: z.string().optional(),
-        countryId: z.string().optional(),
-      })
-    )
-    .query(async ({ input, ctx }) => {
-      return resolveWikiPlaceholdersInternal(input.placeholders ?? [], ctx, input.countryId);
-    }),
-
-  /**
    * Alias for resolvePlaceholders.
    */
   resolveWikiPlaceholders: publicProcedure
@@ -744,15 +640,6 @@ export const wikiosPageContentRouter = createTRPCRouter({
       } catch {
         return null;
       }
-    }),
-
-  /**
-   * Get article sections (table of contents).
-   */
-  getSections: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      return getPageSections(input.title, "ixwiki");
     }),
 
   /**

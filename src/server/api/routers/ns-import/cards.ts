@@ -13,7 +13,6 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
-import { nsImportService } from "~/lib/nationstates/import-service";
 import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
 import { Prisma } from "@prisma/client";
@@ -111,88 +110,6 @@ export const nsImportCardsRouter = createTRPCRouter({
         message: `Card artwork for "${card.title}" has been retired per verified nation owner request.`,
       };
     }),
-  /**
-   * Get user's import history
-   */
-  getMyImportHistory: protectedProcedure
-    .input(
-      z.object({
-        limit: z.number().int().min(1).max(50).default(10),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      // Get user's vault transactions for NS imports
-      const vault = await ctx.db.myVault.findUnique({
-        where: { userId: ctx.user.id },
-        include: {
-          transactions: {
-            where: {
-              source: "ns_import_bonus",
-            },
-            orderBy: { createdAt: "desc" },
-            take: input.limit,
-          },
-        },
-      });
-
-      const imports = vault?.transactions || [];
-
-      return imports.map((tx) => ({
-        id: tx.id,
-        nationName: (tx.metadata as any)?.nationName || "Unknown",
-        cardsImported: (tx.metadata as any)?.cardsImported || 0,
-        totalValue: (tx.metadata as any)?.totalValue || 0,
-        bonusCredits: tx.credits,
-        importedAt: tx.createdAt,
-      }));
-    }),
-
-  /**
-   * Get import statistics
-   */
-  getImportStats: protectedProcedure.query(async ({ ctx }) => {
-    // Count NS import transactions
-    const vault = await ctx.db.myVault.findUnique({
-      where: { userId: ctx.user.id },
-      include: {
-        transactions: {
-          where: {
-            source: "ns_import_bonus",
-          },
-        },
-      },
-    });
-
-    const imports = vault?.transactions || [];
-    const totalImports = imports.length;
-    const lastImport = imports[0]?.createdAt || null;
-
-    // Count imported cards
-    const importedCards = await ctx.db.cardOwnership.findMany({
-      where: {
-        userId: ctx.user.id,
-        cards: {
-          cardType: "NS_IMPORT",
-        },
-      },
-      include: {
-        cards: true,
-      },
-    });
-
-    const totalCards = importedCards.reduce((sum, ownership) => sum + ownership.quantity, 0);
-    const totalValue = importedCards.reduce(
-      (sum, ownership) => sum + (ownership.cards.marketValue || 0),
-      0
-    );
-
-    return {
-      totalImports,
-      totalCards,
-      totalValue,
-      lastImport,
-    };
-  }),
 
   /**
    * Admin: Hide a NationStates-import card (flag-owner takedown / opt-out).
@@ -549,103 +466,7 @@ export const nsImportCardsRouter = createTRPCRouter({
       };
     }),
 
-  // ─── Bulk Import Endpoints ────────────────────────────────────────
-
-  // ─── Pause / Play / Stop controls ───
-
   // ─── Region Discovery ────────────────────────────────────────────
-
-  /**
-   * Batch-update gameplay stats (economic/diplomatic/military/social)
-   * for all NS_IMPORT cards that don't have them yet.
-   */
-  batchUpdateCardStats: adminProcedure
-    .input(
-      z
-        .object({
-          forceAll: z.boolean().optional().default(false),
-        })
-        .optional()
-        .default({ forceAll: false })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const BATCH = 100;
-      let updated = 0;
-      let skipped = 0;
-      let errors = 0;
-
-      // Get all NS_IMPORT cards
-      const cards = await ctx.db.card.findMany({
-        where: { cardType: "NS_IMPORT" },
-        select: { id: true, nsCardId: true, stats: true },
-      });
-
-      console.log(
-        `[NS Import] Batch updating stats for ${cards.length} NS cards (forceAll=${input.forceAll})`
-      );
-
-      for (let i = 0; i < cards.length; i += BATCH) {
-        const batch = cards.slice(i, i + BATCH);
-        const updates = [];
-
-        for (const card of batch) {
-          const existingStats = card.stats as Record<string, unknown> | null;
-          if (!existingStats) {
-            skipped++;
-            continue;
-          }
-
-          // Skip if already has gameplay stats (unless forceAll)
-          if (!input.forceAll && typeof existingStats.economic === "number") {
-            skipped++;
-            continue;
-          }
-
-          const gameplayStats = nsImportService.generateCardStats(
-            {
-              govt: existingStats.govt as string | undefined,
-              marketValue: existingStats.marketValue as string | undefined,
-              badge: existingStats.badge as string | undefined,
-              trophies: existingStats.trophies as string | undefined,
-              region: existingStats.region as string | undefined,
-              category: existingStats.category as string | undefined,
-              cardcategory: existingStats.cardcategory as string | undefined,
-            },
-            card.nsCardId ?? undefined
-          );
-
-          updates.push(
-            ctx.db.card.update({
-              where: { id: card.id },
-              data: {
-                stats: { ...existingStats, ...gameplayStats },
-              },
-            })
-          );
-        }
-
-        if (updates.length > 0) {
-          try {
-            await Promise.all(updates);
-            updated += updates.length;
-          } catch (err) {
-            errors += updates.length;
-            console.error(`[NS Import] Batch error at offset ${i}:`, err);
-          }
-        }
-
-        if ((i + BATCH) % 1000 === 0 || i + BATCH >= cards.length) {
-          console.log(
-            `[NS Import] Progress: ${Math.min(i + BATCH, cards.length)}/${cards.length} (updated: ${updated}, skipped: ${skipped})`
-          );
-        }
-      }
-
-      console.log(
-        `[NS Import] Batch stats complete: ${updated} updated, ${skipped} skipped, ${errors} errors`
-      );
-      return { updated, skipped, errors, total: cards.length };
-    }),
 
   /**
    * Refresh market values for user's 0-value NS cards by re-fetching from NS API,

@@ -12,7 +12,6 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { createHash } from "crypto";
 import type { FeatureCollection } from "geojson";
 
 // ──────────────────────────────────────────────
@@ -21,95 +20,8 @@ import type { FeatureCollection } from "geojson";
 
 export const geoAdminUploadsRouter = createTRPCRouter({
   // ──────────────────────────────────────────────
-  // Border Editor
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Story Pins — Narrative markers on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Storylines — Narrative chains connecting story pins
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Labels — Custom styled text on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Sovereignty / dependency management
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Linkage validation & repair
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
   // SVG Upload & Processing Pipeline
   // ──────────────────────────────────────────────
-
-  /** Upload an SVG file for a specific layer type */
-  uploadSvg: adminProcedure
-    .input(
-      z.object({
-        layerType: z.enum([
-          "political",
-          "climate",
-          "altitudes",
-          "rivers",
-          "lakes",
-          "icecaps",
-          "background",
-        ]),
-        svgContent: z.string().min(100, "SVG content is too short"),
-        fileName: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const svgBuffer = Buffer.from(input.svgContent, "base64");
-      const svgString = svgBuffer.toString("utf-8");
-      const svgHash = createHash("sha256").update(svgString).digest("hex");
-
-      // Check for duplicate uploads
-      const existingUpload = await ctx.db.svgUpload.findFirst({
-        where: { svgHash, layerType: input.layerType, status: { not: "rolled_back" } },
-      });
-      if (existingUpload) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: `This SVG has already been uploaded (ID: ${existingUpload.id}, status: ${existingUpload.status})`,
-        });
-      }
-
-      // Extract metadata before storing
-      const { extractSvgMetadata } = await import("~/lib/flags/svg-parser");
-      const metadata = extractSvgMetadata(svgString);
-
-      const upload = await ctx.db.svgUpload.create({
-        data: {
-          layerType: input.layerType,
-          fileName: input.fileName,
-          fileSizeBytes: svgBuffer.length,
-          svgHash,
-          status: "pending",
-          uploadedBy: ctx.auth!.userId ?? "system",
-          svgContent: svgString,
-          svgMetadata: metadata as any,
-        },
-      });
-
-      return {
-        id: upload.id,
-        fileName: upload.fileName,
-        fileSizeBytes: upload.fileSizeBytes,
-        layerType: upload.layerType,
-        svgMetadata: metadata,
-      };
-    }),
 
   /** Process an uploaded SVG: parse paths, convert to GeoJSON, match countries */
   processSvgUpload: adminProcedure
@@ -264,22 +176,4 @@ export const geoAdminUploadsRouter = createTRPCRouter({
         featureCount: upload.featureCount,
       };
     }),
-
-  // ──────────────────────────────────────────────────────────────
-  // World Template / Clone System (Phase 3)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // Procedural World Generation (Phase 4)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Province Import Endpoints
-  // ──────────────────────────────────────────────
-
-  // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
 });

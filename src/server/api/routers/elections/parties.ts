@@ -131,14 +131,4 @@ export const electionsPartiesRouter = createTRPCRouter({
 
       return ctx.db.politicalParty.delete({ where: { id: input.id } });
     }),
-
-  // ─── Legislature ───────────────────────────────────────
-
-  // ─── Elections ─────────────────────────────────────────
-
-  // ─── Candidates ────────────────────────────────────────
-
-  // ─── Election Simulation (Core Algorithm) ──────────────
-
-  // ─── Current Parliament (for hemicycle visualization) ───
 });

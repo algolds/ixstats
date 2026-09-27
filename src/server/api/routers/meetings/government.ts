@@ -11,16 +11,6 @@ import {
 } from "~/server/shared/country-resource-owner";
 
 export const meetingsGovernmentRouter = createTRPCRouter({
-  // ==================== CABINET MEETINGS ====================
-
-  // ==================== MEETING ATTENDANCE ====================
-
-  // ==================== AGENDA ITEMS ====================
-
-  // ==================== DECISIONS ====================
-
-  // ==================== ACTION ITEMS ====================
-
   // ==================== GOVERNMENT OFFICIALS ====================
 
   appointOfficial: protectedProcedure
@@ -79,25 +69,6 @@ export const meetingsGovernmentRouter = createTRPCRouter({
       });
     }),
 
-  getOfficial: publicProcedure
-    .input(
-      z.object({
-        id: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.governmentOfficial.findUnique({
-        where: { id: input.id },
-        include: {
-          meetingAttendances: {
-            include: { meeting: true },
-            orderBy: { meetingId: "desc" },
-            take: 10,
-          },
-        },
-      });
-    }),
-
   removeOfficial: protectedProcedure
     .input(
       z.object({
@@ -117,26 +88,6 @@ export const meetingsGovernmentRouter = createTRPCRouter({
           isActive: false,
           termEndDate: new Date(),
         },
-      });
-    }),
-
-  // ==================== GOVERNMENT DEPARTMENTS ====================
-
-  getDepartments: publicProcedure
-    .input(
-      z.object({
-        governmentStructureId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.governmentDepartment.findMany({
-        where: { governmentStructureId: input.governmentStructureId },
-        include: {
-          officials: {
-            where: { isActive: true },
-          },
-        },
-        orderBy: { name: "asc" },
       });
     }),
 });

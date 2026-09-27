@@ -6,84 +6,17 @@
  */
 
 import { z } from "zod";
-import { db } from "~/server/db";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  protectedProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import {
   wikiCacheService,
   cleanWikitextForDisplay,
 } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { extractDataFromWikiSections } from "~/lib/builder/wiki-data-extractor";
-import {
-  getArticleWikitext,
-  getCategoryMembers,
-  getBatchWikitext,
-} from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getCategoryMembers, getBatchWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { intelligentLoreCache } from "~/lib/wiki-os/core/intelligent-lore-cache";
 import { type WikiSource } from "~/lib/wiki-os/config";
 
 export const wikiCacheRouter = createTRPCRouter({
-  /**
-   * Get country infobox from cache
-   */
-  getCountryInfobox: publicProcedure
-    .input(
-      z.object({
-        countryName: z.string().min(1),
-      })
-    )
-    .query(async ({ input }) => {
-      const entry = await wikiCacheService.getCountryInfobox(input.countryName);
-
-      return {
-        infobox: entry.data,
-        metadata: entry.metadata,
-        cached: entry.metadata.source !== "api",
-      };
-    }),
-
-  /**
-   * Get page wikitext from cache
-   */
-  getPageWikitext: publicProcedure
-    .input(
-      z.object({
-        pageName: z.string().min(1),
-      })
-    )
-    .query(async ({ input }) => {
-      const entry = await wikiCacheService.getPageWikitext(input.pageName);
-
-      return {
-        wikitext: entry.data,
-        metadata: entry.metadata,
-        cached: entry.metadata.source !== "api",
-      };
-    }),
-
-  /**
-   * Get flag URL from cache
-   */
-  getCountryFlag: publicProcedure
-    .input(
-      z.object({
-        countryName: z.string().min(1),
-      })
-    )
-    .query(async ({ input }) => {
-      const flagUrl = await wikiCacheService.getFlagUrl(input.countryName);
-
-      return {
-        flagUrl,
-        metadata: { source: "cache", cachedAt: Date.now() },
-        cached: true,
-      };
-    }),
-
   /**
    * Get full country profile (batched)
    * This is the main endpoint that replaces multiple API calls in WikiIntelligenceTab
@@ -359,110 +292,4 @@ export const wikiCacheRouter = createTRPCRouter({
         timestamp: new Date().toISOString(),
       };
     }),
-
-  /**
-   * Get cache statistics (admin only)
-   */
-  getCacheStats: adminProcedure.query(async () => {
-    const stats = wikiCacheService.getCacheStats();
-
-    return {
-      ...stats,
-      timestamp: new Date().toISOString(),
-    };
-  }),
-
-  /**
-   * Warm cache for multiple countries (admin only)
-   */
-  warmCache: adminProcedure
-    .input(
-      z.object({
-        countryNames: z.array(z.string()).min(1).max(100),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const result = await wikiCacheService.warmCache();
-
-      return {
-        ...result,
-        total: input.countryNames.length,
-        message: `Cache warming complete: ${result.warmed} warmed`,
-        timestamp: new Date().toISOString(),
-      };
-    }),
-
-  /**
-   * Clear cache for specific country (admin only)
-   */
-  clearCountryCache: adminProcedure
-    .input(
-      z.object({
-        countryName: z.string().min(1),
-      })
-    )
-    .mutation(async ({ input }) => {
-      wikiCacheService.clearCountryCache(input.countryName);
-
-      return {
-        success: true,
-        message: `Cache cleared for ${input.countryName}`,
-        timestamp: new Date().toISOString(),
-      };
-    }),
-
-  /**
-   * Refresh stale cache entries (admin only)
-   */
-  refreshStaleEntries: adminProcedure
-    .input(
-      z.object({
-        thresholdHours: z.number().min(1).max(24).default(2),
-      })
-    )
-    .mutation(async ({ input: _input }) => {
-      const result = await wikiCacheService.refreshStaleEntries();
-
-      return {
-        success: true,
-        refreshed: result.refreshed,
-        message: `Refreshed ${result.refreshed} stale cache entries`,
-        timestamp: new Date().toISOString(),
-      };
-    }),
-
-  /**
-   * Clean up expired cache entries (admin only)
-   */
-  cleanupExpiredEntries: adminProcedure.mutation(async () => {
-    const result = await wikiCacheService.cleanupExpiredEntries();
-
-    return {
-      success: true,
-      cleaned: result.cleaned,
-      message: `Cleaned up ${result.cleaned} expired cache entries`,
-      timestamp: new Date().toISOString(),
-    };
-  }),
-
-  /**
-   * Warm cache for all active countries (admin only)
-   */
-  warmAllCountries: adminProcedure.mutation(async ({ ctx: _ctx }) => {
-    const countries = await db.country.findMany({
-      select: {
-        name: true,
-      },
-      take: 100,
-    });
-
-    const result = await wikiCacheService.warmCache();
-
-    return {
-      ...result,
-      total: countries.length,
-      message: `Warmed cache for ${result.warmed} of ${countries.length} countries`,
-      timestamp: new Date().toISOString(),
-    };
-  }),
 });

@@ -10,7 +10,6 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import {
   getCategoryMembers,
   getParentCategories,
-  getCategoryInfo,
   batchFetchThumbnails,
   type WikiSource,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
@@ -185,58 +184,6 @@ export const wikiosCategoriesRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const categories = await getParentCategories(input.title);
       return { categories };
-    }),
-
-  /**
-   * Get category tree — subcategories and pages with counts.
-   * Supports lazy loading via depth parameter.
-   */
-  getCategoryTree: publicProcedure
-    .input(
-      z.object({
-        category: z.string().min(1).max(500),
-        depth: z.number().min(1).max(3).default(1),
-      })
-    )
-    .query(async ({ input }) => {
-      const info = await getCategoryInfo(input.category);
-
-      let children: Array<{
-        title: string;
-        fullTitle: string;
-        subcategories?: Array<{ title: string; fullTitle: string }>;
-      }> = (info?.subcategories || []).map((name: string) => ({
-        title: name,
-        fullTitle: `Category:${name}`,
-      }));
-
-      // Depth > 1: fetch one more level for each subcategory
-      if (input.depth > 1 && children.length > 0 && children.length <= 20) {
-        children = await Promise.all(
-          children.map(async (sc) => {
-            try {
-              const childInfo = await getCategoryInfo(sc.fullTitle);
-              return {
-                ...sc,
-                subcategories: (childInfo?.subcategories || []).map((cName: string) => ({
-                  title: cName,
-                  fullTitle: `Category:${cName}`,
-                })),
-              };
-            } catch {
-              return sc;
-            }
-          })
-        );
-      }
-
-      return {
-        title: info?.title || input.category,
-        totalPages: info?.totalPages || 0,
-        totalSubcats: info?.totalSubcats || 0,
-        totalFiles: info?.totalFiles || 0,
-        subcategories: children,
-      };
     }),
 
   /**

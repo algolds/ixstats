@@ -429,31 +429,4 @@ export const leaguesCrudRouter = createTRPCRouter({
         });
       }
     }),
-
-  exportLeagueData: publicProcedure
-    .input(z.object({ leagueId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const league = await ctx.db.sportLeague.findUnique({
-          where: { id: input.leagueId },
-          include: {
-            teams: true,
-            seasons: {
-              include: {
-                matches: true,
-                standings: true,
-              },
-            },
-          },
-        });
-        if (!league) throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
-        return league;
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to export league data",
-        });
-      }
-    }),
 });

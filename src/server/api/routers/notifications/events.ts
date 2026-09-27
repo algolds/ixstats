@@ -5,71 +5,7 @@ import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { NOTIFICATION_EVENTS } from "~/lib/notifications/events-registry";
 
-const _NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
-const _NotificationType = z.enum([
-  "info",
-  "warning",
-  "success",
-  "error",
-  "alert",
-  "update",
-  "economic",
-  "crisis",
-  "diplomatic",
-  "system",
-]);
-const _NotificationCategory = z.enum([
-  "economic",
-  "diplomatic",
-  "governance",
-  "social",
-  "security",
-  "system",
-  "achievement",
-  "crisis",
-  "opportunity",
-  "intelligence",
-  "policy",
-  "global",
-  "military",
-]);
-
 export const notificationsEventsRouter = createTRPCRouter({
-  // Get notifications for current user (using auth context)
-
-  // Mark notification as read
-  // RATE LIMITED: Light mutation (100 req/min) - simple toggle operation
-
-  // Dismiss notification (hides it from view)
-  // RATE LIMITED: Light mutation (100 req/min) - simple toggle operation
-
-  // Mark all notifications as read
-  // RATE LIMITED: Light mutation (100 req/min) - batch operation but lightweight
-
-  // Create notification (admin only)
-
-  // Get notification preferences for user
-
-  // Update notification preferences
-  // RATE LIMITED: Light mutation (100 req/min) - simple preference updates
-
-  // Delete notification (admin only)
-
-  // Get notification stats (admin only)
-
-  // Real-time subscription for new notifications
-
-  // Get unread count (for badge display)
-  // Changed from readOnlyProcedure to publicProcedure to prevent auth errors
-  // This endpoint is called before auth completes and should gracefully handle unauthenticated users
-
-  // Get user notification preferences
-
-  // Create or update user notification preferences
-
-  // Delete user notification preferences (reset to defaults)
-  // Delete all notifications (admin only)
-
   // ---- Notification Event Config (Admin) ----
 
   // Get all notification event configs
@@ -166,32 +102,6 @@ export const notificationsEventsRouter = createTRPCRouter({
       return { success: true, count: result.count };
     }),
 
-  // Update event config (JSON config)
-  updateEventConfig: adminProcedure
-    .input(
-      z.object({
-        eventKey: z.string(),
-        config: z.record(z.string(), z.unknown()).optional(),
-        name: z.string().optional(),
-        description: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-
-      const updateData: Record<string, unknown> = {};
-      if (input.config !== undefined) updateData.config = input.config;
-      if (input.name !== undefined) updateData.name = input.name;
-      if (input.description !== undefined) updateData.description = input.description;
-
-      const config = await db.notificationEventConfig.update({
-        where: { eventKey: input.eventKey },
-        data: updateData,
-      });
-
-      return config;
-    }),
-
   // ---- Admin Notification Browser ----
 
   // Get all notifications with admin-level filters
@@ -251,12 +161,4 @@ export const notificationsEventsRouter = createTRPCRouter({
         hasMore: input.offset + notifications.length < totalCount,
       };
     }),
-
-  // ---- Alert Thresholds ----
-
-  // Get all intelligence alert thresholds
-
-  // Create or update an alert threshold
-
-  // Delete an alert threshold
 });

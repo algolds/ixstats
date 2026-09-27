@@ -39,7 +39,6 @@ import { governmentComponentsRouter } from "./routers/governmentComponents";
 import { policiesRouter } from "./routers/policies";
 import { legislationRouter } from "./routers/legislation";
 import { electionsRouter } from "./routers/elections";
-import { nationalIdentityRouter } from "./routers/nationalIdentity";
 import { customTypesRouter } from "./routers/customTypes";
 import { quickActionsRouter } from "./routers/quickactions";
 import { scheduledChangesRouter } from "./routers/scheduledChanges";
@@ -152,7 +151,6 @@ export const appRouter = createTRPCRouter({
   policies: policiesRouter,
   legislation: legislationRouter,
   elections: electionsRouter,
-  nationalIdentity: nationalIdentityRouter,
   customTypes: customTypesRouter,
   quickActions: quickActionsRouter,
   scheduledChanges: scheduledChangesRouter,
