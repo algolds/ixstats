@@ -122,7 +122,7 @@ app
     // WebSocket: Market (always enabled)
     // ──────────────────────────────────────────────
     try {
-      const { initializeMarketWebSocket } = await import("~/lib/websocket");
+      const { initializeMarketWebSocket } = await import("./src/lib/websocket/market-websocket-server.js");
       marketWsInstance = initializeMarketWebSocket(httpServer, "/api/market-ws");
       subsystems.marketWS = { status: "ok", detail: "/api/market-ws" };
       console.log("[Server] ✓ Market WebSocket initialized at /api/market-ws");
@@ -247,203 +247,208 @@ app
       }
     };
 
-      // 1. Auction completion (every minute)
-      scheduleCron("Auction completion", "* * * * *", async () => {
-        try {
-          const { processExpiredAuctions } = await import("./src/lib/auction-completion-cron.js");
-          await processExpiredAuctions();
-        } catch (error) {
-          console.error("[Cron] Auction completion failed:", error);
-        }
-      });
-
-      // 2. Passive income distribution (daily at 00:00 UTC default)
-      scheduleCron("Passive income distribution", cronSchedule_passiveIncome, async () => {
-        try {
-          const { distributePassiveIncome } =
-            await import("./src/lib/passive-income-distribution-cron.js");
-          await distributePassiveIncome();
-        } catch (error) {
-          console.error("[Cron] Passive income distribution failed:", error);
-        }
-      });
-
-      // 3. Card value tracking (every 6 hours default)
-      scheduleCron("Card value tracking", cronSchedule_cardValue, async () => {
-        try {
-          const { updateCardValues } = await import("~/lib/lorewards");
-          await updateCardValues();
-        } catch (error) {
-          console.error("[Cron] Card value update failed:", error);
-        }
-      });
-
-      // 4. Lore card generation (daily at 02:00 UTC)
-      scheduleCron("Lore card generation", "0 2 * * *", async () => {
-        try {
-          const { generateDailyLoreCards } = await import("~/lib/lorewards");
-          await generateDailyLoreCards();
-        } catch (error) {
-          console.error("[Cron] Lore card generation failed:", error);
-        }
-      });
-
-      // 5. IxTwitter Discord sync (every hour)
-      scheduleCron("IxTwitter Discord sync", "0 * * * *", async () => {
-        try {
-          const { syncIxTwitterToThinkPages } = await import("./src/lib/discord/ixtwitter-sync.js");
-          const result = await syncIxTwitterToThinkPages();
-          if (result.posted > 0) {
-            console.log(
-              `[Cron] IxTwitter sync: ${result.posted} posted, ${result.skipped} skipped`
-          console.error("[Cron] ✗ Lore card generation cron error:", error.message);
-        }
-      });
-
-      // 5. IxTwitter -> ThinkPages real-time polling (every 60s).
-      // Production only: polls discord for new #announcements and posts them as ThinkPages system announcements.
-      if (process.env.DISCORD_BOT_TOKEN) {
-        scheduleCron("IxTwitter sync", "* * * * *", async () => {
-          try {
-            const { syncIxTwitterToThinkPages } = await import(
-              "./src/lib/discord/ixtwitter-sync.js"
-            );
-            await syncIxTwitterToThinkPages();
-          } catch (error) {
-            console.error("[Cron] ✗ IxTwitter sync error:", error.message);
-          }
-        });
+    // 1. Auction completion (every minute)
+    scheduleCron("Auction completion", "* * * * *", async () => {
+      try {
+        const { processExpiredAuctions } =
+          await import("./src/lib/economy/auction-completion-cron.js");
+        await processExpiredAuctions();
+      } catch (error) {
+        console.error("[Cron] Auction completion failed:", error);
       }
+    });
 
-      // 6. Lorewards full sync
-      scheduleCron("Lorewards fullSync", cronSchedule_lorewardsScoring, async () => {
-        try {
-          const { runLorewardsFullSync } = await import("~/lib/lorewards");
-          await runLorewardsFullSync();
-        } catch (error) {
-          console.error("[Cron] ✗ Lorewards fullSync cron error:", error.message);
-        }
-      });
-
-      // 7. Trade auto-expiry: cancels pending trades older than 48 hours (runs every 5 minutes)
-      scheduleCron("Trade auto-expiry", "*/5 * * * *", async () => {
-        try {
-          const { processExpiredTrades } = await import("./src/lib/economy/trade-expiry-cron.js");
-          await processExpiredTrades();
-        } catch (error) {
-          console.error("[Cron] ✗ Trade auto-expiry error:", error.message);
-        }
-      });
-
-      // 8. Sports season advance: 1 tick = 1 round (all leagues concurrently)
-      if (process.env.IXSTATS_CRON_RUNNER === "1") {
-        scheduleCron("Sports season tick", "0 */12 * * *", async () => {
-          try {
-            const { advanceSportsSeasons } = await import("./src/lib/sports/sports-cron.js");
-            const result = await advanceSportsSeasons();
-            console.log(
-              `[Cron] ⚽ Sports advanced: ${result.matchesSimulated} matches across ${result.activeLeagues} active leagues (${result.completedLeagues} completed)`
-            );
-          } catch (error) {
-            console.error("[Cron] ✗ Sports season tick error:", error.message);
-          }
-        });
+    // 2. Passive income distribution (daily at 00:00 UTC default)
+    scheduleCron("Passive income distribution", cronSchedule_passiveIncome, async () => {
+      try {
+        const { distributePassiveIncome } =
+          await import("./src/lib/economy/passive-income-distribution-cron.js");
+        await distributePassiveIncome();
+      } catch (error) {
+        console.error("[Cron] Passive income distribution failed:", error);
       }
+    });
 
-      // 9. National Issues auto-generation: checks for countries needing new issues (runs every 30 minutes)
-      scheduleCron("National Issues generation", "*/30 * * * *", async () => {
-        try {
-          const { generateIssuesForAllCountries } = await import(
-            "./src/lib/national-issues-generation-cron.js"
+    // 3. Card value tracking (every 6 hours default)
+    scheduleCron("Card value tracking", cronSchedule_cardValue, async () => {
+      try {
+        const { updateCardValues } = await import("./src/lib/lorewards/card-value-cron.js");
+        await updateCardValues();
+      } catch (error) {
+        console.error("[Cron] Card value update failed:", error);
+      }
+    });
+
+    // 4. Lore card generation (daily at 02:00 UTC)
+    scheduleCron("Lore card generation", "0 2 * * *", async () => {
+      try {
+        const { generateDailyLoreCards } = await import("./src/lib/lorewards/generation-cron.js");
+        await generateDailyLoreCards();
+      } catch (error) {
+        console.error("[Cron] Lore card generation failed:", error);
+      }
+    });
+
+    // 5. IxTwitter Discord sync (every hour)
+    scheduleCron("IxTwitter Discord sync", "0 * * * *", async () => {
+      try {
+        const { syncIxTwitterToThinkPages } = await import("./src/lib/discord/ixtwitter-sync.js");
+        const result = await syncIxTwitterToThinkPages();
+        if (result.posted > 0) {
+          console.log(`[Cron] IxTwitter sync: ${result.posted} posted, ${result.skipped} skipped`);
+        }
+      } catch (error) {
+        console.error("[Cron] IxTwitter sync failed:", error);
+      }
+    });
+
+    // 6. Lorewards full sync (daily at 06:00 UTC default)
+    let loreSyncRunning = false;
+    scheduleCron("Lorewards fullSync", cronSchedule_lorewardsScoring, async () => {
+      if (loreSyncRunning) {
+        console.log("[Cron] Lorewards fullSync already running, skipping this run");
+        return;
+      }
+      loreSyncRunning = true;
+      try {
+        const { fullSync } = await import("./src/lib/lorewards/sync.js");
+        await fullSync();
+        console.log("[Cron] Lorewards fullSync completed successfully");
+      } catch (error) {
+        console.error("[Cron] Lorewards fullSync failed:", error);
+      } finally {
+        loreSyncRunning = false;
+      }
+    });
+
+    // 7. Trade expiry (every 5 minutes)
+    scheduleCron("Trade expiry (every 5 minutes)", "*/5 * * * *", async () => {
+      try {
+        const { processExpiredTrades } = await import("./src/lib/economy/trade-expiry-cron.js");
+        await processExpiredTrades();
+      } catch (error) {
+        console.error("[Cron] Trade expiry failed:", error);
+      }
+    });
+
+    // 8. Sports season auto-advance (every 15 min; self-gates on scheduledIxTime).
+    // ponytail: single-process reentrancy guard. If both this and the standalone
+    // cron-runner run, only run sports advance in one (cron-runner owns it).
+    let sportsAdvanceRunning = false;
+    scheduleCron("Sports Season Auto-Advance", "*/15 * * * *", async () => {
+      if (sportsAdvanceRunning) return;
+      sportsAdvanceRunning = true;
+      try {
+        const { PrismaClient } = await import("@prisma/client");
+        const db = new PrismaClient();
+        const advanced = await advanceSportsSeasons(db);
+        if (advanced > 0) {
+          console.log(`[Cron] Sports: Advanced ${advanced} seasons`);
+        }
+        await db.$disconnect();
+      } catch (error) {
+        console.error("[Cron] Sports season advance failed:", error.message);
+      } finally {
+        sportsAdvanceRunning = false;
+      }
+    });
+
+    // 9. National Issues background generation (every 15 minutes; per-country debounced)
+    scheduleCron("National Issues generation", "*/15 * * * *", async () => {
+      try {
+        const { generateNationalIssues } =
+          await import("./src/lib/national-issues/generation-cron.js");
+        const r = await generateNationalIssues();
+        if (r.issuesGenerated > 0) {
+          console.log(
+            `[Cron] Issues: generated ${r.issuesGenerated} across ${r.countriesEvaluated} countries`
           );
-        } catch (error) {
-          console.error("[Cron] National Issues generation failed:", error.message);
         }
-      });
+      } catch (error) {
+        console.error("[Cron] National Issues generation failed:", error.message);
+      }
+    });
 
-      // 10. Scheduled elections (every 10 minutes; resolves due elections on the IxTime clock)
-      scheduleCron("Scheduled elections", "*/10 * * * *", async () => {
-        try {
-          const { processDueElections } = await import("./src/lib/election-cron.js");
-          const r = await processDueElections();
-          if (r.resolved > 0) {
-            console.log(`[Cron] Elections: resolved ${r.resolved}, scheduled ${r.scheduled} next`);
-          }
-        } catch (error) {
-          console.error("[Cron] Scheduled elections failed:", error.message);
+    // 10. Scheduled elections (every 10 minutes; resolves due elections on the IxTime clock)
+    scheduleCron("Scheduled elections", "*/10 * * * *", async () => {
+      try {
+        const { processDueElections } = await import("./src/lib/government/election-cron.js");
+        const r = await processDueElections();
+        if (r.resolved > 0) {
+          console.log(`[Cron] Elections: resolved ${r.resolved}, scheduled ${r.scheduled} next`);
         }
-      });
+      } catch (error) {
+        console.error("[Cron] Scheduled elections failed:", error.message);
+      }
+    });
 
-      // 11. Politics drift — party support + stability recompute (every 6 hours)
-      scheduleCron("Politics drift", "0 */6 * * *", async () => {
-        try {
-          const { runPoliticsDrift } = await import("./src/lib/politics-drift-cron.js");
-          const r = await runPoliticsDrift();
-          if (r.partiesUpdated > 0) {
-            console.log(
-              `[Cron] Politics: ${r.partiesUpdated} parties drifted across ${r.countriesProcessed} countries`
-            );
-          }
-        } catch (error) {
-          console.error("[Cron] Politics drift failed:", error.message);
-        }
-      });
-
-      // 11.5 Diplomatic drift — relation strength adjust based on goals (every 6 hours)
-      scheduleCron("Diplomatic drift", "0 */6 * * *", async () => {
-        try {
-          const { runDiplomaticDrift } = await import("./src/lib/diplomatic-drift-cron.js");
-          const r = await runDiplomaticDrift();
-          if (r.relationsUpdated > 0) {
-            console.log(
-              `[Cron] Diplomatic: ${r.relationsUpdated} relations drifted of ${r.relationsProcessed} processed`
-            );
-          }
-        } catch (error) {
-          console.error("[Cron] Diplomatic drift failed:", error.message);
-        }
-      });
-
-      // 11.6 Policy Maintenance Cost — deduct active policy maintenance costs from treasury (every 6 hours)
-      scheduleCron("Policy Maintenance Cost", "0 */6 * * *", async () => {
-        try {
-          const { runPolicyMaintenanceDebits } = await import(
-            "./src/lib/policy-maintenance-cron.js"
+    // 11. Politics drift — party support + stability recompute (every 6 hours)
+    scheduleCron("Politics drift", "0 */6 * * *", async () => {
+      try {
+        const { runPoliticsDrift } = await import("./src/lib/government/politics-drift-cron.js");
+        const r = await runPoliticsDrift();
+        if (r.partiesUpdated > 0) {
+          console.log(
+            `[Cron] Politics: ${r.partiesUpdated} parties drifted across ${r.countriesProcessed} countries`
           );
-          const r = await runPolicyMaintenanceDebits();
-          if (r.policiesProcessed > 0) {
-            console.log(
-              `[Cron] Policy Maintenance: debited ${r.totalCostDebited.toLocaleString()} from ${r.countriesProcessed} countries for ${r.policiesProcessed} active policies`
-            );
-          }
-        } catch (error) {
-          console.error("[Cron] Policy Maintenance Cost failed:", error.message);
         }
-      });
+      } catch (error) {
+        console.error("[Cron] Politics drift failed:", error.message);
+      }
+    });
 
-      // 12. WikiOS recentchanges sync (every 10 min default; captures edits made
-      //     directly on MediaWiki into the local WikiRevision history)
-      scheduleCron("WikiOS recentchanges sync", cronSchedule_wikiRecentChanges, async () => {
-        try {
-          const { syncWikiRecentChanges } = await import(
-            "./src/server/cron/sync-wiki-recentchanges.js"
+    // 11.5 Diplomatic drift — relation strength adjust based on goals (every 6 hours)
+    scheduleCron("Diplomatic drift", "0 */6 * * *", async () => {
+      try {
+        const { runDiplomaticDrift } = await import("./src/lib/diplomacy/drift-cron.js");
+        const r = await runDiplomaticDrift();
+        if (r.relationsUpdated > 0) {
+          console.log(
+            `[Cron] Diplomatic: ${r.relationsUpdated} relations drifted of ${r.relationsProcessed} processed`
           );
-          const r = await syncWikiRecentChanges();
-          if (r.recorded > 0) {
-            console.log(
-              `[Cron] WikiOS recentchanges: recorded ${r.recorded}, skipped ${r.skipped} of ${r.changesSeen}`
-            );
-          }
-        } catch (error) {
-          console.error("[Cron] WikiOS recentchanges sync failed:", error.message);
         }
-      });
+      } catch (error) {
+        console.error("[Cron] Diplomatic drift failed:", error.message);
+      }
+    });
 
-      subsystems.cron = {
-        status: cronJobsFailed === 0 ? "ok" : "partial",
-        detail: `${cronJobsScheduled} scheduled, ${cronJobsFailed} failed`,
-      };
-    }
+    // 11.6 Policy Maintenance Cost — deduct active policy maintenance costs from treasury (every 6 hours)
+    scheduleCron("Policy Maintenance Cost", "0 */6 * * *", async () => {
+      try {
+        const { runPolicyMaintenanceDebits } =
+          await import("./src/lib/policies/maintenance-cron.js");
+        const r = await runPolicyMaintenanceDebits();
+        if (r.policiesProcessed > 0) {
+          console.log(
+            `[Cron] Policy Maintenance: debited ${r.totalCostDebited.toLocaleString()} from ${r.countriesProcessed} countries for ${r.policiesProcessed} active policies`
+          );
+        }
+      } catch (error) {
+        console.error("[Cron] Policy Maintenance Cost failed:", error.message);
+      }
+    });
+
+    // 12. WikiOS recentchanges sync (every 10 min default; captures edits made
+    //     directly on MediaWiki into the local WikiRevision history)
+    scheduleCron("WikiOS recentchanges sync", cronSchedule_wikiRecentChanges, async () => {
+      try {
+        const { syncWikiRecentChanges } =
+          await import("./src/server/cron/sync-wiki-recentchanges.js");
+        const r = await syncWikiRecentChanges();
+        if (r.recorded > 0) {
+          console.log(
+            `[Cron] WikiOS recentchanges: recorded ${r.recorded}, skipped ${r.skipped} of ${r.changesSeen}`
+          );
+        }
+      } catch (error) {
+        console.error("[Cron] WikiOS recentchanges sync failed:", error.message);
+      }
+    });
+
+    subsystems.cron = {
+      status: cronJobsFailed === 0 ? "ok" : "partial",
+      detail: `${cronJobsScheduled} scheduled, ${cronJobsFailed} failed`,
+    };
 
     // ──────────────────────────────────────────────
     // Start listening

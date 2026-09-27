@@ -46,11 +46,11 @@ export function deriveDemonym(countryName: string): string {
   if (trimmed.endsWith("e")) {
     return `${trimmed.slice(0, -1)}an`;
   }
-  if (trimmed.endsWith("i")) {
+  if (trimmed.endsWith("i") || trimmed.endsWith("u")) {
     return `${trimmed}an`;
   }
   if (trimmed.endsWith("o")) {
-    return `${trimmed}an`;
+    return `${trimmed.slice(0, -1)}an`;
   }
 
   return `${trimmed}ian`;

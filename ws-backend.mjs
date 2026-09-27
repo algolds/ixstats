@@ -82,7 +82,8 @@ async function main() {
   }
 
   try {
-    const { initializeMarketWebSocket } = await import("./src/lib/market-websocket-server.js");
+    const { initializeMarketWebSocket } =
+      await import("./src/lib/websocket/market-websocket-server.js");
     initializeMarketWebSocket(httpServer, "/api/market-ws");
     console.log("[WS] ✓ Market WebSocket initialized at /api/market-ws");
   } catch (error) {

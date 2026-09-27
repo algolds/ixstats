@@ -182,7 +182,7 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
       expect(exchangeService.spend).toHaveBeenCalledWith(
         "test-manager-id",
         1000,
-        "ADMIN_ADJUSTMENT",
+        "STADIUM_UPGRADE",
         "STADIUM_UPGRADE:team_123",
         expect.any(Object)
       );

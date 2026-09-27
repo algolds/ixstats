@@ -51,6 +51,7 @@ export const CATEGORY_PRESETS: CategoryPreset[] = (
     tag: keyof typeof LoreCategory;
     categoryName: string;
     wikiSourceFilter?: string;
+    synonyms?: string[];
     terms: string[];
   }>
 ).map((p) => {
@@ -61,7 +62,7 @@ export const CATEGORY_PRESETS: CategoryPreset[] = (
     categoryName: p.categoryName,
     wikiSourceFilter: p.wikiSourceFilter ?? "ixwiki",
     icon: CATEGORY_ICON_MAP[cat] ?? Sparkles,
-    synonyms: (CATEGORY_SYNONYMS as Record<string, readonly string[]>)[cat] ?? [],
+    synonyms: p.synonyms ?? (CATEGORY_SYNONYMS as Record<string, readonly string[]>)[cat] ?? [],
     terms: p.terms,
   };
 });

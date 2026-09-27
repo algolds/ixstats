@@ -168,7 +168,8 @@ async function main() {
   scheduleCron("Auction completion", "* * * * *", async () => {
     try {
       await runLocked("auction-completion", 5 * 60_000, async () => {
-        const { processExpiredAuctions } = await import("./src/lib/auction-completion-cron.js");
+        const { processExpiredAuctions } =
+          await import("./src/lib/economy/auction-completion-cron.js");
         await processExpiredAuctions();
       });
     } catch (error) {
@@ -180,7 +181,7 @@ async function main() {
     try {
       await runLocked("passive-income", 30 * 60_000, async () => {
         const { distributePassiveIncome } =
-          await import("./src/lib/passive-income-distribution-cron.js");
+          await import("./src/lib/economy/passive-income-distribution-cron.js");
         await distributePassiveIncome();
       });
     } catch (error) {
@@ -191,7 +192,7 @@ async function main() {
   scheduleCron("Card value tracking", cronSchedule_cardValue, async () => {
     try {
       await runLocked("card-value", 30 * 60_000, async () => {
-        const { updateCardValues } = await import("./src/lib/nation-card-value-update-cron.js");
+        const { updateCardValues } = await import("./src/lib/lorewards/card-value-cron.js");
         await updateCardValues();
       });
     } catch (error) {
@@ -202,7 +203,7 @@ async function main() {
   scheduleCron("Lore card generation", "0 2 * * *", async () => {
     try {
       await runLocked("lore-card-generation", 60 * 60_000, async () => {
-        const { generateDailyLoreCards } = await import("./src/lib/lore-card-generation-cron.js");
+        const { generateDailyLoreCards } = await import("./src/lib/lorewards/generation-cron.js");
         await generateDailyLoreCards();
       });
     } catch (error) {
@@ -216,7 +217,7 @@ async function main() {
     loreSyncRunning = true;
     try {
       await runLocked("lorewards", 60 * 60_000, async () => {
-        const { fullSync } = await import("./src/lib/lorewards-sync.js");
+        const { fullSync } = await import("./src/lib/lorewards/sync.js");
         await fullSync();
       });
     } catch (error) {
@@ -236,7 +237,7 @@ async function main() {
     try {
       // Same lock name as fullSync: the two must never overlap.
       await runLocked("lorewards", 10 * 60_000, async () => {
-        const { syncFromStateFile } = await import("./src/lib/lorewards-sync.js");
+        const { syncFromStateFile } = await import("./src/lib/lorewards/sync.js");
         await syncFromStateFile();
       });
     } catch (error) {
@@ -249,7 +250,7 @@ async function main() {
   scheduleCron("Trade expiry", "*/5 * * * *", async () => {
     try {
       await runLocked("trade-expiry", 5 * 60_000, async () => {
-        const { processExpiredTrades } = await import("./src/lib/trade-expiry-cron.js");
+        const { processExpiredTrades } = await import("./src/lib/economy/trade-expiry-cron.js");
         await processExpiredTrades();
       });
     } catch (error) {

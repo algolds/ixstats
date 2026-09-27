@@ -19,6 +19,7 @@ import type {
   WikiTemplateNode,
   WikiParserFunctionBlock,
   DividerBlock,
+  QuoteBlock,
   ParsedTemplate,
 } from "./types";
 
@@ -254,7 +255,38 @@ function parseTextBlocks(
       continue;
     }
 
-    // 6. Regular Paragraph: gather consecutive non-empty lines
+    // 6. Blockquote: <blockquote>...</blockquote> (the serializer's output for quote blocks)
+    if (/^<blockquote[\s>]/i.test(trimmed)) {
+      const quoteLines: string[] = [line];
+      i++;
+      if (!/<\/blockquote>/i.test(line)) {
+        while (i < lines.length) {
+          const curLine = lines[i]!;
+          quoteLines.push(curLine);
+          i++;
+          if (/<\/blockquote>/i.test(curLine)) break;
+        }
+      }
+      const rawQuote = quoteLines.join("\n");
+      const quoteMatch = /^\s*<blockquote[^>]*>([\s\S]*?)<\/blockquote>([\s\S]*)$/i.exec(rawQuote);
+      if (!quoteMatch) {
+        // Unclosed tag: keep the text verbatim rather than drop it
+        nodes.push({ type: "paragraph", children: parseInlineLinksAndFormatting(rawQuote) });
+        continue;
+      }
+      const quoteNode: QuoteBlock = {
+        type: "blockquote",
+        children: parseInlineLinksAndFormatting(quoteMatch[1]!.trim()),
+      };
+      nodes.push(quoteNode);
+      const trailing = quoteMatch[2]!.trim();
+      if (trailing) {
+        nodes.push({ type: "paragraph", children: parseInlineLinksAndFormatting(trailing) });
+      }
+      continue;
+    }
+
+    // 7. Regular Paragraph: gather consecutive non-empty lines
     const pLines: string[] = [line];
     i++;
     while (
@@ -264,7 +296,8 @@ function parseTextBlocks(
       !lines[i]!.trim().startsWith("{|") &&
       !/^[*#:\;]/.test(lines[i]!.trim()) &&
       !/^----+$/.test(lines[i]!.trim()) &&
-      !lines[i]!.trim().startsWith("<pre")
+      !lines[i]!.trim().startsWith("<pre") &&
+      !/^<blockquote[\s>]/i.test(lines[i]!.trim())
     ) {
       pLines.push(lines[i]!);
       i++;

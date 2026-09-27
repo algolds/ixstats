@@ -50,13 +50,14 @@ describe("National Mobility Engine", () => {
 
     it("evaluates intermediate developing transit networks accurately", () => {
       const result = calculateTAMI({
-        totalLengthKm: 1_200,
+        // density 42, velocity 41, connectivity 28, diversity 40 → TAMI 39
+        totalLengthKm: 2_000,
         landAreaKm2: 60_000,
         effectiveAverageSpeedKmh: 65,
         baselineSpeedKmh: 80,
         totalHubs: 4,
         cityCount: 12,
-        operationalRouteTypes: ["road", "trunk"],
+        operationalRouteTypes: ["road", "trunk", "rail"],
       });
 
       expect(result.tamiScore).toBeGreaterThan(0);

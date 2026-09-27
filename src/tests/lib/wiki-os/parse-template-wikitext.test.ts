@@ -21,13 +21,15 @@ describe("parseTemplateWikitext", () => {
     expect(parseTemplateWikitext("{{}}", "Infobox")).toEqual({
       name: "Infobox",
       params: {},
+      positional: [],
     });
   });
 
-  it("handles square bracket format without params", () => {
+  it("handles square bracket format with a positional label", () => {
     expect(parseTemplateWikitext("[[Coords:40.7,-74.0|Location]]", "Template", "square")).toEqual({
       name: "Coords:40.7,-74.0",
-      params: {},
+      params: { "1": "Location" },
+      positional: ["Location"],
     });
   });
 

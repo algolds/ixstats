@@ -152,44 +152,44 @@ describe("MyLeague Off-Season & Transition Logic", () => {
 
       const mockPrisma = {
         sportSeason: {
-          findUnique: async () => mockSeason,
-          create: async () => ({ id: "s2", seasonNumber: 2 }),
-          update: async () => ({}),
+          findUnique: jest.fn(async () => mockSeason),
+          create: jest.fn(async () => ({ id: "s2", seasonNumber: 2 })),
+          update: jest.fn(async () => ({})),
         },
         sportPlayer: {
-          update: async () => ({}),
-          create: async () => ({ id: "new_p" }),
+          update: jest.fn(async () => ({})),
+          create: jest.fn(async () => ({ id: "new_p" })),
         },
         sportCoach: {
-          update: async () => ({}),
-          create: async () => ({}),
+          update: jest.fn(async () => ({})),
+          create: jest.fn(async () => ({})),
         },
         sportTeam: {
-          findMany: async () => mockSeason.league.teams,
-          update: async () => ({}),
+          findMany: jest.fn(async () => mockSeason.league.teams),
+          update: jest.fn(async () => ({})),
         },
         sportMatchStat: {
-          findMany: async () => [],
+          findMany: jest.fn(async () => []),
         },
         sportSeasonRecord: {
-          deleteMany: async () => ({}),
-          createMany: async () => ({}),
+          deleteMany: jest.fn(async () => ({})),
+          createMany: jest.fn(async () => ({})),
         },
         sportStanding: {
-          findMany: async () => [],
-          createMany: async () => ({}),
+          findMany: jest.fn(async () => []),
+          createMany: jest.fn(async () => ({})),
         },
         sportTeamSeason: {
-          createMany: async () => ({}),
+          createMany: jest.fn(async () => ({})),
         },
         sportRookieClass: {
-          create: async () => ({}),
+          create: jest.fn(async () => ({})),
         },
         sportDraftPick: {
-          createMany: async () => ({}),
+          createMany: jest.fn(async () => ({})),
         },
         sportMatch: {
-          create: async () => ({}),
+          create: jest.fn(async () => ({})),
         },
       } as unknown as Parameters<typeof transitionSeasonAction>[0];
 

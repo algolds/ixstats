@@ -38,7 +38,18 @@ describe("Ice Hockey 3-Period Match Resolver", () => {
 
     expect(outcome.homeScore).toBeGreaterThanOrEqual(0);
     expect(outcome.awayScore).toBeGreaterThanOrEqual(0);
-    expect(outcome.trace.length).toBeGreaterThan(10);
+    // Puck drop + two intermissions are always present; everything else is seed-dependent
+    expect(outcome.trace[0]?.t).toBe(0);
+    expect(outcome.trace.length).toBeGreaterThanOrEqual(3);
+    const times = outcome.trace.map((e) => e.t);
+    expect(times).toEqual([...times].sort((a, b) => a - b));
+
+    // Every scored goal (excluding individual shootout attempts) is traced
+    const tracedGoals = (team: "home" | "away") =>
+      outcome.trace.filter((e) => e.type === "goal" && e.team === team && !e.description.startsWith("SHOOTOUT"))
+        .length;
+    expect(tracedGoals("home")).toBe(outcome.homeScore);
+    expect(tracedGoals("away")).toBe(outcome.awayScore);
 
     // Verify period intermissions
     const period1End = outcome.trace.find((e) => e.t === 20 && e.description.includes("END OF 1ST PERIOD"));

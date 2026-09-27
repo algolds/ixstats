@@ -102,6 +102,10 @@ describe("useMapHistory", () => {
     act(() => {
       result.current.pushAction(sampleAction1);
       result.current.pushAction(sampleAction2);
+    });
+
+    // undo() reads the rendered history, so it must run after the pushes commit
+    act(() => {
       result.current.undo(); // back to position 0
     });
 

@@ -253,7 +253,7 @@ describe("Country Builder & Editor - Unification Tests", () => {
         taxRevenuePercent: 28,
       });
 
-      expect(inputs.countryName).toBe("Aethelgard");
+      expect(inputs.countryName).toBe("New Aethelgard");
       expect(inputs.coreIndicators.totalPopulation).toBe(50000000);
       expect(inputs.coreIndicators.gdpPerCapita).toBe(45000);
       expect(inputs.coreIndicators.nominalGDP).toBe(2250000000000);

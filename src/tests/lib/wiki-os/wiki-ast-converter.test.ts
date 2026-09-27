@@ -141,7 +141,8 @@ The Kingdom of Urcea is located near [[Coords:40.5,-79.8|40.5 N, 79.8 W]].
     expect(roundtrip).toContain("== Section Heading ==");
     expect(roundtrip).toContain("=== Subsection Heading ===");
     expect(roundtrip).toContain("==== Sub-subsection Heading ====");
-    expect(roundtrip).toContain("<blockquote>A famous quotation");
+    // The serializer emits the multi-line form: <blockquote>\n...\n</blockquote>
+    expect(roundtrip).toMatch(/<blockquote>\s*A famous quotation/);
     expect(roundtrip).toContain("* Bullet 1");
     expect(roundtrip).toContain("# Step 1");
   });

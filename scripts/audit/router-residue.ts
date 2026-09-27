@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { ts } from "ts-morph";
+import { ts, type SourceFile as MorphSourceFile } from "ts-morph";
 
 export const DEFAULT_ROOT = process.cwd();
 export const ROUTERS_DIR = "src/server/api/routers";
@@ -53,9 +53,11 @@ export function sortResidueBaseline(baseline: ResidueBaseline): ResidueBaseline 
 }
 
 export function findDeadDeclarationsInSourceFile(
-  sourceFile: ts.SourceFile,
+  input: ts.SourceFile | MorphSourceFile,
   fileRel: string
 ): ResidueItem[] {
+  // Accept a ts-morph SourceFile wrapper too; its raw compiler node is `compilerNode`.
+  const sourceFile: ts.SourceFile = "compilerNode" in input ? input.compilerNode : input;
   const dead: ResidueItem[] = [];
 
   const topLevelDecls: {
