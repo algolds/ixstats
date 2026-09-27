@@ -130,13 +130,13 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
               initial={{
                 x: 0,
                 y: 0,
-                scale: 0,
+                scale: 0.2,
                 opacity: 1,
               }}
               animate={{
                 x: targetX,
                 y: targetY,
-                scale: [0, 1.2, 0.5, 0],
+                scale: [0.2, 1.2, 0.5, 0],
                 opacity: [1, 0.9, 0.6, 0],
                 rotate: [0, 180, 360],
               }}
@@ -167,11 +167,11 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
             willChange: "transform, opacity",
           }}
           initial={{
-            scale: 0,
+            scale: 0.2,
             opacity: 1,
           }}
           animate={{
-            scale: [0, 3, 5],
+            scale: [0.2, 3, 5],
             opacity: [1, 0.6, 0],
           }}
           transition={{
@@ -194,11 +194,11 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
             willChange: "transform, opacity",
           }}
           initial={{
-            scale: 0,
+            scale: 0.2,
             opacity: 1,
           }}
           animate={{
-            scale: [0, 2, 4],
+            scale: [0.2, 2, 4],
             opacity: [1, 0.5, 0],
             rotate: [0, 90, 180],
           }}
@@ -223,11 +223,11 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
               willChange: "transform, opacity",
             }}
             initial={{
-              scale: 0,
+              scale: 0.2,
               opacity: 0.8,
             }}
             animate={{
-              scale: [0, 1.5, 3.5],
+              scale: [0.2, 1.5, 3.5],
               opacity: [0.8, 0.4, 0],
               rotate: [0, -90, -180],
             }}

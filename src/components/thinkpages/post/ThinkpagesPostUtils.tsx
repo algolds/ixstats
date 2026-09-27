@@ -70,7 +70,9 @@ export function proxyDiscordUrl(url: string): string {
     if (DISCORD_CDN_HOSTNAMES.includes(parsed.hostname)) {
       return withBasePath(`/api/proxy-discord-image?url=${encodeURIComponent(url as string)}`);
     }
-  } catch {}
+  } catch {
+    // not an absolute URL — handled as a path below
+  }
   if (url.startsWith("/")) {
     let cleanPath = url;
     if (cleanPath.startsWith("/projects/ixstates")) {

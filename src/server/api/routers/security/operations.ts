@@ -277,7 +277,13 @@ export const securityOperationsRouter = createTRPCRouter({
             metadata: { operationId: input.operationId, result: input.successRating },
           });
         }
-      } catch {}
+      } catch (err) {
+        console.warn(
+          "[Security Operations] Completion notification failed for operation",
+          input.operationId,
+          err
+        );
+      }
 
       return updated;
     }),

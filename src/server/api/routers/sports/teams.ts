@@ -118,7 +118,9 @@ export const sportsTeamsRouter = createTRPCRouter({
             if (typeof meta === "string") {
               try {
                 meta = JSON.parse(meta);
-              } catch {}
+              } catch {
+                // non-JSON metadata — treated as no item match
+              }
             }
             return meta && typeof meta === "object" && (meta as { itemId?: string }).itemId === upgradeId;
           });

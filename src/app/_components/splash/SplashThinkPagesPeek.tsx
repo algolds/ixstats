@@ -23,7 +23,9 @@ function proxyDiscordUrl(url: string | null | undefined): string | undefined {
       }
       return createUrl(path);
     }
-  } catch {}
+  } catch {
+    // not an absolute URL — handled as a path below
+  }
   if (url.startsWith("/")) {
     let cleanPath = url;
     if (cleanPath.startsWith("/projects/ixstates/")) {

@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+// `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
+import { describe, it, expect, beforeEach } from "@jest/globals";
 
 // Mock env and dependencies
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));

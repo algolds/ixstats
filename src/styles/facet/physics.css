@@ -507,11 +507,6 @@
    SPRING-BASED MOTION & TRANSITIONS
    ────────────────────────────────────────────────────────────────────────── */
 
-.facet-transition-spring {
-  transition: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
-}
-
 .facet-interactive {
   cursor: pointer;
   transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
@@ -1165,7 +1160,6 @@ select.facet-refraction-none::after,
 
 @media (prefers-reduced-motion: reduce) {
   .facet-interactive,
-  .facet-transition-spring,
   .facet-cutout-card {
     transition: none !important;
   }
@@ -1208,11 +1202,7 @@ html[data-low-fidelity="true"] .facet-global,
 html[data-low-fidelity="true"] .facet-eci,
 html[data-low-fidelity="true"] .facet-sdi,
 html[data-low-fidelity="true"] .facet-builder,
-html[data-low-fidelity="true"] .facet-forum,
-html[data-low-fidelity="true"] .facet-enhanced,
-html[data-low-fidelity="true"] .navigation-facet,
-html[data-low-fidelity="true"] .command-palette-facet,
-html[data-low-fidelity="true"] .facet-halo {
+html[data-low-fidelity="true"] .facet-forum {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   box-shadow: none !important;
@@ -1221,15 +1211,7 @@ html[data-low-fidelity="true"] .facet-halo {
 }
 
 html[data-low-fidelity="true"] .facet-refraction::before,
-html[data-low-fidelity="true"] .facet-refraction::after,
-html[data-low-fidelity="true"] .bg-card.facet-enhanced::before,
-html[data-low-fidelity="true"] .bg-card.facet-enhanced::after,
-html[data-low-fidelity="true"] .navigation-facet::before,
-html[data-low-fidelity="true"] .navigation-facet::after,
-html[data-low-fidelity="true"] .command-palette-facet::before,
-html[data-low-fidelity="true"] .command-palette-facet::after,
-html[data-low-fidelity="true"] .facet-halo::before,
-html[data-low-fidelity="true"] .facet-halo::after {
+html[data-low-fidelity="true"] .facet-refraction::after {
   display: none !important;
 }
 

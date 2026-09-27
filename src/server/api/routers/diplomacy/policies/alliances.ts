@@ -174,7 +174,9 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
             metadata: { allianceId: alliance.id, allianceName: input.name },
           });
         }
-      } catch {}
+      } catch (err) {
+        console.warn("[Alliances] Formation notification failed for alliance", alliance.id, err);
+      }
 
       return alliance;
     }),
@@ -273,7 +275,13 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
             metadata: { allianceId: input.allianceId },
           });
         }
-      } catch {}
+      } catch (err) {
+        console.warn(
+          "[Alliances] Invitation notification failed for alliance",
+          input.allianceId,
+          err
+        );
+      }
 
       return { success: true };
     }),

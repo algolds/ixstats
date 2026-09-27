@@ -46,6 +46,7 @@ import {
 import { ClubTacticsSection } from "~/components/sports/club/sections/ClubTacticsSection";
 import { ClubTransfersSection } from "~/components/sports/club/sections/ClubTransfersSection";
 import { ClubManagementSection } from "~/components/sports/club/sections/ClubManagementSection";
+import { ClubHistorySection } from "~/components/sports/club/sections/ClubHistorySection";
 
 export interface ClubRouterProps {
   teamId: string;
@@ -108,11 +109,6 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
   const { data: liveActivities } = api.sports.getLiveMatches.useQuery(
     { teamId },
     { refetchInterval: 10000, enabled: activeSection === "overview" && !!teamId }
-  );
-
-  const { data: history } = api.sports.getTeamSeasonHistory.useQuery(
-    { teamId },
-    { enabled: !!teamId }
   );
 
   const updateTeamTactics = api.sports.updateTeamTactics.useMutation({
@@ -360,7 +356,6 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
             activeSeason={activeSeason}
             currentStandings={currentStandings}
             upcomingMatches={upcomingMatches}
-            history={history}
             liveMatch={liveMatch}
             isUpdatingNotifications={setClubNotifications.isPending}
             onUpdateNotifications={(enabled) => setClubNotifications.mutate({ teamId, enabled })}
@@ -416,6 +411,9 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
             onRefetchOverview={() => void refetchOverview()}
           />
         );
+
+      case "history":
+        return <ClubHistorySection teamId={team.id} />;
 
       default:
         return null;

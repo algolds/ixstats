@@ -200,7 +200,9 @@ export function StashWelcomeModal({
     onOpenChangeAction?.(false);
     try {
       localStorage.setItem(STORAGE_KEY, STASHES_WELCOME_VERSION);
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — preference is not persisted
+    }
   }, [onOpenChangeAction]);
 
   if (!mounted || !show) return null;

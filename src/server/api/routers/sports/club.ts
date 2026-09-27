@@ -784,7 +784,9 @@ export const sportsClubRouter = createTRPCRouter({
           seasonId: s.season.id,
           seasonNumber: s.season.seasonNumber,
           wins: s.wins,
+          draws: s.draws,
           losses: s.losses,
+          points: s.points,
           isChampion: s.season.championTeamId === input.teamId,
         }));
       } catch (_error) {

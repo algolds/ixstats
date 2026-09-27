@@ -265,6 +265,8 @@
     "bun": ">=1.4.0"
   },
   "jest": {
+    "maxWorkers": "50%",
+    "workerIdleMemoryLimit": "1GB",
     "testEnvironment": "jsdom",
     "testEnvironmentOptions": {
       "customExportConditions": [

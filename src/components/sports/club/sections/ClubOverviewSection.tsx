@@ -3,7 +3,6 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
 import { MatchTickerSim } from "~/components/sports/league/MatchTickerSim";
 import { ClubResultsCard } from "~/components/sports/club/ClubResultsCard";
@@ -15,7 +14,6 @@ import {
   ArrowSeparate as ArrowLeftRight,
   StatsReport as BarChart3,
   Dollar as DollarSign,
-  Trophy,
 } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 
@@ -55,13 +53,6 @@ export interface ClubOverviewSectionProps {
     homeTeam: { id: string; name: string };
     awayTeam: { id: string; name: string };
   }> | null;
-  history?: Array<{
-    seasonId: string;
-    seasonNumber: number;
-    wins: number;
-    losses: number;
-    isChampion?: boolean;
-  }> | null;
   liveMatch?: {
     homeTeam: { name: string; color?: string; shortName?: string | null };
     awayTeam: { name: string; color?: string; shortName?: string | null };
@@ -79,7 +70,6 @@ export function ClubOverviewSection({
   activeSeason,
   currentStandings,
   upcomingMatches,
-  history,
   liveMatch,
   isUpdatingNotifications,
   onUpdateNotifications,
@@ -276,7 +266,7 @@ export function ClubOverviewSection({
         )}
       </div>
 
-      {/* Right side matches & history list */}
+      {/* Right side: training & upcoming fixtures */}
       <div className="space-y-6">
         <TeamTrainingButton
           teamId={team.id}
@@ -326,42 +316,6 @@ export function ClubOverviewSection({
             </CardContent>
           </Card>
         )}
-
-        {/* History list */}
-        <Card className="facet-hierarchy-child bg-card/45 border-border/40 rounded-2xl backdrop-blur-md">
-          <CardHeader>
-            <CardTitle className="text-foreground flex items-center gap-2 text-sm font-bold">
-              <BarChart3 className="h-4 w-4 text-indigo-400" />
-              Season Campaign History
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="divide-border/20 divide-y">
-            {history && history.length > 0 ? (
-              history.map((entry) => (
-                <div
-                  key={entry.seasonId}
-                  className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0 text-xs"
-                >
-                  <div>
-                    <p className="text-foreground font-bold">
-                      Season {entry.seasonNumber}
-                    </p>
-                    <p className="text-muted-foreground font-semibold">
-                      {entry.wins}W - {entry.losses}L
-                    </p>
-                  </div>
-                  {entry.isChampion && (
-                    <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-400 font-bold text-xs">
-                      <Trophy className="mr-1 h-3.5 w-3.5" /> Champion
-                    </Badge>
-                  )}
-                </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground py-4 text-center text-xs font-semibold">No season records yet.</p>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

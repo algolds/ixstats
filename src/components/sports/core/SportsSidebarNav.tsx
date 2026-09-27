@@ -58,6 +58,7 @@ export const CLUB_NAV_ITEMS: SportsNavItem[] = [
   { id: "tactics", label: "Tactics", icon: Settings, description: "Formation & strategy" },
   { id: "transfers", label: "Transfers", icon: ArrowLeftRight, description: "Escrow market & bids" },
   { id: "management", label: "Management", icon: Shield, description: "Finances & operations" },
+  { id: "history", label: "History", icon: Clock, description: "Titles & past seasons" },
 ];
 
 export interface SportsSidebarNavProps {

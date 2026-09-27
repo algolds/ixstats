@@ -298,7 +298,9 @@ export const ixnayidPassportRouter = createTRPCRouter({
             (await db.lorewardUserStats.count({
               where: { totalScore: { gt: loreStats.totalScore } },
             })) + 1;
-        } catch {}
+        } catch (err) {
+          console.warn("[Passport] Lore rank lookup failed:", err);
+        }
       }
 
       if (userRecord && (forumData || wikiInfo)) {

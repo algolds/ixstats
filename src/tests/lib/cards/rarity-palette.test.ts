@@ -1,5 +1,6 @@
 /** Plan 345 Step 5: pins the canonical card-rarity palette in `~/lib/cards/display-utils`. */
-import { describe, it, expect, jest } from "@jest/globals";
+// `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
+import { describe, it, expect } from "@jest/globals";
 
 jest.mock("~/lib/country-geo", () => ({ computeSpecialStats: jest.fn() }));
 

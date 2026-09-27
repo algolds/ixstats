@@ -30,7 +30,9 @@ async function fetchOOLPageWikitext(yearOrKey: number | "main"): Promise<string 
       select: { wikitext: true },
     });
     if (article?.wikitext) return article.wikitext;
-  } catch {}
+  } catch (err) {
+    console.warn("[Lorewards] DB lookup failed, falling back to HTTP:", pageTitle, err);
+  }
 
   // 2. Try MediaWiki Action API HTTP
   try {

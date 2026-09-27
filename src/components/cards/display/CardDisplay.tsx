@@ -597,9 +597,10 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               style={{
                 textShadow: "0 1px 2px rgba(0,0,0,0.3)",
               }}
-              initial={{ scale: 0, rotate: -180 }}
+              initial={{ scale: 0.8, opacity: 0, rotate: -180 }}
               animate={{
                 scale: 1,
+                opacity: 1,
                 rotate: 0,
               }}
               transition={{ duration: 0.5, type: "spring" }}

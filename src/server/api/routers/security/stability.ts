@@ -235,7 +235,9 @@ export const securityStabilityRouter = createTRPCRouter({
             metadata: { eventId: input.id },
           });
         }
-      } catch {}
+      } catch (err) {
+        console.warn("[Stability] Resolution notification failed for event", input.id, err);
+      }
 
       // Canon news: security/stability event resolved
       void generateDiplomaticNews(ctx.db as any, event.countryId, "security_event_resolved", {

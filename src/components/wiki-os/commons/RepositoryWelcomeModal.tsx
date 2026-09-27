@@ -134,7 +134,9 @@ export function RepositoryWelcomeModal({
     onOpenChangeAction?.(false);
     try {
       localStorage.setItem(STORAGE_KEY, WIKIOS_VERSION);
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — preference is not persisted
+    }
   }, [onOpenChangeAction]);
 
   const TABS = ["Getting Started", "Features", "Tips", "FAQ Guide"];

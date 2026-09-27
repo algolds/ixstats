@@ -6,24 +6,32 @@ import React, { useState } from "react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 
+type ArtifactType = "photo" | "video" | "document" | "artwork" | "recipe" | "music";
+
+/** What the form hands back; the parent uploads `file` and records the artifact. */
+export interface ArtifactUploadData {
+  title: string;
+  type: ArtifactType;
+  description: string;
+  file: File;
+}
+
+/** The image types `/api/upload/image` accepts. */
+const ACCEPTED_IMAGE_TYPES = "image/png,image/jpeg,image/gif,image/webp,image/svg+xml";
+
 interface ArtifactUploadFormProps {
-  onSubmit: (data: {
-    title: string;
-    type: "photo" | "video" | "document" | "artwork" | "recipe" | "music";
-    description: string;
-    file: File;
-    thumbnailUrl?: string;
-  }) => void;
+  onSubmit: (data: ArtifactUploadData) => void;
   onCancel: () => void;
   exchangeTitle: string;
+  isSubmitting: boolean;
 }
 
 export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
-  ({ onSubmit, onCancel, exchangeTitle }) => {
+  ({ onSubmit, onCancel, exchangeTitle, isSubmitting }) => {
     const notify = useNotify();
     const [formData, setFormData] = useState({
       title: "",
-      type: "photo" as "photo" | "video" | "document" | "artwork" | "recipe" | "music",
+      type: "photo" as ArtifactType,
       description: "",
       file: null as File | null,
     });
@@ -46,7 +54,6 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
         type: formData.type,
         description: formData.description,
         file: formData.file,
-        thumbnailUrl: formData.file ? URL.createObjectURL(formData.file) : undefined,
       });
     };
 
@@ -134,14 +141,14 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
                 {formData.file ? formData.file.name : "Click to upload file"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Photos, videos, documents, or audio files
+                PNG, JPG, GIF, WEBP or SVG image, up to 5MB
               </p>
             </div>
             <input
               type="file"
               className="hidden"
               onChange={handleFileChange}
-              accept="image/*,video/*,.pdf,.doc,.docx,audio/*"
+              accept={ACCEPTED_IMAGE_TYPES}
               required
             />
           </label>
@@ -160,10 +167,11 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 rounded-lg bg-cyan-500/20 px-6 py-2 font-medium text-cyan-600 dark:text-cyan-400 transition-colors hover:bg-cyan-500/30"
+              disabled={isSubmitting}
+              className="flex items-center gap-2 rounded-lg bg-cyan-500/20 px-6 py-2 font-medium text-cyan-600 dark:text-cyan-400 transition-colors hover:bg-cyan-500/30 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Camera className="h-4 w-4" />
-              Upload Artifact
+              {isSubmitting ? "Uploading..." : "Upload Artifact"}
             </button>
           </div>
         </div>

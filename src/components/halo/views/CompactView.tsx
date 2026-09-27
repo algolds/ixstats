@@ -370,7 +370,7 @@ function CompactViewComponent({
                           {totalUnreadCount > 0 && (
                             <motion.div
                               key={`total-${totalUnreadCount}`}
-                              initial={{ scale: 0, opacity: 0 }}
+                              initial={{ scale: 0.8, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
                               exit={{ scale: 0, opacity: 0 }}
                               transition={{ type: "spring", stiffness: 500, damping: 25 }}

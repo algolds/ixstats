@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+// `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
+import { describe, it, expect, beforeEach } from "@jest/globals";
 import { securityStabilityRouter } from "~/server/api/routers/security/stability";
 import { newsGenerator } from "~/lib/diplomacy/news-generator";
 import { notificationAPI } from "~/lib/notifications/api";

@@ -53,7 +53,9 @@ export async function GET(
     let decodedLastSegment = lastSegment;
     try {
       decodedLastSegment = decodeURIComponent(lastSegment);
-    } catch {}
+    } catch {
+      // malformed percent-encoding — keep the raw segment
+    }
 
     const isImageFile = /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i.test(decodedLastSegment);
     const cleanFilename = decodedLastSegment

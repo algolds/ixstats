@@ -135,7 +135,9 @@ export function getMd5ShardPath(filename: string): {
   let decoded = filename;
   try {
     decoded = decodeURIComponent(filename);
-  } catch {}
+  } catch {
+    // malformed percent-encoding — use the raw filename
+  }
 
   let cleanName = decoded
     .replace(/^(?:File|Image):/i, "")

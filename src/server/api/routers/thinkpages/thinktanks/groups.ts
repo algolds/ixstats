@@ -439,7 +439,9 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       if (group.settings) {
         try {
           parsedSettings = { ...parsedSettings, ...JSON.parse(group.settings) };
-        } catch {}
+        } catch (err) {
+          console.warn("[ThinkTanks] Malformed settings on group", input.groupId, err);
+        }
       }
 
       let parsedTags: string[] = [];
@@ -506,7 +508,13 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       if (group.settings) {
         try {
           existingSettings = JSON.parse(group.settings);
-        } catch {}
+        } catch (err) {
+          console.warn(
+            "[ThinkTanks] Malformed settings on group (overwritten by update)",
+            groupId,
+            err
+          );
+        }
       }
 
       const newSettings = {

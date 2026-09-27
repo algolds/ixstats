@@ -16,6 +16,11 @@ import {
   computeTeamRatingVector,
   getTeamModifiers,
 } from "~/lib/sports";
+import {
+  SIM_MATCH_INCLUDE,
+  loadEffectsMap,
+  simulateAndPersistMatch,
+} from "~/lib/sports/simulate-and-persist";
 
 export const sportsSeasonsFullseasonRouter = createTRPCRouter({
   simulateFullSeason: protectedProcedure
@@ -121,23 +126,10 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
           const teamsMap = new Map(allTeams.map((t) => [t.id, t]));
 
           // Pre-fetch storyteller effects for all involved teams
-          const nationIds = allTeams.map((t) => t.nationId).filter(Boolean) as string[];
-          const effectsMap = new Map<string, any[]>();
-          if (nationIds.length > 0) {
-            const effects = await ctx.db.storytellerEffect.findMany({
-              where: {
-                countryId: { in: nationIds },
-                isActive: true,
-              },
-            });
-            for (const e of effects) {
-              if (e.countryId) {
-                const list = effectsMap.get(e.countryId) ?? [];
-                list.push(e);
-                effectsMap.set(e.countryId, list);
-              }
-            }
-          }
+          const effectsMap = await loadEffectsMap(
+            ctx.db,
+            allTeams.map((t) => t.nationId)
+          );
 
           let seasonInProgress = true;
 
@@ -167,230 +159,14 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
                     matchDay,
                     status: "scheduled",
                   },
-                  include: {
-                    homeTeam: {
-                      include: {
-                        players: { where: { isActive: true } },
-                        coaches: { where: { isActive: true } },
-                      },
-                    },
-                    awayTeam: {
-                      include: {
-                        players: { where: { isActive: true } },
-                        coaches: { where: { isActive: true } },
-                      },
-                    },
-                  },
+                  include: SIM_MATCH_INCLUDE,
                 });
 
                 // Batch matchday database operations atomically
+                const league = currentSeason.league;
                 await ctx.db.$transaction(async (tx) => {
-                  for (let i = 0; i < matches.length; i++) {
-                    const match = matches[i];
-                    if (!match || !currentSeason) continue;
-                    const seed = simpleHash(input.seasonId, matchDay + activeStage * 100, i);
-
-                    const homeRatings = computeTeamRatingVector(
-                      match.homeTeam.players as any,
-                      match.homeTeam.coaches as any,
-                      currentSeason.league.sportPreset
-                    );
-                    const awayRatings = computeTeamRatingVector(
-                      match.awayTeam.players as any,
-                      match.awayTeam.coaches as any,
-                      currentSeason.league.sportPreset
-                    );
-
-                    const homeTeamModifiers = await getTeamModifiers(
-                      match.homeTeam,
-                      tx,
-                      effectsMap
-                    );
-                    const awayTeamModifiers = await getTeamModifiers(
-                      match.awayTeam,
-                      tx,
-                      effectsMap
-                    );
-
-                    const rivalry = await tx.sportRivalry.findFirst({
-                      where: {
-                        OR: [
-                          { team1Id: match.homeTeamId, team2Id: match.awayTeamId },
-                          { team1Id: match.awayTeamId, team2Id: match.homeTeamId },
-                        ],
-                      },
-                    });
-                    const rivalryIntensity = rivalry?.intensity ?? 0;
-                    const homeAdvantage = rivalryIntensity > 70 ? 65 : 55;
-
-                    const result = resolveMatch({
-                      sport: currentSeason.league.sportPreset,
-                      homeTeam: homeRatings,
-                      awayTeam: awayRatings,
-                      archetype: currentSeason.league.archetype,
-                      seed,
-                      homeTeamModifiers,
-                      awayTeamModifiers,
-                      homeRoster: match.homeTeam.players as any,
-                      awayRoster: match.awayTeam.players as any,
-                      context: { homeAdvantage },
-                    });
-
-                    const resRec = result as any;
-                    const homeScore = (resRec.homeScore as number) ?? 0;
-                    const awayScore = (resRec.awayScore as number) ?? 0;
-                    const homeRatingDelta = (resRec.homeRatingDelta as number) ?? 0;
-                    const awayRatingDelta = (resRec.awayRatingDelta as number) ?? 0;
-
-                    const homeRatingAfter = {
-                      ...homeRatings,
-                      overall:
-                        Math.round(((homeRatings.overall as number) + homeRatingDelta) * 100) / 100,
-                    };
-                    const awayRatingAfter = {
-                      ...awayRatings,
-                      overall:
-                        Math.round(((awayRatings.overall as number) + awayRatingDelta) * 100) / 100,
-                    };
-
-                    const winner =
-                      homeScore > awayScore
-                        ? match.homeTeamId
-                        : awayScore > homeScore
-                          ? match.awayTeamId
-                          : null;
-                    const status = winner
-                      ? homeScore > awayScore
-                        ? "home_win"
-                        : "away_win"
-                      : "draw";
-
-                    await tx.sportMatch.update({
-                      where: { id: match.id },
-                      data: {
-                        homeScore,
-                        awayScore,
-                        status: "completed",
-                        resolvedIxTime: IxTime.getCurrentIxTime(),
-                        matchStats: {
-                          keyStats: result.keyStats,
-                          evaluation: result.evaluation,
-                          trace: result.trace,
-                        } as any,
-                        homeRatingBefore: { ...homeRatings },
-                        awayRatingBefore: { ...awayRatings },
-                        homeRatingAfter: { ...homeRatingAfter },
-                        awayRatingAfter: { ...awayRatingAfter },
-                      },
-                    });
-
-                    // Update team season rating vectors
-                    await tx.sportTeamSeason.updateMany({
-                      where: { seasonId: input.seasonId, teamId: match.homeTeamId },
-                      data: { ratingVector: { ...homeRatingAfter } },
-                    });
-                    await tx.sportTeamSeason.updateMany({
-                      where: { seasonId: input.seasonId, teamId: match.awayTeamId },
-                      data: { ratingVector: { ...awayRatingAfter } },
-                    });
-
-                    // Update standings
-                    if (status === "home_win") {
-                      await tx.sportStanding.updateMany({
-                        where: { seasonId: input.seasonId, teamId: match.homeTeamId },
-                        data: {
-                          wins: { increment: 1 },
-                          points: { increment: 3 },
-                          pointsFor: { increment: homeScore },
-                          pointsAgainst: { increment: awayScore },
-                        },
-                      });
-                      await tx.sportStanding.updateMany({
-                        where: { seasonId: input.seasonId, teamId: match.awayTeamId },
-                        data: {
-                          losses: { increment: 1 },
-                          pointsFor: { increment: awayScore },
-                          pointsAgainst: { increment: homeScore },
-                        },
-                      });
-                    } else if (status === "away_win") {
-                      await tx.sportStanding.updateMany({
-                        where: { seasonId: input.seasonId, teamId: match.awayTeamId },
-                        data: {
-                          wins: { increment: 1 },
-                          points: { increment: 3 },
-                          pointsFor: { increment: awayScore },
-                          pointsAgainst: { increment: homeScore },
-                        },
-                      });
-                      await tx.sportStanding.updateMany({
-                        where: { seasonId: input.seasonId, teamId: match.homeTeamId },
-                        data: {
-                          losses: { increment: 1 },
-                          pointsFor: { increment: homeScore },
-                          pointsAgainst: { increment: awayScore },
-                        },
-                      });
-                    } else {
-                      await tx.sportStanding.updateMany({
-                        where: { seasonId: input.seasonId, teamId: match.homeTeamId },
-                        data: {
-                          draws: { increment: 1 },
-                          points: { increment: 1 },
-                          pointsFor: { increment: homeScore },
-                          pointsAgainst: { increment: awayScore },
-                        },
-                      });
-                      await tx.sportStanding.updateMany({
-                        where: { seasonId: input.seasonId, teamId: match.awayTeamId },
-                        data: {
-                          draws: { increment: 1 },
-                          points: { increment: 1 },
-                          pointsFor: { increment: awayScore },
-                          pointsAgainst: { increment: homeScore },
-                        },
-                      });
-                    }
-
-                    // Update player morale
-                    const homePlayerIds = match.homeTeam.players.map((p) => p.id);
-                    const awayPlayerIds = match.awayTeam.players.map((p) => p.id);
-
-                    if (status === "home_win") {
-                      await tx.sportPlayer.updateMany({
-                        where: { id: { in: homePlayerIds } },
-                        data: { morale: { increment: 5 } },
-                      });
-                      await tx.sportPlayer.updateMany({
-                        where: { id: { in: awayPlayerIds } },
-                        data: { morale: { decrement: 5 } },
-                      });
-                    } else if (status === "away_win") {
-                      await tx.sportPlayer.updateMany({
-                        where: { id: { in: awayPlayerIds } },
-                        data: { morale: { increment: 5 } },
-                      });
-                      await tx.sportPlayer.updateMany({
-                        where: { id: { in: homePlayerIds } },
-                        data: { morale: { decrement: 5 } },
-                      });
-                    }
-
-                    // Cap morale at [0, 100]
-                    await tx.sportPlayer.updateMany({
-                      where: {
-                        id: { in: [...homePlayerIds, ...awayPlayerIds] },
-                        morale: { gt: 100 },
-                      },
-                      data: { morale: 100 },
-                    });
-                    await tx.sportPlayer.updateMany({
-                      where: {
-                        id: { in: [...homePlayerIds, ...awayPlayerIds] },
-                        morale: { lt: 0 },
-                      },
-                      data: { morale: 0 },
-                    });
+                  for (const match of matches) {
+                    await simulateAndPersistMatch(tx, { match, league, effectsMap });
                   }
                 });
               }

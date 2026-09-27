@@ -57,7 +57,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         setVolume(0.2);
         volumeRef.current = 0.2;
       }
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — defaults apply
+    }
   }, []);
 
   // Create mediaTrack representing the article
@@ -257,7 +259,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
           }
         }
       }
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — start from the first block
+    }
 
     setBlocks(validBlocks);
     setActiveIdx(initialIdx);
@@ -437,7 +441,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         if (articleTitle) {
           sessionStorage.setItem(`wikios:narrator:pos:${articleTitle}`, String(index));
         }
-      } catch {}
+      } catch {
+        // storage unavailable (private mode) — preference is not persisted
+      }
 
       try {
         if (isKokoroEnabled) {
@@ -579,7 +585,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
             targetIdx = parsed;
           }
         }
-      } catch {}
+      } catch {
+        // storage unavailable (private mode) — start from the first block
+      }
       if (targetIdx < 0 || targetIdx >= blocksRef.current.length) {
         targetIdx = findViewportClosestBlock();
       }
@@ -664,7 +672,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       volumeRef.current = clamped;
       try {
         localStorage.setItem("onoma-personal-volume", String(clamped));
-      } catch {}
+      } catch {
+        // storage unavailable (private mode) — preference is not persisted
+      }
       setNarratorState({ volume: clamped });
       if (audioRef.current) {
         audioRef.current.volume = clamped;

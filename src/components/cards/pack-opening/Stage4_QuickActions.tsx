@@ -238,7 +238,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
 
     return (
       <motion.div
-        initial={{ scale: 0, opacity: 0 }}
+        initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{
           delay: index * 0.05,

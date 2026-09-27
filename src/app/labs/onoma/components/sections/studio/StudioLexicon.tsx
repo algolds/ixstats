@@ -451,7 +451,9 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                     try {
                       await navigator.clipboard.writeText(selectedTermCyrillic);
                       alert(`Copied Cyrillic: ${selectedTermCyrillic}`);
-                    } catch {}
+                    } catch {
+                      // clipboard unavailable (permission denied / insecure context) — nothing copied
+                    }
                   }}
                   className="border-border/40 bg-background group hover:border-onoma-primary/40 cursor-pointer rounded-xl border p-3 text-center transition-all duration-200 select-none"
                 >
@@ -471,7 +473,9 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                     try {
                       await navigator.clipboard.writeText(selectedTermGreek);
                       alert(`Copied Greek: ${selectedTermGreek}`);
-                    } catch {}
+                    } catch {
+                      // clipboard unavailable (permission denied / insecure context) — nothing copied
+                    }
                   }}
                   className="border-border/40 bg-background group hover:border-onoma-primary/40 cursor-pointer rounded-xl border p-3 text-center transition-all duration-200 select-none"
                 >
@@ -491,7 +495,9 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                     try {
                       await navigator.clipboard.writeText(selectedTermArabic);
                       alert(`Copied Arabic: ${selectedTermArabic}`);
-                    } catch {}
+                    } catch {
+                      // clipboard unavailable (permission denied / insecure context) — nothing copied
+                    }
                   }}
                   className="border-border/40 bg-background group hover:border-onoma-primary/40 cursor-pointer rounded-xl border p-3 text-center transition-all duration-200 select-none"
                   dir="rtl"

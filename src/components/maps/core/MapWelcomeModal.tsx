@@ -127,7 +127,9 @@ export function MapWelcomeModal({
     onClose?.();
     try {
       localStorage.setItem(STORAGE_KEY, IXWORLD_VERSION);
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — preference is not persisted
+    }
   }, [onClose]);
 
   const totalPages = 2; // Tips page + Shortcuts page

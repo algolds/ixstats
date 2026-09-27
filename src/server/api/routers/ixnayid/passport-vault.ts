@@ -158,7 +158,9 @@ export async function resolvePassportVault(userId?: string | null) {
         };
       });
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[PassportVault] Failed to resolve vault summary for user", userId, err);
+  }
 
   return base;
 }

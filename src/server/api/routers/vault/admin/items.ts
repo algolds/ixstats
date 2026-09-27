@@ -36,7 +36,9 @@ export const vaultAdminItemsRouter = createTRPCRouter({
         if (typeof meta === "string") {
           try {
             meta = JSON.parse(meta);
-          } catch {}
+          } catch {
+            // non-JSON metadata — treated as no item match
+          }
         }
         if (meta && typeof meta === "object") {
           const metaObj = meta as Record<string, any>;
@@ -90,7 +92,9 @@ export const vaultAdminItemsRouter = createTRPCRouter({
           if (typeof meta === "string") {
             try {
               meta = JSON.parse(meta);
-            } catch {}
+            } catch {
+              // non-JSON metadata — treated as no item match
+            }
           }
           if (meta && typeof meta === "object") {
             const metaObj = meta as Record<string, any>;
@@ -140,7 +144,9 @@ export const vaultAdminItemsRouter = createTRPCRouter({
           if (typeof meta === "string") {
             try {
               meta = JSON.parse(meta);
-            } catch {}
+            } catch {
+              // non-JSON metadata — treated as no item match
+            }
           }
           return meta && typeof meta === "object" && (meta as any).itemId === input.itemId;
         });
@@ -195,7 +201,9 @@ export const vaultAdminItemsRouter = createTRPCRouter({
           if (typeof meta === "string") {
             try {
               meta = JSON.parse(meta);
-            } catch {}
+            } catch {
+              // non-JSON metadata — treated as no item match
+            }
           }
           if (meta && typeof meta === "object" && (meta as any).itemId === input.itemId) {
             toDeleteIds.push(tx.id);
@@ -268,7 +276,9 @@ export const vaultAdminItemsRouter = createTRPCRouter({
           if (typeof meta === "string") {
             try {
               meta = JSON.parse(meta);
-            } catch {}
+            } catch {
+              // non-JSON metadata — treated as no item match
+            }
           }
           return meta && typeof meta === "object" && (meta as any).itemId === input.itemId;
         });

@@ -98,7 +98,9 @@ export const securityConflictsRouter = createTRPCRouter({
             metadata: { conflictId: conflict.id, initiatorId: userProfile.countryId },
           });
         }
-      } catch {}
+      } catch (err) {
+        console.warn("[Conflicts] Proposal notification failed for conflict", conflict.id, err);
+      }
 
       // Canon news: initiator's feed
       void generateDiplomaticNews(ctx.db as any, conflict.initiatorId, "pvp_conflict_proposed", {
@@ -172,7 +174,13 @@ export const securityConflictsRouter = createTRPCRouter({
               metadata: { conflictId: input.conflictId },
             });
           }
-        } catch {}
+        } catch (err) {
+          console.warn(
+            "[Conflicts] Decline notification failed for conflict",
+            input.conflictId,
+            err
+          );
+        }
 
         return declined;
       }
@@ -209,7 +217,13 @@ export const securityConflictsRouter = createTRPCRouter({
             metadata: { conflictId: input.conflictId },
           });
         }
-      } catch {}
+      } catch (err) {
+        console.warn(
+          "[Conflicts] Acceptance notification failed for conflict",
+          input.conflictId,
+          err
+        );
+      }
 
       // Canon news: defender's feed
       void generateDiplomaticNews(ctx.db as any, accepted.defenderId, "pvp_conflict_accepted", {

@@ -81,7 +81,9 @@ export function useMapEditorSelection({
             if (booleanPointInPolygon(pt, poly)) {
               matchedIds.add(feat.id);
             }
-          } catch {}
+          } catch {
+            // degenerate lasso polygon or feature point — feature left unselected
+          }
         }
       }
       setSelectedIds((prev) => {

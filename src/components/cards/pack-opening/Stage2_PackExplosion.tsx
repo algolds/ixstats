@@ -152,13 +152,13 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
                 initial={{
                   x: 0,
                   y: 0,
-                  scale: 0,
+                  scale: 0.2,
                   opacity: 1,
                 }}
                 animate={{
                   x: `${particle.velocityX * 120}px`,
                   y: `${particle.velocityY * 120}px`,
-                  scale: [0, 1.3, 0.7, 0],
+                  scale: [0.2, 1.3, 0.7, 0],
                   opacity: [1, 0.9, 0.5, 0],
                   rotate: [
                     0,
@@ -221,14 +221,14 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
                   initial={{
                     x: 0,
                     y: 0,
-                    scale: 0,
+                    scale: 0.8,
                     rotate: 0,
                     opacity: 0,
                   }}
                   animate={{
                     x: targetX,
                     y: targetY,
-                    scale: [0, 1.2, 0.8],
+                    scale: [0.8, 1.2, 0.8],
                     rotate: rotation,
                     opacity: [0, 1, 0.8],
                   }}
@@ -312,9 +312,9 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
               borderColor: primaryColor,
               boxShadow: `0 0 30px ${primaryColor}, inset 0 0 20px ${primaryColor}40`,
             }}
-            initial={{ scale: 0, opacity: 1 }}
+            initial={{ scale: 0.2, opacity: 1 }}
             animate={{
-              scale: [0, 4, 6],
+              scale: [0.2, 4, 6],
               opacity: [1, 0.6, 0],
             }}
             transition={{
@@ -331,9 +331,9 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
               height: "60px",
               boxShadow: "0 0 40px rgba(255,255,255,0.8)",
             }}
-            initial={{ scale: 0, opacity: 0.8 }}
+            initial={{ scale: 0.2, opacity: 0.8 }}
             animate={{
-              scale: [0, 3, 5],
+              scale: [0.2, 3, 5],
               opacity: [0.8, 0.4, 0],
             }}
             transition={{
@@ -364,14 +364,14 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
                   initial={{
                     x: 0,
                     y: 0,
-                    scale: 0,
+                    scale: 0.2,
                     opacity: 1,
                     rotate: angle * (180 / Math.PI),
                   }}
                   animate={{
                     x,
                     y,
-                    scale: [0, 1.5, 0],
+                    scale: [0.2, 1.5, 0],
                     opacity: [1, 0.8, 0],
                     rotate: angle * (180 / Math.PI) + 360,
                   }}

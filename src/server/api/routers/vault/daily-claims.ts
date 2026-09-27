@@ -45,7 +45,9 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
           priority: "low",
           metadata: { bonus: result.bonus, streak: result.streak },
         });
-      } catch {}
+      } catch (err) {
+        console.warn("[Vault Router] Daily bonus notification failed:", err);
+      }
 
       return {
         success: true,
@@ -109,7 +111,9 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
               streak: result.streak,
             },
           });
-        } catch {}
+        } catch (err) {
+          console.warn("[Vault Router] Daily claim notification failed:", err);
+        }
 
         return result;
       } catch (error) {

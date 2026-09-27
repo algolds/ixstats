@@ -1,13 +1,3 @@
-/* Marquee animations - optimized for performance */
-@keyframes marqueeY {
-  from {
-    transform: translate3d(0, 0%, 0);
-  }
-  to {
-    transform: translate3d(0, -100%, 0);
-  }
-}
-
 /* Dynamic Island flash animation for new notifications */
 @keyframes flash-notification {
   0%, 100% {

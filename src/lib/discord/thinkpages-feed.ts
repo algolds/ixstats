@@ -74,7 +74,7 @@ export function cleanPostContent(content: string): string {
 }
 
 /** Map a raw DB config row into the parsed filter config. */
-export function toFilterConfig(row: {
+function toFilterConfig(row: {
   enabled: boolean;
   channelId: string;
   includeGovernment: boolean;
@@ -117,7 +117,7 @@ export interface FilterVerdict {
  * Pure filter evaluation — decides whether a post should be mirrored.
  * Precedence: blocklists win → account allowlist force-includes → standard filters.
  */
-export function evaluateFeedFilter(
+function evaluateFeedFilter(
   config: FeedFilterConfig,
   post: FeedPostLike,
   account: FeedAccountLike
@@ -281,35 +281,5 @@ export async function mirrorThinkPagesPostToDiscordFeed(
   } catch (error) {
     console.error("[ThinkPagesFeed] Mirror error:", error);
     return { mirrored: false, reason: "Internal error" };
-  }
-}
-
-/** Post a plain test message to a channel — used by the admin "Send test" button. */
-export async function sendThinkPagesFeedTestMessage(
-  channelId: string
-): Promise<{ ok: boolean; error?: string }> {
-  if (!DISCORD_BOT_TOKEN) return { ok: false, error: "DISCORD_BOT_TOKEN not set on the server" };
-  if (!channelId) return { ok: false, error: "No channel ID configured" };
-  try {
-    const res = await fetch(`${DISCORD_API_BASE}/channels/${channelId}/messages`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-        "Content-Type": "application/json",
-        "User-Agent": "IxStats/1.0 (https://ixwiki.com; contact: admin@ixwiki.com)",
-      },
-      body: JSON.stringify({
-        content:
-          "✅ **ThinkPages → Discord feed** test message from IxStats admin. If you can see this, the channel ID and bot token are configured correctly and posts will mirror here.",
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      return { ok: false, error: `Discord ${res.status} ${res.statusText} ${text}`.slice(0, 300) };
-    }
-    return { ok: true };
-  } catch (error) {
-    return { ok: false, error: String(error) };
   }
 }

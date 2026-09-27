@@ -11,6 +11,7 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useSportsFocus } from "./SportsFocusProvider";
+import { AthleteCareerHistory } from "./AthleteCareerHistory";
 import { getSportTheme } from "~/lib/sports/theming";
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
 import { withBasePath } from "~/lib/base-path";
@@ -330,6 +331,8 @@ function AthleteFocusContent({
           </div>
         </div>
       )}
+
+      <AthleteCareerHistory athleteId={athlete.id} />
     </div>
   );
 }

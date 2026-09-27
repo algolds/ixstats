@@ -95,5 +95,4 @@ Every realm renders 7 standardized vector topology layers generated from UPG v2:
 ```
 
 1. **Catmull-Rom Spline Subdivision**: All GeoJSON layers apply 4-pass Catmull-Rom smoothing ($\tau = 0.5$) along shared vertex topology to eliminate Voronoi polygon angularity.
-2. **Coordinate Truncation (`src/lib/geojson-compress.ts`)**: Truncates output coordinates to 6 decimal places ($\sim 0.11\text{m}$ precision), reducing network transfer payloads by 30–50%.
-3. **Web Worker Offloading (`src/hooks/useGeoWorker.ts`)**: Bounding-box culling and area threshold filtering run in Web Workers during rapid zoom.
+2. **Coordinate Truncation (`src/lib/maps/geojson-compress.ts`)**: Truncates output coordinates to 6 decimal places ($\sim 0.11\text{m}$ precision), reducing network transfer payloads by 30–50%.

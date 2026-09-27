@@ -1,14 +1,13 @@
 /**
- * parsoid.ts — WikiOS Native In-Process Wikitext & HTML Converter Adapter
+ * parsoid.ts — WikiOS article HTML rendering and wikitext preview.
  *
- * Provides 100% local, in-process bidirectional HTML <-> wikitext transformation
- * and native PostgreSQL article rendering with zero external network or PHP dependencies.
+ * Renders from PostgreSQL through the in-process wikitext compiler, falling back to
+ * MediaWiki `action=parse` for the Main Page, cached HTML missing its infobox, and
+ * previews (so templates, parser functions and Lua modules expand).
  */
 
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
-import { parse } from "~/lib/wiki-os/wikitext/parser";
-import { astToWikitext } from "~/lib/wiki-os/wikitext/serializer";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { saveArticleHtmlShadow } from "./article-store";
 
@@ -25,14 +24,6 @@ export interface ParsoidArticle {
   isRedirect: boolean;
   /** Redirect target if applicable */
   redirectTarget: string | null;
-}
-
-export interface ParsoidTransformResult {
-  wikitext: string;
-}
-
-export function invalidateCache(_title: string): void {
-  // No-op for in-process compiler
 }
 
 /**
@@ -126,30 +117,11 @@ export async function getArticleHtml(title: string): Promise<ParsoidArticle> {
 }
 
 /**
- * Alias for getArticleHtml (native in-process).
- */
-export const getArticleHtmlViaParsoid = getArticleHtml;
-export const getArticleHtmlViaActionApi = getArticleHtml;
-
-/**
- * Convert HTML or wikitext back to canonical wikitext using the native AST engine.
- */
-export async function htmlToWikitext(html: string, title: string): Promise<ParsoidTransformResult> {
-  const { ast } = parse(html, { title });
-  const wikitext = astToWikitext(ast);
-  return { wikitext: wikitext || html };
-}
-
-/**
  * Convert wikitext to HTML with 100% MediaWiki compliancy.
  * Queries MediaWiki Action API action=parse to expand all templates, parser functions (#if, #switch),
  * Lua Scribunto modules, and wikitables. Falls back gracefully to native AST compiler.
  */
-export async function wikitextToHtml(
-  wikitext: string,
-  title = "Preview",
-  options?: { preserveUnknownTemplates?: boolean }
-): Promise<string> {
+export async function wikitextToHtml(wikitext: string, title = "Preview"): Promise<string> {
   if (!wikitext || !wikitext.trim()) return "";
   const cleanTitle = title.replace(/^Template:/i, "").trim() || "Preview";
 
@@ -187,8 +159,6 @@ export async function wikitextToHtml(
     // Network unavailable or offline: fall back to local in-process compiler
   }
 
-  return parseWikitextToHtml(wikitext, "ixwiki", {
-    preserveUnknownTemplates: options?.preserveUnknownTemplates ?? false,
-  });
+  return parseWikitextToHtml(wikitext, "ixwiki");
 }
 

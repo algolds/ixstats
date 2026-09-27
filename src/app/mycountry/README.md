@@ -42,29 +42,28 @@ The MyCountry subsystem uses a **4-tier modular domain architecture** located at
 
 Directive primitives under `shared/primitives/composer/` provide preset catalogs, tuning controls, and diff previews.
 
-Key hooks (in `src/hooks/`): `useMyCountryCompliance`, `useMyCountryNotifications`, `useNationalIssuesToast`, `usePremium`, `useUserCountry`.
+Key hooks (in `src/hooks/`): `useMyCountryCompliance`, `useMyCountryMetrics`, `useNationalIssues`, `useNationalIssuesToast`, `usePremium`, `useUserCountry`.
 
 ## Data Sources
 
-Verified `api.*` calls used by this route:
+Verified `api.*` calls used by this route (`src/app/mycountry`, `src/components/mycountry`, and the key hooks):
 
-- **Country / economy:** `api.countries.getByIdWithEconomicData`, `getActivityRingsData`, `getLoreScore`, `getWikiSections`
-- **Overview / canon:** `api.mycountry.getComplianceSummary`, `getNewsFeed`, `getCanonFeed`; `api.notifications.getCountryAlerts`
-- **Executive:** `api.nationalIssues.getMyIssues` / `respond` / `dismiss`, `api.meetings.getMeetings`, `api.policies.getPolicies`, `api.quickActions.getMeetings` / `getPolicies`, `api.crisisEvents.getActive`, `api.scheduledChanges.getPendingChanges`
-- **Diplomacy:** `api.diplomaticEmbassies.getEmbassies`, `api.diplomaticCore.getRelationships` / `getRecentChanges`, `api.diplomaticPolicies.getActiveForeignPolicies`, `api.diplomaticScenarios.getAllScenarios` / `recordChoice`, `api.diplomaticIntelligence.getIntelligenceBriefing`
-- **Intelligence:** `api.intelligence.getExecutiveDashboard`, `api.unifiedIntelligence.getCommandView` / `getModules`, `api.intelCore.getOverview` / `getKeyFindings`, `api.intelAlerts.getAlertThresholds` / `updateAlertThreshold` / `deleteAlertThreshold`
-- **Defense:** `api.security.getDefenseOverview` / `getSecurityAssessment` / `getThreatStatus` / `getMilitaryBranches`
-- **Politics:** `api.elections.getElections` / `getCurrentParliament` / `getLegislature` / `getParties` / `simulateElection`
-- **Government:** `api.government.getComponents` / `getCivilServiceStatus`
+- **Country / economy:** `api.countries.getByIdWithEconomicData` / `getByIdBasic` / `getByIdAtTime` / `getActivityRingsData` / `getAll`, `api.economics.getEconomyConfiguration` / `updateFiscalSystem`, `api.taxSystem.getByCountryId`, `api.wikiCache.getCountryProfile`, `api.transport.getNationalMobilityProfile`
+- **Overview / canon:** `api.mycountry.getCountryDashboard` / `getCanonFeed`, `api.achievements.getRecentByCountry`, `api.thinkpages.createPost`
+- **Executive:** `api.nationalIssues.getMyIssues` / `getIssue` / `respond` / `dismiss` / `commissionRecon` / `getReconReveal`, `api.intent.*` (suggest, commit, tree, status, linked issues, summation draft), `api.quickActions.createMeeting`
+- **Diplomacy:** `api.diplomaticCore.*` (relationships, shared data, follow, goals), `api.diplomaticEmbassies.*` (establish, close, reopen, delete, profile, cost), `api.diplomaticPolicies.*` (foreign policies, alliances), `api.diplomaticCultural.*` (cultural exchanges), `api.diplomaticScenarios.getAllScenarios` / `recordChoice`
+- **Defense:** `api.security.getSecurityAssessment` / `getMilitaryBranches` / `getBorderSecurity` / `getConflicts` / `getOperations`, plus the military-asset, operation and conflict mutations
+- **Politics:** `api.elections.getElections` / `getCurrentParliament` / `getLegislature` / `getParties`
+- **Government:** `api.government.getByCountryId` / `getFullByCountryId` / `getCivilServiceStatus`, `api.autosaveHistory.getAutosaveHistory` / `getAutosaveStats`
 - **Vault / budget:** `api.vault.getBalance` / `getBudgetMultiplier` / `getTodayEarnings` / `calculatePassiveIncome`
-- **Map editor:** `api.countryGeo.*` (geo bundle, compliance, subdivisions, cities, wiki populate, rollup), `api.geoCore.getCountryGeoProfile`, `api.geoFeatures.update*`, `api.cardImages.*`
-- **System:** `api.system.getCurrentIxTime`, `api.users.getProfile`, `api.admin.getNavigationSettings`, `api.wiki.getSectionContent`
+- **Map editor:** `api.countryGeo.*` (geo bundle, compliance, subdivisions, cities, wiki populate, rollup), `api.geoCore.getCountryGeoProfile`, `api.geoFeatures.update`, `api.cardImages.*`
+- **System:** `api.system.getCurrentIxTime`, `api.users.getProfile` / `getMembershipStatus`, `api.admin.getNavigationSettings`, `api.wikios.getSectionContent`
 
 ## Connections to Other Systems
 
 - **Builder** — `/mycountry/editor` mounts `BuilderRouter`; redirects to `/builder` if the user has no country.
 - **Maps / IxWorld** — map-editor section and `countryGeo`/`geoCore`/`geoFeatures` routers tie nation territory to the geo system.
-- **ThinkPages / canon** — `getNewsFeed` and `getCanonFeed` surface narrative output on the overview.
+- **ThinkPages / canon** — `getCanonFeed` surfaces narrative output on the overview.
 - **Vault** — budget multipliers and passive income feed executive economics.
 - **Dynamic Island** — `MyCountryDIPlugin` registers in the layout; national-issue alerts pushed via `useNationalIssuesToast`.
 

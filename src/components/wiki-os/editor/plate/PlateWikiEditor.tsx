@@ -526,7 +526,9 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
             }
           }
         }
-      } catch {}
+      } catch (err) {
+        console.warn("[PlateWikiEditor] Table keyboard navigation failed:", err);
+      }
 
       // ── 2. List Item Navigation & Exit ──
       try {
@@ -618,7 +620,9 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
             }
           }
         }
-      } catch {}
+      } catch (err) {
+        console.warn("[PlateWikiEditor] List keyboard navigation failed:", err);
+      }
     },
     [editor, onKeyDownExtra, slash]
   );

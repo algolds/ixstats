@@ -106,7 +106,9 @@ export function MidRibbonPassportDocument({
       await navigator.clipboard.writeText(`@${cleanUsername}`);
       setCopiedHandle(true);
       setTimeout(() => setCopiedHandle(false), 2000);
-    } catch {}
+    } catch {
+      // clipboard unavailable (permission denied / insecure context) — nothing copied
+    }
   }, [cleanUsername]);
 
   const handleShareLink = useCallback(async () => {
@@ -118,7 +120,9 @@ export function MidRibbonPassportDocument({
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
-    } catch {}
+    } catch {
+      // clipboard unavailable (permission denied / insecure context) — nothing copied
+    }
   }, [cleanUsername]);
 
   const realmName = featuredRealm?.name || "IxEarth";

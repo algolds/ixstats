@@ -387,17 +387,3 @@ export async function getArticleAuthors(
     totalContributors: 0,
   };
 }
-
-/**
- * Invalidate shadow cache on write / edit (No-op: PostgreSQL is authoritative and atomic).
- */
-export function invalidateArticleShadow(_title: string, _source: WikiSource = "ixwiki"): void {
-  // No-op
-}
-
-export function batchInvalidateArticleShadow(
-  _titles: string[],
-  _source: WikiSource = "ixwiki"
-): void {
-  // No-op
-}

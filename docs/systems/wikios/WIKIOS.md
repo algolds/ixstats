@@ -162,8 +162,6 @@ WikiOS Margin replaces standalone talk pages with an inspector docked to the rea
 | Collections | Up to 25 color-coded, named collections |
 | One-click stash | Stash button on every article and inside Margin drawer |
 | Annotations | Text highlights on saved articles with color tags and comments |
-| Notes | Text notes attached to saved articles |
-| Organization | Drag and move items across collections |
 
 ### Lorewards (Contribution scoring)
 
@@ -190,14 +188,35 @@ WikiOS Margin replaces standalone talk pages with an inspector docked to the rea
 
 ### WikiOS router (`src/server/api/routers/wikios/`)
 
-**Reader:**
-`getArticleHtml`, `getWikitext`, `getEditorHtml`, `getIntroResolved`, `getSections`, `search`, `getRecentChanges`, `getRandomPage`, `getSiteStats`, `getHistory`, `getDiff`, `getRevisionContent`, `getBacklinks`, `getCategoryMembers`, `getUserContribs`, `getUserInfo`
+**Page content** (`page-content.ts`):
+`getArticleHtml`, `getWikitext`, `getIntro`, `getInfobox`, `getSectionContent`, `getPageImages`, `getArticleThumbnails`, `getArticleAuthors`, `checkPageExists`, `getMissingPages`, `resolveWikiPlaceholders`, `getForumThreadPreview`, `downloadFile`
 
-**Editor:**
-`previewWikitext`, `htmlToWikitext`, `saveArticle`, `saveWikitext`, `revertToRevision`, `rollback`
+**History** (`history-diff.ts`):
+`getHistory`, `getDiff`, `getRevisionContent`
 
-**Templates:**
-`searchTemplates`, `getTemplateData`, `getTemplatePreview`, `syncTemplates`
+**Search** (`search.ts`):
+`search`, `searchArticles`, `searchPages`, `searchFiles`, `searchBusinesses`, `advancedSearch`, `getRecentChanges`, `getRandomPage`, `getSiteStats`
 
-**Stash:**
-`getStashes`, `createStash`, `updateStash`, `deleteStash`, `reorderStashes`, `stashPage`, `unstashPage`, `isStashed`, `getStashItems`, `moveItem`, `updateItemNote`, `addAnnotation`, `updateAnnotation`, `deleteAnnotation`, `getAnnotations`
+**Categories** (`categories.ts`):
+`getCategories`, `getCategoryMembers`, `getCategoryTotalCounts`, `getParentCategories`, `getSubcategories`, `searchCategories`, `autocompleteCategories`
+
+**Editor** (`editing.ts`):
+`previewWikitext`, `saveWikitext`, `uploadFile`, `revertToRevision`, `rollback`, `restoreArticle`
+
+**Templates** (`templates.ts`):
+`searchTemplates`, `getTemplateData`, `getTemplatePreview`
+
+**Stash** (`stash.ts`):
+`getStashes`, `createStash`, `updateStash`, `deleteStash`, `stashPage`, `unstashPage`, `isStashed`, `getStashItems`
+
+**Watchlist and annotations** (`watchlist-annotations.ts`):
+`getWatchlist`, `getWatchlistFeed`, `isPageWatched`, `watchPage`, `unwatchPage`, `markAllWatchedVisited`, `addAnnotation`, `deleteAnnotation`, `getAnnotations`
+
+**Users** (`user-talk.ts`):
+`getUserInfo`, `getUserContribs`, `getAuthorProfile`, `getBacklinks`
+
+**Discussions** (`discussions.ts`):
+`getArticleMarginData`, `createThread`, `postComment`, `resolveThread`, `deleteThread`
+
+**Maintenance** (`utilities.ts`):
+`getOrphanArticles`, `getDeadEndArticles`, `getBrokenRedirects`, `getLongestArticles`, `getShortestArticles`, `getArchivedArticles`, `getAuditLogs`, `getHealthTelemetry`

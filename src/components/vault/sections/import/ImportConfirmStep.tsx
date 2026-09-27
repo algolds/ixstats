@@ -103,7 +103,7 @@ export function ImportCompleteStep({
           <motion.div
             className="absolute inset-0 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 blur-3xl"
             initial={{ scale: 0.96, opacity: 0 }}
-            animate={{ scale: [0, 2, 1.5], opacity: [0, 0.8, 0.4] }}
+            animate={{ scale: [0.96, 2, 1.5], opacity: [0, 0.8, 0.4] }}
             transition={{ duration: 0.8 }}
           />
           {[...Array(6)].map((_, i) => (
@@ -115,15 +115,15 @@ export function ImportCompleteStep({
                 x: Math.cos((i / 6) * Math.PI * 2) * 50,
                 y: Math.sin((i / 6) * Math.PI * 2) * 50,
                 opacity: [0, 1, 0],
-                scale: [0, 1.5, 0],
+                scale: [0.2, 1.5, 0],
               }}
               transition={{ duration: 0.8, delay: 0.2 + i * 0.05 }}
               style={{ left: "50%", top: "50%" }}
             />
           ))}
           <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
+            initial={{ scale: 0.8, opacity: 0, rotate: -180 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
             className="relative flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20 ring-2 ring-green-400/30"
           >

@@ -1,8 +1,4 @@
-import {
-  formatCanonContext,
-  canonContextHash,
-  type CanonContext,
-} from "~/lib/narrator/canon-context";
+import { formatCanonContext, type CanonContext } from "~/lib/narrator/canon-context";
 
 const base: CanonContext = {
   nation: { name: "Almadaria", leader: "Emperor Castos", governmentType: "Absolute Monarchy" },
@@ -34,11 +30,5 @@ describe("canon-context", () => {
     expect(out).not.toContain("Leader:");
     expect(out).not.toContain("Key relationships:");
     expect(out).not.toContain("Canonical source:");
-  });
-
-  it("hash is stable for same canon and changes when canon changes", () => {
-    expect(canonContextHash(base)).toBe(canonContextHash({ ...base }));
-    const changed = { ...base, state: { approval: 10, stability: 80 } };
-    expect(canonContextHash(changed)).not.toBe(canonContextHash(base));
   });
 });

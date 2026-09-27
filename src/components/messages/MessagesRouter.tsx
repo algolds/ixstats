@@ -116,7 +116,9 @@ function MessagesRouterInner() {
         : [...prev, conversationId];
       try {
         localStorage.setItem("ixstats:messages:muted", JSON.stringify(next));
-      } catch {}
+      } catch {
+        // storage unavailable (private mode) — preference is not persisted
+      }
       return next;
     });
   }, []);
@@ -128,7 +130,9 @@ function MessagesRouterInner() {
         : [...prev, conversationId];
       try {
         localStorage.setItem("ixstats:messages:archived", JSON.stringify(next));
-      } catch {}
+      } catch {
+        // storage unavailable (private mode) — preference is not persisted
+      }
       return next;
     });
     // Deselect active conversation if archived
@@ -266,7 +270,9 @@ function MessagesRouterInner() {
               const next = prev.filter((id) => id !== data.conversationId);
               try {
                 localStorage.setItem("ixstats:messages:archived", JSON.stringify(next));
-              } catch {}
+              } catch {
+                // storage unavailable (private mode) — preference is not persisted
+              }
               return next;
             });
           }

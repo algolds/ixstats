@@ -5,8 +5,69 @@
  */
 
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+
+/** Season awards written by transition.ts, keyed by SportSeasonRecord.recordType. */
+const PLAYER_AWARD_LABELS: Record<string, string> = {
+  top_scorer: "Top Scorer",
+  most_assists: "Most Assists",
+  mvp: "MVP",
+};
+
+function statCount(stats: Prisma.JsonValue | null, key: "goals" | "assists"): number {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return 0;
+  const value = stats[key];
+  return typeof value === "number" ? value : 0;
+}
+
+interface CareerSeason {
+  seasonId: string;
+  seasonNumber: number;
+  matches: number;
+  goals: number;
+  assists: number;
+  awards: string[];
+}
+
+function buildCareerLog(
+  matchStats: Array<{
+    stats: Prisma.JsonValue | null;
+    match: { seasonId: string; season: { seasonNumber: number } };
+  }>,
+  awards: Array<{ seasonId: string; recordType: string }>
+) {
+  const bySeason = new Map<string, CareerSeason>();
+  for (const { stats, match } of matchStats) {
+    const row = bySeason.get(match.seasonId) ?? {
+      seasonId: match.seasonId,
+      seasonNumber: match.season.seasonNumber,
+      matches: 0,
+      goals: 0,
+      assists: 0,
+      awards: [],
+    };
+    row.matches++;
+    row.goals += statCount(stats, "goals");
+    row.assists += statCount(stats, "assists");
+    bySeason.set(match.seasonId, row);
+  }
+  for (const award of awards) {
+    bySeason.get(award.seasonId)?.awards.push(PLAYER_AWARD_LABELS[award.recordType] ?? award.recordType);
+  }
+
+  const seasons = Array.from(bySeason.values()).sort((a, b) => b.seasonNumber - a.seasonNumber);
+  const totals = seasons.reduce(
+    (acc, s) => ({
+      matches: acc.matches + s.matches,
+      goals: acc.goals + s.goals,
+      assists: acc.assists + s.assists,
+    }),
+    { matches: 0, goals: 0, assists: 0 }
+  );
+  return { seasons, totals };
+}
 
 export const sportsAlmanacRouter = createTRPCRouter({
   /**
@@ -119,6 +180,32 @@ export const sportsAlmanacRouter = createTRPCRouter({
           message: "Failed to load league archive",
         });
       }
+    }),
+
+  /**
+   * Season-by-season career log for an athlete (SportsFocusPanel career section).
+   * `matches` counts the matches where the athlete has a stat line (a shot, goal or assist).
+   */
+  getAthleteCareerHistory: publicProcedure
+    .input(z.object({ athleteId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const [matchStats, awards] = await Promise.all([
+        ctx.db.sportMatchStat.findMany({
+          where: { playerId: input.athleteId },
+          select: {
+            stats: true,
+            match: { select: { seasonId: true, season: { select: { seasonNumber: true } } } },
+          },
+        }),
+        ctx.db.sportSeasonRecord.findMany({
+          where: {
+            holderId: input.athleteId,
+            recordType: { in: Object.keys(PLAYER_AWARD_LABELS) },
+          },
+          select: { seasonId: true, recordType: true },
+        }),
+      ]);
+      return buildCareerLog(matchStats, awards);
     }),
 
   /**

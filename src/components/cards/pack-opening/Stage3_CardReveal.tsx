@@ -122,8 +122,8 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
             {/* Radial burst */}
             <motion.div
               className="pointer-events-none absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-yellow-400/30 via-orange-400/30 to-red-400/30"
-              initial={{ scale: 0, opacity: 1 }}
-              animate={{ scale: [0, 2, 3], opacity: [1, 0.5, 0] }}
+              initial={{ scale: 0.2, opacity: 1 }}
+              animate={{ scale: [0.2, 2, 3], opacity: [1, 0.5, 0] }}
               transition={{ duration: 1.2, ease: "easeOut" }}
             />
             {/* Celebration particles */}
@@ -148,11 +148,11 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
                     backgroundColor: color,
                     boxShadow: `0 0 ${size * 2}px ${color}`,
                   }}
-                  initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+                  initial={{ x: 0, y: 0, scale: 0.2, opacity: 1 }}
                   animate={{
                     x,
                     y,
-                    scale: [0, 1.5, 0],
+                    scale: [0.2, 1.5, 0],
                     opacity: [1, 0.8, 0],
                     rotate: [0, 360],
                   }}
@@ -222,9 +222,9 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
     return (
       <motion.div
         ref={cardRef}
-        initial={{ scale: 0, opacity: 0, y: 50 }}
+        initial={{ scale: 0.8, opacity: 0, y: 50 }}
         animate={{
-          scale: isRevealed ? 1 : 0,
+          scale: isRevealed ? 1 : 0.8,
           opacity: isRevealed ? 1 : 0,
           y: isRevealed ? 0 : 50,
         }}
@@ -362,7 +362,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
                             animate={{
                               x: [0, x, x * 1.2, x],
                               y: [0, y, y * 1.2, y],
-                              scale: [0, 1, 1.5, 1],
+                              scale: [0.2, 1, 1.5, 1],
                               opacity: [0, 1, 0.5, 0.8],
                             }}
                             transition={{

@@ -23,12 +23,16 @@ const mockDb = {
   },
 };
 
+// Getter, not `db: mockDb`: the hoisted factory runs before `mockDb` is initialised.
 jest.mock("~/server/db", () => ({
   __esModule: true,
-  db: mockDb,
+  get db() {
+    return mockDb;
+  },
 }));
 
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+// `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
+import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { heraldryRouter } from "~/server/api/routers/heraldry";
 import { db } from "~/server/db";

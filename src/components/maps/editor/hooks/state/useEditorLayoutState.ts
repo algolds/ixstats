@@ -30,7 +30,9 @@ export function useEditorLayoutState({
           if (parsed && parsed.panelA && parsed.panelB) {
             return parsed;
           }
-        } catch (_) {}
+        } catch {
+          // corrupt stored layout — defaults apply
+        }
       }
     }
     return {

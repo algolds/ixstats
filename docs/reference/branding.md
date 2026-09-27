@@ -476,7 +476,7 @@ The platform's design system — a glass / refraction / depth visual language us
 
 ### 6.2 Notifications
 
-Global notification center. Components: `GlobalNotificationSystem`, `LiveDataIntegration`, `NotificationBadgeProvider`, `UnifiedNotificationCenter`. tRPC: `notifications.ts`.
+Global notification center, shown in Halo (`src/components/halo/views/NotificationsView.tsx`). The unread count in the tab title comes from `useNotificationBadge` (`src/hooks/useLiveNotifications.ts`). tRPC: `notifications/` (`user`, `events`, `preferences`).
 
 ### 6.3 Help System
 

@@ -635,13 +635,13 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
       mockPrisma.sportMatch.updateMany = jest.fn<any>().mockResolvedValue({ count: 1 });
       mockPrisma.sportMatch.findUnique = jest.fn<any>().mockResolvedValue({ matchStats: {} });
       mockPrisma.sportMatchStat = {
-        create: jest.fn<any>().mockResolvedValue({}),
+        createMany: jest.fn<any>().mockResolvedValue({ count: 0 }),
       };
       mockPrisma.storytellerEffect = {
         findMany: jest.fn<any>().mockResolvedValue([]),
       };
       mockPrisma.sportTeamSeason.updateMany = jest.fn<any>().mockResolvedValue({ count: 1 });
-      mockPrisma.sportStanding.updateMany = jest.fn<any>().mockResolvedValue({ count: 1 });
+      mockPrisma.sportStanding.upsert = jest.fn<any>().mockResolvedValue({});
 
       await caller.simulateMatchDay({
         seasonId: "season_123",

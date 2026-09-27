@@ -33,7 +33,9 @@ export function HaloTourTooltip() {
     try {
       const hasCompleted = localStorage.getItem("ixstats:halo-tour-completed") === "true";
       setTourState((prev) => ({ ...prev, completed: hasCompleted }));
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — tour treated as not completed
+    }
 
     const handleStepChange = (e: Event) => {
       const customEvent = e as CustomEvent<{ step: number; active: boolean }>;

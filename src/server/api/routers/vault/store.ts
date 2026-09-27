@@ -95,7 +95,9 @@ export const vaultStoreRouter = createTRPCRouter({
         if (typeof meta === "string") {
           try {
             meta = JSON.parse(meta);
-          } catch {}
+          } catch {
+            // non-JSON metadata — treated as no item match
+          }
         }
         if (meta && typeof meta === "object") {
           const metaObj = meta as Record<string, any>;
@@ -192,7 +194,9 @@ export const vaultStoreRouter = createTRPCRouter({
           if (typeof meta === "string") {
             try {
               meta = JSON.parse(meta);
-            } catch {}
+            } catch {
+              // non-JSON metadata — treated as no item match
+            }
           }
           return meta && typeof meta === "object" && (meta as any).itemId === input.itemId;
         });

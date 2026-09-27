@@ -76,8 +76,8 @@ function ChartSkeleton({ height = 300, type = "bar" }: ChartSkeletonProps) {
                 hsl(var(--color-error-hsl)) 280deg 360deg
               )`,
             }}
-            initial={{ scale: 0, rotate: 0 }}
-            animate={{ scale: 1, rotate: 360 }}
+            initial={{ scale: 0.8, opacity: 0, rotate: 0 }}
+            animate={{ scale: 1, opacity: 1, rotate: 360 }}
             transition={{ duration: 1, ease: "easeOut" }}
           />
         );

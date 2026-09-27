@@ -104,7 +104,9 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
         setSelectedGroupId(lastGroupId);
         return;
       }
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — fall back to the default group
+    }
 
     // 2. Prioritize most recent group user is a member of
     const myGroups = groups.filter(
@@ -132,7 +134,9 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
           `ix_thinktanks_last_selected_${currentUserId || "guest"}`,
           selectedGroupId
         );
-      } catch {}
+      } catch {
+        // storage unavailable (private mode) — preference is not persisted
+      }
     }
   }, [selectedGroupId, currentUserId]);
 

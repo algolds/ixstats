@@ -9,7 +9,7 @@ import { z } from "zod";
 import { protectedProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache, globalCache } from "~/lib/cache";
-import { clearLayerCache, invalidateCatalogCache } from "~/server/shared/layer-cache";
+import { clearLayerCache } from "~/server/shared/layer-cache";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import {
   countryEconomicInputsSchema,
@@ -265,7 +265,6 @@ export const managementUpdateProcedures = {
 
         await invalidateCache(["countries."]);
         clearLayerCache("political");
-        invalidateCatalogCache(`gov-components:${input.id}`);
         globalCache.delete(`user_profile:${userId}`);
 
         return result;

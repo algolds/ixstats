@@ -334,7 +334,9 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       let options: ResponseOptionTemplate[] = [];
       try {
         options = JSON.parse(issue.responseOptions);
-      } catch {}
+      } catch (err) {
+        console.warn("[NationalIssues] Malformed responseOptions on issue", input.issueId, err);
+      }
 
       const reconInput = {
         componentTypes: cx.componentTypes,
@@ -384,7 +386,9 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       let options: any[] = [];
       try {
         options = JSON.parse(issue.responseOptions);
-      } catch {}
+      } catch (err) {
+        console.warn("[NationalIssues] Malformed responseOptions on issue", input.issueId, err);
+      }
 
       const option = options.find((o: any) => o.id === input.optionId);
       if (option && option.requiredPolicyKey) {

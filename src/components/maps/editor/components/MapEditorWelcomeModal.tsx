@@ -131,7 +131,9 @@ export function MapEditorWelcomeModal({
         const timer = setTimeout(() => setShow(true), 500);
         return () => clearTimeout(timer);
       }
-    } catch (_) {}
+    } catch {
+      // storage unavailable (private mode) — welcome modal not shown
+    }
     return;
   }, [forceShow]);
 
@@ -140,7 +142,9 @@ export function MapEditorWelcomeModal({
     onClose?.();
     try {
       localStorage.setItem(STORAGE_KEY, MAP_EDITOR_WELCOME_VERSION);
-    } catch (_) {}
+    } catch {
+      // storage unavailable (private mode) — preference is not persisted
+    }
   }, [onClose]);
 
   const totalPages = 3; // Tips, Shortcuts, Changelog

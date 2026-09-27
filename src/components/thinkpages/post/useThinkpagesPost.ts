@@ -27,7 +27,9 @@ export function parseBlurbMeta(post: {
   } else if (typeof post.hashtags === "string") {
     try {
       hashtags = JSON.parse(post.hashtags);
-    } catch {}
+    } catch {
+      // malformed hashtags JSON — show no hashtags
+    }
   }
 
   if (!hashtags.includes("blurb")) {

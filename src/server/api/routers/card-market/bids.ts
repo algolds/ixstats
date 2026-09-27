@@ -86,7 +86,13 @@ export const cardMarketBidsRouter = createTRPCRouter({
               metadata: { auctionId: input.auctionId, amount: input.amount },
             });
           }
-        } catch {}
+        } catch (err) {
+          console.warn(
+            "[Card Market Router] New-bid notification failed for auction",
+            input.auctionId,
+            err
+          );
+        }
 
         await Promise.all([
           globalCache.delete(`user_vault_balance:${ctx.user.id}`),

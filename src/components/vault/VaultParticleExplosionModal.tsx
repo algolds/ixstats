@@ -55,7 +55,7 @@ export function VaultParticleExplosionModal({
               <motion.div
                 key={p.id}
                 className="absolute flex h-6 w-6 items-center justify-center rounded-full border border-amber-300 bg-gradient-to-br from-amber-400 to-yellow-500 p-1 text-amber-950 shadow-[0_0_8px_rgba(245,158,11,0.5)] select-none"
-                initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+                initial={{ x: 0, y: 0, scale: 0.2, opacity: 1 }}
                 animate={{
                   x: p.x,
                   y: p.y,

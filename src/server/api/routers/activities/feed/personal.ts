@@ -158,7 +158,9 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
             let metadata: any = {};
             try {
               if (activity.metadata) metadata = JSON.parse(activity.metadata);
-            } catch {}
+            } catch (err) {
+              console.warn("Failed to parse activity metadata:", activity.id, err);
+            }
 
             const country = activity.countryId ? countryMap.get(activity.countryId) : null;
 

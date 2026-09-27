@@ -441,7 +441,13 @@ export class AuctionService {
             priority: "high",
             metadata: { auctionId: params.auctionId, newBid: params.amount },
           });
-        } catch {}
+        } catch (err) {
+          console.warn(
+            "[Auction Service] Outbid notification failed for auction",
+            params.auctionId,
+            err
+          );
+        }
       }
 
       return { success: true };
@@ -916,7 +922,13 @@ export class AuctionService {
               priority: "high",
               metadata: { auctionId, cardInstanceId: auction.cardInstanceId, finalPrice },
             });
-          } catch {}
+          } catch (err) {
+            console.warn(
+              "[Auction Service] Winner notification failed for auction",
+              auctionId,
+              err
+            );
+          }
 
           // Notify seller (fire-and-forget)
           try {
@@ -930,7 +942,13 @@ export class AuctionService {
               priority: "high",
               metadata: { auctionId, buyerId: auction.currentBidderId, finalPrice },
             });
-          } catch {}
+          } catch (err) {
+            console.warn(
+              "[Auction Service] Seller notification failed for auction",
+              auctionId,
+              err
+            );
+          }
         } else {
           // No bids - return card to seller, refund 50% of listing fee
           await tx.cardOwnership.update({
@@ -975,7 +993,13 @@ export class AuctionService {
               priority: "low",
               metadata: { auctionId },
             });
-          } catch {}
+          } catch (err) {
+            console.warn(
+              "[Auction Service] No-bid notification failed for auction",
+              auctionId,
+              err
+            );
+          }
         }
       });
     } catch (error) {

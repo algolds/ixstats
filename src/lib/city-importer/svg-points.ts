@@ -433,7 +433,9 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
               rawPoints.push({ x: sumX / count, y: sumY / count, el });
             }
           }
-        } catch {}
+        } catch {
+          // malformed or unsupported shape in the uploaded SVG — skipped
+        }
       }
       return;
     }
@@ -673,7 +675,9 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
           svgY: ry,
         });
       }
-    } catch {}
+    } catch {
+      // malformed or unsupported shape in the uploaded SVG — skipped
+    }
   }
 
   return {

@@ -16,6 +16,8 @@ import { EditExchangeModal } from "./EditExchangeModal";
 import { ScenarioModal, type ResponseOption, type Scenario } from "./ScenarioModal";
 import { ImpactVisualizationModal } from "./ImpactVisualizationModal";
 import { ArtifactUploadModal } from "./ArtifactUploadModal";
+import type { ArtifactUploadData } from "./ArtifactUploadForm";
+import { uploadImageFile } from "~/lib/media/upload-image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 
 const isExchangeStatus = (value: string): value is keyof typeof STATUS_STYLES =>
@@ -33,6 +35,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showArtifactUpload, setShowArtifactUpload] = useState(false);
+  const [isUploadingArtifactFile, setIsUploadingArtifactFile] = useState(false);
   const [votedExchanges, setVotedExchanges] = useState<Set<string>>(new Set());
   const [showScenarioModal, setShowScenarioModal] = useState(false);
   const [showImpactVisualization, setShowImpactVisualization] = useState(false);
@@ -336,18 +339,34 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
     [votedExchanges, voteExchangeMutation]
   );
 
+  // Store the file via /api/upload/image first, then record the artifact with its URL.
+  // `contributor` is the display attribution; the server derives countryId from the session.
   const handleUploadArtifact = useCallback(
-    // TODO(types): uploadCulturalArtifact requires fileUrl + contributor; the form supplies a File and neither field.
-    (artifactData: any) => {
+    async (artifact: ArtifactUploadData) => {
       if (!selectedExchange) return;
+      setIsUploadingArtifactFile(true);
+      let fileUrl: string;
+      try {
+        fileUrl = await uploadImageFile(artifact.file);
+      } catch (error) {
+        notify.error(
+          `Failed to upload artifact: ${error instanceof Error ? error.message : "Upload failed"}`
+        );
+        return;
+      } finally {
+        setIsUploadingArtifactFile(false);
+      }
       uploadArtifactMutation.mutate({
         exchangeId: selectedExchange.id,
-        countryId: primaryCountry.id,
-        countryName: primaryCountry.name,
-        ...artifactData,
+        type: artifact.type,
+        title: artifact.title,
+        description: artifact.description,
+        fileUrl,
+        thumbnailUrl: fileUrl,
+        contributor: primaryCountry.name,
       });
     },
-    [selectedExchange, primaryCountry, uploadArtifactMutation]
+    [selectedExchange, primaryCountry.name, uploadArtifactMutation, notify]
   );
 
   // Calculate participation metrics
@@ -652,6 +671,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
         onOpenChange={setShowArtifactUpload}
         selectedExchange={selectedExchange}
         onSubmit={handleUploadArtifact}
+        isSubmitting={isUploadingArtifactFile || uploadArtifactMutation.isPending}
       />
     </div>
   );

@@ -1,7 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-
-// Mock env
-jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
+// `~/env` is already replaced by jest-mocks/env.ts via moduleNameMapper; no jest.mock needed.
 
 import { assemblePackages, classifyGoal, weightAcceptance } from "~/lib/intent/assemble";
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";

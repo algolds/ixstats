@@ -21,7 +21,6 @@
  */
 
 import { db } from "~/server/db";
-import { emitNotificationEvent } from "./emitter";
 import { withBasePath } from "~/lib/base-path";
 import { isNotificationEventEnabled } from "./guard";
 
@@ -160,9 +159,6 @@ class NotificationAPIService {
           relevanceScore: input.relevanceScore ?? null,
         },
       });
-
-      // Emit real-time event
-      emitNotificationEvent(notification);
 
       if (process.env.NODE_ENV !== "test") {
         console.log(

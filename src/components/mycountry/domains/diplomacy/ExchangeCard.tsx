@@ -313,8 +313,8 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
           {/* Status Badge */}
           <motion.div
             className="absolute top-2 right-2 z-20"
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
+            initial={{ scale: 0.8, opacity: 0, rotate: -180 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
           >
             <div

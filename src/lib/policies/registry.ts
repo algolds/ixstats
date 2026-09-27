@@ -275,7 +275,9 @@ export async function getPolicyDecretals(db: any): Promise<Record<string, Policy
       if (template.defaultSettings) {
         try {
           parsedSettings = JSON.parse(template.defaultSettings);
-        } catch {}
+        } catch (err) {
+          console.warn("[Registry] Malformed defaultSettings on template", template.id, err);
+        }
       }
 
       const costMult = parsedSettings.costMultiplier ?? 1.0;

@@ -9,34 +9,21 @@
 
 import { type PrismaClient } from "@prisma/client";
 import { IxTime } from "../ixtime";
-import { resolveMatch, resolveRace, createRNG } from "./resolver";
+import { resolveMatch, resolveRace, createRNG, seedFromString } from "./resolver";
 import type { TeamRatingVector } from "./resolver";
 import { transitionToNextStage } from "./transition";
 import { postMatchDayBulletin } from "./feed-post";
 import { notifyClubMatchResult } from "./club-notify";
 import { resolveMatchPredictions, outcomeFromScores } from "./predictions";
-import { POINTS_FOR_DRAW, POINTS_FOR_WIN } from "./presets";
+import { SIM_MATCH_INCLUDE, simulateAndPersistMatch } from "./simulate-and-persist";
 import type { MatchDayResultLine } from "./feed-bulletins";
 
 type Prisma = PrismaClient;
-
-function hashString(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
 
 function computePlayerAvg(ratings: Record<string, number>): number {
   const values = Object.values(ratings);
   if (values.length === 0) return 50;
   return values.reduce((a, b) => a + b, 0) / values.length;
-}
-
-function defaultRatingVector(): TeamRatingVector {
-  return { overall: 50, offense: 50, defense: 50, form: 50, depth: 50, coaching: 50 };
 }
 
 // ─── Season completion ──────────────────────────────────────────────
@@ -235,33 +222,11 @@ async function advanceLeagueMatchDay(
       status: "scheduled",
       stage: (season as any).activeStage ?? 1,
     } as any,
-    include: {
-      homeTeam: true,
-      awayTeam: true,
-    },
+    include: SIM_MATCH_INCLUDE,
   });
 
   if (matches.length === 0) return false;
 
-  // Get team rating vectors from team seasons
-  const teamSeasons = await prisma.sportTeamSeason.findMany({
-    where: { seasonId: season.id },
-    select: { teamId: true, ratingVector: true },
-  });
-  const ratingMap = new Map<string, TeamRatingVector>();
-  for (const ts of teamSeasons) {
-    const rv = (ts.ratingVector ?? {}) as Record<string, number>;
-    ratingMap.set(ts.teamId, {
-      overall: rv.overall ?? 50,
-      offense: rv.offense ?? 50,
-      defense: rv.defense ?? 50,
-      form: rv.form ?? 50,
-      depth: rv.depth ?? 50,
-      coaching: rv.coaching ?? 50,
-    });
-  }
-
-  const gotchas = new Map<string, { wins: number; losses: number; draws: number }>();
   const resultLines: MatchDayResultLine[] = [];
   const ownerNotifs: Array<{
     userId: string;
@@ -272,93 +237,11 @@ async function advanceLeagueMatchDay(
     teamId: string;
   }> = [];
   for (const m of matches) {
-    const homeRatings = ratingMap.get(m.homeTeamId) ?? defaultRatingVector();
-    const awayRatings = ratingMap.get(m.awayTeamId) ?? defaultRatingVector();
-    const matchSeed = hashString(m.id) + targetMatchDay * 7919;
-
-    const rivalry = await (prisma as any).sportRivalry.findFirst({
-      where: {
-        OR: [
-          { team1Id: m.homeTeamId, team2Id: m.awayTeamId },
-          { team1Id: m.awayTeamId, team2Id: m.homeTeamId },
-        ],
-      },
-    });
-    const rivalryIntensity = rivalry?.intensity ?? 0;
-    const homeAdvantage = rivalryIntensity > 70 ? 65 : 55;
-
-    const result = resolveMatch({
-      sport: season.league.sportPreset,
-      homeTeam: homeRatings,
-      awayTeam: awayRatings,
-      archetype: season.league.archetype,
-      seed: matchSeed,
-      context: { homeAdvantage },
-    });
-
-    const ixNow = IxTime.getCurrentIxTime();
-
-    await prisma.sportMatch.update({
-      where: { id: m.id },
-      data: {
-        homeScore: result.homeScore,
-        awayScore: result.awayScore,
-        status: "completed",
-        resolvedIxTime: ixNow,
-        matchStats: {
-          keyStats: result.keyStats,
-          evaluation: result.evaluation,
-          trace: result.trace,
-        } as any,
-        homeRatingBefore: { ...homeRatings },
-        awayRatingBefore: { ...awayRatings },
-        homeRatingAfter: {
-          ...homeRatings,
-          overall: Math.round((homeRatings.overall + result.homeRatingDelta) * 100) / 100,
-        },
-        awayRatingAfter: {
-          ...awayRatings,
-          overall: Math.round((awayRatings.overall + result.awayRatingDelta) * 100) / 100,
-        },
-      },
-    });
-
-    // Update team season rating vectors
-    await prisma.sportTeamSeason.updateMany({
-      where: { seasonId: season.id, teamId: m.homeTeamId },
-      data: {
-        ratingVector: {
-          ...homeRatings,
-          overall: Math.round((homeRatings.overall + result.homeRatingDelta) * 100) / 100,
-        },
-      },
-    });
-    await prisma.sportTeamSeason.updateMany({
-      where: { seasonId: season.id, teamId: m.awayTeamId },
-      data: {
-        ratingVector: {
-          ...awayRatings,
-          overall: Math.round((awayRatings.overall + result.awayRatingDelta) * 100) / 100,
-        },
-      },
-    });
-
-    // Track result for standings
-    const homeRec = gotchas.get(m.homeTeamId) ?? { wins: 0, losses: 0, draws: 0 };
-    const awayRec = gotchas.get(m.awayTeamId) ?? { wins: 0, losses: 0, draws: 0 };
-
-    if (result.winner === "home") {
-      homeRec.wins++;
-      awayRec.losses++;
-    } else if (result.winner === "away") {
-      awayRec.wins++;
-      homeRec.losses++;
-    } else {
-      homeRec.draws++;
-      awayRec.draws++;
-    }
-    gotchas.set(m.homeTeamId, homeRec);
-    gotchas.set(m.awayTeamId, awayRec);
+    // Same seeded, snapshotted, atomically-claimed path as the Simulate buttons.
+    const result = await prisma.$transaction((tx) =>
+      simulateAndPersistMatch(tx, { match: m, league: season.league })
+    );
+    if (!result) continue; // completed by a concurrent run
 
     resultLines.push({
       homeName: m.homeTeam.name,
@@ -390,86 +273,12 @@ async function advanceLeagueMatchDay(
       });
     }
 
-    // Update player morale
-    const homePlayers = await prisma.sportPlayer.findMany({
-      where: { teamId: m.homeTeamId, isActive: true },
-      select: { id: true },
-    });
-    const awayPlayers = await prisma.sportPlayer.findMany({
-      where: { teamId: m.awayTeamId, isActive: true },
-      select: { id: true },
-    });
-    const homePlayerIds = homePlayers.map((p) => p.id);
-    const awayPlayerIds = awayPlayers.map((p) => p.id);
-
-    if (result.winner === "home") {
-      await (prisma as any).sportPlayer.updateMany({
-        where: { id: { in: homePlayerIds } },
-        data: { morale: { increment: 5 } },
-      });
-      await (prisma as any).sportPlayer.updateMany({
-        where: { id: { in: awayPlayerIds } },
-        data: { morale: { decrement: 5 } },
-      });
-    } else if (result.winner === "away") {
-      await (prisma as any).sportPlayer.updateMany({
-        where: { id: { in: awayPlayerIds } },
-        data: { morale: { increment: 5 } },
-      });
-      await (prisma as any).sportPlayer.updateMany({
-        where: { id: { in: homePlayerIds } },
-        data: { morale: { decrement: 5 } },
-      });
-    }
-
-    // Cap morale at [0, 100]
-    await (prisma as any).sportPlayer.updateMany({
-      where: { id: { in: homePlayerIds.concat(awayPlayerIds) }, morale: { gt: 100 } },
-      data: { morale: 100 },
-    });
-    await (prisma as any).sportPlayer.updateMany({
-      where: { id: { in: homePlayerIds.concat(awayPlayerIds) }, morale: { lt: 0 } },
-      data: { morale: 0 },
-    });
-
     // Settle any matchday predictions on this match.
     await resolveMatchPredictions(
       prisma,
       m.id,
       outcomeFromScores(result.homeScore, result.awayScore)
     );
-  }
-
-  // Update standings
-  for (const [teamId, rec] of gotchas) {
-    const existing = await prisma.sportStanding.findUnique({
-      where: { seasonId_teamId: { seasonId: season.id, teamId } },
-    });
-
-    if (existing) {
-      const newPoints = existing.points + rec.wins * POINTS_FOR_WIN + rec.draws * POINTS_FOR_DRAW;
-
-      await prisma.sportStanding.update({
-        where: { id: existing.id },
-        data: {
-          wins: existing.wins + rec.wins,
-          losses: existing.losses + rec.losses,
-          draws: existing.draws + rec.draws,
-          points: newPoints,
-        },
-      });
-    } else {
-      await prisma.sportStanding.create({
-        data: {
-          seasonId: season.id,
-          teamId,
-          wins: rec.wins,
-          losses: rec.losses,
-          draws: rec.draws,
-          points: rec.wins * POINTS_FOR_WIN + rec.draws * POINTS_FOR_DRAW,
-        },
-      });
-    }
   }
 
   // Re-rank standings, capturing movement for teams that played this matchday.
@@ -612,7 +421,7 @@ async function advanceCircuitRace(
 
   if (allDrivers.length === 0) return false;
 
-  const raceSeed = hashString(race.id) + race.raceNumber * 7919;
+  const raceSeed = seedFromString(race.id) + race.raceNumber * 7919;
   const rng = createRNG(raceSeed);
   const isWet = rng() < 0.2;
 
@@ -733,7 +542,7 @@ async function advanceBracketRound(
       coaching: 50,
     };
 
-    const matchSeed = hashString(bracket.id) + targetRound * 7919;
+    const matchSeed = seedFromString(bracket.id) + targetRound * 7919;
     const isChampionship =
       bracket.round === Math.max(...scheduledBrackets.map((b) => b.round)) &&
       (await prisma.sportBracket.count({

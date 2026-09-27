@@ -21,7 +21,9 @@ export function PlateMediaElement({
   let cb: ReturnType<typeof usePlateWikiCallbacks> | null = null;
   try {
     cb = usePlateWikiCallbacks();
-  } catch {}
+  } catch {
+    // rendered outside the PlateWikiCallbacks provider — media callbacks disabled
+  }
 
   if (!el) return <div {...attributes}>{children}</div>;
 

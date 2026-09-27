@@ -4,8 +4,6 @@ import {
   getUserSessionAndToken,
   invalidateCsrfToken,
 } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
-import { invalidateCache } from "./parsoid";
-import { invalidateArticleShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import type { Prisma } from "@prisma/client";
 import { type db } from "~/server/db";
 
@@ -103,39 +101,4 @@ export async function executeMediaWikiWrite(
     noChange: edit?.nochange,
     result: data as any,
   };
-}
-
-export function cleanHtmlForParsoid(html: string): string {
-  return html
-    .replace(/<div\s+class="[^"]*toc[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "")
-    .replace(/<aside\s+class="[^"]*infobox[^"]*"[^>]*>[\s\S]*?<\/aside>/gi, "")
-    .replace(/<div\s+class="[^"]*infobox[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "")
-    .replace(/<div\s+class="[^"]*wikios-country-profile[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "")
-    .trim();
-}
-
-export async function saveToMediaWiki(
-  title: string,
-  wikitext: string,
-  summary: string,
-  minor: boolean,
-  ctx?: any,
-  basetimestamp?: string
-): Promise<MediaWikiWriteResult> {
-  const result = await executeMediaWikiWrite(
-    {
-      action: "edit",
-      title: title.replace(/_/g, " "),
-      text: wikitext,
-      summary: summary || "Edited via WikiOS",
-      minor: minor ? 1 : 0,
-      ...(basetimestamp ? { basetimestamp } : {}),
-    },
-    ctx
-  );
-
-  invalidateCache(title);
-  invalidateArticleShadow(title);
-
-  return result;
 }

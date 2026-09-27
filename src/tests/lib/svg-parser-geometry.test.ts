@@ -13,7 +13,25 @@ import {
   calculateBoundingBox,
   calculateApproxArea,
 } from "~/lib/flags/svg/topology-flattener";
-import type { Position } from "geojson";
+import type { FeatureCollection, Position } from "geojson";
+import { DOMParser } from "@xmldom/xmldom";
+import { IXEARTH_SVG_CONFIG, svgToWgs84, wgs84ToSvg } from "~/lib/flags/svg-coordinate-config";
+import { readViewBox, resolveCoordinateConfig } from "~/lib/flags/svg/coordinate-calibration";
+
+function svgRootOf(markup: string) {
+  return new DOMParser().parseFromString(markup, "image/svg+xml").documentElement!;
+}
+
+function pointFeatures(points: Array<[string, number, number]>): FeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: points.map(([id, lng, lat]) => ({
+      type: "Feature",
+      properties: { id },
+      geometry: { type: "Point", coordinates: [lng, lat] },
+    })),
+  };
+}
 
 describe("SVG Geometry & Command Evaluator", () => {
   describe("Bezier curve math", () => {
@@ -137,6 +155,134 @@ describe("SVG Geometry & Command Evaluator", () => {
     it("approximates geographic area in sq km", () => {
       const area = calculateApproxArea([squareRing]);
       expect(area).toBeGreaterThan(0);
+    });
+  });
+
+  describe("SVG pixel → WGS84 lat/lng conversion", () => {
+    // Open squares (no Z) so each path's endpoint centroid is its exact centre.
+    const CALIBRATION_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 180">
+      <path id="a" d="M10 10 L30 10 L30 30 L10 30"/>
+      <path id="b" d="M110 50 L130 50 L130 70 L110 70"/>
+      <path id="c" d="M210 130 L230 130 L230 150 L210 150"/>
+      <path id="unmatched" d="M300 10 L320 10 L320 30 L300 30"/>
+    </svg>`;
+
+    it("applies the IxEarth affine transform (lng = 0.04392139x − 153.9062, lat = −0.04392143y + 110.1222)", () => {
+      const [lng0, lat0] = svgToWgs84(0, 0);
+      expect(lng0).toBeCloseTo(-153.9062, 6);
+      expect(lat0).toBeCloseTo(110.1222, 6);
+
+      const [lng, lat] = svgToWgs84(10000, 5000);
+      expect(lng).toBeCloseTo(0.04392139 * 10000 - 153.9062, 6);
+      expect(lat).toBeCloseTo(-0.04392143 * 5000 + 110.1222, 6);
+
+      const [pmLng, eqLat] = svgToWgs84(
+        IXEARTH_SVG_CONFIG.primeMeridianX,
+        IXEARTH_SVG_CONFIG.equatorY
+      );
+      expect(pmLng).toBeCloseTo(0, 9);
+      expect(eqLat).toBeCloseTo(0, 9);
+    });
+
+    it("round-trips pixel → lat/lng → pixel", () => {
+      const [lng, lat] = svgToWgs84(12345.5, 6789.25);
+      const [x, y] = wgs84ToSvg(lng, lat);
+      expect(x).toBeCloseTo(12345.5, 6);
+      expect(y).toBeCloseTo(6789.25, 6);
+    });
+
+    it("reads the viewBox size and falls back to the base config without one", () => {
+      const log: string[] = [];
+      expect(readViewBox(svgRootOf(CALIBRATION_SVG), IXEARTH_SVG_CONFIG, log)).toEqual({
+        width: 360,
+        height: 180,
+      });
+      expect(log).toEqual(["SVG viewBox: 360 × 180"]);
+
+      const bare = svgRootOf(`<svg xmlns="http://www.w3.org/2000/svg"/>`);
+      expect(readViewBox(bare, IXEARTH_SVG_CONFIG, [])).toEqual({
+        width: IXEARTH_SVG_CONFIG.viewBoxWidth,
+        height: IXEARTH_SVG_CONFIG.viewBoxHeight,
+      });
+    });
+
+    it("calibrates from reference features matched by id", () => {
+      // Ground truth: lng = (x − 100) / 2, lat = (80 − y) / 2
+      const reference = pointFeatures([
+        ["a", -40, 30],
+        ["b", 10, 10],
+        ["c", 60, -30],
+      ]);
+      const log: string[] = [];
+      const config = resolveCoordinateConfig(
+        svgRootOf(CALIBRATION_SVG),
+        { width: 360, height: 180 },
+        IXEARTH_SVG_CONFIG,
+        reference,
+        log
+      );
+
+      expect(config.pixelsPerLng).toBeCloseTo(2, 9);
+      expect(config.pixelsPerLat).toBeCloseTo(2, 9);
+      expect(config.primeMeridianX).toBeCloseTo(100, 9);
+      expect(config.equatorY).toBeCloseTo(80, 9);
+      expect(log).toEqual(["Calibrated from 3 matched features (scale: 0.500000 deg/px)"]);
+
+      const [lng, lat] = svgToWgs84(300, 0, config);
+      expect(lng).toBeCloseTo(100, 9);
+      expect(lat).toBeCloseTo(40, 9);
+    });
+
+    it("falls back to whole-world bounds when fewer than two features match", () => {
+      const log: string[] = [];
+      const config = resolveCoordinateConfig(
+        svgRootOf(CALIBRATION_SVG),
+        { width: 360, height: 180 },
+        IXEARTH_SVG_CONFIG,
+        pointFeatures([["a", -40, 30]]),
+        log
+      );
+
+      expect(log).toEqual([
+        "Calibration failed (1 matches found, need 2+). Falling back to bounds mapping.",
+        "Mapping viewBox (360×180) to WGS84 bounds (lat range: ±90.0°)",
+      ]);
+      expect(svgToWgs84(0, 0, config)).toEqual([-180, 90]);
+      expect(svgToWgs84(180, 90, config)).toEqual([0, 0]);
+      expect(svgToWgs84(360, 180, config)).toEqual([180, -90]);
+    });
+
+    it("keeps the aspect ratio when a wide viewBox maps to the world bounds", () => {
+      const log: string[] = [];
+      const config = resolveCoordinateConfig(
+        svgRootOf(CALIBRATION_SVG),
+        { width: 720, height: 180 },
+        IXEARTH_SVG_CONFIG,
+        undefined,
+        log
+      );
+
+      expect(config.pixelsPerLng).toBe(2);
+      expect(config.pixelsPerLat).toBe(2);
+      expect(log).toEqual(["Mapping viewBox (720×180) to WGS84 bounds (lat range: ±45.0°)"]);
+      expect(svgToWgs84(0, 0, config)).toEqual([-180, 45]);
+      expect(svgToWgs84(720, 180, config)).toEqual([180, -45]);
+    });
+
+    it("returns the base config unchanged for a zero-area viewBox", () => {
+      const log: string[] = [];
+      const config = resolveCoordinateConfig(
+        svgRootOf(CALIBRATION_SVG),
+        { width: 0, height: 180 },
+        IXEARTH_SVG_CONFIG,
+        pointFeatures([
+          ["a", -40, 30],
+          ["b", 10, 10],
+        ]),
+        log
+      );
+      expect(config).toBe(IXEARTH_SVG_CONFIG);
+      expect(log).toEqual([]);
     });
   });
 });

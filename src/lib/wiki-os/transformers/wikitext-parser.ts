@@ -5,102 +5,11 @@ import { splitBalancedPipes } from "../wikitext/parameter-parser";
 import { findMatchingClosingBrackets } from "../wikitext/link-parser";
 import { extractTableCellContent, splitBalancedDoubleTokens } from "../wikitext/table-parser";
 
-function escapeHtmlLike(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-export interface ParseOptions {
-  /**
-   * Replace unrecognized {{templates}} with visible, machine-detectable
-   * placeholder spans instead of deleting them. Used by the editor's
-   * wikitext→HTML conversion so unknown templates survive mode switching.
-   * Default false (display callers expect stripping).
-   */
-  preserveUnknownTemplates?: boolean;
-}
-
-const SIMPLE_UNWRAP_NAMES = new Set(["nowrap", "nobr", "small", "smaller"]);
-
-/**
- * Preserve-mode scanner: replaces every OUTERMOST balanced {{…}} invocation
- * whose name is not whitelisted with a placeholder span carrying the FULL
- * original wikitext (nested invocations intact). Whitelisted simple unwrap
- * templates are applied inline, exactly like the stripping loop does.
- */
-function preserveUnknownTemplates(input: string): string {
-  let out = "";
-  let i = 0;
-  while (i < input.length) {
-    const open = input.indexOf("{{", i);
-    if (open === -1) {
-      out += input.slice(i);
-      break;
-    }
-    // depth-scan for the matching close
-    let depth = 0;
-    let j = open;
-    let end = -1;
-    while (j < input.length - 1) {
-      const two = input.slice(j, j + 2);
-      if (two === "{{") {
-        depth++;
-        j += 2;
-        continue;
-      }
-      if (two === "}}") {
-        depth--;
-        j += 2;
-        if (depth === 0) {
-          end = j;
-          break;
-        }
-        continue;
-      }
-      j++;
-    }
-    if (end === -1) {
-      out += input.slice(i);
-      break;
-    }
-
-    const full = input.slice(open, end);
-    const inner = full.slice(2, -2);
-    const name = inner.split("|")[0]?.trim() ?? "";
-
-    if (name.startsWith("formatnum:")) {
-      out += input.slice(i, open) + name.replace(/^formatnum:/i, "").trim();
-      i = end;
-      continue;
-    }
-    if (SIMPLE_UNWRAP_NAMES.has(name.toLowerCase())) {
-      const parts = inner.split("|");
-      out += input.slice(i, open) + parts.slice(1).join("|").trim();
-      i = end;
-      continue;
-    }
-    if (name.startsWith("lang")) {
-      const parts = inner.split("|");
-      out += input.slice(i, open) + (parts.length >= 3 ? (parts[2] ?? "").trim() : "");
-      i = end;
-      continue;
-    }
-
-    const placeholder = `<span class="wikios-template-placeholder" data-wikios-template="${encodeURIComponent(full)}" contenteditable="false">🧩 ${escapeHtmlLike(name)}</span>`;
-    out += input.slice(i, open) + placeholder;
-    i = end;
-  }
-  return out;
-}
-
 /**
  * Strips recursively nested templates (e.g. {{Infobox ... {{flag|...}} ... }})
  * while selectively unpacking useful inline templates (quotes, main links, flags, lang).
  */
-function stripWikitextTemplates(input: string, preserve = false): string {
+function stripWikitextTemplates(input: string): string {
   if (!input || !input.includes("{{")) return input;
 
   let text = input;
@@ -184,10 +93,7 @@ function stripWikitextTemplates(input: string, preserve = false): string {
         return templateName.replace("formatnum:", "").trim();
       }
 
-      if (!preserve) return "";
-      // Preserve unknown templates as visible, machine-detectable placeholders
-      const wt = `{{${inner.trim()}}}`;
-      return `<span class="wikios-template-placeholder" data-wikios-template="${encodeURIComponent(wt)}" contenteditable="false">🧩 ${escapeHtmlLike(parts[0]?.trim() ?? "Template")}</span>`;
+      return "";
     });
 
     if (text === prev) break;
@@ -358,8 +264,7 @@ export function stripWikitextFiles(text: string): string {
  */
 export function parseWikitextToHtml(
   wikitext: string | null | undefined,
-  wikiSource: string = "ixwiki",
-  options: ParseOptions = {}
+  wikiSource: string = "ixwiki"
 ): string {
   if (!wikitext || !wikitext.trim()) return "";
 
@@ -404,14 +309,8 @@ export function parseWikitextToHtml(
   // 6b. Extract and convert Infobox template to HTML table before stripping
   const infoboxHtml = parseInfoboxToHtml(text);
 
-  // 6c. Preserve mode: keep unknown templates as placeholders (balanced scan,
-  // nested invocations stay intact), then let the normal pipeline handle the rest.
-  if (options.preserveUnknownTemplates === true) {
-    text = preserveUnknownTemplates(text);
-  }
-
   // 7. Strip recursively nested templates: {{...}}
-  text = stripWikitextTemplates(text, options.preserveUnknownTemplates === true);
+  text = stripWikitextTemplates(text);
 
   // 8. Strip category tags: [[Category:...]], [Category:...]
   text = text.replace(/\[\[(?:category|Category):[^\]]+\]\]/gi, "");

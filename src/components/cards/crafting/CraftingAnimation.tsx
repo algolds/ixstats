@@ -147,7 +147,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                 <motion.div
                   className="absolute h-16 w-16 rounded-full bg-white"
                   animate={{
-                    scale: [0, 1.5, 1],
+                    scale: [0.2, 1.5, 1],
                     opacity: [0, 1, 0.8],
                   }}
                   transition={{
@@ -252,8 +252,8 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                   {/* XP badge */}
                   {xpGained > 0 && (
                     <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
+                      initial={{ scale: 0.8, opacity: 0, rotate: -180 }}
+                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
                       transition={{ delay: 0.5, type: "spring" }}
                     >
                       <CometCard className="inline-block px-6 py-3" glassDepth="interactive">
