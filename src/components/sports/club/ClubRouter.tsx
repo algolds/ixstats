@@ -105,10 +105,10 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
     { enabled: !overview && !overviewLoading && !!teamId }
   );
 
-  const { data: liveActivities } = api.sports.getLiveMatches.useQuery(undefined, {
-    refetchInterval: 10000,
-    enabled: activeSection === "overview",
-  });
+  const { data: liveActivities } = api.sports.getLiveMatches.useQuery(
+    { teamId },
+    { refetchInterval: 10000, enabled: activeSection === "overview" && !!teamId }
+  );
 
   const { data: history } = api.sports.getTeamSeasonHistory.useQuery(
     { teamId },

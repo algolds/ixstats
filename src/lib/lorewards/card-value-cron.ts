@@ -121,15 +121,23 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
 
     console.log(`[Card Value Cron] Found ${nationCards.length} nation cards to process`);
 
+    // One lookup for every linked country instead of a findUnique per card.
+    const countryIds = [
+      ...new Set(nationCards.map((c) => c.countryId).filter((id): id is string => !!id)),
+    ];
+    const countries = await db.country.findMany({
+      where: { id: { in: countryIds } },
+      select: { id: true, name: true, currentTotalGdp: true, adjustedGdpGrowth: true },
+      take: countryIds.length || 1,
+    });
+    const countryById = new Map(countries.map((c) => [c.id, c]));
+
     // Process each card
     for (const card of nationCards) {
       try {
         if (!card.countryId) continue;
 
-        // Fetch associated country data
-        const country = await db.country.findUnique({
-          where: { id: card.countryId },
-        });
+        const country = countryById.get(card.countryId);
 
         if (!country) {
           console.warn(`[Card Value Cron] Country not found for card ${card.id}`);
