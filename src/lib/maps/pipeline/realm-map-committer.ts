@@ -13,6 +13,7 @@ import type {
   NormalizedCityPayload,
   NormalizedRiverPayload,
 } from "./azgaar-normalizer";
+import { IxTime } from "~/lib/ixtime";
 
 export interface CommitRealmMapInput {
   realmId: string;
@@ -130,6 +131,7 @@ export async function commitRealmMapToDatabase(
           realmId,
           baselinePopulation: 1000000,
           baselineGdpPerCapita: 10000,
+          baselineDate: new Date(IxTime.getCurrentIxTime()),
           maxGdpGrowthRate: 0.05,
           adjustedGdpGrowth: 0.03,
           populationGrowthRate: 0.01,

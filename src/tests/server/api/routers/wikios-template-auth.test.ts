@@ -42,9 +42,9 @@ jest.mock("~/lib/auth/system-owner-constants", () => ({
   __esModule: true,
   isSystemOwner: (id: string) => id === "system_owner_id",
 }));
-jest.mock("~/server/cron/sync-wiki-recentchanges", () => ({
+jest.mock("~/lib/wiki-os/services/auto-sync-service", () => ({
   __esModule: true,
-  syncWikiRecentChanges: jest.fn(),
+  runAutoSyncCycle: jest.fn(),
 }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
@@ -53,7 +53,7 @@ import { wikiosTemplatesRouter } from "~/server/api/routers/wikios/templates";
 import { wikiosHistoryDiffRouter } from "~/server/api/routers/wikios/history-diff";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { db } from "~/server/db";
-import { syncWikiRecentChanges } from "~/server/cron/sync-wiki-recentchanges";
+import { runAutoSyncCycle } from "~/lib/wiki-os/services/auto-sync-service";
 
 const createTemplatesCaller = createCallerFactory(wikiosTemplatesRouter);
 const createHistoryCaller = createCallerFactory(wikiosHistoryDiffRouter);
@@ -143,12 +143,12 @@ describe("WikiOS syncRecentChanges (Finding 1)", () => {
   it("rejects an anonymous caller and never invokes the sync job", async () => {
     const caller = createHistoryCaller(anonymousCtx() as never);
     await expect(caller.syncRecentChanges()).rejects.toThrow();
-    expect(syncWikiRecentChanges).not.toHaveBeenCalled();
+    expect(runAutoSyncCycle).not.toHaveBeenCalled();
   });
 
   it("rejects an ordinary signed-in user and never invokes the sync job", async () => {
     const caller = createHistoryCaller(ordinaryUserCtx() as never);
     await expect(caller.syncRecentChanges()).rejects.toThrow();
-    expect(syncWikiRecentChanges).not.toHaveBeenCalled();
+    expect(runAutoSyncCycle).not.toHaveBeenCalled();
   });
 });

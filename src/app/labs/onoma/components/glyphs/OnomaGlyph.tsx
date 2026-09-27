@@ -5,7 +5,7 @@
 // Philosophy: Apple SF Symbols × IPA × Linguistic Notation × Scientific Precision
 
 import React from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { GLYPH_CATALOG, type OnomaGlyphName } from "./onoma-glyphs-catalog";
 

@@ -11,6 +11,7 @@ import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from
 import { invalidateCache, globalCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
+import { IxTime } from "~/lib/ixtime";
 import {
   countryEconomicInputsSchema,
   countryGovernmentComponentSchema,
@@ -268,6 +269,7 @@ export const managementCreateProcedures = {
               coatOfArms: econ.coatOfArmsUrl || foundationData?.coatOfArms || undefined,
               baselinePopulation: population,
               baselineGdpPerCapita: gdpPerCapita,
+              baselineDate: new Date(IxTime.getCurrentIxTime()),
               currentPopulation: population,
               currentGdpPerCapita: gdpPerCapita,
               currentTotalGdp: totalGdp,

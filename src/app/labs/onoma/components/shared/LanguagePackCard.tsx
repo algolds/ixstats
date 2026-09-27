@@ -6,7 +6,7 @@ import { BookmarkBook, GitFork, Star, Translate } from "iconoir-react";
 // Onoma Lab — Tactile 3D Language Pack Card (Vault-Style Spatial Physics & Facet Material)
 
 import React, { useRef } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";

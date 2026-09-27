@@ -5,6 +5,7 @@ import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../../core";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
+import { IxTime } from "~/lib/ixtime";
 
 export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
   /**
@@ -276,6 +277,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
           areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
           economicTier: "developing",
           isDemo: false,
+          baselineDate: new Date(IxTime.getCurrentIxTime()),
         } as any,
       });
       await ctx.db.mapLayer.update({

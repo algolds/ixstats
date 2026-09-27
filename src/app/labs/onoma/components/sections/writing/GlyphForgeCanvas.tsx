@@ -15,7 +15,7 @@ import {
   EditPencil as PenTool,
   Sparks as Sparkle,
 } from "iconoir-react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import type { Glyph, CanvasGuideSettings, InkColorPreset } from "./types";

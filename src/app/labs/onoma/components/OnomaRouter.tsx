@@ -5,7 +5,7 @@
 // Features: Spatial Workspace Transitions, Dynamic Facet Canvas Materials, and Fluid Apple Spring Physics
 
 import React from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { useOnomaRouter } from "../hooks/useOnomaRouter";
 

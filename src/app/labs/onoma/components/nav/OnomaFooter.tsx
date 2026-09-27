@@ -5,7 +5,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "motion/react";
 import { ArrowUp } from "iconoir-react";
 import { OnomaBrandLogo } from "../shared/OnomaBrandLogo";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";

@@ -4,7 +4,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Eye, AlignLeft, AlignRight, ArrowDown, Copy, Check, Download } from "iconoir-react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import type { Glyph, ScriptDirection, RenderToken } from "./types";

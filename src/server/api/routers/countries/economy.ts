@@ -105,7 +105,7 @@ export const economyProcedures = {
       }
 
       const econCfg = await getEconomicConfigFromDB(ctx.db);
-      const baselineDate = country.baselineDate ? country.baselineDate.getTime() : Date.now();
+      const baselineDate = country.baselineDate.getTime();
 
       const calc = new IxStatsCalculator(econCfg, baselineDate);
       const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
@@ -323,7 +323,7 @@ export const economyProcedures = {
 
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const econCfg = await getEconomicConfigFromDB(ctx.db);
-      const baselineDate = country.baselineDate ? country.baselineDate.getTime() : Date.now();
+      const baselineDate = country.baselineDate.getTime();
       const calc = new IxStatsCalculator(econCfg, baselineDate);
       const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
       const base = prepareBaseCountryData(country, componentsData);

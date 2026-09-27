@@ -5,7 +5,7 @@
 
 import React, { useState } from "react";
 import { GitFork, ControlSlider as SlidersHorizontal } from "iconoir-react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import EtymologySection from "./EtymologySection";
 import SyntaxSection from "./SyntaxSection";

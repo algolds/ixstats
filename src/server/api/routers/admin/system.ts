@@ -8,7 +8,7 @@ import {
   invalidateConfigCache,
 } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
-import { IxStatsCalculator } from "~/lib/economy/calculations";
+import { assertPersistableStats, IxStatsCalculator } from "~/lib/economy/calculations";
 import type { SystemStatus } from "~/types/ixstats";
 import {
   prepareBaseCountryData,
@@ -457,6 +457,7 @@ export const adminSystemRouter = createTRPCRouter({
           }));
 
           const result = calc.calculateTimeProgression(initialStats, currentIxTime, effects);
+          assertPersistableStats(result.newStats);
 
           await ctx.db.country.update({
             where: { id: country.id },

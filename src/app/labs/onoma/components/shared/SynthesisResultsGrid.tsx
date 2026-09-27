@@ -4,7 +4,7 @@
 // Onoma Lab — Modular Synthesis Results Surface (Adaptive Card Grid & Pro Data Table with 50-Word Cutoff)
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 import {
   Check,
   Copy,

@@ -11,7 +11,7 @@
 // Philosophy: "Expose the linguistic concept. Hide the implementation."
 
 import React, { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { HelpCircle, Xmark as X } from "iconoir-react";
 import { FacetTabs, type FacetTabItem } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";

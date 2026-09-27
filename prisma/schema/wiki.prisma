@@ -109,7 +109,7 @@ model WikiRevision {
   createdAt        DateTime     @default(now())
 
   @@index([articleId, createdAt])
-  @@index([source, mwRevId])
+  @@unique([source, mwRevId])
   @@index([author])
   @@index([authorId])
   @@index([createdAt])

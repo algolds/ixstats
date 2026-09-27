@@ -6,7 +6,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { HelpCircle, Bookmark, Settings, SoundHigh, Code, ArrowLeft } from "iconoir-react";
 import { FacetTabs } from "~/components/ui/facet";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";

@@ -4,7 +4,7 @@
 
 import React, { useState } from "react";
 import { Type, Trash as Trash2, Search, BookStack as Library, Copy, Check } from "iconoir-react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import type { Glyph } from "./types";

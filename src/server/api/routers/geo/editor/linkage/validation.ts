@@ -6,6 +6,7 @@ import { clearLayerCache } from "../../core";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
+import { IxTime } from "~/lib/ixtime";
 
 export const geoEditorLinkageValidationRouter = createTRPCRouter({
   /**
@@ -105,6 +106,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
               areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
               economicTier: "developing",
               isDemo: false,
+              baselineDate: new Date(IxTime.getCurrentIxTime()),
               wikiPageTitle,
               wikiSource: wikiPageTitle ? "ixwiki" : undefined,
             } as any,

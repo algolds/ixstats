@@ -8,6 +8,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { IxTime } from "~/lib/ixtime";
 
 export const studioGenerationRouter = createTRPCRouter({
   // ──────────────────────────────────────────────
@@ -128,6 +129,7 @@ export const studioGenerationRouter = createTRPCRouter({
             realmId: realm.id,
             baselinePopulation: 1_000_000,
             baselineGdpPerCapita: 10_000,
+            baselineDate: new Date(IxTime.getCurrentIxTime()),
             maxGdpGrowthRate: 0.03,
             adjustedGdpGrowth: 0.02,
             populationGrowthRate: 0.01,
