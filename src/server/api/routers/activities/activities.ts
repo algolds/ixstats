@@ -6,23 +6,6 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { globalCache } from "~/lib/cache";
 
 // Input schemas
-const createActivitySchema = z.object({
-  type: z.enum(["achievement", "diplomatic", "economic", "social", "meta"]),
-  category: z.enum(["game", "platform", "social"]).default("game"),
-  userId: z.string().optional(),
-  countryId: z.string().optional(),
-  title: z.string().min(1).max(200),
-  description: z.string().min(1).max(1000),
-  metadata: z
-    .record(
-      z.string(),
-      z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.string())])
-    )
-    .optional(),
-  priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
-  visibility: z.enum(["public", "followers", "friends"]).default("public"),
-  relatedCountries: z.array(z.string()).optional(),
-});
 const commentActionSchema = z.object({
   activityId: z.string(),
   userId: z.string(),
@@ -53,41 +36,6 @@ export const activitiesActivitiesRouter = createTRPCRouter({
   // Get feed from countries the user follows
 
   // Get user-specific activity feed
-
-  // Create new activity
-  createActivity: protectedProcedure
-    .input(createActivitySchema)
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const activity = await ctx.db.activityFeed.create({
-          data: {
-            type: input.type,
-            category: input.category,
-            userId: input.userId,
-            countryId: input.countryId,
-            title: input.title,
-            description: input.description,
-            metadata: input.metadata ? JSON.stringify(input.metadata) : null,
-            priority: input.priority,
-            visibility: input.visibility,
-            relatedCountries: input.relatedCountries
-              ? JSON.stringify(input.relatedCountries)
-              : null,
-          },
-        });
-
-        // Invalidate feed caches
-        await Promise.all([
-          globalCache.deleteByPattern("global_activity_feed:*"),
-          globalCache.deleteByPattern("user_following_feed:*"),
-        ]);
-
-        return { success: true, activity };
-      } catch (error) {
-        console.error("Error creating activity:", error);
-        throw new Error("Failed to create activity", { cause: error });
-      }
-    }),
 
   // Handle engagement actions (like, unlike, share, view)
   engageWithActivity: protectedProcedure

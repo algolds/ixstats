@@ -10,6 +10,7 @@ import { protectedProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache, globalCache } from "~/lib/cache";
 import { clearLayerCache, invalidateCatalogCache } from "~/server/shared/layer-cache";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import {
   countryEconomicInputsSchema,
   countryGovernmentComponentSchema,
@@ -46,14 +47,7 @@ export const managementUpdateProcedures = {
         throw new Error("User not authenticated");
       }
 
-      const user = await ctx.db.user.findUnique({
-        where: { clerkUserId: userId },
-        include: { role: true },
-      });
-
-      if (!user) {
-        throw new Error("User not found");
-      }
+      await assertCountryWriteAccess(ctx, input.id);
 
       const existingCountry = await ctx.db.country.findUnique({
         where: { id: input.id },
@@ -61,14 +55,6 @@ export const managementUpdateProcedures = {
 
       if (!existingCountry) {
         throw new Error("Country not found");
-      }
-
-      if (
-        user.countryId !== input.id &&
-        user.role?.name !== "admin" &&
-        user.role?.name !== "system-owner"
-      ) {
-        throw new Error("You do not have permission to update this country");
       }
 
       const econ = input.economicInputs;

@@ -196,45 +196,6 @@ export const militaryEquipmentCatalogRouter = createTRPCRouter({
       }
     }),
 
-  /**
-   * Increment equipment usage count (track procurement)
-   */
-  incrementEquipmentUsage: publicProcedure
-    .input(
-      z.object({
-        equipmentId: z.string().cuid(),
-        countryId: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const equipment = await ctx.db.militaryEquipmentCatalog.update({
-          where: { id: input.equipmentId },
-          data: {
-            usageCount: { increment: 1 },
-            updatedAt: new Date(),
-          },
-          select: {
-            id: true,
-            name: true,
-            usageCount: true,
-          },
-        });
-
-        return {
-          success: true,
-          equipment,
-        };
-      } catch (error) {
-        console.error("[MILITARY_EQUIPMENT] Failed to increment usage:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to track equipment usage",
-          cause: error,
-        });
-      }
-    }),
-
   // ==========================================
   // ADMIN ENDPOINTS
   // ==========================================

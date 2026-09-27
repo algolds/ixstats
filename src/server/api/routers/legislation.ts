@@ -14,6 +14,7 @@ import {
 } from "~/lib/statecraft/legislative-vote";
 import { computeApproval } from "~/lib/government/approval";
 import { fogVoteProjection } from "~/lib/statecraft/whip";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 /**
  * Legislation — bills go to the floor and parties vote them up or down.
@@ -28,15 +29,6 @@ import { fogVoteProjection } from "~/lib/statecraft/whip";
  */
 
 const IDEOLOGY_VALUES = Object.keys(IDEOLOGY_AXIS) as [Ideology, ...Ideology[]];
-
-function ownsOrThrow(userCountryId: string | null | undefined, countryId: string) {
-  if (userCountryId !== countryId) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "You can only manage legislation for your own country",
-    });
-  }
-}
 
 interface BillMeta {
   ideologyTarget: number;
@@ -127,7 +119,7 @@ export const legislationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      ownsOrThrow(ctx.user?.countryId, input.countryId);
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       const meta: BillMeta = { ideologyTarget: IDEOLOGY_AXIS[input.ideology] };
       const bill = await ctx.db.policy.create({
@@ -153,7 +145,7 @@ export const legislationRouter = createTRPCRouter({
       if (!bill || bill.policyType !== "legislative_bill") {
         throw new TRPCError({ code: "NOT_FOUND", message: "Bill not found" });
       }
-      ownsOrThrow(ctx.user?.countryId, bill.countryId);
+      await assertCountryWriteAccess(ctx, bill.countryId);
       if (bill.status !== "in_committee") {
         throw new TRPCError({
           code: "BAD_REQUEST",

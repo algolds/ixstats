@@ -12,6 +12,11 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import {
+  assertCountryResourceWriteAccess,
+  assertCountryWriteAccess,
+} from "~/server/shared/country-authorization";
+import { resolveTransportRouteCountryId } from "~/server/shared/country-resource-owner";
+import {
   generateTransportNetwork,
   estimateCoastalCities,
   type CityNode,
@@ -70,6 +75,8 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       // Get country + cities
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
@@ -242,6 +249,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
       const coords = input.geometry.coordinates ?? [];
 
       const { lengthKm, terrainDifficulty } = await computeRouteLengthAndDifficulty(
@@ -294,6 +302,11 @@ export const transportRouteMutationsRouter = createTRPCRouter({
   deleteRoute: standardMutationCountryOwnerProcedure
     .input(z.object({ id: z.string(), countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await assertCountryResourceWriteAccess(
+        ctx,
+        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId),
+        "Transport route"
+      );
       const deleted = await ctx.db.transportRoute.delete({ where: { id: input.id } });
       await syncTransportEconomicModifiers(ctx.db, input.countryId);
       await syncResourcePoolModifiers(ctx.db, input.countryId);
@@ -327,6 +340,11 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryResourceWriteAccess(
+        ctx,
+        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId),
+        "Transport route"
+      );
       const { id, countryId, ...data } = input;
       const updates: Prisma.TransportRouteUpdateInput = {};
       if (data.name !== undefined) updates.name = data.name;
@@ -388,6 +406,11 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryResourceWriteAccess(
+        ctx,
+        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId),
+        "Transport route"
+      );
       // Recalculate length and terrain difficulty from new geometry
       const coords = input.geometry.coordinates ?? [];
 
@@ -428,178 +451,6 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       await syncResourcePoolModifiers(ctx.db, input.countryId);
 
       return updated;
-    }),
-
-  /**
-   * Create a new network segment between two nodes.
-   */
-  createSegment: standardMutationCountryOwnerProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        fromNodeId: z.string(),
-        toNodeId: z.string(),
-        routeType: z.string(),
-        geometry: z.object({
-          type: z.literal("LineString"),
-          coordinates: z.array(z.array(z.number())),
-        }),
-        status: z.enum(["planned", "under_construction", "operational", "abandoned"]).default("operational"),
-        speedKmh: z.number().optional(),
-        capacity: z.number().optional(),
-        isInternational: z.boolean().default(false),
-        properties: z.record(z.string(), z.unknown()).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { lengthKm, terrainDifficulty } = await computeRouteLengthAndDifficulty(
-        ctx.db,
-        input.geometry.coordinates,
-        input.countryId
-      );
-
-      const dbAny = ctx.db as any;
-      if (!dbAny.transportSegment) {
-        throw new Error("TransportSegment model not yet initialized in database.");
-      }
-
-      const segment = await dbAny.transportSegment.create({
-        data: {
-          countryId: input.countryId,
-          fromNodeId: input.fromNodeId,
-          toNodeId: input.toNodeId,
-          routeType: input.routeType,
-          geometry: input.geometry,
-          status: input.status,
-          lengthKm,
-          terrainDifficulty,
-          speedKmh: input.speedKmh,
-          capacity: input.capacity,
-          isInternational: input.isInternational,
-          properties: input.properties as Prisma.InputJsonValue,
-        },
-      });
-
-      await syncTransportEconomicModifiers(ctx.db, input.countryId);
-      return segment;
-    }),
-
-  /**
-   * Split a segment at an intermediate coordinate by creating a new junction node
-   * and replacing the segment with two sub-segments.
-   */
-  splitSegment: standardMutationCountryOwnerProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        segmentId: z.string(),
-        splitCoordinate: z.tuple([z.number(), z.number()]),
-        nodeName: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const dbAny = ctx.db as any;
-      const seg = await dbAny.transportSegment.findUnique({
-        where: { id: input.segmentId },
-      });
-      if (!seg) throw new Error("Segment not found");
-
-      // 1. Create junction node
-      const node = await dbAny.transportNode.create({
-        data: {
-          countryId: input.countryId,
-          coordinates: input.splitCoordinate,
-          nodeType: "junction",
-          name: input.nodeName ?? "Junction",
-          worldId: seg.worldId,
-        },
-      });
-
-      // 2. Divide geometry coordinates
-      const coords = (seg.geometry as { coordinates: [number, number][] }).coordinates;
-      const midIdx = Math.max(1, Math.floor(coords.length / 2));
-      const geom1 = { type: "LineString", coordinates: [...coords.slice(0, midIdx), input.splitCoordinate] };
-      const geom2 = { type: "LineString", coordinates: [input.splitCoordinate, ...coords.slice(midIdx)] };
-
-      // 3. Create sub-segments
-      const seg1 = await dbAny.transportSegment.create({
-        data: {
-          ...seg,
-          id: undefined,
-          fromNodeId: seg.fromNodeId,
-          toNodeId: node.id,
-          geometry: geom1,
-          createdAt: undefined,
-          updatedAt: undefined,
-        },
-      });
-
-      const seg2 = await dbAny.transportSegment.create({
-        data: {
-          ...seg,
-          id: undefined,
-          fromNodeId: node.id,
-          toNodeId: seg.toNodeId,
-          geometry: geom2,
-          createdAt: undefined,
-          updatedAt: undefined,
-        },
-      });
-
-      // 4. Delete original
-      await dbAny.transportSegment.delete({ where: { id: input.segmentId } });
-
-      return { node, segment1: seg1, segment2: seg2 };
-    }),
-
-  /**
-   * Merge two adjacent segments sharing a node into a single segment.
-   */
-  mergeSegments: standardMutationCountryOwnerProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        segmentIdA: z.string(),
-        segmentIdB: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const dbAny = ctx.db as any;
-      const [segA, segB] = await Promise.all([
-        dbAny.transportSegment.findUnique({ where: { id: input.segmentIdA } }),
-        dbAny.transportSegment.findUnique({ where: { id: input.segmentIdB } }),
-      ]);
-      if (!segA || !segB) throw new Error("Segments not found");
-
-      const coordsA = (segA.geometry as { coordinates: [number, number][] }).coordinates;
-      const coordsB = (segB.geometry as { coordinates: [number, number][] }).coordinates;
-
-      const mergedCoords = [...coordsA, ...coordsB.slice(1)];
-      const { lengthKm, terrainDifficulty } = await computeRouteLengthAndDifficulty(
-        ctx.db,
-        mergedCoords,
-        input.countryId
-      );
-
-      const merged = await dbAny.transportSegment.create({
-        data: {
-          countryId: input.countryId,
-          fromNodeId: segA.fromNodeId,
-          toNodeId: segB.toNodeId,
-          routeType: segA.routeType,
-          geometry: { type: "LineString", coordinates: mergedCoords },
-          status: segA.status,
-          lengthKm,
-          terrainDifficulty,
-          worldId: segA.worldId,
-        },
-      });
-
-      await dbAny.transportSegment.deleteMany({
-        where: { id: { in: [input.segmentIdA, input.segmentIdB] } },
-      });
-
-      return merged;
     }),
 });
 

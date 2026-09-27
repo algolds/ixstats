@@ -5,10 +5,10 @@
  * `api.meetings.*` is byte-identical to the former monolith — no call sites change.
  *
  * Domains:
- *  - meetings:    cabinet meeting CRUD (create / list / get / update / delete)
+ *  - meetings:    cabinet meetings (create / list / get / accept / decline)
  *  - attendance:  meeting attendance recording and retrieval
- *  - proceedings: in-meeting work — agenda items and decisions
- *  - government:  government officials and departments (org-structure entities)
+ *  - proceedings: agenda items (add / list) and decisions (list)
+ *  - government:  government officials (appoint / list / remove) and departments (list)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { meetingsMeetingsRouter } from "./meetings";

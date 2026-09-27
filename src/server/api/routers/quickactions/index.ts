@@ -5,9 +5,9 @@
  * `api.quickActions.*` is byte-identical to the former monolith — no call sites change.
  *
  * Domains:
- *  - officials:  government officials CRUD (get/create/update/delete)
+ *  - officials:  government officials listing
  *  - meetings:   cabinet meeting scheduling + listing
- *  - policies:   policy CRUD + economic effect tracking + policy recommendations
+ *  - policies:   policy listing + policy recommendations
  *  - activities: activity schedule (planner) + dashboard / meeting-outcome summaries
  */
 import { mergeRouters } from "~/server/api/trpc";

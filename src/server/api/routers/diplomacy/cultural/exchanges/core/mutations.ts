@@ -7,6 +7,7 @@ import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 import { vaultService } from "~/lib/vault/vault-service";
 
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
   // Get diplomatic relationships for a country
@@ -281,9 +282,7 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.countryId || ctx.user.countryId !== input.countryId) {
-        throw new Error("You can only join cultural exchanges with your own country.");
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       // Get exchange details for tracking
       const exchange = await ctx.db.culturalExchange.findUnique({

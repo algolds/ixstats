@@ -22,7 +22,7 @@ const mockNotifCreate = jest
 type MockFn = any;
 
 const mockDb = {
-  user: { findUnique: jest.fn() as MockFn },
+  user: { findUnique: jest.fn() as MockFn, findFirst: jest.fn() as MockFn },
   country: { findUnique: jest.fn() as MockFn },
   militaryConflict: {
     findFirst: jest.fn() as MockFn,
@@ -174,6 +174,7 @@ describe("securityConflictsRouter conflict news", () => {
 
   it("fires pvnpc_conflict_resolved news on both sides with the winner", async () => {
     mockDb.user.findUnique.mockResolvedValue({ countryId: "country_1", id: "user_1" });
+    mockDb.user.findFirst.mockResolvedValue(null); // country_2 is an unclaimed NPC nation
     mockDb.militaryBranch.findMany.mockImplementation((args: { where: { countryId: string } }) => {
       if (args.where.countryId === "country_1") {
         return Promise.resolve([

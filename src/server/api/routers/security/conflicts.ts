@@ -278,6 +278,19 @@ export const securityConflictsRouter = createTRPCRouter({
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Not associated with a country." });
       }
 
+      // The strike damages the target's GDP, so the target must be an NPC (unclaimed) nation;
+      // player nations (including the caller's own) go through the mutual-consent PvP flow.
+      const targetPlayer = await ctx.db.user.findFirst({
+        where: { countryId: input.targetCountryId },
+        select: { id: true },
+      });
+      if (targetPlayer) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "PvNPC strikes can only target NPC nations. Challenge player nations via PvP.",
+        });
+      }
+
       // Get both countries' military data
       const [initiatorBranches, defenderBranches, initiator, defender] = await Promise.all([
         ctx.db.militaryBranch.findMany({

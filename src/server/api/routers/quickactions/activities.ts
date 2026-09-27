@@ -2,9 +2,7 @@
 // Comprehensive Quick Actions tRPC router with government integration, IxTime sync, and economic system integration
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { IxTime } from "~/lib/ixtime";
-import { notificationHooks } from "~/lib/notifications/hooks";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 /**
  * QUICK ACTIONS ROUTER
@@ -16,121 +14,6 @@ import { notificationHooks } from "~/lib/notifications/hooks";
  * - Government officials management
  * - Meeting agendas with tagging and categorization
  */
-
-// ============================================================================
-// INPUT VALIDATION SCHEMAS
-// ============================================================================
-
-// Base schema for government officials
-const governmentOfficialBaseSchema = z.object({
-  governmentStructureId: z.string().optional(),
-  departmentId: z.string().optional(),
-  name: z.string().min(1, "Name is required"),
-  title: z.string().min(1, "Title is required"),
-  role: z.enum(["Cabinet Member", "Department Head", "Advisor", "Staff", "External Consultant"]),
-  email: z.string().email().optional().nullable(),
-  phone: z.string().optional().nullable(),
-  bio: z.string().optional().nullable(),
-  photoUrl: z.string().url().optional().nullable(),
-  appointedDate: z.date().optional(),
-  termEndDate: z.date().optional().nullable(),
-  responsibilities: z.array(z.string()).optional(),
-  priority: z.number().int().min(0).max(100).default(50),
-  isActive: z.boolean().default(true),
-});
-
-// Create schema - all required fields with defaults
-const _governmentOfficialCreateSchema = governmentOfficialBaseSchema;
-
-// Update schema - all fields optional
-const _governmentOfficialUpdateSchema = governmentOfficialBaseSchema.partial();
-
-const _meetingInputSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().optional().nullable(),
-  scheduledDate: z.date(),
-  scheduledIxTime: z.number().optional(), // Optional IxTime override (if provided, scheduledDate is treated as IxTime)
-  duration: z.number().int().min(15).max(480).default(60),
-  attendeeIds: z.array(z.string()).default([]),
-  customAttendees: z
-    .array(
-      z.object({
-        name: z.string(),
-        role: z.string().optional(),
-      })
-    )
-    .optional()
-    .default([]),
-  agendaItems: z
-    .array(
-      z.object({
-        title: z.string(),
-        description: z.string().optional(),
-        duration: z.number().optional(),
-        category: z.string().optional(),
-        tags: z.array(z.string()).optional(),
-        presenter: z.string().optional(),
-      })
-    )
-    .optional()
-    .default([]),
-});
-
-// Base schema for policies
-const policyBaseSchema = z.object({
-  name: z.string().min(1, "Policy name is required"),
-  description: z.string().min(10, "Description is required (min 10 characters)"),
-  policyType: z.enum(["economic", "social", "diplomatic", "infrastructure", "governance"]),
-  category: z.string().min(1, "Category is required"),
-  priority: z.enum(["critical", "high", "medium", "low"]).default("medium"),
-  objectives: z.array(z.string()).optional().default([]),
-  targetMetrics: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
-  implementationCost: z.number().min(0).default(0),
-  maintenanceCost: z.number().min(0).default(0),
-  estimatedBenefit: z.string().optional().nullable(),
-  effectiveDate: z.date().optional().nullable(),
-  expiryDate: z.date().optional().nullable(),
-  // Economic effects
-  gdpEffect: z.number().default(0),
-  employmentEffect: z.number().default(0),
-  inflationEffect: z.number().default(0),
-  taxRevenueEffect: z.number().default(0),
-  customEffects: z.record(z.string(), z.number()).optional(),
-  approvalRequired: z.boolean().default(false),
-  isActive: z.boolean().default(true),
-});
-
-// Create schema - all required fields with defaults
-const _policyCreateSchema = policyBaseSchema;
-
-// Update schema - all fields optional
-const _policyUpdateSchema = policyBaseSchema.partial();
-
-const activityScheduleInputSchema = z.object({
-  activityType: z.enum([
-    "meeting",
-    "policy_review",
-    "economic_review",
-    "diplomatic_event",
-    "custom",
-  ]),
-  title: z.string().min(1),
-  description: z.string().optional().nullable(),
-  scheduledDate: z.date(),
-  duration: z.number().int().min(15).optional().nullable(),
-  priority: z.enum(["urgent", "high", "normal", "low"]).default("normal"),
-  category: z.string().optional().nullable(),
-  tags: z.array(z.string()).optional().default([]),
-  relatedIds: z.record(z.string(), z.string()).optional(),
-  recurrence: z
-    .object({
-      frequency: z.enum(["daily", "weekly", "monthly", "yearly"]),
-      interval: z.number().int().min(1),
-      endDate: z.date().optional(),
-    })
-    .optional()
-    .nullable(),
-});
 
 // ============================================================================
 // ROUTER DEFINITION
@@ -191,58 +74,6 @@ export const quickActionsActivitiesRouter = createTRPCRouter({
         recurrence: activity.recurrence ? JSON.parse(activity.recurrence) : null,
         reminderSettings: activity.reminderSettings ? JSON.parse(activity.reminderSettings) : null,
       }));
-    }),
-
-  /**
-   * Create activity schedule entry
-   */
-  createActivity: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        userId: z.string(),
-        activity: activityScheduleInputSchema,
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const scheduledIxTime = IxTime.convertToIxTime(input.activity.scheduledDate.getTime());
-
-      const activity = await ctx.db.activitySchedule.create({
-        data: {
-          countryId: input.countryId,
-          userId: input.userId,
-          activityType: input.activity.activityType,
-          title: input.activity.title,
-          description: input.activity.description ?? null,
-          scheduledDate: input.activity.scheduledDate,
-          scheduledIxTime,
-          duration: input.activity.duration ?? null,
-          priority: input.activity.priority,
-          category: input.activity.category ?? null,
-          tags: input.activity.tags.length > 0 ? JSON.stringify(input.activity.tags) : null,
-          relatedIds: input.activity.relatedIds ? JSON.stringify(input.activity.relatedIds) : null,
-          recurrence: input.activity.recurrence ? JSON.stringify(input.activity.recurrence) : null,
-          status: "scheduled",
-        },
-      });
-
-      // Notify about activity scheduled
-      try {
-        const _isUrgent = input.activity.priority === "urgent";
-        await notificationHooks.onQuickActionComplete({
-          userId: input.userId,
-          countryId: input.countryId,
-          actionType: "activity",
-          actionName: input.activity.title,
-          status: "scheduled",
-          impactSummary: `${input.activity.activityType} scheduled for ${input.activity.scheduledDate.toLocaleDateString()}`,
-          href: "/mycountry/quickactions",
-        });
-      } catch (error) {
-        console.error("[QuickActions] Failed to send activity scheduled notification:", error);
-      }
-
-      return { activity, success: true };
     }),
 
   /**

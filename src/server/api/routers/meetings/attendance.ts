@@ -3,6 +3,8 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { assertCountryResourceWriteAccess } from "~/server/shared/country-authorization";
+import { resolveMeetingCountryId } from "~/server/shared/country-resource-owner";
 
 export const meetingsAttendanceRouter = createTRPCRouter({
   // ==================== CABINET MEETINGS ====================
@@ -21,6 +23,11 @@ export const meetingsAttendanceRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryResourceWriteAccess(
+        ctx,
+        await resolveMeetingCountryId(ctx.db, input.meetingId),
+        "Meeting"
+      );
       // Check if attendance record already exists
       const existing = input.officialId
         ? await ctx.db.meetingAttendance.findFirst({

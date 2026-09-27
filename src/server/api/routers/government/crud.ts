@@ -5,87 +5,6 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { detectGovernmentConflicts } from "~/server/services/builderIntegrationService";
 import { GovernmentBuilderStateSchema } from "~/types/government";
 
-// Base schema for government departments
-const departmentBaseSchema = z.object({
-  name: z.string().min(1, "Department name is required"),
-  shortName: z.string().optional(),
-  category: z.enum([
-    "Defense",
-    "Education",
-    "Health",
-    "Finance",
-    "Foreign Affairs",
-    "Interior",
-    "Justice",
-    "Transportation",
-    "Agriculture",
-    "Environment",
-    "Labor",
-    "Commerce",
-    "Energy",
-    "Communications",
-    "Culture",
-    "Science and Technology",
-    "Social Services",
-    "Housing",
-    "Veterans Affairs",
-    "Intelligence",
-    "Emergency Management",
-    "Other",
-  ]),
-  description: z.string().optional(),
-  minister: z.string().optional(),
-  ministerTitle: z.string().default("Minister"),
-  headquarters: z.string().optional(),
-  established: z.string().optional(),
-  employeeCount: z.number().int().positive().optional(),
-  icon: z.string().optional(),
-  color: z.string().default("#6366f1"),
-  priority: z.number().int().min(1).max(100).default(50),
-  parentDepartmentId: z.string().optional(),
-  organizationalLevel: z
-    .enum(["Ministry", "Department", "Agency", "Bureau", "Office", "Commission"])
-    .default("Ministry"),
-  functions: z.array(z.string()).optional(),
-  isActive: z.boolean().default(true),
-});
-
-// Create schema - all required fields with defaults
-const _departmentCreateSchema = departmentBaseSchema;
-
-// Update schema - all fields optional
-const _departmentUpdateSchema = departmentBaseSchema.partial();
-
-const _budgetAllocationInputSchema = z.object({
-  departmentId: z.string().min(1),
-  budgetYear: z.number().int().min(2020).max(2030),
-  allocatedAmount: z.number().nonnegative(),
-  allocatedPercent: z.number().min(0).max(100),
-  notes: z.string().optional(),
-});
-
-const _subBudgetInputSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().optional(),
-  amount: z.number().nonnegative(),
-  percent: z.number().min(0).max(100),
-  budgetType: z.enum(["Personnel", "Operations", "Capital", "Research", "Other"]),
-  isRecurring: z.boolean().default(true),
-  priority: z.enum(["Critical", "High", "Medium", "Low"]).default("Medium"),
-});
-
-const _revenueSourceInputSchema = z.object({
-  name: z.string().min(1),
-  category: z.enum(["Direct Tax", "Indirect Tax", "Non-Tax Revenue", "Fees and Fines", "Other"]),
-  description: z.string().optional(),
-  rate: z.number().min(0).max(100).optional(),
-  revenueAmount: z.number().nonnegative(),
-  collectionMethod: z.string().optional(),
-  administeredBy: z.string().optional(),
-});
-
-const _governmentBuilderStateSchema = GovernmentBuilderStateSchema;
-
 export const governmentCrudRouter = createTRPCRouter({
   // Get government structure by country ID with configurable includes
   // Phase 1 optimization: Added limits to prevent unbounded data fetching
@@ -188,16 +107,5 @@ export const governmentCrudRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const warnings = await detectGovernmentConflicts(ctx.db as any, input.countryId, input.data);
       return { warnings };
-    }),
-
-  // Delete government structure
-  delete: protectedProcedure
-    .input(z.object({ countryId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const deleted = await ctx.db.governmentStructure.delete({
-        where: { countryId: input.countryId },
-      });
-
-      return { success: true, id: deleted.id };
     }),
 });

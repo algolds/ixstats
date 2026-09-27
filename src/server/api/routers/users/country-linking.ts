@@ -2,6 +2,7 @@
 // Simplified users router with profile management and country linking
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   publicProcedure,
@@ -249,6 +250,12 @@ export const usersCountryLinkingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      if (input.userId !== ctx.auth?.userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Cannot create a country for a different user",
+        });
+      }
       try {
         // Check if user already has a country
         const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
@@ -407,43 +414,6 @@ export const usersCountryLinkingRouter = createTRPCRouter({
       } catch (error) {
         console.error("Error creating country:", error);
         throw new Error(error instanceof Error ? error.message : "Failed to create country", {
-          cause: error,
-        });
-      }
-    }),
-
-  // Unlink country from user
-  unlinkCountry: protectedProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-        countryId: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        // Verify the userId matches the authenticated user
-        if (input.userId !== ctx.auth?.userId) {
-          throw new Error("UNAUTHORIZED: Cannot unlink country for different user");
-        }
-        // Check if user is linked to the country
-        const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
-        if (!user || user.countryId !== input.countryId) {
-          throw new Error("Country not found or not linked to user");
-        }
-        // Unlink user from country
-        await ctx.db.user.update({
-          where: { clerkUserId: input.userId },
-          data: { countryId: null },
-        });
-        await globalCache.delete(`user_profile:${input.userId}`);
-        return {
-          success: true,
-          message: "Country unlinked successfully",
-        };
-      } catch (error) {
-        console.error("Error unlinking country:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to unlink country", {
           cause: error,
         });
       }

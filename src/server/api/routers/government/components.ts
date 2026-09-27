@@ -3,7 +3,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { COMPONENT_TYPE_VALUES, GovernmentBuilderStateSchema } from "~/types/government";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { notificationAPI } from "~/lib/notifications/api";
 import { applyGovernmentComponentEffects } from "~/lib/government/component-effects";
@@ -11,14 +10,13 @@ import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import { ATOMIC_TAX_COMPONENTS } from "~/lib/government/tax/atomic-tax-components";
 import {
-  calculateImplementationDate,
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
   parseTimeToImplement,
 } from "~/lib/government/atomic-utils";
 import { mapTaxComponentTypeToId } from "~/lib/enums";
 import { IxTime } from "~/lib/ixtime";
-import { getOrSetCatalogCache, invalidateCatalogCache } from "~/server/shared/layer-cache";
+import { getOrSetCatalogCache } from "~/server/shared/layer-cache";
 
 // Input validation schemas
 // Base schema for government departments
@@ -316,189 +314,6 @@ export const governmentComponentsRouter = createTRPCRouter({
         implementingCount: rolloutQueue.length,
         rolloutQueue,
       };
-    }),
-
-  // Add atomic government component
-  addComponent: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        componentType: z.enum(COMPONENT_TYPE_VALUES),
-        isActive: z.boolean().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Check if component already exists
-      const existing = await ctx.db.governmentComponent.findFirst({
-        where: {
-          countryId: input.countryId,
-          componentType: input.componentType,
-        },
-      });
-
-      if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "This component is already selected",
-        });
-      }
-
-      // Look up component data
-      const compData = ATOMIC_COMPONENTS[input.componentType];
-      if (!compData) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Component not found in catalog",
-        });
-      }
-
-      // Check budget
-      const structure = await ctx.db.governmentStructure.findUnique({
-        where: { countryId: input.countryId },
-      });
-
-      if (!structure) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message:
-            "Government structure not found for this country. Please configure your government first.",
-        });
-      }
-
-      const cost = compData.implementationCost || 0;
-      if (structure.totalBudget < cost) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Insufficient budget. Required: ${cost}, Available: ${structure.totalBudget}`,
-        });
-      }
-
-      // Deduct budget
-      await ctx.db.governmentStructure.update({
-        where: { countryId: input.countryId },
-        data: {
-          totalBudget: { decrement: cost },
-        },
-      });
-
-      // Calculate implementationDate
-      const isImmediate = input.isActive ?? false;
-      const implementationDate = isImmediate
-        ? new Date()
-        : calculateImplementationDate(compData.metadata.timeToImplement);
-
-      const component = await ctx.db.governmentComponent.create({
-        data: {
-          countryId: input.countryId,
-          componentType: input.componentType,
-          isActive: isImmediate,
-          implementationCost: cost,
-          maintenanceCost: compData.maintenanceCost || 0,
-          requiredCapacity: compData.metadata.staffRequired || compData.requiredCapacity || 50,
-          implementationDate,
-        },
-      });
-
-      // Apply component effects to game state
-      try {
-        const result = await applyGovernmentComponentEffects(ctx.db, input.countryId);
-        await notificationAPI.create({
-          title: "Government Component Added",
-          message: `Added ${input.componentType}. Government effectiveness: ${result.overallEffectiveness.toFixed(1)}%. ${result.effectsCreated} economic effect(s) applied.`,
-          countryId: input.countryId,
-          category: "governance",
-          priority: "medium",
-          type: "info",
-          href: "/mycountry/government/builder",
-          source: "government-components",
-          actionable: false,
-          metadata: {
-            componentType: input.componentType,
-            overallEffectiveness: result.overallEffectiveness,
-            effectsCreated: result.effectsCreated,
-          },
-        });
-      } catch (error) {
-        console.error("[Government] Failed to apply component effects:", error);
-      }
-
-      // Notify about component addition
-      try {
-        await notificationHooks.onGovernmentStructureChange({
-          countryId: input.countryId,
-          changeType: "component_added",
-          componentName: input.componentType,
-          details: `Atomic government component added: ${input.componentType}`,
-        });
-      } catch (error) {
-        console.error("[Government] Failed to send component addition notification:", error);
-      }
-
-      // Invalidate catalog cache for this country
-      invalidateCatalogCache(`gov-components:${input.countryId}`);
-
-      return component;
-    }),
-
-  // Remove atomic government component
-  removeComponent: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        componentType: z.enum(COMPONENT_TYPE_VALUES),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const deleted = await ctx.db.governmentComponent.deleteMany({
-        where: {
-          countryId: input.countryId,
-          componentType: input.componentType,
-        },
-      });
-
-      // Invalidate catalog cache for this country
-      invalidateCatalogCache(`gov-components:${input.countryId}`);
-
-      // Apply component effects to game state after removal
-      if (deleted.count > 0) {
-        try {
-          const result = await applyGovernmentComponentEffects(ctx.db, input.countryId);
-          await notificationAPI.create({
-            title: "Government Component Removed",
-            message: `Removed ${input.componentType}. Government effectiveness: ${result.overallEffectiveness.toFixed(1)}%. ${result.effectsCreated} economic effect(s) active.`,
-            countryId: input.countryId,
-            category: "governance",
-            priority: "medium",
-            type: "info",
-            href: "/mycountry/government/builder",
-            source: "government-components",
-            actionable: false,
-            metadata: {
-              componentType: input.componentType,
-              overallEffectiveness: result.overallEffectiveness,
-              effectsCreated: result.effectsCreated,
-            },
-          });
-        } catch (error) {
-          console.error("[Government] Failed to apply component effects after removal:", error);
-        }
-      }
-
-      // Notify about component removal
-      try {
-        if (deleted.count > 0) {
-          await notificationHooks.onGovernmentStructureChange({
-            countryId: input.countryId,
-            changeType: "component_removed",
-            componentName: input.componentType,
-            details: `Atomic government component removed: ${input.componentType}`,
-          });
-        }
-      } catch (error) {
-        console.error("[Government] Failed to send component removal notification:", error);
-      }
-
-      return { success: deleted.count > 0 };
     }),
 
   // Get effectiveness analysis for atomic components

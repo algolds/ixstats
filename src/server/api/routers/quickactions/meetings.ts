@@ -1,15 +1,15 @@
 /**
  * Quick Actions Cabinet Meetings Router (Plan 163 / Plan 191)
  *
- * Handles cabinet meeting lifecycle, agenda items, attendance tracking,
- * and meeting completion decision recommendations.
+ * Lists cabinet meetings and schedules new ones (with attendees, agenda
+ * items and an activity-schedule entry).
  */
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationHooks } from "~/lib/notifications/hooks";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 const meetingInputSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -107,12 +107,13 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
     .input(
       z.object({
         countryId: z.string(),
-        userId: z.string(),
+        userId: z.string().optional(), // ignored: the organiser is always the caller
         meeting: meetingInputSchema,
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const _currentIxTime = IxTime.getCurrentIxTime();
+      await assertCountryWriteAccess(ctx, input.countryId);
+      const userId = ctx.auth.userId;
 
       const scheduledIxTime =
         input.meeting.scheduledIxTime ??
@@ -122,7 +123,7 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
       const meeting = await ctx.db.cabinetMeeting.create({
         data: {
           countryId: input.countryId,
-          userId: input.userId,
+          userId,
           title: input.meeting.title,
           description: input.meeting.description ?? null,
           scheduledDate: input.meeting.scheduledDate,
@@ -177,7 +178,7 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
       await ctx.db.activitySchedule.create({
         data: {
           countryId: input.countryId,
-          userId: input.userId,
+          userId,
           activityType: "meeting",
           title: input.meeting.title,
           description: input.meeting.description ?? null,
@@ -194,7 +195,7 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
       // Notify about meeting scheduled
       try {
         await notificationHooks.onQuickActionComplete({
-          userId: input.userId,
+          userId,
           countryId: input.countryId,
           actionType: "meeting",
           actionName: input.meeting.title,
@@ -207,197 +208,5 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
       }
 
       return { meeting, success: true, message: "Cabinet meeting scheduled successfully" };
-    }),
-
-  /**
-   * Update meeting status and add notes
-   */
-  updateMeeting: protectedProcedure
-    .input(
-      z.object({
-        meetingId: z.string(),
-        updates: z.object({
-          status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).optional(),
-          notes: z.string().optional(),
-        }),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const meeting = await ctx.db.cabinetMeeting.update({
-        where: { id: input.meetingId },
-        data: {
-          ...(input.updates.status && { status: input.updates.status }),
-          ...(input.updates.notes && { notes: input.updates.notes }),
-        },
-      });
-
-      // Update related activity schedule
-      if (input.updates.status) {
-        await ctx.db.activitySchedule.updateMany({
-          where: {
-            relatedIds: { contains: input.meetingId },
-            activityType: "meeting",
-          },
-          data: {
-            status:
-              input.updates.status === "completed"
-                ? "completed"
-                : input.updates.status === "cancelled"
-                  ? "cancelled"
-                  : input.updates.status === "in_progress"
-                    ? "in_progress"
-                    : "scheduled",
-          },
-        });
-      }
-
-      return { meeting, success: true };
-    }),
-
-  /**
-   * Update agenda item status
-   */
-  updateAgendaItem: protectedProcedure
-    .input(
-      z.object({
-        agendaItemId: z.string(),
-        status: z.enum(["pending", "discussed", "deferred", "completed"]),
-        outcome: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const agendaItem = await ctx.db.meetingAgendaItem.update({
-        where: { id: input.agendaItemId },
-        data: {
-          status: input.status,
-          ...(input.outcome && { outcome: input.outcome }),
-        },
-      });
-
-      return { agendaItem, success: true };
-    }),
-
-  /**
-   * Complete a meeting and trigger decision/action prompts
-   */
-  completeMeeting: protectedProcedure
-    .input(
-      z.object({
-        meetingId: z.string(),
-        notes: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const meeting = await ctx.db.cabinetMeeting.findUnique({
-        where: { id: input.meetingId },
-        include: {
-          agendaItems: true,
-        },
-      });
-
-      if (!meeting) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Meeting not found",
-        });
-      }
-
-      // Update meeting status
-      await ctx.db.cabinetMeeting.update({
-        where: { id: input.meetingId },
-        data: {
-          status: "completed",
-          completedAt: new Date(),
-          notes: input.notes ?? null,
-        },
-      });
-
-      // Update related activity schedule
-      await ctx.db.activitySchedule.updateMany({
-        where: {
-          relatedIds: { contains: input.meetingId },
-          activityType: "meeting",
-        },
-        data: {
-          status: "completed",
-        },
-      });
-
-      // Notify about meeting completion
-      try {
-        const discussedCount = meeting.agendaItems.filter((i) => i.status === "discussed").length;
-        await notificationHooks.onQuickActionComplete({
-          countryId: meeting.countryId,
-          actionType: "meeting",
-          actionName: meeting.title,
-          status: "completed",
-          impactSummary: `Meeting completed with ${discussedCount} items discussed`,
-          href: "/mycountry/quickactions",
-        });
-      } catch (error) {
-        console.error("[QuickActions] Failed to send meeting completion notification:", error);
-      }
-
-      // Generate suggested decisions based on agenda items
-      const suggestedDecisions: Array<{
-        title: string;
-        description: string;
-        decisionType: string;
-        agendaItemId?: string;
-        agendaTitle: string;
-      }> = [];
-
-      for (const item of meeting.agendaItems) {
-        const category = item.category?.toLowerCase() ?? "";
-        const tags = item.tags ? (JSON.parse(item.tags) as string[]) : [];
-
-        // Generate context-appropriate decision suggestions
-        if (category === "economic" || tags.includes("budget") || tags.includes("finance")) {
-          suggestedDecisions.push({
-            title: `Budget Allocation for ${item.title}`,
-            description: `Approve budget allocation related to: ${item.title}`,
-            decisionType: "budget_allocation",
-            agendaItemId: item.id,
-            agendaTitle: item.title,
-          });
-        }
-
-        if (category === "social" || tags.includes("policy")) {
-          suggestedDecisions.push({
-            title: `Policy Decision on ${item.title}`,
-            description: `Approve or modify policy discussed in: ${item.title}`,
-            decisionType: "policy_approval",
-            agendaItemId: item.id,
-            agendaTitle: item.title,
-          });
-        }
-
-        if (tags.includes("appointment") || tags.includes("personnel")) {
-          suggestedDecisions.push({
-            title: `Personnel Decision for ${item.title}`,
-            description: `Approve appointment or personnel change for: ${item.title}`,
-            decisionType: "appointment",
-            agendaItemId: item.id,
-            agendaTitle: item.title,
-          });
-        }
-
-        // Always suggest a general resolution for discussed items
-        if (item.status === "discussed") {
-          suggestedDecisions.push({
-            title: `Resolution on ${item.title}`,
-            description: `Record formal decision regarding: ${item.title}`,
-            decisionType: "resolution",
-            agendaItemId: item.id,
-            agendaTitle: item.title,
-          });
-        }
-      }
-
-      return {
-        success: true,
-        message: "Meeting completed successfully",
-        suggestedDecisions,
-      };
     }),
 });

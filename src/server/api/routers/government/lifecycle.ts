@@ -10,6 +10,7 @@ import {
 } from "~/server/services/builderIntegrationService";
 import { GovernmentBuilderStateSchema } from "~/types/government";
 import { notificationHooks } from "~/lib/notifications/hooks";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const governmentLifecycleRouter = createTRPCRouter({
   // Create complete government structure
@@ -23,6 +24,7 @@ export const governmentLifecycleRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { countryId, data, skipConflictCheck } = input;
+      await assertCountryWriteAccess(ctx, countryId);
 
       // Check if government structure already exists
       const existing = await ctx.db.governmentStructure.findUnique({
@@ -205,6 +207,7 @@ export const governmentLifecycleRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { countryId, data, skipConflictCheck } = input;
+      await assertCountryWriteAccess(ctx, countryId);
 
       // Detect conflicts if not skipped
       let warnings: ConflictWarning[] = [];

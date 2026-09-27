@@ -12,6 +12,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { requireWikiUserId, isWikiAdmin } from "~/lib/wiki-os/auth";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 interface HydratedComment {
   id: string;
@@ -231,6 +232,8 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const authUserId = requireWikiUserId(ctx);
+      // Posting "as" a country is only allowed for a country the caller may write to.
+      if (input.countryId) await assertCountryWriteAccess(ctx, input.countryId);
       const dbUser = ctx.user as any;
       const effectiveUserId = dbUser?.id || authUserId;
       const effectiveCountryId = input.countryId || dbUser?.countryId || null;
@@ -284,6 +287,8 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const authUserId = requireWikiUserId(ctx);
+      // Posting "as" a country is only allowed for a country the caller may write to.
+      if (input.countryId) await assertCountryWriteAccess(ctx, input.countryId);
       const dbUser = ctx.user as any;
       const effectiveUserId = dbUser?.id || authUserId;
       const effectiveCountryId = input.countryId || dbUser?.countryId || null;

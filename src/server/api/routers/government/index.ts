@@ -5,8 +5,7 @@
  * `api.government.*` is byte-identical to the former monolith — no call sites change.
  *
  * Domains:
- *  - crud:       structure reads (getByCountryId / getFullByCountryId), conflict check,
- *                delete, and partial autosave
+ *  - crud:       structure reads (getByCountryId / getFullByCountryId) and conflict check
  *  - lifecycle:  full create / update of the government structure (departments, budgets, revenue)
  *  - budget:     budget & revenue summaries, allocation updates, sub-budget categories
  *  - components: atomic government components, department hierarchy, political metrics,

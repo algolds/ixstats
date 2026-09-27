@@ -3,6 +3,12 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { assertCountryResourceWriteAccess } from "~/server/shared/country-authorization";
+import {
+  resolveDepartmentCountryId,
+  resolveOfficialCountryId,
+  resolveStructureCountryId,
+} from "~/server/shared/country-resource-owner";
 
 export const meetingsGovernmentRouter = createTRPCRouter({
   // ==================== CABINET MEETINGS ====================
@@ -33,6 +39,18 @@ export const meetingsGovernmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const { governmentStructureId, departmentId } = input;
+      if (departmentId) {
+        const departmentCountryId = await resolveDepartmentCountryId(ctx.db, departmentId);
+        await assertCountryResourceWriteAccess(ctx, departmentCountryId, "Department");
+      }
+      // With no parent at all, only privileged callers may create a floating official.
+      if (governmentStructureId || !departmentId) {
+        const structureCountryId = governmentStructureId
+          ? await resolveStructureCountryId(ctx.db, governmentStructureId)
+          : null;
+        await assertCountryResourceWriteAccess(ctx, structureCountryId, "Government structure");
+      }
       return await ctx.db.governmentOfficial.create({
         data: input,
       });
@@ -80,29 +98,6 @@ export const meetingsGovernmentRouter = createTRPCRouter({
       });
     }),
 
-  updateOfficial: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().optional(),
-        title: z.string().optional(),
-        role: z.string().optional(),
-        departmentId: z.string().optional(),
-        termEndDate: z.date().optional(),
-        bio: z.string().optional(),
-        isActive: z.boolean().optional(),
-        email: z.string().optional(),
-        phone: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      return await ctx.db.governmentOfficial.update({
-        where: { id },
-        data,
-      });
-    }),
-
   removeOfficial: protectedProcedure
     .input(
       z.object({
@@ -111,6 +106,11 @@ export const meetingsGovernmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryResourceWriteAccess(
+        ctx,
+        await resolveOfficialCountryId(ctx.db, input.id),
+        "Official"
+      );
       return await ctx.db.governmentOfficial.update({
         where: { id: input.id },
         data: {
@@ -121,25 +121,6 @@ export const meetingsGovernmentRouter = createTRPCRouter({
     }),
 
   // ==================== GOVERNMENT DEPARTMENTS ====================
-
-  createDepartment: protectedProcedure
-    .input(
-      z.object({
-        governmentStructureId: z.string(),
-        name: z.string().min(1).max(100),
-        category: z.string(),
-        description: z.string().optional(),
-        shortName: z.string().optional(),
-        minister: z.string().optional(),
-        ministerTitle: z.string().optional(),
-        parentDepartmentId: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.db.governmentDepartment.create({
-        data: input,
-      });
-    }),
 
   getDepartments: publicProcedure
     .input(
@@ -156,44 +137,6 @@ export const meetingsGovernmentRouter = createTRPCRouter({
           },
         },
         orderBy: { name: "asc" },
-      });
-    }),
-
-  updateDepartment: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().optional(),
-        description: z.string().optional(),
-        budget: z.number().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { id, budget: _budget, ...data } = input;
-      return await ctx.db.governmentDepartment.update({
-        where: { id },
-        data,
-      });
-    }),
-
-  deleteDepartment: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      // First check if department has officials
-      const officials = await ctx.db.governmentOfficial.count({
-        where: { departmentId: input.id },
-      });
-
-      if (officials > 0) {
-        throw new Error("Cannot delete department with active officials");
-      }
-
-      return await ctx.db.governmentDepartment.delete({
-        where: { id: input.id },
       });
     }),
 });
