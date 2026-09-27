@@ -32,7 +32,11 @@ import {
   snapGeometryToBackgroundLayers,
 } from "../utils/map-helpers";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
-import { getSnapEnabled, getSnapTolerance } from "~/lib/maps/editor-prefs";
+import {
+  getSnapEnabled,
+  getSnapTolerance,
+  withoutDisabledSnapLayers,
+} from "~/lib/maps/editor-prefs";
 import {
   exceedsHysteresis,
   detectAxis,
@@ -224,7 +228,7 @@ export function useSubdivisionVertexEdit({
       geo = snapGeometryToBackgroundLayers(
         geo as Polygon | MultiPolygon,
         worldMapLayers,
-        editorVisibleLayers,
+        withoutDisabledSnapLayers(editorVisibleLayers),
         0.015
       );
     }

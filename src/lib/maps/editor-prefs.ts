@@ -9,67 +9,75 @@
 
 const PREFS_KEY = "ixeditor-snap-enabled";
 const TOLERANCE_KEY = "ixeditor-snap-tolerance";
+const SNAP_LAYERS_OFF_KEY = "ixeditor-snap-layers-off";
 const DEFAULT_ENABLED = true;
 const DEFAULT_TOLERANCE = 0.015; // ~1.7 km at equator
 
 const memoryStore: Record<string, string> = {};
 
-// --- Snap enabled ---
-
-export function getSnapEnabled(): boolean {
+function readPref(key: string): string | null {
   try {
-    if (typeof localStorage !== "undefined") {
-      const raw = localStorage.getItem(PREFS_KEY);
-      if (raw === null) return DEFAULT_ENABLED;
-      return raw !== "false";
-    }
-    const mem = memoryStore[PREFS_KEY];
-    if (mem === undefined) return DEFAULT_ENABLED;
-    return mem !== "false";
+    if (typeof localStorage !== "undefined") return localStorage.getItem(key);
+    return memoryStore[key] ?? null;
   } catch {
-    return DEFAULT_ENABLED;
+    return null;
   }
 }
 
-export function setSnapEnabled(enabled: boolean): void {
+function writePref(key: string, value: string): void {
   try {
     if (typeof localStorage !== "undefined") {
-      localStorage.setItem(PREFS_KEY, String(enabled));
+      localStorage.setItem(key, value);
     }
-    memoryStore[PREFS_KEY] = String(enabled);
+    memoryStore[key] = value;
   } catch {
     /* quota / private-browsing — silently ignore */
   }
+}
+
+// --- Snap enabled ---
+
+export function getSnapEnabled(): boolean {
+  const raw = readPref(PREFS_KEY);
+  return raw === null ? DEFAULT_ENABLED : raw !== "false";
+}
+
+export function setSnapEnabled(enabled: boolean): void {
+  writePref(PREFS_KEY, String(enabled));
 }
 
 // --- Snap tolerance (degrees) ---
 
 export function getSnapTolerance(): number {
-  try {
-    if (typeof localStorage !== "undefined") {
-      const raw = localStorage.getItem(TOLERANCE_KEY);
-      if (raw === null) return DEFAULT_TOLERANCE;
-      const n = parseFloat(raw);
-      if (isNaN(n) || n <= 0) return DEFAULT_TOLERANCE;
-      return n;
-    }
-    const mem = memoryStore[TOLERANCE_KEY];
-    if (mem === undefined) return DEFAULT_TOLERANCE;
-    const n = parseFloat(mem);
-    if (isNaN(n) || n <= 0) return DEFAULT_TOLERANCE;
-    return n;
-  } catch {
-    return DEFAULT_TOLERANCE;
-  }
+  const n = parseFloat(readPref(TOLERANCE_KEY) ?? "");
+  return isNaN(n) || n <= 0 ? DEFAULT_TOLERANCE : n;
 }
 
 export function setSnapTolerance(tolerance: number): void {
-  try {
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem(TOLERANCE_KEY, String(tolerance));
-    }
-    memoryStore[TOLERANCE_KEY] = String(tolerance);
-  } catch {
-    /* quota / private-browsing — silently ignore */
-  }
+  writePref(TOLERANCE_KEY, String(tolerance));
+}
+
+// --- Per-layer terrain snap toggles ---
+
+/** Background layers the editor snaps to. "background" is the landmass, i.e. the coastline. */
+export const SNAP_LAYER_TYPES = ["rivers", "lakes", "background", "altitudes", "climate"] as const;
+export type SnapLayerType = (typeof SNAP_LAYER_TYPES)[number];
+
+/** Snap layers the user switched off (all layers are on by default). */
+export function getDisabledSnapLayers(): Set<SnapLayerType> {
+  const off = (readPref(SNAP_LAYERS_OFF_KEY) ?? "").split(",");
+  return new Set(SNAP_LAYER_TYPES.filter((layer) => off.includes(layer)));
+}
+
+export function setSnapLayerEnabled(layer: SnapLayerType, enabled: boolean): void {
+  const off = getDisabledSnapLayers();
+  if (enabled) off.delete(layer);
+  else off.add(layer);
+  writePref(SNAP_LAYERS_OFF_KEY, [...off].join(","));
+}
+
+/** The visible layers minus the snap layers the user switched off. */
+export function withoutDisabledSnapLayers(visibleLayers: ReadonlySet<string>): Set<string> {
+  const off: ReadonlySet<string> = getDisabledSnapLayers();
+  return new Set([...visibleLayers].filter((layer) => !off.has(layer)));
 }

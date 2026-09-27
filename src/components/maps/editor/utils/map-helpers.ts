@@ -11,6 +11,7 @@ import {
   distanceDeg,
 } from "~/lib/maps/border-editor";
 import { distanceKm } from "~/lib/maps/geo-math";
+import { SNAP_LAYER_TYPES } from "~/lib/maps/editor-prefs";
 
 export const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as Feature[] };
 
@@ -233,7 +234,8 @@ export function updateSnapGuide(map: MapLibreMap, from: Position | null, to: Pos
 export const haversineDistance = distanceKm;
 
 /**
- * Snap a coordinate point to visible background features (rivers, lakes, elevation contour, climate zones).
+ * Snap a coordinate point to visible background features (rivers, lakes, coastline,
+ * elevation contour, climate zones). Only layer types present in `visibleLayers` are used.
  */
 export function snapToLayerFeatures(
   point: [number, number],
@@ -246,9 +248,7 @@ export function snapToLayerFeatures(
   let bestDist = Infinity;
   let bestProj: [number, number] = point;
 
-  const targetLayerTypes = ["rivers", "lakes", "altitudes", "climate"];
-
-  for (const layerType of targetLayerTypes) {
+  for (const layerType of SNAP_LAYER_TYPES) {
     if (!visibleLayers.has(layerType)) continue;
 
     const layer = worldMapLayers.find((l) => l.type === layerType);

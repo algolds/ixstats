@@ -6,6 +6,7 @@ import {
   clampToGeometry,
   snapPointToGeometries,
 } from "~/lib/maps/border-editor";
+import { withoutDisabledSnapLayers } from "~/lib/maps/editor-prefs";
 import { snapToLayerFeatures } from "../utils/map-helpers";
 
 export interface CalculateSnapTargetOptions {
@@ -48,7 +49,7 @@ export function calculateSnapTarget({
     target = snapToLayerFeatures(
       target as [number, number],
       worldMapLayers,
-      editorVisibleLayers,
+      withoutDisabledSnapLayers(editorVisibleLayers),
       snapTolerance
     );
   }
