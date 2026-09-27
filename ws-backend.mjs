@@ -3,18 +3,17 @@
  * Standalone WebSocket backend.
  *
  * The live preview is served only by the ixworld standalone build (`server.js`),
- * which has NO Socket.IO server attached — so ThinkPages/Intelligence/Market
+ * which has NO Socket.IO server attached — so ThinkPages/Market
  * realtime fail. This process runs ONLY the WebSocket servers (no Next, no cron)
  * and nginx proxies the WS paths on maps.ixwiki.com to it, so realtime works
  * same-origin from the browser's point of view.
  *
  * Paths served (attach to the raw HTTP server, independent of Next basePath):
- *   /ws/thinkpages   ThinkPages (Socket.IO)
- *   /socket.io       Intelligence (Socket.IO, default path)
+ *   /ws/thinkpages   ThinkPages (Socket.IO, Clerk session token required)
  *   /api/market-ws   Market auctions (ws)
  *
- * Run as PM2 app "ixstats-ws". Cron stays in the separate "ixstats-cron"
- * process — do NOT run full server.mjs here (it would double the cron payouts).
+ * Run as PM2 app "ixstats-ws". Scheduled jobs run only in the separate
+ * "ixstats-cron" process (cron-runner.mjs).
  *
  * NOTE: no top-level await — PM2's Bun fork container `require()`s this file,
  * which fails on top-level await. Everything runs inside main().
@@ -75,10 +74,10 @@ async function main() {
 
   try {
     const { initializeWebSocketServer } = await import("./src/server/websocket-server.js");
-    await initializeWebSocketServer(httpServer); // Intelligence (/socket.io) + ThinkPages (/ws/thinkpages)
-    console.log("[WS] ✓ Intelligence + ThinkPages WebSocket initialized");
+    await initializeWebSocketServer(httpServer); // ThinkPages (/ws/thinkpages)
+    console.log("[WS] ✓ ThinkPages WebSocket initialized");
   } catch (error) {
-    console.error("[WS] ✗ Intelligence/ThinkPages init failed:", error.message);
+    console.error("[WS] ✗ ThinkPages init failed:", error.message);
   }
 
   try {

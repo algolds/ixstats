@@ -1,5 +1,4 @@
 import { db } from "~/server/db";
-import { IxTime } from "~/lib/ixtime";
 
 /**
  * Process all expired pending trades every 5 minutes
@@ -10,7 +9,8 @@ export async function processExpiredTrades() {
   const startTime = Date.now();
   console.log("[CRON] Checking for expired trades at", new Date().toISOString());
 
-  const now = IxTime.getCurrentIxTime();
+  // Trades are created and checked against real time (trading/offers.ts), not IxTime.
+  const now = Date.now();
 
   try {
     const expiredTrades = await db.tradeOffer.findMany({
