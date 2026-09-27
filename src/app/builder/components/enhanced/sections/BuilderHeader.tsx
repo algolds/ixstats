@@ -11,7 +11,7 @@ import {
   SystemRestart as Loader2,
   ClockRotateRight as History,
 } from "iconoir-react";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { useBuilderContext } from "../context/BuilderStateContext";

@@ -24,7 +24,7 @@ import {
 } from "iconoir-react";
 
 import { api } from "~/trpc/react";
-import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
+import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/admin/log-viewer";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";

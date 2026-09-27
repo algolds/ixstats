@@ -10,7 +10,7 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath, stripBasePath } from "~/lib/base-path";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 import { useTheme } from "~/context/theme-context";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { useCountryData } from "~/components/mycountry/shared/primitives";

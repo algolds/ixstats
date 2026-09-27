@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Globe, EditPencil as Edit3, ArrowRight, ClockRotateRight, Trash } from "iconoir-react";
 import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";

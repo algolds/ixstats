@@ -10,7 +10,7 @@ import {
   User,
   ArrowUpRight,
 } from "iconoir-react";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 import { FacetContainer, FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { useCountryData } from "~/components/mycountry/shared/primitives";

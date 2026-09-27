@@ -5,7 +5,7 @@ import Link from "next/link";
 import { OpenBook as BookOpen } from "iconoir-react";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
-import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
+import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
 import { parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";

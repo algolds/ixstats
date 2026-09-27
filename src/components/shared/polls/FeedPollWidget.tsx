@@ -3,11 +3,11 @@
 import React, { useState, useTransition } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { PollWidget } from "~/components/ui/poll-widget";
-import { FeatureVoting } from "~/components/ui/feature-voting";
+import { PollWidget } from "~/components/shared/polls/poll-widget";
+import { FeatureVoting } from "~/components/shared/polls/feature-voting";
 import { cn } from "~/lib/utils/cn";
 import { ArrowUp } from "iconoir-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface PollOptionData {
   id: string;
@@ -35,6 +35,7 @@ interface FeedPollWidgetProps {
 }
 
 export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
+  const notify = useNotify();
   // oxlint-disable-next-line eslint/no-unused-vars
   const { isSignedIn, user } = useUser();
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(
@@ -66,7 +67,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
         hasVoted: poll.hasVoted,
         userVotedOptionIds: poll.userVotedOptionIds,
       });
-      toast.error(err.message || "Failed to submit your vote");
+      notify.error(err.message || "Failed to submit your vote");
     },
   });
 
@@ -97,7 +98,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
   // Handle standard choice or feature-poll submission
   const handleVoteSubmit = (ids?: string[]) => {
     if (!isSignedIn) {
-      toast.error("You must sign in to vote");
+      notify.error("You must sign in to vote");
       return;
     }
     const targetIds = ids || selectedOptionIds;
@@ -121,14 +122,14 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
         pollId: poll.id,
         optionIds: targetIds,
       });
-      toast.success("Vote recorded!");
+      notify.success("Vote recorded!");
     });
   };
 
   // Handle toggle feature request upvote/unvote
   const handleFeatureToggleVote = (optionId: string) => {
     if (!isSignedIn) {
-      toast.error("You must sign in to vote");
+      notify.error("You must sign in to vote");
       return;
     }
 

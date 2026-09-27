@@ -7,7 +7,7 @@ import { PassportOverviewTab } from "~/components/passport/tabs/PassportOverview
 import { PassportWorkTab } from "~/components/passport/tabs/PassportWorkTab";
 import type { PassportPayload, WorkPayload } from "~/components/passport/types";
 
-jest.mock("~/components/ui/UnifiedCountryFlag", () => ({
+jest.mock("~/components/shared/flags/UnifiedCountryFlag", () => ({
   UnifiedCountryFlag: () => null,
 }));
 

@@ -13,7 +13,7 @@ import {
   Trophy,
 } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import type { PassportPayload } from "../types";
 
 interface PassportOverviewTabProps {

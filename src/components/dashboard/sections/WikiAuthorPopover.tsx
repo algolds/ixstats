@@ -10,7 +10,7 @@ import {
 } from "~/components/ui/hover-card";
 import { OpenBook as BookOpen, Clock, Globe, Map as MapIcon, Group as Users } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { createUrl } from "~/lib/utils";
 
 export function WikiAuthorPopover({ username }: { username: string }) {

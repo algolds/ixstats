@@ -5,7 +5,7 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
-import { useToastHelpers } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 import { getConsoleLogs, type CapturedLog } from "~/lib/logging";
 import {
   Select,
@@ -31,7 +31,7 @@ interface FeedbackModalProps {
 }
 
 export function FeedbackModal({ onClose }: FeedbackModalProps) {
-  const toast = useToastHelpers();
+  const notify = useNotify();
   const [feedbackType, setFeedbackType] = useState<string>("suggestion");
   const [message, setMessage] = useState<string>("");
   const [url, setUrl] = useState<string>("");
@@ -50,11 +50,11 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
 
   const submitMutation = api.userLogging.submitFeedback.useMutation({
     onSuccess: () => {
-      toast.success("Feedback Submitted", "Thank you for helping us improve IxStats!");
+      notify.success("Feedback Submitted", "Thank you for helping us improve IxStats!");
       onClose();
     },
     onError: (err) => {
-      toast.error(
+      notify.error(
         "Submission Failed",
         err.message || "Failed to submit feedback. Please try again."
       );
@@ -64,7 +64,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) {
-      toast.error("Validation Error", "Please enter your feedback message.");
+      notify.error("Validation Error", "Please enter your feedback message.");
       return;
     }
 

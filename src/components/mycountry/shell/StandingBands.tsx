@@ -12,13 +12,13 @@ import {
 } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
-import { VitalityBreakdownModal } from "~/components/ui/modals/VitalityBreakdownModal";
+import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/VitalityBreakdownModal";
 import {
   useCountryData,
   createVitalityRingsFromCountry,
   type VitalityRing,
 } from "~/components/mycountry/shared/primitives";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { formatCompact } from "~/lib/format/compact";

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
-import { GlassBarChart, GlassPieChart } from "~/components/ui/charts/RechartsIntegration";
+import { GlassBarChart, GlassPieChart } from "~/components/shared/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
 import {
   Reports as PieChart,

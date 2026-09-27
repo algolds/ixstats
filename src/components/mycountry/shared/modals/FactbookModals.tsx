@@ -10,7 +10,7 @@ import {
   GovernmentSpendingModal,
   DebtAnalysisModal,
   DemographicsHealthModal,
-} from "~/components/ui/modals/metric-details";
+} from "~/components/mycountry/shared/modals/metric-details";
 
 /**
  * FactbookModals — shared metric-details + card-image-upload modal renderer.

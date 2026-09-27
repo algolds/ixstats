@@ -10,7 +10,7 @@ import {
 } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { NationStatesLogo } from "~/components/cards/display/NationStatesLogo";
-import { MyCountryLogomark } from "~/components/ui/mycountry-logo";
+import { MyCountryLogomark } from "~/components/mycountry/shared/primitives/mycountry-logo";
 
 export type SettingSectionId =
   | "account"

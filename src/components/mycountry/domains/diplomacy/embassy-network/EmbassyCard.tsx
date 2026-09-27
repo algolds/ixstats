@@ -12,7 +12,7 @@ import {
   CreditCard,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import Link from "next/link";
 import { getStandingBand, getSynergyBand } from "~/lib/diplomacy/relation-bands";
 import { calculateRelativeDevelopment } from "~/lib/diplomacy/relative-development";

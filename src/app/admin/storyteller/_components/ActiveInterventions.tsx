@@ -6,7 +6,7 @@ import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { formatDistanceToNow } from "date-fns";
 import { Flash as Zap, Clock, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { useState } from "react";

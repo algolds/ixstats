@@ -16,7 +16,7 @@ import { useUser } from "~/context/auth-context";
 import { usePremium } from "~/hooks/usePremium";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { api } from "~/trpc/react";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { createVitalityRingsFromCountry } from "~/components/mycountry/primitives";
 import { SECTION_THEME_CLASSES } from "~/lib/themes";
@@ -89,10 +89,10 @@ const CountryMapEmbed = dynamic(
   { ssr: false, loading: () => <div className="bg-muted h-52 animate-pulse rounded-xl" /> }
 );
 
-import { VitalityBreakdownModal } from "~/components/ui/modals/VitalityBreakdownModal";
-import { GdpDetailsModal } from "~/components/ui/modals/metric-details/GdpDetailsModal";
-import { PopulationDetailsModal } from "~/components/ui/modals/metric-details/PopulationDetailsModal";
-import { GovernmentSpendingModal } from "~/components/ui/modals/metric-details/GovernmentSpendingModal";
+import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/VitalityBreakdownModal";
+import { GdpDetailsModal } from "~/components/mycountry/shared/modals/metric-details/GdpDetailsModal";
+import { PopulationDetailsModal } from "~/components/mycountry/shared/modals/metric-details/PopulationDetailsModal";
+import { GovernmentSpendingModal } from "~/components/mycountry/shared/modals/metric-details/GovernmentSpendingModal";
 
 function normalizeGrowth(value: number | null | undefined): number {
   if (!value || !isFinite(value)) return 0;

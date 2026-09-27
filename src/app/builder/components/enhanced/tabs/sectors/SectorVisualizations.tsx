@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Reports as PieChart, StatsReport as BarChart3, Flash as Zap } from "iconoir-react";
-import { GlassBarChart, GlassPieChart } from "~/components/ui/charts/RechartsIntegration";
+import { GlassBarChart, GlassPieChart } from "~/components/shared/charts/RechartsIntegration";
 import { getColorsFromData } from "~/lib/themes";
 import { SECTOR_TEMPLATES } from "../utils/sectorCalculations";
 import type { SectorConfiguration } from "~/types/economy-builder";

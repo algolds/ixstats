@@ -13,7 +13,7 @@ import {
   CHANNEL_CONFIG,
 } from "~/lib/buildVersion";
 import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
-import { FeedbackModal } from "~/components/ui/modals/FeedbackModal";
+import { FeedbackModal } from "~/components/dashboard/sidebar/FeedbackModal";
 import {
   CutoutCard,
   CutoutCardContent,

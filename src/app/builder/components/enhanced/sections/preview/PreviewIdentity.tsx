@@ -9,7 +9,7 @@ import {
   Phone,
   Translate as Languages,
 } from "iconoir-react";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
 
 interface PreviewIdentityProps {

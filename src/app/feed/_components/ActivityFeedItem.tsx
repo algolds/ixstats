@@ -15,9 +15,9 @@ import {
   NavArrowUp as ChevronUp,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { formatDistanceToNow } from "date-fns";
-import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
+import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 
 interface ActivityData {
   id: string;

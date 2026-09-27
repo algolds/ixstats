@@ -24,7 +24,7 @@ import { cn, formatPercent, formatYears } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { api } from "~/trpc/react";
 import { Input } from "~/components/ui/input";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 interface AchievementEntry {

@@ -12,7 +12,7 @@ import {
 import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { DomainKpiGrid, DomainActivityCard, type Kpi, type ActivityEntry } from "./shared";
 
 interface EmbassyItem {

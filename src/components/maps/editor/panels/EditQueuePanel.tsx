@@ -10,7 +10,7 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
-import { JsonViewer } from "~/components/ui/json-viewer";
+import { JsonViewer } from "~/components/shared/json-viewer";
 
 type StatusFilter = "pending" | "approved" | "rejected";
 

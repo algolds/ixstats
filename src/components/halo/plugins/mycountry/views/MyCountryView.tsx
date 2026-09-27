@@ -16,7 +16,7 @@ import {
   ScaleFrameEnlarge as Scale,
   EditPencil as Edit3,
 } from "iconoir-react";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { createAbsoluteUrl, getNationUrl, cn } from "~/lib/utils";

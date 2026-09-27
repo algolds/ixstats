@@ -25,7 +25,7 @@ import {
 import { PostBody } from "./PostBody";
 import { PostMediaGrid } from "./PostMediaGrid";
 import { PostActions } from "../primitives/PostActions";
-import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
+import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
 import { LiveDataCard } from "../LiveDataCard";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";

@@ -7,7 +7,7 @@ import { cn, formatCurrency } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { useSidebar } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { CountryActionsMenu } from "~/components/mycountry/dossier/CountryActionsMenu";
 
 export interface ActiveCountryData {

@@ -15,7 +15,7 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { api } from "~/trpc/react";
-import { GlassLineChart, GlassBarChart, GlassPieChart } from "~/components/ui/charts";
+import { GlassLineChart, GlassBarChart, GlassPieChart } from "~/components/shared/charts";
 
 interface LiveDataCardProps {
   type:

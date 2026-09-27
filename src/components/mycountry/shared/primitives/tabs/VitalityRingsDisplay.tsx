@@ -14,7 +14,7 @@ import {
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { cn } from "~/lib/utils";
 
-import { VitalityBreakdownModal } from "~/components/ui/modals/VitalityBreakdownModal";
+import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/VitalityBreakdownModal";
 
 export interface VitalityRing {
   id: string;

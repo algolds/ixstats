@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { JsonViewer } from "~/components/ui/json-viewer";
+import { JsonViewer } from "~/components/shared/json-viewer";
 import { Plus, EditPencil as Pencil, Trash as Trash2, Check } from "iconoir-react";
 import { type ChoiceFormData, RISK_LEVELS } from "~/lib/admin/diplomatic-scenario-transforms";
 

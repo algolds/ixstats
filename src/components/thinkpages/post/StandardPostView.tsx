@@ -37,7 +37,7 @@ import { RepostCard } from "./RepostCard";
 import { ReactionPills } from "./ReactionPills";
 import { ThreadReplies } from "./ThreadReplies";
 import { LiveDataCard } from "../LiveDataCard";
-import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
+import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";

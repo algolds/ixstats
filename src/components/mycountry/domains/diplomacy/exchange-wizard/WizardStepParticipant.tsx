@@ -5,7 +5,7 @@ import { Check, Search } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import type { WizardCountry } from "./exchange-wizard-config";
 
 interface WizardStepParticipantProps {

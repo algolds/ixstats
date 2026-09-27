@@ -8,8 +8,8 @@ import {
 } from "iconoir-react";
 import { useRouter } from "next/navigation";
 import { ProvinceGeneratorPanel } from "./ProvinceGeneratorPanel";
-import { JsonViewer } from "~/components/ui/json-viewer";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { JsonViewer } from "~/components/shared/json-viewer";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import type { Polygon, MultiPolygon } from "geojson";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { EditorFeatureDetails, PropertiesPanelCountry } from "../types/editor-state";

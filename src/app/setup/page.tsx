@@ -29,7 +29,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
 import { IxStatsLogo } from "~/components/ui/ixstats-logo";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 
 type SetupStep = "welcome" | "link-existing" | "create-new" | "complete";
 

@@ -22,7 +22,7 @@ import {
   calculateRequiredCapacity,
   validateSelection,
 } from "~/lib/government/atomic-utils";
-import type { EffectivenessMetrics } from "~/components/ui/atomic/shared/types";
+import type { EffectivenessMetrics } from "~/components/shared/atomic/types";
 import { useAtomicSelectorState } from "./useAtomicSelectorState";
 
 export interface UseAtomicGovernmentBuilderProps {

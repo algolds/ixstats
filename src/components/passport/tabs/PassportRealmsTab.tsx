@@ -16,7 +16,7 @@ import {
   Flash as Zap,
 } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { getScaledValue } from "~/lib/utils/format-utils";
 import type { RealmItem } from "../types";
 

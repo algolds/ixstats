@@ -1,5 +1,5 @@
 import React from "react";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { Community as Handshake, Lock } from "iconoir-react";
 import { cn } from "~/lib/utils";
 

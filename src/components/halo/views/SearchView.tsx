@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Search, Xmark, NavArrowRight } from "iconoir-react";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import type { SearchViewProps, SearchFilter } from "../types";
 import { PreText } from "~/components/ui/pretext";
 import { soundEffects } from "~/lib/sound/cuelume";

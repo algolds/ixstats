@@ -25,7 +25,7 @@ import {
   FloppyDisk as Save,
   CheckCircle,
 } from "iconoir-react";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import {
   Command,

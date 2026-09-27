@@ -24,14 +24,14 @@ import { ImageLightbox } from "~/components/maps/core/components/ImageLightbox";
 
 const GdpDetailsModal = dynamic(
   () =>
-    import("~/components/ui/modals/metric-details/GdpDetailsModal").then((m) => ({
+    import("~/components/mycountry/shared/modals/metric-details/GdpDetailsModal").then((m) => ({
       default: m.GdpDetailsModal,
     })),
   { ssr: false }
 );
 const PopulationDetailsModal = dynamic(
   () =>
-    import("~/components/ui/modals/metric-details/PopulationDetailsModal").then((m) => ({
+    import("~/components/mycountry/shared/modals/metric-details/PopulationDetailsModal").then((m) => ({
       default: m.PopulationDetailsModal,
     })),
   { ssr: false }

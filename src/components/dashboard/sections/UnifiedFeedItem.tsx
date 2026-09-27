@@ -17,7 +17,7 @@ import {
 } from "iconoir-react";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { Badge } from "~/components/ui/badge";
-import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
+import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import {
   WikiLinkPreview,
   ForumLinkPreview,

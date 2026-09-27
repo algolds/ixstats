@@ -20,7 +20,7 @@ import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import * as IconoirIcons from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { createUrl } from "~/lib/utils";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import {
   CutoutCard,

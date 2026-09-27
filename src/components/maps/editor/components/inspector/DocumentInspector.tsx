@@ -14,7 +14,7 @@ import {
 import type { EditorFeature, EditorMode } from "~/hooks/useMapEditor";
 import { api } from "~/trpc/react";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 
 function formatCountryFallback(nameOrId: string): string {
