@@ -1,0 +1,2556 @@
+{
+  "source": {
+    "file": "scripts/archive/geojson_dumps/geojson_sanitized/*.geojson",
+    "feature_properties": {
+      "id": "Zaclaria",
+      "ixmap-subgroup": null,
+      "fill": "#f1f4a8"
+    }
+  },
+  "geometry": {
+    "type": "Polygon",
+    "vertices": 516,
+    "holes": 0,
+    "area_km2": 946589.0,
+    "area_sqmi": 365480.0,
+    "perimeter_km": 5312.0,
+    "bbox": {
+      "minLng": 122.7117,
+      "minLat": -1.8187,
+      "maxLng": 133.4576,
+      "maxLat": 9.3746
+    },
+    "ns_extent_km": 1238.0,
+    "ew_extent_mid_km": 1194.0,
+    "max_span_km": 1271.0,
+    "max_span_from": {
+      "lng": 122.712,
+      "lat": 1.858
+    },
+    "max_span_to": {
+      "lng": 132.828,
+      "lat": 7.263
+    },
+    "extremes": {
+      "north": {
+        "lng": 127.637,
+        "lat": 9.375
+      },
+      "south": {
+        "lng": 128.229,
+        "lat": -1.819
+      },
+      "east": {
+        "lng": 133.458,
+        "lat": 3.021
+      },
+      "west": {
+        "lng": 122.712,
+        "lat": 1.858
+      }
+    },
+    "centroid": {
+      "lat": 3.917,
+      "lng": 127.996
+    },
+    "pole_of_inaccessibility": {
+      "lat": 3.776,
+      "lng": 127.999
+    },
+    "poi_distance_to_border_km": 400.0,
+    "polsby_popper": 0.422,
+    "convex_hull_ratio": 0.845
+  },
+  "excluded_wrapped_features": [
+    "Metzetta"
+  ],
+  "borders": {
+    "neighbours": [
+      {
+        "name": "Soirwind",
+        "shared_border_km": 988.0,
+        "direction": "NNE",
+        "border_midpoint": {
+          "lat": 8.381,
+          "lng": 129.207
+        },
+        "border_bbox": [
+          125.96,
+          7.72,
+          132.4,
+          9.37
+        ],
+        "touches": true
+      },
+      {
+        "name": "Kandara",
+        "shared_border_km": 671.0,
+        "direction": "ENE",
+        "border_midpoint": {
+          "lat": 5.308,
+          "lng": 132.853
+        },
+        "border_bbox": [
+          132.38,
+          2.9,
+          133.46,
+          7.74
+        ],
+        "touches": true
+      }
+    ],
+    "land_border_km": 1659.0,
+    "coastline_km": 3657.0,
+    "coast_share_pct": 68.8,
+    "coast_to_area_m_per_km2": 3.86,
+    "coastline_by_facing": {
+      "SW": 708.0,
+      "S": 695.0,
+      "NW": 540.0,
+      "W": 523.0,
+      "SE": 469.0,
+      "N": 336.0,
+      "E": 302.0,
+      "NE": 85.0
+    },
+    "within_400km": [
+      {
+        "name": "Soirwind",
+        "min_distance_km": 0.0,
+        "direction": "NNW"
+      },
+      {
+        "name": "Kandara",
+        "min_distance_km": 0.0,
+        "direction": "E"
+      },
+      {
+        "name": "Alcairet",
+        "min_distance_km": 47.0,
+        "direction": "SSW"
+      },
+      {
+        "name": "Sacatia",
+        "min_distance_km": 229.0,
+        "direction": "N"
+      },
+      {
+        "name": "Kagazi",
+        "min_distance_km": 259.0,
+        "direction": "NE"
+      },
+      {
+        "name": "Antilles",
+        "min_distance_km": 261.0,
+        "direction": "NW"
+      },
+      {
+        "name": "Tapakdore",
+        "min_distance_km": 362.0,
+        "direction": "S"
+      }
+    ]
+  },
+  "elevation": {
+    "zones": [
+      {
+        "fill": "#a8c995",
+        "class": "Coastal Lowlands (0\u201399 m)",
+        "area_km2": 406888.0,
+        "pct": 42.98,
+        "patches": 2,
+        "largest_patch_km2": 406886.0,
+        "largest_patch_centre": {
+          "lat": 3.779,
+          "lng": 131.751
+        },
+        "lat_range": [
+          -1.81,
+          9.33
+        ],
+        "lng_range": [
+          122.72,
+          133.45
+        ],
+        "area_weighted_centre": {
+          "lat": 3.34,
+          "lng": 128.218
+        },
+        "patch_list": [
+          {
+            "area_km2": 406886.0,
+            "centre": {
+              "lat": 3.779,
+              "lng": 131.751
+            },
+            "bbox": [
+              122.72,
+              -1.81,
+              133.45,
+              9.33
+            ],
+            "touches_coast": true
+          },
+          {
+            "area_km2": 1.0,
+            "centre": {
+              "lat": 5.326,
+              "lng": 127.962
+            },
+            "bbox": [
+              127.93,
+              5.31,
+              127.99,
+              5.34
+            ],
+            "touches_coast": false
+          }
+        ],
+        "subgroups": [
+          "coastlines"
+        ],
+        "source_ids": [
+          "path374"
+        ]
+      },
+      {
+        "fill": "#c3d3a1",
+        "class": "Low Hills (100\u2013349 m)",
+        "area_km2": 519448.0,
+        "pct": 54.88,
+        "patches": 2,
+        "largest_patch_km2": 519009.0,
+        "largest_patch_centre": {
+          "lat": 3.614,
+          "lng": 125.761
+        },
+        "lat_range": [
+          -1.41,
+          8.63
+        ],
+        "lng_range": [
+          123.79,
+          132.85
+        ],
+        "area_weighted_centre": {
+          "lat": 4.521,
+          "lng": 127.867
+        },
+        "patch_list": [
+          {
+            "area_km2": 519009.0,
+            "centre": {
+              "lat": 3.614,
+              "lng": 125.761
+            },
+            "bbox": [
+              123.79,
+              -1.41,
+              132.85,
+              8.63
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 438.0,
+            "centre": {
+              "lat": -0.463,
+              "lng": 130.483
+            },
+            "bbox": [
+              130.12,
+              -0.56,
+              130.88,
+              -0.38
+            ],
+            "touches_coast": false
+          }
+        ],
+        "subgroups": [
+          "Altitude-1"
+        ],
+        "source_ids": [
+          "path1081",
+          "path1157"
+        ]
+      },
+      {
+        "fill": "#dcdcac",
+        "class": "Rolling Hills (350\u2013499 m)",
+        "area_km2": 9563.0,
+        "pct": 1.01,
+        "patches": 1,
+        "largest_patch_km2": 9563.0,
+        "largest_patch_centre": {
+          "lat": 0.039,
+          "lng": 126.838
+        },
+        "lat_range": [
+          -0.85,
+          0.93
+        ],
+        "lng_range": [
+          125.37,
+          128.62
+        ],
+        "area_weighted_centre": {
+          "lat": -0.189,
+          "lng": 126.786
+        },
+        "patch_list": [
+          {
+            "area_km2": 9563.0,
+            "centre": {
+              "lat": 0.039,
+              "lng": 126.838
+            },
+            "bbox": [
+              125.37,
+              -0.85,
+              128.62,
+              0.93
+            ],
+            "touches_coast": false
+          }
+        ],
+        "subgroups": [
+          "Altitude-2"
+        ],
+        "source_ids": [
+          "path1686"
+        ]
+      },
+      {
+        "fill": "#f7e6b8",
+        "class": "Uplands (500\u2013999 m)",
+        "area_km2": 6156.0,
+        "pct": 0.65,
+        "patches": 2,
+        "largest_patch_km2": 5914.0,
+        "largest_patch_centre": {
+          "lat": -0.02,
+          "lng": 126.448
+        },
+        "lat_range": [
+          -0.65,
+          0.63
+        ],
+        "lng_range": [
+          125.57,
+          128.27
+        ],
+        "area_weighted_centre": {
+          "lat": -0.191,
+          "lng": 126.638
+        },
+        "patch_list": [
+          {
+            "area_km2": 5914.0,
+            "centre": {
+              "lat": -0.02,
+              "lng": 126.448
+            },
+            "bbox": [
+              125.57,
+              -0.65,
+              127.9,
+              0.63
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 241.0,
+            "centre": {
+              "lat": -0.574,
+              "lng": 128.128
+            },
+            "bbox": [
+              128.0,
+              -0.65,
+              128.27,
+              -0.52
+            ],
+            "touches_coast": false
+          }
+        ],
+        "subgroups": [
+          "Altitude-3"
+        ],
+        "source_ids": [
+          "path2586",
+          "path2587"
+        ]
+      },
+      {
+        "fill": "#dac497",
+        "class": "Low Mountains (1,000\u20131,999 m)",
+        "area_km2": 1797.0,
+        "pct": 0.19,
+        "patches": 2,
+        "largest_patch_km2": 1613.0,
+        "largest_patch_centre": {
+          "lat": -0.004,
+          "lng": 126.122
+        },
+        "lat_range": [
+          -0.6,
+          0.4
+        ],
+        "lng_range": [
+          125.73,
+          127.37
+        ],
+        "area_weighted_centre": {
+          "lat": -0.049,
+          "lng": 126.281
+        },
+        "patch_list": [
+          {
+            "area_km2": 1613.0,
+            "centre": {
+              "lat": -0.004,
+              "lng": 126.122
+            },
+            "bbox": [
+              125.73,
+              -0.41,
+              126.75,
+              0.4
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 183.0,
+            "centre": {
+              "lat": -0.562,
+              "lng": 127.21
+            },
+            "bbox": [
+              127.14,
+              -0.6,
+              127.37,
+              -0.47
+            ],
+            "touches_coast": false
+          }
+        ],
+        "subgroups": [
+          "Altitude-4"
+        ],
+        "source_ids": [
+          "path3341",
+          "path3342"
+        ]
+      }
+    ],
+    "uncovered_km2": 2738.6
+  },
+  "excluded_wrapped_parts": {
+    "climate": [
+      "path6612",
+      "path6575"
+    ]
+  },
+  "climate": {
+    "zones": [
+      {
+        "fill": "#980000",
+        "class": "Tropical Wet (Ar)",
+        "area_km2": 318681.0,
+        "pct": 33.67,
+        "patches": 2,
+        "largest_patch_km2": 318678.0,
+        "largest_patch_centre": {
+          "lat": 2.316,
+          "lng": 130.235
+        },
+        "lat_range": [
+          -1.81,
+          6.36
+        ],
+        "lng_range": [
+          122.72,
+          133.45
+        ],
+        "area_weighted_centre": {
+          "lat": 1.611,
+          "lng": 128.562
+        },
+        "patch_list": [
+          {
+            "area_km2": 318678.0,
+            "centre": {
+              "lat": 2.316,
+              "lng": 130.235
+            },
+            "bbox": [
+              122.72,
+              -1.81,
+              133.45,
+              6.36
+            ],
+            "touches_coast": true
+          },
+          {
+            "area_km2": 3.0,
+            "centre": {
+              "lat": -0.067,
+              "lng": 126.374
+            },
+            "bbox": [
+              126.34,
+              -0.07,
+              126.39,
+              -0.06
+            ],
+            "touches_coast": false
+          }
+        ],
+        "subgroups": [
+          "None"
+        ],
+        "source_ids": [
+          "path6605"
+        ]
+      },
+      {
+        "fill": "#fd9833",
+        "class": "Steppe / Semiarid (BS)",
+        "area_km2": 307906.0,
+        "pct": 32.53,
+        "patches": 3,
+        "largest_patch_km2": 306351.0,
+        "largest_patch_centre": {
+          "lat": 4.107,
+          "lng": 126.384
+        },
+        "lat_range": [
+          -0.51,
+          8.68
+        ],
+        "lng_range": [
+          124.93,
+          132.96
+        ],
+        "area_weighted_centre": {
+          "lat": 4.372,
+          "lng": 128.45
+        },
+        "patch_list": [
+          {
+            "area_km2": 306351.0,
+            "centre": {
+              "lat": 4.107,
+              "lng": 126.384
+            },
+            "bbox": [
+              124.93,
+              -0.51,
+              132.96,
+              8.68
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 1488.0,
+            "centre": {
+              "lat": 8.11,
+              "lng": 130.682
+            },
+            "bbox": [
+              130.37,
+              7.92,
+              130.89,
+              8.29
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 66.0,
+            "centre": {
+              "lat": 8.14,
+              "lng": 129.844
+            },
+            "bbox": [
+              129.77,
+              8.1,
+              129.91,
+              8.19
+            ],
+            "touches_coast": false
+          }
+        ],
+        "subgroups": [
+          "None"
+        ],
+        "source_ids": [
+          "path6354"
+        ]
+      },
+      {
+        "fill": "#fc3502",
+        "class": "Tropical Wet-and-Dry (Aw)",
+        "area_km2": 170082.0,
+        "pct": 17.97,
+        "patches": 1,
+        "largest_patch_km2": 170082.0,
+        "largest_patch_centre": {
+          "lat": 4.924,
+          "lng": 124.545
+        },
+        "lat_range": [
+          0.49,
+          9.37
+        ],
+        "lng_range": [
+          123.26,
+          128.88
+        ],
+        "area_weighted_centre": {
+          "lat": 5.743,
+          "lng": 125.408
+        },
+        "patch_list": [
+          {
+            "area_km2": 170082.0,
+            "centre": {
+              "lat": 4.924,
+              "lng": 124.545
+            },
+            "bbox": [
+              123.26,
+              0.49,
+              128.88,
+              9.37
+            ],
+            "touches_coast": true
+          }
+        ],
+        "subgroups": [
+          "None"
+        ],
+        "source_ids": [
+          "path6002"
+        ]
+      },
+      {
+        "fill": "#fcfc33",
+        "class": "Desert / Arid (BW)",
+        "area_km2": 145389.0,
+        "pct": 15.36,
+        "patches": 8,
+        "largest_patch_km2": 134129.0,
+        "largest_patch_centre": {
+          "lat": 5.583,
+          "lng": 128.863
+        },
+        "lat_range": [
+          2.87,
+          8.15
+        ],
+        "lng_range": [
+          126.89,
+          130.94
+        ],
+        "area_weighted_centre": {
+          "lat": 5.952,
+          "lng": 128.851
+        },
+        "patch_list": [
+          {
+            "area_km2": 134129.0,
+            "centre": {
+              "lat": 5.583,
+              "lng": 128.863
+            },
+            "bbox": [
+              127.2,
+              2.93,
+              130.94,
+              8.15
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 7979.0,
+            "centre": {
+              "lat": 5.89,
+              "lng": 127.621
+            },
+            "bbox": [
+              126.89,
+              3.72,
+              128.24,
+              8.03
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 1562.0,
+            "centre": {
+              "lat": 3.552,
+              "lng": 128.573
+            },
+            "bbox": [
+              127.83,
+              3.19,
+              129.67,
+              4.03
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 560.0,
+            "centre": {
+              "lat": 3.294,
+              "lng": 127.547
+            },
+            "bbox": [
+              127.17,
+              2.87,
+              127.8,
+              3.67
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 524.0,
+            "centre": {
+              "lat": 8.047,
+              "lng": 129.831
+            },
+            "bbox": [
+              129.51,
+              8.0,
+              130.11,
+              8.13
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 493.0,
+            "centre": {
+              "lat": 6.834,
+              "lng": 130.428
+            },
+            "bbox": [
+              130.13,
+              6.74,
+              130.66,
+              6.93
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 83.0,
+            "centre": {
+              "lat": 6.468,
+              "lng": 129.802
+            },
+            "bbox": [
+              129.78,
+              6.4,
+              129.92,
+              6.66
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 58.0,
+            "centre": {
+              "lat": 6.944,
+              "lng": 130.813
+            },
+            "bbox": [
+              130.76,
+              6.92,
+              130.86,
+              6.97
+            ],
+            "touches_coast": false
+          }
+        ],
+        "subgroups": [
+          "None"
+        ],
+        "source_ids": [
+          "path6223",
+          "path6361"
+        ]
+      },
+      {
+        "fill": "#fecbfe",
+        "class": "Highland (H)",
+        "area_km2": 1677.0,
+        "pct": 0.18,
+        "patches": 2,
+        "largest_patch_km2": 1445.0,
+        "largest_patch_centre": {
+          "lat": -0.043,
+          "lng": 126.16
+        },
+        "lat_range": [
+          -0.61,
+          0.31
+        ],
+        "lng_range": [
+          125.77,
+          127.45
+        ],
+        "area_weighted_centre": {
+          "lat": -0.083,
+          "lng": 126.328
+        },
+        "patch_list": [
+          {
+            "area_km2": 1445.0,
+            "centre": {
+              "lat": -0.043,
+              "lng": 126.16
+            },
+            "bbox": [
+              125.77,
+              -0.4,
+              126.76,
+              0.31
+            ],
+            "touches_coast": false
+          },
+          {
+            "area_km2": 232.0,
+            "centre": {
+              "lat": -0.545,
+              "lng": 127.232
+            },
+            "bbox": [
+              127.13,
+              -0.61,
+              127.45,
+              -0.48
+            ],
+            "touches_coast": false
+          }
+        ],
+        "subgroups": [
+          "None"
+        ],
+        "source_ids": [
+          "path5523"
+        ]
+      }
+    ],
+    "uncovered_km2": 2855.0
+  },
+  "climate_x_elevation": [
+    {
+      "climate": "Steppe / Semiarid (BS)",
+      "elevation": "Low Hills (100\u2013349 m)",
+      "area_km2": 238026.0,
+      "pct_of_country": 25.15
+    },
+    {
+      "climate": "Tropical Wet (Ar)",
+      "elevation": "Coastal Lowlands (0\u201399 m)",
+      "area_km2": 231722.0,
+      "pct_of_country": 24.48
+    },
+    {
+      "climate": "Desert / Arid (BW)",
+      "elevation": "Low Hills (100\u2013349 m)",
+      "area_km2": 136760.0,
+      "pct_of_country": 14.45
+    },
+    {
+      "climate": "Tropical Wet-and-Dry (Aw)",
+      "elevation": "Coastal Lowlands (0\u201399 m)",
+      "area_km2": 100545.0,
+      "pct_of_country": 10.62
+    },
+    {
+      "climate": "Tropical Wet (Ar)",
+      "elevation": "Low Hills (100\u2013349 m)",
+      "area_km2": 75104.0,
+      "pct_of_country": 7.93
+    },
+    {
+      "climate": "Tropical Wet-and-Dry (Aw)",
+      "elevation": "Low Hills (100\u2013349 m)",
+      "area_km2": 69485.0,
+      "pct_of_country": 7.34
+    },
+    {
+      "climate": "Steppe / Semiarid (BS)",
+      "elevation": "Coastal Lowlands (0\u201399 m)",
+      "area_km2": 65927.0,
+      "pct_of_country": 6.96
+    },
+    {
+      "climate": "Desert / Arid (BW)",
+      "elevation": "Coastal Lowlands (0\u201399 m)",
+      "area_km2": 8629.0,
+      "pct_of_country": 0.91
+    },
+    {
+      "climate": "Tropical Wet (Ar)",
+      "elevation": "Rolling Hills (350\u2013499 m)",
+      "area_km2": 7497.0,
+      "pct_of_country": 0.79
+    },
+    {
+      "climate": "Tropical Wet (Ar)",
+      "elevation": "Uplands (500\u2013999 m)",
+      "area_km2": 4195.0,
+      "pct_of_country": 0.44
+    },
+    {
+      "climate": "Steppe / Semiarid (BS)",
+      "elevation": "Rolling Hills (350\u2013499 m)",
+      "area_km2": 2064.0,
+      "pct_of_country": 0.22
+    },
+    {
+      "climate": "Steppe / Semiarid (BS)",
+      "elevation": "Uplands (500\u2013999 m)",
+      "area_km2": 1722.0,
+      "pct_of_country": 0.18
+    },
+    {
+      "climate": "Highland (H)",
+      "elevation": "Low Mountains (1,000\u20131,999 m)",
+      "area_km2": 1448.0,
+      "pct_of_country": 0.15
+    },
+    {
+      "climate": "Highland (H)",
+      "elevation": "Uplands (500\u2013999 m)",
+      "area_km2": 228.0,
+      "pct_of_country": 0.02
+    },
+    {
+      "climate": "Steppe / Semiarid (BS)",
+      "elevation": "Low Mountains (1,000\u20131,999 m)",
+      "area_km2": 167.0,
+      "pct_of_country": 0.02
+    },
+    {
+      "climate": "Tropical Wet (Ar)",
+      "elevation": "Low Mountains (1,000\u20131,999 m)",
+      "area_km2": 162.0,
+      "pct_of_country": 0.02
+    },
+    {
+      "climate": "Tropical Wet-and-Dry (Aw)",
+      "elevation": "Rolling Hills (350\u2013499 m)",
+      "area_km2": 1.0,
+      "pct_of_country": 0.0
+    }
+  ],
+  "latitude_bands": [
+    {
+      "band": "-2\u00b0 to -1\u00b0",
+      "land_km2": 10960.0,
+      "elevation": {
+        "Coastal Lowlands": 75.2,
+        "Low Hills": 19.5
+      },
+      "climate": {
+        "Tropical Wet (Ar)": 94.6
+      }
+    },
+    {
+      "band": "-1\u00b0 to 0\u00b0",
+      "land_km2": 73329.0,
+      "elevation": {
+        "Coastal Lowlands": 54.8,
+        "Low Hills": 28.5,
+        "Rolling Hills": 8.7,
+        "Uplands": 5.9,
+        "Low Mountains": 1.3
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 5.9,
+        "Tropical Wet (Ar)": 92.1,
+        "Highland (H)": 1.2
+      }
+    },
+    {
+      "band": "0\u00b0 to 1\u00b0",
+      "land_km2": 66012.0,
+      "elevation": {
+        "Coastal Lowlands": 46.7,
+        "Low Hills": 44.1,
+        "Rolling Hills": 4.8,
+        "Uplands": 2.7,
+        "Low Mountains": 1.3
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 29.9,
+        "Tropical Wet (Ar)": 67.4,
+        "Tropical Wet-and-Dry (Aw)": 1.1,
+        "Highland (H)": 1.2
+      }
+    },
+    {
+      "band": "1\u00b0 to 2\u00b0",
+      "land_km2": 91864.0,
+      "elevation": {
+        "Coastal Lowlands": 55.4,
+        "Low Hills": 43.8
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 23.3,
+        "Tropical Wet (Ar)": 64.1,
+        "Tropical Wet-and-Dry (Aw)": 11.8
+      }
+    },
+    {
+      "band": "2\u00b0 to 3\u00b0",
+      "land_km2": 112579.0,
+      "elevation": {
+        "Coastal Lowlands": 57.2,
+        "Low Hills": 41.7
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 31.2,
+        "Tropical Wet (Ar)": 56.7,
+        "Tropical Wet-and-Dry (Aw)": 10.9,
+        "Desert / Arid (BW)": 0.1
+      }
+    },
+    {
+      "band": "3\u00b0 to 4\u00b0",
+      "land_km2": 128302.0,
+      "elevation": {
+        "Coastal Lowlands": 50.8,
+        "Low Hills": 49.0
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 42.5,
+        "Tropical Wet (Ar)": 38.0,
+        "Tropical Wet-and-Dry (Aw)": 11.0,
+        "Desert / Arid (BW)": 8.3
+      }
+    },
+    {
+      "band": "4\u00b0 to 5\u00b0",
+      "land_km2": 114381.0,
+      "elevation": {
+        "Coastal Lowlands": 36.0,
+        "Low Hills": 64.0
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 40.6,
+        "Tropical Wet (Ar)": 13.6,
+        "Tropical Wet-and-Dry (Aw)": 18.5,
+        "Desert / Arid (BW)": 27.1
+      }
+    },
+    {
+      "band": "5\u00b0 to 6\u00b0",
+      "land_km2": 112114.0,
+      "elevation": {
+        "Coastal Lowlands": 32.9,
+        "Low Hills": 67.4
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 42.6,
+        "Tropical Wet (Ar)": 7.3,
+        "Tropical Wet-and-Dry (Aw)": 25.2,
+        "Desert / Arid (BW)": 24.9
+      }
+    },
+    {
+      "band": "6\u00b0 to 7\u00b0",
+      "land_km2": 101332.0,
+      "elevation": {
+        "Coastal Lowlands": 23.2,
+        "Low Hills": 76.8
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 41.6,
+        "Tropical Wet (Ar)": 1.1,
+        "Tropical Wet-and-Dry (Aw)": 21.2,
+        "Desert / Arid (BW)": 36.2
+      }
+    },
+    {
+      "band": "7\u00b0 to 8\u00b0",
+      "land_km2": 97119.0,
+      "elevation": {
+        "Coastal Lowlands": 18.1,
+        "Low Hills": 82.2
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 27.7,
+        "Tropical Wet-and-Dry (Aw)": 34.6,
+        "Desert / Arid (BW)": 38.1
+      }
+    },
+    {
+      "band": "8\u00b0 to 9\u00b0",
+      "land_km2": 36962.0,
+      "elevation": {
+        "Coastal Lowlands": 71.6,
+        "Low Hills": 29.4
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 25.7,
+        "Tropical Wet-and-Dry (Aw)": 70.1,
+        "Desert / Arid (BW)": 5.0
+      }
+    },
+    {
+      "band": "9\u00b0 to 10\u00b0",
+      "land_km2": 1634.0,
+      "elevation": {
+        "Coastal Lowlands": 96.8
+      },
+      "climate": {
+        "Tropical Wet-and-Dry (Aw)": 100.0
+      }
+    }
+  ],
+  "longitude_bands": [
+    {
+      "band": "122\u00b0 to 123\u00b0",
+      "land_km2": 3688.0,
+      "elevation": {
+        "Coastal Lowlands": 97.4
+      },
+      "climate": {
+        "Tropical Wet (Ar)": 97.4
+      }
+    },
+    {
+      "band": "123\u00b0 to 124\u00b0",
+      "land_km2": 42272.0,
+      "elevation": {
+        "Coastal Lowlands": 97.2,
+        "Low Hills": 2.1
+      },
+      "climate": {
+        "Tropical Wet (Ar)": 68.7,
+        "Tropical Wet-and-Dry (Aw)": 30.5
+      }
+    },
+    {
+      "band": "124\u00b0 to 125\u00b0",
+      "land_km2": 75485.0,
+      "elevation": {
+        "Coastal Lowlands": 57.2,
+        "Low Hills": 42.3
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 0.4,
+        "Tropical Wet (Ar)": 33.6,
+        "Tropical Wet-and-Dry (Aw)": 65.4
+      }
+    },
+    {
+      "band": "125\u00b0 to 126\u00b0",
+      "land_km2": 112887.0,
+      "elevation": {
+        "Coastal Lowlands": 37.4,
+        "Low Hills": 58.7,
+        "Rolling Hills": 2.1,
+        "Uplands": 1.2,
+        "Low Mountains": 0.4
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 24.1,
+        "Tropical Wet (Ar)": 18.6,
+        "Tropical Wet-and-Dry (Aw)": 56.8,
+        "Highland (H)": 0.4
+      }
+    },
+    {
+      "band": "126\u00b0 to 127\u00b0",
+      "land_km2": 120182.0,
+      "elevation": {
+        "Coastal Lowlands": 22.0,
+        "Low Hills": 71.6,
+        "Rolling Hills": 3.0,
+        "Uplands": 2.4,
+        "Low Mountains": 0.9
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 64.6,
+        "Tropical Wet (Ar)": 9.3,
+        "Tropical Wet-and-Dry (Aw)": 24.6,
+        "Desert / Arid (BW)": 0.6,
+        "Highland (H)": 0.8
+      }
+    },
+    {
+      "band": "127\u00b0 to 128\u00b0",
+      "land_km2": 127382.0,
+      "elevation": {
+        "Coastal Lowlands": 26.4,
+        "Low Hills": 70.0,
+        "Rolling Hills": 2.1,
+        "Uplands": 1.3,
+        "Low Mountains": 0.1
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 51.6,
+        "Tropical Wet (Ar)": 16.9,
+        "Tropical Wet-and-Dry (Aw)": 10.3,
+        "Desert / Arid (BW)": 20.8,
+        "Highland (H)": 0.2
+      }
+    },
+    {
+      "band": "128\u00b0 to 129\u00b0",
+      "land_km2": 121848.0,
+      "elevation": {
+        "Coastal Lowlands": 18.0,
+        "Low Hills": 80.9,
+        "Rolling Hills": 0.8,
+        "Uplands": 0.2
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 17.8,
+        "Tropical Wet (Ar)": 35.3,
+        "Tropical Wet-and-Dry (Aw)": 0.8,
+        "Desert / Arid (BW)": 45.9
+      }
+    },
+    {
+      "band": "129\u00b0 to 130\u00b0",
+      "land_km2": 111481.0,
+      "elevation": {
+        "Coastal Lowlands": 34.6,
+        "Low Hills": 65.2
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 14.3,
+        "Tropical Wet (Ar)": 43.2,
+        "Desert / Arid (BW)": 42.3
+      }
+    },
+    {
+      "band": "130\u00b0 to 131\u00b0",
+      "land_km2": 99521.0,
+      "elevation": {
+        "Coastal Lowlands": 56.4,
+        "Low Hills": 43.2
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 42.0,
+        "Tropical Wet (Ar)": 42.5,
+        "Desert / Arid (BW)": 15.2
+      }
+    },
+    {
+      "band": "131\u00b0 to 132\u00b0",
+      "land_km2": 77272.0,
+      "elevation": {
+        "Coastal Lowlands": 76.6,
+        "Low Hills": 23.0
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 53.0,
+        "Tropical Wet (Ar)": 46.5
+      }
+    },
+    {
+      "band": "132\u00b0 to 133\u00b0",
+      "land_km2": 50491.0,
+      "elevation": {
+        "Coastal Lowlands": 73.3,
+        "Low Hills": 26.3
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 33.0,
+        "Tropical Wet (Ar)": 66.6
+      }
+    },
+    {
+      "band": "133\u00b0 to 134\u00b0",
+      "land_km2": 4080.0,
+      "elevation": {
+        "Coastal Lowlands": 97.2
+      },
+      "climate": {
+        "Tropical Wet (Ar)": 97.2
+      }
+    }
+  ],
+  "coastal_strips": {
+    "within_25km_of_coast": {
+      "area_km2": 86876.0,
+      "pct_of_country": 9.2,
+      "elevation": {
+        "Coastal Lowlands": 94.8,
+        "Low Hills": 2.1
+      },
+      "climate": {
+        "Tropical Wet (Ar)": 73.5,
+        "Tropical Wet-and-Dry (Aw)": 23.4
+      }
+    },
+    "within_100km_of_coast": {
+      "area_km2": 291975.0,
+      "pct_of_country": 30.8,
+      "elevation": {
+        "Coastal Lowlands": 77.5,
+        "Low Hills": 16.2,
+        "Rolling Hills": 2.8,
+        "Uplands": 2.0,
+        "Low Mountains": 0.6
+      },
+      "climate": {
+        "Steppe / Semiarid (BS)": 1.0,
+        "Tropical Wet (Ar)": 70.6,
+        "Tropical Wet-and-Dry (Aw)": 26.9,
+        "Highland (H)": 0.6
+      }
+    }
+  },
+  "farthest_from_coast": {
+    "point": {
+      "lat": 7.789,
+      "lng": 131.04
+    },
+    "distance_km": 567.0
+  },
+  "rivers": {
+    "count": 9,
+    "total_channel_length_in_country_km": 3729.0,
+    "drainage_density_km_per_1000km2": 3.94,
+    "list": [
+      {
+        "id": "path4976",
+        "fill": "#6f95ff",
+        "vertices": 189,
+        "outline_ring_km": 1773.0,
+        "channel_length_km": 887.0,
+        "channel_length_in_country_km": 885.0,
+        "mean_drawn_width_km": 2.5,
+        "straight_line_source_to_mouth_km": 651.0,
+        "sinuosity": 1.36,
+        "general_flow_direction": "SW",
+        "also_in": [],
+        "source": {
+          "lat": 5.826,
+          "lng": 128.479,
+          "country": "Zaclaria",
+          "km_to_sea": 387.0,
+          "elevation": "Low Hills (100\u2013349 m)",
+          "climate": "Desert / Arid (BW)",
+          "joins": null,
+          "role": "source / upper end"
+        },
+        "mouth": {
+          "lat": 1.814,
+          "lng": 124.188,
+          "country": "Zaclaria",
+          "km_to_sea": 1.0,
+          "elevation": "sea / none",
+          "climate": "sea / none",
+          "joins": null,
+          "role": "mouth (sea)"
+        },
+        "in_country_by_elevation_km": {
+          "Coastal Lowlands": 779.0,
+          "Low Hills": 105.0
+        },
+        "in_country_by_climate_km": {
+          "Steppe / Semiarid (BS)": 131.0,
+          "Tropical Wet (Ar)": 110.0,
+          "Tropical Wet-and-Dry (Aw)": 260.0,
+          "Desert / Arid (BW)": 383.0
+        },
+        "bbox": [
+          124.19,
+          1.8,
+          128.48,
+          5.83
+        ]
+      },
+      {
+        "id": "path4965",
+        "fill": "#6f95ff",
+        "vertices": 167,
+        "outline_ring_km": 1165.0,
+        "channel_length_km": 582.0,
+        "channel_length_in_country_km": 574.0,
+        "mean_drawn_width_km": 2.6,
+        "straight_line_source_to_mouth_km": 398.0,
+        "sinuosity": 1.46,
+        "general_flow_direction": "E",
+        "also_in": [
+          "Kandara"
+        ],
+        "source": {
+          "lat": 6.399,
+          "lng": 129.17,
+          "country": "Zaclaria",
+          "km_to_sea": 323.0,
+          "elevation": "Low Hills (100\u2013349 m)",
+          "climate": "Desert / Arid (BW)",
+          "joins": null,
+          "role": "source / upper end"
+        },
+        "mouth": {
+          "lat": 5.782,
+          "lng": 132.716,
+          "country": "Kandara",
+          "km_to_sea": 285.0,
+          "elevation": "Coastal Lowlands (0\u201399 m)",
+          "climate": "Tropical Wet (Ar)",
+          "joins": "path4964",
+          "role": "confluence with path4964"
+        },
+        "in_country_by_elevation_km": {
+          "Coastal Lowlands": 419.0,
+          "Low Hills": 156.0
+        },
+        "in_country_by_climate_km": {
+          "Steppe / Semiarid (BS)": 375.0,
+          "Tropical Wet (Ar)": 70.0,
+          "Desert / Arid (BW)": 129.0
+        },
+        "bbox": [
+          129.17,
+          5.78,
+          132.73,
+          7.11
+        ]
+      },
+      {
+        "id": "path5006",
+        "fill": "#6f95ff",
+        "vertices": 123,
+        "outline_ring_km": 991.0,
+        "channel_length_km": 496.0,
+        "channel_length_in_country_km": 494.0,
+        "mean_drawn_width_km": 2.2,
+        "straight_line_source_to_mouth_km": 376.0,
+        "sinuosity": 1.32,
+        "general_flow_direction": "ENE",
+        "also_in": [],
+        "source": {
+          "lat": -0.108,
+          "lng": 126.582,
+          "country": "Zaclaria",
+          "km_to_sea": 77.0,
+          "elevation": "Uplands (500\u2013999 m)",
+          "climate": "Steppe / Semiarid (BS)",
+          "joins": null,
+          "role": "source / upper end"
+        },
+        "mouth": {
+          "lat": 0.611,
+          "lng": 129.884,
+          "country": "none (sea)",
+          "km_to_sea": 2.0,
+          "elevation": "sea / none",
+          "climate": "sea / none",
+          "joins": null,
+          "role": "mouth (sea)"
+        },
+        "in_country_by_elevation_km": {
+          "Coastal Lowlands": 435.0,
+          "Low Hills": 35.0,
+          "Rolling Hills": 18.0,
+          "Uplands": 5.0
+        },
+        "in_country_by_climate_km": {
+          "Steppe / Semiarid (BS)": 113.0,
+          "Tropical Wet (Ar)": 380.0
+        },
+        "bbox": [
+          126.58,
+          -0.18,
+          129.88,
+          0.89
+        ]
+      },
+      {
+        "id": "path4967",
+        "fill": "#6f95ff",
+        "vertices": 173,
+        "outline_ring_km": 1573.0,
+        "channel_length_km": 786.0,
+        "channel_length_in_country_km": 413.0,
+        "mean_drawn_width_km": 2.9,
+        "straight_line_source_to_mouth_km": 537.0,
+        "sinuosity": 1.47,
+        "general_flow_direction": "WNW",
+        "also_in": [
+          "Soirwind"
+        ],
+        "source": {
+          "lat": 7.773,
+          "lng": 130.748,
+          "country": "Zaclaria",
+          "km_to_sea": 171.0,
+          "elevation": "Low Hills (100\u2013349 m)",
+          "climate": "Desert / Arid (BW)",
+          "joins": null,
+          "role": "source / upper end"
+        },
+        "mouth": {
+          "lat": 8.813,
+          "lng": 125.989,
+          "country": "none (sea)",
+          "km_to_sea": 0.0,
+          "elevation": "Coastal Lowlands (0\u201399 m)",
+          "climate": "Tropical Wet-and-Dry (Aw)",
+          "joins": null,
+          "role": "mouth (sea)"
+        },
+        "in_country_by_elevation_km": {
+          "Coastal Lowlands": 304.0,
+          "Low Hills": 104.0
+        },
+        "in_country_by_climate_km": {
+          "Steppe / Semiarid (BS)": 113.0,
+          "Tropical Wet-and-Dry (Aw)": 229.0,
+          "Desert / Arid (BW)": 72.0
+        },
+        "bbox": [
+          125.99,
+          7.77,
+          130.96,
+          9.38
+        ]
+      },
+      {
+        "id": "path4977",
+        "fill": "#6f95ff",
+        "vertices": 83,
+        "outline_ring_km": 720.0,
+        "channel_length_km": 360.0,
+        "channel_length_in_country_km": 360.0,
+        "mean_drawn_width_km": 2.2,
+        "straight_line_source_to_mouth_km": 302.0,
+        "sinuosity": 1.19,
+        "general_flow_direction": "SW",
+        "also_in": [],
+        "source": {
+          "lat": 4.596,
+          "lng": 129.168,
+          "country": "Zaclaria",
+          "km_to_sea": 359.0,
+          "elevation": "Low Hills (100\u2013349 m)",
+          "climate": "Desert / Arid (BW)",
+          "joins": null,
+          "role": "source / upper end"
+        },
+        "mouth": {
+          "lat": 2.873,
+          "lng": 127.064,
+          "country": "Zaclaria",
+          "km_to_sea": 334.0,
+          "elevation": "Coastal Lowlands (0\u201399 m)",
+          "climate": "Steppe / Semiarid (BS)",
+          "joins": "path4976",
+          "role": "confluence with path4976"
+        },
+        "in_country_by_elevation_km": {
+          "Coastal Lowlands": 145.0,
+          "Low Hills": 215.0
+        },
+        "in_country_by_climate_km": {
+          "Steppe / Semiarid (BS)": 155.0,
+          "Desert / Arid (BW)": 205.0
+        },
+        "bbox": [
+          127.06,
+          2.86,
+          129.17,
+          4.6
+        ]
+      },
+      {
+        "id": "path4968",
+        "fill": "#6f95ff",
+        "vertices": 64,
+        "outline_ring_km": 698.0,
+        "channel_length_km": 349.0,
+        "channel_length_in_country_km": 349.0,
+        "mean_drawn_width_km": 2.1,
+        "straight_line_source_to_mouth_km": 266.0,
+        "sinuosity": 1.31,
+        "general_flow_direction": "N",
+        "also_in": [],
+        "source": {
+          "lat": 6.142,
+          "lng": 127.122,
+          "country": "Zaclaria",
+          "km_to_sea": 264.0,
+          "elevation": "Low Hills (100\u2013349 m)",
+          "climate": "Desert / Arid (BW)",
+          "joins": null,
+          "role": "source / upper end"
+        },
+        "mouth": {
+          "lat": 8.547,
+          "lng": 127.134,
+          "country": "Zaclaria",
+          "km_to_sea": 73.0,
+          "elevation": "Coastal Lowlands (0\u201399 m)",
+          "climate": "Tropical Wet-and-Dry (Aw)",
+          "joins": "path4967",
+          "role": "confluence with path4967"
+        },
+        "in_country_by_elevation_km": {
+          "Coastal Lowlands": 204.0,
+          "Low Hills": 145.0
+        },
+        "in_country_by_climate_km": {
+          "Steppe / Semiarid (BS)": 95.0,
+          "Tropical Wet-and-Dry (Aw)": 102.0,
+          "Desert / Arid (BW)": 152.0
+        },
+        "bbox": [
+          127.09,
+          6.14,
+          127.81,
+          8.56
+        ]
+      },
+      {
+        "id": "path4964",
+        "fill": "#6f95ff",
+        "vertices": 186,
+        "outline_ring_km": 1954.0,
+        "channel_length_km": 977.0,
+        "channel_length_in_country_km": 332.0,
+        "mean_drawn_width_km": 3.9,
+        "straight_line_source_to_mouth_km": 731.0,
+        "sinuosity": 1.34,
+        "general_flow_direction": "S",
+        "also_in": [
+          "Soirwind",
+          "Kandara"
+        ],
+        "source": {
+          "lat": 9.561,
+          "lng": 134.229,
+          "country": "Kandara",
+          "km_to_sea": 27.0,
+          "elevation": "Rolling Hills (350\u2013499 m)",
+          "climate": "Steppe / Semiarid (BS)",
+          "joins": null,
+          "role": "source / upper end"
+        },
+        "mouth": {
+          "lat": 2.999,
+          "lng": 133.462,
+          "country": "none (sea)",
+          "km_to_sea": 4.0,
+          "elevation": "sea / none",
+          "climate": "sea / none",
+          "joins": null,
+          "role": "mouth (sea)"
+        },
+        "in_country_by_elevation_km": {
+          "Coastal Lowlands": 306.0,
+          "Low Hills": 26.0
+        },
+        "in_country_by_climate_km": {
+          "Steppe / Semiarid (BS)": 104.0,
+          "Tropical Wet (Ar)": 227.0
+        },
+        "bbox": [
+          132.36,
+          3.0,
+          134.23,
+          9.57
+        ]
+      },
+      {
+        "id": "path4993",
+        "fill": "#6f95ff",
+        "vertices": 60,
+        "outline_ring_km": 588.0,
+        "channel_length_km": 294.0,
+        "channel_length_in_country_km": 291.0,
+        "mean_drawn_width_km": 2.4,
+        "straight_line_source_to_mouth_km": 250.0,
+        "sinuosity": 1.18,
+        "general_flow_direction": "WNW",
+        "also_in": [],
+        "source": {
+          "lat": 4.912,
+          "lng": 125.992,
+          "country": "Zaclaria",
+          "km_to_sea": 228.0,
+          "elevation": "Low Hills (100\u2013349 m)",
+          "climate": "Steppe / Semiarid (BS)",
+          "joins": null,
+          "role": "source / upper end"
+        },
+        "mouth": {
+          "lat": 5.904,
+          "lng": 123.969,
+          "country": "none (sea)",
+          "km_to_sea": 0.0,
+          "elevation": "sea / none",
+          "climate": "sea / none",
+          "joins": null,
+          "role": "mouth (sea)"
+        },
+        "in_country_by_elevation_km": {
+          "Coastal Lowlands": 116.0,
+          "Low Hills": 175.0
+        },
+        "in_country_by_climate_km": {
+          "Steppe / Semiarid (BS)": 30.0,
+          "Tropical Wet-and-Dry (Aw)": 261.0
+        },
+        "bbox": [
+          123.97,
+          4.82,
+          126.0,
+          5.91
+        ]
+      },
+      {
+        "id": "path4966",
+        "fill": "#6f95ff",
+        "vertices": 58,
+        "outline_ring_km": 392.0,
+        "channel_length_km": 196.0,
+        "channel_length_in_country_km": 31.0,
+        "mean_drawn_width_km": 1.9,
+        "straight_line_source_to_mouth_km": 145.0,
+        "sinuosity": 1.35,
+        "general_flow_direction": "E",
+        "also_in": [
+          "Soirwind",
+          "Kandara"
+        ],
+        "source": {
+          "lat": 7.701,
+          "lng": 131.104,
+          "country": "Zaclaria",
+          "km_to_sea": 179.0,
+          "elevation": "Low Hills (100\u2013349 m)",
+          "climate": "Steppe / Semiarid (BS)",
+          "joins": null,
+          "role": "source / upper end"
+        },
+        "mouth": {
+          "lat": 7.635,
+          "lng": 132.419,
+          "country": "Kandara",
+          "km_to_sea": 186.0,
+          "elevation": "Low Hills (100\u2013349 m)",
+          "climate": "Steppe / Semiarid (BS)",
+          "joins": "path4964",
+          "role": "confluence with path4964"
+        },
+        "in_country_by_elevation_km": {
+          "Low Hills": 31.0
+        },
+        "in_country_by_climate_km": {
+          "Steppe / Semiarid (BS)": 31.0
+        },
+        "bbox": [
+          131.1,
+          7.64,
+          132.43,
+          8.02
+        ]
+      }
+    ],
+    "density_by_climate_km_per_1000km2": {
+      "Steppe / Semiarid (BS)": 3.73,
+      "Tropical Wet (Ar)": 2.47,
+      "Tropical Wet-and-Dry (Aw)": 5.01,
+      "Desert / Arid (BW)": 6.47,
+      "Highland (H)": 0.0
+    },
+    "density_by_elevation_km_per_1000km2": {
+      "Coastal Lowlands": 6.65,
+      "Low Hills": 1.91,
+      "Rolling Hills": 1.88,
+      "Uplands": 0.8,
+      "Low Mountains": 0.0
+    },
+    "farthest_point_from_any_river": {
+      "point": {
+        "lat": 2.659,
+        "lng": 130.986
+      },
+      "distance_km": 256.0
+    }
+  },
+  "lakes": {
+    "inside": [],
+    "nearest": [
+      {
+        "id": "path5321",
+        "distance_km": 723.0,
+        "area_km2": 1891.0,
+        "at": {
+          "lat": 2.673,
+          "lng": 139.955
+        }
+      },
+      {
+        "id": "path5476",
+        "distance_km": 1043.0,
+        "area_km2": 422.0,
+        "at": {
+          "lat": 10.495,
+          "lng": 141.737
+        }
+      },
+      {
+        "id": "path5475",
+        "distance_km": 1217.0,
+        "area_km2": 2235.0,
+        "at": {
+          "lat": 9.937,
+          "lng": 143.566
+        }
+      }
+    ]
+  },
+  "icecaps": {
+    "inside": [],
+    "nearest": [
+      {
+        "id": "path2",
+        "distance_km": 6947.0,
+        "area_km2": 4887985.0,
+        "at": {
+          "lat": 71.819,
+          "lng": 121.619
+        }
+      },
+      {
+        "id": "path10",
+        "distance_km": 7291.0,
+        "area_km2": 2088875.0,
+        "at": {
+          "lat": 74.24,
+          "lng": 144.987
+        }
+      },
+      {
+        "id": "path6",
+        "distance_km": 8208.0,
+        "area_km2": 5444903.0,
+        "at": {
+          "lat": -75.725,
+          "lng": 125.954
+        }
+      }
+    ]
+  },
+  "farthest_from_any_sea": {
+    "point": {
+      "lat": 5.27,
+      "lng": 128.622
+    },
+    "distance_km": 448.0,
+    "nearest_sea_at": {
+      "lat": 9.325,
+      "lng": 128.626
+    }
+  },
+  "transects": {
+    "N-S through centroid": [
+      {
+        "lng": 128.0,
+        "lat": 8.79,
+        "km": 76.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet-and-Dry (Aw)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 8.56,
+        "km": 101.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 8.34,
+        "km": 126.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 8.11,
+        "km": 151.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 7.88,
+        "km": 176.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 7.65,
+        "km": 202.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 7.42,
+        "km": 227.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 7.2,
+        "km": 252.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 6.97,
+        "km": 277.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 6.74,
+        "km": 302.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 6.51,
+        "km": 328.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 6.28,
+        "km": 353.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 6.06,
+        "km": 378.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 5.83,
+        "km": 403.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 5.6,
+        "km": 428.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 5.37,
+        "km": 454.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 5.15,
+        "km": 479.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 4.92,
+        "km": 504.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 4.69,
+        "km": 529.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 4.46,
+        "km": 554.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 4.23,
+        "km": 580.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 4.01,
+        "km": 605.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 3.78,
+        "km": 630.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 3.55,
+        "km": 655.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 3.32,
+        "km": 680.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 3.09,
+        "km": 706.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 2.87,
+        "km": 731.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 2.64,
+        "km": 756.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 2.41,
+        "km": 781.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 2.18,
+        "km": 806.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 1.95,
+        "km": 832.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 1.73,
+        "km": 857.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 1.5,
+        "km": 882.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 1.27,
+        "km": 907.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 1.04,
+        "km": 932.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 0.82,
+        "km": 958.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 0.59,
+        "km": 983.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 0.36,
+        "km": 1008.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": 0.13,
+        "km": 1033.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": -0.1,
+        "km": 1058.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": -0.32,
+        "km": 1084.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": -0.55,
+        "km": 1109.0,
+        "elevation": "Rolling Hills",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": -0.78,
+        "km": 1134.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": -1.01,
+        "km": 1159.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": -1.24,
+        "km": 1184.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 128.0,
+        "lat": -1.46,
+        "km": 1210.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      }
+    ],
+    "W-E through centroid": [
+      {
+        "lng": 123.05,
+        "lat": 3.92,
+        "km": 49.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 123.27,
+        "lat": 3.92,
+        "km": 73.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 123.49,
+        "lat": 3.92,
+        "km": 97.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 123.71,
+        "lat": 3.92,
+        "km": 122.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet-and-Dry (Aw)"
+      },
+      {
+        "lng": 123.93,
+        "lat": 3.92,
+        "km": 146.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet-and-Dry (Aw)"
+      },
+      {
+        "lng": 124.14,
+        "lat": 3.92,
+        "km": 170.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet-and-Dry (Aw)"
+      },
+      {
+        "lng": 124.36,
+        "lat": 3.92,
+        "km": 195.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet-and-Dry (Aw)"
+      },
+      {
+        "lng": 124.58,
+        "lat": 3.92,
+        "km": 219.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet-and-Dry (Aw)"
+      },
+      {
+        "lng": 124.8,
+        "lat": 3.92,
+        "km": 243.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet-and-Dry (Aw)"
+      },
+      {
+        "lng": 125.02,
+        "lat": 3.92,
+        "km": 267.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet-and-Dry (Aw)"
+      },
+      {
+        "lng": 125.24,
+        "lat": 3.92,
+        "km": 292.0,
+        "elevation": "Low Hills",
+        "climate": "Tropical Wet-and-Dry (Aw)"
+      },
+      {
+        "lng": 125.46,
+        "lat": 3.92,
+        "km": 316.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 125.68,
+        "lat": 3.92,
+        "km": 340.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 125.9,
+        "lat": 3.92,
+        "km": 365.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 126.11,
+        "lat": 3.92,
+        "km": 389.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 126.33,
+        "lat": 3.92,
+        "km": 413.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 126.55,
+        "lat": 3.92,
+        "km": 438.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 126.77,
+        "lat": 3.92,
+        "km": 462.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 126.99,
+        "lat": 3.92,
+        "km": 486.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 127.21,
+        "lat": 3.92,
+        "km": 511.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 127.43,
+        "lat": 3.92,
+        "km": 535.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 127.65,
+        "lat": 3.92,
+        "km": 559.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 127.87,
+        "lat": 3.92,
+        "km": 584.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.08,
+        "lat": 3.92,
+        "km": 608.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.3,
+        "lat": 3.92,
+        "km": 632.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.52,
+        "lat": 3.92,
+        "km": 656.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.74,
+        "lat": 3.92,
+        "km": 681.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 128.96,
+        "lat": 3.92,
+        "km": 705.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 129.18,
+        "lat": 3.92,
+        "km": 729.0,
+        "elevation": "Low Hills",
+        "climate": "Desert / Arid (BW)"
+      },
+      {
+        "lng": 129.4,
+        "lat": 3.92,
+        "km": 754.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 129.62,
+        "lat": 3.92,
+        "km": 778.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 129.84,
+        "lat": 3.92,
+        "km": 802.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 130.05,
+        "lat": 3.92,
+        "km": 827.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 130.27,
+        "lat": 3.92,
+        "km": 851.0,
+        "elevation": "Low Hills",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 130.49,
+        "lat": 3.92,
+        "km": 875.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 130.71,
+        "lat": 3.92,
+        "km": 900.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Steppe / Semiarid (BS)"
+      },
+      {
+        "lng": 130.93,
+        "lat": 3.92,
+        "km": 924.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 131.15,
+        "lat": 3.92,
+        "km": 948.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 131.37,
+        "lat": 3.92,
+        "km": 973.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 131.59,
+        "lat": 3.92,
+        "km": 997.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 131.81,
+        "lat": 3.92,
+        "km": 1021.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 132.03,
+        "lat": 3.92,
+        "km": 1045.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 132.24,
+        "lat": 3.92,
+        "km": 1070.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 132.46,
+        "lat": 3.92,
+        "km": 1094.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 132.68,
+        "lat": 3.92,
+        "km": 1118.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      },
+      {
+        "lng": 132.9,
+        "lat": 3.92,
+        "km": 1143.0,
+        "elevation": "Coastal Lowlands",
+        "climate": "Tropical Wet (Ar)"
+      }
+    ]
+  },
+  "low_hills_enclosed_areas": [
+    {
+      "area_km2": 17516.0,
+      "centre": {
+        "lat": 0.035,
+        "lng": 126.344
+      },
+      "bbox": [
+        125.37,
+        -0.85,
+        128.62,
+        0.93
+      ],
+      "contains_elevation": {
+        "Rolling Hills": 9563.0,
+        "Uplands": 6156.0,
+        "Low Mountains": 1797.0
+      }
+    }
+  ],
+  "lowland_max_inland_reach": {
+    "point": {
+      "lat": 4.076,
+      "lng": 127.798
+    },
+    "km_from_sea": 437.0
+  },
+  "river_borders": {
+    "Soirwind": {
+      "border_km": 988.0,
+      "river_following_km": 670.0,
+      "pct": 67.9,
+      "rivers": [
+        "path4966",
+        "path4967"
+      ]
+    },
+    "Kandara": {
+      "border_km": 671.0,
+      "river_following_km": 652.0,
+      "pct": 97.1,
+      "rivers": [
+        "path4964",
+        "path4965",
+        "path4966"
+      ]
+    }
+  }
+}
