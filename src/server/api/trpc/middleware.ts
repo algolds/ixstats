@@ -438,20 +438,24 @@ export const publicRateLimit = createRateLimitMiddleware({
   namespace: "public",
 });
 
-export const standardCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput }) => {
-  const rawInput = await getRawInput();
-  const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.standard);
-  return cacheFactory({ ctx, path, input: rawInput, next });
-});
+export const standardCacheMiddleware = t.middleware(
+  async ({ ctx, next, path, type, getRawInput }) => {
+    const rawInput = await getRawInput();
+    const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.standard);
+    return cacheFactory({ ctx, path, type, input: rawInput, next });
+  }
+);
 
-export const staticCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput }) => {
-  const rawInput = await getRawInput();
-  const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.static);
-  return cacheFactory({ ctx, path, input: rawInput, next });
-});
+export const staticCacheMiddleware = t.middleware(
+  async ({ ctx, next, path, type, getRawInput }) => {
+    const rawInput = await getRawInput();
+    const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.static);
+    return cacheFactory({ ctx, path, type, input: rawInput, next });
+  }
+);
 
-export const userCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput }) => {
+export const userCacheMiddleware = t.middleware(async ({ ctx, next, path, type, getRawInput }) => {
   const rawInput = await getRawInput();
   const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.userSpecific);
-  return cacheFactory({ ctx, path, input: rawInput, next });
+  return cacheFactory({ ctx, path, type, input: rawInput, next });
 });

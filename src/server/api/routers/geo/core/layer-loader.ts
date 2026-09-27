@@ -13,7 +13,13 @@ import {
   getSovereigntyColor,
   DEMOTED_COUNTRY_NAMES,
 } from "~/lib/maps/map-config";
-import { getCached, setCache, getCompressionForLayer, type ZoomBucket } from "./cache";
+import {
+  getCached,
+  setCache,
+  getCompressionForLayer,
+  layerInflight,
+  type ZoomBucket,
+} from "./cache";
 import { computeApproxAreaForFeature, computeVisualCenter } from "./geometry";
 
 export async function warmGeoCache(db: any): Promise<void> {
@@ -131,6 +137,28 @@ export async function loadLayerFromDB(
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
+  // Share one build between concurrent callers (political is huge and requested in parallel)
+  const existing = layerInflight.get(cacheKey);
+  if (existing) return existing;
+  const promise: Promise<FeatureCollection | null> = buildLayerFromDB(
+    db,
+    layerType,
+    zoomBucket,
+    cacheKey
+  ).finally(() => {
+    // Identity check: a clearLayerCache() may have replaced this entry with a newer build
+    if (layerInflight.get(cacheKey) === promise) layerInflight.delete(cacheKey);
+  });
+  layerInflight.set(cacheKey, promise);
+  return promise;
+}
+
+async function buildLayerFromDB(
+  db: Parameters<typeof loadLayerFromDB>[0],
+  layerType: string,
+  zoomBucket: ZoomBucket,
+  cacheKey: string
+): Promise<FeatureCollection | null> {
   // Virtual layer: country_labels is derived from the political layer
   if (layerType === "country_labels") {
     const politicalFC = await loadLayerFromDB(db, "political", zoomBucket);

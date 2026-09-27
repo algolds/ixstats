@@ -9,9 +9,6 @@ import { prismaErrorToAppError } from "~/lib/prisma-error";
 // Check if we're in read-only mode (development with production data)
 const isReadOnlyMode = process.env.DATABASE_READONLY === "true";
 
-// Slow query threshold in milliseconds (higher in dev to reduce log noise and memory)
-const SLOW_QUERY_THRESHOLD_MS = isDevMode ? 500 : 100;
-
 /**
  * Creates a Prisma client with optional read-only protection and query monitoring.
  * In read-only mode, all write operations (create, update, delete, upsert)
@@ -40,20 +37,13 @@ const createPrismaClient = () => {
   // Only set up query monitoring in production (saves memory in dev)
   if (!isDevMode) {
     baseClient.$on("query", (e) => {
-      // Record query metrics for performance analysis
+      // Record query metrics; the monitor logs slow queries (>100ms) once
       queryMonitor.recordQuery({
-        queryKey: e.query.substring(0, 100),
+        queryKey: e.query.substring(0, 200),
         duration: e.duration,
         success: true,
         timestamp: Date.now(),
       });
-
-      // Log slow queries (>100ms) in production
-      if (e.duration > SLOW_QUERY_THRESHOLD_MS) {
-        console.warn(
-          `[SLOW_QUERY] ${e.duration}ms | ${e.query.substring(0, 200)}${e.query.length > 200 ? "..." : ""}`
-        );
-      }
     });
   }
 

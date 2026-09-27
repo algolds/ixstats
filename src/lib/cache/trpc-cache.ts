@@ -5,59 +5,26 @@
  * This dramatically reduces database load for frequently accessed, read-heavy endpoints.
  *
  * Features:
- * - Redis primary with in-memory fallback
+ * - Redis primary (shared client) with in-memory fallback only while Redis is not ready
  * - Configurable TTL per procedure
  * - Automatic cache key generation from path + input
  * - User-aware caching (optional)
- * - Mutation detection to skip caching
+ * - Only queries are cached (mutations/subscriptions skipped by procedure type)
  *
  * Usage in trpc.ts:
  *   export const cachedPublicProcedure = publicProcedure
  *     .use(createTrpcCacheMiddleware({ ttlSeconds: 60 }));
  */
 
-import { Redis } from "ioredis";
 import { createHash } from "crypto";
+import superjson from "superjson";
+import type { SuperJSONResult } from "superjson";
 import type { createTRPCContext } from "~/server/api/trpc";
 import { memoryConfig } from "~/lib/system/dev-memory-config";
+import { getSharedRedis, isRedisReady, deleteKeysByPattern } from "./redis-client";
 
 // Type for the tRPC middleware context
 type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
-
-// Redis client (lazy initialized)
-let redis: Redis | null = null;
-
-function getRedisClient(): Redis | null {
-  if (redis) return redis;
-
-  const redisUrl = process.env.REDIS_URL;
-  const redisEnabled = process.env.REDIS_ENABLED === "true";
-
-  if (redisUrl && redisEnabled) {
-    try {
-      redis = new Redis(redisUrl, {
-        maxRetriesPerRequest: 3,
-        lazyConnect: true,
-      });
-
-      redis.on("error", (err) => {
-        console.warn("[TRPC_CACHE] Redis connection error:", err.message);
-        // Don't crash on Redis errors, fall back to memory cache
-      });
-
-      redis.on("connect", () => {
-        console.log("[TRPC_CACHE] Connected to Redis");
-      });
-
-      return redis;
-    } catch {
-      console.warn("[TRPC_CACHE] Failed to connect to Redis, using memory cache fallback");
-      return null;
-    }
-  }
-
-  return null;
-}
 
 // In-memory cache with TTL support
 interface MemoryCacheEntry {
@@ -113,7 +80,7 @@ export interface TrpcCacheOptions {
   namespace?: string;
   /** Whether to include user ID in cache key (for user-specific caches) */
   userAware?: boolean;
-  /** Patterns to skip caching (mutations are always skipped) */
+  /** Path patterns to skip caching (non-query procedures are always skipped) */
   skipPatterns?: RegExp[];
 }
 
@@ -156,67 +123,42 @@ function generateCacheKey(
   return `trpc:${namespace}:${path}${userPart}:${inputHash}`;
 }
 
+export type TrpcProcedureType = "query" | "mutation" | "subscription";
+
 /**
- * Check if procedure path should skip caching
+ * Only queries are cached; custom skip patterns can exclude specific query paths.
  */
-function shouldSkipCache(path: string, skipPatterns?: RegExp[]): boolean {
-  // Always skip mutations
-  const mutationPatterns = [
-    /create/i,
-    /update/i,
-    /delete/i,
-    /upsert/i,
-    /add/i,
-    /remove/i,
-    /set/i,
-    /mutation/i,
-    /execute/i,
-    /action/i,
-    /respond/i,
-    /cancel/i,
-    /submit/i,
-    /send/i,
-    /save/i,
-    /upload/i,
-    /batch/i,
-    /sync/i,
-    /copy/i,
-    /clone/i,
-    /import/i,
-    /export/i,
-    /publish/i,
-    /generate/i,
-    /seed/i,
-    /migrate/i,
-    /reset/i,
-  ];
+export function shouldSkipCache(
+  type: TrpcProcedureType,
+  path: string,
+  skipPatterns?: RegExp[]
+): boolean {
+  if (type !== "query") return true;
+  return skipPatterns?.some((p) => p.test(path)) ?? false;
+}
 
-  for (const pattern of mutationPatterns) {
-    if (pattern.test(path)) return true;
-  }
-
-  // Check custom skip patterns
-  if (skipPatterns) {
-    for (const pattern of skipPatterns) {
-      if (pattern.test(path)) return true;
-    }
-  }
-
-  return false;
+/** Parse a Redis value written as JSON.stringify(superjson.serialize(v)); null for legacy/invalid values. */
+function parseRedisPayload(raw: string): SuperJSONResult | null {
+  const parsed: SuperJSONResult | null = JSON.parse(raw);
+  if (parsed === null || typeof parsed !== "object" || !("json" in parsed)) return null;
+  return parsed;
 }
 
 /**
- * Get cached value from Redis or memory
+ * Get cached value. While Redis is ready it is the only tier (a Redis miss is a miss);
+ * memory is used only when Redis is unavailable or errors.
  */
-async function getCachedValue(key: string): Promise<unknown | null> {
-  const redisClient = getRedisClient();
+async function getCachedValue<T>(key: string): Promise<T | null> {
+  const redisClient = getSharedRedis();
 
-  if (redisClient && redisClient.status === "ready") {
+  if (isRedisReady(redisClient)) {
     try {
-      const cached = await redisClient.get(key);
-      if (cached) {
-        return JSON.parse(cached);
-      }
+      const raw = await redisClient.get(key);
+      if (raw === null) return null;
+      const payload = parseRedisPayload(raw);
+      if (!payload) return null;
+      const value = superjson.deserialize<T | undefined>(payload);
+      return value === undefined ? null : value;
     } catch (err) {
       console.warn("[TRPC_CACHE] Redis get error, falling back to memory:", err);
     }
@@ -225,7 +167,7 @@ async function getCachedValue(key: string): Promise<unknown | null> {
   // Try memory cache
   const memEntry = memoryCache.get(key);
   if (memEntry && memEntry.expiry > Date.now()) {
-    return memEntry.data;
+    return memEntry.data as T;
   }
 
   // Clean up expired entry
@@ -237,21 +179,21 @@ async function getCachedValue(key: string): Promise<unknown | null> {
 }
 
 /**
- * Set cached value in Redis and memory
+ * Set cached value in Redis when ready, otherwise in the size-capped memory cache.
  */
-async function setCachedValue(key: string, value: unknown, ttlSeconds: number): Promise<void> {
-  const redisClient = getRedisClient();
+async function setCachedValue<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
+  const redisClient = getSharedRedis();
 
-  // Try to set in Redis
-  if (redisClient && redisClient.status === "ready") {
+  if (isRedisReady(redisClient)) {
     try {
-      await redisClient.setex(key, ttlSeconds, safeJsonStringify(value));
+      await redisClient.setex(key, ttlSeconds, JSON.stringify(superjson.serialize(value)));
     } catch (err) {
-      console.warn("[TRPC_CACHE] Redis set error:", err);
+      // Includes unserializable (e.g. circular) values: skip caching rather than failing the request
+      console.warn("[TRPC_CACHE] Redis set error, value not cached:", err);
     }
+    return;
   }
 
-  // Also set in memory cache as backup/fallback
   // Enforce max size with LRU-style eviction
   if (memoryCache.size >= MAX_MEMORY_CACHE_SIZE) {
     // Delete oldest entries (first 10%)
@@ -268,6 +210,11 @@ async function setCachedValue(key: string, value: unknown, ttlSeconds: number): 
   });
 }
 
+/** tRPC's next() resolves to { ok: false, error } when the procedure throws. */
+function isFailedResult<T>(result: T): boolean {
+  return typeof result === "object" && result !== null && "ok" in result && result.ok === false;
+}
+
 /**
  * Create a tRPC cache middleware factory
  *
@@ -280,13 +227,14 @@ export function createCacheMiddlewareFactory(options: TrpcCacheOptions) {
   return async function cacheMiddleware<T>(opts: {
     ctx: TRPCContext;
     path: string;
+    type: TrpcProcedureType;
     input: unknown;
     next: () => Promise<T>;
   }): Promise<T> {
-    const { ctx, path, input, next } = opts;
+    const { ctx, path, type, input, next } = opts;
 
-    // Skip caching for mutations
-    if (shouldSkipCache(path, skipPatterns)) {
+    // Only queries are cached
+    if (shouldSkipCache(type, path, skipPatterns)) {
       return next();
     }
 
@@ -295,19 +243,21 @@ export function createCacheMiddlewareFactory(options: TrpcCacheOptions) {
     const cacheKey = generateCacheKey(path, input, userId, namespace);
 
     // Check cache
-    const cached = await getCachedValue(cacheKey);
+    const cached = await getCachedValue<T>(cacheKey);
     if (cached !== null) {
       if (process.env.NODE_ENV === "development") {
         console.log(`[TRPC_CACHE] HIT: ${path}`);
       }
-      return cached as T;
+      return cached;
     }
 
     // Execute procedure
     const result = await next();
 
-    // Cache result
-    await setCachedValue(cacheKey, result, ttlSeconds);
+    // Cache result (never a failed one, or the error would be replayed for the whole TTL)
+    if (!isFailedResult(result)) {
+      await setCachedValue(cacheKey, result, ttlSeconds);
+    }
 
     if (process.env.NODE_ENV === "development") {
       console.log(`[TRPC_CACHE] MISS: ${path} (cached for ${ttlSeconds}s)`);
@@ -322,16 +272,15 @@ export function createCacheMiddlewareFactory(options: TrpcCacheOptions) {
  * Call this when data changes to clear related caches
  */
 export async function invalidateCache(patterns: string[]): Promise<void> {
-  const redisClient = getRedisClient();
+  const redisClient = getSharedRedis();
 
-  // Clear from Redis
-  if (redisClient) {
+  // Clear from Redis (SCAN + UNLINK; never blocks Redis like KEYS)
+  if (isRedisReady(redisClient)) {
     try {
       for (const pattern of patterns) {
-        const keys = await redisClient.keys(`trpc:*${pattern}*`);
-        if (keys.length > 0) {
-          await redisClient.del(...keys);
-          console.log(`[TRPC_CACHE] Invalidated ${keys.length} Redis keys matching: ${pattern}`);
+        const deleted = await deleteKeysByPattern(redisClient, `trpc:*${pattern}*`);
+        if (deleted > 0) {
+          console.log(`[TRPC_CACHE] Invalidated ${deleted} Redis keys matching: ${pattern}`);
         }
       }
     } catch (err) {
@@ -365,7 +314,7 @@ export function getCacheStats(): {
 } {
   return {
     memoryCacheSize: memoryCache.size,
-    redisConnected: redis?.status === "ready",
+    redisConnected: isRedisReady(getSharedRedis()),
   };
 }
 
