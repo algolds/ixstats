@@ -254,12 +254,38 @@ export function getAllPresets(): SportPreset[] {
 }
 
 /**
- * Standings points for a win / draw. Every simulation path (match-day, full-season,
- * playoff and the cron tick) awards the same amount; the cron used to award 2 for
- * non-league archetypes, so the same league scored differently by code path.
+ * Standings points for a win / draw in every sport except hockey. Every simulation path
+ * (match-day, full-season, playoff and the cron tick) awards the same amount; the cron
+ * used to award 2 for non-league archetypes, so the same league scored differently by path.
  */
 export const POINTS_FOR_WIN = 3;
 export const POINTS_FOR_DRAW = 1;
+
+/** One side's result for standings. An overtime loss is a loss decided after regulation. */
+export type StandingOutcome = "win" | "draw" | "loss" | "overtimeLoss";
+
+const DEFAULT_POINTS: Record<StandingOutcome, number> = {
+  win: POINTS_FOR_WIN,
+  draw: POINTS_FOR_DRAW,
+  loss: 0,
+  overtimeLoss: 0,
+};
+
+/**
+ * Hockey (owner decision): 2 for a win, 1 for an overtime / shootout loss, 0 for a
+ * regulation loss. The hockey sim never ends level, so `draw` is unreachable.
+ */
+const HOCKEY_POINTS: Record<StandingOutcome, number> = {
+  win: 2,
+  draw: 1,
+  loss: 0,
+  overtimeLoss: 1,
+};
+
+/** Standings points one side earns for a result in this sport (a SportLeague.sportPreset). */
+export function pointsFor(sport: string, outcome: StandingOutcome): number {
+  return (sport === "hockey" ? HOCKEY_POINTS : DEFAULT_POINTS)[outcome];
+}
 
 export const SPORTS_ABBREVIATIONS: Record<string, string> = {
   // Soccer

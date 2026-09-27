@@ -8,17 +8,13 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
-import {
-  resolveMatch,
-  resolveRace,
-  transitionToNextStage,
-  simpleHash,
-  computeTeamRatingVector,
-  getTeamModifiers,
-} from "~/lib/sports";
+import { resolveRace, transitionToNextStage, simpleHash } from "~/lib/sports";
+import { outcomeFromScores, resolveMatchPredictions } from "~/lib/sports/predictions";
 import {
   SIM_MATCH_INCLUDE,
+  SIM_TEAM_INCLUDE,
   loadEffectsMap,
+  simulateAndPersistBout,
   simulateAndPersistMatch,
 } from "~/lib/sports/simulate-and-persist";
 
@@ -118,10 +114,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
           // League, Knockout, or Multi-Stage Tournament Simulation
           const allTeams = await ctx.db.sportTeam.findMany({
             where: { leagueId: currentSeason.leagueId },
-            include: {
-              players: { where: { isActive: true } },
-              coaches: { where: { isActive: true } },
-            },
+            include: SIM_TEAM_INCLUDE,
           });
           const teamsMap = new Map(allTeams.map((t) => [t.id, t]));
 
@@ -164,11 +157,28 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
 
                 // Batch matchday database operations atomically
                 const league = currentSeason.league;
-                await ctx.db.$transaction(async (tx) => {
+                const completed = await ctx.db.$transaction(async (tx) => {
+                  const done: Array<{ matchId: string; homeScore: number; awayScore: number }> = [];
                   for (const match of matches) {
-                    await simulateAndPersistMatch(tx, { match, league, effectsMap });
+                    const sim = await simulateAndPersistMatch(tx, { match, league, effectsMap });
+                    if (!sim) continue; // completed by a concurrent run
+                    done.push({
+                      matchId: match.id,
+                      homeScore: sim.homeScore,
+                      awayScore: sim.awayScore,
+                    });
                   }
+                  return done;
                 });
+
+                // Settle predictions on every match this day completed (as match day does).
+                for (const m of completed) {
+                  await resolveMatchPredictions(
+                    ctx.db,
+                    m.matchId,
+                    outcomeFromScores(m.homeScore, m.awayScore)
+                  );
+                }
               }
             }
 
@@ -199,59 +209,18 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
                   break;
                 }
               } else {
-                for (let i = 0; i < pendingBrackets.length; i++) {
-                  const bm = pendingBrackets[i];
-                  if (!bm || !currentSeason) continue;
-                  const seed = simpleHash(
-                    input.seasonId,
-                    currentRound * 100 + activeStage * 1000,
-                    i
-                  );
-
-                  const f1 = teamsMap.get(bm.fighter1Id);
-                  const f2 = teamsMap.get(bm.fighter2Id);
-
-                  if (!f1 || !f2) continue;
-
-                  const f1ratings = computeTeamRatingVector(
-                    f1.players as any,
-                    f1.coaches as any,
-                    currentSeason.league.sportPreset
-                  );
-                  const f2ratings = computeTeamRatingVector(
-                    f2.players as any,
-                    f2.coaches as any,
-                    currentSeason.league.sportPreset
-                  );
-
-                  const homeTeamModifiers = await getTeamModifiers(f1, ctx.db, effectsMap);
-                  const awayTeamModifiers = await getTeamModifiers(f2, ctx.db, effectsMap);
-
-                  const result = resolveMatch({
-                    sport: currentSeason.league.sportPreset,
-                    homeTeam: f1ratings,
-                    awayTeam: f2ratings,
-                    archetype: "bracket",
-                    seed,
-                    homeTeamModifiers,
-                    awayTeamModifiers,
-                    homeRoster: f1.players as any,
-                    awayRoster: f2.players as any,
-                  });
-
-                  const resRec = result as any;
-                  const homeScore = (resRec.homeScore as number) ?? 0;
-                  const awayScore = (resRec.awayScore as number) ?? 0;
-                  const winnerId = homeScore > awayScore ? bm.fighter1Id : bm.fighter2Id;
-
-                  await ctx.db.sportBracket.update({
-                    where: { id: bm.id },
-                    data: {
-                      winnerId,
-                      status: "completed",
-                      resolvedIxTime: IxTime.getCurrentIxTime(),
-                      result: result as any,
-                    },
+                // Same seeded, snapshotted, atomically-claimed bout path as the IxTime cron.
+                const sportPreset = currentSeason.league.sportPreset;
+                for (const bout of pendingBrackets) {
+                  const fighter1 = teamsMap.get(bout.fighter1Id);
+                  const fighter2 = teamsMap.get(bout.fighter2Id);
+                  if (!fighter1 || !fighter2) continue;
+                  await simulateAndPersistBout(ctx.db, {
+                    bout,
+                    fighter1,
+                    fighter2,
+                    sportPreset,
+                    effectsMap,
                   });
                 }
               }

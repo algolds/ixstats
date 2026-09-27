@@ -3,7 +3,7 @@
  *
  * The match-day button, the single-match button, the full-season sim and the IxTime
  * cron all call simulateAndPersistMatch, so a match scores the same whichever path
- * advances it:
+ * advances it (knockout bouts go through simulateAndPersistBout, same snapshot + seed):
  *   1. build a replayable SimulationSnapshot (seed, ratings, rosters, morale, tactics,
  *      storyteller modifiers, home advantage) and resolve the match *from that snapshot*,
  *      so `resolveFromSnapshot(matchStats.simulationSnapshot)` reproduces the result;
@@ -18,7 +18,8 @@ import { resolveMatch } from "./resolver";
 import { createRNG, seedFromString } from "./rng";
 import { computeTeamRatingVector, getTeamModifiers } from "./team-rating";
 import { generateMatchAnalysisFacts, type MatchAnalysisFacts } from "./analysis";
-import { POINTS_FOR_DRAW, POINTS_FOR_WIN } from "./presets";
+import { decidedAfterRegulation } from "./match-outcome";
+import { pointsFor, type StandingOutcome } from "./presets";
 import type { EventTraceStep, ExtendedMatchResult } from "./types";
 
 const RESOLVER_VERSION = "2.1.0";
@@ -65,12 +66,13 @@ export type SimMatch = {
 
 export type SimLeague = { sportPreset: string; archetype: string };
 
-const TEAM_WITH_ROSTER = {
-  include: {
-    players: { where: { isActive: true } },
-    coaches: { where: { isActive: true } },
-  },
-} satisfies Prisma.SportTeamDefaultArgs;
+/** Prisma `include` that loads a SportTeam as a SimTeam (active roster + coaches). */
+export const SIM_TEAM_INCLUDE = {
+  players: { where: { isActive: true } },
+  coaches: { where: { isActive: true } },
+} satisfies Prisma.SportTeamInclude;
+
+const TEAM_WITH_ROSTER = { include: SIM_TEAM_INCLUDE } satisfies Prisma.SportTeamDefaultArgs;
 
 /** Prisma `include` that loads everything simulateAndPersistMatch reads. */
 export const SIM_MATCH_INCLUDE = {
@@ -202,19 +204,32 @@ export function resolveFromSnapshot(snapshot: SimulationSnapshot): ExtendedMatch
   });
 }
 
+function standingOutcome(
+  scored: number,
+  conceded: number,
+  afterRegulation: boolean
+): StandingOutcome {
+  if (scored > conceded) return "win";
+  if (scored === conceded) return "draw";
+  return afterRegulation ? "overtimeLoss" : "loss";
+}
+
 /**
- * Standings increments for one side. Every sport uses POINTS_FOR_WIN / POINTS_FOR_DRAW;
- * a hockey-style 2-point win + overtime-loss point is not modelled — owner decision, plan 322.
+ * Standings increments for one side, points from the sport's rule (presets `pointsFor`).
+ * An overtime loss counts in `losses` (SportStanding has no OTL column) but earns its point.
  */
-export function standingDelta(scored: number, conceded: number) {
-  const wins = scored > conceded ? 1 : 0;
-  const draws = scored === conceded ? 1 : 0;
-  const losses = scored < conceded ? 1 : 0;
+export function standingDelta(
+  sport: string,
+  scored: number,
+  conceded: number,
+  afterRegulation: boolean
+) {
+  const outcome = standingOutcome(scored, conceded, afterRegulation);
   return {
-    wins,
-    draws,
-    losses,
-    points: wins * POINTS_FOR_WIN + draws * POINTS_FOR_DRAW,
+    wins: outcome === "win" ? 1 : 0,
+    draws: outcome === "draw" ? 1 : 0,
+    losses: outcome === "loss" || outcome === "overtimeLoss" ? 1 : 0,
+    points: pointsFor(sport, outcome),
     pointsFor: scored,
     pointsAgainst: conceded,
   };
@@ -278,6 +293,26 @@ function toMatchStats(
 
 export type PersistedMatchStats = ReturnType<typeof toMatchStats>;
 
+/** Resolves from the snapshot and builds the persisted stats (league matches and bouts). */
+function simulateFromSnapshot(snapshot: SimulationSnapshot, homeName: string, awayName: string) {
+  const result = resolveFromSnapshot(snapshot);
+  const home = snapshot.homeTeamSnapshot;
+  const away = snapshot.awayTeamSnapshot;
+  const analysisFacts = generateMatchAnalysisFacts({
+    homeTeamName: homeName,
+    awayTeamName: awayName,
+    homeScore: result.homeScore,
+    awayScore: result.awayScore,
+    sportPreset: snapshot.sport,
+    events: result.trace,
+    homeRatings: home.ratingVector,
+    awayRatings: away.ratingVector,
+    homeTactics: home.tactics.intent || "Balanced",
+    awayTactics: away.tactics.intent || "Balanced",
+  });
+  return { result, analysisFacts, matchStats: toMatchStats(result, snapshot, analysisFacts) };
+}
+
 // ─── DB steps ───
 
 /** Active storyteller effects for these nations, keyed by nationId (one query). */
@@ -336,10 +371,8 @@ async function applyStanding(
   db: Db,
   seasonId: string,
   teamId: string,
-  scored: number,
-  conceded: number
+  delta: ReturnType<typeof standingDelta>
 ): Promise<void> {
-  const delta = standingDelta(scored, conceded);
   await db.sportStanding.upsert({
     where: { seasonId_teamId: { seasonId, teamId } },
     create: { seasonId, teamId, ...delta },
@@ -393,23 +426,13 @@ export async function simulateAndPersistMatch(
 ): Promise<SimulatedMatch | null> {
   const { match, league } = input;
   const snapshot = await buildSimulationSnapshot(db, match, league, input.effectsMap);
-  const result = resolveFromSnapshot(snapshot);
+  const { result, analysisFacts, matchStats } = simulateFromSnapshot(
+    snapshot,
+    match.homeTeam.name,
+    match.awayTeam.name
+  );
   const home = snapshot.homeTeamSnapshot;
   const away = snapshot.awayTeamSnapshot;
-
-  const analysisFacts = generateMatchAnalysisFacts({
-    homeTeamName: match.homeTeam.name,
-    awayTeamName: match.awayTeam.name,
-    homeScore: result.homeScore,
-    awayScore: result.awayScore,
-    sportPreset: league.sportPreset,
-    events: result.trace,
-    homeRatings: home.ratingVector,
-    awayRatings: away.ratingVector,
-    homeTactics: home.tactics.intent || "Balanced",
-    awayTactics: away.tactics.intent || "Balanced",
-  });
-  const matchStats = toMatchStats(result, snapshot, analysisFacts);
   const homeAfter = ratingAfter(home.ratingVector, result.homeRatingDelta);
   const awayAfter = ratingAfter(away.ratingVector, result.awayRatingDelta);
 
@@ -438,8 +461,21 @@ export async function simulateAndPersistMatch(
     data: { ratingVector: awayAfter },
   });
 
-  await applyStanding(db, match.seasonId, match.homeTeamId, result.homeScore, result.awayScore);
-  await applyStanding(db, match.seasonId, match.awayTeamId, result.awayScore, result.homeScore);
+  const sport = league.sportPreset;
+  const afterRegulation = decidedAfterRegulation(sport, result.trace);
+  const { homeScore, awayScore } = result;
+  await applyStanding(
+    db,
+    match.seasonId,
+    match.homeTeamId,
+    standingDelta(sport, homeScore, awayScore, afterRegulation)
+  );
+  await applyStanding(
+    db,
+    match.seasonId,
+    match.awayTeamId,
+    standingDelta(sport, awayScore, homeScore, afterRegulation)
+  );
 
   const homeIds = home.roster.map((p) => p.id);
   const awayIds = away.roster.map((p) => p.id);
@@ -461,4 +497,71 @@ export async function simulateAndPersistMatch(
     analysisFacts,
     matchStats,
   };
+}
+
+// ─── Knockout bouts (SportBracket rows) ───
+
+export type SimBout = {
+  id: string;
+  seasonId: string;
+  round: number;
+  fighter1Id: string;
+  fighter2Id: string;
+};
+
+export type PersistedBoutResult = PersistedMatchStats & {
+  winner: string;
+  method: string;
+  homeScore: number;
+  awayScore: number;
+};
+
+/**
+ * Simulates one scheduled knockout bout with the same seeded snapshot as a league match
+ * (fighter1 at home, archetype "bracket"), so `resolveFromSnapshot(result.simulationSnapshot)`
+ * replays it. Claims the bout atomically (scheduled → completed); returns null when another
+ * caller already completed it. A drawn bout goes to fighter2, as before.
+ */
+export async function simulateAndPersistBout(
+  db: Db,
+  input: {
+    bout: SimBout;
+    fighter1: SimTeam;
+    fighter2: SimTeam;
+    sportPreset: string;
+    effectsMap?: EffectsMap;
+  }
+): Promise<PersistedBoutResult | null> {
+  const { bout, fighter1, fighter2 } = input;
+  const match: SimMatch = {
+    id: bout.id,
+    seasonId: bout.seasonId,
+    matchDay: bout.round,
+    homeTeamId: bout.fighter1Id,
+    awayTeamId: bout.fighter2Id,
+    homeTeam: fighter1,
+    awayTeam: fighter2,
+  };
+  const league = { sportPreset: input.sportPreset, archetype: "bracket" };
+  const snapshot = await buildSimulationSnapshot(db, match, league, input.effectsMap);
+  const { result, matchStats } = simulateFromSnapshot(snapshot, fighter1.name, fighter2.name);
+  const winnerId = result.winner === "home" ? bout.fighter1Id : bout.fighter2Id;
+  const boutResult: PersistedBoutResult = {
+    winner: winnerId,
+    method: "decision",
+    homeScore: result.homeScore,
+    awayScore: result.awayScore,
+    ...matchStats,
+  };
+
+  const claimed = await db.sportBracket.updateMany({
+    where: { id: bout.id, status: "scheduled" },
+    data: {
+      winnerId,
+      status: "completed",
+      resolvedIxTime: snapshot.capturedIxTime,
+      result: boutResult,
+    },
+  });
+  return claimed.count === 0 ? null : boutResult;
 }

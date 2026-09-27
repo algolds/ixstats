@@ -761,39 +761,4 @@ export const sportsClubRouter = createTRPCRouter({
         });
       }
     }),
-
-  getTeamSeasonHistory: publicProcedure
-    .input(z.object({ teamId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const standings = await ctx.db.sportStanding.findMany({
-          where: { teamId: input.teamId },
-          include: {
-            season: {
-              select: {
-                id: true,
-                seasonNumber: true,
-                championTeamId: true,
-              },
-            },
-          },
-          orderBy: { season: { seasonNumber: "desc" } },
-        });
-
-        return standings.map((s) => ({
-          seasonId: s.season.id,
-          seasonNumber: s.season.seasonNumber,
-          wins: s.wins,
-          draws: s.draws,
-          losses: s.losses,
-          points: s.points,
-          isChampion: s.season.championTeamId === input.teamId,
-        }));
-      } catch (_error) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch team season history",
-        });
-      }
-    }),
 });

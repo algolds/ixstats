@@ -1,6 +1,7 @@
 import { describe, it, expect } from "@jest/globals";
 import { runHockeyMatch } from "~/lib/sports/resolvers/hockey";
 import { createRNG } from "~/lib/sports/resolver";
+import { decidedAfterRegulation } from "~/lib/sports/match-outcome";
 import type { SportResolverContext } from "~/lib/sports/resolvers/types";
 
 describe("Ice Hockey 3-Period Match Resolver", () => {
@@ -103,5 +104,30 @@ describe("Ice Hockey 3-Period Match Resolver", () => {
       // Hockey matches must never end in a draw
       expect(outcome.homeScore).not.toEqual(outcome.awayScore);
     }
+  });
+
+  it("reads an overtime / shootout decision from the trace (tied after 60 minutes)", () => {
+    let overtimeGames = 0;
+    let regulationGames = 0;
+    for (let seed = 100; seed <= 150; seed++) {
+      const outcome = runHockeyMatch(
+        createMockContext(seed, {
+          homeOffense: 50,
+          homeDefense: 50,
+          awayOffense: 50,
+          awayDefense: 50,
+        })
+      );
+      const tiedAfterRegulation = outcome.trace.some((e) =>
+        e.description.startsWith("END OF REGULATION")
+      );
+      expect(decidedAfterRegulation("hockey", outcome.trace)).toBe(tiedAfterRegulation);
+      // Only hockey awards an overtime-loss point.
+      expect(decidedAfterRegulation("soccer", outcome.trace)).toBe(false);
+      if (tiedAfterRegulation) overtimeGames++;
+      else regulationGames++;
+    }
+    expect(overtimeGames).toBeGreaterThan(0);
+    expect(regulationGames).toBeGreaterThan(0);
   });
 });

@@ -9,8 +9,7 @@ import {
   resolveMatch,
   generateTeamRoster,
   createRNG,
-  POINTS_FOR_WIN,
-  POINTS_FOR_DRAW,
+  pointsFor,
 } from "../../sports";
 import sportsData from "../../../../data/seed/sports-leagues.json";
 import {
@@ -249,7 +248,7 @@ export async function seedCaphirianSoccerLeague(
 
   const standingsArr = Array.from(standings.entries()).map(([teamId, s]) => ({
     teamId,
-    points: s.wins * POINTS_FOR_WIN + s.draws * POINTS_FOR_DRAW,
+    points: s.wins * pointsFor("soccer", "win") + s.draws * pointsFor("soccer", "draw"),
     ...s,
   }));
   standingsArr.sort((a, b) => b.points - a.points || b.gf - b.ga - (a.gf - a.ga));

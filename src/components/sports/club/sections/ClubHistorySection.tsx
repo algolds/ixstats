@@ -10,7 +10,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 
 /** Club legacy: titles, all-time record and season-by-season finishes (plan 321 Step 4). */
 export function ClubHistorySection({ teamId }: { teamId: string }) {
-  const { data: history, isLoading } = api.sports.getTeamSeasonHistory.useQuery({ teamId });
+  const { data: history, isLoading } = api.sports.getTeamHistory.useQuery({ teamId });
 
   if (isLoading) return <Skeleton className="mx-auto h-64 max-w-3xl rounded-2xl" />;
 

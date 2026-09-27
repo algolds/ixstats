@@ -2,121 +2,91 @@
  * Sports Leagues Helpers
  */
 
-/** Recompute a season's standings from scratch off completed matches (idempotent). */
-export async function recalculateStandings(db: any, seasonId: string) {
+import type { Prisma, PrismaClient } from "@prisma/client";
+import { decidedAfterRegulation } from "~/lib/sports/match-outcome";
+import { standingDelta } from "~/lib/sports/simulate-and-persist";
+import type { EventTraceStep } from "~/lib/sports/types";
+
+type StandingTotals = ReturnType<typeof standingDelta>;
+
+const emptyTotals = (): StandingTotals => ({
+  wins: 0,
+  losses: 0,
+  draws: 0,
+  points: 0,
+  pointsFor: 0,
+  pointsAgainst: 0,
+});
+
+function addInto(target: StandingTotals, delta: StandingTotals) {
+  target.wins += delta.wins;
+  target.losses += delta.losses;
+  target.draws += delta.draws;
+  target.points += delta.points;
+  target.pointsFor += delta.pointsFor;
+  target.pointsAgainst += delta.pointsAgainst;
+}
+
+/** Trace stored with a simulated match; manual results have none (then no overtime is assumed). */
+function traceOf(matchStats: Prisma.JsonValue): EventTraceStep[] {
+  const stats = matchStats as { trace?: EventTraceStep[] } | null;
+  return Array.isArray(stats?.trace) ? stats.trace : [];
+}
+
+/**
+ * Recompute a season's standings from scratch off completed matches (idempotent).
+ * Points follow the sport's rule (`pointsFor` via `standingDelta`), the same one live
+ * match completion uses — e.g. hockey pays 2 for a win and 1 for an overtime loss.
+ */
+export async function recalculateStandings(
+  db: PrismaClient | Prisma.TransactionClient,
+  seasonId: string
+) {
+  const season = await db.sportSeason.findUnique({
+    where: { id: seasonId },
+    select: { league: { select: { sportPreset: true } } },
+  });
+  const sport = season?.league.sportPreset ?? "soccer";
+
   const teams = await db.sportTeamSeason.findMany({
     where: { seasonId },
     select: { teamId: true },
   });
-
   const matches = await db.sportMatch.findMany({
     where: { seasonId, status: "completed" },
+    select: { homeTeamId: true, awayTeamId: true, homeScore: true, awayScore: true, matchStats: true },
   });
 
-  const statsMap: Record<
-    string,
-    {
-      wins: number;
-      losses: number;
-      draws: number;
-      points: number;
-      pointsFor: number;
-      pointsAgainst: number;
-    }
-  > = {};
-  for (const t of teams) {
-    statsMap[t.teamId] = {
-      wins: 0,
-      losses: 0,
-      draws: 0,
-      points: 0,
-      pointsFor: 0,
-      pointsAgainst: 0,
-    };
-  }
+  const totals = new Map<string, StandingTotals>(teams.map((t) => [t.teamId, emptyTotals()]));
+  const totalsFor = (teamId: string) => {
+    const existing = totals.get(teamId);
+    if (existing) return existing;
+    const created = emptyTotals();
+    totals.set(teamId, created);
+    return created;
+  };
 
   for (const m of matches) {
-    const homeScore = m.homeScore ?? 0;
-    const awayScore = m.awayScore ?? 0;
-
-    if (!statsMap[m.homeTeamId]) {
-      statsMap[m.homeTeamId] = {
-        wins: 0,
-        losses: 0,
-        draws: 0,
-        points: 0,
-        pointsFor: 0,
-        pointsAgainst: 0,
-      };
-    }
-    if (!statsMap[m.awayTeamId]) {
-      statsMap[m.awayTeamId] = {
-        wins: 0,
-        losses: 0,
-        draws: 0,
-        points: 0,
-        pointsFor: 0,
-        pointsAgainst: 0,
-      };
-    }
-
-    statsMap[m.homeTeamId].pointsFor += homeScore;
-    statsMap[m.homeTeamId].pointsAgainst += awayScore;
-    statsMap[m.awayTeamId].pointsFor += awayScore;
-    statsMap[m.awayTeamId].pointsAgainst += homeScore;
-
-    if (homeScore > awayScore) {
-      statsMap[m.homeTeamId].wins += 1;
-      statsMap[m.homeTeamId].points += 3;
-      statsMap[m.awayTeamId].losses += 1;
-    } else if (awayScore > homeScore) {
-      statsMap[m.awayTeamId].wins += 1;
-      statsMap[m.awayTeamId].points += 3;
-      statsMap[m.homeTeamId].losses += 1;
-    } else {
-      statsMap[m.homeTeamId].draws += 1;
-      statsMap[m.homeTeamId].points += 1;
-      statsMap[m.awayTeamId].draws += 1;
-      statsMap[m.awayTeamId].points += 1;
-    }
+    const home = m.homeScore ?? 0;
+    const away = m.awayScore ?? 0;
+    const afterRegulation = decidedAfterRegulation(sport, traceOf(m.matchStats));
+    addInto(totalsFor(m.homeTeamId), standingDelta(sport, home, away, afterRegulation));
+    addInto(totalsFor(m.awayTeamId), standingDelta(sport, away, home, afterRegulation));
   }
 
-  const standingsArray = Object.entries(statsMap).map(([teamId, stats]) => ({
-    teamId,
-    ...stats,
-    diff: stats.pointsFor - stats.pointsAgainst,
-  }));
-
-  standingsArray.sort((a, b) => {
+  const ranked = [...totals.entries()].sort(([, a], [, b]) => {
     if (b.points !== a.points) return b.points - a.points;
-    if (b.diff !== a.diff) return b.diff - a.diff;
+    const diff = b.pointsFor - b.pointsAgainst - (a.pointsFor - a.pointsAgainst);
+    if (diff !== 0) return diff;
     return b.pointsFor - a.pointsFor;
   });
 
-  for (let idx = 0; idx < standingsArray.length; idx++) {
-    const item = standingsArray[idx];
+  for (const [idx, [teamId, stats]] of ranked.entries()) {
+    const data = { ...stats, rank: idx + 1 };
     await db.sportStanding.upsert({
-      where: { seasonId_teamId: { seasonId, teamId: item.teamId } },
-      create: {
-        seasonId,
-        teamId: item.teamId,
-        wins: item.wins,
-        losses: item.losses,
-        draws: item.draws,
-        points: item.points,
-        pointsFor: item.pointsFor,
-        pointsAgainst: item.pointsAgainst,
-        position: idx + 1,
-      },
-      update: {
-        wins: item.wins,
-        losses: item.losses,
-        draws: item.draws,
-        points: item.points,
-        pointsFor: item.pointsFor,
-        pointsAgainst: item.pointsAgainst,
-        position: idx + 1,
-      },
+      where: { seasonId_teamId: { seasonId, teamId } },
+      create: { seasonId, teamId, ...data },
+      update: data,
     });
   }
 }

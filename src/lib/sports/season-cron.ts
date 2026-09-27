@@ -9,22 +9,20 @@
 
 import { type PrismaClient } from "@prisma/client";
 import { IxTime } from "../ixtime";
-import { resolveMatch, resolveRace, createRNG, seedFromString } from "./resolver";
-import type { TeamRatingVector } from "./resolver";
+import { resolveRace, createRNG, seedFromString } from "./resolver";
 import { transitionToNextStage } from "./transition";
 import { postMatchDayBulletin } from "./feed-post";
 import { notifyClubMatchResult } from "./club-notify";
 import { resolveMatchPredictions, outcomeFromScores } from "./predictions";
-import { SIM_MATCH_INCLUDE, simulateAndPersistMatch } from "./simulate-and-persist";
+import {
+  SIM_MATCH_INCLUDE,
+  SIM_TEAM_INCLUDE,
+  simulateAndPersistBout,
+  simulateAndPersistMatch,
+} from "./simulate-and-persist";
 import type { MatchDayResultLine } from "./feed-bulletins";
 
 type Prisma = PrismaClient;
-
-function computePlayerAvg(ratings: Record<string, number>): number {
-  const values = Object.values(ratings);
-  if (values.length === 0) return 50;
-  return values.reduce((a, b) => a + b, 0) / values.length;
-}
 
 // ─── Season completion ──────────────────────────────────────────────
 
@@ -502,80 +500,22 @@ async function advanceBracketRound(
   });
 
   for (const bracket of brackets) {
-    const fighter1Team = await prisma.sportTeam.findUnique({
+    const fighter1 = await prisma.sportTeam.findUnique({
       where: { id: bracket.fighter1Id },
-      include: {
-        players: { where: { isActive: true } },
-      },
+      include: SIM_TEAM_INCLUDE,
     });
-    const fighter2Team = await prisma.sportTeam.findUnique({
+    const fighter2 = await prisma.sportTeam.findUnique({
       where: { id: bracket.fighter2Id },
-      include: {
-        players: { where: { isActive: true } },
-      },
+      include: SIM_TEAM_INCLUDE,
     });
-
-    if (!fighter1Team || !fighter2Team) continue;
-
-    const fighter1 = fighter1Team.players[0];
-    const fighter2 = fighter2Team.players[0];
-
     if (!fighter1 || !fighter2) continue;
 
-    const r1 = (fighter1.ratings ?? {}) as Record<string, number>;
-    const r2 = (fighter2.ratings ?? {}) as Record<string, number>;
-
-    const homeRatings: TeamRatingVector = {
-      overall: computePlayerAvg(r1),
-      offense: r1.power ?? 50,
-      defense: r1.defense ?? 50,
-      form: 50,
-      depth: 50,
-      coaching: 50,
-    };
-    const awayRatings: TeamRatingVector = {
-      overall: computePlayerAvg(r2),
-      offense: r2.power ?? 50,
-      defense: r2.defense ?? 50,
-      form: 50,
-      depth: 50,
-      coaching: 50,
-    };
-
-    const matchSeed = seedFromString(bracket.id) + targetRound * 7919;
-    const isChampionship =
-      bracket.round === Math.max(...scheduledBrackets.map((b) => b.round)) &&
-      (await prisma.sportBracket.count({
-        where: {
-          seasonId: season.id,
-          round: { gt: targetRound },
-          stage: (season as any).activeStage ?? 1,
-        } as any,
-      })) === 0;
-
-    const result = resolveMatch({
-      sport: season.league.sportPreset,
-      homeTeam: homeRatings,
-      awayTeam: awayRatings,
-      archetype: "bracket",
-      seed: matchSeed,
-      context: { isChampionship, isPlayoff: !isChampionship },
-    });
-
-    const ixNow = IxTime.getCurrentIxTime();
-    const winnerId = result.winner === "home" ? bracket.fighter1Id : bracket.fighter2Id;
-
-    await prisma.sportBracket.update({
-      where: { id: bracket.id },
-      data: {
-        winnerId,
-        status: "completed",
-        resolvedIxTime: ixNow,
-        result: {
-          winner: winnerId,
-          method: result.winner === "home" ? "decision" : "decision",
-        } as any,
-      },
+    // Same seeded, snapshotted, atomically-claimed bout path as the full-season sim.
+    await simulateAndPersistBout(prisma, {
+      bout: bracket,
+      fighter1,
+      fighter2,
+      sportPreset: season.league.sportPreset,
     });
   }
 

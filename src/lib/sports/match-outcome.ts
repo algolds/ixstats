@@ -1,5 +1,5 @@
 import { computeEloDelta } from "./elo-calculator";
-import type { ExtendedMatchResult } from "./types";
+import type { EventTraceStep, ExtendedMatchResult } from "./types";
 import { clamp } from "~/lib/utils";
 import type { SportMatchOutcome, SportResolverContext } from "./resolvers";
 import {
@@ -90,6 +90,18 @@ export function runSportMatch(sport: string, ctx: SportResolverContext): SportMa
     default:
       return runSoccerMatch(ctx);
   }
+}
+
+/** Hockey regulation length; the hockey sim stamps overtime and shootout events after it. */
+const HOCKEY_REGULATION_MINUTES = 60;
+
+/**
+ * True when a hockey game was decided after regulation (an overtime or shootout goal),
+ * read from the resolver's trace. Always false for other sports.
+ */
+export function decidedAfterRegulation(sport: string, trace: EventTraceStep[]): boolean {
+  if (sport !== "hockey") return false;
+  return trace.some((step) => step.type === "goal" && step.t > HOCKEY_REGULATION_MINUTES);
 }
 
 function determineWinner(homeScore: number, awayScore: number): Winner {
