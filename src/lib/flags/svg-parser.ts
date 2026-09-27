@@ -11,8 +11,6 @@
  */
 
 import { DOMParser } from "@xmldom/xmldom";
-// svg-path-parser is CJS-only; use createRequire for ESM compatibility
-import { createRequire } from "module";
 
 import {
   type SvgPathCommand,
@@ -30,6 +28,14 @@ import {
   extractFillColor,
   extractStrokeColor,
 } from "./svg/topology-flattener";
+import type { SvgCoordinateConfig } from "./svg-coordinate-config";
+import { IXEARTH_SVG_CONFIG } from "./svg-coordinate-config";
+import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
+import { SVG_NS, INKSCAPE_NS } from "./svg/xml";
+import { readViewBox, resolveCoordinateConfig } from "./svg/coordinate-calibration";
+import { selectTargetLayer } from "./svg/layer-selection";
+import { buildReferenceGeometryMap } from "./svg/reference-geometry";
+import { extractFeatures, featureIdToDisplayName } from "./svg/feature-extraction";
 
 export type { SvgPathCommand };
 export {
@@ -44,21 +50,10 @@ export {
   calculateApproxArea,
   extractFillColor,
   extractStrokeColor,
+  featureIdToDisplayName,
 };
-
-const _require = createRequire(import.meta.url);
-const { parseSVG, makeAbsolute } = _require("svg-path-parser") as {
-  parseSVG: (d: string) => SvgPathCommand[];
-  makeAbsolute: (cmds: SvgPathCommand[]) => SvgPathCommand[];
-};
-import type { SvgCoordinateConfig } from "./svg-coordinate-config";
-import {
-  createConfigFromBounds,
-  createConfigFromCalibration,
-  IXEARTH_SVG_CONFIG,
-  svgToWgs84,
-} from "./svg-coordinate-config";
-import type { Feature, FeatureCollection, Polygon, MultiPolygon, Position } from "geojson";
+export type { FeatureDiffEntry, LayerDiff } from "./svg/layer-diff";
+export { computeLayerDiff } from "./svg/layer-diff";
 
 // ──────────────────────────────────────────────
 // Types
@@ -104,14 +99,6 @@ export interface SvgParseResult {
 // SVG Parsing
 // ──────────────────────────────────────────────
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-const INKSCAPE_NS = "http://www.inkscape.org/namespaces/inkscape";
-
-// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
-// global lib.dom Element (it was in 0.8). All "Element" values in this file are
-// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
-type XmlElement = import("@xmldom/xmldom").Element;
-
 /**
  * Main entry point: parse SVG content string into GeoJSON.
  */
@@ -137,434 +124,27 @@ export function parseSvgToGeoJson(
     throw new Error("Failed to parse SVG: no root element found");
   }
 
-  // Extract viewBox
-  const viewBoxAttr = svgRoot.getAttribute("viewBox");
-  let viewBox = { width: baseCoordConfig.viewBoxWidth, height: baseCoordConfig.viewBoxHeight };
-  if (viewBoxAttr) {
-    const parts = viewBoxAttr.split(/[\s,]+/).map(Number);
-    if (parts.length >= 4) {
-      viewBox = { width: parts[2]!, height: parts[3]! };
-      log.push(`SVG viewBox: ${viewBox.width} × ${viewBox.height}`);
-    }
-  }
+  const viewBox = readViewBox(svgRoot, baseCoordConfig, log);
+  const coordConfig = resolveCoordinateConfig(
+    svgRoot,
+    viewBox,
+    baseCoordConfig,
+    config.referenceGeoJson,
+    log
+  );
 
-  // Build coordinate config.
-  // Strategy 1: Calibrate from reference GeoJSON (most accurate — matches existing layers)
-  // Strategy 2: Fall back to mapping viewBox → WGS84 world bounds (for first-time imports)
-  let coordConfig = baseCoordConfig;
-  let calibrated = false;
-
-  if (config.referenceGeoJson && viewBox.width > 0 && viewBox.height > 0) {
-    // Build a lookup of reference feature CENTROIDS by ID.
-    // Centroids are ring-start-invariant (unlike first coordinate which
-    // differs between SVG and GeoJSON because rings can start at any vertex).
-    const refCentroids = new Map<string, [number, number]>();
-    for (const feat of config.referenceGeoJson.features) {
-      const fid = String(feat.properties?.id ?? feat.id ?? "");
-      if (!fid || !feat.geometry || !("coordinates" in feat.geometry)) continue;
-      // Flatten all coordinates to compute centroid
-      const allCoords: number[][] = [];
-      const flatten = (arr: unknown): void => {
-        if (!Array.isArray(arr)) return;
-        if (arr.length >= 2 && typeof arr[0] === "number" && typeof arr[1] === "number") {
-          allCoords.push(arr as number[]);
-          return;
-        }
-        for (const item of arr) flatten(item);
-      };
-      flatten(feat.geometry.coordinates);
-      if (allCoords.length > 0) {
-        const avgLng = allCoords.reduce((s, c) => s + c[0]!, 0) / allCoords.length;
-        const avgLat = allCoords.reduce((s, c) => s + c[1]!, 0) / allCoords.length;
-        refCentroids.set(fid, [avgLng, avgLat]);
-      }
-    }
-
-    // Compute SVG centroids using the path parser (handles relative commands correctly).
-    // Uses only command endpoints (cmd.x, cmd.y), NOT bezier control points (x1,y1,x2,y2).
-    const allSvgPaths = svgRoot.getElementsByTagNameNS(SVG_NS, "path");
-    const calibPoints: Array<{ svgX: number; svgY: number; lng: number; lat: number }> = [];
-
-    for (let i = 0; i < allSvgPaths.length; i++) {
-      const p = allSvgPaths[i]!;
-      const pid = p.getAttribute("id") || "";
-      const ref = refCentroids.get(pid);
-      if (!ref) continue;
-      const d = p.getAttribute("d") || "";
-      if (!d) continue;
-      try {
-        const cmds = makeAbsolute(parseSVG(d));
-        let svgSumX = 0,
-          svgSumY = 0,
-          svgCount = 0;
-        for (const cmd of cmds) {
-          if (cmd.x !== undefined && cmd.y !== undefined) {
-            svgSumX += cmd.x;
-            svgSumY += cmd.y;
-            svgCount++;
-          }
-        }
-        if (svgCount < 3) continue;
-        calibPoints.push({
-          svgX: svgSumX / svgCount,
-          svgY: svgSumY / svgCount,
-          lng: ref[0],
-          lat: ref[1],
-        });
-      } catch {
-        continue;
-      }
-    }
-
-    if (calibPoints.length >= 2) {
-      const calibConfig = createConfigFromCalibration(viewBox.width, viewBox.height, calibPoints);
-      if (calibConfig) {
-        coordConfig = calibConfig;
-        calibrated = true;
-        log.push(
-          `Calibrated from ${calibPoints.length} matched features (scale: ${(1 / calibConfig.pixelsPerLng).toFixed(6)} deg/px)`
-        );
-      }
-    }
-
-    if (!calibrated) {
-      log.push(
-        `Calibration failed (${calibPoints.length} matches found, need 2+). Falling back to bounds mapping.`
-      );
-    }
-  }
-
-  if (!calibrated && viewBox.width > 0 && viewBox.height > 0) {
-    coordConfig = createConfigFromBounds(
-      viewBox.width,
-      viewBox.height,
-      {
-        minLng: -180,
-        maxLng: 180,
-        minLat: -90,
-        maxLat: 90,
-      },
-      { preserveAspectRatio: true }
-    );
-
-    const effectiveLatRange = viewBox.height / Math.max(viewBox.width / 360, viewBox.height / 180);
-    log.push(
-      `Mapping viewBox (${viewBox.width}×${viewBox.height}) to WGS84 bounds (lat range: ±${(effectiveLatRange / 2).toFixed(1)}°)`
-    );
-  }
-
-  // Find all top-level groups (layers)
-  const layersFound: string[] = [];
-  const topGroups = svgRoot.getElementsByTagNameNS(SVG_NS, "g");
-
-  let targetGroup: XmlElement | null = null;
-
-  for (let i = 0; i < topGroups.length; i++) {
-    const g = topGroups[i]!;
-    // Only check direct children of svg root
-    if (g.parentNode !== svgRoot) continue;
-
-    const gId = g.getAttribute("id") || "";
-    const gLabel = g.getAttributeNS(INKSCAPE_NS, "label") || g.getAttribute("inkscape:label") || "";
-
-    if (gId) layersFound.push(gId);
-
-    // Match by ID or label (case-insensitive)
-    const matchId = gId.toLowerCase().replace(/-/g, "");
-    const matchLabel = gLabel.toLowerCase().replace(/-/g, "");
-    const targetNorm = targetLayerId.toLowerCase().replace(/-/g, "");
-
-    if (matchId === targetNorm || matchLabel === targetNorm) {
-      targetGroup = g;
-    }
-  }
-
-  log.push(`Layers found in SVG: ${layersFound.join(", ")}`);
-
-  // Fallback for single-layer SVGs (e.g., exporting from Inkscape or Illustrator)
-  if (!targetGroup) {
-    // Strategy 1: Top-level <g> elements that contain paths (at any depth)
-    const groupsWithPaths: { el: XmlElement; pathCount: number }[] = [];
-    for (let i = 0; i < topGroups.length; i++) {
-      const g = topGroups[i]!;
-      if (g.parentNode !== svgRoot) continue;
-      const pathCount = g.getElementsByTagNameNS(SVG_NS, "path").length;
-      if (pathCount > 0) groupsWithPaths.push({ el: g, pathCount });
-    }
-
-    if (groupsWithPaths.length === 1) {
-      // Single top-level group with paths — use it
-      targetGroup = groupsWithPaths[0]!.el;
-      log.push(
-        `Layer "${targetLayerId}" not found by name; using sole group "${targetGroup.getAttribute("id")}" (${groupsWithPaths[0]!.pathCount} paths)`
-      );
-    } else if (groupsWithPaths.length > 1) {
-      // Multiple groups — check nested groups for a name match
-      for (const { el: g } of groupsWithPaths) {
-        const nestedGroups = g.getElementsByTagNameNS(SVG_NS, "g");
-        for (let k = 0; k < nestedGroups.length; k++) {
-          const ng = nestedGroups[k]!;
-          if (ng.parentNode !== g) continue;
-          const ngId = (ng.getAttribute("id") || "").toLowerCase().replace(/-/g, "");
-          const ngLabel = (
-            ng.getAttributeNS(INKSCAPE_NS, "label") ||
-            ng.getAttribute("inkscape:label") ||
-            ""
-          )
-            .toLowerCase()
-            .replace(/-/g, "");
-          const targetNormFb = targetLayerId.toLowerCase().replace(/-/g, "");
-          if (ngId === targetNormFb || ngLabel === targetNormFb) {
-            targetGroup = ng;
-            log.push(
-              `Found nested layer "${ng.getAttribute("id")}" inside group "${g.getAttribute("id")}"`
-            );
-            break;
-          }
-        }
-        if (targetGroup) break;
-      }
-
-      // Still no match — pick the group with the most paths
-      if (!targetGroup) {
-        const best = groupsWithPaths.sort((a, b) => b.pathCount - a.pathCount)[0]!;
-        targetGroup = best.el;
-        log.push(
-          `Layer "${targetLayerId}" not found by name; using largest group "${targetGroup.getAttribute("id")}" (${best.pathCount} paths)`
-        );
-      }
-    }
-
-    // Strategy 2: Any paths anywhere in the document — use SVG root
-    if (!targetGroup) {
-      const totalPaths = svgRoot.getElementsByTagNameNS(SVG_NS, "path").length;
-      if (totalPaths > 0) {
-        targetGroup = svgRoot;
-        log.push(
-          `Layer "${targetLayerId}" not found by name; using SVG root (${totalPaths} total paths)`
-        );
-      }
-    }
-  }
-
-  if (!targetGroup) {
-    throw new Error(
-      `Layer "${targetLayerId}" not found in SVG. Available layers: ${layersFound.join(", ") || "none"}`
-    );
-  }
-
+  const { targetGroup, layersFound } = selectTargetLayer(svgRoot, targetLayerId, log);
   log.push(`Extracting features from layer: ${targetGroup.getAttribute("id")}`);
 
-  // Build reference geometry lookup: use exact coordinates from reference GeoJSON
-  // when available, instead of converting SVG coordinates (which introduces error).
-  // The SVG is still used for feature discovery, colors, and names.
-  const refGeometryMap = new Map<
-    string,
-    {
-      geometry: Polygon | MultiPolygon;
-      centroid: [number, number];
-      bbox: [number, number, number, number];
-      area: number;
-    }
-  >();
-  if (config.referenceGeoJson) {
-    for (const feat of config.referenceGeoJson.features) {
-      const fid = String(feat.properties?.id ?? feat.id ?? "");
-      if (!fid || !feat.geometry || !("coordinates" in feat.geometry)) continue;
-      const geom = feat.geometry as Polygon | MultiPolygon;
-      // Compute centroid, bbox, area from reference coordinates
-      const allCoords: [number, number][] = [];
-      const flattenCoords = (arr: unknown): void => {
-        if (!Array.isArray(arr)) return;
-        if (arr.length >= 2 && typeof arr[0] === "number" && typeof arr[1] === "number") {
-          allCoords.push(arr as [number, number]);
-          return;
-        }
-        for (const item of arr) flattenCoords(item);
-      };
-      flattenCoords(geom.coordinates);
-      if (allCoords.length === 0) continue;
-      const cLng = allCoords.reduce((s, c) => s + c[0], 0) / allCoords.length;
-      const cLat = allCoords.reduce((s, c) => s + c[1], 0) / allCoords.length;
-      let minLng = Infinity,
-        minLat = Infinity,
-        maxLng = -Infinity,
-        maxLat = -Infinity;
-      for (const [lng, lat] of allCoords) {
-        if (lng < minLng) minLng = lng;
-        if (lng > maxLng) maxLng = lng;
-        if (lat < minLat) minLat = lat;
-        if (lat > maxLat) maxLat = lat;
-      }
-      // Approximate area using the reference rings
-      const refRings =
-        geom.type === "Polygon"
-          ? (geom.coordinates as Position[][])
-          : (geom.coordinates as Position[][][]).flat();
-      const area = calculateApproxArea(refRings as [number, number][][]);
-      refGeometryMap.set(fid, {
-        geometry: geom,
-        centroid: [cLng, cLat],
-        bbox: [minLng, minLat, maxLng, maxLat],
-        area,
-      });
-    }
-    log.push(`Reference geometry available for ${refGeometryMap.size} features`);
-  }
+  // Prefer exact coordinates from the reference GeoJSON over converted SVG coordinates.
+  const refGeometryMap = buildReferenceGeometryMap(config.referenceGeoJson, log);
+  const { features, pathCount, refUsedCount } = extractFeatures(
+    targetGroup,
+    { coordConfig, bezierSegments, minRingSize, refGeometryMap },
+    log
+  );
 
-  // Extract path elements from the target group (all descendants, not just direct children)
-  // This supports both Inkscape (flat layer structure) and Illustrator (nested sub-groups)
-  const features: ParsedFeature[] = [];
-  const allPaths = targetGroup.getElementsByTagNameNS(SVG_NS, "path");
-  let refUsedCount = 0;
-
-  for (let i = 0; i < allPaths.length; i++) {
-    const pathEl = allPaths[i]!;
-
-    const featureId = pathEl.getAttribute("id") || `feature_${i}`;
-    const displayName =
-      pathEl.getAttributeNS(INKSCAPE_NS, "label") ||
-      pathEl.getAttribute("inkscape:label") ||
-      pathEl.getAttribute("data-name") ||
-      featureIdToDisplayName(featureId);
-    const d = pathEl.getAttribute("d");
-    const style = pathEl.getAttribute("style") || "";
-
-    if (!d) {
-      log.push(`  Skipping ${featureId}: no path data`);
-      continue;
-    }
-
-    try {
-      // Extract fill/stroke colors from SVG (always needed, even for reference geometry)
-      const fillColor = extractFillColor(pathEl, style);
-      const strokeColor = extractStrokeColor(pathEl, style);
-
-      const properties: Record<string, unknown> = {
-        id: featureId,
-        name: displayName,
-      };
-      if (fillColor) properties.fill = fillColor;
-      if (strokeColor) properties.stroke = strokeColor;
-
-      // Use reference geometry if available (exact coordinates, perfect alignment)
-      const refData = refGeometryMap.get(featureId);
-      if (refData) {
-        refUsedCount++;
-        features.push({
-          featureId,
-          displayName,
-          geometry: refData.geometry,
-          properties,
-          centroid: refData.centroid,
-          boundingBox: refData.bbox,
-          areaSqKm: refData.area,
-        });
-        continue; // skip SVG coordinate conversion
-      }
-
-      // No reference — fall back to SVG coordinate conversion
-      // Parse SVG path to absolute commands
-      const commands = makeAbsolute(parseSVG(d));
-
-      // Convert to coordinate rings
-      const rings = pathCommandsToRings(commands, bezierSegments);
-
-      if (rings.length === 0) {
-        log.push(`  Skipping ${featureId}: no valid rings`);
-        continue;
-      }
-
-      // Convert SVG coordinates to WGS84 (clamp to valid range)
-      const wgs84Rings = rings.map((ring) =>
-        ring.map(([x, y]): [number, number] => {
-          const [lng, lat] = svgToWgs84(x!, y!, coordConfig);
-          return [Math.max(-180, Math.min(180, lng)), Math.max(-90, Math.min(90, lat))];
-        })
-      );
-
-      // Skip features entirely outside valid geographic bounds
-      const hasValidCoords = wgs84Rings.some((ring) =>
-        ring.some(([lng, lat]) => Math.abs(lng) < 180 && Math.abs(lat) < 90)
-      );
-      if (!hasValidCoords) {
-        log.push(`  Skipping ${featureId}: all coordinates outside valid range`);
-        continue;
-      }
-
-      // Filter out rings that are too small
-      const validRings = wgs84Rings.filter((ring) => ring.length >= minRingSize);
-      if (validRings.length === 0) {
-        log.push(`  Skipping ${featureId}: all rings too small`);
-        continue;
-      }
-
-      // Close rings (GeoJSON requires first == last)
-      const closedRings = validRings.map((ring) => {
-        if (
-          ring.length > 0 &&
-          (ring[0]![0] !== ring[ring.length - 1]![0] || ring[0]![1] !== ring[ring.length - 1]![1])
-        ) {
-          return [...ring, ring[0]!];
-        }
-        return ring;
-      });
-
-      // Build geometry
-      let geometry: Polygon | MultiPolygon;
-      if (closedRings.length === 1) {
-        geometry = {
-          type: "Polygon",
-          coordinates: [closedRings[0]!],
-        };
-      } else {
-        // Determine which rings are outer (CCW in GeoJSON) vs holes (CW)
-        const outerRings = closedRings.filter((r) => ringArea(r) > 0);
-        const holeRings = closedRings.filter((r) => ringArea(r) <= 0);
-
-        if (outerRings.length === 0) {
-          geometry = {
-            type: outerRings.length <= 1 && holeRings.length === 0 ? "Polygon" : "MultiPolygon",
-            coordinates:
-              closedRings.length === 1
-                ? [closedRings[0]!.slice().reverse()]
-                : closedRings.map((r) => [r.slice().reverse()]),
-          } as Polygon | MultiPolygon;
-        } else if (outerRings.length === 1 && holeRings.length > 0) {
-          geometry = {
-            type: "Polygon",
-            coordinates: [outerRings[0]!, ...holeRings.map((r) => r.slice().reverse())],
-          };
-        } else {
-          geometry = {
-            type: "MultiPolygon",
-            coordinates: outerRings.map((outer) => [outer]),
-          };
-        }
-      }
-
-      // Calculate metrics
-      const centroid = calculateCentroid(closedRings);
-      const bbox = calculateBoundingBox(closedRings);
-      const area = calculateApproxArea(closedRings);
-
-      features.push({
-        featureId,
-        displayName,
-        geometry,
-        properties,
-        centroid,
-        boundingBox: bbox,
-        areaSqKm: area,
-      });
-    } catch (err) {
-      log.push(
-        `  Error processing ${featureId}: ${err instanceof Error ? err.message : String(err)}`
-      );
-    }
-  }
-
-  log.push(`Extracted ${features.length} features from ${allPaths.length} paths`);
+  log.push(`Extracted ${features.length} features from ${pathCount} paths`);
   if (refUsedCount > 0) {
     log.push(
       `Used reference geometry for ${refUsedCount} features (${features.length - refUsedCount} from SVG conversion)`
@@ -591,18 +171,9 @@ export function parseSvgToGeoJson(
   };
 }
 
-
-
 // ──────────────────────────────────────────────
 // Country Name Matching
 // ──────────────────────────────────────────────
-
-/**
- * Convert feature ID to display name: "New_Harren" → "New Harren"
- */
-export function featureIdToDisplayName(id: string): string {
-  return id.replace(/_/g, " ").replace(/-/g, " ");
-}
 
 /**
  * Normalize a name for fuzzy matching.
@@ -735,150 +306,6 @@ export function detectLayerType(
   }
 
   return null;
-}
-
-// ---------------------------------------------------------------------------
-// Layer diff computation
-// ---------------------------------------------------------------------------
-
-export interface FeatureDiffEntry {
-  featureId: string;
-  displayName: string;
-  status: "added" | "modified" | "removed" | "unchanged";
-  changes?: {
-    geometryChanged: boolean;
-    propertiesChanged: boolean;
-    areaDeltaSqKm?: number;
-  };
-  existingCountryId?: string | null;
-  existingCountryName?: string | null;
-}
-
-export interface LayerDiff {
-  layerType: string;
-  totalExisting: number;
-  totalIncoming: number;
-  added: FeatureDiffEntry[];
-  modified: FeatureDiffEntry[];
-  removed: FeatureDiffEntry[];
-  unchanged: FeatureDiffEntry[];
-  preservedLinkages: Array<{ featureId: string; countryId: string; countryName?: string }>;
-  summary: {
-    addedCount: number;
-    modifiedCount: number;
-    removedCount: number;
-    unchangedCount: number;
-    linkagesPreserved: number;
-    linkagesLost: number;
-  };
-}
-
-/**
- * Compare incoming parsed features against existing DB features to produce a diff.
- * Uses featureId as the stable key (matches the @@unique constraint on MapLayer).
- */
-export function computeLayerDiff(
-  incomingFeatures: ParsedFeature[],
-  existingFeatures: Array<{
-    featureId: string;
-    displayName: string | null;
-    geometry: unknown;
-    countryId: string | null;
-    areaSqKm: number | null;
-    properties: unknown;
-    country?: { name: string } | null;
-  }>
-): LayerDiff {
-  const existingMap = new Map(existingFeatures.map((f) => [f.featureId, f]));
-  const incomingMap = new Map(incomingFeatures.map((f) => [f.featureId, f]));
-
-  const added: FeatureDiffEntry[] = [];
-  const modified: FeatureDiffEntry[] = [];
-  const removed: FeatureDiffEntry[] = [];
-  const unchanged: FeatureDiffEntry[] = [];
-  const preservedLinkages: Array<{ featureId: string; countryId: string; countryName?: string }> =
-    [];
-  let linkagesLost = 0;
-
-  // Check incoming features against existing
-  for (const incoming of incomingFeatures) {
-    const existing = existingMap.get(incoming.featureId);
-    if (!existing) {
-      added.push({
-        featureId: incoming.featureId,
-        displayName: incoming.displayName,
-        status: "added",
-      });
-      continue;
-    }
-
-    // Feature exists — check for modifications via full JSON comparison
-    const geometryChanged = JSON.stringify(incoming.geometry) !== JSON.stringify(existing.geometry);
-    const propertiesChanged =
-      JSON.stringify(incoming.properties) !== JSON.stringify(existing.properties);
-    const areaDelta = incoming.areaSqKm - (existing.areaSqKm ?? 0);
-
-    if (geometryChanged || propertiesChanged) {
-      modified.push({
-        featureId: incoming.featureId,
-        displayName: incoming.displayName,
-        status: "modified",
-        changes: { geometryChanged, propertiesChanged, areaDeltaSqKm: areaDelta },
-        existingCountryId: existing.countryId,
-        existingCountryName: existing.country?.name ?? null,
-      });
-    } else {
-      unchanged.push({
-        featureId: incoming.featureId,
-        displayName: incoming.displayName,
-        status: "unchanged",
-        existingCountryId: existing.countryId,
-        existingCountryName: existing.country?.name ?? null,
-      });
-    }
-
-    // Preserve linkage for both modified and unchanged features
-    if (existing.countryId) {
-      preservedLinkages.push({
-        featureId: incoming.featureId,
-        countryId: existing.countryId,
-        countryName: existing.country?.name ?? undefined,
-      });
-    }
-  }
-
-  // Check for removed features (in DB but not in incoming)
-  for (const existing of existingFeatures) {
-    if (!incomingMap.has(existing.featureId)) {
-      removed.push({
-        featureId: existing.featureId,
-        displayName: existing.displayName ?? existing.featureId,
-        status: "removed",
-        existingCountryId: existing.countryId,
-        existingCountryName: existing.country?.name ?? null,
-      });
-      if (existing.countryId) linkagesLost++;
-    }
-  }
-
-  return {
-    layerType: "",
-    totalExisting: existingFeatures.length,
-    totalIncoming: incomingFeatures.length,
-    added,
-    modified,
-    removed,
-    unchanged,
-    preservedLinkages,
-    summary: {
-      addedCount: added.length,
-      modifiedCount: modified.length,
-      removedCount: removed.length,
-      unchangedCount: unchanged.length,
-      linkagesPreserved: preservedLinkages.length,
-      linkagesLost,
-    },
-  };
 }
 
 /**

@@ -7,27 +7,17 @@ export * from "./tactics";
 export * from "./modifiers";
 
 import { createRNG } from "./rng";
-import { computeStrength, computeEloDelta } from "./elo-calculator";
+import { computeStrength } from "./elo-calculator";
 import type { TeamRatingVector, ExtendedMatchResult } from "./types";
-import { clamp } from "~/lib/utils";
-import type { RosterPlayer, SportResolverContext } from "./resolvers";
-import {
-  runHockeyMatch,
-  runBasketballMatch,
-  runFootballMatch,
-  runBaseballMatch,
-  runSoccerMatch,
-} from "./resolvers";
+import type { RosterPlayer } from "./resolvers";
 import {
   checkCPUTactics,
   applyTactics,
   getTacticalBonus,
   computeAdjustedStrength,
 } from "./tactics";
-import {
-  applyStorytellerModifiers,
-  type TeamStorytellerModifiers,
-} from "./modifiers";
+import { applyStorytellerModifiers, type TeamStorytellerModifiers } from "./modifiers";
+import { applyLineupSliders, buildMatchResult, runSportMatch } from "./match-outcome";
 
 export function resolveMatch(args: {
   sport: string;
@@ -69,7 +59,7 @@ export function resolveMatch(args: {
   const winProbability =
     1 / (1 + Math.pow(10, (rawAwayStrength - (rawHomeStrength + homeAdvantageAdjustment)) / 400));
 
-  // 2. Evaluate tactics and apply vectors
+  // 2. Evaluate tactics and apply vectors, then the customizable lineup sliders
   const homeTactical =
     args.homeTacticalIntent ||
     checkCPUTactics(homeTeamModified, awayTeamModified, homeTeamModified.coaching);
@@ -77,29 +67,13 @@ export function resolveMatch(args: {
     args.awayTacticalIntent ||
     checkCPUTactics(awayTeamModified, homeTeamModified, awayTeamModified.coaching);
 
-  const hTactRes = applyTactics(homeTactical, homeTeamModified.offense, homeTeamModified.defense);
-  const aTactRes = applyTactics(awayTactical, awayTeamModified.offense, awayTeamModified.defense);
-
-  let homeOffense = hTactRes.o;
-  let homeDefense = hTactRes.d;
-  let awayOffense = aTactRes.o;
-  let awayDefense = aTactRes.d;
-  let baseVariance = 2.0 + hTactRes.vMod + aTactRes.vMod;
-
-  // Apply customizable sliders from lineups
-  const hLineup = args.homeLineup ?? {};
-  const aLineup = args.awayLineup ?? {};
-  const hAttackFocus = typeof hLineup.attackFocus === "number" ? hLineup.attackFocus : 50;
-  const hTeamIntensity = typeof hLineup.teamIntensity === "number" ? hLineup.teamIntensity : 50;
-  const aAttackFocus = typeof aLineup.attackFocus === "number" ? aLineup.attackFocus : 50;
-  const aTeamIntensity = typeof aLineup.teamIntensity === "number" ? aLineup.teamIntensity : 50;
-
-  homeOffense = Math.max(1, Math.min(99, homeOffense + (hAttackFocus - 50) * 0.16));
-  homeDefense = Math.max(1, Math.min(99, homeDefense + (50 - hAttackFocus) * 0.16));
-  awayOffense = Math.max(1, Math.min(99, awayOffense + (aAttackFocus - 50) * 0.16));
-  awayDefense = Math.max(1, Math.min(99, awayDefense + (50 - aAttackFocus) * 0.16));
-
-  baseVariance = Math.max(0.5, baseVariance + (hTeamIntensity - 50) * 0.01 + (aTeamIntensity - 50) * 0.01);
+  const ratings = applyLineupSliders(
+    applyTactics(homeTactical, homeTeamModified.offense, homeTeamModified.defense),
+    applyTactics(awayTactical, awayTeamModified.offense, awayTeamModified.defense),
+    args.homeLineup,
+    args.awayLineup
+  );
+  const { homeOffense, homeDefense, awayOffense, awayDefense } = ratings;
 
   const homeTacticalBonus = getTacticalBonus(homeTactical, awayTactical);
   const awayTacticalBonus = getTacticalBonus(awayTactical, homeTactical);
@@ -113,11 +87,9 @@ export function resolveMatch(args: {
     awayDefense,
     awayTacticalBonus
   );
-  const differential = homeStrength - awayStrength;
-  const isHomeFavored = differential >= 0;
 
   // 3. Dispatch to Sport-Specific Sim Loop
-  const resolverCtx: SportResolverContext = {
+  const outcome = runSportMatch(args.sport, {
     rng,
     homeOffense,
     homeDefense,
@@ -132,80 +104,21 @@ export function resolveMatch(args: {
     archetype: args.archetype,
     homeRoster: args.homeRoster,
     awayRoster: args.awayRoster,
-  };
-
-  const outcome =
-    args.sport === "hockey"
-      ? runHockeyMatch(resolverCtx)
-      : args.sport === "basketball"
-        ? runBasketballMatch(resolverCtx)
-        : args.sport === "football"
-          ? runFootballMatch(resolverCtx)
-          : args.sport === "baseball"
-            ? runBaseballMatch(resolverCtx)
-            : runSoccerMatch(resolverCtx);
-
-  const { homeScore, awayScore, trace } = outcome;
+  });
 
   // 4. Determine Winner, ELO Deltas & Evaluation Vector
-  let winner: "home" | "away" | "draw" = "draw";
-  if (homeScore > awayScore) winner = "home";
-  else if (awayScore > homeScore) winner = "away";
-
-  const homeWon = winner === "home";
-  const awayWon = winner === "away";
-  const isDraw = winner === "draw";
-  const upset = isDraw ? Math.abs(differential) > 10 : isHomeFavored ? awayWon : homeWon;
-
-  const isDivineDerby = !!(
-    args.homeTeamModifiers?.saintBlessing && args.awayTeamModifiers?.saintBlessing
-  );
-
-  const dominance =
-    Math.round(
-      ((homeOffense + homeDefense) / (homeOffense + homeDefense + awayOffense + awayDefense)) * 100
-    ) / 100;
-  const tempo = Math.round((baseVariance / 2.0) * 100) / 100;
-  const volatility = isDivineDerby
-    ? 0.95
-    : Math.round((1 - Math.abs(winProbability - 0.5) * 2) * 100) / 100;
-
-  const kFactor = isChampionship ? 32 : isPlayoff ? 24 : 16;
-  const homeActual = homeWon ? 1 : isDraw ? 0.5 : 0;
-  const awayActual = awayWon ? 1 : isDraw ? 0.5 : 0;
-
-  let ELOFeedbackScale = 1.0;
-  if (homeWon && dominance < 0.42) ELOFeedbackScale = 0.7;
-  if (awayWon && dominance > 0.58) ELOFeedbackScale = 0.7;
-
-  const rawHomeDelta = computeEloDelta(rawHomeStrength, rawAwayStrength, homeActual, kFactor);
-  const rawAwayDelta = computeEloDelta(rawAwayStrength, rawHomeStrength, awayActual, kFactor);
-
-  const homeRatingDelta = Math.round(rawHomeDelta * ELOFeedbackScale * 100) / 100;
-  const awayRatingDelta = Math.round(rawAwayDelta * ELOFeedbackScale * 100) / 100;
-
-  return {
-    homeScore,
-    awayScore,
-    winner,
-    upset,
-    upsetFactor: clamp(Math.abs(differential) / 50, 0, 1),
-    keyStats: {
-      homeStrength: Math.round(homeStrength * 100) / 100,
-      awayStrength: Math.round(awayStrength * 100) / 100,
-      differential: Math.round(differential * 100) / 100,
-      dominance,
-      tempo,
-      volatility,
-    },
-    homeRatingDelta,
-    awayRatingDelta,
-    evaluation: {
-      winProbability: Math.round(winProbability * 100) / 100,
-      dominance,
-      tempo,
-      volatility,
-    },
-    trace,
-  };
+  return buildMatchResult({
+    outcome,
+    ratings,
+    homeStrength,
+    awayStrength,
+    rawHomeStrength,
+    rawAwayStrength,
+    winProbability,
+    isPlayoff,
+    isChampionship,
+    isDivineDerby: !!(
+      args.homeTeamModifiers?.saintBlessing && args.awayTeamModifiers?.saintBlessing
+    ),
+  });
 }
